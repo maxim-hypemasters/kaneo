@@ -3422,7 +3422,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "Przypisz użytkownikowi {{name}}",
 			"cannotAssign": "Nie można przypisać użytkownikowi {{name}}",
 			"laneTaskCount_few": "{{count}} zadania",

@@ -3048,7 +3048,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "{{name}}님에게 할당",
 			"cannotAssign": "{{name}}님에게 할당할 수 없음",
 			"laneTaskCount_other": "작업 {{count}}개",

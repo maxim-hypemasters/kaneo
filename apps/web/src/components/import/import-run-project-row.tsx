@@ -65,7 +65,7 @@ export function ImportRunProjectRow({
             })}
             render={
               <Link
-                to="/dashboard/workspace/$workspaceId/project/$projectId/board"
+                to="/dashboard/workspace/$workspaceId/project/$projectId"
                 params={{ workspaceId, projectId: project.projectId }}
               />
             }

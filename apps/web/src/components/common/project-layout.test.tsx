@@ -1,7 +1,9 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import type { ProjectRoute } from "@/components/project/views/project-views";
 import { HttpError } from "@/lib/http-error";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 import ProjectLayout from "./project-layout";
 
 const project = vi.hoisted(() => ({
@@ -56,14 +58,18 @@ vi.mock("@/components/shared/modals/create-project-modal", () => ({
 }));
 vi.mock("@/components/page-title", () => ({ default: () => null }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.removeItem("user-preferences");
+  useUserPreferencesStore.setState({ viewMode: "board", taskLayout: "board" });
+});
 
-function renderLayout() {
+function renderLayout(activeView: ProjectRoute = "board") {
   render(
     <ProjectLayout
       projectId="project-1"
       workspaceId="workspace-1"
-      activeView="board"
+      activeView={activeView}
       toolbar={<button type="button">Toolbar action</button>}
       summary={<span>5 tasks</span>}
     >
@@ -125,5 +131,33 @@ describe("ProjectLayout access states", () => {
     expect(backlog.getAttribute("href")).toBe(
       "/dashboard/workspace/$workspaceId/project/$projectId/backlog",
     );
+  });
+});
+
+describe("ProjectLayout tasks view", () => {
+  it("returns from the backlog to a task view reached by a link", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    useUserPreferencesStore.setState({ viewMode: "list", taskLayout: "gantt" });
+
+    renderLayout("board");
+    expect(useUserPreferencesStore.getState().taskLayout).toBe("list");
+    cleanup();
+    renderLayout("backlog");
+
+    expect(
+      screen.getByRole("link", { name: "tasks:title" }).getAttribute("href"),
+    ).toBe("/dashboard/workspace/$workspaceId/project/$projectId/board");
+  });
+
+  it("keeps the last task view while the backlog is open", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    useUserPreferencesStore.setState({ taskLayout: "calendar" });
+
+    renderLayout("backlog");
+
+    expect(useUserPreferencesStore.getState().taskLayout).toBe("calendar");
+    expect(
+      screen.getByRole("link", { name: "tasks:title" }).getAttribute("href"),
+    ).toBe("/dashboard/workspace/$workspaceId/project/$projectId/calendar");
   });
 });

@@ -12757,9 +12757,6 @@
 						},
 						"periodStart": {
 							"type": "string"
-						},
-						"showTaskDates": {
-							"type": "string"
 						}
 					},
 					"required": [
@@ -12780,8 +12777,7 @@
 						"taskAriaLabel",
 						"previousPeriod",
 						"nextPeriod",
-						"periodStart",
-						"showTaskDates"
+						"periodStart"
 					]
 				},
 				"delete": {

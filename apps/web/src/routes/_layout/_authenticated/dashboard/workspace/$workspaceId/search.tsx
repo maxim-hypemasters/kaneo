@@ -129,7 +129,7 @@ function SearchComponent() {
                       onClick={() => {
                         if (result.type === "task" && result.projectId) {
                           navigate({
-                            to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
+                            to: "/dashboard/workspace/$workspaceId/project/$projectId",
                             params: {
                               workspaceId,
                               projectId: result.projectId,

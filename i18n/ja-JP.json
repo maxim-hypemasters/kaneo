@@ -3048,7 +3048,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "{{name}} に割り当て",
 			"cannotAssign": "{{name}} には割り当てできません",
 			"laneTaskCount_other": "{{count}} 件のタスク",

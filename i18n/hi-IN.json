@@ -3081,7 +3081,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "{{name}} को सौंपें",
 			"cannotAssign": "{{name}} को नहीं सौंपा जा सकता",
 			"laneTaskCount_one": "{{count}} कार्य",

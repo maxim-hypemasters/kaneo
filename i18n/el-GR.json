@@ -3081,7 +3081,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "Ανάθεση σε {{name}}",
 			"cannotAssign": "Δεν είναι δυνατή η ανάθεση σε {{name}}",
 			"laneTaskCount_one": "{{count}} εργασία",

@@ -3191,7 +3191,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "Назначить на {{name}}",
 			"cannotAssign": "Нельзя назначить на {{name}}",
 			"laneTaskCount_few": "{{count}} задачи",

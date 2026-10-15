@@ -59,7 +59,12 @@ vi.mock("@/hooks/use-mobile", () => ({
 }));
 
 // Mutable for the same reason as routeParams: read lazily by the mock.
-const preferences = { weekStartsOn: 0, ganttGroupBy: "none" };
+const preferences = {
+  weekStartsOn: 0,
+  ganttGroupBy: "none",
+  setViewMode: vi.fn(),
+  setTaskLayout: vi.fn(),
+};
 vi.mock("@/store/user-preferences", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/store/user-preferences")>()),
   useUserPreferencesStore: (selector: (state: typeof preferences) => unknown) =>
@@ -213,6 +218,7 @@ function mockProjectWithTasks(
   overrides: { id?: string; name?: string } = {},
 ) {
   useGetTasks.mockReturnValue({
+    isSuccess: true,
     data: {
       id: overrides.id ?? "project-1",
       name: overrides.name ?? "Roadmap",
@@ -270,23 +276,49 @@ describe("Gantt jump-to-today", () => {
       expect.objectContaining({ behavior: "auto", inline: "center" }),
     );
   });
-  it("disables the button and never auto-scrolls when no task falls near today", () => {
+  it("never auto-scrolls to a far-off today, but still jumps there on demand", () => {
     mockProjectWithTask(
       makeTask({
         id: "past-task",
         title: "Old milestone",
+        startDate: "2025-01-01",
+        dueDate: "2025-01-03",
+      }),
+    );
+
+    const { container } = render(<GanttRoute />);
+
+    // Today (Aug 31, 2026) is outside the span the project opens on, so
+    // opening the view leaves the scroll where the project's work is.
+    expect(container.querySelector('[aria-current="date"]')).toBeNull();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    const button = screen.getByRole("button", { name: "Jump to today" });
+    expect(button).not.toBeDisabled();
+    fireEvent.click(button);
+
+    // The timeline re-centres on today, so its column now exists.
+    expect(container.querySelector('[aria-current="date"]')).toHaveTextContent(
+      "31",
+    );
+    expect(screen.getAllByText("Old milestone").length).toBeGreaterThan(0);
+  });
+
+  it("doesn't auto-centre on today when only the minimum span reaches it", () => {
+    mockProjectWithTask(
+      makeTask({
+        id: "spring-task",
+        title: "Spring launch",
         startDate: "2026-05-01",
         dueDate: "2026-05-03",
       }),
     );
 
-    render(<GanttRoute />);
+    const { container } = render(<GanttRoute />);
 
-    const button = screen.getByRole("button", { name: "Jump to today" });
-    expect(button).toBeDisabled();
-    expect(scrollIntoView).not.toHaveBeenCalled();
-
-    fireEvent.click(button);
+    // The span is padded to a minimum width that happens to reach today,
+    // but the work is months away, so the view opens where the work is.
+    expect(container.querySelector('[aria-current="date"]')).not.toBeNull();
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
@@ -553,5 +585,50 @@ describe("Gantt group by assignee", () => {
 
     expect(container.querySelector("[data-gantt-lane]")).toBeNull();
     expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
+  });
+});
+
+describe("Gantt navigation", () => {
+  it("doesn't centre on today later, when a jump brings today into view", () => {
+    // Work from July 2025 to Aug 12, 2026: today (Aug 31) is near the end of
+    // it, but the span opens around the first task, so today isn't rendered.
+    mockProjectWithTasks([
+      makeTask({
+        id: "early",
+        title: "Early work",
+        startDate: "2025-07-01",
+        dueDate: "2025-07-05",
+      }),
+      makeTask({
+        id: "recent",
+        title: "Recent work",
+        startDate: "2026-08-10",
+        dueDate: "2026-08-12",
+      }),
+    ]);
+    const { container } = render(<GanttRoute />);
+    expect(container.querySelector('[aria-current="date"]')).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Timeline start date"), {
+      target: { value: "2026-08-20" },
+    });
+
+    // The jump re-centred the span so today is rendered now, but the view
+    // stays on the date the reader asked for.
+    expect(container.querySelector('[aria-current="date"]')).not.toBeNull();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it("offers the board when nothing is scheduled", () => {
+    mockProjectWithTask(makeTask({ title: "Undated idea" }));
+
+    render(<GanttRoute />);
+    fireEvent.click(screen.getByRole("button", { name: "Board" }));
+
+    expect(navigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
+      }),
+    );
   });
 });

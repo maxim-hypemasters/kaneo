@@ -217,7 +217,7 @@ function RouteComponent() {
 
   const handleProjectClick = (projectId: string) => {
     navigate({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
+      to: "/dashboard/workspace/$workspaceId/project/$projectId",
       params: { workspaceId, projectId },
     });
   };

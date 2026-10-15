@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { useOpenProject } from "@/components/project/views/use-open-project";
 import { toastManager } from "@/components/ui/toast";
 import useGetProjects from "@/hooks/queries/project/use-get-projects";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
@@ -6,6 +7,7 @@ import { useShortcut } from "@/lib/shortcuts/use-shortcut";
 
 export function GlobalShortcuts() {
   const navigate = useNavigate();
+  const openProject = useOpenProject();
   const { data: workspace } = useActiveWorkspace();
   const { data: projects = [] } = useGetProjects(
     { workspaceId: workspace?.id ?? "" },
@@ -28,7 +30,7 @@ export function GlobalShortcuts() {
     "goToProject",
     (event) => {
       const project = projects[Number(event.code.replace("Digit", "")) - 1];
-      if (project) go(`/project/${project.id}/board`);
+      if (project && workspace) openProject(workspace.id, project.id);
     },
     { enabled: enabled && projects.length > 0 },
   );

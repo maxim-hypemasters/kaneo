@@ -117,6 +117,7 @@ export function GanttLaneHeader({
     >
       {showTaskRail ? (
         <div
+          data-gantt-rail=""
           className={cn(
             "sticky left-0 z-[11] flex h-full items-center border-r border-border bg-background px-2 sm:px-3",
             heightClassName,
@@ -134,7 +135,7 @@ export function GanttLaneHeader({
 
       <div
         className={cn(
-          "relative flex shrink-0 items-center bg-muted/40",
+          "relative flex shrink-0 cursor-grab items-center bg-muted/40",
           heightClassName,
         )}
         style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}

@@ -34,6 +34,7 @@ vi.mock("@/components/task/task-details-sheet", () => ({
 }));
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
   useGetTasks: () => ({
+    isSuccess: true,
     data: {
       name: "Project",
       slug: "PROJ",
@@ -141,7 +142,9 @@ describe("Gantt window UI", () => {
     );
     expect(grids.length).toBeGreaterThan(0);
     expect(
-      grids.every((grid) => /repeat\(91,/.test(grid.style.gridTemplateColumns)),
+      grids.every((grid) =>
+        /repeat\(182,/.test(grid.style.gridTemplateColumns),
+      ),
     ).toBe(true);
     expect(
       screen.getByRole("button", { name: "tasks:gantt.resizeStart" }),
@@ -161,32 +164,35 @@ describe("Gantt window UI", () => {
     expect(m.update).not.toHaveBeenCalled();
   });
 
-  it("can jump to a far-away task and navigate without losing its row", () => {
+  it("can jump to a far-away date and navigate without losing rows", () => {
     m.tasks = [
       task("Ancient", "0001-01-01", "0001-01-02"),
       task("Future", "9999-12-30", "9999-12-31"),
     ];
     const { container } = show();
-    const jump = screen.getAllByRole("button", {
-      name: "tasks:gantt.showTaskDates",
+    // The span opens around today, far from both tasks.
+    expect(
+      screen.queryAllByRole("button", { name: "tasks:gantt.taskAriaLabel" }),
+    ).toHaveLength(0);
+
+    fireEvent.change(screen.getByLabelText("tasks:gantt.periodStart"), {
+      target: { value: "9999-12-23" },
     });
-    expect(jump).toHaveLength(2);
-    fireEvent.click(jump[1]);
+    expect(
+      screen.getAllByRole("button", { name: "tasks:gantt.taskAriaLabel" }),
+    ).toHaveLength(1);
+
+    // The span re-centres on the far task, clamped to the last supported
+    // day, and stays bounded.
     expect(screen.getByLabelText("tasks:gantt.periodStart")).toHaveValue(
-      "9999-10-02",
+      "9999-07-03",
     );
     expect(
       screen.getByRole("button", { name: "tasks:gantt.nextPeriod" }),
     ).toBeDisabled();
     expect(screen.getByText("Ancient")).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:gantt.previousPeriod" }),
-    );
     expect(
-      screen.getByRole("button", { name: "tasks:gantt.nextPeriod" }),
-    ).not.toBeDisabled();
-    expect(
-      container.querySelectorAll('[style*="repeat(91,"]').length,
+      container.querySelectorAll('[style*="repeat(182,"]').length,
     ).toBeGreaterThan(0);
   });
 
@@ -196,11 +202,12 @@ describe("Gantt window UI", () => {
     fireEvent.change(screen.getByLabelText("tasks:gantt.periodStart"), {
       target: { value: "2050-01-01" },
     });
+    // Re-centred: Monday Dec 27, 2049 (the week of Jan 1) less eight weeks.
     expect(screen.getByLabelText("tasks:gantt.periodStart")).toHaveValue(
-      "2050-01-01",
+      "2049-11-01",
     );
     expect(
-      container.querySelectorAll('[style*="repeat(91,"]').length,
+      container.querySelectorAll('[style*="repeat(182,"]').length,
     ).toBeGreaterThan(0);
   });
 });

@@ -3096,7 +3096,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"laneTaskCount_one": "{{count}} task",
 			"laneTaskCount_other": "{{count}} tasks",
 			"assignTo": "Assign to {{name}}",
