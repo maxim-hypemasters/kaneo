@@ -3175,7 +3175,16 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Призначити на {{name}}",
+			"cannotAssign": "Не можна призначити на {{name}}",
+			"laneTaskCount_few": "{{count}} завдання",
+			"laneTaskCount_many": "{{count}} завдань",
+			"laneTaskCount_one": "{{count}} завдання",
+			"laneTaskCount_other": "{{count}} завдання",
+			"reassignError": "Не вдалося перепризначити завдання",
+			"taskAriaLabelGrouped": "{{title}}: відкрити або перетягнути для зміни дат чи перепризначення",
+			"unassign": "Зняти призначення"
 		},
 		"delete": {
 			"title": "Видалити завдання?",
@@ -3360,7 +3369,12 @@
 			"showOnRows": "Показувати в рядках",
 			"checklistProgress": "Прогрес чек-листа",
 			"projectBackground": "Фон проєкту",
-			"layout": "Макет"
+			"layout": "Макет",
+			"groupBy": "Групувати за",
+			"groupByOptions": {
+				"assignee": "Виконавець",
+				"none": "Без групування"
+			}
 		},
 		"filterBar": {
 			"label": "Активні фільтри",

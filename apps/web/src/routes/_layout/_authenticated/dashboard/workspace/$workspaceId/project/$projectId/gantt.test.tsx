@@ -1,5 +1,11 @@
 import enUS from "@i18n/en-US.json";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
 import {
   afterEach,
@@ -52,10 +58,29 @@ vi.mock("@/hooks/use-mobile", () => ({
   useIsMobile: () => false,
 }));
 
-vi.mock("@/store/user-preferences", () => ({
-  useUserPreferencesStore: (
-    selector: (state: { weekStartsOn: number }) => unknown,
-  ) => selector({ weekStartsOn: 0 }),
+// Mutable for the same reason as routeParams: read lazily by the mock.
+const preferences = { weekStartsOn: 0, ganttGroupBy: "none" };
+vi.mock("@/store/user-preferences", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/store/user-preferences")>()),
+  useUserPreferencesStore: (selector: (state: typeof preferences) => unknown) =>
+    selector(preferences),
+}));
+
+const projectMembers: { id: string; name: string; image: string | null }[] = [];
+vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
+  default: () => ({ data: projectMembers, isSuccess: true }),
+}));
+
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({ canAssignTasks: () => true }),
+}));
+
+vi.mock("@/hooks/mutations/task/use-update-task", () => ({
+  useUpdateTask: () => ({ mutateAsync: vi.fn() }),
+}));
+
+vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
+  useUpdateTaskAssignee: () => ({ mutateAsync: vi.fn() }),
 }));
 
 vi.mock("@/components/common/project-layout", () => ({
@@ -119,13 +144,20 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) => {
       const [namespace, path] = key.split(":");
-      const source = path
-        .split(".")
-        .reduce<unknown>(
-          (accumulator, part) =>
-            (accumulator as Record<string, unknown> | undefined)?.[part],
-          (enUS as Record<string, unknown>)[namespace],
-        );
+      const lookup = (keyPath: string) =>
+        keyPath
+          .split(".")
+          .reduce<unknown>(
+            (accumulator, part) =>
+              (accumulator as Record<string, unknown> | undefined)?.[part],
+            (enUS as Record<string, unknown>)[namespace],
+          );
+      // English plural forms, as i18next resolves them for `count`.
+      const plural =
+        typeof options?.count === "number"
+          ? lookup(`${path}_${options.count === 1 ? "one" : "other"}`)
+          : undefined;
+      const source = plural ?? lookup(path);
 
       if (typeof source !== "string") return key;
 
@@ -173,12 +205,19 @@ function mockProjectWithTask(
   task: Task,
   overrides: { id?: string; name?: string } = {},
 ) {
+  mockProjectWithTasks([task], overrides);
+}
+
+function mockProjectWithTasks(
+  tasks: Task[],
+  overrides: { id?: string; name?: string } = {},
+) {
   useGetTasks.mockReturnValue({
     data: {
       id: overrides.id ?? "project-1",
       name: overrides.name ?? "Roadmap",
       slug: "RM",
-      columns: [{ id: "col-1", name: "In Progress", tasks: [task] }],
+      columns: [{ id: "col-1", name: "In Progress", tasks }],
       plannedTasks: [],
       archivedTasks: [],
     },
@@ -198,6 +237,8 @@ afterEach(() => {
   scrollIntoView.mockClear();
   useGetTasks.mockReset();
   routeParams.projectId = "project-1";
+  preferences.ganttGroupBy = "none";
+  projectMembers.length = 0;
 });
 
 describe("Gantt jump-to-today", () => {
@@ -368,5 +409,149 @@ describe("Gantt jump-to-today", () => {
     // component is correct.
     const container = screen.getByTestId("gantt-scroll-container");
     expect(container.style.scrollPaddingLeft).toBe("20rem");
+  });
+});
+
+describe("Gantt group by assignee", () => {
+  const laneKeys = (container: HTMLElement) =>
+    Array.from(
+      container.querySelectorAll<HTMLElement>("[data-gantt-lane]"),
+    ).map((lane) => lane.dataset.ganttLane);
+  const lane = (container: HTMLElement, key: string) => {
+    const element = container.querySelector<HTMLElement>(
+      `[data-gantt-lane="${key}"]`,
+    );
+    if (!element) throw new Error(`lane ${key} not rendered`);
+    return element;
+  };
+
+  function mockTeamProject() {
+    projectMembers.push(
+      { id: "u-zoe", name: "Zoe", image: null },
+      { id: "u-al", name: "alice", image: null },
+      { id: "u-bob", name: "Bob", image: null },
+    );
+    mockProjectWithTasks([
+      makeTask({
+        id: "zoe-task",
+        title: "Zoe's work",
+        userId: "u-zoe",
+        assigneeId: "u-zoe",
+        assigneeName: "Zoe",
+        startDate: "2026-09-01",
+        dueDate: "2026-09-03",
+      }),
+      makeTask({
+        id: "alpha",
+        title: "Alpha",
+        userId: "u-al",
+        assigneeId: "u-al",
+        assigneeName: "alice",
+        startDate: "2026-08-28",
+        dueDate: "2026-09-02",
+      }),
+      makeTask({
+        id: "beta",
+        title: "Beta",
+        userId: "u-al",
+        assigneeId: "u-al",
+        assigneeName: "alice",
+        startDate: "2026-09-05",
+        dueDate: "2026-09-10",
+      }),
+      makeTask({
+        id: "loose",
+        title: "Loose end",
+        startDate: "2026-09-02",
+        dueDate: "2026-09-02",
+      }),
+    ]);
+  }
+
+  it("shows a lane per project member, alphabetically, with Unassigned last", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockTeamProject();
+
+    const { container } = render(<GanttRoute />);
+
+    expect(laneKeys(container)).toEqual([
+      "member:u-al",
+      "member:u-bob",
+      "member:u-zoe",
+      "unassigned",
+    ]);
+    expect(
+      within(lane(container, "member:u-al")).getByRole("button", {
+        name: "alice 2 tasks",
+      }),
+    ).toHaveAttribute("aria-expanded", "true");
+    // Bob has nothing scheduled: a compact, non-collapsible drop target.
+    const bobLane = lane(container, "member:u-bob");
+    expect(within(bobLane).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(bobLane).getByText("0 tasks")).toBeInTheDocument();
+    expect(
+      within(lane(container, "unassigned")).getAllByText("Loose end").length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("collapses and expands a lane from its header", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockTeamProject();
+
+    const { container } = render(<GanttRoute />);
+    const aliceLane = lane(container, "member:u-al");
+    const toggle = within(aliceLane).getByRole("button", {
+      name: "alice 2 tasks",
+    });
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(within(aliceLane).queryAllByText("Alpha")).toHaveLength(0);
+    // The summary bar stays, so a collapsed lane still shows its span.
+    expect(
+      within(aliceLane).getByTestId("gantt-lane-summary"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(within(aliceLane).getAllByText("Alpha").length).toBeGreaterThan(0);
+  });
+
+  it("spans the lane summary bar from the earliest start to the latest end", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockTeamProject();
+
+    const { container } = render(<GanttRoute />);
+
+    // Week starts Sunday and today is Aug 31, so the window opens a week
+    // before the earliest task's week: Aug 16. Alpha starts Aug 28 (column
+    // 13); Beta ends Sep 10 (column 26, exclusive end line 27).
+    const summary = within(lane(container, "member:u-al")).getByTestId(
+      "gantt-lane-summary",
+    );
+    expect(summary.getAttribute("style")).toContain("grid-column: 13 / 27");
+  });
+
+  it("drops the assignee from grouped rows but keeps it in the flat list", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockTeamProject();
+
+    const { container, rerender } = render(<GanttRoute />);
+    expect(screen.queryByText(/• alice/)).not.toBeInTheDocument();
+
+    preferences.ganttGroupBy = "none";
+    rerender(<GanttRoute />);
+    expect(container.querySelector("[data-gantt-lane]")).toBeNull();
+    expect(screen.getAllByText(/• alice/)).toHaveLength(2);
+  });
+
+  it("falls back to the flat list for an unknown stored grouping", () => {
+    preferences.ganttGroupBy = "status";
+    mockTeamProject();
+
+    const { container } = render(<GanttRoute />);
+
+    expect(container.querySelector("[data-gantt-lane]")).toBeNull();
+    expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
   });
 });

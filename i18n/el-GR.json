@@ -3081,7 +3081,14 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Ανάθεση σε {{name}}",
+			"cannotAssign": "Δεν είναι δυνατή η ανάθεση σε {{name}}",
+			"laneTaskCount_one": "{{count}} εργασία",
+			"laneTaskCount_other": "{{count}} εργασίες",
+			"reassignError": "Αποτυχία επανανάθεσης εργασίας",
+			"taskAriaLabelGrouped": "{{title}}: άνοιγμα ή σύρσιμο για αναπρογραμματισμό ή επανανάθεση",
+			"unassign": "Αφαίρεση ανάθεσης"
 		},
 		"delete": {
 			"title": "Διαγραφή εργασίας;",
@@ -3252,7 +3259,12 @@
 			"showOnRows": "Εμφάνιση στις γραμμές",
 			"checklistProgress": "Πρόοδος λίστας ελέγχου",
 			"projectBackground": "Φόντο έργου",
-			"layout": "Διάταξη"
+			"layout": "Διάταξη",
+			"groupBy": "Ομαδοποίηση κατά",
+			"groupByOptions": {
+				"assignee": "Ανατεθειμένος",
+				"none": "Χωρίς ομαδοποίηση"
+			}
 		},
 		"filterBar": {
 			"label": "Ενεργά φίλτρα",

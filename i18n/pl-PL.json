@@ -3422,7 +3422,16 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Przypisz użytkownikowi {{name}}",
+			"cannotAssign": "Nie można przypisać użytkownikowi {{name}}",
+			"laneTaskCount_few": "{{count}} zadania",
+			"laneTaskCount_many": "{{count}} zadań",
+			"laneTaskCount_one": "{{count}} zadanie",
+			"laneTaskCount_other": "{{count}} zadania",
+			"reassignError": "Nie udało się zmienić przypisania zadania",
+			"taskAriaLabelGrouped": "{{title}}: otwórz lub przeciągnij, aby zmienić termin lub osobę przypisaną",
+			"unassign": "Usuń przypisanie"
 		},
 		"kanban": {
 			"addTask": "Dodaj zadanie",
@@ -3642,7 +3651,12 @@
 			"showOnRows": "Pokaż w wierszach",
 			"checklistProgress": "Postęp listy kontrolnej",
 			"projectBackground": "Tło projektu",
-			"layout": "Układ"
+			"layout": "Układ",
+			"groupBy": "Grupuj według",
+			"groupByOptions": {
+				"assignee": "Osoba przypisana",
+				"none": "Bez grupowania"
+			}
 		},
 		"filterBar": {
 			"label": "Aktywne filtry",

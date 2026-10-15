@@ -3081,7 +3081,14 @@
 			"previousPeriod": "Vorheriger Zeitraum",
 			"nextPeriod": "Nächster Zeitraum",
 			"periodStart": "Startdatum der Zeitleiste",
-			"showTaskDates": "Aufgabendaten anzeigen"
+			"showTaskDates": "Aufgabendaten anzeigen",
+			"assignTo": "Zuweisen an {{name}}",
+			"cannotAssign": "{{name}} kann nicht zugewiesen werden",
+			"laneTaskCount_one": "{{count}} Aufgabe",
+			"laneTaskCount_other": "{{count}} Aufgaben",
+			"reassignError": "Aufgabe konnte nicht neu zugewiesen werden",
+			"taskAriaLabelGrouped": "{{title}}: öffnen oder ziehen zum Umplanen oder Neuzuweisen",
+			"unassign": "Zuweisung aufheben"
 		},
 		"delete": {
 			"title": "Aufgabe löschen?",
@@ -3252,7 +3259,12 @@
 			"showOnRows": "In Zeilen anzeigen",
 			"checklistProgress": "Checklisten-Fortschritt",
 			"projectBackground": "Projekthintergrund",
-			"layout": "Layout"
+			"layout": "Layout",
+			"groupBy": "Gruppieren nach",
+			"groupByOptions": {
+				"assignee": "Zugewiesen an",
+				"none": "Keine"
+			}
 		},
 		"filterBar": {
 			"label": "Aktive Filter",

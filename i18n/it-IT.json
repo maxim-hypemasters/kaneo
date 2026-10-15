@@ -3128,7 +3128,15 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Assegna a {{name}}",
+			"cannotAssign": "Impossibile assegnare a {{name}}",
+			"laneTaskCount_many": "{{count}} attività",
+			"laneTaskCount_one": "{{count}} attività",
+			"laneTaskCount_other": "{{count}} attività",
+			"reassignError": "Riassegnazione attività fallita",
+			"taskAriaLabelGrouped": "{{title}}: apri o trascina per riprogrammare o riassegnare",
+			"unassign": "Rimuovi assegnazione"
 		},
 		"delete": {
 			"title": "Eliminare l'Attività?",
@@ -3306,7 +3314,12 @@
 			"showOnRows": "Mostra nelle righe",
 			"checklistProgress": "Avanzamento checklist",
 			"projectBackground": "Sfondo del progetto",
-			"layout": "Layout"
+			"layout": "Layout",
+			"groupBy": "Raggruppa per",
+			"groupByOptions": {
+				"assignee": "Assegnatario",
+				"none": "Nessuno"
+			}
 		},
 		"filterBar": {
 			"label": "Filtri attivi",

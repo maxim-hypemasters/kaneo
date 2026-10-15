@@ -3,7 +3,9 @@ import { describe, expect, it } from "vite-plus/test";
 import {
   buildGanttTimeline,
   GANTT_WINDOW_DAYS,
+  getBarGridColumns,
   parseTaskDate,
+  toIsoDay,
 } from "./timeline";
 
 const span = (start: string, end = start) => ({
@@ -79,4 +81,50 @@ describe("bounded Gantt timeline", () => {
       expect(parseTaskDate(value)).toBeNull();
     },
   );
+});
+
+describe("getBarGridColumns", () => {
+  const rangeStart = parseISO("2026-09-07");
+  const columns = (start: string, end: string, trackCount = 42) =>
+    getBarGridColumns(parseISO(start), parseISO(end), rangeStart, trackCount);
+
+  it("maps a span inside the window onto 1-based grid lines", () => {
+    expect(columns("2026-09-10", "2026-09-12")).toEqual({
+      barInView: true,
+      lineStart: 4,
+      lineEnd: 7,
+      clippedStart: false,
+      clippedEnd: false,
+    });
+  });
+
+  it("clips spans that run past either edge and says which side", () => {
+    expect(columns("2026-09-01", "2026-09-08")).toMatchObject({
+      lineStart: 1,
+      lineEnd: 3,
+      clippedStart: true,
+      clippedEnd: false,
+    });
+    expect(columns("2026-10-15", "2026-10-30")).toMatchObject({
+      lineStart: 39,
+      lineEnd: 43,
+      clippedStart: false,
+      clippedEnd: true,
+    });
+  });
+
+  it("reports spans entirely outside the window, or an empty window, as not in view", () => {
+    expect(columns("2026-08-01", "2026-09-06").barInView).toBe(false);
+    expect(columns("2026-10-19", "2026-10-20").barInView).toBe(false);
+    expect(columns("2026-09-10", "2026-09-12", 0).barInView).toBe(false);
+  });
+});
+
+describe("toIsoDay", () => {
+  it("serializes the start of the local day", () => {
+    const value = parseISO("2026-09-10T17:45");
+    expect(toIsoDay(value)).toBe(
+      new Date(2026, 8, 10, 0, 0, 0, 0).toISOString(),
+    );
+  });
 });

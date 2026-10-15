@@ -1,0 +1,50 @@
+import { differenceInCalendarDays } from "date-fns";
+import type { GanttTaskEdit, ScheduledTask } from "./gantt-types";
+
+// A saved-but-not-yet-refetched drag. The route shows it in place of the
+// server data so a bar doesn't snap back (or jump lanes twice) while the
+// request and the refetch are in flight.
+export type PendingTaskEdit = GanttTaskEdit & {
+  seq: number;
+  assigneeName: string | null;
+  assigneeImage: string | null;
+};
+
+function sameDay(left: Date, right: Date) {
+  return differenceInCalendarDays(left, right) === 0;
+}
+
+export function classifyEdit(task: ScheduledTask, edit: GanttTaskEdit) {
+  return {
+    dates:
+      !sameDay(task.scheduleStart, edit.start) ||
+      !sameDay(task.scheduleEnd, edit.end),
+    assignee: (task.userId || null) !== edit.userId,
+  };
+}
+
+export function applyPendingEdit(
+  task: ScheduledTask,
+  pending: PendingTaskEdit,
+): ScheduledTask {
+  return {
+    ...task,
+    scheduleStart: pending.start,
+    scheduleEnd: pending.end,
+    userId: pending.userId,
+    assigneeId: pending.userId,
+    assigneeName: pending.assigneeName,
+    assigneeImage: pending.assigneeImage,
+  };
+}
+
+export function pendingEditLanded(
+  task: ScheduledTask,
+  pending: PendingTaskEdit,
+) {
+  return (
+    sameDay(task.scheduleStart, pending.start) &&
+    sameDay(task.scheduleEnd, pending.end) &&
+    (task.userId || null) === pending.userId
+  );
+}

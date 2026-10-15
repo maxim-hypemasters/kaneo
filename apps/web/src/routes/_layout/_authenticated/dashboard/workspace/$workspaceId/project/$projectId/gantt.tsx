@@ -4,6 +4,7 @@ import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useId,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -11,14 +12,28 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import ProjectLayout from "@/components/common/project-layout";
-import { GanttTaskBar } from "@/components/gantt/gantt-task-bar";
+import { GanttLaneHeader } from "@/components/gantt/gantt-lane-header";
+import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
+import type {
+  GanttLaneDragState,
+  GanttLaneTarget,
+  GanttTaskEdit,
+  ScheduledTask,
+} from "@/components/gantt/gantt-types";
+import {
+  groupGanttTasks,
+  laneKeyForAssignee,
+} from "@/components/gantt/group-gantt-tasks";
+import { applyPendingEdit } from "@/components/gantt/pending-task-edits";
 import {
   buildGanttTimeline,
   GANTT_WINDOW_DAYS,
   parseTaskDate,
 } from "@/components/gantt/timeline";
+import { useGanttTaskCommits } from "@/components/gantt/use-gantt-task-commits";
 import PageTitle from "@/components/page-title";
 import { DisplaySection } from "@/components/project/display/display-section";
+import { GanttGroupByControl } from "@/components/project/display/gantt-group-by-control";
 import { WeekStartControl } from "@/components/project/display/week-start-control";
 import { ActiveFiltersBar } from "@/components/project/task-filters/active-filters-bar";
 import { ProjectToolbar } from "@/components/project/toolbar/project-toolbar";
@@ -28,14 +43,17 @@ import { LayoutSwitch } from "@/components/project/views/layout-switch";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
-import { getStatusLabel } from "@/lib/i18n/domain";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type GanttSearchParams = {
   taskId?: string;
 };
+
+const NO_COLLAPSED_LANES: ReadonlySet<string> = new Set();
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/workspace/$workspaceId/project/$projectId/gantt",
@@ -53,6 +71,19 @@ function RouteComponent() {
   const navigate = useNavigate();
   const { data: project } = useGetTasks(projectId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
+  const groupByPreference = useUserPreferencesStore(
+    (state) => state.ganttGroupBy,
+  );
+  // Anything but an explicit "assignee" (including a stale stored value)
+  // renders the flat timeline.
+  const groupByAssignee = groupByPreference === "assignee";
+  const { data: projectMembers, isSuccess: membersLoaded } =
+    useGetProjectMembers({
+      workspaceId,
+      projectId,
+      enabled: groupByAssignee,
+    });
+  const { canAssignTasks } = useWorkspacePermission();
   const view = useProjectTaskView({
     project,
     projectId,
@@ -69,6 +100,32 @@ function RouteComponent() {
       ? windowStart.date
       : null;
   const showDate = (date: Date) => setWindowStart({ projectId, date });
+  // Collapsed lanes are per visit and per project: a lane collapsed long ago
+  // shouldn't silently hide work in a planning view.
+  const [collapsedLanes, setCollapsedLanes] = useState<{
+    projectId: string;
+    keys: ReadonlySet<string>;
+  }>({ projectId, keys: NO_COLLAPSED_LANES });
+  const collapsedLaneKeys =
+    collapsedLanes.projectId === projectId
+      ? collapsedLanes.keys
+      : NO_COLLAPSED_LANES;
+  const toggleLane = (laneKey: string) =>
+    setCollapsedLanes((current) => {
+      const keys = new Set(
+        current.projectId === projectId ? current.keys : NO_COLLAPSED_LANES,
+      );
+      if (keys.has(laneKey)) {
+        keys.delete(laneKey);
+      } else {
+        keys.add(laneKey);
+      }
+      return { projectId, keys };
+    });
+  const [laneDragState, setLaneDragState] = useState<GanttLaneDragState | null>(
+    null,
+  );
+  const laneLabelIdPrefix = useId();
   const isMobile = useIsMobile();
   const [isTaskRailOpen, setIsTaskRailOpen] = useState(false);
 
@@ -76,6 +133,14 @@ function RouteComponent() {
   const dayColumnWidthRem = isMobile ? 3.125 : 2.75;
   const taskColumnWidthRem = isMobile ? 12 : 14;
   const showTaskRail = !isMobile || isTaskRailOpen;
+  const taskRailWidth = showTaskRail
+    ? isMobile
+      ? `${taskColumnWidthRem}rem`
+      : "20rem"
+    : "0rem";
+  const rowGridTemplateColumns = showTaskRail
+    ? `${taskRailWidth} max-content`
+    : "max-content";
   const timelineTrackRef = useRef<HTMLDivElement>(null);
   const [pixelsPerDay, setPixelsPerDay] = useState(44);
   const todayCellRef = useRef<HTMLDivElement>(null);
@@ -139,6 +204,21 @@ function RouteComponent() {
       );
   }, [allTasks]);
 
+  const { pending: pendingEdits, commit } = useGanttTaskCommits(parsedTasks);
+
+  // Saved drags show right away; rows keep their server-date order until
+  // the refetch lands, as they always have.
+  const displayedTasks = useMemo<ScheduledTask[]>(
+    () =>
+      pendingEdits.size === 0
+        ? parsedTasks
+        : parsedTasks.map((task) => {
+            const edit = pendingEdits.get(task.id);
+            return edit ? applyPendingEdit(task, edit) : task;
+          }),
+    [parsedTasks, pendingEdits],
+  );
+
   const scheduledTasks = useMemo(() => {
     const visibleIds = new Set(
       [
@@ -146,8 +226,74 @@ function RouteComponent() {
         ...(filteredProject?.plannedTasks ?? []),
       ].map((task) => task.id),
     );
-    return parsedTasks.filter((task) => visibleIds.has(task.id));
-  }, [parsedTasks, filteredProject]);
+    return displayedTasks.filter((task) => visibleIds.has(task.id));
+  }, [displayedTasks, filteredProject]);
+
+  const unassignedLabel = t("tasks:assignee.unassigned");
+  const unknownLabel = t("common:people.unknown");
+  const assigneeFilterValues = view.filters.filters.assignee;
+  const assigneeFilterNegated =
+    view.filters.filters.negated?.includes("assignee") ?? false;
+  const lanes = useMemo(
+    () =>
+      groupByAssignee
+        ? groupGanttTasks(scheduledTasks, {
+            members: projectMembers ?? [],
+            membersLoaded,
+            assigneeFilter: {
+              values: assigneeFilterValues,
+              negated: assigneeFilterNegated,
+            },
+            unassignedLabel,
+            unknownLabel,
+          })
+        : null,
+    [
+      groupByAssignee,
+      scheduledTasks,
+      projectMembers,
+      membersLoaded,
+      assigneeFilterValues,
+      assigneeFilterNegated,
+      unassignedLabel,
+      unknownLabel,
+    ],
+  );
+  const lanesByKey = useMemo(
+    () => new Map((lanes ?? []).map((lane) => [lane.key, lane])),
+    [lanes],
+  );
+  const resolveLane = useCallback(
+    (laneKey: string): GanttLaneTarget | null =>
+      lanesByKey.get(laneKey) ?? null,
+    [lanesByKey],
+  );
+  const laneDragEnabled = groupByAssignee && canAssignTasks();
+  const dropTargetLaneKey = laneDragState?.targetLaneKey ?? null;
+
+  const commitTaskEdit = (task: ScheduledTask, edit: GanttTaskEdit) => {
+    const keepsAssignee = edit.userId === (task.userId || null);
+    const targetLane = keepsAssignee
+      ? null
+      : lanesByKey.get(laneKeyForAssignee(edit.userId));
+    commit(task, edit, {
+      name: keepsAssignee
+        ? task.assigneeName
+        : targetLane?.userId
+          ? targetLane.name
+          : null,
+      image: keepsAssignee
+        ? (task.assigneeImage ?? null)
+        : (targetLane?.image ?? null),
+    });
+  };
+
+  const openTask = (taskId: string) =>
+    navigate({
+      to: ".",
+      search: { taskId },
+      replace: true,
+    });
 
   const timeline = useMemo(
     () =>
@@ -253,6 +399,7 @@ function RouteComponent() {
                 />
               </DisplaySection>
               <DisplaySection>
+                <GanttGroupByControl />
                 <WeekStartControl />
               </DisplaySection>
             </>
@@ -377,7 +524,11 @@ function RouteComponent() {
         ) : (
           <div
             data-testid="gantt-scroll-container"
-            className="min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]"
+            data-gantt-scroll-container=""
+            className={cn(
+              "min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]",
+              laneDragState && "cursor-grabbing [&_*]:cursor-grabbing",
+            )}
             style={{ scrollPaddingLeft: `${scrollPaddingLeftRem}rem` }}
           >
             <div className="relative min-w-max touch-pan-x touch-pan-y">
@@ -440,11 +591,7 @@ function RouteComponent() {
                   ref={timelineTrackRef}
                   className="absolute inset-y-0 z-0 grid"
                   style={{
-                    left: showTaskRail
-                      ? isMobile
-                        ? `${taskColumnWidthRem}rem`
-                        : "20rem"
-                      : "0rem",
+                    left: taskRailWidth,
                     gridTemplateColumns: timeline.gridTemplateColumns,
                     width: `${timeline.timelineMinWidthRem}rem`,
                   }}
@@ -460,90 +607,96 @@ function RouteComponent() {
                   ))}
                 </div>
 
-                <div className="relative z-10 flex flex-col">
-                  {scheduledTasks.map((task) => {
-                    return (
-                      <div
-                        key={task.id}
-                        className="grid items-stretch border-b border-border/70"
-                        style={{
-                          gridTemplateColumns: showTaskRail
-                            ? isMobile
-                              ? `${taskColumnWidthRem}rem max-content`
-                              : "20rem max-content"
-                            : "max-content",
-                        }}
-                      >
-                        {showTaskRail ? (
-                          <div className="sticky left-0 z-[11] h-full border-r border-border bg-background">
-                            <button
-                              type="button"
-                              className="flex min-h-[44px] w-full min-w-0 flex-col items-start justify-center gap-0.5 px-2 py-2 text-left transition-colors hover:bg-muted sm:min-h-0 sm:px-3 sm:py-1.5"
-                              onClick={() =>
-                                navigate({
-                                  to: ".",
-                                  search: { taskId: task.id },
-                                  replace: true,
-                                })
-                              }
-                            >
-                              <div className="flex w-full items-center gap-1.5">
-                                <span className="max-w-[7rem] truncate rounded-full bg-secondary px-1.5 py-px text-[10px] font-medium uppercase tracking-wide text-secondary-foreground sm:max-w-none">
-                                  {getStatusLabel(task.status)}
-                                </span>
-                                <span className="truncate text-[10px] text-muted-foreground">
-                                  {project?.slug}-{task.number}
-                                </span>
-                              </div>
-                              <p className="w-full line-clamp-1 text-xs font-medium leading-tight text-foreground">
-                                {task.title}
-                              </p>
-                              <p className="w-full truncate text-[11px] leading-tight text-muted-foreground">
-                                {format(task.scheduleStart, "MMM d, yyyy")} -{" "}
-                                {format(task.scheduleEnd, "MMM d, yyyy")}
-                                {task.assigneeName
-                                  ? ` • ${task.assigneeName}`
-                                  : ""}
-                              </p>
-                            </button>
-                            {(task.scheduleEnd < timeline.rangeStart ||
-                              task.scheduleStart > timeline.rangeEnd) && (
-                              <button
-                                type="button"
-                                className="px-3 pb-2 text-xs text-primary underline"
-                                onClick={() =>
-                                  showDate(addDays(task.scheduleStart, -7))
-                                }
-                              >
-                                {t("tasks:gantt.showTaskDates")}
-                              </button>
-                            )}
-                          </div>
-                        ) : null}
-
-                        <div
-                          className="relative min-h-11 shrink-0 select-none"
-                          style={{
-                            minWidth: `${timeline.timelineMinWidthRem}rem`,
-                          }}
-                        >
-                          <GanttTaskBar
-                            task={task}
-                            timeline={timeline}
-                            pixelsPerDay={pixelsPerDay}
-                            isMobile={isMobile}
-                            onOpenTask={() =>
-                              navigate({
-                                to: ".",
-                                search: { taskId: task.id },
-                                replace: true,
-                              })
+                <div
+                  data-gantt-lanes=""
+                  className="relative z-10 flex flex-col"
+                >
+                  {lanes
+                    ? lanes.map((lane) => {
+                        const collapsed =
+                          lane.tasks.length > 0 &&
+                          collapsedLaneKeys.has(lane.key);
+                        const labelId = `${laneLabelIdPrefix}-${lane.key}`;
+                        const laneDrag = laneDragEnabled
+                          ? {
+                              laneKey: lane.key,
+                              resolveLane,
+                              onChange: setLaneDragState,
                             }
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                          : undefined;
+                        return (
+                          // No z-index/transform here: a lane must not form
+                          // a stacking context, or a bar dragged out of it
+                          // would paint underneath the other lanes.
+                          <div
+                            key={lane.key}
+                            role="group"
+                            aria-labelledby={labelId}
+                            data-gantt-lane={lane.key}
+                            data-drop-target={
+                              dropTargetLaneKey === lane.key ? "" : undefined
+                            }
+                            className={cn(
+                              "relative",
+                              dropTargetLaneKey === lane.key &&
+                                "after:pointer-events-none after:absolute after:inset-0 after:z-[12] after:bg-primary/5 after:ring-2 after:ring-inset after:ring-primary/50",
+                            )}
+                          >
+                            <GanttLaneHeader
+                              lane={lane}
+                              labelId={labelId}
+                              collapsed={collapsed}
+                              onToggle={() => toggleLane(lane.key)}
+                              timeline={timeline}
+                              showTaskRail={showTaskRail}
+                              rowGridTemplateColumns={rowGridTemplateColumns}
+                            />
+                            {collapsed
+                              ? null
+                              : lane.tasks.map((task) => (
+                                  <GanttTaskRow
+                                    key={task.id}
+                                    task={task}
+                                    projectSlug={project?.slug}
+                                    timeline={timeline}
+                                    pixelsPerDay={pixelsPerDay}
+                                    isMobile={isMobile}
+                                    showTaskRail={showTaskRail}
+                                    rowGridTemplateColumns={
+                                      rowGridTemplateColumns
+                                    }
+                                    showAssignee={false}
+                                    laneDrag={laneDrag}
+                                    onOpenTask={() => openTask(task.id)}
+                                    onShowDates={() =>
+                                      showDate(addDays(task.scheduleStart, -7))
+                                    }
+                                    onCommit={(edit) =>
+                                      commitTaskEdit(task, edit)
+                                    }
+                                  />
+                                ))}
+                          </div>
+                        );
+                      })
+                    : scheduledTasks.map((task) => (
+                        <GanttTaskRow
+                          key={task.id}
+                          task={task}
+                          projectSlug={project?.slug}
+                          timeline={timeline}
+                          pixelsPerDay={pixelsPerDay}
+                          isMobile={isMobile}
+                          showTaskRail={showTaskRail}
+                          rowGridTemplateColumns={rowGridTemplateColumns}
+                          showAssignee
+                          onOpenTask={() => openTask(task.id)}
+                          onShowDates={() =>
+                            showDate(addDays(task.scheduleStart, -7))
+                          }
+                          onCommit={(edit) => commitTaskEdit(task, edit)}
+                        />
+                      ))}
                 </div>
               </div>
             </div>

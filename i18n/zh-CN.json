@@ -3048,7 +3048,13 @@
 			"previousPeriod": "上一周期",
 			"nextPeriod": "下一周期",
 			"periodStart": "时间线开始日期",
-			"showTaskDates": "显示任务日期"
+			"showTaskDates": "显示任务日期",
+			"assignTo": "指派给 {{name}}",
+			"cannotAssign": "无法指派给 {{name}}",
+			"laneTaskCount_other": "{{count}} 个任务",
+			"reassignError": "更改任务负责人失败",
+			"taskAriaLabelGrouped": "{{title}}：打开，或拖动以重新排期或更改负责人",
+			"unassign": "取消指派"
 		},
 		"delete": {
 			"title": "删除任务？",
@@ -3198,7 +3204,12 @@
 			"showOnRows": "在行中显示",
 			"checklistProgress": "清单进度",
 			"projectBackground": "项目背景",
-			"layout": "布局"
+			"layout": "布局",
+			"groupBy": "分组方式",
+			"groupByOptions": {
+				"assignee": "负责人",
+				"none": "无"
+			}
 		},
 		"filterBar": {
 			"label": "已应用的筛选",

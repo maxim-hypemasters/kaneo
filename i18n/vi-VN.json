@@ -3034,7 +3034,13 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Giao cho {{name}}",
+			"cannotAssign": "Không thể giao cho {{name}}",
+			"laneTaskCount_other": "{{count}} công việc",
+			"reassignError": "Không thể thay đổi người được giao công việc",
+			"taskAriaLabelGrouped": "{{title}}: mở, hoặc kéo để lên lịch lại hoặc giao lại",
+			"unassign": "Hủy giao"
 		},
 		"delete": {
 			"title": "Xóa công việc?",
@@ -3198,7 +3204,12 @@
 			"showOnRows": "Hiện trên hàng",
 			"checklistProgress": "Tiến độ danh sách kiểm tra",
 			"projectBackground": "Hình nền dự án",
-			"layout": "Bố cục"
+			"layout": "Bố cục",
+			"groupBy": "Nhóm theo",
+			"groupByOptions": {
+				"assignee": "Người được giao",
+				"none": "Không có"
+			}
 		},
 		"filterBar": {
 			"label": "Bộ lọc đang áp dụng",

@@ -3070,7 +3070,14 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Toewijzen aan {{name}}",
+			"cannotAssign": "Kan niet toewijzen aan {{name}}",
+			"laneTaskCount_one": "{{count}} taak",
+			"laneTaskCount_other": "{{count}} taken",
+			"reassignError": "Opnieuw toewijzen van taak mislukt",
+			"taskAriaLabelGrouped": "{{title}}: openen, of slepen om opnieuw in te plannen of opnieuw toe te wijzen",
+			"unassign": "Toewijzing verwijderen"
 		},
 		"delete": {
 			"title": "Taak verwijderen?",
@@ -3252,7 +3259,12 @@
 			"showOnRows": "Tonen in rijen",
 			"checklistProgress": "Voortgang checklist",
 			"projectBackground": "Projectachtergrond",
-			"layout": "Indeling"
+			"layout": "Indeling",
+			"groupBy": "Groeperen op",
+			"groupByOptions": {
+				"assignee": "Toegewezen persoon",
+				"none": "Geen"
+			}
 		},
 		"filterBar": {
 			"label": "Actieve filters",
