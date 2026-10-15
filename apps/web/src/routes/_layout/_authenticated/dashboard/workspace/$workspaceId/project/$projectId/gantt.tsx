@@ -1,6 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { addDays, format, isSameMonth, isToday, isWeekend } from "date-fns";
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  addDays,
+  format,
+  isSameMonth,
+  isToday,
+  isWeekend,
+  startOfToday,
+} from "date-fns";
+import {
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  SquareKanban,
+} from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -13,6 +25,7 @@ import {
 import { useTranslation } from "react-i18next";
 import ProjectLayout from "@/components/common/project-layout";
 import { GanttLaneHeader } from "@/components/gantt/gantt-lane-header";
+import { GanttPeriodControls } from "@/components/gantt/gantt-period-controls";
 import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
 import type {
   GanttLaneDragState,
@@ -25,11 +38,9 @@ import {
   laneKeyForAssignee,
 } from "@/components/gantt/group-gantt-tasks";
 import { applyPendingEdit } from "@/components/gantt/pending-task-edits";
-import {
-  buildGanttTimeline,
-  GANTT_WINDOW_DAYS,
-  parseTaskDate,
-} from "@/components/gantt/timeline";
+import { paddedSchedule, parseTaskDate } from "@/components/gantt/timeline";
+import { useDragToPan } from "@/components/gantt/use-drag-to-pan";
+import { useGanttRange } from "@/components/gantt/use-gantt-range";
 import { useGanttTaskCommits } from "@/components/gantt/use-gantt-task-commits";
 import PageTitle from "@/components/page-title";
 import { DisplaySection } from "@/components/project/display/display-section";
@@ -40,6 +51,7 @@ import { ProjectToolbar } from "@/components/project/toolbar/project-toolbar";
 import { TaskCount } from "@/components/project/toolbar/task-count";
 import { useProjectTaskView } from "@/components/project/toolbar/use-project-task-view";
 import { LayoutSwitch } from "@/components/project/views/layout-switch";
+import { useGoToProjectView } from "@/components/project/views/use-go-to-project-view";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
@@ -69,7 +81,9 @@ function RouteComponent() {
   const { projectId, workspaceId } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
-  const { data: project } = useGetTasks(projectId);
+  // isSuccess stays false while only streamed pages of a large board are
+  // in, so the chart waits for all tasks before choosing its opening span.
+  const { data: project, isSuccess: tasksLoaded } = useGetTasks(projectId);
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const groupByPreference = useUserPreferencesStore(
     (state) => state.ganttGroupBy,
@@ -84,6 +98,11 @@ function RouteComponent() {
       enabled: groupByAssignee,
     });
   const { canAssignTasks } = useWorkspacePermission();
+  const goToView = useGoToProjectView({
+    workspaceId,
+    projectId,
+    currentRoute: "gantt",
+  });
   const view = useProjectTaskView({
     project,
     projectId,
@@ -91,15 +110,6 @@ function RouteComponent() {
     scope: "schedule",
   });
   const filteredProject = view.filters.filteredProject;
-  const [windowStart, setWindowStart] = useState<{
-    projectId: string;
-    date: Date;
-  } | null>(null);
-  const requestedStart =
-    windowStart && windowStart.projectId === projectId
-      ? windowStart.date
-      : null;
-  const showDate = (date: Date) => setWindowStart({ projectId, date });
   // Collapsed lanes are per visit and per project: a lane collapsed long ago
   // shouldn't silently hide work in a planning view.
   const [collapsedLanes, setCollapsedLanes] = useState<{
@@ -133,15 +143,19 @@ function RouteComponent() {
   const dayColumnWidthRem = isMobile ? 3.125 : 2.75;
   const taskColumnWidthRem = isMobile ? 12 : 14;
   const showTaskRail = !isMobile || isTaskRailOpen;
-  const taskRailWidth = showTaskRail
-    ? isMobile
-      ? `${taskColumnWidthRem}rem`
-      : "20rem"
-    : "0rem";
+  const railWidthRem = showTaskRail ? (isMobile ? taskColumnWidthRem : 20) : 0;
+  const taskRailWidth = `${railWidthRem}rem`;
   const rowGridTemplateColumns = showTaskRail
     ? `${taskRailWidth} max-content`
     : "max-content";
   const timelineTrackRef = useRef<HTMLDivElement>(null);
+  // State, not a ref: the range hook and period controls attach scroll
+  // listeners once the container mounts (it doesn't while there's nothing
+  // to show).
+  const [scrollElement, setScrollElement] = useState<HTMLDivElement | null>(
+    null,
+  );
+  const panTimeline = useDragToPan();
   const [pixelsPerDay, setPixelsPerDay] = useState(44);
   const todayCellRef = useRef<HTMLDivElement>(null);
   // Only auto-scroll once per visit to the view: re-running on every timeline
@@ -295,25 +309,32 @@ function RouteComponent() {
       replace: true,
     });
 
-  const timeline = useMemo(
-    () =>
-      buildGanttTimeline(
-        parsedTasks,
-        weekStartsOn,
-        dayColumnWidthRem,
-        requestedStart,
-      ),
-    [parsedTasks, weekStartsOn, dayColumnWidthRem, requestedStart],
-  );
+  // The rendered days follow the scroll: the span grows as either edge comes
+  // near, and jumps re-centre it on dates outside it.
+  const { timeline, viewport, scrollToDate, scrollByPage } = useGanttRange({
+    projectId,
+    tasks: parsedTasks,
+    ready: tasksLoaded,
+    weekStartsOn,
+    dayColumnWidthRem,
+    railWidthRem,
+    scrollElement,
+  });
 
-  // Whether "today" actually falls inside the computed date range. A project
-  // made up entirely of past or far-future tasks has no "today" column to
-  // jump to, so the button below is disabled in that case instead of doing
-  // nothing silently.
+  // Whether today's column is rendered; "Jump to today" re-centres the span
+  // first when it isn't.
   const todayInRange = useMemo(
     () => timeline?.days.some((day) => isToday(day)) ?? false,
     [timeline],
   );
+  // Opening the view only centres on today when today is near the project's
+  // work. The rendered span is padded to a minimum width, so today can be in
+  // it while the work sits months away.
+  const todayNearSchedule = useMemo(() => {
+    const schedule = paddedSchedule(parsedTasks, weekStartsOn);
+    const today = startOfToday();
+    return !!schedule && today >= schedule.start && today <= schedule.end;
+  }, [parsedTasks, weekStartsOn]);
 
   // The task rail is `position: sticky; left: 0`, so it stays pinned over the
   // left edge of the scroll container's viewport rather than scrolling away
@@ -324,11 +345,7 @@ function RouteComponent() {
   // browser's own scroll-alignment math to treat the rail's width as inset
   // from the viewport, so "center" (and any future "start"/"end" alignment)
   // resolves against the space actually visible next to it.
-  const scrollPaddingLeftRem = showTaskRail
-    ? isMobile
-      ? taskColumnWidthRem
-      : 20
-    : 0;
+  const scrollPaddingLeftRem = railWidthRem;
 
   const scrollToToday = useCallback((behavior: ScrollBehavior = "smooth") => {
     const reduceMotion = window.matchMedia?.(
@@ -340,6 +357,14 @@ function RouteComponent() {
       block: "nearest",
     });
   }, []);
+
+  const jumpToToday = () => {
+    if (todayInRange) {
+      scrollToToday();
+    } else {
+      scrollToDate(startOfToday(), "center");
+    }
+  };
 
   useLayoutEffect(() => {
     const element = timelineTrackRef.current;
@@ -357,28 +382,32 @@ function RouteComponent() {
     return () => observer.disconnect();
   }, [timeline]);
 
-  // Center the view on today the first time it becomes available, so opening
-  // the Gantt chart on a long-running project doesn't drop you at the start
-  // of the timeline with today scrolled off-screen. `projectId` is listed as
-  // a dependency (even though the effect body doesn't use it directly)
-  // because switching projects can leave `todayInRange` unchanged (true on
-  // both the old and new project) while still resetting the one-time guard
-  // above during render — without `projectId` here, React would bail out of
-  // re-running this effect since neither `todayInRange` nor `scrollToToday`
-  // actually changed value, and the newly selected project would never get
-  // its auto-center.
+  // Decide once per project, as soon as its opening span is on screen with
+  // all of its tasks in, whether to centre on today: only when today is near
+  // the work. Deciding later (when growing the span or a jump brings today
+  // into it) would yank the view away from wherever the reader went.
+  // `projectId` is listed (though unused in the body) so a project switch on
+  // the same route re-runs this after the guard was re-armed during render.
   // eslint-disable-next-line react-hooks/exhaustive-deps -- projectId is intentionally listed to force a re-run on project switch; see comment above.
   useLayoutEffect(() => {
     if (
       hasCenteredOnTodayRef.current ||
-      !todayInRange ||
-      scheduledTasks.length === 0 ||
-      !todayCellRef.current
+      !tasksLoaded ||
+      !timeline ||
+      !scrollElement
     )
       return;
     hasCenteredOnTodayRef.current = true;
-    scrollToToday("auto");
-  }, [todayInRange, scrollToToday, projectId, scheduledTasks.length]);
+    if (todayInRange && todayNearSchedule) scrollToToday("auto");
+  }, [
+    tasksLoaded,
+    timeline,
+    scrollElement,
+    todayInRange,
+    todayNearSchedule,
+    scrollToToday,
+    projectId,
+  ]);
 
   return (
     <ProjectLayout
@@ -425,45 +454,12 @@ function RouteComponent() {
           <h1 className="sr-only">{t("tasks:gantt.title")}</h1>
           <div className="flex flex-wrap items-center gap-2">
             {timeline && (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label={t("tasks:gantt.previousPeriod")}
-                  disabled={!timeline.hasPrevious}
-                  onClick={() =>
-                    showDate(addDays(timeline.rangeStart, -GANTT_WINDOW_DAYS))
-                  }
-                >
-                  <ChevronLeft className="size-4" />
-                </Button>
-                <input
-                  type="date"
-                  aria-label={t("tasks:gantt.periodStart")}
-                  className="h-9 min-w-0 rounded-md border border-border bg-background px-2 text-base sm:h-8 sm:text-sm"
-                  min={format(timeline.minimumStart, "yyyy-MM-dd")}
-                  max={format(timeline.maximumStart, "yyyy-MM-dd")}
-                  value={format(timeline.rangeStart, "yyyy-MM-dd")}
-                  onChange={(event) => {
-                    const date = parseTaskDate(event.target.value);
-                    if (date) showDate(date);
-                  }}
-                />
-                <span className="hidden text-xs text-muted-foreground sm:inline">
-                  – {format(timeline.rangeEnd, "MMM d, yyyy")}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon-sm"
-                  aria-label={t("tasks:gantt.nextPeriod")}
-                  disabled={!timeline.hasNext}
-                  onClick={() =>
-                    showDate(addDays(timeline.rangeStart, GANTT_WINDOW_DAYS))
-                  }
-                >
-                  <ChevronRight className="size-4" />
-                </Button>
-              </>
+              <GanttPeriodControls
+                timeline={timeline}
+                viewport={viewport}
+                onGoToDate={(date) => scrollToDate(date, "start", "auto")}
+                onPage={scrollByPage}
+              />
             )}
 
             <Button
@@ -471,8 +467,8 @@ function RouteComponent() {
               size="xs"
               className="h-9 touch-manipulation sm:h-auto"
               aria-label={t("tasks:gantt.jumpToToday")}
-              onClick={() => scrollToToday()}
-              disabled={!todayInRange || scheduledTasks.length === 0}
+              onClick={jumpToToday}
+              disabled={scheduledTasks.length === 0}
             >
               <Calendar className="size-3.5" />
               <span className="hidden sm:inline">
@@ -508,6 +504,17 @@ function RouteComponent() {
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("tasks:gantt.noTasksSubtitle")}
               </p>
+              {/* Gantt is the default landing view, so a new or undated
+                  project needs a way to its tasks from here. */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => goToView("board")}
+              >
+                <SquareKanban className="size-4" />
+                {t("tasks:view.board")}
+              </Button>
             </div>
           </div>
         ) : scheduledTasks.length === 0 ? (
@@ -523,10 +530,12 @@ function RouteComponent() {
           </div>
         ) : (
           <div
+            ref={setScrollElement}
             data-testid="gantt-scroll-container"
             data-gantt-scroll-container=""
+            onPointerDown={panTimeline}
             className={cn(
-              "min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]",
+              "min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] data-panning:cursor-grabbing data-panning:[&_*]:cursor-grabbing",
               laneDragState && "cursor-grabbing [&_*]:cursor-grabbing",
             )}
             style={{ scrollPaddingLeft: `${scrollPaddingLeftRem}rem` }}
@@ -546,7 +555,7 @@ function RouteComponent() {
                   </div>
                 ) : null}
                 <div
-                  className="grid shrink-0"
+                  className="grid shrink-0 cursor-grab select-none"
                   style={{
                     gridTemplateColumns: timeline.gridTemplateColumns,
                     minWidth: `${timeline.timelineMinWidthRem}rem`,
@@ -563,6 +572,7 @@ function RouteComponent() {
                       <div
                         key={day.toISOString()}
                         ref={isCurrentDay ? todayCellRef : undefined}
+                        aria-current={isCurrentDay ? "date" : undefined}
                         className={cn(
                           "border-r border-border/70 px-0.5 py-2 text-center sm:px-1",
                           isWeekend(day) && "bg-muted/25",
@@ -659,6 +669,7 @@ function RouteComponent() {
                                     task={task}
                                     projectSlug={project?.slug}
                                     timeline={timeline}
+                                    viewport={viewport}
                                     pixelsPerDay={pixelsPerDay}
                                     isMobile={isMobile}
                                     showTaskRail={showTaskRail}
@@ -669,7 +680,9 @@ function RouteComponent() {
                                     laneDrag={laneDrag}
                                     onOpenTask={() => openTask(task.id)}
                                     onShowDates={() =>
-                                      showDate(addDays(task.scheduleStart, -7))
+                                      scrollToDate(
+                                        addDays(task.scheduleStart, -7),
+                                      )
                                     }
                                     onCommit={(edit) =>
                                       commitTaskEdit(task, edit)
@@ -685,6 +698,7 @@ function RouteComponent() {
                           task={task}
                           projectSlug={project?.slug}
                           timeline={timeline}
+                          viewport={viewport}
                           pixelsPerDay={pixelsPerDay}
                           isMobile={isMobile}
                           showTaskRail={showTaskRail}
@@ -692,7 +706,7 @@ function RouteComponent() {
                           showAssignee
                           onOpenTask={() => openTask(task.id)}
                           onShowDates={() =>
-                            showDate(addDays(task.scheduleStart, -7))
+                            scrollToDate(addDays(task.scheduleStart, -7))
                           }
                           onCommit={(edit) => commitTaskEdit(task, edit)}
                         />

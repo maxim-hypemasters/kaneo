@@ -47,7 +47,7 @@ vi.mock("@/components/task/task-details-sheet", () => ({
   default: () => null,
 }));
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
-  useGetTasks: () => ({ data: m.project }),
+  useGetTasks: () => ({ data: m.project, isSuccess: true }),
 }));
 vi.mock("@/hooks/mutations/task/use-update-task", () => ({
   useUpdateTask: () => ({ mutateAsync: m.update }),

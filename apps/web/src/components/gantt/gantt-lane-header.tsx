@@ -134,7 +134,7 @@ export function GanttLaneHeader({
 
       <div
         className={cn(
-          "relative flex shrink-0 items-center bg-muted/40",
+          "relative flex shrink-0 cursor-grab items-center bg-muted/40",
           heightClassName,
         )}
         style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}

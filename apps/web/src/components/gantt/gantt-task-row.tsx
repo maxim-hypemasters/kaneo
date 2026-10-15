@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { getStatusLabel } from "@/lib/i18n/domain";
 import { GanttTaskBar } from "./gantt-task-bar";
@@ -7,12 +7,14 @@ import type {
   GanttTaskEdit,
   ScheduledTask,
 } from "./gantt-types";
+import { type GanttViewportStore, useGanttViewport } from "./gantt-viewport";
 import type { GanttTimeline } from "./timeline";
 
 type GanttTaskRowProps = {
   task: ScheduledTask;
   projectSlug: string | undefined;
   timeline: GanttTimeline;
+  viewport: GanttViewportStore;
   pixelsPerDay: number;
   isMobile: boolean;
   showTaskRail: boolean;
@@ -29,6 +31,7 @@ export function GanttTaskRow({
   task,
   projectSlug,
   timeline,
+  viewport,
   pixelsPerDay,
   isMobile,
   showTaskRail,
@@ -40,6 +43,13 @@ export function GanttTaskRow({
   onCommit,
 }: GanttTaskRowProps) {
   const { t } = useTranslation();
+  // Offer a jump when none of the task is on screen. Before the viewport is
+  // measured, fall back to whether it is within the rendered days.
+  const offScreen = useGanttViewport(viewport, (visible) => {
+    const first = visible?.first ?? timeline.rangeStart;
+    const last = visible?.last ?? timeline.rangeEnd;
+    return task.scheduleEnd < first || startOfDay(task.scheduleStart) > last;
+  });
 
   return (
     <div
@@ -72,8 +82,7 @@ export function GanttTaskRow({
                 : ""}
             </p>
           </button>
-          {(task.scheduleEnd < timeline.rangeStart ||
-            task.scheduleStart > timeline.rangeEnd) && (
+          {offScreen && (
             <button
               type="button"
               className="px-3 pb-2 text-xs text-primary underline"
@@ -86,7 +95,7 @@ export function GanttTaskRow({
       ) : null}
 
       <div
-        className="relative min-h-11 shrink-0 select-none"
+        className="relative min-h-11 shrink-0 cursor-grab select-none"
         style={{
           minWidth: `${timeline.timelineMinWidthRem}rem`,
         }}
