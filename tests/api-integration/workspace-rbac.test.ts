@@ -717,6 +717,41 @@ describe("API integration: workspace RBAC enforcement", () => {
       expect(persisted?.userId).toBe(member.user.id);
     });
 
+    it("allows a member to update an unassigned task that is sent with an empty assignee", async () => {
+      const member = await createWorkspaceMember({ role: "member" });
+      const { project, columns } = await createProjectFixture({
+        workspaceId: member.workspace.id,
+      });
+      const task = await seedTask(project.id, columns.todo.id);
+
+      mockAuthenticatedSession(member.user);
+      const { app } = createApp();
+
+      // The web client always serializes a missing assignee as "".
+      const response = await app.request(`/api/task/${task.id}`, {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          title: "Rescheduled by member",
+          description: "edit",
+          priority: "high",
+          status: "to-do",
+          projectId: project.id,
+          position: 1,
+          userId: "",
+          startDate: "2026-09-01T00:00:00.000Z",
+          dueDate: "2026-09-03T00:00:00.000Z",
+        }),
+      });
+      expect(response.status).toBe(200);
+
+      const persisted = await db.query.taskTable.findFirst({
+        where: eq(schema.taskTable.id, task.id),
+      });
+      expect(persisted?.title).toBe("Rescheduled by member");
+      expect(persisted?.userId).toBeNull();
+    });
+
     it("blocks a member from assigning an unassigned task through full update", async () => {
       const member = await createWorkspaceMember({ role: "member" });
       const { project, columns } = await createProjectFixture({
