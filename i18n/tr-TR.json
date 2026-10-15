@@ -3081,7 +3081,14 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "{{name}} kişisine ata",
+			"cannotAssign": "{{name}} kişisine atanamaz",
+			"laneTaskCount_one": "{{count}} talep",
+			"laneTaskCount_other": "{{count}} talep",
+			"reassignError": "Talep yeniden atanamadı",
+			"taskAriaLabelGrouped": "{{title}}: açın veya yeniden zamanlamak ya da yeniden atamak için sürükleyin",
+			"unassign": "Atamayı kaldır"
 		},
 		"delete": {
 			"title": "Talep Silinsin mi?",
@@ -3252,7 +3259,12 @@
 			"showOnRows": "Satırlarda göster",
 			"checklistProgress": "Kontrol listesi ilerlemesi",
 			"projectBackground": "Proje arka planı",
-			"layout": "Düzen"
+			"layout": "Düzen",
+			"groupBy": "Gruplama ölçütü",
+			"groupByOptions": {
+				"assignee": "Atanan",
+				"none": "Yok"
+			}
 		},
 		"filterBar": {
 			"label": "Etkin filtreler",

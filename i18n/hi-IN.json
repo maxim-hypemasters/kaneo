@@ -3081,7 +3081,14 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "{{name}} को सौंपें",
+			"cannotAssign": "{{name}} को नहीं सौंपा जा सकता",
+			"laneTaskCount_one": "{{count}} कार्य",
+			"laneTaskCount_other": "{{count}} कार्य",
+			"reassignError": "कार्य दोबारा सौंपने में विफल",
+			"taskAriaLabelGrouped": "{{title}}: खोलें, या शेड्यूल बदलने या दोबारा सौंपने के लिए खींचें",
+			"unassign": "असाइनमेंट हटाएँ"
 		},
 		"delete": {
 			"title": "कार्य हटाएँ?",
@@ -3252,7 +3259,12 @@
 			"showOnRows": "पंक्तियों में दिखाएँ",
 			"checklistProgress": "चेकलिस्ट प्रगति",
 			"projectBackground": "प्रोजेक्ट पृष्ठभूमि",
-			"layout": "लेआउट"
+			"layout": "लेआउट",
+			"groupBy": "इसके अनुसार समूहित करें",
+			"groupByOptions": {
+				"assignee": "सौंपा गया",
+				"none": "कोई नहीं"
+			}
 		},
 		"filterBar": {
 			"label": "सक्रिय फ़िल्टर",

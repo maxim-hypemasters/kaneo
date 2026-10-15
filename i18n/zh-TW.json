@@ -3048,7 +3048,13 @@
 			"previousPeriod": "上一個期間",
 			"nextPeriod": "下一個期間",
 			"periodStart": "時間軸開始日期",
-			"showTaskDates": "顯示任務日期"
+			"showTaskDates": "顯示任務日期",
+			"assignTo": "指派給 {{name}}",
+			"cannotAssign": "無法指派給 {{name}}",
+			"laneTaskCount_other": "{{count}} 個任務",
+			"reassignError": "變更任務負責人失敗",
+			"taskAriaLabelGrouped": "{{title}}：開啟，或拖曳以重新排程或變更負責人",
+			"unassign": "取消指派"
 		},
 		"delete": {
 			"title": "刪除任務？",
@@ -3198,7 +3204,12 @@
 			"showOnRows": "在列中顯示",
 			"checklistProgress": "檢查清單進度",
 			"projectBackground": "專案背景",
-			"layout": "版面配置"
+			"layout": "版面配置",
+			"groupBy": "分組依據",
+			"groupByOptions": {
+				"assignee": "負責人",
+				"none": "無"
+			}
 		},
 		"filterBar": {
 			"label": "已套用的篩選",

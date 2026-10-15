@@ -4,14 +4,16 @@ import getProjectMembers from "@/fetchers/workspace-user/get-project-members";
 function useGetProjectMembers({
   workspaceId,
   projectId,
+  enabled = true,
 }: {
   workspaceId: string;
   projectId: string;
+  enabled?: boolean;
 }) {
   return useQuery({
     queryKey: ["workspace-users", workspaceId, "project", projectId],
     queryFn: () => getProjectMembers({ workspaceId, projectId }),
-    enabled: !!workspaceId && !!projectId,
+    enabled: enabled && !!workspaceId && !!projectId,
   });
 }
 

@@ -3081,7 +3081,14 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Додели на {{name}}",
+			"cannotAssign": "Не може да се додели на {{name}}",
+			"laneTaskCount_one": "{{count}} задача",
+			"laneTaskCount_other": "{{count}} задачи",
+			"reassignError": "Неуспешно повторно доделување на задача",
+			"taskAriaLabelGrouped": "{{title}}: отвори или повлечи за презакажување или повторно доделување",
+			"unassign": "Отстрани доделување"
 		},
 		"delete": {
 			"title": "Избриши задача?",
@@ -3252,7 +3259,12 @@
 			"showOnRows": "Прикажи во редовите",
 			"checklistProgress": "Напредок на списокот",
 			"projectBackground": "Позадина на проектот",
-			"layout": "Распоред"
+			"layout": "Распоред",
+			"groupBy": "Групирај по",
+			"groupByOptions": {
+				"assignee": "Доделен",
+				"none": "Без групирање"
+			}
 		},
 		"filterBar": {
 			"label": "Активни филтри",

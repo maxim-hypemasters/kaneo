@@ -3191,7 +3191,16 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Назначить на {{name}}",
+			"cannotAssign": "Нельзя назначить на {{name}}",
+			"laneTaskCount_few": "{{count}} задачи",
+			"laneTaskCount_many": "{{count}} задач",
+			"laneTaskCount_one": "{{count}} задача",
+			"laneTaskCount_other": "{{count}} задачи",
+			"reassignError": "Не удалось переназначить задачу",
+			"taskAriaLabelGrouped": "{{title}}: откройте или перетащите для изменения сроков или переназначения",
+			"unassign": "Снять назначение"
 		},
 		"delete": {
 			"title": "Удалить задачу?",
@@ -3412,7 +3421,12 @@
 			"showOnRows": "Показывать в строках",
 			"checklistProgress": "Прогресс чек-листа",
 			"projectBackground": "Фон проекта",
-			"layout": "Макет"
+			"layout": "Макет",
+			"groupBy": "Группировать по",
+			"groupByOptions": {
+				"assignee": "Исполнитель",
+				"none": "Без группировки"
+			}
 		},
 		"filterBar": {
 			"label": "Активные фильтры",

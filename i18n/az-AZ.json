@@ -3095,7 +3095,14 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "{{name}} adlı şəxsə təyin et",
+			"cannotAssign": "{{name}} adlı şəxsə təyin etmək olmur",
+			"laneTaskCount_one": "{{count}} tapşırıq",
+			"laneTaskCount_other": "{{count}} tapşırıq",
+			"reassignError": "Tapşırığı yenidən təyin etmək alınmadı",
+			"taskAriaLabelGrouped": "{{title}}: aç və ya tarixini dəyişmək, yaxud yenidən təyin etmək üçün sürüklə",
+			"unassign": "İcraçını çıxar"
 		},
 		"delete": {
 			"title": "Tapşırıq silinsin?",
@@ -3252,7 +3259,12 @@
 			"showOnRows": "Sətirlərdə göstər",
 			"checklistProgress": "Yoxlama siyahısının gedişatı",
 			"projectBackground": "Layihə fonu",
-			"layout": "Düzən"
+			"layout": "Düzən",
+			"groupBy": "Qruplaşdırma meyarı",
+			"groupByOptions": {
+				"assignee": "İcraçı",
+				"none": "Heç biri"
+			}
 		},
 		"filterBar": {
 			"label": "Aktiv süzgəclər",

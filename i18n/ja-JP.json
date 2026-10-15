@@ -3048,7 +3048,13 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "{{name}} に割り当て",
+			"cannotAssign": "{{name}} には割り当てできません",
+			"laneTaskCount_other": "{{count}} 件のタスク",
+			"reassignError": "担当者の変更に失敗しました",
+			"taskAriaLabelGrouped": "{{title}}: 開く、またはドラッグして日程や担当者を変更",
+			"unassign": "割り当てを解除"
 		},
 		"delete": {
 			"title": "タスクを削除しますか？",
@@ -3198,7 +3204,12 @@
 			"showOnRows": "行に表示",
 			"checklistProgress": "チェックリストの進捗",
 			"projectBackground": "プロジェクトの背景",
-			"layout": "レイアウト"
+			"layout": "レイアウト",
+			"groupBy": "グループ化",
+			"groupByOptions": {
+				"assignee": "担当者",
+				"none": "なし"
+			}
 		},
 		"filterBar": {
 			"label": "適用中のフィルター",

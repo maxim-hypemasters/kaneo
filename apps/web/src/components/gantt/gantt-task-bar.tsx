@@ -1,10 +1,16 @@
-import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
-import { useCallback, useEffect, useState } from "react";
+import { addDays, differenceInCalendarDays } from "date-fns";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { cn } from "@/lib/cn";
-import { toast } from "@/lib/toast";
-import type Task from "@/types/task";
+import { GanttLaneHint } from "./gantt-lane-hint";
+import { laneKeyAtPoint } from "./gantt-lane-dom";
+import type {
+  GanttLaneDrag,
+  GanttLaneTarget,
+  GanttTaskEdit,
+  ScheduledTask,
+} from "./gantt-types";
+import { type GanttTimeline, getBarGridColumns } from "./timeline";
 
 const CLICK_MOVE_THRESHOLD_PX = 4;
 const MOBILE_MOVE_THRESHOLD_PX = 14;
@@ -13,46 +19,38 @@ const MIN_INLINE_LABEL_PX = 120;
 // usable move/tap area, so it's left as one target; dates stay editable from
 // the task sheet.
 const MIN_TOUCH_RESIZABLE_PX = 120;
-
-type ScheduledTask = Task & {
-  scheduleStart: Date;
-  scheduleEnd: Date;
-};
+// Vertical travel (half a row) before a drag starts targeting other lanes, so
+// a slightly wobbly reschedule never reassigns a task by accident.
+const LANE_ENGAGE_PX = 22;
 
 type GanttTaskBarProps = {
   task: ScheduledTask;
-  timeline: {
-    days: Date[];
-    rangeStart: Date;
-    gridTemplateColumns: string;
-  };
+  timeline: Pick<GanttTimeline, "days" | "rangeStart" | "gridTemplateColumns">;
   pixelsPerDay: number;
   isMobile?: boolean;
+  // Present only when the bar may be dragged into another assignee lane.
+  laneDrag?: GanttLaneDrag;
+  onCommit: (edit: GanttTaskEdit) => void;
   onOpenTask: () => void;
 };
 
-function getBarGridColumns(
-  scheduleStart: Date,
-  scheduleEnd: Date,
-  rangeStart: Date,
-  trackCount: number,
-): { barInView: boolean; lineStart: number; lineEnd: number } {
-  const startIndex = differenceInCalendarDays(scheduleStart, rangeStart);
-  const endIndex = differenceInCalendarDays(scheduleEnd, rangeStart);
-  const barInView = endIndex >= 0 && startIndex < trackCount && trackCount > 0;
-  if (!barInView) {
-    return { barInView: false, lineStart: 1, lineEnd: 1 };
-  }
-  const lineStart = Math.max(1, Math.min(startIndex + 1, trackCount));
-  const lineEnd = Math.max(
-    lineStart + 1,
-    Math.min(endIndex + 2, trackCount + 1),
-  );
-  return { barInView: true, lineStart, lineEnd };
-}
+type LaneView = {
+  offsetY: number;
+  hint: { x: number; y: number; label: string; disabled: boolean } | null;
+};
 
-function toIsoDay(d: Date) {
-  return startOfDay(d).toISOString();
+// The bar may only travel within the lanes, so the transform never grows the
+// scroll area. Both rects scroll together, so offsets measured once at
+// pointerdown stay valid for the whole gesture.
+function verticalDragBounds(bar: HTMLElement | null) {
+  const lanes = bar?.closest("[data-gantt-lanes]");
+  if (!bar || !lanes) return { min: 0, max: 0 };
+  const barRect = bar.getBoundingClientRect();
+  const lanesRect = lanes.getBoundingClientRect();
+  return {
+    min: Math.min(0, lanesRect.top - barRect.top),
+    max: Math.max(0, lanesRect.bottom - barRect.bottom),
+  };
 }
 
 export function GanttTaskBar({
@@ -60,26 +58,28 @@ export function GanttTaskBar({
   timeline,
   pixelsPerDay,
   isMobile = false,
+  laneDrag,
+  onCommit,
   onOpenTask,
 }: GanttTaskBarProps) {
   const { t } = useTranslation();
-  const { mutateAsync: updateTask } = useUpdateTask();
   const [dragDisplay, setDragDisplay] = useState<{
     start: Date;
     end: Date;
   } | null>(null);
-
-  // Drop the drag overlay once server data matches
-  useEffect(() => {
-    if (!dragDisplay) return;
-    const startMatches =
-      differenceInCalendarDays(task.scheduleStart, dragDisplay.start) === 0;
-    const endMatches =
-      differenceInCalendarDays(task.scheduleEnd, dragDisplay.end) === 0;
-    if (startMatches && endMatches) {
-      setDragDisplay(null);
-    }
-  }, [dragDisplay, task.scheduleEnd, task.scheduleStart]);
+  const [laneView, setLaneView] = useState<LaneView | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  // Pointer handlers outlive the render that created them (the route
+  // re-renders while a lane is highlighted), so they read the latest props
+  // from here instead of their closure.
+  const latestRef = useRef({ task, laneDrag, onCommit, onOpenTask });
+  useLayoutEffect(() => {
+    latestRef.current = { task, laneDrag, onCommit, onOpenTask };
+  });
+  // Ends an in-flight move gesture; called if the bar unmounts mid-drag
+  // (e.g. a realtime update moved the task) so no window listener leaks.
+  const endGestureRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => endGestureRef.current?.(), []);
 
   const displayStart = dragDisplay?.start ?? task.scheduleStart;
   const displayEnd = dragDisplay?.end ?? task.scheduleEnd;
@@ -98,26 +98,10 @@ export function GanttTaskBar({
     differenceInCalendarDays(task.scheduleEnd, timeline.rangeStart) <
     trackCount;
 
-  const persistDates = useCallback(
-    async (nextStart: Date, nextEnd: Date): Promise<boolean> => {
-      try {
-        await updateTask({
-          ...task,
-          startDate: toIsoDay(nextStart),
-          dueDate: toIsoDay(nextEnd),
-        });
-        return true;
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : t("tasks:gantt.updateDatesError"),
-        );
-        return false;
-      }
-    },
-    [task, updateTask, t],
-  );
+  const commitDates = (start: Date, end: Date) => {
+    const { task: current, onCommit: commit } = latestRef.current;
+    commit({ start, end, userId: current.userId || null });
+  };
 
   const pxPerDay = Math.max(pixelsPerDay, 1e-6);
   const moveThresholdPx = isMobile
@@ -145,26 +129,18 @@ export function GanttTaskBar({
       setDragDisplay({ start: nextStart, end: nextEnd });
     };
 
-    const onUp = async (ev: PointerEvent) => {
+    const onUp = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
-      if (ev.type === "pointercancel") {
-        setDragDisplay(null);
-        return;
-      }
+      setDragDisplay(null);
+      if (ev.type === "pointercancel") return;
       const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
       let nextStartIdx = startIdx + deltaDays;
       nextStartIdx = Math.max(0, Math.min(nextStartIdx, endIdx));
       const nextStart = timeline.days[nextStartIdx] ?? initialStart;
-      if (nextStart.getTime() === initialStart.getTime()) {
-        setDragDisplay(null);
-        return;
-      }
-      const ok = await persistDates(nextStart, initialEnd);
-      if (!ok) {
-        setDragDisplay(null);
-      }
+      if (nextStart.getTime() === initialStart.getTime()) return;
+      commitDates(nextStart, initialEnd);
     };
 
     const onCancel = onUp;
@@ -195,26 +171,18 @@ export function GanttTaskBar({
       setDragDisplay({ start: nextStart, end: nextEnd });
     };
 
-    const onUp = async (ev: PointerEvent) => {
+    const onUp = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
-      if (ev.type === "pointercancel") {
-        setDragDisplay(null);
-        return;
-      }
+      setDragDisplay(null);
+      if (ev.type === "pointercancel") return;
       const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
       let nextEndIdx = endIdx + deltaDays;
       nextEndIdx = Math.max(startIdx, Math.min(nextEndIdx, trackCount - 1));
       const nextEnd = timeline.days[nextEndIdx] ?? initialEnd;
-      if (nextEnd.getTime() === initialEnd.getTime()) {
-        setDragDisplay(null);
-        return;
-      }
-      const ok = await persistDates(initialStart, nextEnd);
-      if (!ok) {
-        setDragDisplay(null);
-      }
+      if (nextEnd.getTime() === initialEnd.getTime()) return;
+      commitDates(initialStart, nextEnd);
     };
 
     const onCancel = onUp;
@@ -224,71 +192,195 @@ export function GanttTaskBar({
     window.addEventListener("pointercancel", onCancel);
   };
 
+  const laneHintLabel = (target: GanttLaneTarget) => {
+    if (!target.droppable) {
+      return t("tasks:gantt.cannotAssign", { name: target.name });
+    }
+    return target.userId
+      ? t("tasks:gantt.assignTo", { name: target.name })
+      : t("tasks:gantt.unassign");
+  };
+
   const handleMovePointerDown = (event: React.PointerEvent) => {
     if (event.button !== 0) return;
     event.preventDefault();
+    // A press always starts fresh, even if an earlier gesture lost its
+    // release somewhere.
+    endGestureRef.current?.();
     const originX = event.clientX;
+    const originY = event.clientY;
     const initialStart = task.scheduleStart;
     const initialEnd = task.scheduleEnd;
     if (!startIsVisible || !endIsVisible) {
       onOpenTask();
       return;
     }
+    // Touch drags pan the timeline instead (the browser cancels the
+    // gesture), so lanes are only targeted by mouse and pen.
+    const lane = event.pointerType === "touch" ? undefined : laneDrag;
     const durationDays = differenceInCalendarDays(initialEnd, initialStart);
     const startIdx = differenceInCalendarDays(
       initialStart,
       timeline.rangeStart,
     );
+    const scrollContainer = lane
+      ? (barRef.current?.closest<HTMLElement>(
+          "[data-gantt-scroll-container]",
+        ) ?? null)
+      : null;
+    const initialScrollTop = scrollContainer?.scrollTop ?? 0;
+    const bounds = lane ? verticalDragBounds(barRef.current) : null;
+    let pointer = { x: originX, y: originY };
+    // undefined while no lane is targeted; otherwise the reported target key.
+    let reportedTarget: string | null | undefined;
+    // Set once the pointer itself has travelled past the click threshold.
+    // Scrolling under a still pointer must never turn a click into a drag
+    // (or, worse, into a reassignment to whichever lane scrolled under it).
+    let dragging = false;
+    const pointerTravel = (clientX: number, clientY: number) =>
+      lane
+        ? Math.max(Math.abs(clientX - originX), Math.abs(clientY - originY))
+        : Math.abs(clientX - originX);
 
-    const onMove = (ev: PointerEvent) => {
-      const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
-      let nextStartIdx = startIdx + deltaDays;
+    const datesFor = (clientX: number) => {
+      const deltaDays = Math.round((clientX - originX) / pxPerDay);
       const maxStart = trackCount - 1 - durationDays;
-      nextStartIdx = Math.max(0, Math.min(nextStartIdx, maxStart));
-      const nextStart = timeline.days[nextStartIdx] ?? initialStart;
-      const nextEnd = addDays(nextStart, durationDays);
-      setDragDisplay({ start: nextStart, end: nextEnd });
+      const nextStartIdx = Math.max(
+        0,
+        Math.min(startIdx + deltaDays, maxStart),
+      );
+      const start = timeline.days[nextStartIdx] ?? initialStart;
+      return { start, end: addDays(start, durationDays) };
     };
 
-    const onUp = async (ev: PointerEvent) => {
+    // Vertical travel in content coordinates, so scrolling the timeline
+    // mid-drag counts as moving through the lanes.
+    const verticalOffset = (clientY: number) =>
+      clientY - originY + (scrollContainer?.scrollTop ?? 0) - initialScrollTop;
+
+    const laneTargetAt = (x: number, y: number) => {
+      if (!lane) return null;
+      const key = laneKeyAtPoint(x, y);
+      if (!key || key === lane.laneKey) return null;
+      // Lanes can change mid-drag (a realtime update, members loading), so
+      // resolve against the latest ones.
+      return (latestRef.current.laneDrag ?? lane).resolveLane(key);
+    };
+
+    const syncLane = () => {
+      if (!lane || !dragging) return;
+      const offset = verticalOffset(pointer.y);
+      if (Math.abs(offset) < LANE_ENGAGE_PX) {
+        if (reportedTarget !== undefined) {
+          reportedTarget = undefined;
+          lane.onChange(null);
+        }
+        setLaneView(null);
+        return;
+      }
+      const target = laneTargetAt(pointer.x, pointer.y);
+      const targetKey = target?.droppable ? target.key : null;
+      if (targetKey !== reportedTarget) {
+        reportedTarget = targetKey;
+        lane.onChange({ taskId: task.id, targetLaneKey: targetKey });
+      }
+      setLaneView({
+        offsetY: bounds
+          ? Math.min(bounds.max, Math.max(bounds.min, offset))
+          : offset,
+        hint: target
+          ? {
+              x: pointer.x,
+              y: pointer.y,
+              label: laneHintLabel(target),
+              disabled: !target.droppable,
+            }
+          : null,
+      });
+    };
+
+    const end = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onCancel);
-      if (ev.type === "pointercancel") {
-        setDragDisplay(null);
-        return;
+      window.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("contextmenu", end);
+      if (lane) {
+        window.removeEventListener("keydown", onKeyDown, true);
+        window.removeEventListener("blur", end);
+        scrollContainer?.removeEventListener("scroll", syncLane);
+        if (reportedTarget !== undefined) lane.onChange(null);
       }
-      const moved = Math.abs(ev.clientX - originX);
-      const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
-      let nextStartIdx = startIdx + deltaDays;
-      const maxStart = trackCount - 1 - durationDays;
-      nextStartIdx = Math.max(0, Math.min(nextStartIdx, maxStart));
-      const nextStart = timeline.days[nextStartIdx] ?? initialStart;
-      const nextEnd = addDays(nextStart, durationDays);
-
-      if (moved < moveThresholdPx) {
-        setDragDisplay(null);
-        onOpenTask();
-        return;
-      }
-      if (
-        nextStart.getTime() === initialStart.getTime() &&
-        nextEnd.getTime() === initialEnd.getTime()
-      ) {
-        setDragDisplay(null);
-        return;
-      }
-      const ok = await persistDates(nextStart, nextEnd);
-      if (!ok) {
-        setDragDisplay(null);
-      }
+      endGestureRef.current = null;
+      setDragDisplay(null);
+      setLaneView(null);
     };
 
-    const onCancel = onUp;
+    const onMove = (ev: PointerEvent) => {
+      // The release happened somewhere we never heard about (e.g. a context
+      // menu swallowed it): drop the gesture instead of letting the next
+      // unrelated click commit it.
+      if (ev.pointerType === "mouse" && (ev.buttons & 1) === 0) {
+        end();
+        return;
+      }
+      pointer = { x: ev.clientX, y: ev.clientY };
+      if (pointerTravel(ev.clientX, ev.clientY) >= moveThresholdPx) {
+        dragging = true;
+      }
+      setDragDisplay(datesFor(ev.clientX));
+      syncLane();
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      if (ev.type === "pointercancel") {
+        end();
+        return;
+      }
+      const travelled =
+        pointerTravel(ev.clientX, ev.clientY) >= moveThresholdPx;
+      const isDrag = lane ? dragging || travelled : travelled;
+      const dy = lane && isDrag ? verticalOffset(ev.clientY) : 0;
+      // Hit-test before end(): the dragged bar is still click-through, so it
+      // can't hide the lane underneath the pointer.
+      const target =
+        Math.abs(dy) >= LANE_ENGAGE_PX
+          ? laneTargetAt(ev.clientX, ev.clientY)
+          : null;
+      end();
+      const {
+        task: current,
+        onCommit: commit,
+        onOpenTask: open,
+      } = latestRef.current;
+      if (!isDrag) {
+        open();
+        return;
+      }
+      const { start, end: due } = datesFor(ev.clientX);
+      commit({
+        start,
+        end: due,
+        userId: target?.droppable ? target.userId : current.userId || null,
+      });
+    };
+
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key !== "Escape") return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      end();
+    };
 
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onCancel);
+    window.addEventListener("pointercancel", onUp);
+    window.addEventListener("contextmenu", end);
+    if (lane) {
+      window.addEventListener("keydown", onKeyDown, true);
+      window.addEventListener("blur", end);
+      scrollContainer?.addEventListener("scroll", syncLane, { passive: true });
+    }
+    endGestureRef.current = end;
   };
 
   if (!barInView || lineEnd <= lineStart) {
@@ -304,14 +396,24 @@ export function GanttTaskBar({
 
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[1] grid items-center"
+      ref={barRef}
+      className={cn(
+        "pointer-events-none absolute inset-0 grid items-center",
+        laneView ? "z-[10]" : "z-[1]",
+      )}
       style={{
         gridTemplateColumns: timeline.gridTemplateColumns,
+        transform: laneView ? `translateY(${laneView.offsetY}px)` : undefined,
       }}
     >
       <div
         style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
-        className="group pointer-events-auto relative mx-1 flex min-h-[44px] min-w-0 items-stretch overflow-hidden rounded-md border border-primary/25 bg-background text-left text-sm font-medium leading-none text-foreground shadow-sm transition-colors hover:border-primary/40 sm:h-11 sm:min-h-0"
+        className={cn(
+          "group relative mx-1 flex min-h-[44px] min-w-0 items-stretch overflow-hidden rounded-md border border-primary/25 bg-background text-left text-sm font-medium leading-none text-foreground shadow-sm transition-colors hover:border-primary/40 sm:h-11 sm:min-h-0",
+          laneView
+            ? "pointer-events-none shadow-lg ring-2 ring-primary/40"
+            : "pointer-events-auto",
+        )}
       >
         {showResizeHandles && (
           <button
@@ -328,7 +430,11 @@ export function GanttTaskBar({
         )}
         <button
           type="button"
-          aria-label={t("tasks:gantt.taskAriaLabel", { title: task.title })}
+          aria-label={
+            laneDrag
+              ? t("tasks:gantt.taskAriaLabelGrouped", { title: task.title })
+              : t("tasks:gantt.taskAriaLabel", { title: task.title })
+          }
           className="relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5"
           onPointerDown={handleMovePointerDown}
           onKeyDown={(e) => {
@@ -370,6 +476,14 @@ export function GanttTaskBar({
         >
           {task.title}
         </span>
+      )}
+      {laneView?.hint && (
+        <GanttLaneHint
+          x={laneView.hint.x}
+          y={laneView.hint.y}
+          label={laneView.hint.label}
+          disabled={laneView.hint.disabled}
+        />
       )}
     </div>
   );

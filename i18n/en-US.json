@@ -3096,7 +3096,14 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"laneTaskCount_one": "{{count}} task",
+			"laneTaskCount_other": "{{count}} tasks",
+			"assignTo": "Assign to {{name}}",
+			"unassign": "Unassign",
+			"cannotAssign": "Can't assign to {{name}}",
+			"reassignError": "Failed to reassign task",
+			"taskAriaLabelGrouped": "{{title}}: open, or drag to reschedule or reassign"
 		},
 		"delete": {
 			"title": "Delete Task?",
@@ -3252,7 +3259,12 @@
 			"showOnRows": "Show on rows",
 			"checklistProgress": "Checklist progress",
 			"projectBackground": "Project background",
-			"layout": "Layout"
+			"layout": "Layout",
+			"groupBy": "Group by",
+			"groupByOptions": {
+				"none": "None",
+				"assignee": "Assignee"
+			}
 		},
 		"filterBar": {
 			"label": "Active filters",

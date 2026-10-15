@@ -3128,7 +3128,15 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Atribuir a {{name}}",
+			"cannotAssign": "Não é possível atribuir a {{name}}",
+			"laneTaskCount_many": "{{count}} tarefas",
+			"laneTaskCount_one": "{{count}} tarefa",
+			"laneTaskCount_other": "{{count}} tarefas",
+			"reassignError": "Falha ao reatribuir a tarefa",
+			"taskAriaLabelGrouped": "{{title}}: abrir ou arrastar para reagendar ou reatribuir",
+			"unassign": "Remover responsável"
 		},
 		"delete": {
 			"title": "Excluir tarefa?",
@@ -3306,7 +3314,12 @@
 			"showOnRows": "Mostrar nas linhas",
 			"checklistProgress": "Progresso da checklist",
 			"projectBackground": "Fundo do projeto",
-			"layout": "Layout"
+			"layout": "Layout",
+			"groupBy": "Agrupar por",
+			"groupByOptions": {
+				"assignee": "Responsável",
+				"none": "Nenhum"
+			}
 		},
 		"filterBar": {
 			"label": "Filtros ativos",

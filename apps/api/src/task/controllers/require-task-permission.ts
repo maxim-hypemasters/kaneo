@@ -82,7 +82,11 @@ export async function requireBulkTaskEntitlement(c: Context, next: Next) {
 export async function requireTaskAssigneePermission(c: Context, next: Next) {
   const id = c.req.param("id");
   const { userId } = await readJsonBody(c);
-  const nextAssignee = typeof userId === "string" ? userId : null;
+  // Mirror the controller: a blank userId means "unassigned", so an
+  // unassigned task saved with `userId: ""` keeps its (null) assignee and
+  // must not require task:assign.
+  const nextAssignee =
+    typeof userId === "string" && userId.trim() ? userId.trim() : null;
 
   const [existingTask] = await db
     .select({ userId: taskTable.userId })

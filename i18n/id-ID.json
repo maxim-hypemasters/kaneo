@@ -3034,7 +3034,13 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "Tugaskan ke {{name}}",
+			"cannotAssign": "Tidak dapat menugaskan ke {{name}}",
+			"laneTaskCount_other": "{{count}} tugas",
+			"reassignError": "Gagal menugaskan ulang tugas",
+			"taskAriaLabelGrouped": "{{title}}: buka, atau seret untuk menjadwalkan ulang atau menugaskan ulang",
+			"unassign": "Hapus penugasan"
 		},
 		"delete": {
 			"title": "Hapus Tugas?",
@@ -3198,7 +3204,12 @@
 			"showOnRows": "Tampilkan di baris",
 			"checklistProgress": "Progres daftar periksa",
 			"projectBackground": "Latar belakang proyek",
-			"layout": "Tata letak"
+			"layout": "Tata letak",
+			"groupBy": "Kelompokkan berdasarkan",
+			"groupByOptions": {
+				"assignee": "Penanggung jawab",
+				"none": "Tidak ada"
+			}
 		},
 		"filterBar": {
 			"label": "Filter aktif",

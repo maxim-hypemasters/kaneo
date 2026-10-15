@@ -94,3 +94,44 @@ export function buildGanttTimeline(
     timelineMinWidthRem: days.length * dayColumnWidthRem,
   };
 }
+
+export type GanttTimeline = NonNullable<ReturnType<typeof buildGanttTimeline>>;
+
+export function toIsoDay(date: Date) {
+  return startOfDay(date).toISOString();
+}
+
+// Maps a date span onto 1-based CSS grid lines of the visible window. Spans
+// that run past either edge are clipped to it; `clippedStart`/`clippedEnd`
+// say which side continues off-screen.
+export function getBarGridColumns(
+  start: Date,
+  end: Date,
+  rangeStart: Date,
+  trackCount: number,
+) {
+  const startIndex = differenceInCalendarDays(start, rangeStart);
+  const endIndex = differenceInCalendarDays(end, rangeStart);
+  const barInView = endIndex >= 0 && startIndex < trackCount && trackCount > 0;
+  if (!barInView) {
+    return {
+      barInView: false,
+      lineStart: 1,
+      lineEnd: 1,
+      clippedStart: false,
+      clippedEnd: false,
+    };
+  }
+  const lineStart = Math.max(1, Math.min(startIndex + 1, trackCount));
+  const lineEnd = Math.max(
+    lineStart + 1,
+    Math.min(endIndex + 2, trackCount + 1),
+  );
+  return {
+    barInView: true,
+    lineStart,
+    lineEnd,
+    clippedStart: startIndex < 0,
+    clippedEnd: endIndex >= trackCount,
+  };
+}

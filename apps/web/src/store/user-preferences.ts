@@ -8,6 +8,13 @@ export function isWeekStartDay(value: number): value is WeekStartDay {
   return WEEK_START_DAYS.some((day) => day === value);
 }
 
+export const GANTT_GROUP_BY_OPTIONS = ["none", "assignee"] as const;
+export type GanttGroupBy = (typeof GANTT_GROUP_BY_OPTIONS)[number];
+
+export function isGanttGroupBy(value: unknown): value is GanttGroupBy {
+  return GANTT_GROUP_BY_OPTIONS.some((option) => option === value);
+}
+
 export type TaskLayout = "board" | "list" | "calendar" | "gantt";
 
 type UserPreferencesStore = {
@@ -58,6 +65,9 @@ type UserPreferencesStore = {
 
   weekStartsOn: WeekStartDay;
   setWeekStartsOn: (weekStartsOn: WeekStartDay) => void;
+
+  ganttGroupBy: GanttGroupBy;
+  setGanttGroupBy: (ganttGroupBy: GanttGroupBy) => void;
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -152,13 +162,20 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
 
       weekStartsOn: 0,
       setWeekStartsOn: (weekStartsOn) => set({ weekStartsOn }),
+
+      ganttGroupBy: "none",
+      setGanttGroupBy: (ganttGroupBy) => set({ ganttGroupBy }),
     }),
     {
       name: "user-preferences",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
-        if (state && !isWeekStartDay(state.weekStartsOn)) {
+        if (!state) return;
+        if (!isWeekStartDay(state.weekStartsOn)) {
           state.setWeekStartsOn(0);
+        }
+        if (!isGanttGroupBy(state.ganttGroupBy)) {
+          state.setGanttGroupBy("none");
         }
       },
     },

@@ -3048,7 +3048,13 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates"
+			"showTaskDates": "Show task dates",
+			"assignTo": "{{name}}님에게 할당",
+			"cannotAssign": "{{name}}님에게 할당할 수 없음",
+			"laneTaskCount_other": "작업 {{count}}개",
+			"reassignError": "작업 담당자 변경에 실패했습니다",
+			"taskAriaLabelGrouped": "{{title}}: 열거나 드래그하여 일정 또는 담당자 변경",
+			"unassign": "할당 해제"
 		},
 		"delete": {
 			"title": "작업을 삭제하시겠습니까?",
@@ -3198,7 +3204,12 @@
 			"showOnRows": "행에 표시",
 			"checklistProgress": "체크리스트 진행률",
 			"projectBackground": "프로젝트 배경",
-			"layout": "레이아웃"
+			"layout": "레이아웃",
+			"groupBy": "그룹화 기준",
+			"groupByOptions": {
+				"assignee": "담당자",
+				"none": "없음"
+			}
 		},
 		"filterBar": {
 			"label": "적용된 필터",
