@@ -16,6 +16,7 @@ import {
   it,
   vi,
 } from "vite-plus/test";
+import { useUserPreferencesStore } from "@/store/user-preferences";
 import { OnboardingFlow } from "./onboarding-flow";
 
 const m = vi.hoisted(() => ({
@@ -209,6 +210,12 @@ describe("OnboardingFlow steps", () => {
       screen.getByRole("button", { name: "auth:onboarding.ready.open" }),
     );
     await waitFor(() => expect(m.navigate).toHaveBeenCalledWith(toBoard));
+    // The board route shows cards, not the list, for a fresh user, even
+    // though their default project view is the Gantt chart.
+    expect(useUserPreferencesStore.getState()).toMatchObject({
+      defaultProjectView: "gantt",
+      viewMode: "board",
+    });
   });
 
   it("skips invites on a self-hosted instance that cannot send email", async () => {

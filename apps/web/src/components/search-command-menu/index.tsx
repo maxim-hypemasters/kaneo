@@ -24,6 +24,7 @@ import {
   CommandPanel,
   CommandSeparator,
 } from "@/components/ui/command";
+import { useOpenProject } from "@/components/project/views/use-open-project";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 
@@ -57,6 +58,7 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
   const [query, setQuery] = useState("");
   const { data: workspace } = useActiveWorkspace();
   const navigate = useNavigate();
+  const openProject = useOpenProject();
 
   const searchEnabled = query.trim().length >= 3;
 
@@ -92,13 +94,7 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         break;
       case "project":
         if (item.id && workspace?.id) {
-          navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
-            params: {
-              workspaceId: workspace.id,
-              projectId: item.id,
-            },
-          });
+          openProject(workspace.id, item.id);
         }
         break;
       case "workspace":

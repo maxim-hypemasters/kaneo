@@ -110,6 +110,8 @@ export function OnboardingFlow() {
   const goToWorkspace = useCallback(() => {
     if (!created) return;
     if (created.projectId) {
+      // The starter tasks are a board tutorial without dates, so skip the
+      // default project view, which may be an empty Gantt chart.
       navigate({
         to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
         params: {

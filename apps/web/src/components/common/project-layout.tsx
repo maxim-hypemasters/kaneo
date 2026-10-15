@@ -1,6 +1,6 @@
 import { ShortcutKeys } from "@/components/shortcuts/shortcut-keys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import MobileProjectNav from "@/components/common/header/mobile-project-nav";
 import ProjectCrumbSelect from "@/components/common/header/project-crumb-select";
@@ -77,6 +77,14 @@ export default function ProjectLayout({
           : "board");
   const currentView = resolveProjectView(resolvedRoute, viewMode);
   const showViews = showViewSwitcher && !unavailableReason;
+
+  // "Tasks" on the backlog returns to the task view shown last, however it was
+  // reached: a deep link, the default project view, or the layout switch.
+  useEffect(() => {
+    if (currentView === "backlog") return;
+    const { taskLayout, setTaskLayout } = useUserPreferencesStore.getState();
+    if (taskLayout !== currentView) setTaskLayout(currentView);
+  }, [currentView]);
 
   const goToView = useGoToProjectView({
     workspaceId,

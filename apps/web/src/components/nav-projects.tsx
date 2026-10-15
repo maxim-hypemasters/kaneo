@@ -37,6 +37,7 @@ import { type CSSProperties, type ReactNode, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { ProjectProgress } from "@/components/project-progress";
+import { useOpenProject } from "@/components/project/views/use-open-project";
 import {
   Collapsible,
   CollapsiblePanel,
@@ -141,6 +142,7 @@ export function NavProjects() {
   // alone — not the create+update+delete bundle.
   const canReorder = canUpdateProjects();
   const navigate = useNavigate();
+  const openProject = useOpenProject();
   const { workspaceId: currentWorkspaceId, projectId: currentProjectId } =
     useParams({
       strict: false,
@@ -168,13 +170,7 @@ export function NavProjects() {
   };
 
   const handleProjectClick = (project: ProjectWithTasks) => {
-    navigate({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
-      params: {
-        workspaceId: workspace?.id || "",
-        projectId: project.id,
-      },
-    });
+    openProject(workspace?.id || "", project.id);
   };
 
   // Below these thresholds the row is still a link and the sidebar still

@@ -68,7 +68,7 @@ function RouteComponent() {
 
   const handleDeleted = () => {
     navigate({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
+      to: "/dashboard/workspace/$workspaceId/project/$projectId",
       params: { workspaceId, projectId },
       replace: true,
     });

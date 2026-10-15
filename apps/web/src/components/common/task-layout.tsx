@@ -85,7 +85,7 @@ export default function TaskLayout({
                     type="button"
                     onClick={() =>
                       navigate({
-                        to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
+                        to: "/dashboard/workspace/$workspaceId/project/$projectId",
                         params: { workspaceId, projectId },
                       })
                     }

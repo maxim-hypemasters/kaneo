@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it } from "vite-plus/test";
-import { isGanttGroupBy, useUserPreferencesStore } from "./user-preferences";
+import {
+  isDefaultProjectView,
+  isGanttGroupBy,
+  useUserPreferencesStore,
+} from "./user-preferences";
 
 function storePreferences(state: Record<string, unknown>) {
   localStorage.setItem(
@@ -52,5 +56,61 @@ describe("isGanttGroupBy", () => {
     expect(isGanttGroupBy("status")).toBe(false);
     expect(isGanttGroupBy(1)).toBe(false);
     expect(isGanttGroupBy(undefined)).toBe(false);
+  });
+});
+
+describe("default project view", () => {
+  afterEach(() => {
+    useUserPreferencesStore.setState({
+      defaultProjectView: "gantt",
+      viewMode: "board",
+    });
+  });
+
+  it("defaults to Gantt", () => {
+    expect(useUserPreferencesStore.getState().defaultProjectView).toBe("gantt");
+  });
+
+  it("restores a stored default view", async () => {
+    storePreferences({ defaultProjectView: "list" });
+
+    await useUserPreferencesStore.persist.rehydrate();
+
+    expect(useUserPreferencesStore.getState().defaultProjectView).toBe("list");
+  });
+
+  it("opens Gantt for preferences saved before the setting existed", async () => {
+    storePreferences({ viewMode: "list" });
+
+    await useUserPreferencesStore.persist.rehydrate();
+
+    expect(useUserPreferencesStore.getState().defaultProjectView).toBe("gantt");
+  });
+
+  it("resets an invalid stored default view to Gantt", async () => {
+    storePreferences({ defaultProjectView: "calendar" });
+
+    await useUserPreferencesStore.persist.rehydrate();
+
+    expect(useUserPreferencesStore.getState().defaultProjectView).toBe("gantt");
+  });
+
+  it("persists a changed default view", () => {
+    useUserPreferencesStore.getState().setDefaultProjectView("board");
+
+    expect(
+      JSON.parse(localStorage.getItem("user-preferences") ?? "{}").state
+        .defaultProjectView,
+    ).toBe("board");
+  });
+});
+
+describe("isDefaultProjectView", () => {
+  it("accepts only the views a project can open in", () => {
+    expect(isDefaultProjectView("gantt")).toBe(true);
+    expect(isDefaultProjectView("board")).toBe(true);
+    expect(isDefaultProjectView("list")).toBe(true);
+    expect(isDefaultProjectView("backlog")).toBe(false);
+    expect(isDefaultProjectView(undefined)).toBe(false);
   });
 });

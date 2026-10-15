@@ -56,11 +56,15 @@ async function createProject(page: Page) {
   await page
     .getByRole("button", { name: "Create Project", exact: true })
     .click();
-  await expect(page).toHaveURL(/\/project\/[^/]+\/board$/);
+  // A new project opens on the viewer's default view; these tests add tasks
+  // from the board's columns.
+  await expect(page).toHaveURL(/\/project\/[^/]+\/(gantt|board)$/);
+  const boardUrl = page.url().replace(/\/(gantt|board)$/, "/board");
+  await page.goto(boardUrl);
   await expect(
     page.getByTitle("Add task", { exact: true }).first(),
   ).toBeVisible();
-  return page.url();
+  return boardUrl;
 }
 
 async function createTask(page: Page, title: string) {

@@ -18,14 +18,15 @@ vi.mock("react-i18next", () => ({
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
     children,
+    to,
     params,
     ...props
   }: {
     children?: ReactNode;
     to: string;
-    params: { projectId: string };
+    params: Record<string, string>;
   }) => (
-    <a href={`/board/${params.projectId}`} {...props}>
+    <a href={to.replace(/\$(\w+)/g, (_, key) => params[key])} {...props}>
       {children}
     </a>
   ),
@@ -67,7 +68,7 @@ function renderRow(value: ImportRunProject, message: string | null = null) {
 }
 
 describe("ImportRunProjectRow", () => {
-  it("summarizes a finished project and links to its board", () => {
+  it("summarizes a finished project and links to it", () => {
     renderRow(project({}));
 
     expect(
@@ -79,7 +80,7 @@ describe("ImportRunProjectRow", () => {
       screen.getByRole("link", {
         name: "settings:workspaceImport.run.openProject:Design",
       }),
-    ).toHaveAttribute("href", "/board/p1");
+    ).toHaveAttribute("href", "/dashboard/workspace/ws1/project/p1");
   });
 
   it("shows the live message for the project being imported", () => {

@@ -15,6 +15,15 @@ export function isGanttGroupBy(value: unknown): value is GanttGroupBy {
   return GANTT_GROUP_BY_OPTIONS.some((option) => option === value);
 }
 
+export const DEFAULT_PROJECT_VIEW_OPTIONS = ["gantt", "board", "list"] as const;
+export type DefaultProjectView = (typeof DEFAULT_PROJECT_VIEW_OPTIONS)[number];
+
+export function isDefaultProjectView(
+  value: unknown,
+): value is DefaultProjectView {
+  return DEFAULT_PROJECT_VIEW_OPTIONS.some((option) => option === value);
+}
+
 export type TaskLayout = "board" | "list" | "calendar" | "gantt";
 
 type UserPreferencesStore = {
@@ -26,6 +35,9 @@ type UserPreferencesStore = {
 
   viewMode: "board" | "list";
   setViewMode: (mode: "board" | "list") => void;
+
+  defaultProjectView: DefaultProjectView;
+  setDefaultProjectView: (view: DefaultProjectView) => void;
 
   taskLayout: TaskLayout;
   setTaskLayout: (layout: TaskLayout) => void;
@@ -104,6 +116,9 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       viewMode: "board",
       setViewMode: (mode) => set({ viewMode: mode }),
 
+      defaultProjectView: "gantt",
+      setDefaultProjectView: (view) => set({ defaultProjectView: view }),
+
       taskLayout: "board",
       setTaskLayout: (layout) => set({ taskLayout: layout }),
 
@@ -176,6 +191,9 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
         }
         if (!isGanttGroupBy(state.ganttGroupBy)) {
           state.setGanttGroupBy("none");
+        }
+        if (!isDefaultProjectView(state.defaultProjectView)) {
+          state.setDefaultProjectView("gantt");
         }
       },
     },
