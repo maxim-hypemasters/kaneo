@@ -3048,7 +3048,6 @@
 			"previousPeriod": "上一周期",
 			"nextPeriod": "下一周期",
 			"periodStart": "时间线开始日期",
-			"showTaskDates": "显示任务日期",
 			"assignTo": "指派给 {{name}}",
 			"cannotAssign": "无法指派给 {{name}}",
 			"laneTaskCount_other": "{{count}} 个任务",

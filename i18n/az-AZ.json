@@ -3095,7 +3095,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "{{name}} adlı şəxsə təyin et",
 			"cannotAssign": "{{name}} adlı şəxsə təyin etmək olmur",
 			"laneTaskCount_one": "{{count}} tapşırıq",

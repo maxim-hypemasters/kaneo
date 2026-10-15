@@ -3128,7 +3128,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "Assigner à {{name}}",
 			"cannotAssign": "Impossible d'assigner à {{name}}",
 			"laneTaskCount_many": "{{count}} tâches",

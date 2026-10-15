@@ -1,5 +1,4 @@
-import { format, startOfDay } from "date-fns";
-import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
 import { getStatusLabel } from "@/lib/i18n/domain";
 import { GanttTaskBar } from "./gantt-task-bar";
 import type {
@@ -7,14 +6,12 @@ import type {
   GanttTaskEdit,
   ScheduledTask,
 } from "./gantt-types";
-import { type GanttViewportStore, useGanttViewport } from "./gantt-viewport";
 import type { GanttTimeline } from "./timeline";
 
 type GanttTaskRowProps = {
   task: ScheduledTask;
   projectSlug: string | undefined;
   timeline: GanttTimeline;
-  viewport: GanttViewportStore;
   pixelsPerDay: number;
   isMobile: boolean;
   showTaskRail: boolean;
@@ -23,7 +20,6 @@ type GanttTaskRowProps = {
   showAssignee: boolean;
   laneDrag?: GanttLaneDrag;
   onOpenTask: () => void;
-  onShowDates: () => void;
   onCommit: (edit: GanttTaskEdit) => void;
 };
 
@@ -31,7 +27,6 @@ export function GanttTaskRow({
   task,
   projectSlug,
   timeline,
-  viewport,
   pixelsPerDay,
   isMobile,
   showTaskRail,
@@ -39,25 +34,18 @@ export function GanttTaskRow({
   showAssignee,
   laneDrag,
   onOpenTask,
-  onShowDates,
   onCommit,
 }: GanttTaskRowProps) {
-  const { t } = useTranslation();
-  // Offer a jump when none of the task is on screen. Before the viewport is
-  // measured, fall back to whether it is within the rendered days.
-  const offScreen = useGanttViewport(viewport, (visible) => {
-    const first = visible?.first ?? timeline.rangeStart;
-    const last = visible?.last ?? timeline.rangeEnd;
-    return task.scheduleEnd < first || startOfDay(task.scheduleStart) > last;
-  });
-
   return (
     <div
       className="grid items-stretch border-b border-border/70"
       style={{ gridTemplateColumns: rowGridTemplateColumns }}
     >
       {showTaskRail ? (
-        <div className="sticky left-0 z-[11] h-full border-r border-border bg-background">
+        <div
+          data-gantt-rail=""
+          className="sticky left-0 z-[11] h-full border-r border-border bg-background"
+        >
           <button
             type="button"
             className="flex min-h-[44px] w-full min-w-0 flex-col items-start justify-center gap-0.5 px-2 py-2 text-left transition-colors hover:bg-muted sm:min-h-0 sm:px-3 sm:py-1.5"
@@ -82,15 +70,6 @@ export function GanttTaskRow({
                 : ""}
             </p>
           </button>
-          {offScreen && (
-            <button
-              type="button"
-              className="px-3 pb-2 text-xs text-primary underline"
-              onClick={onShowDates}
-            >
-              {t("tasks:gantt.showTaskDates")}
-            </button>
-          )}
         </div>
       ) : null}
 

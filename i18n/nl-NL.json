@@ -3070,7 +3070,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "Toewijzen aan {{name}}",
 			"cannotAssign": "Kan niet toewijzen aan {{name}}",
 			"laneTaskCount_one": "{{count}} taak",

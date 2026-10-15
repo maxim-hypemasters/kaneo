@@ -117,6 +117,7 @@ export function GanttLaneHeader({
     >
       {showTaskRail ? (
         <div
+          data-gantt-rail=""
           className={cn(
             "sticky left-0 z-[11] flex h-full items-center border-r border-border bg-background px-2 sm:px-3",
             heightClassName,

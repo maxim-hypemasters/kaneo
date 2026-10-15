@@ -3034,7 +3034,6 @@
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
-			"showTaskDates": "Show task dates",
 			"assignTo": "Giao cho {{name}}",
 			"cannotAssign": "Không thể giao cho {{name}}",
 			"laneTaskCount_other": "{{count}} công việc",

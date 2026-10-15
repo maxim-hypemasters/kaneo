@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
-  addDays,
   format,
   isSameMonth,
   isToday,
@@ -41,6 +40,7 @@ import { applyPendingEdit } from "@/components/gantt/pending-task-edits";
 import { paddedSchedule, parseTaskDate } from "@/components/gantt/timeline";
 import { useDragToPan } from "@/components/gantt/use-drag-to-pan";
 import { useGanttRange } from "@/components/gantt/use-gantt-range";
+import { useWheelScrollsTime } from "@/components/gantt/use-wheel-scrolls-time";
 import { useGanttTaskCommits } from "@/components/gantt/use-gantt-task-commits";
 import PageTitle from "@/components/page-title";
 import { DisplaySection } from "@/components/project/display/display-section";
@@ -156,6 +156,7 @@ function RouteComponent() {
     null,
   );
   const panTimeline = useDragToPan();
+  useWheelScrollsTime(scrollElement);
   const [pixelsPerDay, setPixelsPerDay] = useState(44);
   const todayCellRef = useRef<HTMLDivElement>(null);
   // Only auto-scroll once per visit to the view: re-running on every timeline
@@ -544,6 +545,7 @@ function RouteComponent() {
               <div className="sticky top-0 z-20 flex border-b border-border bg-background/95 backdrop-blur">
                 {showTaskRail ? (
                   <div
+                    data-gantt-rail=""
                     className="sticky left-0 z-30 shrink-0 border-r border-border bg-background px-2 py-2.5 sm:w-80 sm:px-4 sm:py-3"
                     style={{
                       width: isMobile ? `${taskColumnWidthRem}rem` : undefined,
@@ -669,7 +671,6 @@ function RouteComponent() {
                                     task={task}
                                     projectSlug={project?.slug}
                                     timeline={timeline}
-                                    viewport={viewport}
                                     pixelsPerDay={pixelsPerDay}
                                     isMobile={isMobile}
                                     showTaskRail={showTaskRail}
@@ -679,11 +680,6 @@ function RouteComponent() {
                                     showAssignee={false}
                                     laneDrag={laneDrag}
                                     onOpenTask={() => openTask(task.id)}
-                                    onShowDates={() =>
-                                      scrollToDate(
-                                        addDays(task.scheduleStart, -7),
-                                      )
-                                    }
                                     onCommit={(edit) =>
                                       commitTaskEdit(task, edit)
                                     }
@@ -698,16 +694,12 @@ function RouteComponent() {
                           task={task}
                           projectSlug={project?.slug}
                           timeline={timeline}
-                          viewport={viewport}
                           pixelsPerDay={pixelsPerDay}
                           isMobile={isMobile}
                           showTaskRail={showTaskRail}
                           rowGridTemplateColumns={rowGridTemplateColumns}
                           showAssignee
                           onOpenTask={() => openTask(task.id)}
-                          onShowDates={() =>
-                            scrollToDate(addDays(task.scheduleStart, -7))
-                          }
                           onCommit={(edit) => commitTaskEdit(task, edit)}
                         />
                       ))}

@@ -164,24 +164,26 @@ describe("Gantt window UI", () => {
     expect(m.update).not.toHaveBeenCalled();
   });
 
-  it("can jump to a far-away task and navigate without losing its row", () => {
+  it("can jump to a far-away date and navigate without losing rows", () => {
     m.tasks = [
       task("Ancient", "0001-01-01", "0001-01-02"),
       task("Future", "9999-12-30", "9999-12-31"),
     ];
     const { container } = show();
-    const jump = screen.getAllByRole("button", {
-      name: "tasks:gantt.showTaskDates",
-    });
-    expect(jump).toHaveLength(2);
+    // The span opens around today, far from both tasks.
+    expect(
+      screen.queryAllByRole("button", { name: "tasks:gantt.taskAriaLabel" }),
+    ).toHaveLength(0);
 
-    fireEvent.click(jump[1]);
+    fireEvent.change(screen.getByLabelText("tasks:gantt.periodStart"), {
+      target: { value: "9999-12-23" },
+    });
+    expect(
+      screen.getAllByRole("button", { name: "tasks:gantt.taskAriaLabel" }),
+    ).toHaveLength(1);
 
     // The span re-centres on the far task, clamped to the last supported
     // day, and stays bounded.
-    expect(
-      screen.getAllByRole("button", { name: "tasks:gantt.showTaskDates" }),
-    ).toHaveLength(1);
     expect(screen.getByLabelText("tasks:gantt.periodStart")).toHaveValue(
       "9999-07-03",
     );
