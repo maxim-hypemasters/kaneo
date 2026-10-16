@@ -32,6 +32,9 @@ const optionalIsoDateTimeSchema = isoDateTimeSchema.optional();
 const nullableOptionalIsoDateTimeSchema = isoDateTimeSchema
   .nullable()
   .optional();
+// A feature is a task that groups the tasks of one piece of work; it stays on
+// the board with its own status, assignee and dates.
+const taskTypeSchema = z.enum(["task", "feature"]);
 const hexColorSchema = z
   .string()
   .regex(
@@ -225,7 +228,7 @@ export function registerTools(
     "list_tasks",
     {
       description:
-        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata.",
+        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each task has a type ('task' or 'feature') and a featureId (the feature it belongs to, or null); a feature's subtaskCounts is the progress of its tasks.",
       inputSchema: listTasksSchema,
     },
     async (args) => {
@@ -246,7 +249,8 @@ export function registerTools(
   registerTool(
     "get_task",
     {
-      description: "Get a task by ID.",
+      description:
+        "Get a task by ID, including its type ('task' or 'feature') and featureId (the feature it belongs to, or null).",
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>
@@ -285,7 +289,8 @@ export function registerTools(
   registerTool(
     "create_task",
     {
-      description: "Create a task in a project.",
+      description:
+        "Create a task in a project. Pass type 'feature' to create a feature, or featureId to create the task inside a feature of the same project in one call. A feature can't belong to another feature.",
       inputSchema: z.object({
         projectId: nonEmptyString,
         title: nonEmptyString,
@@ -295,6 +300,14 @@ export function registerTools(
         startDate: optionalIsoDateTimeSchema,
         dueDate: optionalIsoDateTimeSchema,
         userId: optionalNonEmptyString,
+        type: taskTypeSchema
+          .optional()
+          .describe(
+            "'feature' creates a feature, which groups tasks and stays on the board as a card. Defaults to 'task'.",
+          ),
+        featureId: optionalNonEmptyString.describe(
+          "Create the task inside this feature (a task of type 'feature' in the same project).",
+        ),
       }),
     },
     async (args) => {
@@ -313,6 +326,12 @@ export function registerTools(
       if (args.userId !== undefined) {
         body.userId = args.userId;
       }
+      if (args.type !== undefined) {
+        body.type = args.type;
+      }
+      if (args.featureId !== undefined) {
+        body.featureId = args.featureId;
+      }
       return run(() =>
         client.json(`/api/task/${encodeURIComponent(args.projectId)}`, {
           method: "POST",
@@ -326,7 +345,7 @@ export function registerTools(
     "duplicate_task",
     {
       description:
-        "Duplicate a task in the same project, copying its fields and labels. Pass title to rename the copy.",
+        "Duplicate a task in the same project, copying its fields, labels, type and feature. A feature's tasks are not copied. Pass title to rename the copy.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         title: optionalNonEmptyString,
@@ -363,7 +382,7 @@ export function registerTools(
     "update_task",
     {
       description:
-        "Update a task (fetches current task, merges fields, then full update).",
+        "Update a task (fetches current task, merges fields, then full update). Leaves the task's type and feature as they are: use set_task_type and set_task_feature for those.",
       inputSchema: updateTaskSchema,
     },
     async (args) => {
@@ -386,7 +405,7 @@ export function registerTools(
     "move_task",
     {
       description:
-        "Move a task to another project (and optional column status).",
+        "Move a task to another project (and optional column status). The task leaves its feature; a feature that still has tasks can't be moved.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         destinationProjectId: nonEmptyString,
@@ -421,6 +440,48 @@ export function registerTools(
         client.json(`/api/task/status/${encodeURIComponent(args.taskId)}`, {
           method: "PUT",
           body: JSON.stringify({ status: args.status }),
+        }),
+      ),
+  );
+
+  registerTool(
+    "set_task_feature",
+    {
+      description:
+        "Put a task into a feature of its project, or pass a null featureId to take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        featureId: nonEmptyString
+          .nullable()
+          .describe(
+            "A task of type 'feature' in the same project, or null to remove the task from its feature",
+          ),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task/feature/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ featureId: args.featureId }),
+        }),
+      ),
+  );
+
+  registerTool(
+    "set_task_type",
+    {
+      description:
+        "Turn a task into a feature, or a feature back into a task. A task that becomes a feature leaves its own feature; a feature can become a task only once it has no tasks.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        type: taskTypeSchema.describe("'feature' or 'task'"),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task/type/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ type: args.type }),
         }),
       ),
   );
@@ -566,7 +627,7 @@ export function registerTools(
     "create_task_relation",
     {
       description:
-        "Create a relation between two tasks. relationType: 'subtask' (sourceTaskId is the parent, targetTaskId the child), 'blocks' (sourceTaskId blocks targetTaskId), or 'related' (bidirectional).",
+        "Create a relation between two tasks. relationType: 'blocks' (sourceTaskId blocks targetTaskId) or 'related' (bidirectional). 'subtask' is a deprecated alias that puts targetTaskId into sourceTaskId's feature (making a plain source a feature); prefer set_task_feature.",
       inputSchema: z.object({
         sourceTaskId: nonEmptyString,
         targetTaskId: nonEmptyString,
@@ -590,7 +651,7 @@ export function registerTools(
     "get_task_relations",
     {
       description:
-        "List all relations (subtask/blocks/related) involving a task.",
+        "List the blocks and related relations involving a task. A task's feature link is also listed as a deprecated 'subtask' entry (sourceTaskId is the feature, targetTaskId the task); prefer the featureId on get_task.",
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>
@@ -604,7 +665,8 @@ export function registerTools(
   registerTool(
     "delete_task_relation",
     {
-      description: "Delete a task relation by its relation ID.",
+      description:
+        "Delete a task relation by its relation ID. Deleting a 'subtask' entry (id 'feature:<taskId>:<featureId>') takes the task out of its feature; prefer set_task_feature with a null featureId.",
       inputSchema: z.object({ id: nonEmptyString }),
     },
     async (args) =>
@@ -720,7 +782,8 @@ export function registerTools(
   registerTool(
     "delete_task",
     {
-      description: "Delete a task by ID.",
+      description:
+        "Delete a task by ID. Deleting a feature keeps its tasks and takes them out of it.",
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>

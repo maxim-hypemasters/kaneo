@@ -47,6 +47,13 @@ describe("registerTools", () => {
       expect.any(Object),
       expect.any(Function),
     );
+    for (const name of ["set_task_feature", "set_task_type"]) {
+      expect(server.registerTool).toHaveBeenCalledWith(
+        name,
+        expect.any(Object),
+        expect.any(Function),
+      );
+    }
   });
 
   it("uses the API-key current-user endpoint for whoami", async () => {
@@ -260,6 +267,178 @@ describe("registerTools", () => {
     expect(result?.isError).toBe(false);
   });
 
+  it("leaves the type and feature out of the update_task body", async () => {
+    const { server, tools } = createServerMock();
+    const client = {
+      json: vi
+        .fn()
+        .mockResolvedValueOnce({
+          title: "Write docs",
+          status: "open",
+          priority: "medium",
+          projectId: "project-1",
+          position: 4,
+          type: "task",
+          featureId: "feature-1",
+        })
+        .mockResolvedValueOnce({ id: "task-1" }),
+    };
+
+    registerTools(server as never, { client: client as never });
+
+    await tools.get("update_task")?.handler({
+      taskId: "task-1",
+      title: "Write the docs",
+    });
+
+    const putBody = JSON.parse(
+      String((client.json.mock.calls[1]?.[1] as { body?: string })?.body),
+    );
+    expect(putBody).not.toHaveProperty("type");
+    expect(putBody).not.toHaveProperty("featureId");
+  });
+
+  it("creates a task inside a feature in one call", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "task-2" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools.get("create_task")?.handler({
+      projectId: "project 1",
+      title: "Write docs",
+      description: "",
+      priority: "low",
+      status: "to-do",
+      featureId: "feature-1",
+    });
+
+    expect(client.json).toHaveBeenCalledWith("/api/task/project%201", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Write docs",
+        description: "",
+        priority: "low",
+        status: "to-do",
+        featureId: "feature-1",
+      }),
+    });
+    expect(result?.isError).toBe(false);
+  });
+
+  it("creates a feature", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "feature-1" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    await tools.get("create_task")?.handler({
+      projectId: "project-1",
+      title: "Onboarding",
+      description: "",
+      priority: "medium",
+      status: "to-do",
+      type: "feature",
+    });
+
+    const body = JSON.parse(
+      String((client.json.mock.calls[0]?.[1] as { body?: string })?.body),
+    );
+    expect(body).toEqual(expect.objectContaining({ type: "feature" }));
+    expect(body).not.toHaveProperty("featureId");
+  });
+
+  it("rejects an unknown task type for create_task", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn() };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools.get("create_task")?.handler({
+      projectId: "project-1",
+      title: "Onboarding",
+      description: "",
+      priority: "medium",
+      status: "to-do",
+      type: "epic",
+    });
+
+    expect(result?.isError).toBe(true);
+    expect(client.json).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["feature-1", "feature-1"],
+    [null, null],
+  ])(
+    "sets a task's feature to %s with set_task_feature",
+    async (featureId, expected) => {
+      const { server, tools } = createServerMock();
+      const client = { json: vi.fn().mockResolvedValue({ id: "task 1" }) };
+
+      registerTools(server as never, { client: client as never });
+
+      const result = await tools.get("set_task_feature")?.handler({
+        taskId: "task 1",
+        featureId,
+      });
+
+      expect(client.json).toHaveBeenCalledWith("/api/task/feature/task%201", {
+        method: "PUT",
+        body: JSON.stringify({ featureId: expected }),
+      });
+      expect(result?.isError).toBe(false);
+    },
+  );
+
+  it("requires an explicit featureId for set_task_feature", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn() };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools
+      .get("set_task_feature")
+      ?.handler({ taskId: "task-1" });
+
+    expect(result?.isError).toBe(true);
+    expect(client.json).not.toHaveBeenCalled();
+  });
+
+  it("converts a task with set_task_type", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "task-1" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    await tools
+      .get("set_task_type")
+      ?.handler({ taskId: "task-1", type: "feature" });
+
+    expect(client.json).toHaveBeenCalledWith("/api/task/type/task-1", {
+      method: "PUT",
+      body: JSON.stringify({ type: "feature" }),
+    });
+  });
+
+  it("surfaces the API conflict when a feature with tasks becomes a task", async () => {
+    const { server, tools } = createServerMock();
+    const client = {
+      json: vi
+        .fn()
+        .mockRejectedValue(new Error("This feature still has tasks.")),
+    };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools
+      .get("set_task_type")
+      ?.handler({ taskId: "feature-1", type: "task" });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content[0]?.text).toContain("still has tasks");
+  });
+
   it("fetches the current project and sends a full body for update_project", async () => {
     const { server, tools } = createServerMock();
     const client = {
@@ -374,6 +553,29 @@ describe("registerTools", () => {
       }),
     });
     expect(result?.isError).toBe(false);
+  });
+
+  it("still accepts the deprecated subtask relation type", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "feature:t2:t1" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools.get("create_task_relation")?.handler({
+      sourceTaskId: "t1",
+      targetTaskId: "t2",
+      relationType: "subtask",
+    });
+
+    expect(result?.isError).toBe(false);
+    expect(client.json).toHaveBeenCalledWith("/api/task-relation", {
+      method: "POST",
+      body: JSON.stringify({
+        sourceTaskId: "t1",
+        targetTaskId: "t2",
+        relationType: "subtask",
+      }),
+    });
   });
 
   it("validates relationType for create_task_relation", () => {
