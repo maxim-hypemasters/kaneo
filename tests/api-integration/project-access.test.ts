@@ -42,6 +42,7 @@ describe("project access enforcement", () => {
       `/label/task/${ctx.betaTask.id}`,
       `/time-entry/task/${ctx.betaTask.id}`,
       `/task-relation/${ctx.betaTask.id}`,
+      `/task-relation/project/${ctx.beta.id}`,
       `/custom-field/project/${ctx.beta.id}`,
       `/external-link/task/${ctx.betaTask.id}`,
       `/workflow-rule/${ctx.beta.id}`,
