@@ -5,7 +5,8 @@ import { migrate } from "./migrate.js";
 
 type Call = { method: string; args: unknown[] };
 
-function fakeKaneo(calls: Call[]) {
+// withoutFeatures: a server from before features, which sends no task type.
+function fakeKaneo(calls: Call[], { withoutFeatures = false } = {}) {
   let taskCounter = 0;
   const record = (method: string, ...args: unknown[]) => {
     calls.push({ method, args });
@@ -39,10 +40,19 @@ function fakeKaneo(calls: Call[]) {
       record("createColumn", input);
       return { id: "c_new", name: "x", slug: "x" };
     },
-    async createTask(_projectId: string, input: unknown) {
+    async createTask(_projectId: string, input: { type?: string }) {
       record("createTask", input);
       taskCounter++;
-      return { id: `t_${taskCounter}`, title: "t", number: taskCounter };
+      return {
+        id: `t_${taskCounter}`,
+        title: "t",
+        number: taskCounter,
+        ...(withoutFeatures ? {} : { type: input.type ?? "task" }),
+      };
+    },
+    async setTaskFeature(taskId: string, featureId: string) {
+      record("setTaskFeature", taskId, featureId);
+      return { id: taskId, title: "t", number: 1, featureId };
     },
     async createLabel(input: unknown) {
       record("createLabel", input);
@@ -130,6 +140,41 @@ function bundleWith(overrides: Partial<BoardBundle["included"]>): BoardBundle {
 }
 
 const target = { project, board, boardCountInProject: 1 };
+
+const card = (id: string, name: string, position: number) => ({
+  id,
+  boardId: "b1",
+  listId: "l1",
+  name,
+  description: null,
+  position,
+  dueDate: null,
+  isDueCompleted: null,
+  isClosed: null,
+  commentsTotal: 0,
+});
+
+// card1 links card2 from its checklist; card3 links nothing.
+function linkedBundle(): BoardBundle {
+  const bundle = bundleWith({
+    taskLists: [{ id: "tl1", cardId: "card1", name: "Depends on" }],
+    tasks: [
+      {
+        id: "t1",
+        taskListId: "tl1",
+        name: "Blocked by card 2",
+        isCompleted: false,
+        position: 1,
+        linkedCardId: "card2",
+      },
+    ],
+  });
+  bundle.included.cards?.push(
+    card("card2", "The dependency", 2),
+    card("card3", "Another card", 3),
+  );
+  return bundle;
+}
 
 describe("migrate (dry run)", () => {
   it("reports counts without calling Kaneo", async () => {
@@ -423,32 +468,63 @@ describe("migrate (write)", () => {
     expect(report?.warnings.join(" ")).toContain("Invite those people");
   });
 
-  it("turns a linked checklist item into a task relation, not checkbox text", async () => {
+  it("makes the card with a linked checklist item a feature holding the linked card, not checkbox text", async () => {
     const calls: Call[] = [];
-    const bundle = bundleWith({
-      taskLists: [{ id: "tl1", cardId: "card1", name: "Depends on" }],
-      tasks: [
-        {
-          id: "t1",
-          taskListId: "tl1",
-          name: "Blocked by card 2",
-          isCompleted: false,
-          position: 1,
-          linkedCardId: "card2",
-        },
-      ],
+    const [report] = await migrate({
+      planka: fakePlanka(linkedBundle()),
+      kaneo: fakeKaneo(calls),
+      workspaceId: "ws_1",
+      targets: [target],
+      dryRun: false,
+      skipComments: false,
     });
-    bundle.included.cards?.push({
-      id: "card2",
-      boardId: "b1",
-      listId: "l1",
-      name: "The dependency",
-      description: null,
-      position: 2,
-      dueDate: null,
-      isDueCompleted: null,
-      isClosed: null,
-      commentsTotal: 0,
+
+    const created = calls
+      .filter((call) => call.method === "createTask")
+      .map(
+        (call) =>
+          call.args[0] as {
+            title: string;
+            description: string;
+            type?: string;
+            featureId?: string;
+          },
+      );
+    // The feature comes first, so its task is created straight into it.
+    expect(
+      created.map((task) => [task.title, task.type, task.featureId]),
+    ).toEqual([
+      ["Write copy", "feature", undefined],
+      ["The dependency", undefined, "t_1"],
+      ["Another card", undefined, undefined],
+    ]);
+    expect(calls.some((call) => call.method === "setTaskFeature")).toBe(false);
+    expect(calls.some((call) => call.method === "createTaskRelation")).toBe(
+      false,
+    );
+    expect(report?.features).toBe(1);
+    expect(report?.relations).toBe(1);
+
+    expect(created.map((task) => task.description).join(" ")).not.toContain(
+      "Blocked by card 2",
+    );
+  });
+
+  it("keeps a card's first parent as its feature and links the others as related", async () => {
+    const calls: Call[] = [];
+    const bundle = linkedBundle();
+    bundle.included.taskLists?.push({
+      id: "tl3",
+      cardId: "card3",
+      name: "Also",
+    });
+    bundle.included.tasks?.push({
+      id: "t2",
+      taskListId: "tl3",
+      name: "Same dependency",
+      isCompleted: false,
+      position: 1,
+      linkedCardId: "card2",
     });
 
     const [report] = await migrate({
@@ -460,18 +536,114 @@ describe("migrate (write)", () => {
       skipComments: false,
     });
 
-    const relations = calls
-      .filter((call) => call.method === "createTaskRelation")
-      .map((call) => call.args[0]);
-    expect(relations).toEqual([
-      { sourceTaskId: "t_1", targetTaskId: "t_2", relationType: "subtask" },
+    expect(
+      calls
+        .filter((call) => call.method === "createTask")
+        .map((call) => (call.args[0] as { featureId?: string }).featureId),
+    ).toEqual([undefined, "t_1", undefined]);
+    expect(
+      calls
+        .filter((call) => call.method === "createTaskRelation")
+        .map((call) => call.args[0]),
+    ).toEqual([
+      { sourceTaskId: "t_3", targetTaskId: "t_2", relationType: "related" },
     ]);
-    expect(report?.relations).toBe(1);
+    expect(report?.features).toBe(1);
+    expect(report?.relations).toBe(2);
+  });
 
-    const descriptions = calls
-      .filter((call) => call.method === "createTask")
-      .map((call) => (call.args[0] as { description: string }).description);
-    expect(descriptions.join(" ")).not.toContain("Blocked by card 2");
+  it("puts a card created before its feature into it once every card exists", async () => {
+    const calls: Call[] = [];
+    // card2, after card1 on the board, links card1.
+    const bundle = linkedBundle();
+    bundle.included.taskLists = [
+      { id: "tl2", cardId: "card2", name: "Depends on" },
+    ];
+    bundle.included.tasks = [
+      {
+        id: "t1",
+        taskListId: "tl2",
+        name: "Needs the copy",
+        isCompleted: false,
+        position: 1,
+        linkedCardId: "card1",
+      },
+    ];
+
+    const [report] = await migrate({
+      planka: fakePlanka(bundle),
+      kaneo: fakeKaneo(calls),
+      workspaceId: "ws_1",
+      targets: [target],
+      dryRun: false,
+      skipComments: false,
+    });
+
+    expect(
+      calls
+        .filter((call) => call.method === "createTask")
+        .map((call) => {
+          const input = call.args[0] as { type?: string; featureId?: string };
+          return [input.type, input.featureId];
+        }),
+    ).toEqual([
+      [undefined, undefined],
+      ["feature", undefined],
+      [undefined, undefined],
+    ]);
+    expect(
+      calls
+        .filter((call) => call.method === "setTaskFeature")
+        .map((call) => call.args),
+    ).toEqual([["t_1", "t_2"]]);
+    expect(report?.features).toBe(1);
+    expect(report?.relations).toBe(1);
+  });
+
+  it("links the cards as related on a Kaneo server without features", async () => {
+    const calls: Call[] = [];
+    const [report] = await migrate({
+      planka: fakePlanka(linkedBundle()),
+      kaneo: fakeKaneo(calls, { withoutFeatures: true }),
+      workspaceId: "ws_1",
+      targets: [target],
+      dryRun: false,
+      skipComments: false,
+    });
+
+    expect(calls.some((call) => call.method === "setTaskFeature")).toBe(false);
+    expect(
+      calls.some(
+        (call) =>
+          call.method === "createTask" &&
+          (call.args[0] as { featureId?: string }).featureId !== undefined,
+      ),
+    ).toBe(false);
+    expect(
+      calls
+        .filter((call) => call.method === "createTaskRelation")
+        .map((call) => call.args[0]),
+    ).toEqual([
+      { sourceTaskId: "t_1", targetTaskId: "t_2", relationType: "related" },
+    ]);
+    expect(report?.features).toBe(0);
+    expect(report?.warnings.join(" ")).toContain("no features yet");
+  });
+
+  it("plans the features in a dry run", async () => {
+    const calls: Call[] = [];
+    const [report] = await migrate({
+      planka: fakePlanka(linkedBundle()),
+      kaneo: fakeKaneo(calls),
+      workspaceId: "ws_1",
+      targets: [target],
+      dryRun: true,
+      skipComments: false,
+    });
+
+    expect(calls).toEqual([]);
+    expect(report?.features).toBe(1);
+    expect(report?.relations).toBe(1);
   });
 
   it("attributes imported comments to the original PLANKA author", async () => {

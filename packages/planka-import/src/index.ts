@@ -238,6 +238,11 @@ async function selectWorkspace(
   return chosen;
 }
 
+// Features are tasks too, so they count among the tasks.
+function featureCount(report: BoardReport): string {
+  return report.features > 0 ? ` (${report.features} features)` : "";
+}
+
 function printPlan(reports: BoardReport[]): void {
   log("");
   log("Planned import:");
@@ -247,7 +252,7 @@ function printPlan(reports: BoardReport[]): void {
       continue;
     }
     log(
-      `  • ${report.projectName}  ${report.columns} columns  ${report.tasks} tasks  ${report.labels} labels  ${report.comments} comments`,
+      `  • ${report.projectName}  ${report.columns} columns  ${report.tasks} tasks${featureCount(report)}  ${report.labels} labels  ${report.comments} comments`,
     );
     for (const warning of report.warnings) log(`      ! ${warning}`);
     if (report.skippedLists.length > 0) {
@@ -272,7 +277,7 @@ function printResults(reports: BoardReport[]): void {
       continue;
     }
     log(
-      `✔ ${report.projectName} (${report.projectKey})  ${report.columns} columns  ${report.tasks} tasks  ${report.labels} labels  ${report.comments} comments  ${report.assignees} assignees`,
+      `✔ ${report.projectName} (${report.projectKey})  ${report.columns} columns  ${report.tasks} tasks${featureCount(report)}  ${report.labels} labels  ${report.comments} comments  ${report.assignees} assignees`,
     );
   }
 

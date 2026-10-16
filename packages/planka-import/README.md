@@ -34,11 +34,18 @@ Create a Kaneo API key under **Settings → Account → API Keys**. Self-hosting
 | Card | Task |
 | Card description | Task description |
 | Checklists (task lists) | Markdown checkboxes appended to the description |
-| Checklist items linked to another card | Task relations (subtask) |
+| Checklist items linked to another card | A feature and its tasks: the card holding the checklist becomes a feature, and the linked cards its tasks |
 | Labels | Labels, with their original colors |
 | Card members | Assignee, matched by email address |
 | Due date | Due date |
 | Comments | Comments, with the original author recorded separately and the original date added to the text |
+
+A Kaneo task belongs to at most one feature, and a feature can't belong to
+one. So a card linked from several cards joins the feature of the first one and
+gets a related link to the others, and cards linked several levels deep join
+the top card's feature, keeping a related link to the card that links them.
+Against a Kaneo server from before features, linked cards are imported as
+related tasks, and the summary says so.
 
 One Kaneo project is created per PLANKA **board**, since the board is what holds
 lists and cards. If a PLANKA project has several boards, each Kaneo project is
