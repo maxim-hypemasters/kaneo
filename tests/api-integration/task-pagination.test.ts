@@ -271,7 +271,7 @@ it("detects task edits between public pages regardless of sort order", async () 
   ).not.toBe(title);
 });
 
-it.each(["label", "link", "assignee", "project", "subtask"])(
+it.each(["label", "link", "assignee", "project", "feature task"])(
   "detects a %s edit to an earlier public page while loading a later page",
   async (change) => {
     const { app, project, tasks, member } = await fixture(2, true);
@@ -299,22 +299,21 @@ it.each(["label", "link", "assignee", "project", "subtask"])(
         metadata: JSON.stringify({ merged: false }),
       })
       .returning();
-    const { project: childProject } = await createProjectFixture({
-      workspaceId: member.workspace.id,
-    });
+    // The first task is a feature; its progress counts this task.
     await db
-      .update(schema.projectTable)
-      .set({ isPublic: true })
-      .where(eq(schema.projectTable.id, childProject.id));
+      .update(schema.taskTable)
+      .set({ type: "feature" })
+      .where(eq(schema.taskTable.id, task.id));
     const [child] = await db
       .insert(schema.taskTable)
-      .values({ projectId: childProject.id, title: "Child", status: "to-do" })
+      .values({
+        projectId: project.id,
+        title: "Child",
+        status: "to-do",
+        number: 999,
+        featureId: task.id,
+      })
       .returning();
-    await db.insert(schema.taskRelationTable).values({
-      sourceTaskId: task.id,
-      targetTaskId: child.id,
-      relationType: "subtask",
-    });
     mockAnonymousSession();
     const path = `/api/public-project/${project.id}?limit=1`;
     const before = (await (await app.request(path)).json()).pagination.revision;
@@ -341,7 +340,7 @@ it.each(["label", "link", "assignee", "project", "subtask"])(
         .update(schema.projectTable)
         .set({ name: "Renamed project" })
         .where(eq(schema.projectTable.id, project.id));
-    if (change === "subtask")
+    if (change === "feature task")
       await db
         .update(schema.taskTable)
         .set({ status: "done" })

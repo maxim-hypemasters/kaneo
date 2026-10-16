@@ -1,10 +1,14 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { projectTable, taskRelationTable, taskTable } from "../database/schema";
+import { projectTable, taskTable } from "../database/schema";
 import { projectAccessCondition } from "../project-access/project-access-condition";
 import type { TaskReadDatabase } from "./bounded-read";
 import { taskIsCompleted } from "./task-is-completed";
 
-/** Load direct-child progress for the entire page, independent of board filters. */
+/**
+ * Load each feature's task progress for the entire page, independent of
+ * board filters. Tasks that aren't features get no entry. (The name predates
+ * features, which replaced subtasks.)
+ */
 export async function getSubtaskCounts(
   db: TaskReadDatabase,
   taskIds: string[],
@@ -18,26 +22,22 @@ export async function getSubtaskCounts(
 
   const rows = await db
     .select({
-      taskId: taskRelationTable.sourceTaskId,
-      total: sql<number>`count(distinct ${taskTable.id})`.mapWith(Number),
+      taskId: sql<string>`${taskTable.featureId}`,
+      total: sql<number>`count(*)`.mapWith(Number),
       completed:
-        sql<number>`count(distinct ${taskTable.id}) filter (where ${taskIsCompleted})`.mapWith(
-          Number,
-        ),
+        sql<number>`count(*) filter (where ${taskIsCompleted})`.mapWith(Number),
     })
-    .from(taskRelationTable)
-    .innerJoin(taskTable, eq(taskRelationTable.targetTaskId, taskTable.id))
+    .from(taskTable)
     .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
     .where(
       and(
-        inArray(taskRelationTable.sourceTaskId, taskIds),
-        eq(taskRelationTable.relationType, "subtask"),
+        inArray(taskTable.featureId, taskIds),
         eq(projectTable.workspaceId, workspaceId),
         publicOnly ? eq(projectTable.isPublic, true) : undefined,
         userId ? projectAccessCondition(userId, projectTable.id) : undefined,
       ),
     )
-    .groupBy(taskRelationTable.sourceTaskId);
+    .groupBy(taskTable.featureId);
 
   return new Map(
     rows.map(({ taskId, completed, total }) => [taskId, { completed, total }]),

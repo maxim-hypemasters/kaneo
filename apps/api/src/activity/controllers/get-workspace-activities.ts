@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import db from "../../database";
-import { redactInaccessibleMoves } from "../redact-inaccessible-moves";
+import { redactInaccessibleActivity } from "../redaction/redact-inaccessible-activity";
 import {
   activityTable,
   columnTable,
@@ -121,7 +121,7 @@ async function getWorkspaceActivities(workspaceId: string, userId: string) {
       excerpt: commentExcerpt(content),
     };
   });
-  return redactInaccessibleMoves(userId, activities);
+  return redactInaccessibleActivity(userId, activities);
 }
 
 function statusData(value: unknown): Record<string, unknown> | null {

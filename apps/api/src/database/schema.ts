@@ -2,6 +2,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   customType,
   foreignKey,
   index,
@@ -551,6 +552,10 @@ export const taskTable = pgTable(
     priority: text("priority").default("low").notNull(),
     startDate: timestamp("start_date", { mode: "date" }),
     dueDate: timestamp("due_date", { mode: "date" }),
+    // "task" or "feature". A feature groups tasks of its own project and
+    // can't itself belong to one.
+    type: text("type").$type<"task" | "feature">().default("task").notNull(),
+    featureId: text("feature_id"),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(utcNow)
       .notNull(),
@@ -560,6 +565,21 @@ export const taskTable = pgTable(
       .notNull(),
   },
   (table) => [
+    // Deleting a feature leaves its tasks in place, without a feature.
+    foreignKey({
+      columns: [table.featureId],
+      foreignColumns: [table.id],
+      name: "task_feature_id_task_id_fk",
+    })
+      .onDelete("set null")
+      .onUpdate("cascade"),
+    // The database can't check that feature_id points at a feature in the
+    // same project; assign-feature does that under row locks.
+    check(
+      "task_feature_shape_check",
+      sql`${table.type} in ('task', 'feature') and (${table.type} = 'task' or ${table.featureId} is null) and ${table.featureId} <> ${table.id}`,
+    ),
+    index("task_featureId_idx").on(table.featureId),
     index("task_projectId_idx").on(table.projectId),
     index("task_project_scheduled_id_idx")
       .on(table.projectId, table.id)
@@ -1217,6 +1237,22 @@ export const taskRelationTable = pgTable(
     index("task_relation_target_idx").on(table.targetTaskId),
   ],
 );
+
+// Every "subtask" relation as it was before features replaced subtasks, with
+// what became of it, so the conversion can be undone by hand. No foreign
+// keys: rows outlive the tasks they mention.
+export const legacySubtaskRelationTable = pgTable("legacy_subtask_relation", {
+  id: text("id").primaryKey(),
+  sourceTaskId: text("source_task_id").notNull(),
+  targetTaskId: text("target_task_id").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull(),
+  // "membership": the target joined the source's feature; "related": the
+  // row became a related link; "dropped": another row already covered it.
+  outcome: text("outcome").notNull(),
+  convertedAt: timestamp("converted_at", { mode: "date" })
+    .default(utcNow)
+    .notNull(),
+});
 
 export const apikeyTable = pgTable(
   "apikey",

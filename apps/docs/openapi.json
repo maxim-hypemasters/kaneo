@@ -271,6 +271,21 @@
           "projectId": {
             "type": "string"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "feature"
+            ],
+            "description": "A feature groups tasks of its own project, like an epic; a task can belong to one feature."
+          },
+          "featureId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The feature this task belongs to, in the same project. Always null for a feature."
+          },
           "subtaskCounts": {
             "type": "object",
             "properties": {
@@ -287,7 +302,7 @@
               "completed",
               "total"
             ],
-            "description": "Direct subtasks in the workspace; completed means a final column in the child project. Public boards count only children in public projects."
+            "description": "For a feature, its tasks and how many are in a final column; zero for a task. Counts every task in the feature, whatever the board's filters."
           },
           "labels": {
             "type": "array",
@@ -318,6 +333,8 @@
           "assigneeId",
           "assigneeImage",
           "projectId",
+          "type",
+          "featureId",
           "subtaskCounts",
           "labels",
           "externalLinks"
@@ -432,7 +449,7 @@
           },
           "revision": {
             "type": "string",
-            "description": "Public board content, membership and ordering revision, including related records and visible subtask progress. Restart pagination if it changes between task or related pages."
+            "description": "Public board content, membership and ordering revision, including related records and feature progress. Restart pagination if it changes between task or related pages."
           }
         },
         "required": [
@@ -1233,6 +1250,21 @@
             "type": "string",
             "format": "date-time"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "feature"
+            ],
+            "description": "A feature groups tasks of its own project, like an epic; a task can belong to one feature."
+          },
+          "featureId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The feature this task belongs to, in the same project. Always null for a feature."
+          },
           "customFields": {
             "type": "array",
             "items": {
@@ -1264,7 +1296,9 @@
           "priority",
           "startDate",
           "dueDate",
-          "createdAt"
+          "createdAt",
+          "type",
+          "featureId"
         ]
       },
       "TaskByTicketId": {
@@ -1318,7 +1352,8 @@
                 "required": [
                   "completed",
                   "total"
-                ]
+                ],
+                "description": "For a feature, its tasks and how many are in a final column. Zero for a task."
               },
               "parentSubtaskCounts": {
                 "type": "array",
@@ -1340,7 +1375,8 @@
                     "completed",
                     "total"
                   ]
-                }
+                },
+                "description": "The progress of the task's feature (at most one entry), so a board can update the feature's card."
               },
               "assigneeName": {
                 "type": [
@@ -1598,7 +1634,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed."
+            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }). Project and feature names from a project the viewer can't access, such as one a task was moved out of, are null."
           },
           "createdAt": {
             "type": "string",
@@ -1691,7 +1727,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed."
+            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }). Project and feature names from a project the viewer can't access, such as one a task was moved out of, are null."
           },
           "createdAt": {
             "type": "string",
@@ -3931,15 +3967,15 @@
           },
           "sourceTaskId": {
             "type": "string",
-            "description": "The blocking task for `blocks`, the parent task for `subtask`."
+            "description": "The blocking task for `blocks`, the feature for `subtask`."
           },
           "targetTaskId": {
             "type": "string",
-            "description": "The blocked task for `blocks`, the subtask for `subtask`."
+            "description": "The blocked task for `blocks`, the feature's task for `subtask`."
           },
           "relationType": {
             "type": "string",
-            "description": "How the two tasks relate: `subtask`, `blocks`, or `related`."
+            "description": "How the two tasks relate: `blocks` or `related`. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead."
           }
         },
         "required": [
@@ -4044,7 +4080,7 @@
           },
           "relationType": {
             "type": "string",
-            "description": "How the two tasks relate: `subtask`, `blocks`, or `related`."
+            "description": "How the two tasks relate: `blocks` or `related`. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead."
           },
           "createdAt": {
             "type": "string",
@@ -11332,6 +11368,19 @@
                         "value"
                       ]
                     }
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "task",
+                      "feature"
+                    ],
+                    "description": "Defaults to task."
+                  },
+                  "featureId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Create the task inside this feature of the project."
                   }
                 },
                 "required": [
@@ -11386,7 +11435,17 @@
             }
           },
           "404": {
-            "description": "Project not found",
+            "description": "Project or feature not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "featureId isn't a feature, or the task is a feature",
             "content": {
               "application/json": {
                 "schema": {
@@ -11408,7 +11467,7 @@
           "Tasks"
         ],
         "summary": "Duplicate a task",
-        "description": "Copy a task into the same project and column, including custom fields, labels, description assets and same-workspace parent links. Copying parent links also requires task:update. Comments, time entries and child tasks are not copied.",
+        "description": "Copy a task into the same project and column, including custom fields, labels, description assets, its type and its feature. Comments, time entries and a feature's tasks are not copied.",
         "parameters": [
           {
             "schema": {
@@ -11466,7 +11525,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, missing task:create, or missing task:update when copying parent links",
+            "description": "No access to the project, or missing task:create permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -11630,7 +11689,7 @@
           "Tasks"
         ],
         "summary": "Get task",
-        "description": "Get a single task by ID, with its assignee name. The board view omits descriptions above 64 KiB and includes task and same-project parent subtask progress.",
+        "description": "Get a single task by ID, with its assignee name. The board view omits descriptions above 64 KiB and includes the task's own feature progress and its feature's.",
         "parameters": [
           {
             "schema": {
@@ -12665,6 +12724,222 @@
           },
           "404": {
             "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/task/feature/{id}": {
+      "put": {
+        "operationId": "updateTaskFeature",
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Update task feature",
+        "description": "Put a task into a feature of its project, or take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "featureId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "A feature in the task's project, or null to take the task out of its feature."
+                  }
+                },
+                "required": [
+                  "featureId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, or missing task:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task or feature not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The target isn't a feature, or the task is itself a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/task/type/{id}": {
+      "put": {
+        "operationId": "updateTaskType",
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Update task type",
+        "description": "Turn a task into a feature, or a feature back into a task. A task that becomes a feature leaves its own feature.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "task",
+                      "feature"
+                    ],
+                    "description": "Making a task a feature takes it out of its own feature; a feature can become a task once it has no tasks."
+                  }
+                },
+                "required": [
+                  "type"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, or missing task:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The feature still has tasks",
             "content": {
               "application/json": {
                 "schema": {
@@ -21145,7 +21420,8 @@
                       "subtask",
                       "blocks",
                       "related"
-                    ]
+                    ],
+                    "description": "`subtask` is deprecated: creating one puts the target into the source's feature (making the source a feature if it's a plain task). Use PUT /task/feature/{id} instead."
                   }
                 },
                 "required": [

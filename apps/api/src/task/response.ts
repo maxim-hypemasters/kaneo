@@ -2,6 +2,16 @@ import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
 
 const priorityDescription = "One of: no-priority, low, medium, high, urgent.";
 
+export const taskTypeSchema = z.enum(["task", "feature"]).openapi({
+  description:
+    "A feature groups tasks of its own project, like an epic; a task can belong to one feature.",
+});
+
+const featureIdSchema = z.string().nullable().openapi({
+  description:
+    "The feature this task belongs to, in the same project. Always null for a feature.",
+});
+
 export const taskSchema = z
   .object({
     id: z.string(),
@@ -29,6 +39,8 @@ export const taskSchema = z
     startDate: nullableResponseTimestamp,
     dueDate: nullableResponseTimestamp,
     createdAt: responseTimestamp,
+    type: taskTypeSchema,
+    featureId: featureIdSchema,
     customFields: z
       .array(z.object({ fieldId: z.string(), value: z.string() }))
       .optional(),
@@ -47,7 +59,11 @@ export const taskWithAssigneeSchema = taskSchema
     }),
     subtaskCounts: z
       .object({ completed: z.number(), total: z.number() })
-      .optional(),
+      .optional()
+      .openapi({
+        description:
+          "For a feature, its tasks and how many are in a final column. Zero for a task.",
+      }),
     parentSubtaskCounts: z
       .array(
         z.object({
@@ -56,7 +72,11 @@ export const taskWithAssigneeSchema = taskSchema
           total: z.number(),
         }),
       )
-      .optional(),
+      .optional()
+      .openapi({
+        description:
+          "The progress of the task's feature (at most one entry), so a board can update the feature's card.",
+      }),
     assigneeName: z.string().nullable(),
     assigneeId: z.string().nullable(),
   })
@@ -113,6 +133,8 @@ export const boardTaskSchema = z
     assigneeId: z.string().nullable(),
     assigneeImage: z.string().nullable(),
     projectId: z.string(),
+    type: taskTypeSchema,
+    featureId: featureIdSchema,
     subtaskCounts: z
       .object({
         completed: z.number().int().nonnegative(),
@@ -120,7 +142,7 @@ export const boardTaskSchema = z
       })
       .openapi({
         description:
-          "Direct subtasks in the workspace; completed means a final column in the child project. Public boards count only children in public projects.",
+          "For a feature, its tasks and how many are in a final column; zero for a task. Counts every task in the feature, whatever the board's filters.",
       }),
     labels: z.array(taskLabelSchema),
     externalLinks: z.array(taskExternalLinkSchema),
@@ -175,7 +197,7 @@ export const boardSchema = z
         }),
         revision: z.string().optional().openapi({
           description:
-            "Public board content, membership and ordering revision, including related records and visible subtask progress. Restart pagination if it changes between task or related pages.",
+            "Public board content, membership and ordering revision, including related records and feature progress. Restart pagination if it changes between task or related pages.",
         }),
       })
       .openapi({

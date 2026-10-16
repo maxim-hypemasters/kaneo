@@ -8,6 +8,7 @@ import {
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { assertProjectAccess } from "../../project-access/assert-project-access";
+import { linkSubtaskAsFeature } from "../feature-links";
 
 async function createTaskRelation({
   sourceTaskId,
@@ -25,6 +26,14 @@ async function createTaskRelation({
   if (sourceTaskId === targetTaskId) {
     throw new HTTPException(400, {
       message: "Cannot create a relation between a task and itself",
+    });
+  }
+  if (relationType === "subtask") {
+    return linkSubtaskAsFeature({
+      sourceTaskId,
+      targetTaskId,
+      userId,
+      workspaceId,
     });
   }
 

@@ -85,6 +85,13 @@ export const createTaskBody = z.object({
   customFields: z
     .array(z.object({ fieldId: z.string(), value: z.string() }))
     .optional(),
+  type: z
+    .enum(["task", "feature"])
+    .optional()
+    .openapi({ description: "Defaults to task." }),
+  featureId: z.string().min(1).optional().openapi({
+    description: "Create the task inside this feature of the project.",
+  }),
 });
 
 export const updateTaskBody = z.object({
@@ -130,6 +137,19 @@ export const updateAssigneeBody = z.object({
 });
 export const updateDueDateBody = z.object({ dueDate: z.string().optional() });
 export const updateTitleBody = z.object({ title: z.string() });
+export const taskTypeBody = z.enum(["task", "feature"]);
+export const updateFeatureBody = z.object({
+  featureId: z.string().min(1).nullable().openapi({
+    description:
+      "A feature in the task's project, or null to take the task out of its feature.",
+  }),
+});
+export const updateTypeBody = z.object({
+  type: taskTypeBody.openapi({
+    description:
+      "Making a task a feature takes it out of its own feature; a feature can become a task once it has no tasks.",
+  }),
+});
 export const updateDescriptionBody = z.object({ description: z.string() });
 
 const surface = z.enum(["description", "comment"]).openapi({

@@ -9,7 +9,6 @@ import {
 import { publishEvent } from "../../events";
 import createNotification from "../../notification/controllers/create-notification";
 import { deleteOrphanedAssets } from "../../storage/cleanup-assets";
-import { getSubtaskParentProjects } from "../get-subtask-parent-projects";
 import { parseMentionIds } from "../../utils/parse-mentions";
 
 type Task = typeof taskTable.$inferSelect;
@@ -55,7 +54,6 @@ export async function publishTaskMutation(
   after: Pick<TaskBefore, "id" | "projectId" | "title"> & Partial<TaskBefore>,
   userId?: string,
   options: {
-    skipSubtaskParentRefresh?: boolean;
     skipRelationRefresh?: boolean;
     fields?: Array<keyof Changes>;
     assigneeName?: string | null;
@@ -81,9 +79,6 @@ export async function publishTaskMutation(
       newStatus: after.status,
       assigneeId: after.userId,
       type: "status_changed",
-      ...(options.skipSubtaskParentRefresh
-        ? { skipSubtaskParentRefresh: true }
-        : {}),
     });
   }
   const columnChanged =
@@ -91,10 +86,8 @@ export async function publishTaskMutation(
     before.columnId !== undefined &&
     after.columnId !== undefined &&
     before.columnId !== after.columnId;
-  if (columnChanged && !changed("status") && !options.skipSubtaskParentRefresh)
-    await publishEvent("subtask-parents.refresh", {
-      projects: await getSubtaskParentProjects([after.id]),
-    });
+  // Refreshes the project's board, which carries feature progress (a feature
+  // and its tasks always share a project).
   if (!options.skipRelationRefresh && (changed("status") || columnChanged))
     await publishEvent("task-relation.refresh", {
       projectId: after.projectId,

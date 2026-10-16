@@ -8,6 +8,8 @@ import {
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { queueStorageCleanup } from "../../storage/cleanup-queue";
+import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
+import { recordFeatureDeletion } from "../feature-hierarchy/record-feature-deletion";
 import getTask from "./get-task";
 
 async function deleteTask(taskId: string, currentUserId: string) {
@@ -26,7 +28,11 @@ async function deleteTask(taskId: string, currentUserId: string) {
 
   const deletedTask = await db.transaction(async (tx) => {
     const [locked] = await tx
-      .select({ id: taskTable.id, projectId: taskTable.projectId })
+      .select({
+        id: taskTable.id,
+        projectId: taskTable.projectId,
+        type: taskTable.type,
+      })
       .from(taskTable)
       .where(eq(taskTable.id, taskId))
       .for("update");
@@ -35,6 +41,9 @@ async function deleteTask(taskId: string, currentUserId: string) {
       throw new HTTPException(409, {
         message: "Task changed projects; retry the operation",
       });
+    if (locked.type === "feature") {
+      await recordFeatureDeletion(tx, [taskId], currentUserId);
+    }
     const assets = await tx
       .select({ objectKey: assetTable.objectKey })
       .from(assetTable)
@@ -62,6 +71,22 @@ async function deleteTask(taskId: string, currentUserId: string) {
     userId: currentUserId,
     title: task.title,
   });
+
+  if (deletedTask.featureId) {
+    // Its feature's progress changed.
+    await publishFeatureChange({
+      projectId: task.projectId,
+      featureIds: [deletedTask.featureId],
+      userId: currentUserId,
+    });
+  }
+  if (deletedTask.type === "feature") {
+    // The database took its tasks out of it; refresh them all at once.
+    await publishEvent("task-relation.refresh", {
+      projectId: task.projectId,
+      userId: currentUserId,
+    });
+  }
 
   for (const relation of relations) {
     await publishEvent("task-relation.deleted", {

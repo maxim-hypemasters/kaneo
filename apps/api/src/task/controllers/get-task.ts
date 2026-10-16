@@ -1,16 +1,10 @@
 import { boundedTaskRead } from "../bounded-read";
-import { alias } from "drizzle-orm/pg-core";
 import { boardDescription, descriptionDeferred } from "../description-pages";
 import { getSubtaskCounts } from "../get-subtask-counts";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import {
-  taskTable,
-  userTable,
-  projectTable,
-  taskRelationTable,
-} from "../../database/schema";
+import { taskTable, userTable, projectTable } from "../../database/schema";
 
 async function getTask(taskId: string, board = false, userId?: string) {
   const task = await db
@@ -35,6 +29,8 @@ async function getTask(taskId: string, board = false, userId?: string) {
       assigneeName: userTable.name,
       assigneeId: userTable.id,
       projectId: taskTable.projectId,
+      type: taskTable.type,
+      featureId: taskTable.featureId,
       workspaceId: sql<string>`(select ${projectTable.workspaceId} from ${projectTable} where ${projectTable.id} = ${taskTable.projectId})`,
     })
     .from(taskTable)
@@ -51,31 +47,16 @@ async function getTask(taskId: string, board = false, userId?: string) {
   if (!board) return task[0];
   const { workspaceId, ...result } = task[0];
   if (!workspaceId) return result;
-  const parent = alias(taskTable, "parent");
-  const parents = await db
-    .selectDistinct({ id: parent.id })
-    .from(taskRelationTable)
-    .innerJoin(parent, eq(taskRelationTable.sourceTaskId, parent.id))
-    .where(
-      and(
-        eq(taskRelationTable.targetTaskId, taskId),
-        eq(taskRelationTable.relationType, "subtask"),
-        eq(parent.projectId, result.projectId),
-      ),
-    );
+  // The task's own progress if it's a feature, and its feature's, so the
+  // board can update both cards from this one read.
+  const featureIds = result.featureId ? [result.featureId] : [];
   const counts = await boundedTaskRead((tx) =>
-    getSubtaskCounts(
-      tx,
-      [taskId, ...parents.map((task) => task.id)],
-      workspaceId,
-      false,
-      userId,
-    ),
+    getSubtaskCounts(tx, [taskId, ...featureIds], workspaceId, false, userId),
   );
   return {
     ...result,
     subtaskCounts: counts.get(taskId) ?? { completed: 0, total: 0 },
-    parentSubtaskCounts: parents.map(({ id }) => ({
+    parentSubtaskCounts: featureIds.map((id) => ({
       taskId: id,
       ...(counts.get(id) ?? { completed: 0, total: 0 }),
     })),

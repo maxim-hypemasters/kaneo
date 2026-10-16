@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import db from "../../database";
 import { activityTable } from "../../database/schema";
-import { redactInaccessibleMoves } from "../redact-inaccessible-moves";
+import { redactInaccessibleActivity } from "../redaction/redact-inaccessible-activity";
 
 async function getActivitiesFromTaskId(
   taskId: string,
@@ -20,7 +20,7 @@ async function getActivitiesFromTaskId(
     }
   });
 
-  return redactInaccessibleMoves(viewerId, activities);
+  return redactInaccessibleActivity(viewerId, activities);
 }
 
 export default getActivitiesFromTaskId;

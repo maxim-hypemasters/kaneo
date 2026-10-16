@@ -18,10 +18,7 @@ import {
   instanceAdminRoleSql,
 } from "../utils/instance-admin-role";
 import { isRedisConfigured } from "../redis";
-import {
-  getRelationSourceProject,
-  getSubtaskParentProjects,
-} from "../task/get-subtask-parent-projects";
+import { getRelationSourceProject } from "../task/get-relation-source-project";
 import type {
   BroadcastAdapter,
   BroadcastMessage,
@@ -659,7 +656,6 @@ export function broadcastToProject(
 
 type TaskEvent = {
   titleChanged?: boolean;
-  skipSubtaskParentRefresh?: boolean;
   id: string | undefined;
   projectId: string;
   userId: string;
@@ -669,8 +665,9 @@ type TaskEvent = {
   targetTaskId: string | undefined;
 };
 
-// Include the initiating window: its local mutation refreshes the child project,
-// while it may be displaying a different parent board. Never send child data.
+// A deleted blocks/related link can reach into another project, whose open
+// boards show it too. Include the initiating window: it may be showing that
+// other board. Never send the linked task's data.
 function refreshParentBoards(
   projects: { projectId: string }[],
   currentProjectId = "",
@@ -684,13 +681,6 @@ function refreshParentBoards(
     });
   }
 }
-
-subscribeToEvent<{ projects: { projectId: string }[] }>(
-  "subtask-parents.refresh",
-  async ({ projects }) => {
-    refreshParentBoards(projects);
-  },
-);
 
 const taskUpdateEvents = [
   "task.created",
@@ -740,7 +730,6 @@ subscribeToEvent<{
     { type: "TASK_MOVED", projectId: fromProjectId, taskId },
     initiatorId,
   );
-  refreshParentBoards(await getSubtaskParentProjects([taskId]), toProjectId);
 });
 
 subscribeToEvent<{
@@ -901,9 +890,7 @@ for (const eventName of taskUpdateEvents) {
       },
       initiatorId,
     );
-    if (eventName === "task.status_changed" && !data.skipSubtaskParentRefresh) {
-      refreshParentBoards(await getSubtaskParentProjects([taskId]), projectId);
-    } else if (eventName === "task-relation.deleted" && data.sourceTaskId) {
+    if (eventName === "task-relation.deleted" && data.sourceTaskId) {
       refreshParentBoards(
         await getRelationSourceProject(data.sourceTaskId),
         projectId,

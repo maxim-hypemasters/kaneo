@@ -6,12 +6,12 @@ import {
   getTableColumns,
   gte,
   inArray,
+  isNotNull,
   lte,
   type SQL,
   type SQLWrapper,
   sql,
 } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 import { HTTPException } from "hono/http-exception";
 import {
   columnTable,
@@ -19,7 +19,6 @@ import {
   labelTable,
   projectTable,
   taskTable,
-  taskRelationTable,
   userTable,
 } from "../../database/schema";
 import { boundedTaskRead, type TaskReadDatabase } from "../bounded-read";
@@ -193,6 +192,8 @@ async function getTasksPage(
     assigneeId: userTable.id,
     assigneeImage: userTable.image,
     projectId: taskTable.projectId,
+    type: taskTable.type,
+    featureId: taskTable.featureId,
   };
 
   const query = db
@@ -393,26 +394,19 @@ async function getTasksPage(
       .from(externalLinkTable)
       .innerJoin(taskTable, eq(externalLinkTable.taskId, taskTable.id))
       .where(whereClause);
-    const parent = alias(taskTable, "board_parent");
+    // Feature progress counts every task in a feature, including ones the
+    // board's filters leave out, so they get their own revision.
     const [children] = await db
       .select({
         revision: boardRevision(true, [
-          taskRelationTable.id,
           taskTable.id,
+          taskTable.featureId,
           taskIsCompleted,
         ]),
       })
-      .from(taskRelationTable)
-      .innerJoin(parent, eq(taskRelationTable.sourceTaskId, parent.id))
-      .innerJoin(taskTable, eq(taskRelationTable.targetTaskId, taskTable.id))
-      .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+      .from(taskTable)
       .where(
-        and(
-          eq(parent.projectId, projectId),
-          eq(taskRelationTable.relationType, "subtask"),
-          eq(projectTable.workspaceId, project.workspaceId),
-          eq(projectTable.isPublic, true),
-        ),
+        and(eq(taskTable.projectId, projectId), isNotNull(taskTable.featureId)),
       );
     publicRelatedRevision = `${labels?.revision}:${links?.revision}:${children?.revision}`;
   }

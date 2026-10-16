@@ -300,70 +300,60 @@ describe("API integration: task duplication", () => {
     });
   });
 
-  it("keeps a duplicated subtask under the same parent without copying its own subtasks", async () => {
+  it("keeps a copied task in its feature, and copies a feature without its tasks", async () => {
     const member = await createWorkspaceMember();
     const { project, columns } = await createProjectFixture({
       workspaceId: member.workspace.id,
     });
-    const parent = await seedTask({
+    const feature = await seedTask({
       projectId: project.id,
       columnId: columns.todo.id,
-      overrides: { title: "Release epic", number: 1, position: 1 },
-    });
-    const subtask = await seedTask({
-      projectId: project.id,
-      columnId: columns.todo.id,
-      overrides: { title: "Bump version", number: 2, position: 2 },
-    });
-    const grandchild = await seedTask({
-      projectId: project.id,
-      columnId: columns.todo.id,
-      overrides: { title: "Update changelog", number: 3, position: 3 },
-    });
-
-    await db.insert(schema.taskRelationTable).values([
-      {
-        sourceTaskId: parent.id,
-        targetTaskId: subtask.id,
-        relationType: "subtask",
+      overrides: {
+        title: "Release epic",
+        number: 1,
+        position: 1,
+        type: "feature",
       },
-      {
-        sourceTaskId: subtask.id,
-        targetTaskId: grandchild.id,
-        relationType: "subtask",
+    });
+    const task = await seedTask({
+      projectId: project.id,
+      columnId: columns.todo.id,
+      overrides: {
+        title: "Bump version",
+        number: 2,
+        position: 2,
+        featureId: feature.id,
       },
-    ]);
+    });
 
     mockAuthenticatedSession(member.user);
     const { app } = createApp();
 
-    const response = await requestDuplicate(app, subtask.id);
+    const taskCopy = await requestDuplicate(app, task.id);
+    expect(taskCopy.status).toBe(200);
+    expect(await taskCopy.json()).toMatchObject({
+      type: "task",
+      featureId: feature.id,
+    });
+    // The feature's card shows one more task.
+    expect(publishEvent).toHaveBeenCalledWith(
+      "task.updated",
+      expect.objectContaining({ taskId: feature.id }),
+    );
 
-    expect(response.status).toBe(200);
-    const payload = (await response.json()) as { id: string };
-
-    const parentsOfCopy = await db
-      .select({
-        sourceTaskId: schema.taskRelationTable.sourceTaskId,
-        relationType: schema.taskRelationTable.relationType,
-      })
-      .from(schema.taskRelationTable)
-      .where(eq(schema.taskRelationTable.targetTaskId, payload.id));
-
-    expect(parentsOfCopy).toEqual([
-      { sourceTaskId: parent.id, relationType: "subtask" },
-    ]);
-
-    const childrenOfCopy = await db
-      .select({ id: schema.taskRelationTable.id })
-      .from(schema.taskRelationTable)
-      .where(eq(schema.taskRelationTable.sourceTaskId, payload.id));
-
-    expect(childrenOfCopy).toEqual([]);
+    const featureCopy = await requestDuplicate(app, feature.id);
+    expect(featureCopy.status).toBe(200);
+    const copied = (await featureCopy.json()) as { id: string };
+    expect(copied).toMatchObject({ type: "feature", featureId: null });
+    expect(
+      await db.query.taskTable.findMany({
+        where: eq(schema.taskTable.featureId, copied.id),
+      }),
+    ).toEqual([]);
   });
 
   it.each(["custom-role", "api-key"] as const)(
-    "%s cannot copy parent links without task:update but can copy standalone tasks",
+    "%s copies a task in a feature with task:create alone",
     async (authentication) => {
       const member = await createWorkspaceMember({
         role: authentication === "custom-role" ? "creator" : "admin",
@@ -371,19 +361,15 @@ describe("API integration: task duplication", () => {
       const { project, columns } = await createProjectFixture({
         workspaceId: member.workspace.id,
       });
-      const parent = await seedTask({
+      const feature = await seedTask({
         projectId: project.id,
         columnId: columns.todo.id,
+        overrides: { type: "feature" },
       });
       const child = await seedTask({
         projectId: project.id,
         columnId: columns.todo.id,
-        overrides: { number: 2 },
-      });
-      await db.insert(schema.taskRelationTable).values({
-        sourceTaskId: parent.id,
-        targetTaskId: child.id,
-        relationType: "subtask",
+        overrides: { number: 2, featureId: feature.id },
       });
       const permissions = { task: ["create", "read"] };
       const headers: Record<string, string> = {};
@@ -410,15 +396,9 @@ describe("API integration: task duplication", () => {
         headers.Authorization = `Bearer ${key}`;
       }
       const { app } = createApp();
-      const rejected = await requestDuplicate(app, child.id, {}, headers);
-      expect(rejected.status).toBe(403);
-      expect(await db.query.taskTable.findMany()).toHaveLength(2);
-      expect(await db.query.taskRelationTable.findMany()).toHaveLength(1);
-      expect(copyTaskAssetObject).not.toHaveBeenCalled();
-      expect(publishEvent).not.toHaveBeenCalled();
-      expect((await requestDuplicate(app, parent.id, {}, headers)).status).toBe(
-        200,
-      );
+      const response = await requestDuplicate(app, child.id, {}, headers);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toMatchObject({ featureId: feature.id });
     },
   );
 
@@ -645,32 +625,9 @@ describe("API integration: task duplication", () => {
     expect(await db.query.taskTable.findMany()).toHaveLength(1);
   });
 
-  it("copies only same-workspace parents and labels from legacy mixed data", async () => {
+  it("copies only same-workspace labels from legacy mixed data", async () => {
     const own = await fixture();
     const other = await createWorkspaceMember();
-    const { project: foreignProject, columns: foreignColumns } =
-      await createProjectFixture({
-        workspaceId: other.workspace.id,
-      });
-    const foreignParent = await seedTask({
-      projectId: foreignProject.id,
-      columnId: foreignColumns.todo.id,
-    });
-    const { project: siblingProject, columns: siblingColumns } =
-      await createProjectFixture({
-        workspaceId: own.workspace.id,
-      });
-    const parent = await seedTask({
-      projectId: siblingProject.id,
-      columnId: siblingColumns.todo.id,
-    });
-    await db.insert(schema.taskRelationTable).values(
-      [parent, foreignParent].map((p) => ({
-        sourceTaskId: p.id,
-        targetTaskId: own.task.id,
-        relationType: "subtask",
-      })),
-    );
     await db.insert(schema.labelTable).values([
       {
         taskId: own.task.id,
@@ -688,24 +645,11 @@ describe("API integration: task duplication", () => {
     const response = await requestDuplicate(own.app, own.task.id);
     expect(response.status).toBe(200);
     const copy = (await response.json()) as { id: string };
-    expect(
-      await db.query.taskRelationTable.findMany({
-        where: eq(schema.taskRelationTable.targetTaskId, copy.id),
-      }),
-    ).toMatchObject([{ sourceTaskId: parent.id }]);
     const labels = await db.query.labelTable.findMany({
       where: eq(schema.labelTable.taskId, copy.id),
     });
     expect(labels).toHaveLength(1);
     expect(labels[0].name).toBe("Local");
-    const relationEvents = publishEvent.mock.calls.filter(
-      ([name]) => name === "task-relation.created",
-    );
-    expect(relationEvents).toHaveLength(1);
-    expect(relationEvents[0][1]).toMatchObject({
-      sourceTaskId: parent.id,
-      projectId: siblingProject.id,
-    });
   });
 
   it("allocates distinct task numbers and positions for simultaneous copies", async () => {
