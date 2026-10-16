@@ -1,4 +1,10 @@
-import { Calendar, CircleAlert, History, UserRound } from "lucide-react";
+import {
+  Calendar,
+  CircleAlert,
+  History,
+  Layers,
+  UserRound,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import useGetWorkspaceUsers from "@/hooks/queries/workspace-users/use-get-workspace-users";
@@ -13,6 +19,7 @@ import {
 } from "../ui/preview-card";
 import { TimelineContent, TimelineItem } from "../ui/timeline";
 import CommentCard from "./comment-card";
+import { describeHierarchyActivity } from "./describe-hierarchy-activity";
 import { isCommentActivity } from "./utils";
 
 type ActivityItem = {
@@ -60,6 +67,9 @@ function getActivityTypeIcon(type: string) {
     case "assignee_changed":
     case "unassigned":
       return <UserRound className={iconClass} />;
+    case "feature_changed":
+    case "type_changed":
+      return <Layers className={iconClass} />;
     default:
       return <History className={iconClass} />;
   }
@@ -395,6 +405,15 @@ function renderActivityContent({
         </span>
       );
     }
+  }
+
+  const hierarchyChange = describeHierarchyActivity(
+    activity.type,
+    eventData,
+    t,
+  );
+  if (hierarchyChange) {
+    return <span className="text-muted-foreground">{hierarchyChange}</span>;
   }
 
   if (["create", "created", "task"].includes(activity.type)) {

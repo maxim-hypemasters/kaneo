@@ -116,3 +116,22 @@ it("defers descriptions exceeding the UTF-8 board limit", () => {
     descriptionDeferred: true,
   });
 });
+it("applies a feature change the server reports as null", () => {
+  const member = patchBoardTask(board(), "a", {
+    projectId: "p",
+    type: "task",
+    featureId: "feature",
+  })!;
+  expect(member.columns[0].tasks[0]).toMatchObject({ featureId: "feature" });
+
+  const promoted = patchBoardTask(member, "a", {
+    projectId: "p",
+    type: "feature",
+    featureId: null,
+  });
+  expect(promoted?.columns[0].tasks[0]).toMatchObject({
+    type: "feature",
+    featureId: null,
+    labels: [{ id: "label" }],
+  });
+});

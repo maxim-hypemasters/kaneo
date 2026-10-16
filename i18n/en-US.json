@@ -367,8 +367,8 @@
 					"description": "Cards move from column to column as work moves forward. Drag this one to the next column, or open it and change its status."
 				},
 				"details": {
-					"title": "Open this task and add a subtask",
-					"description": "A task can hold a description, subtasks, labels, an assignee and a due date. Add a subtask to this one to try it."
+					"title": "Open this task and make it a feature",
+					"description": "A task can hold a description, labels, an assignee and a due date. Make this one a feature, then add tasks to it to group work under it."
 				},
 				"invite": {
 					"title": "Invite your team",
@@ -2497,10 +2497,10 @@
 				"editDescription": "Edit description",
 				"commentOnTask": "Comment",
 				"moveToProject": "Move to another project",
-				"createSubtask": "Create subtask",
-				"setParent": "Set parent task",
-				"openParent": "Open parent task",
-				"openSubtask": "Open subtask",
+				"createSubtask": "Add a task to this feature",
+				"setParent": "Set feature",
+				"openParent": "Open feature",
+				"openSubtask": "Open a task of this feature",
 				"markBlockedBy": "Mark as blocked by",
 				"markBlocking": "Mark as blocking",
 				"markRelated": "Mark as related",
@@ -2750,7 +2750,12 @@
 			},
 			"importedFrom": "Imported from {{source}}",
 			"importedBy": "Imported by {{name}}"
-		}
+		},
+		"addedToFeature": "added the task to feature \"{{feature}}\"",
+		"removedFromFeature": "removed the task from feature \"{{feature}}\"",
+		"changedFeature": "moved the task from feature \"{{from}}\" to \"{{to}}\"",
+		"madeFeature": "made this task a feature",
+		"madeTask": "made this feature a task"
 	},
 	"tasks": {
 		"checklistProgress": "{{completed}} of {{total}} checklist items completed",
@@ -2790,7 +2795,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Subtask of",
+			"subtaskOf": "Feature",
 			"activity": "Activity",
 			"noActivity": "No activity found",
 			"openInFullPage": "Open in full page",
@@ -2926,22 +2931,22 @@
 				"related": "relates to"
 			},
 			"blockedBy": "Blocked by",
-			"parentPlaceholder": "Set parent task…"
+			"parentPlaceholder": "Set feature…"
 		},
 		"subtasks": {
-			"progress": "{{completed}} of {{total}} subtasks completed",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-			"title": "Sub-tasks",
-			"inputPlaceholder": "Subtask title...",
+			"progress": "{{completed}} of {{total}} tasks completed",
+			"noCompletionColumn": "This project has no matching column for completing or reopening this task.",
+			"title": "Tasks",
+			"inputPlaceholder": "Task title...",
 			"addAction": "Add",
-			"empty": "No subtasks yet",
-			"createError": "Failed to create subtask",
+			"empty": "No tasks in this feature yet",
+			"createError": "Failed to create task",
 			"deleteSuccess": "Task deleted successfully",
 			"deleteError": "Failed to delete task",
 			"deleteDialogTitle": "Delete Task?",
 			"deleteDialogDescription": "This will permanently remove the task and all its data. You can't undo this action.",
 			"deleteAction": "Delete Task",
-			"completeAria": "Mark subtask complete"
+			"completeAria": "Mark task complete"
 		},
 		"properties": {
 			"title": "Properties",
@@ -3114,7 +3119,13 @@
 				"moveDates": "Current dates: {{from}}. New dates: {{to}}.",
 				"movesLabel": "Tasks that would move",
 				"startsBeforeBlocker": "Starts before {{title}} ends."
-			}
+			},
+			"featuresLabel": "Features",
+			"featureSliceAria_one": "{{title}}: {{count}} task, {{start}} to {{end}}. Opens the feature.",
+			"featureSliceAria_other": "{{title}}: {{count}} tasks, {{start}} to {{end}}. Opens the feature.",
+			"featureOverflow": "+{{count}}",
+			"featureOverflowAria_one": "{{count}} more feature",
+			"featureOverflowAria_other": "{{count}} more features"
 		},
 		"delete": {
 			"title": "Delete Task?",
@@ -3316,6 +3327,26 @@
 			"startsOn": "Starts {{date}}",
 			"beforeStart": "{{date}} is before the start date",
 			"afterDue": "{{date}} is after the due date"
+		},
+		"features": {
+			"badge": "Feature",
+			"chipLabel": "Feature: {{title}}",
+			"unknown": "Unknown feature",
+			"property": "Feature",
+			"none": "No feature",
+			"searchPlaceholder": "Search features…",
+			"empty": "No features in this project yet",
+			"remove": "Remove from feature",
+			"updateError": "Failed to update the feature",
+			"type": "Type",
+			"typeTask": "Task",
+			"typeFeature": "Feature",
+			"convertToFeature": "Convert to feature",
+			"convertToTask": "Convert to task",
+			"typeError": "Failed to change the task type",
+			"convertBlocked": "Move this feature's tasks out of it before making it a task.",
+			"openFeature": "Open feature {{title}}",
+			"inProject": "Features in project"
 		}
 	},
 	"invitations": {

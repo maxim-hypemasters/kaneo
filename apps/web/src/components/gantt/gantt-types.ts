@@ -13,6 +13,21 @@ export type GanttTaskEdit = {
   userId: string | null;
 };
 
+// A feature on one member's line: from the earliest start to the latest end
+// of that member's tasks in it.
+export type GanttFeatureSpan = {
+  featureId: string;
+  title: string;
+  start: Date;
+  end: Date;
+  taskCount: number;
+};
+
+export type GanttLaneFeature = GanttFeatureSpan & {
+  // 0-based row in the lane header; overlapping features stack.
+  track: number;
+};
+
 export type GanttLane = {
   key: string;
   userId: string | null;
@@ -25,6 +40,10 @@ export type GanttLane = {
   // False for assignees who no longer have access to the project: the API
   // would reject a reassignment to them.
   droppable: boolean;
+  features: GanttLaneFeature[];
+  // Features that found no free track, in start order.
+  overflowFeatures: GanttFeatureSpan[];
+  featureTrackCount: number;
 };
 
 export type GanttLaneTarget = Pick<

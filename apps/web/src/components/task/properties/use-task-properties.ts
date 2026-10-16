@@ -6,6 +6,9 @@ import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
 import { getDueDateStatus, isTaskCompleted } from "@/lib/due-date-status";
 import { getStatusDisplayLabel } from "@/lib/i18n/domain";
+import { useFeatureTasks } from "../features/use-feature-tasks";
+import { useTaskFeature } from "../features/use-task-feature";
+import { useProjectSlugs } from "../sections/use-project-slugs";
 
 export function useTaskProperties(
   taskId: string,
@@ -18,6 +21,13 @@ export function useTaskProperties(
   const { data: workspaceUsers } = useGetActiveWorkspaceUsers(workspaceId);
   const { data: labels = [] } = useGetLabelsByTask(taskId);
   const { data: workspaceProjects = [] } = useGetProjects({ workspaceId });
+  const feature = useTaskFeature(task);
+  const isFeature = task?.type === "feature";
+  const { tasks: featureTasks } = useFeatureTasks(
+    isFeature ? taskId : "",
+    task?.projectId ?? projectId,
+  );
+  const displayIdOf = useProjectSlugs(workspaceId);
 
   const statusColumn = columns.find(
     (column) => column.slug === task?.status || column.id === task?.status,
@@ -42,5 +52,12 @@ export function useTaskProperties(
     canMoveTask:
       Boolean(task) &&
       workspaceProjects.some((project) => project.id !== task?.projectId),
+    isFeature,
+    // The task's feature (null for none, undefined while it loads).
+    feature,
+    featureDisplayId: feature
+      ? displayIdOf(feature.projectId, feature.number)
+      : null,
+    hasFeatureTasks: featureTasks.length > 0,
   };
 }

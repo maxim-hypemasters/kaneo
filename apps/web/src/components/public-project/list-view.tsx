@@ -1,4 +1,5 @@
 import { getColumnIcon } from "@/lib/column";
+import { getFeatureIndex } from "@/lib/features/feature-index";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
 import { PublicTaskRow } from "./task-row";
@@ -10,6 +11,7 @@ type PublicListViewProps = {
 
 export function PublicListView({ project, onTaskClick }: PublicListViewProps) {
   const columns = project.columns ?? [];
+  const { features } = getFeatureIndex(project);
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
@@ -34,6 +36,9 @@ export function PublicListView({ project, onTaskClick }: PublicListViewProps) {
                   <PublicTaskRow
                     key={task.id}
                     task={task}
+                    feature={
+                      task.featureId ? features.get(task.featureId) : undefined
+                    }
                     projectSlug={project.slug}
                     isCompleted={column.isFinal}
                     onTaskClick={onTaskClick}

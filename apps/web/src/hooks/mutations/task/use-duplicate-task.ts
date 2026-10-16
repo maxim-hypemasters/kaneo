@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CopyPlusIcon } from "lucide-react";
+import { invalidateFeatureChange } from "@/lib/invalidate-feature-change";
 import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import { useTranslation } from "react-i18next";
 import duplicateTask from "@/fetchers/task/duplicate-task";
@@ -15,14 +16,13 @@ export function useDuplicateTask() {
       invalidateMyWork(queryClient);
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success(t("tasks:duplicate.success"), { icon: CopyPlusIcon });
-      queryClient.invalidateQueries({
-        queryKey: ["tasks", task.projectId],
-      });
-      // Duplicating a subtask attaches the copy to the same parents, so any open
-      // relation list is stale even though the copy is not the task we know about.
-      queryClient.invalidateQueries({
-        queryKey: ["task-relations"],
-      });
+      // A copy of a task joins its feature; both refresh the board.
+      if (task.featureId)
+        invalidateFeatureChange(queryClient, task.projectId, [task.featureId]);
+      else
+        void queryClient.invalidateQueries({
+          queryKey: ["tasks", task.projectId],
+        });
     },
     onError: (error) => {
       toast.error(

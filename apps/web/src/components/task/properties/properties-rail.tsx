@@ -7,6 +7,10 @@ import { formatDateShort } from "@/lib/format";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { TaskCustomFieldRows } from "../custom-fields/task-custom-field-rows";
+import { FeatureValue } from "../features/feature-value";
+import { TaskFeaturePopover } from "../features/task-feature-popover";
+import { TaskTypeMenu } from "../features/task-type-menu";
+import { TaskTypeValue } from "../features/task-type-value";
 import TaskAssigneePopover from "../task-assignee-popover";
 import TaskDueDatePopover from "../task-due-date-popover";
 import TaskLabelsPopover from "../task-labels-popover";
@@ -35,8 +39,19 @@ export function PropertiesRail({
   className,
 }: PropertiesRailProps) {
   const { t } = useTranslation();
-  const { task, project, labels, status, assignee, dueStatus, canMoveTask } =
-    useTaskProperties(taskId, projectId, workspaceId);
+  const {
+    task,
+    project,
+    labels,
+    status,
+    assignee,
+    dueStatus,
+    canMoveTask,
+    isFeature,
+    feature,
+    featureDisplayId,
+    hasFeatureTasks,
+  } = useTaskProperties(taskId, projectId, workspaceId);
 
   if (!task) return null;
 
@@ -158,6 +173,28 @@ export function PropertiesRail({
             </div>
           )}
         </PropertyRow>
+
+        <PropertyRow label={t("tasks:features.type")}>
+          <TaskTypeMenu task={task} hasTasks={hasFeatureTasks}>
+            <PropertyValue>
+              <TaskTypeValue type={task.type} />
+            </PropertyValue>
+          </TaskTypeMenu>
+        </PropertyRow>
+
+        {!isFeature && (
+          <PropertyRow label={t("tasks:features.property")}>
+            <TaskFeaturePopover
+              task={task}
+              feature={feature}
+              workspaceId={workspaceId}
+            >
+              <PropertyValue data-task-action="feature" shortcutId="setParent">
+                <FeatureValue feature={feature} displayId={featureDisplayId} />
+              </PropertyValue>
+            </TaskFeaturePopover>
+          </PropertyRow>
+        )}
       </div>
 
       <TaskCustomFieldRows taskId={taskId} projectId={projectId} />

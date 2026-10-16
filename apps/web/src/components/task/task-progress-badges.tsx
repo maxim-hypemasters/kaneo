@@ -25,7 +25,8 @@ export function TaskProgressBadges({
   );
   const counters = [
     {
-      kind: "subtasks",
+      // A feature's tasks; zero for a task.
+      kind: "tasks",
       counts: task.subtaskCounts,
       Icon: ListTree,
       label: t("tasks:subtasks.progress", {

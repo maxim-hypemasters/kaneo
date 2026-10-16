@@ -36,6 +36,7 @@ import {
   groupGanttTasks,
   laneKeyForAssignee,
 } from "@/components/gantt/group-gantt-tasks";
+import { groupedRowTasks } from "@/components/gantt/grouped-row-tasks";
 import {
   blockingDependencies,
   type GanttSpan,
@@ -71,6 +72,7 @@ import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-projec
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
+import { getFeatureIndex } from "@/lib/features/feature-index";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type GanttSearchParams = {
@@ -331,7 +333,7 @@ function RouteComponent() {
   }, [savedTasks, heldEdit, heldDraft]);
   const spans = useMemo(() => spansOf(displayedTasks), [displayedTasks]);
   // Bars whose drag moves an arrow; only they report drags, so other drags
-  // never re-render the chart.
+  // never re-render the chart. Grouped, a feature among them keeps its row.
   const dependentTaskIds = useMemo(
     () =>
       new Set(
@@ -379,6 +381,10 @@ function RouteComponent() {
 
   const unassignedLabel = t("tasks:assignee.unassigned");
   const unknownLabel = t("common:people.unknown");
+  const unknownFeatureLabel = t("tasks:features.unknown");
+  // From the whole board (planned and archived included), so a slice keeps
+  // its title while the feature itself is filtered out or undated.
+  const boardFeatures = getFeatureIndex(project).features;
   const assigneeFilterValues = view.filters.filters.assignee;
   const assigneeFilterNegated =
     view.filters.filters.negated?.includes("assignee") ?? false;
@@ -394,6 +400,9 @@ function RouteComponent() {
             },
             unassignedLabel,
             unknownLabel,
+            features: boardFeatures,
+            unknownFeatureLabel,
+            featureRowIds: dependentTaskIds,
           })
         : null,
     [
@@ -405,7 +414,24 @@ function RouteComponent() {
       assigneeFilterNegated,
       unassignedLabel,
       unknownLabel,
+      boardFeatures,
+      unknownFeatureLabel,
+      dependentTaskIds,
     ],
+  );
+  // Grouped, features with tasks on the chart leave the rows for their
+  // members' lane headers, unless they're in a dependency (its arrows and
+  // early-start warning need their row); the count and empty state follow
+  // what's drawn.
+  const rowCount = lanes
+    ? lanes.reduce((count, lane) => count + lane.tasks.length, 0)
+    : scheduledTasks.length;
+  const totalRowCount = useMemo(
+    () =>
+      groupByAssignee
+        ? groupedRowTasks(parsedTasks, dependentTaskIds).length
+        : parsedTasks.length,
+    [groupByAssignee, parsedTasks, dependentTaskIds],
   );
   const lanesByKey = useMemo(
     () => new Map((lanes ?? []).map((lane) => [lane.key, lane])),
@@ -416,13 +442,14 @@ function RouteComponent() {
       lanesByKey.get(laneKey) ?? null,
     [lanesByKey],
   );
-  // Which rows are on screen and in what order; the dependency lines
-  // measure them again whenever this changes.
+  // Which rows are on screen and in what order, and how many feature tracks
+  // tall each lane header is; the dependency lines measure them again
+  // whenever this changes.
   const renderedRowsKey = lanes
     ? lanes
         .map(
           (lane) =>
-            `${lane.key}:${
+            `${lane.key}:${lane.featureTrackCount}:${
               collapsedLaneKeys.has(lane.key)
                 ? ""
                 : lane.tasks.map((task) => task.id).join(",")
@@ -644,9 +671,7 @@ function RouteComponent() {
           }
         />
       }
-      summary={
-        <TaskCount shown={scheduledTasks.length} total={parsedTasks.length} />
-      }
+      summary={<TaskCount shown={rowCount} total={totalRowCount} />}
       filterBar={
         <ActiveFiltersBar
           subjects={view.subjects}
@@ -677,7 +702,7 @@ function RouteComponent() {
               className="h-9 touch-manipulation sm:h-auto"
               aria-label={t("tasks:gantt.jumpToToday")}
               onClick={jumpToToday}
-              disabled={scheduledTasks.length === 0}
+              disabled={rowCount === 0}
             >
               <Calendar className="size-3.5" />
               <span className="hidden sm:inline">
@@ -726,7 +751,7 @@ function RouteComponent() {
               </Button>
             </div>
           </div>
-        ) : scheduledTasks.length === 0 ? (
+        ) : rowCount === 0 ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <div className="max-w-sm text-center">
               <h2 className="text-sm font-semibold text-foreground">
@@ -880,7 +905,9 @@ function RouteComponent() {
                               onToggle={() => toggleLane(lane.key)}
                               timeline={timeline}
                               showTaskRail={showTaskRail}
+                              railWidthRem={railWidthRem}
                               rowGridTemplateColumns={rowGridTemplateColumns}
+                              onOpenFeature={openTask}
                             />
                             {collapsed
                               ? null

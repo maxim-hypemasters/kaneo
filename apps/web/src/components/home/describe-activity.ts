@@ -1,3 +1,4 @@
+import { describeHierarchyActivity } from "@/components/activity/describe-hierarchy-activity";
 import type { WorkspaceActivity } from "@/fetchers/activity/get-workspace-activities";
 import { formatDateMedium } from "@/lib/format";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
@@ -98,6 +99,16 @@ export function describeActivity(activity: WorkspaceActivity, t: Translate) {
             });
       }
       break;
+    case "feature_changed":
+    case "type_changed": {
+      const description = describeHierarchyActivity(
+        activity.type,
+        eventData,
+        t,
+      );
+      if (description) return description;
+      break;
+    }
     default:
       break;
   }

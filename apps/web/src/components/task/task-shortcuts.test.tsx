@@ -7,6 +7,7 @@ import {
   it,
   vi,
 } from "vite-plus/test";
+import { getFeatureIndex } from "@/lib/features/feature-index";
 import { shortcutRegistry } from "@/lib/shortcuts/registry";
 import { ShortcutTestWrapper } from "@/lib/shortcuts/shortcut-test-wrapper";
 import { useRelationPickerStore } from "./task-relation-picker-store";
@@ -21,29 +22,42 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
   canUpdateTasks: vi.fn(),
   canAssignTasks: vi.fn(),
-  task: {
-    id: "task-1",
-    number: 42,
-    title: "Fix login",
-    description: "Steps to reproduce",
-    dueDate: "2026-10-20T00:00:00.000Z",
-    userId: null,
-  } as Record<string, unknown> | undefined,
-  relations: [
-    {
-      id: "parent-link",
-      sourceTaskId: "parent-1",
-      targetTaskId: "task-1",
-      relationType: "subtask",
-    },
-    {
-      id: "child-link",
-      sourceTaskId: "task-1",
-      targetTaskId: "child-1",
-      relationType: "subtask",
-    },
-  ],
+  task: undefined as Record<string, unknown> | undefined,
+  relations: [] as unknown[],
 }));
+
+const summary = (id: string) => ({
+  id,
+  title: id,
+  status: "to-do",
+  isCompleted: false,
+  priority: null,
+  number: 1,
+  projectId: "project-9",
+  userId: null,
+  assigneeName: null,
+});
+
+const featureLink = (featureId: string, taskId: string) => ({
+  id: `feature:${taskId}:${featureId}`,
+  sourceTaskId: featureId,
+  targetTaskId: taskId,
+  relationType: "subtask",
+  sourceTask: summary(featureId),
+  targetTask: summary(taskId),
+});
+
+const plainTask = {
+  id: "task-1",
+  number: 42,
+  title: "Fix login",
+  description: "Steps to reproduce",
+  dueDate: "2026-10-20T00:00:00.000Z",
+  userId: null,
+  projectId: "project-9",
+  type: "task",
+  featureId: null,
+};
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -88,7 +102,13 @@ vi.mock(
   }),
 );
 vi.mock("@/hooks/queries/task-relation/use-get-task-relations", () => ({
-  default: () => ({ data: mocks.relations }),
+  default: () => ({ data: mocks.relations, isSuccess: true }),
+}));
+vi.mock("@/hooks/queries/task/use-feature-index", () => ({
+  useFeatureIndex: () => getFeatureIndex(undefined),
+}));
+vi.mock("@/hooks/queries/column/use-get-columns", () => ({
+  useGetColumns: () => ({ data: [] }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
@@ -101,12 +121,29 @@ vi.mock("@/lib/toast", () => ({
 }));
 
 const onStatus = vi.fn();
+const onAddSubtask = vi.fn();
+const onFeature = vi.fn();
 
-function renderTaskShortcuts(enabled = true) {
+function renderTaskShortcuts(
+  enabled = true,
+  { withFeatureProperty = false } = {},
+) {
   return render(
     <ShortcutTestWrapper>
       <div data-task-view>
         <button type="button" data-task-action="status" onClick={onStatus} />
+        <button
+          type="button"
+          data-task-action="addSubtask"
+          onClick={onAddSubtask}
+        />
+        {withFeatureProperty && (
+          <button
+            type="button"
+            data-task-action="feature"
+            onClick={onFeature}
+          />
+        )}
       </div>
       <TaskShortcuts
         taskId="task-1"
@@ -123,6 +160,8 @@ function press(init: KeyboardEventInit) {
 }
 
 beforeEach(() => {
+  mocks.task = plainTask;
+  mocks.relations = [];
   mocks.canUpdateTasks.mockReturnValue(true);
   mocks.canAssignTasks.mockReturnValue(true);
   mocks.updateAssignee.mockResolvedValue({});
@@ -217,10 +256,29 @@ describe("TaskShortcuts", () => {
     });
   });
 
-  it("opens the parent task and the first subtask", () => {
+  it("opens the task's feature in the feature's project", () => {
+    mocks.task = { ...plainTask, featureId: "feature-1" };
+    mocks.relations = [featureLink("feature-1", "task-1")];
     renderTaskShortcuts();
 
     press({ key: "ArrowUp", code: "ArrowUp", ctrlKey: true, shiftKey: true });
+
+    expect(mocks.navigate).toHaveBeenCalledTimes(1);
+    expect(mocks.navigate.mock.calls[0]?.[0].params).toEqual({
+      workspaceId: "workspace-1",
+      projectId: "project-9",
+      taskId: "feature-1",
+    });
+  });
+
+  it("opens the first task of a feature", () => {
+    mocks.task = { ...plainTask, type: "feature" };
+    mocks.relations = [
+      featureLink("task-1", "child-1"),
+      featureLink("task-1", "child-2"),
+    ];
+    renderTaskShortcuts();
+
     press({
       key: "ArrowDown",
       code: "ArrowDown",
@@ -228,20 +286,51 @@ describe("TaskShortcuts", () => {
       shiftKey: true,
     });
 
-    expect(
-      mocks.navigate.mock.calls.map(([options]) => options.params),
-    ).toEqual([
-      {
-        workspaceId: "workspace-1",
-        projectId: "project-1",
-        taskId: "parent-1",
-      },
-      {
-        workspaceId: "workspace-1",
-        projectId: "project-1",
-        taskId: "child-1",
-      },
-    ]);
+    expect(mocks.navigate).toHaveBeenCalledTimes(1);
+    expect(mocks.navigate.mock.calls[0]?.[0].params).toEqual({
+      workspaceId: "workspace-1",
+      projectId: "project-9",
+      taskId: "child-1",
+    });
+  });
+
+  it("adds tasks only to a feature", () => {
+    const { unmount } = renderTaskShortcuts();
+    press({ key: "O", code: "KeyO", ctrlKey: true, shiftKey: true });
+    expect(onAddSubtask).not.toHaveBeenCalled();
+    unmount();
+    shortcutRegistry.reset();
+
+    mocks.task = { ...plainTask, type: "feature" };
+    renderTaskShortcuts();
+    press({ key: "O", code: "KeyO", ctrlKey: true, shiftKey: true });
+    expect(onAddSubtask).toHaveBeenCalledTimes(1);
+  });
+
+  it("picks a feature for a task, but not for a feature", () => {
+    const { unmount } = renderTaskShortcuts();
+    press({ key: "P", code: "KeyP", ctrlKey: true, shiftKey: true });
+    expect(useRelationPickerStore.getState().request).toEqual({
+      taskId: "task-1",
+      mode: "feature",
+    });
+    unmount();
+    shortcutRegistry.reset();
+    useRelationPickerStore.getState().clear();
+
+    mocks.task = { ...plainTask, type: "feature" };
+    renderTaskShortcuts();
+    press({ key: "P", code: "KeyP", ctrlKey: true, shiftKey: true });
+    expect(useRelationPickerStore.getState().request).toBeNull();
+  });
+
+  it("opens the Feature property when it's on screen", () => {
+    renderTaskShortcuts(true, { withFeatureProperty: true });
+
+    press({ key: "P", code: "KeyP", ctrlKey: true, shiftKey: true });
+
+    expect(onFeature).toHaveBeenCalledTimes(1);
+    expect(useRelationPickerStore.getState().request).toBeNull();
   });
 
   it("keeps copy shortcuts but blocks edits without update permission", async () => {

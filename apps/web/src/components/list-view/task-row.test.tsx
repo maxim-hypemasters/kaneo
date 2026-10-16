@@ -292,7 +292,7 @@ describe("TaskRow", () => {
   );
 
   it.each(["planned", "archived"])(
-    "renders progress for %s backlog parents without per-row requests",
+    "renders progress for %s backlog features without per-row requests",
     (status) => {
       render(<BacklogTaskRow task={{ ...task, status }} />);
 
@@ -301,6 +301,85 @@ describe("TaskRow", () => {
       ).toHaveTextContent("2/5");
       expect(useExternalLinks).not.toHaveBeenCalled();
       expect(useGetLabelsByTask).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([PublicTaskCard, PublicTaskRow])(
+    "marks public features and opens a task's feature",
+    (Component) => {
+      const onTaskClick = vi.fn();
+      const feature: Task = {
+        ...task,
+        id: "feature-1",
+        title: "Checkout",
+        type: "feature",
+      };
+      const { container } = render(
+        <>
+          <Component
+            task={{ ...feature, externalLinks: [] }}
+            projectSlug="kan"
+            onTaskClick={onTaskClick}
+          />
+          <Component
+            task={{
+              ...task,
+              subtaskCounts: undefined,
+              featureId: "feature-1",
+              externalLinks: [],
+            }}
+            feature={feature}
+            projectSlug="kan"
+            onTaskClick={onTaskClick}
+          />
+        </>,
+      );
+      expect(screen.getByText("tasks:features.badge")).toBeVisible();
+      fireEvent.click(
+        screen.getByRole("button", { name: "tasks:features.chipLabel" }),
+      );
+      expect(onTaskClick).toHaveBeenCalledExactlyOnceWith(feature);
+      expect(container.querySelector("button button")).toBeNull();
+    },
+  );
+
+  it.each(["list", "backlog"])(
+    "names a task's feature in %s rows and opens it",
+    (view) => {
+      testQueryClient.setQueryData(["tasks", "project-1"], {
+        id: "project-1",
+        columns: [
+          {
+            id: "to-do",
+            slug: "to-do",
+            tasks: [
+              { ...task, id: "feature-1", title: "Checkout", type: "feature" },
+            ],
+          },
+        ],
+        plannedTasks: [],
+        archivedTasks: [],
+      });
+      const member = {
+        ...task,
+        subtaskCounts: undefined,
+        featureId: "feature-1",
+      };
+      render(
+        view === "list" ? (
+          <TaskRow task={member} projectSlug="kan" />
+        ) : (
+          <BacklogTaskRow task={member} />
+        ),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "tasks:features.chipLabel" }),
+      );
+      expect(navigate).toHaveBeenCalledExactlyOnceWith({
+        to: ".",
+        search: { taskId: "feature-1" },
+      });
+      testQueryClient.clear();
     },
   );
 

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
-export type RelationPickerMode = "related" | "blocks" | "blockedBy" | "parent";
+// "feature" picks the feature the task belongs to; the others link tasks.
+export type RelationPickerMode = "related" | "blocks" | "blockedBy" | "feature";
 
 type RelationPickerRequest = { taskId: string; mode: RelationPickerMode };
 

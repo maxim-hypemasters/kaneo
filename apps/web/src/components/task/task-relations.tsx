@@ -2,9 +2,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { Ban, Link2, Search, X } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { pickableFeatures } from "./features/feature-lookup";
 import {
   buildRelationLink,
-  findParentRelation,
+  isTaskRelation,
   unpickableTaskIds,
 } from "./task-relation-link";
 import {
@@ -33,9 +34,11 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useUpdateTaskFeature } from "@/hooks/mutations/task/use-update-task-feature";
 import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
 import useDeleteTaskRelation from "@/hooks/mutations/task-relation/use-delete-task-relation";
 import useGetProject from "@/hooks/queries/project/use-get-project";
+import { useFeatureIndex } from "@/hooks/queries/task/use-feature-index";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
@@ -63,6 +66,8 @@ type TaskRelationsProps = {
   taskId: string;
   projectId: string;
   workspaceId: string;
+  // The open task, once loaded: the feature picker needs its feature.
+  task?: Pick<Task, "id" | "projectId" | "featureId" | "type">;
 };
 
 type TaskItem = {
@@ -82,6 +87,7 @@ export default function TaskRelations({
   taskId,
   projectId,
   workspaceId,
+  task,
 }: TaskRelationsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -101,19 +107,26 @@ export default function TaskRelations({
   const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
     workspace?.id ?? "",
   );
+  const featureIndex = useFeatureIndex(task?.projectId ?? projectId);
   const createRelation = useCreateTaskRelation();
   const deleteRelation = useDeleteTaskRelation(taskId);
+  const { mutateAsync: updateFeature } = useUpdateTaskFeature();
   const { canUpdateTasks } = useWorkspacePermission();
   const canEdit = canUpdateTasks();
   const displayIdOf = useProjectSlugs(workspaceId);
+
+  // Only a task can join a feature.
+  const canPickFeature = task !== undefined && task.type !== "feature";
+  const isFeatureMode = selectedRelationType === "feature";
 
   useEffect(() => {
     if (!relationRequest || relationRequest.taskId !== taskId) return;
     clearRelationRequest();
     if (!canEdit) return;
+    if (relationRequest.mode === "feature" && !canPickFeature) return;
     setSelectedRelationType(relationRequest.mode);
     setCommandOpen(true);
-  }, [relationRequest, taskId, canEdit, clearRelationRequest]);
+  }, [relationRequest, taskId, canEdit, canPickFeature, clearRelationRequest]);
 
   useEffect(() => {
     if (!commandOpen) {
@@ -121,9 +134,7 @@ export default function TaskRelations({
     }
   }, [commandOpen]);
 
-  const nonSubtaskRelations = relations.filter(
-    (rel) => rel.relationType !== "subtask",
-  );
+  const nonSubtaskRelations = relations.filter(isTaskRelation);
 
   const linkedRelations = nonSubtaskRelations
     .flatMap((rel) => {
@@ -140,11 +151,7 @@ export default function TaskRelations({
     })
     .sort((a, b) => relationOrder[a.kind] - relationOrder[b.kind]);
 
-  const existingRelatedTaskIds = unpickableTaskIds(
-    selectedRelationType,
-    taskId,
-    relations,
-  );
+  const existingRelatedTaskIds = unpickableTaskIds(taskId, relations);
 
   const allTasks = useMemo(() => {
     if (!projectData) return [];
@@ -195,32 +202,48 @@ export default function TaskRelations({
     (t) => !existingRelatedTaskIds.has(t.id),
   );
 
-  const commandGroups = useMemo<TaskGroup[]>(() => {
-    return [
-      {
-        value: "tasks",
-        label: t("tasks:relations.tasksInProject"),
-        items: filteredTasks,
-      },
-    ];
-  }, [filteredTasks, t]);
+  // The project's features, minus the task and the feature it's in.
+  const featureItems: TaskItem[] = pickableFeatures(featureIndex, [
+    taskId,
+    task?.featureId,
+  ]);
+
+  const commandGroups: TaskGroup[] = isFeatureMode
+    ? [
+        {
+          value: "features",
+          label: t("tasks:features.inProject"),
+          items: featureItems,
+        },
+      ]
+    : [
+        {
+          value: "tasks",
+          label: t("tasks:relations.tasksInProject"),
+          items: filteredTasks,
+        },
+      ];
 
   const handleLinkTask = async (pickedTaskId: string) => {
-    const previousParent =
-      selectedRelationType === "parent"
-        ? findParentRelation(taskId, relations)
-        : undefined;
     try {
-      await createRelation.mutateAsync(
-        buildRelationLink(selectedRelationType, taskId, pickedTaskId),
-      );
-      if (previousParent) {
-        await deleteRelation.mutateAsync(previousParent.id);
+      if (selectedRelationType === "feature") {
+        if (!task) return;
+        await updateFeature({ task, featureId: pickedTaskId });
+      } else {
+        await createRelation.mutateAsync(
+          buildRelationLink(selectedRelationType, taskId, pickedTaskId),
+        );
       }
       setCommandOpen(false);
       setSearchQuery("");
-    } catch {
-      toast.error(t("tasks:relations.linkError"));
+    } catch (error) {
+      toast.error(
+        isFeatureMode
+          ? error instanceof Error
+            ? error.message
+            : t("tasks:features.updateError")
+          : t("tasks:relations.linkError"),
+      );
     }
   };
 
@@ -228,10 +251,10 @@ export default function TaskRelations({
     deleteRelation.mutate(relationId);
   };
 
-  const handleNavigateToTask = (linkedTaskId: string) => {
+  const handleNavigateToTask = (linked: { id: string; projectId: string }) => {
     navigate({
       to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
-      params: { workspaceId, projectId, taskId: linkedTaskId },
+      params: { workspaceId, projectId: linked.projectId, taskId: linked.id },
     });
   };
 
@@ -279,7 +302,10 @@ export default function TaskRelations({
             canEdit && (
               <SectionAddButton
                 aria-label={`${t("tasks:subtasks.addAction")} ${t("tasks:relations.title")}`}
-                onClick={() => setCommandOpen(true)}
+                onClick={() => {
+                  if (isFeatureMode) setSelectedRelationType("related");
+                  setCommandOpen(true);
+                }}
               />
             )
           }
@@ -317,7 +343,7 @@ export default function TaskRelations({
                     )}
                     title={item.task.title}
                     done={isFinal}
-                    onOpen={() => handleNavigateToTask(item.task.id)}
+                    onOpen={() => handleNavigateToTask(item.task)}
                     tag={<RelationTag kind={item.kind} />}
                     assignee={
                       <ReferenceAssigneeButton
@@ -332,7 +358,7 @@ export default function TaskRelations({
 
                 <ContextMenuContent className="w-40">
                   <ContextMenuItem
-                    onClick={() => handleNavigateToTask(item.task.id)}
+                    onClick={() => handleNavigateToTask(item.task)}
                   >
                     <span>{t("tasks:relations.openTask")}</span>
                   </ContextMenuItem>
@@ -365,7 +391,7 @@ export default function TaskRelations({
           <Command items={commandGroups}>
             <CommandInput
               placeholder={
-                selectedRelationType === "parent"
+                isFeatureMode
                   ? t("tasks:relations.parentPlaceholder")
                   : t("tasks:relations.searchPlaceholder")
               }
@@ -377,7 +403,11 @@ export default function TaskRelations({
                 <div className="text-center py-6">
                   <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    {t("tasks:relations.noTasksFound")}
+                    {!projectData
+                      ? t("common:empty.loading")
+                      : isFeatureMode && featureItems.length === 0
+                        ? t("tasks:features.empty")
+                        : t("tasks:relations.noTasksFound")}
                   </p>
                 </div>
               </CommandEmpty>
@@ -416,39 +446,40 @@ export default function TaskRelations({
                 )}
               </CommandList>
             </CommandPanel>
-            <CommandFooter>
-              <div
-                className={`flex items-center gap-3 ${selectedRelationType === "parent" ? "hidden" : ""}`}
-              >
-                <button
-                  type="button"
-                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "related" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setSelectedRelationType("related")}
-                >
-                  <Link2 className="size-3" />
-                  {t("tasks:relations.related")}
-                </button>
-                <button
-                  type="button"
-                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blocks" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setSelectedRelationType("blocks")}
-                >
-                  <X className="size-3" />
-                  {t("tasks:relations.blocks")}
-                </button>
-                <button
-                  type="button"
-                  className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blockedBy" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                  onClick={() => setSelectedRelationType("blockedBy")}
-                >
-                  <Ban className="size-3" />
-                  {t("tasks:relations.blockedBy")}
-                </button>
-              </div>
-              <span className="text-muted-foreground/60">
-                {t("tasks:relations.selectTask")}
-              </span>
-            </CommandFooter>
+            {/* The relation kinds and their hint don't apply to a feature. */}
+            {!isFeatureMode && (
+              <CommandFooter>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "related" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setSelectedRelationType("related")}
+                  >
+                    <Link2 className="size-3" />
+                    {t("tasks:relations.related")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blocks" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setSelectedRelationType("blocks")}
+                  >
+                    <X className="size-3" />
+                    {t("tasks:relations.blocks")}
+                  </button>
+                  <button
+                    type="button"
+                    className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-md transition-colors ${selectedRelationType === "blockedBy" ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={() => setSelectedRelationType("blockedBy")}
+                  >
+                    <Ban className="size-3" />
+                    {t("tasks:relations.blockedBy")}
+                  </button>
+                </div>
+                <span className="text-muted-foreground/60">
+                  {t("tasks:relations.selectTask")}
+                </span>
+              </CommandFooter>
+            )}
           </Command>
         </CommandDialogPopup>
       </CommandDialog>

@@ -17,15 +17,15 @@ import CircularProgress from "@/components/ui/circular-progress";
 import { Input } from "@/components/ui/input";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
-import useCreateTaskRelation from "@/hooks/mutations/task-relation/use-create-task-relation";
+import { useUpdateTaskFeature } from "@/hooks/mutations/task/use-update-task-feature";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
-import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
 import type Task from "@/types/task";
+import { useFeatureTasks } from "./features/use-feature-tasks";
 import { SectionAddButton } from "./sections/section-add-button";
 import { SectionHeader } from "./sections/section-header";
 import { useProjectSlugs } from "./sections/use-project-slugs";
@@ -33,17 +33,19 @@ import SubtaskRow from "./subtask-row";
 import { useToggleTaskCompletion } from "./use-toggle-task-completion";
 
 type TaskSubtasksProps = {
-  taskId: string;
+  featureId: string;
+  // The feature's project, which its tasks share.
   projectId: string;
   workspaceId: string;
-  parentStatus: string;
+  featureStatus: string;
 };
 
+// A feature's tasks: add, open, complete, remove from the feature, delete.
 export default function TaskSubtasks({
-  taskId,
+  featureId,
   projectId,
   workspaceId,
-  parentStatus,
+  featureStatus,
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -54,14 +56,13 @@ export default function TaskSubtasks({
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: relations = [], isSuccess: relationsLoaded } =
-    useGetTaskRelations(taskId);
+  const { tasks: subtasks, ready } = useFeatureTasks(featureId, projectId);
   const { data: workspace } = useActiveWorkspace();
   const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
     workspace?.id ?? "",
   );
   const createTask = useCreateTask();
-  const createRelation = useCreateTaskRelation();
+  const { mutateAsync: updateFeature } = useUpdateTaskFeature();
   const { mutateAsync: deleteTask } = useDeleteTask();
   const { data: columns = [], isLoading: isLoadingColumns } =
     useGetColumns(projectId);
@@ -72,19 +73,9 @@ export default function TaskSubtasks({
 
   const todoSlug = columns.find((c) => !c.isFinal)?.slug;
   const canCreateSubtask =
-    parentStatus === "planned" || (!isLoadingColumns && Boolean(todoSlug));
+    featureStatus === "planned" || (!isLoadingColumns && Boolean(todoSlug));
 
-  const subtasks = relations
-    .filter(
-      (rel) => rel.relationType === "subtask" && rel.sourceTaskId === taskId,
-    )
-    .map((rel) => ({ relation: rel, task: rel.targetTask }))
-    .filter(
-      (item): item is typeof item & { task: NonNullable<typeof item.task> } =>
-        item.task !== null,
-    );
-
-  const completedCount = subtasks.filter((s) => s.task.isCompleted).length;
+  const completedCount = subtasks.filter((s) => s.isCompleted).length;
   const totalCount = subtasks.length;
   const hasSelection = selectedIds.size > 0;
 
@@ -105,28 +96,11 @@ export default function TaskSubtasks({
     setFocusedIndex(-1);
   }, []);
 
-  const buildTaskObject = (subtask: (typeof subtasks)[number]): Task => ({
-    id: subtask.task.id,
-    title: subtask.task.title,
-    number: subtask.task.number,
-    description: null,
-    status: subtask.task.status,
-    priority: subtask.task.priority,
-    startDate: null,
-    dueDate: null,
-    position: null,
-    createdAt: "",
-    userId: subtask.task.userId,
-    assigneeId: subtask.task.userId,
-    assigneeName: subtask.task.assigneeName,
-    projectId: subtask.task.projectId,
-  });
-
   const getTargetTasks = (currentTask: Task): Task[] => {
     if (hasSelection && selectedIds.has(currentTask.id)) {
       return subtasks
         .filter((s) => selectedIds.has(s.task.id))
-        .map(buildTaskObject);
+        .map((s) => s.task);
     }
     return [currentTask];
   };
@@ -172,11 +146,19 @@ export default function TaskSubtasks({
       if (!container.contains(document.activeElement) && focusedIndex === -1)
         return;
 
+      // A focused control (a row's status, remove or assignee button, or one
+      // outside the list) answers Enter and Space itself. Moving through the
+      // rows takes focus off a row's control, so the keys then reach the row.
+      const control = target?.closest<HTMLElement>(
+        "button, a[href], [role='button'], [role='menuitem'], [role='option']",
+      );
+
       switch (e.key) {
         case "ArrowDown":
         case "j": {
           e.preventDefault();
           e.stopPropagation();
+          if (control && container.contains(control)) control.blur();
           setFocusedIndex((prev) => (prev < totalCount - 1 ? prev + 1 : prev));
           break;
         }
@@ -184,10 +166,12 @@ export default function TaskSubtasks({
         case "k": {
           e.preventDefault();
           e.stopPropagation();
+          if (control && container.contains(control)) control.blur();
           setFocusedIndex((prev) => (prev > 0 ? prev - 1 : prev));
           break;
         }
         case " ": {
+          if (control) break;
           if (focusedIndex >= 0 && focusedIndex < totalCount) {
             e.preventDefault();
             e.stopPropagation();
@@ -196,6 +180,7 @@ export default function TaskSubtasks({
           break;
         }
         case "Enter": {
+          if (control) break;
           if (focusedIndex >= 0 && focusedIndex < totalCount) {
             e.preventDefault();
             e.stopPropagation();
@@ -239,23 +224,25 @@ export default function TaskSubtasks({
   ]);
 
   const handleAddSubtask = async () => {
-    if (!canCreate || !canEdit || !newTitle.trim()) return;
-    const initialStatus = parentStatus === "planned" ? "planned" : todoSlug;
+    if (!canCreate || !canEdit || !newTitle.trim() || createTask.isPending) {
+      return;
+    }
+    const initialStatus = featureStatus === "planned" ? "planned" : todoSlug;
     if (!initialStatus) return;
 
     try {
-      const newTask = await createTask.mutateAsync({
+      // Created inside the feature in one request, so a failure leaves no
+      // stray task behind.
+      await createTask.mutateAsync({
         title: newTitle.trim(),
         description: "",
         projectId,
         status: initialStatus,
         priority: "no-priority",
+        featureId,
       });
-
-      await createRelation.mutateAsync({
-        sourceTaskId: taskId,
-        targetTaskId: newTask.id,
-        relationType: "subtask",
+      void queryClient.invalidateQueries({
+        queryKey: ["task-relations", featureId],
       });
 
       setNewTitle("");
@@ -265,12 +252,34 @@ export default function TaskSubtasks({
     }
   };
 
+  const handleRemoveFromFeature = async (task: Task) => {
+    try {
+      await updateFeature({
+        task: { id: task.id, projectId: task.projectId, featureId },
+        featureId: null,
+      });
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(task.id);
+        return next;
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("tasks:features.updateError"),
+      );
+    }
+  };
+
   const handleDeleteTask = async () => {
     if (!deleteTaskId) return;
     try {
       await deleteTask(deleteTaskId);
       queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
-      queryClient.invalidateQueries({ queryKey: ["task-relations", taskId] });
+      queryClient.invalidateQueries({
+        queryKey: ["task-relations", featureId],
+      });
       setSelectedIds((prev) => {
         const next = new Set(prev);
         next.delete(deleteTaskId);
@@ -328,12 +337,9 @@ export default function TaskSubtasks({
             }
           }}
         >
-          <AnimatePresence
-            key={relationsLoaded ? "loaded" : "loading"}
-            initial={false}
-          >
+          <AnimatePresence key={ready ? "loaded" : "loading"} initial={false}>
             {subtasks.map((subtask, index) => {
-              const taskObj = buildTaskObject(subtask);
+              const taskObj = subtask.task;
               const isSelected = selectedIds.has(subtask.task.id);
 
               return (
@@ -350,7 +356,7 @@ export default function TaskSubtasks({
                   workspaceSlug={workspace?.slug}
                   isSelected={isSelected}
                   isFocused={focusedIndex === index}
-                  isCompleted={subtask.task.isCompleted}
+                  isCompleted={subtask.isCompleted}
                   canEdit={canEdit}
                   selectionRadius={getSelectionRadius(index, isSelected)}
                   assignee={getAssignee(subtask.task.userId)}
@@ -366,6 +372,9 @@ export default function TaskSubtasks({
                     })
                   }
                   onDeleteClick={() => setDeleteTaskId(subtask.task.id)}
+                  onRemoveFromFeature={() =>
+                    void handleRemoveFromFeature(taskObj)
+                  }
                 />
               );
             })}
@@ -413,7 +422,7 @@ export default function TaskSubtasks({
           </div>
         )}
 
-        {!isAdding && totalCount === 0 && (
+        {!isAdding && ready && totalCount === 0 && (
           <p className="px-2 py-1 text-muted-foreground text-xs">
             {t("tasks:subtasks.empty")}
           </p>

@@ -366,8 +366,8 @@
 					"description": "Kartu berpindah dari kolom ke kolom seiring pekerjaan berjalan. Seret kartu ini ke kolom berikutnya, atau buka dan ubah statusnya."
 				},
 				"details": {
-					"title": "Buka tugas ini dan tambahkan subtugas",
-					"description": "Tugas bisa berisi deskripsi, subtugas, label, penanggung jawab, dan tenggat. Tambahkan subtugas ke tugas ini untuk mencobanya."
+					"title": "Buka tugas ini dan jadikan fitur",
+					"description": "Tugas bisa berisi deskripsi, label, penanggung jawab, dan tenggat. Jadikan tugas ini fitur, lalu tambahkan tugas ke dalamnya untuk mengelompokkan pekerjaan di bawahnya."
 				},
 				"invite": {
 					"title": "Undang tim Anda",
@@ -2455,10 +2455,10 @@
 				"editDescription": "Edit deskripsi",
 				"commentOnTask": "Komentari",
 				"moveToProject": "Pindahkan ke proyek lain",
-				"createSubtask": "Buat subtugas",
-				"setParent": "Atur tugas induk",
-				"openParent": "Buka tugas induk",
-				"openSubtask": "Buka subtugas",
+				"createSubtask": "Tambahkan tugas ke fitur ini",
+				"setParent": "Atur fitur",
+				"openParent": "Buka fitur",
+				"openSubtask": "Buka tugas dari fitur ini",
 				"markBlockedBy": "Tandai diblokir oleh",
 				"markBlocking": "Tandai sebagai pemblokir",
 				"markRelated": "Tandai sebagai terkait",
@@ -2703,7 +2703,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "berkomentar di {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "menambahkan tugas ke fitur \"{{feature}}\"",
+		"removedFromFeature": "menghapus tugas dari fitur \"{{feature}}\"",
+		"changedFeature": "memindahkan tugas dari fitur \"{{from}}\" ke \"{{to}}\"",
+		"madeFeature": "menjadikan tugas ini fitur",
+		"madeTask": "menjadikan fitur ini tugas"
 	},
 	"tasks": {
 		"title": "Tugas",
@@ -2742,7 +2747,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Subtugas dari",
+			"subtaskOf": "Fitur",
 			"activity": "Aktivitas",
 			"noActivity": "Tidak ada aktivitas ditemukan",
 			"openInFullPage": "Buka di halaman penuh",
@@ -2878,22 +2883,22 @@
 				"related": "terkait dengan"
 			},
 			"blockedBy": "Diblokir oleh",
-			"parentPlaceholder": "Atur tugas induk…"
+			"parentPlaceholder": "Atur fitur…"
 		},
 		"subtasks": {
-			"title": "Subtugas",
-			"inputPlaceholder": "Judul subtugas...",
+			"title": "Tugas",
+			"inputPlaceholder": "Judul tugas...",
 			"addAction": "Tambah",
-			"empty": "Belum ada subtugas",
-			"createError": "Gagal membuat subtugas",
+			"empty": "Belum ada tugas di fitur ini",
+			"createError": "Gagal membuat tugas",
 			"deleteSuccess": "Tugas berhasil dihapus",
 			"deleteError": "Gagal menghapus tugas",
 			"deleteDialogTitle": "Hapus Tugas?",
 			"deleteDialogDescription": "Ini akan menghapus tugas dan semua datanya secara permanen. Anda tidak dapat membatalkan tindakan ini.",
 			"deleteAction": "Hapus Tugas",
-			"completeAria": "Tandai subtugas selesai",
-			"progress": "{{completed}} dari {{total}} subtugas selesai",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Tandai tugas selesai",
+			"progress": "{{completed}} dari {{total}} tugas selesai",
+			"noCompletionColumn": "Proyek ini tidak memiliki kolom yang sesuai untuk menyelesaikan atau membuka kembali tugas ini."
 		},
 		"properties": {
 			"title": "Properti",
@@ -3049,7 +3054,11 @@
 				"movesLabel": "Tugas yang akan dipindahkan",
 				"startsBeforeBlocker": "Dimulai sebelum {{title}} selesai.",
 				"title_other": "Perubahan ini melanggar {{count}} dependensi"
-			}
+			},
+			"featuresLabel": "Fitur",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_other": "{{title}}: {{count}} tugas, {{start}} hingga {{end}}. Membuka fitur.",
+			"featureOverflowAria_other": "{{count}} fitur lainnya"
 		},
 		"delete": {
 			"title": "Hapus Tugas?",
@@ -3256,6 +3265,26 @@
 			"startsOn": "Mulai {{date}}",
 			"beforeStart": "{{date}} sebelum tanggal mulai",
 			"afterDue": "{{date}} setelah tenggat"
+		},
+		"features": {
+			"badge": "Fitur",
+			"chipLabel": "Fitur: {{title}}",
+			"unknown": "Fitur tidak dikenal",
+			"property": "Fitur",
+			"none": "Tanpa fitur",
+			"searchPlaceholder": "Cari fitur…",
+			"empty": "Belum ada fitur di proyek ini",
+			"remove": "Hapus dari fitur",
+			"updateError": "Gagal memperbarui fitur",
+			"type": "Jenis",
+			"typeTask": "Tugas",
+			"typeFeature": "Fitur",
+			"convertToFeature": "Ubah menjadi fitur",
+			"convertToTask": "Ubah menjadi tugas",
+			"typeError": "Gagal mengubah jenis tugas",
+			"convertBlocked": "Pindahkan tugas-tugas fitur ini keluar darinya sebelum menjadikannya tugas.",
+			"openFeature": "Buka fitur {{title}}",
+			"inProject": "Fitur dalam proyek"
 		}
 	},
 	"invitations": {

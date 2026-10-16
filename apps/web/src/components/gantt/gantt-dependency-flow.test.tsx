@@ -22,6 +22,7 @@ const m = vi.hoisted(() => ({
   update: vi.fn(),
   toastError: vi.fn(),
   project: null as unknown,
+  groupBy: "none",
   relations: [] as {
     id: string;
     sourceTaskId: string;
@@ -73,7 +74,7 @@ vi.mock("@/store/user-preferences", async (importOriginal) => ({
       weekStartsOn: number;
       ganttGroupBy: string;
     }) => unknown,
-  ) => selector({ weekStartsOn: 1, ganttGroupBy: "none" }),
+  ) => selector({ weekStartsOn: 1, ganttGroupBy: m.groupBy }),
 }));
 vi.mock("@/lib/i18n/domain", () => ({
   getStatusLabel: (status: string) => status,
@@ -124,8 +125,14 @@ class TestPointerEvent extends MouseEvent {
   }
 }
 
-function task(id: string, startDate: string | null, dueDate: string) {
+function task(
+  id: string,
+  startDate: string | null,
+  dueDate: string,
+  hierarchy: { type?: "task" | "feature"; featureId?: string | null } = {},
+) {
   return {
+    ...hierarchy,
     id,
     projectId: "project",
     title: id,
@@ -202,6 +209,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 7, 31));
+  m.groupBy = "none";
   m.update.mockResolvedValue({});
   // Design blocks Build: Build may start on Sep 3, the day Design ends.
   setTasks(
@@ -652,5 +660,87 @@ describe("Gantt dependencies", () => {
       "tasks:gantt.dependencies.startsBeforeBlocker:Design",
     );
     expect(bar("Design")).not.toHaveAccessibleDescription();
+  });
+
+  it("keeps a feature in a dependency as a row when grouped, with its arrow and warning", () => {
+    m.groupBy = "assignee";
+    // Design blocks the Checkout feature but ends after it starts. Checkout's
+    // one task also puts it on the Unassigned line as a slice.
+    setTasks(
+      task("Design", "2026-09-01", "2026-09-04"),
+      task("Checkout", "2026-09-03", "2026-09-06", { type: "feature" }),
+      task("Cart", "2026-09-04", "2026-09-05", { featureId: "Checkout" }),
+      task("Search", "2026-09-07", "2026-09-08", { type: "feature" }),
+      task("Query", "2026-09-07", "2026-09-08", { featureId: "Search" }),
+    );
+    m.relations = [blocks("Design", "Checkout")];
+    const { container } = show();
+
+    expect(
+      container.querySelector('[data-gantt-row="Checkout"]'),
+    ).not.toBeNull();
+    expect(
+      screen.getByRole("button", {
+        name: "tasks:gantt.featureSliceAria:Checkout",
+      }),
+    ).toBeInTheDocument();
+    // A feature outside any dependency still leaves the rows.
+    expect(container.querySelector('[data-gantt-row="Search"]')).toBeNull();
+    expect(linePaths()).toHaveLength(1);
+    expect(linePaths()[0]).toHaveAttribute("data-broken");
+    expect(
+      screen.getByRole("button", {
+        name: "tasks:gantt.taskAriaLabelGrouped:Checkout",
+      }),
+    ).toHaveAccessibleDescription(
+      "tasks:gantt.dependencies.startsBeforeBlocker:Design",
+    );
+  });
+
+  it("still plans around a feature drawn on its members' lines", async () => {
+    m.groupBy = "assignee";
+    // Design blocks the Checkout feature, whose one task also draws it on
+    // the Unassigned line.
+    setTasks(
+      task("Design", "2026-09-01", "2026-09-03"),
+      task("Checkout", "2026-09-03", "2026-09-06", { type: "feature" }),
+      task("Cart", "2026-09-04", "2026-09-05", { featureId: "Checkout" }),
+    );
+    m.relations = [blocks("Design", "Checkout")];
+    show();
+
+    expect(
+      screen.getByRole("button", {
+        name: "tasks:gantt.featureSliceAria:Checkout",
+      }),
+    ).toBeInTheDocument();
+
+    dragBy(
+      screen.getByRole("button", {
+        name: "tasks:gantt.taskAriaLabelGrouped:Design",
+      }),
+      88,
+    );
+
+    const dialog = screen.getByRole("alertdialog");
+    expect(within(dialog).getByText("Checkout")).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "tasks:gantt.dependencies.moveRelated:1",
+      }),
+    );
+    expect(m.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "Design", startDate: isoDay(9, 3) }),
+    );
+    // The feature keeps its four days and starts the day Design now ends.
+    await waitFor(() =>
+      expect(m.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "Checkout",
+          startDate: isoDay(9, 5),
+          dueDate: isoDay(9, 8),
+        }),
+      ),
+    );
   });
 });

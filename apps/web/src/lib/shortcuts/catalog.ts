@@ -81,6 +81,9 @@ export const SHORTCUTS = {
   commentOnTask: { keys: ["ctrl+m"], category: "tasks", scope: "task" },
   moveToProject: { keys: ["mod+shift+m"], category: "tasks", scope: "task" },
   deleteTask: { keys: ["mod+backspace"], category: "tasks", scope: "task" },
+  // These four ids (and their label keys) predate features: on a feature,
+  // createSubtask adds a task and openSubtask opens its first one; on a
+  // task, setParent picks its feature and openParent opens it.
   createSubtask: { keys: ["mod+shift+o"], category: "tasks", scope: "task" },
   setParent: { keys: ["mod+shift+p"], category: "tasks", scope: "task" },
   openParent: { keys: ["mod+shift+arrowup"], category: "tasks", scope: "task" },

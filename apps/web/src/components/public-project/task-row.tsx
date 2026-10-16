@@ -1,6 +1,8 @@
 import { Calendar, CalendarClock, CalendarX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { TaskProgressBadges } from "@/components/task/task-progress-badges";
+import { FeatureBadge } from "@/components/task-chips/feature-badge";
+import { FeatureChip } from "@/components/task-chips/feature-chip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   dueDateStatusColors,
@@ -20,6 +22,8 @@ type PublicTaskRowProps = {
     labels?: Array<{ id: string; name: string; color: string }>;
     externalLinks?: Array<ExternalLink>;
   };
+  // The feature the task belongs to, when the board holds it.
+  feature?: Task;
   projectSlug: string;
   // Passed by views that hold the column, so completion comes from isFinal
   // rather than the slug fallback.
@@ -29,6 +33,7 @@ type PublicTaskRowProps = {
 
 export function PublicTaskRow({
   task,
+  feature,
   projectSlug,
   isCompleted,
   onTaskClick,
@@ -61,7 +66,16 @@ export function PublicTaskRow({
       </div>
 
       <div className="pointer-events-none flex flex-wrap items-center gap-2">
+        {task.type === "feature" && <FeatureBadge />}
         <TaskProgressBadges task={task} asText />
+        {feature && (
+          <span className="pointer-events-auto relative flex min-w-0">
+            <FeatureChip
+              feature={feature}
+              onOpen={() => onTaskClick(feature)}
+            />
+          </span>
+        )}
         {task.assigneeName && (
           <div className="flex items-center gap-1.5">
             <Avatar className="h-5 w-5">

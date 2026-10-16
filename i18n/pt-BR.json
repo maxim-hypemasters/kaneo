@@ -368,8 +368,8 @@
 					"description": "Os cartões passam de coluna em coluna conforme o trabalho anda. Arraste este para a próxima coluna, ou abra-o e mude o status."
 				},
 				"details": {
-					"title": "Abra esta tarefa e adicione uma subtarefa",
-					"description": "Uma tarefa pode ter descrição, subtarefas, etiquetas, um responsável e um prazo. Adicione uma subtarefa a esta para experimentar."
+					"title": "Abra esta tarefa e transforme-a em uma funcionalidade",
+					"description": "Uma tarefa pode ter descrição, etiquetas, um responsável e um prazo. Transforme esta em uma funcionalidade e depois adicione tarefas a ela para agrupar o trabalho."
 				},
 				"invite": {
 					"title": "Convide sua equipe",
@@ -2539,10 +2539,10 @@
 				"editDescription": "Editar descrição",
 				"commentOnTask": "Comentar",
 				"moveToProject": "Mover para outro projeto",
-				"createSubtask": "Criar subtarefa",
-				"setParent": "Definir tarefa principal",
-				"openParent": "Abrir tarefa principal",
-				"openSubtask": "Abrir subtarefa",
+				"createSubtask": "Adicionar uma tarefa a esta funcionalidade",
+				"setParent": "Definir funcionalidade",
+				"openParent": "Abrir funcionalidade",
+				"openSubtask": "Abrir uma tarefa desta funcionalidade",
 				"markBlockedBy": "Marcar como bloqueada por",
 				"markBlocking": "Marcar como bloqueadora",
 				"markRelated": "Marcar como relacionada",
@@ -2797,7 +2797,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "comentou no {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "adicionou a tarefa à funcionalidade \"{{feature}}\"",
+		"removedFromFeature": "removeu a tarefa da funcionalidade \"{{feature}}\"",
+		"changedFeature": "moveu a tarefa da funcionalidade \"{{from}}\" para \"{{to}}\"",
+		"madeFeature": "transformou esta tarefa em uma funcionalidade",
+		"madeTask": "transformou esta funcionalidade em uma tarefa"
 	},
 	"tasks": {
 		"title": "Tarefas",
@@ -2836,7 +2841,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Subtarefa de",
+			"subtaskOf": "Funcionalidade",
 			"activity": "Atividade",
 			"noActivity": "Nenhuma atividade encontrada",
 			"openInFullPage": "Abrir em página inteira",
@@ -2972,22 +2977,22 @@
 				"related": "relaciona-se a"
 			},
 			"blockedBy": "Bloqueada por",
-			"parentPlaceholder": "Definir tarefa principal…"
+			"parentPlaceholder": "Definir funcionalidade…"
 		},
 		"subtasks": {
-			"title": "Subtarefas",
-			"inputPlaceholder": "Título da subtarefa...",
+			"title": "Tarefas",
+			"inputPlaceholder": "Título da tarefa...",
 			"addAction": "Adicionar",
-			"empty": "Ainda não há subtarefas",
-			"createError": "Falha ao criar subtarefa",
+			"empty": "Ainda não há tarefas nesta funcionalidade",
+			"createError": "Falha ao criar tarefa",
 			"deleteSuccess": "Tarefa excluída com sucesso",
 			"deleteError": "Falha ao excluir tarefa",
 			"deleteDialogTitle": "Excluir tarefa?",
 			"deleteDialogDescription": "Isso removerá permanentemente a tarefa e todos os seus dados. Você não pode desfazer esta ação.",
 			"deleteAction": "Excluir tarefa",
-			"completeAria": "Marcar subtarefa como concluída",
-			"progress": "{{completed}} de {{total}} subtarefas concluídas",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Marcar tarefa como concluída",
+			"progress": "{{completed}} de {{total}} tarefas concluídas",
+			"noCompletionColumn": "Este projeto não tem uma coluna correspondente para concluir ou reabrir esta tarefa."
 		},
 		"properties": {
 			"title": "Propriedades",
@@ -3149,7 +3154,15 @@
 				"title_many": "Esta alteração quebra {{count}} dependências",
 				"title_one": "Esta alteração quebra {{count}} dependência",
 				"title_other": "Esta alteração quebra {{count}} dependências"
-			}
+			},
+			"featuresLabel": "Funcionalidades",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} tarefa, de {{start}} a {{end}}. Abre a funcionalidade.",
+			"featureSliceAria_many": "{{title}}: {{count}} tarefas, de {{start}} a {{end}}. Abre a funcionalidade.",
+			"featureSliceAria_other": "{{title}}: {{count}} tarefas, de {{start}} a {{end}}. Abre a funcionalidade.",
+			"featureOverflowAria_one": "Mais {{count}} funcionalidade",
+			"featureOverflowAria_many": "Mais {{count}} funcionalidades",
+			"featureOverflowAria_other": "Mais {{count}} funcionalidades"
 		},
 		"delete": {
 			"title": "Excluir tarefa?",
@@ -3376,6 +3389,26 @@
 			"startsOn": "Começa em {{date}}",
 			"beforeStart": "{{date}} é antes da data de início",
 			"afterDue": "{{date}} é depois do prazo"
+		},
+		"features": {
+			"badge": "Funcionalidade",
+			"chipLabel": "Funcionalidade: {{title}}",
+			"unknown": "Funcionalidade desconhecida",
+			"property": "Funcionalidade",
+			"none": "Sem funcionalidade",
+			"searchPlaceholder": "Buscar funcionalidades…",
+			"empty": "Ainda não há funcionalidades neste projeto",
+			"remove": "Remover da funcionalidade",
+			"updateError": "Falha ao atualizar a funcionalidade",
+			"type": "Tipo",
+			"typeTask": "Tarefa",
+			"typeFeature": "Funcionalidade",
+			"convertToFeature": "Converter em funcionalidade",
+			"convertToTask": "Converter em tarefa",
+			"typeError": "Falha ao alterar o tipo da tarefa",
+			"convertBlocked": "Retire as tarefas desta funcionalidade antes de transformá-la em uma tarefa.",
+			"openFeature": "Abrir funcionalidade {{title}}",
+			"inProject": "Funcionalidades no projeto"
 		}
 	},
 	"invitations": {

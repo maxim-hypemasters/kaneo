@@ -76,8 +76,14 @@ vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
   default: () => ({ data: projectMembers, isSuccess: true }),
 }));
 
+const projectRelations: {
+  id: string;
+  sourceTaskId: string;
+  targetTaskId: string;
+  relationType: string;
+}[] = [];
 vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
-  default: () => ({ data: [] }),
+  default: () => ({ data: projectRelations }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({ canAssignTasks: () => true }),
@@ -95,12 +101,15 @@ vi.mock("@/components/common/project-layout", () => ({
   default: ({
     children,
     toolbar,
+    summary,
   }: {
     children: ReactNode;
     toolbar?: ReactNode;
+    summary?: ReactNode;
   }) => (
     <div>
       {toolbar}
+      {summary}
       {children}
     </div>
   ),
@@ -248,6 +257,7 @@ afterEach(() => {
   routeParams.projectId = "project-1";
   preferences.ganttGroupBy = "none";
   projectMembers.length = 0;
+  projectRelations.length = 0;
 });
 
 describe("Gantt jump-to-today", () => {
@@ -588,6 +598,257 @@ describe("Gantt group by assignee", () => {
 
     expect(container.querySelector("[data-gantt-lane]")).toBeNull();
     expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
+  });
+});
+
+describe("Gantt features on member lines", () => {
+  const lane = (container: HTMLElement, key: string) => {
+    const element = container.querySelector<HTMLElement>(
+      `[data-gantt-lane="${key}"]`,
+    );
+    if (!element) throw new Error(`lane ${key} not rendered`);
+    return element;
+  };
+  const row = (container: HTMLElement, taskId: string) =>
+    container.querySelector(`[data-gantt-row="${taskId}"]`);
+  const alice = {
+    userId: "u-al",
+    assigneeId: "u-al",
+    assigneeName: "Alice",
+  };
+  const bob = { userId: "u-bob", assigneeId: "u-bob", assigneeName: "Bob" };
+
+  function mockFeatureProject() {
+    projectMembers.push(
+      { id: "u-al", name: "Alice", image: null },
+      { id: "u-bob", name: "Bob", image: null },
+    );
+    mockProjectWithTasks([
+      makeTask({
+        id: "checkout",
+        title: "Checkout",
+        type: "feature",
+        ...bob,
+        startDate: "2026-09-01",
+        dueDate: "2026-09-20",
+      }),
+      makeTask({
+        id: "cart",
+        title: "Cart page",
+        featureId: "checkout",
+        ...alice,
+        startDate: "2026-09-02",
+        dueDate: "2026-09-04",
+      }),
+      makeTask({
+        id: "pay",
+        title: "Payment form",
+        featureId: "checkout",
+        ...alice,
+        startDate: "2026-09-06",
+        dueDate: "2026-09-08",
+      }),
+      makeTask({
+        id: "tax",
+        title: "Tax rules",
+        featureId: "checkout",
+        ...bob,
+        startDate: "2026-09-03",
+        dueDate: "2026-09-05",
+      }),
+      // Nothing scheduled in it, so it keeps its own row.
+      makeTask({
+        id: "search",
+        title: "Search",
+        type: "feature",
+        ...alice,
+        startDate: "2026-09-10",
+        dueDate: "2026-09-12",
+      }),
+    ]);
+  }
+
+  it("moves features from the rows onto the lines of the members doing their tasks", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+
+    expect(row(container, "checkout")).toBeNull();
+    const aliceLane = lane(container, "member:u-al");
+    expect(
+      within(aliceLane).getByRole("group", { name: "Features" }),
+    ).toBeInTheDocument();
+    expect(
+      within(aliceLane).getByRole("button", {
+        name: "Checkout: 2 tasks, Sep 2, 2026 to Sep 8, 2026. Opens the feature.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(lane(container, "member:u-bob")).getByRole("button", {
+        name: "Checkout: 1 task, Sep 3, 2026 to Sep 5, 2026. Opens the feature.",
+      }),
+    ).toBeInTheDocument();
+    // The feature no longer counts as Bob's row, or in the task count.
+    expect(
+      within(lane(container, "member:u-bob")).getByRole("button", {
+        name: "Bob 1 task",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("4 tasks")).toBeInTheDocument();
+  });
+
+  it("keeps a feature with nothing scheduled in it as a row", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+
+    expect(
+      lane(container, "member:u-al").querySelector('[data-gantt-row="search"]'),
+    ).not.toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /^Search: / }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps a feature in a dependency as a row, still counted", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockFeatureProject();
+    projectRelations.push({
+      id: "checkout-blocks-search",
+      sourceTaskId: "checkout",
+      targetTaskId: "search",
+      relationType: "blocks",
+    });
+
+    const { container } = render(<GanttRoute />);
+    const bobLane = lane(container, "member:u-bob");
+
+    // Its arrow needs a row to start from; the slices stay too.
+    expect(bobLane.querySelector('[data-gantt-row="checkout"]')).not.toBeNull();
+    expect(
+      within(lane(container, "member:u-al")).getByRole("button", {
+        name: /^Checkout: 2 tasks/,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(bobLane).getByRole("button", { name: "Bob 2 tasks" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("5 tasks")).toBeInTheDocument();
+  });
+
+  it("keeps a feature with no free track reachable across all its days", () => {
+    preferences.ganttGroupBy = "assignee";
+    projectMembers.push({ id: "u-al", name: "Alice", image: null });
+    // A, B and C take Alice's three tracks and end Sep 30; D finds no track
+    // and runs on to Dec 15, months past them.
+    const spans = [
+      ["a", "2026-09-01", "2026-09-30"],
+      ["b", "2026-09-01", "2026-09-30"],
+      ["c", "2026-09-02", "2026-09-30"],
+      ["d", "2026-09-03", "2026-12-15"],
+    ] as const;
+    mockProjectWithTasks(
+      spans.flatMap(([id, startDate, dueDate]) => [
+        makeTask({ id, title: `Feature ${id}`, type: "feature" }),
+        makeTask({
+          id: `${id}-work`,
+          title: `Work ${id}`,
+          featureId: id,
+          ...alice,
+          startDate,
+          dueDate,
+        }),
+      ]),
+    );
+
+    const { container } = render(<GanttRoute />);
+    const aliceLane = lane(container, "member:u-al");
+    const columns = (element: HTMLElement | null) =>
+      (element?.style.gridColumn ?? "").split(" / ").map(Number);
+
+    const chip = within(aliceLane).getByRole("button", {
+      name: "1 more feature",
+    });
+    const [sliceStart = 0] = columns(
+      within(aliceLane).getByRole("button", { name: /^Feature a: / }),
+    );
+    const [boxStart = 0, boxEnd = 0] = columns(
+      chip.closest<HTMLElement>("[data-gantt-feature-overflow]"),
+    );
+    // The chip's box covers D's 104 days, from two days after A starts, so
+    // the chip stays on screen while any of them is.
+    expect(boxStart).toBe(sliceStart + 2);
+    expect(boxEnd - boxStart).toBe(104);
+    // Sticky, just clear of the 20rem task rail painted over the timeline.
+    expect(chip).toHaveClass("sticky");
+    expect(chip.style.left).toBe("20.125rem");
+  });
+
+  it("keeps the slices on a collapsed lane", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+    const aliceLane = lane(container, "member:u-al");
+    fireEvent.click(
+      within(aliceLane).getByRole("button", { name: "Alice 3 tasks" }),
+    );
+
+    expect(within(aliceLane).queryAllByText("Cart page")).toHaveLength(0);
+    expect(
+      within(aliceLane).getByRole("button", { name: /^Checkout: 2 tasks/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the feature from its slice", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+    fireEvent.click(
+      within(lane(container, "member:u-bob")).getByRole("button", {
+        name: /^Checkout: /,
+      }),
+    );
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: ".",
+      search: { taskId: "checkout" },
+      replace: true,
+    });
+  });
+
+  it("follows the filters, keeping the title of a filtered-out feature", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+    searchFor("Cart");
+
+    expect(
+      within(lane(container, "member:u-al")).getByRole("button", {
+        name: "Checkout: 1 task, Sep 2, 2026 to Sep 4, 2026. Opens the feature.",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(lane(container, "member:u-bob")).queryByRole("group", {
+        name: "Features",
+      }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("1 of 4 tasks")).toBeInTheDocument();
+  });
+
+  it("leaves the flat timeline as it was", () => {
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+
+    expect(row(container, "checkout")).not.toBeNull();
+    expect(row(container, "search")).not.toBeNull();
+    expect(screen.queryByRole("group", { name: "Features" })).toBeNull();
+    expect(screen.getByText("5 tasks")).toBeInTheDocument();
   });
 });
 

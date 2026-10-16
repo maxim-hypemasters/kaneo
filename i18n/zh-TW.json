@@ -366,8 +366,8 @@
 					"description": "隨著工作推進，卡片會從一欄移到下一欄。把這張卡片拖到下一欄，或打開它變更狀態。"
 				},
 				"details": {
-					"title": "打開這個任務並新增子任務",
-					"description": "任務可以包含描述、子任務、標籤、負責人和截止日期。試著為這個任務新增一個子任務。"
+					"title": "打開這個任務並將它轉換為功能",
+					"description": "任務可以包含描述、標籤、負責人和截止日期。將這個任務轉換為功能，再為它新增任務，把相關工作歸入其下。"
 				},
 				"invite": {
 					"title": "邀請你的團隊",
@@ -2455,10 +2455,10 @@
 				"editDescription": "編輯描述",
 				"commentOnTask": "留言",
 				"moveToProject": "移至其他專案",
-				"createSubtask": "建立子任務",
-				"setParent": "設定父任務",
-				"openParent": "開啟父任務",
-				"openSubtask": "開啟子任務",
+				"createSubtask": "為此功能新增任務",
+				"setParent": "設定功能",
+				"openParent": "開啟功能",
+				"openSubtask": "開啟此功能的任務",
 				"markBlockedBy": "標記為被封鎖",
 				"markBlocking": "標記為封鎖中",
 				"markRelated": "標記為相關",
@@ -2703,7 +2703,12 @@
 			"importedBy": "由 {{name}} 匯入",
 			"commentedOnForge": "在 {{forge}} 上留言"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "將任務加入功能「{{feature}}」",
+		"removedFromFeature": "將任務從功能「{{feature}}」中移除",
+		"changedFeature": "將任務從功能「{{from}}」移動到「{{to}}」",
+		"madeFeature": "將此任務轉換為功能",
+		"madeTask": "將此功能轉換為任務"
 	},
 	"tasks": {
 		"title": "任務",
@@ -2742,7 +2747,7 @@
 			"ticketNotFoundDescription": "此工作區中沒有 ID 為 {{ticketId}} 的任務，或你沒有存取權限。"
 		},
 		"detail": {
-			"subtaskOf": "父任務",
+			"subtaskOf": "功能",
 			"activity": "活動",
 			"noActivity": "目前沒有活動",
 			"openInFullPage": "在完整頁面中開啟",
@@ -2878,22 +2883,22 @@
 				"related": "相關於"
 			},
 			"blockedBy": "被封鎖於",
-			"parentPlaceholder": "設定父任務…"
+			"parentPlaceholder": "設定功能…"
 		},
 		"subtasks": {
-			"title": "子任務",
-			"inputPlaceholder": "子任務標題…",
+			"title": "任務",
+			"inputPlaceholder": "任務標題…",
 			"addAction": "新增",
-			"empty": "尚無子任務",
-			"createError": "建立子任務失敗",
+			"empty": "此功能尚無任務",
+			"createError": "建立任務失敗",
 			"deleteSuccess": "任務已刪除",
 			"deleteError": "刪除任務失敗",
 			"deleteDialogTitle": "刪除任務？",
 			"deleteDialogDescription": "這會永久移除此任務及其所有資料，且無法復原。",
 			"deleteAction": "刪除任務",
-			"completeAria": "將子任務標記為完成",
-			"progress": "已完成 {{completed}}/{{total}} 個子任務",
-			"noCompletionColumn": "此專案沒有對應的欄可用來完成或重新開啟這個子任務。"
+			"completeAria": "將任務標記為完成",
+			"progress": "已完成 {{completed}}/{{total}} 個任務",
+			"noCompletionColumn": "此專案沒有對應的欄可用來完成或重新開啟這個任務。"
 		},
 		"properties": {
 			"title": "屬性",
@@ -3063,7 +3068,11 @@
 				"movesLabel": "將被移動的任務",
 				"startsBeforeBlocker": "在「{{title}}」結束前開始。",
 				"title_other": "此變更會破壞 {{count}} 個相依關係"
-			}
+			},
+			"featuresLabel": "功能",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_other": "{{title}}：{{count}} 個任務，{{start}} 至 {{end}}。開啟此功能。",
+			"featureOverflowAria_other": "還有 {{count}} 個功能"
 		},
 		"delete": {
 			"title": "刪除任務？",
@@ -3256,6 +3265,26 @@
 			"startsOn": "開始於 {{date}}",
 			"beforeStart": "{{date}} 早於開始日期",
 			"afterDue": "{{date}} 晚於截止日期"
+		},
+		"features": {
+			"badge": "功能",
+			"chipLabel": "功能：{{title}}",
+			"unknown": "未知的功能",
+			"property": "功能",
+			"none": "未設定功能",
+			"searchPlaceholder": "搜尋功能…",
+			"empty": "此專案尚無功能",
+			"remove": "從功能中移除",
+			"updateError": "更新功能失敗",
+			"type": "類型",
+			"typeTask": "任務",
+			"typeFeature": "功能",
+			"convertToFeature": "轉換為功能",
+			"convertToTask": "轉換為任務",
+			"typeError": "變更任務類型失敗",
+			"convertBlocked": "請先將此功能中的任務移出，再將它轉換為任務。",
+			"openFeature": "開啟功能 {{title}}",
+			"inProject": "專案內的功能"
 		}
 	},
 	"invitations": {

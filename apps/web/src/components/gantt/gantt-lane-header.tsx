@@ -2,6 +2,7 @@ import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { AssigneeAvatar } from "@/components/task/properties/assignee-avatar";
 import { cn } from "@/lib/cn";
+import { GanttLaneFeatures } from "./gantt-lane-features";
 import type { GanttLane } from "./gantt-types";
 import { type GanttTimeline, getBarGridColumns } from "./timeline";
 
@@ -12,7 +13,10 @@ type GanttLaneHeaderProps = {
   onToggle: () => void;
   timeline: GanttTimeline;
   showTaskRail: boolean;
+  // Width of the sticky task rail (0 when it's hidden).
+  railWidthRem: number;
   rowGridTemplateColumns: string;
+  onOpenFeature: (featureId: string) => void;
 };
 
 export function GanttLaneHeader({
@@ -22,7 +26,9 @@ export function GanttLaneHeader({
   onToggle,
   timeline,
   showTaskRail,
+  railWidthRem,
   rowGridTemplateColumns,
+  onOpenFeature,
 }: GanttLaneHeaderProps) {
   const { t } = useTranslation();
   const count = lane.tasks.length;
@@ -75,8 +81,9 @@ export function GanttLaneHeader({
     </>
   );
 
+  const hasFeatures = lane.featureTrackCount > 0;
   // Lanes with tasks get a full touch target for the collapse toggle; empty
-  // lanes render compact.
+  // lanes render compact. Feature tracks grow the header past either.
   const heightClassName = hasTasks
     ? "min-h-[44px] sm:min-h-9"
     : "min-h-9 sm:min-h-8";
@@ -135,7 +142,7 @@ export function GanttLaneHeader({
 
       <div
         className={cn(
-          "relative flex shrink-0 cursor-grab items-center bg-muted/40",
+          "relative flex shrink-0 cursor-grab flex-col justify-center bg-muted/40",
           heightClassName,
         )}
         style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}
@@ -143,19 +150,18 @@ export function GanttLaneHeader({
         {summary?.barInView && (
           <div
             aria-hidden="true"
-            className={cn(
-              "pointer-events-none absolute inset-0 grid",
-              showTaskRail ? "items-center" : "items-end pb-1",
-            )}
+            className="pointer-events-none absolute inset-x-0 bottom-1 grid"
             style={{ gridTemplateColumns: timeline.gridTemplateColumns }}
           >
+            {/* A thin underline, so the feature slices above it stay the
+                header's main read. */}
             <div
               data-testid="gantt-lane-summary"
               style={{
                 gridColumn: `${summary.lineStart} / ${summary.lineEnd}`,
               }}
               className={cn(
-                "h-1.5 bg-primary/45",
+                "h-1 bg-primary/45",
                 summary.clippedStart ? "rounded-l-none" : "ml-1 rounded-l-full",
                 summary.clippedEnd ? "rounded-r-none" : "mr-1 rounded-r-full",
               )}
@@ -163,10 +169,26 @@ export function GanttLaneHeader({
           </div>
         )}
         {showTaskRail ? null : (
-          <div className="sticky left-0 z-[2] rounded-sm bg-background px-2 py-1">
+          <div
+            className={cn(
+              "sticky left-0 z-[2] self-start rounded-sm bg-background px-2 py-1",
+              hasFeatures && "mt-1",
+            )}
+          >
             {control}
           </div>
         )}
+        {/* Without the rail the tracks stack below the sticky name chip;
+            the bottom padding leaves the workload underline its own room. */}
+        <GanttLaneFeatures
+          features={lane.features}
+          overflowFeatures={lane.overflowFeatures}
+          trackCount={lane.featureTrackCount}
+          timeline={timeline}
+          railWidthRem={railWidthRem}
+          onOpenFeature={onOpenFeature}
+          className="pt-1 pb-2.5"
+        />
       </div>
     </div>
   );

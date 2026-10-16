@@ -20,6 +20,8 @@ type TaskCustomFieldValue = {
   value: string | null;
 };
 
+export type TaskType = "task" | "feature";
+
 type Task = {
   id: string;
   title: string;
@@ -39,6 +41,11 @@ type Task = {
   assigneeImage?: string | null;
   projectId: string;
   columnId?: string | null;
+  // "feature" groups tasks of its project; a task belongs to at most one.
+  // Optional while older cached data and hand-built tasks lack them.
+  type?: TaskType;
+  featureId?: string | null;
+  // For a feature: its tasks, and how many are done.
   subtaskCounts?: { completed: number; total: number };
   labels?: TaskLabel[];
   externalLinks?: TaskExternalLink[];

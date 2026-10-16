@@ -17,7 +17,7 @@ vi.mock("@/store/user-preferences", () => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, values: { completed: number; total: number }) =>
-      `${values.completed} of ${values.total} ${key.includes("subtasks") ? "subtasks" : "checklist items"} completed`,
+      `${values.completed} of ${values.total} ${key.includes("subtasks") ? "tasks" : "checklist items"} completed`,
   }),
 }));
 
@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 describe("TaskProgressBadges", () => {
-  it("keeps checklist and subtask completion independent", () => {
+  it("keeps checklist and feature task completion independent", () => {
     render(
       <TaskProgressBadges
         task={{
@@ -37,19 +37,19 @@ describe("TaskProgressBadges", () => {
         }}
       />,
     );
-    const subtasks = screen.getByRole("button", {
-      name: "2 of 2 subtasks completed",
+    const tasks = screen.getByRole("button", {
+      name: "2 of 2 tasks completed",
     });
     const checklist = screen.getByRole("button", {
       name: "1 of 3 checklist items completed",
     });
-    expect(subtasks).toHaveTextContent("2/2");
-    expect(subtasks).toHaveClass("text-success-foreground");
+    expect(tasks).toHaveTextContent("2/2");
+    expect(tasks).toHaveClass("text-success-foreground");
     expect(checklist).toHaveTextContent("1/3");
     expect(checklist).not.toHaveClass("text-success-foreground");
   });
 
-  it("shows subtasks when description checklist counts are disabled", () => {
+  it("shows feature tasks when description checklist counts are disabled", () => {
     preferences.showTaskItemCounts = false;
     render(
       <TaskProgressBadges
@@ -60,7 +60,7 @@ describe("TaskProgressBadges", () => {
       />,
     );
     expect(
-      screen.getByRole("button", { name: "0 of 3 subtasks completed" }),
+      screen.getByRole("button", { name: "0 of 3 tasks completed" }),
     ).toBeVisible();
     expect(screen.getAllByRole("button")).toHaveLength(1);
   });
@@ -97,10 +97,10 @@ describe("TaskProgressBadges", () => {
       </TooltipProvider>,
     );
     const badge = screen.getByRole("button", {
-      name: "2 of 5 subtasks completed",
+      name: "2 of 5 tasks completed",
     });
     fireEvent.mouseEnter(badge);
-    expect(await screen.findByText("2 of 5 subtasks completed")).toBeVisible();
+    expect(await screen.findByText("2 of 5 tasks completed")).toBeVisible();
     fireEvent.click(badge);
     expect(open).toHaveBeenCalledOnce();
   });
@@ -119,7 +119,7 @@ it.each([
     );
     expect(screen.getAllByRole("button")).toHaveLength(1);
     expect(
-      screen.getByRole("button", { name: "1 of 2 subtasks completed" }),
+      screen.getByRole("button", { name: "1 of 2 tasks completed" }),
     ).toBeVisible();
   },
 );
