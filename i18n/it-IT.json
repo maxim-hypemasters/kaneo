@@ -3135,7 +3135,21 @@
 			"laneTaskCount_other": "{{count}} attività",
 			"reassignError": "Riassegnazione attività fallita",
 			"taskAriaLabelGrouped": "{{title}}: apri o trascina per riprogrammare o riassegnare",
-			"unassign": "Rimuovi assegnazione"
+			"unassign": "Rimuovi assegnazione",
+			"dependencies": {
+				"cycleDescription": "Queste attività si bloccano a vicenda in un ciclo, quindi non possono essere messe in ordine automaticamente.",
+				"description": "Un'attività bloccata non può iniziare prima che termini l'attività che la blocca. Sposta anche le attività correlate per mantenerle in ordine.",
+				"moveDates": "Date attuali: {{from}}. Nuove date: {{to}}.",
+				"moveOnly": "Sposta solo questa attività",
+				"moveRelated_many": "Sposta {{count}} attività correlate",
+				"moveRelated_one": "Sposta {{count}} attività correlata",
+				"moveRelated_other": "Sposta {{count}} attività correlate",
+				"movesLabel": "Attività che verrebbero spostate",
+				"startsBeforeBlocker": "Inizia prima che termini {{title}}.",
+				"title_many": "Questa modifica viola {{count}} dipendenze",
+				"title_one": "Questa modifica viola {{count}} dipendenza",
+				"title_other": "Questa modifica viola {{count}} dipendenze"
+			}
 		},
 		"delete": {
 			"title": "Eliminare l'Attività?",

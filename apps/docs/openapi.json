@@ -3923,6 +3923,32 @@
           "updatedAt"
         ]
       },
+      "ProjectTaskRelation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "sourceTaskId": {
+            "type": "string",
+            "description": "The blocking task for `blocks`, the parent task for `subtask`."
+          },
+          "targetTaskId": {
+            "type": "string",
+            "description": "The blocked task for `blocks`, the subtask for `subtask`."
+          },
+          "relationType": {
+            "type": "string",
+            "description": "How the two tasks relate: `subtask`, `blocks`, or `related`."
+          }
+        },
+        "required": [
+          "id",
+          "sourceTaskId",
+          "targetTaskId",
+          "relationType"
+        ]
+      },
       "TaskRelationWithTasks": {
         "allOf": [
           {
@@ -20917,6 +20943,99 @@
           },
           "404": {
             "description": "Project or Telegram integration not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/task-relation/project/{projectId}": {
+      "get": {
+        "operationId": "getProjectTaskRelations",
+        "tags": [
+          "Task Relations"
+        ],
+        "summary": "Get project task relations",
+        "description": "Get every relation whose source and target tasks both belong to the project, oldest first. Relations reaching into another project are omitted. Filter by relationType, for example `blocks` to draw dependencies.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "subtask",
+                "blocks",
+                "related"
+              ],
+              "description": "Only return relations of this type. Omit for every type."
+            },
+            "required": false,
+            "description": "Only return relations of this type. Omit for every type.",
+            "name": "relationType",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Relations between the project's tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectTaskRelation"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid relationType",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, or missing task:read permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
             "content": {
               "application/json": {
                 "schema": {

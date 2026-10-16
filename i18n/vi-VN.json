@@ -3039,7 +3039,17 @@
 			"laneTaskCount_other": "{{count}} công việc",
 			"reassignError": "Không thể thay đổi người được giao công việc",
 			"taskAriaLabelGrouped": "{{title}}: mở, hoặc kéo để lên lịch lại hoặc giao lại",
-			"unassign": "Hủy giao"
+			"unassign": "Hủy giao",
+			"dependencies": {
+				"cycleDescription": "Các công việc này chặn lẫn nhau theo vòng lặp, nên không thể tự động sắp xếp đúng thứ tự.",
+				"description": "Công việc bị chặn không thể bắt đầu trước khi công việc chặn nó kết thúc. Hãy di chuyển cả các công việc liên quan để giữ đúng thứ tự.",
+				"moveDates": "Ngày hiện tại: {{from}}. Ngày mới: {{to}}.",
+				"moveOnly": "Chỉ di chuyển công việc này",
+				"moveRelated_other": "Di chuyển {{count}} công việc liên quan",
+				"movesLabel": "Các công việc sẽ được di chuyển",
+				"startsBeforeBlocker": "Bắt đầu trước khi {{title}} kết thúc.",
+				"title_other": "Thay đổi này phá vỡ {{count}} quan hệ phụ thuộc"
+			}
 		},
 		"delete": {
 			"title": "Xóa công việc?",

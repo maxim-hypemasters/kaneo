@@ -16,6 +16,15 @@ type CommitAssignee = {
   image: string | null;
 };
 
+type CommitOptions = {
+  // Send only after this settles successfully; if it fails, this edit is
+  // dropped silently (the failure it waited on is the one reported).
+  after?: Promise<unknown>;
+  // Shift only the date fields the task already has, instead of setting
+  // both. For tasks moved along by a dependency, which the user didn't touch.
+  keepDateFields?: boolean;
+};
+
 const NO_PENDING_EDITS: ReadonlyMap<string, PendingTaskEdit> = new Map();
 
 // Rejection for a queued edit whose predecessor failed. The edit was made on
@@ -68,18 +77,31 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
   }, [tasks]);
 
   const commit = useCallback(
-    (task: ScheduledTask, edit: GanttTaskEdit, assignee: CommitAssignee) => {
+    (
+      task: ScheduledTask,
+      edit: GanttTaskEdit,
+      assignee: CommitAssignee,
+      options: CommitOptions = {},
+    ): Promise<unknown> => {
       const kind = classifyEdit(task, edit);
-      if (!kind.dates && !kind.assignee) return;
+      if (!kind.dates && !kind.assignee) return Promise.resolve();
 
       nextSeqRef.current += 1;
       const seq = nextSeqRef.current;
+      // A drag sets both dates; `task` already carries any pending edit's
+      // fields, so this reads what the task will have, not what the server
+      // last sent.
+      const setsBoth = kind.dates && !options.keepDateFields;
+      const hasStartDate = setsBoth || !!task.startDate;
+      const hasDueDate = setsBoth || !!task.dueDate;
       setPending((current) =>
         new Map(current).set(task.id, {
           ...edit,
           seq,
           assigneeName: assignee.name,
           assigneeImage: assignee.image,
+          hasStartDate,
+          hasDueDate,
         }),
       );
 
@@ -88,8 +110,8 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
         return kind.dates
           ? updateTask({
               ...task,
-              startDate: toIsoDay(edit.start),
-              dueDate: toIsoDay(edit.end),
+              startDate: hasStartDate ? toIsoDay(edit.start) : null,
+              dueDate: hasDueDate ? toIsoDay(edit.end) : null,
               userId: edit.userId,
             })
           : updateTaskAssignee({ ...task, userId: edit.userId });
@@ -98,9 +120,19 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
       // Send right away unless an earlier drag of this task is still in
       // flight; then wait for it, so the later edit is the one that sticks.
       const previous = queuesRef.current.get(task.id);
-      const queued: Promise<unknown> = previous
-        ? previous.then(send, () => Promise.reject(PREDECESSOR_FAILED))
-        : send();
+      const prerequisites = [previous, options.after].filter(
+        (promise): promise is Promise<unknown> => promise !== undefined,
+      );
+      // Waits for every prerequisite to settle, even after one fails, so
+      // this task's queue never moves on while its earlier save is in flight.
+      const queued: Promise<unknown> =
+        prerequisites.length > 0
+          ? Promise.allSettled(prerequisites).then((results) =>
+              results.every((result) => result.status === "fulfilled")
+                ? send()
+                : Promise.reject(PREDECESSOR_FAILED),
+            )
+          : send();
       queuesRef.current.set(task.id, queued);
 
       queued
@@ -127,6 +159,7 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
             queuesRef.current.delete(task.id);
           }
         });
+      return queued;
     },
     [t, updateTask, updateTaskAssignee],
   );

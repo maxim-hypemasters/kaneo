@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
 import { GanttTaskBar } from "./gantt-task-bar";
 import type {
@@ -21,6 +22,8 @@ type GanttTaskRowProps = {
   laneDrag?: GanttLaneDrag;
   onOpenTask: () => void;
   onCommit: (edit: GanttTaskEdit) => void;
+  onDragChange?: (dragging: boolean) => void;
+  dependencyNote?: string;
 };
 
 export function GanttTaskRow({
@@ -35,9 +38,12 @@ export function GanttTaskRow({
   laneDrag,
   onOpenTask,
   onCommit,
+  onDragChange,
+  dependencyNote,
 }: GanttTaskRowProps) {
   return (
     <div
+      data-gantt-row={task.id}
       className="grid items-stretch border-b border-border/70"
       style={{ gridTemplateColumns: rowGridTemplateColumns }}
     >
@@ -74,7 +80,12 @@ export function GanttTaskRow({
       ) : null}
 
       <div
-        className="relative min-h-11 shrink-0 cursor-grab select-none"
+        className={cn(
+          "relative shrink-0 cursor-grab select-none",
+          // Without the rail a row would be exactly as tall as its bar,
+          // leaving dependency arrows no room to turn between rows.
+          showTaskRail ? "min-h-11" : "min-h-12",
+        )}
         style={{
           minWidth: `${timeline.timelineMinWidthRem}rem`,
         }}
@@ -87,6 +98,8 @@ export function GanttTaskRow({
           laneDrag={laneDrag}
           onCommit={onCommit}
           onOpenTask={onOpenTask}
+          onDragChange={onDragChange}
+          dependencyNote={dependencyNote}
         />
       </div>
     </div>

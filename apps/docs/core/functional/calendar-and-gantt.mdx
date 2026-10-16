@@ -28,6 +28,12 @@ Dates and status answer different questions. Reaching a due date does not finish
 
 For unscheduled ideas, use the [backlog](/core/functional/backlog-planning). For daily status changes, use [Board or List](/core/functional/plan-and-execute-tasks).
 
+### Dependencies
+
+When one task blocks another (set under **Relations** in the task), Gantt draws an arrow from the end of the blocking task to the start of the task it blocks. A blocked task may start on the day its blocker ends, but not before; an arrow turns red and dashed when that's no longer true.
+
+If dragging or resizing a bar would break a dependency, Kaneo asks first and lists the tasks that would move. **Move N related tasks** keeps everything in order: tasks it blocks are pushed later and tasks blocking it are pulled earlier, along the whole chain, each keeping its length. Overlaps that were already there stay as they are. **Move only this task** keeps just your change, and **Cancel** puts the bar back. When the tasks block each other in a loop and moving them would come back around to the task you moved, only **Move only this task** and **Cancel** are offered.
+
 ### Group by assignee
 
 To see who is carrying which work, open **Display** and set **Group by** to **Assignee**. The timeline then shows one lane per project member, plus **Unassigned**, and your choice is remembered for next time. Each lane header shows the member's task count and a bar spanning their earliest start to their latest due date. Click a header to collapse or expand its lane. If you filter by assignee, only the matching lanes are shown.

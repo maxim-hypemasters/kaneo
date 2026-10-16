@@ -3124,7 +3124,21 @@
 			"laneTaskCount_other": "{{count}} tareas",
 			"reassignError": "Error al reasignar la tarea",
 			"taskAriaLabelGrouped": "{{title}}: abrir o arrastrar para reprogramar o reasignar",
-			"unassign": "Desasignar"
+			"unassign": "Desasignar",
+			"dependencies": {
+				"cycleDescription": "Estas tareas se bloquean entre sí en un ciclo, así que no se pueden ordenar automáticamente.",
+				"description": "Una tarea bloqueada no puede empezar antes de que termine la tarea que la bloquea. Mueve también las tareas relacionadas para mantener el orden.",
+				"moveDates": "Fechas actuales: {{from}}. Nuevas fechas: {{to}}.",
+				"moveOnly": "Mover solo esta tarea",
+				"moveRelated_many": "Mover {{count}} tareas relacionadas",
+				"moveRelated_one": "Mover {{count}} tarea relacionada",
+				"moveRelated_other": "Mover {{count}} tareas relacionadas",
+				"movesLabel": "Tareas que se moverían",
+				"startsBeforeBlocker": "Empieza antes de que termine {{title}}.",
+				"title_many": "Este cambio rompe {{count}} dependencias",
+				"title_one": "Este cambio rompe {{count}} dependencia",
+				"title_other": "Este cambio rompe {{count}} dependencias"
+			}
 		},
 		"delete": {
 			"title": "¿Eliminar tarea?",

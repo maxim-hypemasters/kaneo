@@ -3087,7 +3087,19 @@
 			"laneTaskCount_other": "{{count}} talep",
 			"reassignError": "Talep yeniden atanamadı",
 			"taskAriaLabelGrouped": "{{title}}: açın veya yeniden zamanlamak ya da yeniden atamak için sürükleyin",
-			"unassign": "Atamayı kaldır"
+			"unassign": "Atamayı kaldır",
+			"dependencies": {
+				"cycleDescription": "Bu talepler birbirini döngü halinde engelliyor, bu yüzden otomatik olarak sıraya konamazlar.",
+				"description": "Engellenen bir talep, onu engelleyen talep bitmeden başlayamaz. Sırayı korumak için ilişkili talepleri de taşıyın.",
+				"moveDates": "Mevcut tarihler: {{from}}. Yeni tarihler: {{to}}.",
+				"moveOnly": "Yalnızca bu talebi taşı",
+				"moveRelated_one": "{{count}} ilişkili talebi taşı",
+				"moveRelated_other": "{{count}} ilişkili talebi taşı",
+				"movesLabel": "Taşınacak talepler",
+				"startsBeforeBlocker": "{{title}} bitmeden başlıyor.",
+				"title_one": "Bu değişiklik {{count}} bağımlılığı bozuyor",
+				"title_other": "Bu değişiklik {{count}} bağımlılığı bozuyor"
+			}
 		},
 		"delete": {
 			"title": "Talep Silinsin mi?",

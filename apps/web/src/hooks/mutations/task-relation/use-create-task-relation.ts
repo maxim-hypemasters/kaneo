@@ -16,6 +16,7 @@ function useCreateTaskRelation() {
       queryClient.invalidateQueries({
         queryKey: ["task-relations", variables.targetTaskId],
       });
+      queryClient.invalidateQueries({ queryKey: ["project-task-relations"] });
     },
   });
 }

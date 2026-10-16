@@ -3135,7 +3135,21 @@
 			"laneTaskCount_other": "{{count}} tâches",
 			"reassignError": "Échec de la réassignation de la tâche",
 			"taskAriaLabelGrouped": "{{title}} : ouvrir ou faire glisser pour replanifier ou réassigner",
-			"unassign": "Désassigner"
+			"unassign": "Désassigner",
+			"dependencies": {
+				"cycleDescription": "Ces tâches se bloquent mutuellement en boucle, elles ne peuvent donc pas être remises en ordre automatiquement.",
+				"description": "Une tâche bloquée ne peut pas commencer avant la fin de la tâche qui la bloque. Déplacez aussi les tâches liées pour conserver leur ordre.",
+				"moveDates": "Dates actuelles : {{from}}. Nouvelles dates : {{to}}.",
+				"moveOnly": "Déplacer uniquement cette tâche",
+				"moveRelated_many": "Déplacer {{count}} tâches liées",
+				"moveRelated_one": "Déplacer {{count}} tâche liée",
+				"moveRelated_other": "Déplacer {{count}} tâches liées",
+				"movesLabel": "Tâches qui seraient déplacées",
+				"startsBeforeBlocker": "Commence avant la fin de {{title}}.",
+				"title_many": "Cette modification ne respecte pas {{count}} dépendances",
+				"title_one": "Cette modification ne respecte pas {{count}} dépendance",
+				"title_other": "Cette modification ne respecte pas {{count}} dépendances"
+			}
 		},
 		"delete": {
 			"title": "Supprimer la tâche ?",

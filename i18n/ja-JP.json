@@ -3053,7 +3053,17 @@
 			"laneTaskCount_other": "{{count}} 件のタスク",
 			"reassignError": "担当者の変更に失敗しました",
 			"taskAriaLabelGrouped": "{{title}}: 開く、またはドラッグして日程や担当者を変更",
-			"unassign": "割り当てを解除"
+			"unassign": "割り当てを解除",
+			"dependencies": {
+				"cycleDescription": "これらのタスクは循環して互いをブロックしているため、自動で順序を整えることはできません。",
+				"description": "ブロックされているタスクは、それをブロックしているタスクが終わるまで開始できません。順序を保つため、関連タスクも一緒に移動してください。",
+				"moveDates": "現在の日程: {{from}}。新しい日程: {{to}}。",
+				"moveOnly": "このタスクのみ移動",
+				"moveRelated_other": "関連タスク {{count}} 件も移動",
+				"movesLabel": "移動されるタスク",
+				"startsBeforeBlocker": "{{title}} が終わる前に開始します。",
+				"title_other": "この変更で {{count}} 件の依存関係が崩れます"
+			}
 		},
 		"delete": {
 			"title": "タスクを削除しますか？",

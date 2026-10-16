@@ -13,6 +13,7 @@ function useDeleteTaskRelation(taskId: string) {
       queryClient.invalidateQueries({
         queryKey: ["task-relations", taskId],
       });
+      queryClient.invalidateQueries({ queryKey: ["project-task-relations"] });
     },
   });
 }

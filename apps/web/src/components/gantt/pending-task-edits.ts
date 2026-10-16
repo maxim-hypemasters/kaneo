@@ -1,5 +1,6 @@
 import { differenceInCalendarDays } from "date-fns";
 import type { GanttTaskEdit, ScheduledTask } from "./gantt-types";
+import { toIsoDay } from "./timeline";
 
 // A saved-but-not-yet-refetched drag. The route shows it in place of the
 // server data so a bar doesn't snap back (or jump lanes twice) while the
@@ -8,6 +9,11 @@ export type PendingTaskEdit = GanttTaskEdit & {
   seq: number;
   assigneeName: string | null;
   assigneeImage: string | null;
+  // Which date fields the task has once this edit is saved, so a later edit
+  // made before the refetch sees them (a task with only a due date gains a
+  // start date when dragged, but not when moved along by a dependency).
+  hasStartDate: boolean;
+  hasDueDate: boolean;
 };
 
 function sameDay(left: Date, right: Date) {
@@ -31,6 +37,8 @@ export function applyPendingEdit(
     ...task,
     scheduleStart: pending.start,
     scheduleEnd: pending.end,
+    startDate: pending.hasStartDate ? toIsoDay(pending.start) : null,
+    dueDate: pending.hasDueDate ? toIsoDay(pending.end) : null,
     userId: pending.userId,
     assigneeId: pending.userId,
     assigneeName: pending.assigneeName,

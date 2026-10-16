@@ -168,9 +168,12 @@ it("reconciles the initial handshake after active pagination completes", async (
     query: { queryKey: ["tasks", "p"], state: { fetchStatus: "idle" } },
   });
   await Promise.resolve();
-  expect(mocks.client.invalidateQueries).toHaveBeenCalledExactlyOnceWith({
-    queryKey: ["tasks", "p"],
-  });
+  expect(
+    mocks.client.invalidateQueries.mock.calls.map(([options]) => options),
+  ).toEqual([
+    { queryKey: ["tasks", "p"] },
+    { queryKey: ["project-task-relations", "p"] },
+  ]);
 });
 it("preserves distinct task effects across pagination and a disconnect before replay", async () => {
   vi.useFakeTimers();
@@ -434,6 +437,46 @@ it.each(["TASK_UPDATED", "TASK_CREATED", "TASK_MOVED", "TASK_LABEL_UPDATED"])(
   },
 );
 
+it.each([
+  ["TASK_RELATION_UPDATED", { sourceTaskId: "a", targetTaskId: "b" }],
+  ["TASK_RELATION_UPDATED", { taskId: "" }],
+  ["TASK_MOVED", { taskId: "a" }],
+])("refreshes the project's relations after %s", (type, rest) => {
+  renderHook(() => useProjectWebSocket("p"));
+  Socket.current.message(type, rest);
+  expect(mocks.client.invalidateQueries).toHaveBeenCalledWith({
+    queryKey: ["project-task-relations", "p"],
+  });
+});
+
+it("polls the project's relations once realtime falls back to polling", async () => {
+  vi.useFakeTimers();
+  try {
+    renderHook(() => useProjectWebSocket("p"));
+    for (const delay of [1000, 2000, 4000, 8000, 16000]) {
+      Socket.current.onclose?.();
+      await vi.advanceTimersByTimeAsync(delay);
+    }
+    Socket.current.onclose?.();
+    mocks.client.invalidateQueries.mockClear();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(mocks.client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["project-task-relations", "p"],
+    });
+  } finally {
+    cleanup();
+    vi.useRealTimers();
+  }
+});
+
+it("keeps project relations cached through ordinary task edits", () => {
+  renderHook(() => useProjectWebSocket("p"));
+  Socket.current.message("TASK_UPDATED", { taskId: "a" });
+  expect(mocks.client.invalidateQueries).not.toHaveBeenCalledWith({
+    queryKey: ["project-task-relations", "p"],
+  });
+});
+
 it("drains queued detail events after retries fall back to polling", async () => {
   vi.useFakeTimers();
   try {
@@ -468,6 +511,7 @@ it("drains queued detail events after retries fall back to polling", async () =>
       ["task", "a"],
       ["external-links", "a"],
       ["task-relations", "b"],
+      ["project-task-relations", "p"],
     ])
       expect(mocks.client.invalidateQueries).toHaveBeenCalledWith({
         queryKey: key,

@@ -36,7 +36,18 @@ import {
   groupGanttTasks,
   laneKeyForAssignee,
 } from "@/components/gantt/group-gantt-tasks";
-import { applyPendingEdit } from "@/components/gantt/pending-task-edits";
+import {
+  blockingDependencies,
+  type GanttSpan,
+  isDependencyBroken,
+  planDependencyMoves,
+} from "@/components/gantt/gantt-dependencies";
+import { GanttDependencyDialog } from "@/components/gantt/gantt-dependency-dialog";
+import { GanttDependencyLines } from "@/components/gantt/gantt-dependency-lines";
+import {
+  applyPendingEdit,
+  classifyEdit,
+} from "@/components/gantt/pending-task-edits";
 import { paddedSchedule, parseTaskDate } from "@/components/gantt/timeline";
 import { useDragToPan } from "@/components/gantt/use-drag-to-pan";
 import { useGanttRange } from "@/components/gantt/use-gantt-range";
@@ -55,6 +66,7 @@ import { useGoToProjectView } from "@/components/project/views/use-go-to-project
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import useGetProjectTaskRelations from "@/hooks/queries/task-relation/use-get-project-task-relations";
 import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
@@ -66,6 +78,16 @@ type GanttSearchParams = {
 };
 
 const NO_COLLAPSED_LANES: ReadonlySet<string> = new Set();
+
+type TaskAssignee = { name: string | null; image: string | null };
+
+const spansOf = (tasks: readonly ScheduledTask[]) =>
+  new Map<string, GanttSpan>(
+    tasks.map((task) => [
+      task.id,
+      { start: task.scheduleStart, end: task.scheduleEnd },
+    ]),
+  );
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/workspace/$workspaceId/project/$projectId/gantt",
@@ -220,19 +242,130 @@ function RouteComponent() {
   }, [allTasks]);
 
   const { pending: pendingEdits, commit } = useGanttTaskCommits(parsedTasks);
+  const { data: relations } = useGetProjectTaskRelations({
+    projectId,
+    relationType: "blocks",
+  });
+  const dependencies = useMemo(
+    () => blockingDependencies(relations ?? []),
+    [relations],
+  );
+  // A date change that breaks a dependency waits here (shown in place, not
+  // saved) while the user decides what to do about it. Only the edit itself
+  // is kept, with the dependencies it broke: what still breaks and what would
+  // move is worked out from the live data, which can change while the
+  // question is open.
+  const [heldEdit, setHeldEdit] = useState<{
+    taskId: string;
+    edit: GanttTaskEdit;
+    assignee: TaskAssignee;
+    // A plain move or resize takes whoever is assigned when it's saved, so a
+    // reassignment made meanwhile isn't undone.
+    changesAssignee: boolean;
+    brokenIds: ReadonlySet<string>;
+  } | null>(null);
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
 
   // Saved drags show right away; rows keep their server-date order until
   // the refetch lands, as they always have.
-  const displayedTasks = useMemo<ScheduledTask[]>(
-    () =>
-      pendingEdits.size === 0
-        ? parsedTasks
-        : parsedTasks.map((task) => {
-            const edit = pendingEdits.get(task.id);
-            return edit ? applyPendingEdit(task, edit) : task;
-          }),
-    [parsedTasks, pendingEdits],
+  const savedTasks = useMemo<ScheduledTask[]>(() => {
+    if (pendingEdits.size === 0) return parsedTasks;
+    return parsedTasks.map((task) => {
+      const edit = pendingEdits.get(task.id);
+      return edit ? applyPendingEdit(task, edit) : task;
+    });
+  }, [parsedTasks, pendingEdits]);
+  const savedTasksById = useMemo(
+    () => new Map(savedTasks.map((task) => [task.id, task])),
+    [savedTasks],
   );
+  const savedSpans = useMemo(() => spansOf(savedTasks), [savedTasks]);
+  const heldTask = heldEdit ? savedTasksById.get(heldEdit.taskId) : undefined;
+  const heldDraft = useMemo(() => {
+    if (!heldEdit || !heldTask) return null;
+    if (heldEdit.changesAssignee) return heldEdit;
+    return {
+      edit: { ...heldEdit.edit, userId: heldTask.userId || null },
+      assignee: {
+        name: heldTask.assigneeName,
+        image: heldTask.assigneeImage ?? null,
+      },
+    };
+  }, [heldEdit, heldTask]);
+  const heldPlan = useMemo(
+    () =>
+      heldEdit && heldDraft
+        ? planDependencyMoves(
+            savedSpans,
+            dependencies,
+            heldEdit.taskId,
+            heldDraft.edit,
+            heldEdit.brokenIds,
+          )
+        : null,
+    [heldEdit, heldDraft, savedSpans, dependencies],
+  );
+  const heldMoves = useMemo(
+    () =>
+      (heldPlan?.moves ?? []).map((move) => ({
+        ...move,
+        title: savedTasksById.get(move.taskId)?.title ?? "",
+      })),
+    [heldPlan, savedTasksById],
+  );
+
+  const displayedTasks = useMemo<ScheduledTask[]>(() => {
+    if (!heldEdit || !heldDraft) return savedTasks;
+    return savedTasks.map((task) =>
+      task.id === heldEdit.taskId
+        ? applyPendingEdit(task, {
+            ...heldDraft.edit,
+            seq: -1,
+            assigneeName: heldDraft.assignee.name,
+            assigneeImage: heldDraft.assignee.image,
+            hasStartDate: true,
+            hasDueDate: true,
+          })
+        : task,
+    );
+  }, [savedTasks, heldEdit, heldDraft]);
+  const spans = useMemo(() => spansOf(displayedTasks), [displayedTasks]);
+  // Bars whose drag moves an arrow; only they report drags, so other drags
+  // never re-render the chart.
+  const dependentTaskIds = useMemo(
+    () =>
+      new Set(
+        dependencies.flatMap((dependency) => [
+          dependency.blockerId,
+          dependency.blockedId,
+        ]),
+      ),
+    [dependencies],
+  );
+  // The red arrows, in words: for each task starting too early, the tasks
+  // that block it and haven't ended yet.
+  const earlyStartBlockers = useMemo(() => {
+    const titles = new Map(displayedTasks.map((task) => [task.id, task.title]));
+    const blockers = new Map<string, string[]>();
+    for (const dependency of dependencies) {
+      const blocker = spans.get(dependency.blockerId);
+      const blocked = spans.get(dependency.blockedId);
+      if (!blocker || !blocked || !isDependencyBroken(blocker, blocked)) {
+        continue;
+      }
+      const list = blockers.get(dependency.blockedId) ?? [];
+      list.push(titles.get(dependency.blockerId) ?? "");
+      blockers.set(dependency.blockedId, list);
+    }
+    return blockers;
+  }, [dependencies, spans, displayedTasks]);
+  const dependencyNote = (taskId: string) =>
+    earlyStartBlockers
+      .get(taskId)
+      ?.map((title) =>
+        t("tasks:gantt.dependencies.startsBeforeBlocker", { title }),
+      )
+      .join(" ");
 
   const scheduledTasks = useMemo(() => {
     const visibleIds = new Set(
@@ -283,6 +416,20 @@ function RouteComponent() {
       lanesByKey.get(laneKey) ?? null,
     [lanesByKey],
   );
+  // Which rows are on screen and in what order; the dependency lines
+  // measure them again whenever this changes.
+  const renderedRowsKey = lanes
+    ? lanes
+        .map(
+          (lane) =>
+            `${lane.key}:${
+              collapsedLaneKeys.has(lane.key)
+                ? ""
+                : lane.tasks.map((task) => task.id).join(",")
+            }`,
+        )
+        .join("|")
+    : scheduledTasks.map((task) => task.id).join(",");
   const laneDragEnabled = groupByAssignee && canAssignTasks();
   const dropTargetLaneKey = laneDragState?.targetLaneKey ?? null;
 
@@ -291,7 +438,7 @@ function RouteComponent() {
     const targetLane = keepsAssignee
       ? null
       : lanesByKey.get(laneKeyForAssignee(edit.userId));
-    commit(task, edit, {
+    const assignee = {
       name: keepsAssignee
         ? task.assigneeName
         : targetLane?.userId
@@ -300,8 +447,69 @@ function RouteComponent() {
       image: keepsAssignee
         ? (task.assigneeImage ?? null)
         : (targetLane?.image ?? null),
-    });
+    };
+    const broken = classifyEdit(task, edit).dates
+      ? planDependencyMoves(savedSpans, dependencies, task.id, edit).broken
+      : [];
+    if (broken.length > 0) {
+      setHeldEdit({
+        taskId: task.id,
+        edit,
+        assignee,
+        changesAssignee: !keepsAssignee,
+        brokenIds: new Set(broken.map((dependency) => dependency.id)),
+      });
+      return;
+    }
+    commit(task, edit, assignee);
   };
+
+  const resolveHeldEdit = (moveRelated: boolean) => {
+    setHeldEdit(null);
+    if (!heldTask || !heldDraft) return;
+    const saved = commit(heldTask, heldDraft.edit, heldDraft.assignee);
+    if (!moveRelated) return;
+    for (const move of heldPlan?.moves ?? []) {
+      const related = savedTasksById.get(move.taskId);
+      if (!related) continue;
+      // Only once the task the user moved has saved: if that fails, the
+      // tasks moved to make room for it stay where they were.
+      commit(
+        related,
+        {
+          start: move.to.start,
+          end: move.to.end,
+          userId: related.userId || null,
+        },
+        {
+          name: related.assigneeName,
+          image: related.assigneeImage ?? null,
+        },
+        { after: saved, keepDateFields: true },
+      );
+    }
+  };
+
+  // The question only stands while the edit still breaks something: drop it
+  // when its task is gone, and save it as is once a refetch (someone else
+  // moving the other task, or removing the dependency) has made room for
+  // every dependency it broke.
+  useEffect(() => {
+    if (!heldEdit) return;
+    if (!heldTask || !heldDraft) {
+      setHeldEdit(null);
+      return;
+    }
+    if (heldPlan && heldPlan.broken.length === 0) {
+      setHeldEdit(null);
+      commit(heldTask, heldDraft.edit, heldDraft.assignee);
+    }
+  }, [heldEdit, heldTask, heldDraft, heldPlan, commit]);
+
+  const trackDrag = (taskId: string, dragging: boolean) =>
+    setDraggingTaskId((current) =>
+      dragging ? taskId : current === taskId ? null : current,
+    );
 
   const openTask = (taskId: string) =>
     navigate({
@@ -623,6 +831,17 @@ function RouteComponent() {
                   data-gantt-lanes=""
                   className="relative z-10 flex flex-col"
                 >
+                  {dependencies.length > 0 && (
+                    <GanttDependencyLines
+                      dependencies={dependencies}
+                      spans={spans}
+                      timeline={timeline}
+                      dayColumnWidthRem={dayColumnWidthRem}
+                      railWidthRem={railWidthRem}
+                      layoutKey={renderedRowsKey}
+                      draggingTaskId={draggingTaskId}
+                    />
+                  )}
                   {lanes
                     ? lanes.map((lane) => {
                         const collapsed =
@@ -683,6 +902,13 @@ function RouteComponent() {
                                     onCommit={(edit) =>
                                       commitTaskEdit(task, edit)
                                     }
+                                    onDragChange={
+                                      dependentTaskIds.has(task.id)
+                                        ? (dragging) =>
+                                            trackDrag(task.id, dragging)
+                                        : undefined
+                                    }
+                                    dependencyNote={dependencyNote(task.id)}
                                   />
                                 ))}
                           </div>
@@ -701,6 +927,12 @@ function RouteComponent() {
                           showAssignee
                           onOpenTask={() => openTask(task.id)}
                           onCommit={(edit) => commitTaskEdit(task, edit)}
+                          onDragChange={
+                            dependentTaskIds.has(task.id)
+                              ? (dragging) => trackDrag(task.id, dragging)
+                              : undefined
+                          }
+                          dependencyNote={dependencyNote(task.id)}
                         />
                       ))}
                 </div>
@@ -708,6 +940,16 @@ function RouteComponent() {
             </div>
           </div>
         )}
+
+        <GanttDependencyDialog
+          open={!!heldPlan && heldPlan.broken.length > 0}
+          brokenCount={heldPlan?.broken.length ?? 0}
+          cycle={heldPlan?.cycle ?? false}
+          moves={heldMoves}
+          onMoveRelated={() => resolveHeldEdit(true)}
+          onMoveOnly={() => resolveHeldEdit(false)}
+          onCancel={() => setHeldEdit(null)}
+        />
 
         <TaskDetailsSheet
           taskId={taskId}

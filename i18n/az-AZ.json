@@ -3101,7 +3101,19 @@
 			"laneTaskCount_other": "{{count}} tapşırıq",
 			"reassignError": "Tapşırığı yenidən təyin etmək alınmadı",
 			"taskAriaLabelGrouped": "{{title}}: aç və ya tarixini dəyişmək, yaxud yenidən təyin etmək üçün sürüklə",
-			"unassign": "İcraçını çıxar"
+			"unassign": "İcraçını çıxar",
+			"dependencies": {
+				"cycleDescription": "Bu tapşırıqlar bir-birini dövrəvi şəkildə bloklayır, buna görə onları avtomatik olaraq ardıcıllığa salmaq mümkün deyil.",
+				"description": "Bloklanmış tapşırıq onu bloklayan tapşırıq bitməzdən əvvəl başlaya bilməz. Ardıcıllığı qorumaq üçün əlaqəli tapşırıqları da köçürün.",
+				"moveDates": "Cari tarixlər: {{from}}. Yeni tarixlər: {{to}}.",
+				"moveOnly": "Yalnız bu tapşırığı köçür",
+				"moveRelated_one": "{{count}} əlaqəli tapşırığı köçür",
+				"moveRelated_other": "{{count}} əlaqəli tapşırığı köçür",
+				"movesLabel": "Köçürüləcək tapşırıqlar",
+				"startsBeforeBlocker": "{{title}} bitməzdən əvvəl başlayır.",
+				"title_one": "Bu dəyişiklik {{count}} asılılığı pozur",
+				"title_other": "Bu dəyişiklik {{count}} asılılığı pozur"
+			}
 		},
 		"delete": {
 			"title": "Tapşırıq silinsin?",

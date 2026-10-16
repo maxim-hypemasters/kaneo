@@ -29,6 +29,22 @@ export const taskRelationSchema = z
   })
   .openapi("TaskRelation");
 
+export const projectTaskRelationSchema = z
+  .object({
+    id: z.string(),
+    sourceTaskId: z.string().openapi({
+      description:
+        "The blocking task for `blocks`, the parent task for `subtask`.",
+    }),
+    targetTaskId: z.string().openapi({
+      description: "The blocked task for `blocks`, the subtask for `subtask`.",
+    }),
+    relationType: z.string().openapi({ description: relationTypeDescription }),
+  })
+  .openapi("ProjectTaskRelation");
+
+export const projectTaskRelationListSchema = z.array(projectTaskRelationSchema);
+
 // Always present in practice: relations whose endpoints are not both visible in
 // the workspace are dropped. Nullable only because the lookup is a map read.
 export const taskRelationWithTasksSchema = taskRelationSchema

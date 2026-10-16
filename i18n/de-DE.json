@@ -3087,7 +3087,19 @@
 			"laneTaskCount_other": "{{count}} Aufgaben",
 			"reassignError": "Aufgabe konnte nicht neu zugewiesen werden",
 			"taskAriaLabelGrouped": "{{title}}: öffnen oder ziehen zum Umplanen oder Neuzuweisen",
-			"unassign": "Zuweisung aufheben"
+			"unassign": "Zuweisung aufheben",
+			"dependencies": {
+				"cycleDescription": "Diese Aufgaben blockieren sich gegenseitig in einer Schleife, daher können sie nicht automatisch in die richtige Reihenfolge gebracht werden.",
+				"description": "Eine blockierte Aufgabe kann nicht beginnen, bevor die blockierende Aufgabe endet. Verschiebe die verknüpften Aufgaben ebenfalls, um die Reihenfolge beizubehalten.",
+				"moveDates": "Aktueller Zeitraum: {{from}}. Neuer Zeitraum: {{to}}.",
+				"moveOnly": "Nur diese Aufgabe verschieben",
+				"moveRelated_one": "{{count}} verknüpfte Aufgabe verschieben",
+				"moveRelated_other": "{{count}} verknüpfte Aufgaben verschieben",
+				"movesLabel": "Aufgaben, die verschoben würden",
+				"startsBeforeBlocker": "Beginnt, bevor {{title}} endet.",
+				"title_one": "Diese Änderung verletzt {{count}} Abhängigkeit",
+				"title_other": "Diese Änderung verletzt {{count}} Abhängigkeiten"
+			}
 		},
 		"delete": {
 			"title": "Aufgabe löschen?",
