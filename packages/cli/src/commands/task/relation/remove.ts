@@ -1,9 +1,6 @@
 import { Effect, Option } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
-import {
-  deleteTaskRelation,
-  listTaskRelations,
-} from "../../../api/task-relations.js";
+import { listTaskRelations } from "../../../api/task-relations.js";
 import { NotFound } from "../../../errors/errors.js";
 import { emit } from "../../../output/emit.js";
 import { withSpinner } from "../../../output/spinner.js";
@@ -18,6 +15,7 @@ import {
 import { renderRelationsRemoved } from "../../../relations/render-relation-change.js";
 import { resolvePair } from "../../../relations/resolve-pair.js";
 import { taskLabel, taskRef } from "../../../relations/task-ref.js";
+import { unlinkRelation } from "../../../relations/unlink-relation.js";
 import { ApiLayer } from "../../api-layer.js";
 
 export const runRelationRemove = Effect.fn("command.task.relation.remove")(
@@ -39,12 +37,11 @@ export const runRelationRemove = Effect.fn("command.task.relation.remove")(
     const relations = yield* withSpinner(`Loading relations of ${label}`)(
       listTaskRelations(task.id),
     );
-    const matches = relationsBetween(relations, task.id, other.id, type).map(
-      (relation) => ({
-        id: relation.id,
-        type: perspectiveOf(relation, task.id).type,
-      }),
-    );
+    const between = relationsBetween(relations, task.id, other.id, type);
+    const matches = between.map((relation) => ({
+      id: relation.id,
+      type: perspectiveOf(relation, task.id).type,
+    }));
     if (matches.length === 0) {
       return yield* new NotFound({
         message: type
@@ -61,9 +58,7 @@ export const runRelationRemove = Effect.fn("command.task.relation.remove")(
     }
 
     yield* withSpinner(`Unlinking ${label} and ${otherLabel}`)(
-      Effect.forEach(matches, (match) => deleteTaskRelation(match.id), {
-        discard: true,
-      }),
+      Effect.forEach(between, unlinkRelation, { discard: true }),
     );
 
     yield* emit({ task, other, removed: matches }, (ui) =>

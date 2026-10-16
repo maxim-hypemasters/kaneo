@@ -56,3 +56,26 @@ export function renderRelationsRemoved(
       : `  ${tick} Unlinked ${task} and ${other}`;
   return ["", line, ""];
 }
+
+export function renderFeatureJoined(
+  ui: Ui,
+  change: {
+    readonly task: TaskLabel;
+    readonly feature: TaskLabel & { readonly title: string };
+    readonly madeFeature: boolean;
+  },
+): string[] {
+  const [, linked = ""] = renderRelationLinked(ui, {
+    type: "subtask-of",
+    task: change.task,
+    other: change.feature,
+  });
+  return [
+    "",
+    linked,
+    ...(change.madeFeature
+      ? [`    ${ui.theme.muted(`${change.feature.label} is now a feature.`)}`]
+      : []),
+    "",
+  ];
+}

@@ -2,6 +2,13 @@ import { Effect, Option } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 import { listTaskLabels } from "../../api/labels.js";
 import {
+  TASK_TYPES,
+  type TaskType,
+  taskTypeOf,
+  updateTaskFeature,
+  updateTaskType,
+} from "../../api/task-features.js";
+import {
   type Priority,
   updateTaskDescription,
   updateTaskDueDate,
@@ -21,6 +28,10 @@ import { withSpinner } from "../../output/spinner.js";
 import { checkDateRange } from "../../tasks/date-range.js";
 import { parseDateChange } from "../../tasks/parse-date.js";
 import { renderTaskChange } from "../../tasks/render-task-change.js";
+import {
+  checkFeatureProject,
+  resolveFeature,
+} from "../../tasks/resolve-feature.js";
 import { resolveTask } from "../../tasks/resolve-task.js";
 import { toTaskDetailJson } from "../../tasks/task-detail-json.js";
 import { readTextInput } from "../../input/read-text-input.js";
@@ -46,18 +57,40 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   readonly start: Option.Option<string>;
   readonly addLabel: ReadonlyArray<string>;
   readonly removeLabel: ReadonlyArray<string>;
+  readonly type: Option.Option<TaskType>;
+  readonly feature: Option.Option<string>;
 }) {
-  const { title, description, priority } = options;
+  const { title, description, priority, type } = options;
   if (
-    [title, description, priority, options.due, options.start].every((flag) =>
-      Option.isNone(flag),
-    ) &&
+    [
+      title,
+      description,
+      priority,
+      options.due,
+      options.start,
+      type,
+      options.feature,
+    ].every((flag) => Option.isNone(flag)) &&
     options.addLabel.length === 0 &&
     options.removeLabel.length === 0
   ) {
     return yield* new InvalidArgument({
       message: "Nothing to change.",
-      hint: "Pass at least one of --title, --description, --priority, --due, --start, --add-label or --remove-label.",
+      hint: "Pass at least one of --title, --description, --priority, --due, --start, --add-label, --remove-label, --type or --feature.",
+    });
+  }
+  // "none" takes the task out of its feature.
+  const featureReference = Option.filter(
+    options.feature,
+    (value) => value.trim().toLowerCase() !== "none",
+  );
+  if (
+    Option.getOrUndefined(type) === "feature" &&
+    Option.isSome(featureReference)
+  ) {
+    return yield* new InvalidArgument({
+      message: "A feature can't belong to another feature.",
+      hint: "Leave out --type feature, or pass --feature none.",
     });
   }
   const newTitle = Option.map(title, (value) => value.trim());
@@ -83,6 +116,21 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
     );
   }
 
+  if (
+    Option.isSome(featureReference) &&
+    taskTypeOf(resolved.task) === "feature" &&
+    Option.getOrUndefined(type) !== "task"
+  ) {
+    return yield* new InvalidArgument({
+      message: `${resolved.ticketId ?? resolved.task.id.slice(0, 8)} is a feature, and a feature can't belong to one.`,
+      hint: "Add --type task to make it a task first. A feature with tasks can't become one.",
+    });
+  }
+  const feature = yield* resolveFeature(featureReference, resolved.workspaceId);
+  if (feature) {
+    yield* Effect.fromResult(checkFeatureProject(feature, resolved.project));
+  }
+
   const id = resolved.task.id;
   const label = resolved.ticketId ?? id.slice(0, 8);
   const labelPlan = yield* withSpinner("Loading labels")(
@@ -98,6 +146,17 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   const changed: string[] = [];
   yield* withSpinner(`Updating ${label}`)(
     Effect.gen(function* () {
+      // These go first, as the server may refuse them (a feature that still
+      // has tasks can't become a task). The type comes before the feature,
+      // so a feature turned back into a task can join one.
+      if (Option.isSome(type)) {
+        yield* updateTaskType(id, type.value);
+        changed.push("type");
+      }
+      if (Option.isSome(options.feature)) {
+        yield* updateTaskFeature(id, feature?.task.id ?? null);
+        changed.push("feature");
+      }
       if (Option.isSome(newTitle)) {
         yield* updateTaskTitle(id, newTitle.value);
         changed.push("title");
@@ -190,6 +249,18 @@ export const taskEdit = Command.make(
       Flag.withDescription("Remove a label by name; repeat for more"),
       Flag.atLeast(0),
     ),
+    type: Flag.Literals("type", TASK_TYPES).pipe(
+      Flag.withDescription(
+        "feature makes it a feature, which groups tasks; task turns a feature without tasks back",
+      ),
+      Flag.optional,
+    ),
+    feature: Flag.String("feature").pipe(
+      Flag.withDescription(
+        "Put it in this feature of its project, for example KAN-12, or none to take it out",
+      ),
+      Flag.optional,
+    ),
   },
   (options) =>
     Effect.flatMap(
@@ -202,7 +273,7 @@ export const taskEdit = Command.make(
     ),
 ).pipe(
   Command.withDescription(
-    "Change a task's title, description, priority, dates or labels",
+    "Change a task's title, description, priority, dates, labels, type or feature",
   ),
   Command.provide(ApiLayer),
 );

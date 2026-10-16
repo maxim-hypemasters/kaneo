@@ -30,6 +30,11 @@ export type TaskViewErrors = Readonly<
 
 export type TaskViewJson = TaskDetailJson & {
   readonly labels: ReadonlyArray<TaskLabelJson> | null;
+  readonly feature: RelatedTaskJson | null;
+  // A feature's tasks.
+  readonly tasks: ReadonlyArray<RelatedTaskJson> | null;
+  // feature and tasks under their names from before features, kept for one
+  // release.
   readonly parent: RelatedTaskJson | null;
   readonly subtasks: ReadonlyArray<RelatedTaskJson> | null;
   readonly relations: ReadonlyArray<RelationJson> | null;
@@ -76,8 +81,10 @@ export function toTaskViewJson(input: TaskViewInput): TaskViewJson {
     labels: sectionValue(
       mapSection(sections.labels, (labels) => labels.map(toTaskLabelJson)),
     ),
-    parent: relations?.parent ?? null,
-    subtasks: relations?.subtasks ?? null,
+    feature: relations?.feature ?? null,
+    tasks: relations?.tasks ?? null,
+    parent: relations?.feature ?? null,
+    subtasks: relations?.tasks ?? null,
     relations: relations?.relations ?? null,
     links: sectionValue(
       mapSection(sections.links, (links) => links.map(toLinkJson)),

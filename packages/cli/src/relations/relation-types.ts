@@ -2,14 +2,16 @@ import { Result } from "effect";
 import type { NewTaskRelation } from "../api/task-relations.js";
 import { InvalidArgument } from "../errors/errors.js";
 
-export const RELATION_TYPES = [
-  "subtask-of",
-  "parent-of",
-  "blocks",
-  "blocked-by",
-  "relates-to",
-] as const;
-export type RelationType = (typeof RELATION_TYPES)[number];
+export const RELATION_TYPES = ["blocks", "blocked-by", "relates-to"] as const;
+export type LinkType = (typeof RELATION_TYPES)[number];
+
+// Deprecated words from before features: a task's parent is now its feature.
+// They still work (see join-parent-feature.ts) and name a task's feature link
+// in listings, but are not offered anymore.
+export const FEATURE_WORDS = ["subtask-of", "parent-of"] as const;
+export type FeatureWord = (typeof FEATURE_WORDS)[number];
+
+export type RelationType = LinkType | FeatureWord;
 
 export type RelationDirection = "outgoing" | "incoming";
 
@@ -27,6 +29,8 @@ const ALIASES: Readonly<Record<string, RelationType>> = {
 const UNSUPPORTED = new Set(["duplicates", "duplicate-of", "duplicated-by"]);
 
 const TYPE_HINT = `Use one of: ${RELATION_TYPES.join(", ")}.`;
+const FEATURE_HINT =
+  "To put a task into a feature, run kaneo task edit <task> --feature <feature>.";
 
 export function normalizeRelationWord(input: string): string {
   return input
@@ -48,29 +52,23 @@ export function parseRelationType(
         : `"${input.trim()}" is not a relation type.`,
       hint: UNSUPPORTED.has(word)
         ? `${TYPE_HINT} relates-to is the closest match.`
-        : TYPE_HINT,
+        : /feature|subtask|parent|child/u.test(word)
+          ? `${TYPE_HINT} ${FEATURE_HINT}`
+          : TYPE_HINT,
     }),
   );
 }
 
+export function isFeatureWord(type: string): type is FeatureWord {
+  return (FEATURE_WORDS as ReadonlyArray<string>).includes(type);
+}
+
 export function toApiRelation(
-  type: RelationType,
+  type: LinkType,
   taskId: string,
   otherId: string,
 ): NewTaskRelation {
   switch (type) {
-    case "subtask-of":
-      return {
-        sourceTaskId: otherId,
-        targetTaskId: taskId,
-        relationType: "subtask",
-      };
-    case "parent-of":
-      return {
-        sourceTaskId: taskId,
-        targetTaskId: otherId,
-        relationType: "subtask",
-      };
     case "blocks":
       return {
         sourceTaskId: taskId,
@@ -107,6 +105,7 @@ export function perspectiveOf(
   const outgoing = relation.sourceTaskId === taskId;
   const direction: RelationDirection = outgoing ? "outgoing" : "incoming";
   switch (relation.relationType) {
+    // A feature link: the source is the feature, the target its task.
     case "subtask":
       return { type: outgoing ? "parent-of" : "subtask-of", direction };
     case "blocks":
@@ -126,14 +125,14 @@ type Phrases = {
 
 const PHRASES: Readonly<Record<RelationType, Phrases>> = {
   "subtask-of": {
-    now: "is now a subtask of",
-    noLonger: "is no longer a subtask of",
-    not: "is not a subtask of",
+    now: "is now in feature",
+    noLonger: "is no longer in feature",
+    not: "is not in feature",
   },
   "parent-of": {
-    now: "is now the parent of",
-    noLonger: "is no longer the parent of",
-    not: "is not the parent of",
+    now: "is now the feature of",
+    noLonger: "is no longer the feature of",
+    not: "is not the feature of",
   },
   blocks: {
     now: "now blocks",
@@ -153,7 +152,10 @@ const PHRASES: Readonly<Record<RelationType, Phrases>> = {
 };
 
 export function isRelationType(type: string): type is RelationType {
-  return (RELATION_TYPES as ReadonlyArray<string>).includes(type);
+  return (
+    (RELATION_TYPES as ReadonlyArray<string>).includes(type) ||
+    isFeatureWord(type)
+  );
 }
 
 export function linkedPhrase(type: RelationType): string {
@@ -169,8 +171,6 @@ export function unlinkedPhrase(type: string): string | null {
 }
 
 const HEADINGS: Readonly<Record<string, string>> = {
-  "subtask-of": "Also a subtask of",
-  "parent-of": "Parent of",
   blocks: "Blocks",
   "blocked-by": "Blocked by",
   "relates-to": "Related",

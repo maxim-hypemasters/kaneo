@@ -4,17 +4,17 @@ import type { Ui } from "../render/ui.js";
 import { relatedTaskColumns } from "./related-task-columns.js";
 import { sectionTitle } from "./section-title.js";
 
-export function renderSubtasks(
+export function renderFeatureTasks(
   ui: Ui,
-  subtasks: ReadonlyArray<RelatedTaskJson>,
+  tasks: ReadonlyArray<RelatedTaskJson>,
 ): string[] {
-  if (subtasks.length === 0) return [];
-  const done = subtasks.filter((task) => task.completed).length;
+  if (tasks.length === 0) return [];
+  const done = tasks.filter((task) => task.completed).length;
   return [
-    sectionTitle(ui, "Subtasks", `${done} of ${subtasks.length} done`),
+    sectionTitle(ui, "Tasks", `${done} of ${tasks.length} done`),
     ...renderTable(
       ui,
-      subtasks,
+      tasks,
       relatedTaskColumns(ui, (task: RelatedTaskJson) => task),
       { width: ui.caps.columns, indent: 4, gap: 2 },
     ),

@@ -4,8 +4,6 @@ import { relationList } from "./relation/list.js";
 import { relationRemove } from "./relation/remove.js";
 
 export const taskRelation = Command.make("relation").pipe(
-  Command.withDescription(
-    "Work with parents, subtasks, blockers and related tasks",
-  ),
+  Command.withDescription("Work with features, blockers and related tasks"),
   Command.withSubcommands([relationList, relationAdd, relationRemove]),
 );

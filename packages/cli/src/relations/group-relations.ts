@@ -25,9 +25,11 @@ export type RelationJson = {
   readonly task: RelatedTaskJson;
 };
 
+// A task's feature, a feature's tasks, and the other links. Feature links
+// come from the relation listing as "subtask" entries.
 export type RelationsJson = {
-  readonly parent: RelatedTaskJson | null;
-  readonly subtasks: ReadonlyArray<RelatedTaskJson>;
+  readonly feature: RelatedTaskJson | null;
+  readonly tasks: ReadonlyArray<RelatedTaskJson>;
   readonly relations: ReadonlyArray<RelationJson>;
 };
 
@@ -67,8 +69,8 @@ export function groupRelations(
   taskId: string,
   context: TaskContext,
 ): RelationsJson {
-  const parents: RelatedTaskJson[] = [];
-  const subtasks: RelatedTaskJson[] = [];
+  let feature: RelatedTaskJson | null = null;
+  const tasks: RelatedTaskJson[] = [];
   const others: RelationJson[] = [];
   for (const relation of relations) {
     const outgoing = relation.sourceTaskId === taskId;
@@ -76,29 +78,20 @@ export function groupRelations(
     if (!linked || linked.id === taskId) continue;
     const task = relatedTaskJson(linked, context);
     const perspective = perspectiveOf(relation, taskId);
-    if (perspective.type === "parent-of") subtasks.push(task);
-    else if (perspective.type === "subtask-of") parents.push(task);
+    if (perspective.type === "parent-of") tasks.push(task);
+    // A task belongs to at most one feature.
+    else if (perspective.type === "subtask-of") feature = task;
     else others.push({ ...perspective, task });
   }
-  parents.sort(byTicket);
-  const [parent = null, ...extraParents] = parents;
-  const relationsJson = [
-    ...extraParents.map((task): RelationJson => ({
-      type: "subtask-of",
-      direction: "incoming",
-      task,
-    })),
-    ...others,
-  ].sort(
-    (a, b) =>
-      relationOrder(a.type) - relationOrder(b.type) ||
-      a.type.localeCompare(b.type) ||
-      byTicket(a.task, b.task),
-  );
   return {
-    parent,
-    subtasks: subtasks.sort(byTicket),
-    relations: relationsJson,
+    feature,
+    tasks: tasks.sort(byTicket),
+    relations: others.sort(
+      (a, b) =>
+        relationOrder(a.type) - relationOrder(b.type) ||
+        a.type.localeCompare(b.type) ||
+        byTicket(a.task, b.task),
+    ),
   };
 }
 

@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import { KaneoApi } from "./kaneo-api.js";
+import type { TaskType } from "./task-features.js";
 
 const NullableString = Schema.NullOr(Schema.String);
 
@@ -15,6 +16,8 @@ export const CreatedTask = Schema.Struct({
   dueDate: NullableString,
   createdAt: Schema.String,
   userId: NullableString,
+  type: Schema.optionalKey(Schema.String),
+  featureId: Schema.optionalKey(NullableString),
 });
 export type CreatedTask = typeof CreatedTask.Type;
 
@@ -41,6 +44,8 @@ export type CreateTaskBody = {
   readonly userId?: string;
   readonly dueDate?: string;
   readonly startDate?: string;
+  readonly type?: TaskType;
+  readonly featureId?: string;
 };
 
 function taskPath(route: string, id: string): string {

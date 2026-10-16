@@ -2,6 +2,7 @@ import { Effect, Option } from "effect";
 import { Argument, Command, Flag, Prompt } from "effect/cli";
 import { listColumns } from "../../api/endpoints.js";
 import { attachLabelToTask, type Label } from "../../api/labels.js";
+import { TASK_TYPES, type TaskType } from "../../api/task-features.js";
 import {
   type CreateTaskBody,
   createTask,
@@ -11,14 +12,10 @@ import { describeError } from "../../errors/describe.js";
 import { Cancelled, InvalidArgument } from "../../errors/errors.js";
 import { toTaskLabelJson } from "../../labels/label-json.js";
 import { resolveLabels } from "../../labels/resolve-labels.js";
-import { emit } from "../../output/emit.js";
+import { emit, note } from "../../output/emit.js";
 import { Output } from "../../output/output.js";
 import { withSpinner } from "../../output/spinner.js";
-import {
-  linkToParent,
-  projectOrParent,
-  resolveParent,
-} from "../../relations/link-subtask.js";
+import { taskRef } from "../../relations/task-ref.js";
 import { labelChip } from "../../render/label-chip.js";
 import { taskUrl } from "../../render/links.js";
 import { ticketId } from "../../render/task-format.js";
@@ -33,6 +30,11 @@ import { checkDateRange } from "../../tasks/date-range.js";
 import { parseDateInput } from "../../tasks/parse-date.js";
 import { renderTaskChange } from "../../tasks/render-task-change.js";
 import { resolveAssignee } from "../../tasks/resolve-assignee.js";
+import {
+  checkFeatureProject,
+  projectOrFeature,
+  resolveFeature,
+} from "../../tasks/resolve-feature.js";
 import { toTaskDetailJson } from "../../tasks/task-detail-json.js";
 import { readTextInput } from "../../input/read-text-input.js";
 import { shellSafeOr } from "../../input/shell-safe.js";
@@ -98,7 +100,8 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     readonly due: Option.Option<string>;
     readonly start: Option.Option<string>;
     readonly label: ReadonlyArray<string>;
-    readonly parent: Option.Option<string>;
+    readonly type: TaskType;
+    readonly feature: Option.Option<string>;
   }) {
     const session = yield* Session;
     const now = new Date();
@@ -106,12 +109,20 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     const startDate = yield* dateFlag(options.start, now, "--start");
     yield* Effect.fromResult(checkDateRange(startDate, dueDate));
 
+    if (options.type === "feature" && Option.isSome(options.feature)) {
+      return yield* new InvalidArgument({
+        message: "A feature can't belong to another feature.",
+        hint: "Leave out --type feature or --feature.",
+      });
+    }
     const workspaceId = yield* resolveWorkspaceId();
-    const parent = yield* resolveParent(options.parent, workspaceId);
+    const feature = yield* resolveFeature(options.feature, workspaceId);
     const project = yield* resolveProject(
       workspaceId,
-      projectOrParent(options.project, parent),
+      projectOrFeature(options.project, feature),
     );
+    if (feature)
+      yield* Effect.fromResult(checkFeatureProject(feature, project));
     const title = yield* resolveTitle(options.title);
 
     const [columns, assignee, labels] = yield* withSpinner(
@@ -145,6 +156,8 @@ export const runTaskCreate = Effect.fn("command.task.create")(
       ...(assignee ? { userId: assignee.id } : {}),
       ...(dueDate ? { dueDate } : {}),
       ...(startDate ? { startDate } : {}),
+      ...(options.type === "feature" ? { type: options.type } : {}),
+      ...(feature ? { featureId: feature.task.id } : {}),
     };
     const created = yield* withSpinner("Creating task")(
       createTask(project.id, body),
@@ -152,6 +165,12 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     const createdTicket = ticketId(project.slug, created.number);
     const createdLabel = createdTicket ?? created.id;
     const createdArgument = shellSafeOr(createdTicket, created.id);
+    // A server from before features ignores the type and sends none back.
+    if (options.type === "feature" && created.type === undefined) {
+      yield* note((ui) => [
+        `  ${ui.theme.warning(ui.glyphs.warning)} This Kaneo server has no features yet, so ${createdLabel} was created as a plain task. Update the server, then run kaneo task edit ${createdArgument} --type feature.`,
+      ]);
+    }
     const attached: ReadonlyArray<Label> =
       labels.length > 0
         ? yield* withSpinner("Adding labels")(
@@ -168,11 +187,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
             ),
           )
         : [];
-    const parentRef = yield* linkToParent(parent, {
-      id: created.id,
-      label: createdLabel,
-      argument: createdArgument,
-    });
+    const featureRef = feature ? taskRef(feature) : null;
 
     const json = toTaskDetailJson({
       task: {
@@ -180,6 +195,8 @@ export const runTaskCreate = Effect.fn("command.task.create")(
         projectId: created.projectId,
         number: created.number,
         title: created.title,
+        type: created.type,
+        featureId: created.featureId,
         description: created.description,
         status: created.status,
         priority: created.priority,
@@ -201,7 +218,13 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     });
 
     yield* emit(
-      { ...json, labels: attached.map(toTaskLabelJson), parent: parentRef },
+      {
+        ...json,
+        labels: attached.map(toTaskLabelJson),
+        feature: featureRef,
+        // The feature under its name from before features, for one release.
+        parent: featureRef,
+      },
       (ui, task) =>
         renderTaskChange(ui, {
           verb: "Created",
@@ -212,10 +235,11 @@ export const runTaskCreate = Effect.fn("command.task.create")(
             ...task.labels.map(
               (label) => `${labelChip(ui, label.color)} ${label.name}`,
             ),
-            ...(task.parent
+            ...(task.type === "feature" ? [ui.theme.muted("feature")] : []),
+            ...(task.feature
               ? [
                   ui.theme.muted(
-                    `subtask of ${task.parent.ticketId ?? task.parent.id.slice(0, 8)}`,
+                    `in feature ${task.feature.ticketId ?? task.feature.id.slice(0, 8)}`,
                   ),
                 ]
               : []),
@@ -277,9 +301,15 @@ export const taskCreate = Command.make(
       Flag.withDescription("Add a workspace label by name; repeat for more"),
       Flag.atLeast(0),
     ),
-    parent: Flag.String("parent").pipe(
+    type: Flag.Literals("type", TASK_TYPES).pipe(
+      Flag.withDescription("feature makes it a feature, which groups tasks"),
+      Flag.withDefault("task"),
+    ),
+    feature: Flag.String("feature").pipe(
+      // --parent is the name from before features.
+      Flag.withAlias("parent"),
       Flag.withDescription(
-        "Create it as a subtask of this task, for example KAN-12 (default project: the parent's)",
+        "Create it in this feature, for example KAN-12 (default project: the feature's)",
       ),
       Flag.optional,
     ),

@@ -22,15 +22,15 @@ type Group = {
 
 function groupsOf(relations: RelationsJson): Group[] {
   const groups: Group[] = [];
-  if (relations.parent) {
-    groups.push({ title: "Parent", meta: null, tasks: [relations.parent] });
+  if (relations.feature) {
+    groups.push({ title: "Feature", meta: null, tasks: [relations.feature] });
   }
-  if (relations.subtasks.length > 0) {
-    const done = relations.subtasks.filter((task) => task.completed).length;
+  if (relations.tasks.length > 0) {
+    const done = relations.tasks.filter((task) => task.completed).length;
     groups.push({
-      title: "Subtasks",
-      meta: `${done} of ${relations.subtasks.length} done`,
-      tasks: relations.subtasks,
+      title: "Tasks",
+      meta: `${done} of ${relations.tasks.length} done`,
+      tasks: relations.tasks,
     });
   }
   const byType = new Map<string, RelatedTaskJson[]>();

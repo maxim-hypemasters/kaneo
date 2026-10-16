@@ -81,6 +81,8 @@ export const resolvedTask: ResolvedTask = {
     createdAt: at(-8),
     assigneeId: "u1",
     assigneeName: "Ada Lovelace",
+    type: "feature",
+    featureId: null,
   },
   workspaceId: "ws_1",
   project,
@@ -120,8 +122,8 @@ const relation = (
   targetTask: target,
 });
 
+// KAN-12 is a feature: its tasks come as "subtask" links from it.
 export const relationsFixture: ReadonlyArray<TaskRelationWithTasks> = [
-  relation(related("t4", 4, "Auth overhaul"), me, "subtask"),
   relation(me, related("t13", 13, "Reproduce on Safari", "done"), "subtask"),
   relation(me, related("t14", 14, "Add a regression test", "done"), "subtask"),
   relation(

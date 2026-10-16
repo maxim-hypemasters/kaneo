@@ -1,6 +1,7 @@
 import { Result } from "effect";
 import { describe, expect, it } from "vite-plus/test";
 import {
+  isFeatureWord,
   notLinkedPhrase,
   parseRelationType,
   perspectiveOf,
@@ -28,7 +29,17 @@ describe("parseRelationType", () => {
     if (Result.isFailure(result)) {
       expect(result.failure.message).toBe('"follows" is not a relation type.');
       expect(result.failure.hint).toBe(
-        "Use one of: subtask-of, parent-of, blocks, blocked-by, relates-to.",
+        "Use one of: blocks, blocked-by, relates-to.",
+      );
+    }
+  });
+
+  it("points words about features at task edit --feature", () => {
+    const result = parseRelationType("in-feature");
+    expect(Result.isFailure(result)).toBe(true);
+    if (Result.isFailure(result)) {
+      expect(result.failure.hint).toBe(
+        "Use one of: blocks, blocked-by, relates-to. To put a task into a feature, run kaneo task edit <task> --feature <feature>.",
       );
     }
   });
@@ -45,20 +56,15 @@ describe("parseRelationType", () => {
   });
 });
 
-describe("toApiRelation", () => {
-  it("makes the parent the source of a subtask relation", () => {
-    expect(toApiRelation("subtask-of", "child", "parent")).toEqual({
-      sourceTaskId: "parent",
-      targetTaskId: "child",
-      relationType: "subtask",
-    });
-    expect(toApiRelation("parent-of", "parent", "child")).toEqual({
-      sourceTaskId: "parent",
-      targetTaskId: "child",
-      relationType: "subtask",
-    });
+describe("isFeatureWord", () => {
+  it("knows the deprecated words that set a feature", () => {
+    expect(isFeatureWord("subtask-of")).toBe(true);
+    expect(isFeatureWord("parent-of")).toBe(true);
+    expect(isFeatureWord("blocks")).toBe(false);
   });
+});
 
+describe("toApiRelation", () => {
   it("makes the blocker the source of a blocks relation", () => {
     expect(toApiRelation("blocks", "a", "b")).toEqual({
       sourceTaskId: "a",
@@ -115,6 +121,7 @@ describe("labels", () => {
 
   it("phrases a missing relation", () => {
     expect(notLinkedPhrase("blocks")).toBe("does not block");
-    expect(notLinkedPhrase("subtask-of")).toBe("is not a subtask of");
+    expect(notLinkedPhrase("subtask-of")).toBe("is not in feature");
+    expect(notLinkedPhrase("parent-of")).toBe("is not the feature of");
   });
 });

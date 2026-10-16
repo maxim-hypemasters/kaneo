@@ -1,9 +1,9 @@
 import type { Ui } from "../render/ui.js";
 import { renderComments } from "./render-comments.js";
+import { renderFeatureTasks } from "./render-feature-tasks.js";
 import { renderFields } from "./render-fields.js";
 import { renderLinks } from "./render-links.js";
 import { renderRelations } from "./render-relations.js";
-import { renderSubtasks } from "./render-subtasks.js";
 import { failedSection } from "./section-title.js";
 import type { TaskViewJson } from "./task-view-json.js";
 
@@ -17,10 +17,10 @@ export type TaskSectionsView = {
 export function renderTaskSections(ui: Ui, view: TaskSectionsView): string[] {
   const { task } = view;
   return [
-    ...(task.subtasks === null
+    ...(task.tasks === null
       ? failedSection(ui, "Relations")
       : [
-          ...renderSubtasks(ui, task.subtasks),
+          ...renderFeatureTasks(ui, task.tasks),
           ...renderRelations(ui, task.relations ?? []),
         ]),
     ...(task.links === null

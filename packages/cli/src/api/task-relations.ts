@@ -1,7 +1,9 @@
 import { Effect, Schema } from "effect";
 import { KaneoApi } from "./kaneo-api.js";
 
-export const API_RELATION_TYPES = ["subtask", "blocks", "related"] as const;
+// Listings also carry "subtask" for a task's feature link, which is set with
+// the task feature route instead.
+export const API_RELATION_TYPES = ["blocks", "related"] as const;
 export type ApiRelationType = (typeof API_RELATION_TYPES)[number];
 
 export const RelatedTask = Schema.Struct({

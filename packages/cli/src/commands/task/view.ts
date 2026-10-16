@@ -117,7 +117,7 @@ export const taskView = Command.make(
   (options) => runTaskView(options),
 ).pipe(
   Command.withDescription(
-    "Show a task with its details, description, subtasks, links, fields and recent comments",
+    "Show a task with its details, description, feature or tasks, links, fields and recent comments",
   ),
   Command.provide(ApiLayer),
 );

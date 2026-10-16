@@ -55,6 +55,8 @@ describe("toTaskDetailJson", () => {
       ticketId: "KAN-12",
       number: 12,
       title: "Fix login redirect",
+      type: "task",
+      featureId: null,
       description: "Steps",
       status: "in-progress",
       statusName: "In Progress",
@@ -88,5 +90,27 @@ describe("toTaskDetailJson", () => {
     expect(json.statusName).toBe("planned");
     expect(json.assignee).toBeNull();
     expect(json.ticketId).toBeNull();
+  });
+
+  it("reads the type and feature, and treats a server without features as plain tasks", () => {
+    const resolved = {
+      project,
+      columns: [column],
+      workspaceId: "workspace-1",
+      ticketId: "KAN-12",
+      url: "https://kaneo.test/task-1",
+    };
+    const member = toTaskDetailJson({
+      ...resolved,
+      task: { ...task, type: "task", featureId: "feature-1" },
+    });
+    expect([member.type, member.featureId]).toEqual(["task", "feature-1"]);
+    const feature = toTaskDetailJson({
+      ...resolved,
+      task: { ...task, type: "feature", featureId: null },
+    });
+    expect([feature.type, feature.featureId]).toEqual(["feature", null]);
+    const legacy = toTaskDetailJson({ ...resolved, task });
+    expect([legacy.type, legacy.featureId]).toEqual(["task", null]);
   });
 });
