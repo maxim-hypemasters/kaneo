@@ -7,6 +7,7 @@ import {
   type PendingTaskEdit,
   pendingEditLanded,
 } from "./pending-task-edits";
+import { toIsoDay } from "./timeline";
 
 const day = (value: string) => parseISO(value);
 
@@ -37,6 +38,8 @@ const pending: PendingTaskEdit = {
   seq: 1,
   assigneeName: "Bob",
   assigneeImage: null,
+  hasStartDate: true,
+  hasDueDate: true,
 };
 
 describe("classifyEdit", () => {
@@ -97,7 +100,15 @@ describe("applyPendingEdit", () => {
       assigneeId: "bob",
       assigneeName: "Bob",
       assigneeImage: null,
+      startDate: toIsoDay(pending.start),
+      dueDate: toIsoDay(pending.end),
     });
+  });
+
+  it("carries which date fields the task will have once saved", () => {
+    expect(
+      applyPendingEdit(task, { ...pending, hasStartDate: false }),
+    ).toMatchObject({ startDate: null, dueDate: toIsoDay(pending.end) });
   });
 });
 

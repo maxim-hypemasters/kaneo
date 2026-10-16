@@ -3039,7 +3039,17 @@
 			"laneTaskCount_other": "{{count}} tugas",
 			"reassignError": "Gagal menugaskan ulang tugas",
 			"taskAriaLabelGrouped": "{{title}}: buka, atau seret untuk menjadwalkan ulang atau menugaskan ulang",
-			"unassign": "Hapus penugasan"
+			"unassign": "Hapus penugasan",
+			"dependencies": {
+				"cycleDescription": "Tugas-tugas ini saling memblokir dalam satu lingkaran, sehingga tidak dapat diurutkan secara otomatis.",
+				"description": "Tugas yang diblokir tidak dapat dimulai sebelum tugas yang memblokirnya selesai. Pindahkan juga tugas terkait agar urutannya tetap terjaga.",
+				"moveDates": "Tanggal saat ini: {{from}}. Tanggal baru: {{to}}.",
+				"moveOnly": "Pindahkan tugas ini saja",
+				"moveRelated_other": "Pindahkan {{count}} tugas terkait",
+				"movesLabel": "Tugas yang akan dipindahkan",
+				"startsBeforeBlocker": "Dimulai sebelum {{title}} selesai.",
+				"title_other": "Perubahan ini melanggar {{count}} dependensi"
+			}
 		},
 		"delete": {
 			"title": "Hapus Tugas?",

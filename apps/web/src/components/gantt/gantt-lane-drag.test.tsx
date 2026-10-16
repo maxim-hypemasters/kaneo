@@ -55,6 +55,9 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: m.updateAssignee }),
 }));
+vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
+  default: () => ({ data: [] }),
+}));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({ canAssignTasks: () => m.canAssign }),
 }));

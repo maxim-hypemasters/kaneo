@@ -3053,7 +3053,17 @@
 			"laneTaskCount_other": "{{count}} 個任務",
 			"reassignError": "變更任務負責人失敗",
 			"taskAriaLabelGrouped": "{{title}}：開啟，或拖曳以重新排程或變更負責人",
-			"unassign": "取消指派"
+			"unassign": "取消指派",
+			"dependencies": {
+				"cycleDescription": "這些任務彼此循環阻擋，因此無法自動排列成正確的順序。",
+				"description": "被阻擋的任務無法在阻擋它的任務結束前開始。請一併移動關聯任務，以維持正確的順序。",
+				"moveDates": "目前日期：{{from}}。新日期：{{to}}。",
+				"moveOnly": "僅移動此任務",
+				"moveRelated_other": "一併移動 {{count}} 個關聯任務",
+				"movesLabel": "將被移動的任務",
+				"startsBeforeBlocker": "在「{{title}}」結束前開始。",
+				"title_other": "此變更會破壞 {{count}} 個相依關係"
+			}
 		},
 		"delete": {
 			"title": "刪除任務？",

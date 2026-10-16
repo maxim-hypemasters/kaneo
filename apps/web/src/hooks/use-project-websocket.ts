@@ -95,6 +95,9 @@ export function useProjectWebSocket(projectId: string) {
       }
 
       if (message.type === "TASK_RELATION_UPDATED") {
+        queryClient.invalidateQueries({
+          queryKey: ["project-task-relations", projectId],
+        });
         if (message.sourceTaskId) {
           queryClient.invalidateQueries({
             queryKey: ["task", message.sourceTaskId],
@@ -261,6 +264,11 @@ export function useProjectWebSocket(projectId: string) {
               queryKey: ["integration-sync-preview", projectId],
             });
           }
+          // A task moved in or out changes which relations lie within the project.
+          if (message.type === "TASK_MOVED")
+            queryClient.invalidateQueries({
+              queryKey: ["project-task-relations", projectId],
+            });
           if (message.type === "PROJECT_MOVED") {
             markBoardCacheChanged(queryClient, projectId);
             for (const queryKey of [
@@ -569,6 +577,9 @@ export function useProjectWebSocket(projectId: string) {
             void queryClient.invalidateQueries({
               queryKey: ["tasks", projectId],
             });
+            void queryClient.invalidateQueries({
+              queryKey: ["project-task-relations", projectId],
+            });
           }, 30_000);
           flushPending();
         }
@@ -598,6 +609,10 @@ export function useProjectWebSocket(projectId: string) {
           markBoardCacheChanged(queryClient, projectId);
           void queryClient.invalidateQueries({
             queryKey: ["tasks", projectId],
+          });
+          // Relation events missed while disconnected are not replayed either.
+          void queryClient.invalidateQueries({
+            queryKey: ["project-task-relations", projectId],
           });
         }
         const messages = Array.from(pendingMessages.values());

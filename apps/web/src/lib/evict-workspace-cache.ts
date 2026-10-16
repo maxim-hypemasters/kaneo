@@ -139,6 +139,7 @@ function evictPrivateQueries(
       "task",
       "tasks",
       "task-relations",
+      "project-task-relations",
       "activities",
       "comments",
       "labels",

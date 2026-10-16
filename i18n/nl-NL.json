@@ -3076,7 +3076,19 @@
 			"laneTaskCount_other": "{{count}} taken",
 			"reassignError": "Opnieuw toewijzen van taak mislukt",
 			"taskAriaLabelGrouped": "{{title}}: openen, of slepen om opnieuw in te plannen of opnieuw toe te wijzen",
-			"unassign": "Toewijzing verwijderen"
+			"unassign": "Toewijzing verwijderen",
+			"dependencies": {
+				"cycleDescription": "Deze taken blokkeren elkaar in een kringloop, dus ze kunnen niet automatisch in de juiste volgorde worden gezet.",
+				"description": "Een geblokkeerde taak kan niet starten voordat de blokkerende taak eindigt. Verplaats ook de gerelateerde taken om ze in de juiste volgorde te houden.",
+				"moveDates": "Huidige datums: {{from}}. Nieuwe datums: {{to}}.",
+				"moveOnly": "Alleen deze taak verplaatsen",
+				"moveRelated_one": "{{count}} gerelateerde taak verplaatsen",
+				"moveRelated_other": "{{count}} gerelateerde taken verplaatsen",
+				"movesLabel": "Taken die verplaatst zouden worden",
+				"startsBeforeBlocker": "Begint voordat {{title}} eindigt.",
+				"title_one": "Deze wijziging verbreekt {{count}} afhankelijkheid",
+				"title_other": "Deze wijziging verbreekt {{count}} afhankelijkheden"
+			}
 		},
 		"delete": {
 			"title": "Taak verwijderen?",

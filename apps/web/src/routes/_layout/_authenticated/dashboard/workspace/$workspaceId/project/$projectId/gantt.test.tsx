@@ -76,6 +76,9 @@ vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
   default: () => ({ data: projectMembers, isSuccess: true }),
 }));
 
+vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
+  default: () => ({ data: [] }),
+}));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({ canAssignTasks: () => true }),
 }));

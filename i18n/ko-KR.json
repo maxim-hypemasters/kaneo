@@ -3053,7 +3053,17 @@
 			"laneTaskCount_other": "작업 {{count}}개",
 			"reassignError": "작업 담당자 변경에 실패했습니다",
 			"taskAriaLabelGrouped": "{{title}}: 열거나 드래그하여 일정 또는 담당자 변경",
-			"unassign": "할당 해제"
+			"unassign": "할당 해제",
+			"dependencies": {
+				"cycleDescription": "이 작업들은 서로를 순환적으로 차단하고 있어 자동으로 순서를 맞출 수 없습니다.",
+				"description": "차단된 작업은 이를 차단한 작업이 끝나기 전에 시작할 수 없습니다. 순서를 유지하려면 관련 작업도 함께 이동하세요.",
+				"moveDates": "현재 일정: {{from}}. 새 일정: {{to}}.",
+				"moveOnly": "이 작업만 이동",
+				"moveRelated_other": "관련 작업 {{count}}개도 이동",
+				"movesLabel": "이동될 작업",
+				"startsBeforeBlocker": "{{title}}이(가) 끝나기 전에 시작합니다.",
+				"title_other": "이 변경으로 종속성 {{count}}개가 깨집니다"
+			}
 		},
 		"delete": {
 			"title": "작업을 삭제하시겠습니까?",

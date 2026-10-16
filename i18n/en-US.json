@@ -3102,7 +3102,19 @@
 			"unassign": "Unassign",
 			"cannotAssign": "Can't assign to {{name}}",
 			"reassignError": "Failed to reassign task",
-			"taskAriaLabelGrouped": "{{title}}: open, or drag to reschedule or reassign"
+			"taskAriaLabelGrouped": "{{title}}: open, or drag to reschedule or reassign",
+			"dependencies": {
+				"title_one": "This change breaks {{count}} dependency",
+				"title_other": "This change breaks {{count}} dependencies",
+				"description": "A blocked task can't start before the task blocking it ends. Move the related tasks too to keep them in order.",
+				"cycleDescription": "These tasks block each other in a loop, so they can't be moved into order automatically.",
+				"moveRelated_one": "Move {{count}} related task",
+				"moveRelated_other": "Move {{count}} related tasks",
+				"moveOnly": "Move only this task",
+				"moveDates": "Current dates: {{from}}. New dates: {{to}}.",
+				"movesLabel": "Tasks that would move",
+				"startsBeforeBlocker": "Starts before {{title}} ends."
+			}
 		},
 		"delete": {
 			"title": "Delete Task?",

@@ -1,5 +1,5 @@
 import { addDays, differenceInCalendarDays } from "date-fns";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { GanttLaneHint } from "./gantt-lane-hint";
@@ -32,6 +32,10 @@ type GanttTaskBarProps = {
   laneDrag?: GanttLaneDrag;
   onCommit: (edit: GanttTaskEdit) => void;
   onOpenTask: () => void;
+  // Told when a move or resize starts showing new dates, and when it ends.
+  onDragChange?: (dragging: boolean) => void;
+  // Read out with the bar, e.g. that it starts before a blocker ends.
+  dependencyNote?: string;
 };
 
 type LaneView = {
@@ -61,8 +65,11 @@ export function GanttTaskBar({
   laneDrag,
   onCommit,
   onOpenTask,
+  onDragChange,
+  dependencyNote,
 }: GanttTaskBarProps) {
   const { t } = useTranslation();
+  const noteId = useId();
   const [dragDisplay, setDragDisplay] = useState<{
     start: Date;
     end: Date;
@@ -72,9 +79,21 @@ export function GanttTaskBar({
   // Pointer handlers outlive the render that created them (the route
   // re-renders while a lane is highlighted), so they read the latest props
   // from here instead of their closure.
-  const latestRef = useRef({ task, laneDrag, onCommit, onOpenTask });
+  const latestRef = useRef({
+    task,
+    laneDrag,
+    onCommit,
+    onOpenTask,
+    onDragChange,
+  });
   useLayoutEffect(() => {
-    latestRef.current = { task, laneDrag, onCommit, onOpenTask };
+    latestRef.current = {
+      task,
+      laneDrag,
+      onCommit,
+      onOpenTask,
+      onDragChange,
+    };
   });
   // Ends an in-flight move gesture; called if the bar unmounts mid-drag
   // (e.g. a realtime update moved the task) so no window listener leaks.
@@ -103,6 +122,23 @@ export function GanttTaskBar({
     commit({ start, end, userId: current.userId || null });
   };
 
+  // Reports a gesture's drag to the route once, and its end once.
+  const dragReporter = () => {
+    let reported = false;
+    return {
+      start() {
+        if (reported) return;
+        reported = true;
+        latestRef.current.onDragChange?.(true);
+      },
+      end() {
+        if (!reported) return;
+        reported = false;
+        latestRef.current.onDragChange?.(false);
+      },
+    };
+  };
+
   const pxPerDay = Math.max(pixelsPerDay, 1e-6);
   const moveThresholdPx = isMobile
     ? MOBILE_MOVE_THRESHOLD_PX
@@ -119,8 +155,10 @@ export function GanttTaskBar({
       timeline.rangeStart,
     );
     const endIdx = differenceInCalendarDays(initialEnd, timeline.rangeStart);
+    const drag = dragReporter();
 
     const onMove = (ev: PointerEvent) => {
+      drag.start();
       const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
       let nextStartIdx = startIdx + deltaDays;
       nextStartIdx = Math.max(0, Math.min(nextStartIdx, endIdx));
@@ -133,6 +171,7 @@ export function GanttTaskBar({
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
+      drag.end();
       setDragDisplay(null);
       if (ev.type === "pointercancel") return;
       const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
@@ -161,8 +200,10 @@ export function GanttTaskBar({
       timeline.rangeStart,
     );
     const endIdx = differenceInCalendarDays(initialEnd, timeline.rangeStart);
+    const drag = dragReporter();
 
     const onMove = (ev: PointerEvent) => {
+      drag.start();
       const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
       let nextEndIdx = endIdx + deltaDays;
       nextEndIdx = Math.max(startIdx, Math.min(nextEndIdx, trackCount - 1));
@@ -175,6 +216,7 @@ export function GanttTaskBar({
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
+      drag.end();
       setDragDisplay(null);
       if (ev.type === "pointercancel") return;
       const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
@@ -230,6 +272,7 @@ export function GanttTaskBar({
       : null;
     const initialScrollTop = scrollContainer?.scrollTop ?? 0;
     const bounds = lane ? verticalDragBounds(barRef.current) : null;
+    const drag = dragReporter();
     let pointer = { x: originX, y: originY };
     // undefined while no lane is targeted; otherwise the reported target key.
     let reportedTarget: string | null | undefined;
@@ -311,6 +354,7 @@ export function GanttTaskBar({
         if (reportedTarget !== undefined) lane.onChange(null);
       }
       endGestureRef.current = null;
+      drag.end();
       setDragDisplay(null);
       setLaneView(null);
     };
@@ -326,6 +370,7 @@ export function GanttTaskBar({
       pointer = { x: ev.clientX, y: ev.clientY };
       if (pointerTravel(ev.clientX, ev.clientY) >= moveThresholdPx) {
         dragging = true;
+        drag.start();
       }
       setDragDisplay(datesFor(ev.clientX));
       syncLane();
@@ -435,6 +480,7 @@ export function GanttTaskBar({
               ? t("tasks:gantt.taskAriaLabelGrouped", { title: task.title })
               : t("tasks:gantt.taskAriaLabel", { title: task.title })
           }
+          aria-describedby={dependencyNote ? noteId : undefined}
           className="relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5"
           onPointerDown={handleMovePointerDown}
           onKeyDown={(e) => {
@@ -454,6 +500,11 @@ export function GanttTaskBar({
             {task.title}
           </span>
         </button>
+        {dependencyNote && (
+          <span id={noteId} className="sr-only">
+            {dependencyNote}
+          </span>
+        )}
         {showResizeHandles && (
           <button
             type="button"

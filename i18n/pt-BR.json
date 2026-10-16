@@ -3135,7 +3135,21 @@
 			"laneTaskCount_other": "{{count}} tarefas",
 			"reassignError": "Falha ao reatribuir a tarefa",
 			"taskAriaLabelGrouped": "{{title}}: abrir ou arrastar para reagendar ou reatribuir",
-			"unassign": "Remover responsável"
+			"unassign": "Remover responsável",
+			"dependencies": {
+				"cycleDescription": "Essas tarefas se bloqueiam mutuamente em um ciclo, então não é possível colocá-las em ordem automaticamente.",
+				"description": "Uma tarefa bloqueada não pode começar antes que a tarefa que a bloqueia termine. Mova também as tarefas relacionadas para manter a ordem.",
+				"moveDates": "Datas atuais: {{from}}. Novas datas: {{to}}.",
+				"moveOnly": "Mover apenas esta tarefa",
+				"moveRelated_many": "Mover {{count}} tarefas relacionadas",
+				"moveRelated_one": "Mover {{count}} tarefa relacionada",
+				"moveRelated_other": "Mover {{count}} tarefas relacionadas",
+				"movesLabel": "Tarefas que seriam movidas",
+				"startsBeforeBlocker": "Começa antes de {{title}} terminar.",
+				"title_many": "Esta alteração quebra {{count}} dependências",
+				"title_one": "Esta alteração quebra {{count}} dependência",
+				"title_other": "Esta alteração quebra {{count}} dependências"
+			}
 		},
 		"delete": {
 			"title": "Excluir tarefa?",

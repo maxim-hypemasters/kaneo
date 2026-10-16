@@ -3430,7 +3430,23 @@
 			"laneTaskCount_other": "{{count}} zadania",
 			"reassignError": "Nie udało się zmienić przypisania zadania",
 			"taskAriaLabelGrouped": "{{title}}: otwórz lub przeciągnij, aby zmienić termin lub osobę przypisaną",
-			"unassign": "Usuń przypisanie"
+			"unassign": "Usuń przypisanie",
+			"dependencies": {
+				"cycleDescription": "Te zadania blokują się nawzajem w pętli, więc nie da się ich automatycznie ułożyć we właściwej kolejności.",
+				"description": "Zablokowane zadanie nie może się rozpocząć przed zakończeniem zadania, które je blokuje. Przenieś również powiązane zadania, aby zachować ich kolejność.",
+				"moveDates": "Obecne daty: {{from}}. Nowe daty: {{to}}.",
+				"moveOnly": "Przenieś tylko to zadanie",
+				"moveRelated_few": "Przenieś {{count}} powiązane zadania",
+				"moveRelated_many": "Przenieś {{count}} powiązanych zadań",
+				"moveRelated_one": "Przenieś {{count}} powiązane zadanie",
+				"moveRelated_other": "Przenieś {{count}} powiązanego zadania",
+				"movesLabel": "Zadania, które zostałyby przeniesione",
+				"startsBeforeBlocker": "Zaczyna się przed zakończeniem zadania {{title}}.",
+				"title_few": "Ta zmiana narusza {{count}} zależności",
+				"title_many": "Ta zmiana narusza {{count}} zależności",
+				"title_one": "Ta zmiana narusza {{count}} zależność",
+				"title_other": "Ta zmiana narusza {{count}} zależności"
+			}
 		},
 		"kanban": {
 			"addTask": "Dodaj zadanie",
