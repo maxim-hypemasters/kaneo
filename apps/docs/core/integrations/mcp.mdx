@@ -8,7 +8,7 @@ Kaneo supports the Model Context Protocol (MCP) in two ways:
 1. **Built-in HTTP endpoint**: every Kaneo instance exposes `/api/mcp` out of the box. No extra setup, no extra process.
 2. **Stdio package** ([`@kaneo/mcp`](https://www.npmjs.com/package/@kaneo/mcp)): the official Kaneo MCP package on npm, a local stdio server for clients that prefer stdio transport.
 
-Both offer the same tools for managing workspaces, projects, tasks, comments, and labels.
+Both offer the same tools for managing workspaces, projects, tasks, features, comments, and labels.
 
 To work with Kaneo from a terminal or a shell script instead, use the [Kaneo CLI](/cli).
 
@@ -109,6 +109,7 @@ Both the HTTP endpoint and stdio package expose the same tools:
 - Search: `search`
 - Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `list_project_columns`
 - Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_due_date`, `list_task_activity`
+- Features: `set_task_feature`, `set_task_type`
 - Time entries: `list_task_time_entries`, `get_time_entry`, `create_time_entry`, `update_time_entry`
 - Comments: `list_task_comments`, `create_task_comment`, `update_task_comment`, `delete_task_comment`
 - Labels: `list_workspace_labels`, `create_label`, `attach_label_to_task`, `detach_label_from_task`, `delete_label`
@@ -121,6 +122,36 @@ slugs it returns are exactly the values `create_task` and `update_task_status`
 accept. Likewise `list_workspace_members` resolves the user IDs the assignee
 tools expect. Time entries have no delete endpoint on the API, so there is no
 `delete_time_entry` tool.
+
+### Features
+
+A [feature](/core/functional/plan-and-execute-tasks#group-work-into-features) is a
+task that groups other tasks of the same project, one level deep. Every task the
+tools return has a `type` (`task` or `feature`) and a `featureId`, which is `null`
+when the task is in no feature.
+
+- `create_task` takes an optional `type` and `featureId`, so you can create a
+  feature, or a task inside a feature, in one call.
+- `set_task_feature` puts a task into a feature, or takes it out with
+  `featureId: null`. The feature must be in the task's project, and a feature
+  can't join another feature.
+- `set_task_type` turns a task into a feature, or a feature back into a task. A
+  task that becomes a feature leaves its own feature. A feature that still has
+  tasks can't become a task.
+- `update_task` leaves a task's type and feature as they are. `move_task` takes a
+  task out of its feature, and a feature that still has tasks can't be moved.
+- `duplicate_task` keeps the copy in the task's feature. A copy of a feature is a
+  feature without tasks.
+
+The `subtask` relation type is deprecated. It only remains so older clients keep
+working. `create_task_relation` with `subtask` puts the target task into a
+feature. When the source task is a feature, the target joins it. When the
+source is in a feature, the target joins that one, and the two tasks are also
+linked as related. A source in no feature becomes a feature first. Both tasks
+must be in the same project, and the target can't be a feature.
+`get_task_relations` lists each feature link as a `subtask` relation, and
+`delete_task_relation` removes it. Use `set_task_feature` and `set_task_type`
+instead.
 
 ## Debugging
 

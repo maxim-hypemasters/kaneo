@@ -36,6 +36,10 @@ If dragging or resizing a bar would break a dependency, Kaneo asks first and lis
 
 ### Group by assignee
 
-To see who is carrying which work, open **Display** and set **Group by** to **Assignee**. The timeline then shows one lane per project member, plus **Unassigned**, and your choice is remembered for next time. Each lane header shows the member's task count and a bar spanning their earliest start to their latest due date. Click a header to collapse or expand its lane. If you filter by assignee, only the matching lanes are shown.
+To see who is carrying which work, open **Display** and set **Group by** to **Assignee**. The timeline then shows one lane per project member, plus **Unassigned**, and your choice is remembered for next time. Each lane header shows the member's task count and a thin line spanning their earliest start to their latest due date. Click a header to collapse or expand its lane. If you filter by assignee, only the matching lanes are shown.
 
 If you can assign tasks, drag a task bar into another member's lane to reassign it, or into **Unassigned** to clear its assignee. Scroll until the whole bar is on screen first. Moving the bar sideways at the same time also changes its dates. Press **Esc** to cancel a drag. On touch screens, open the task and change its assignee there instead.
+
+### Features
+
+When grouped by assignee, [features](/core/functional/plan-and-execute-tasks#group-work-into-features) leave the task rows and appear as bars on the lines of the members doing their tasks, each spanning that member's own tasks in the feature. Click a bar to open the feature. Overlapping features stack up to three high. Each group of overlapping features that doesn't fit gets a **+N** chip that lists them, and the chip stays on screen while you scroll across their dates. A feature with none of its tasks on the chart keeps its own row. A feature that blocks or is blocked by another task keeps its row as well as its bars, so its dependency arrows and warnings still show. The ungrouped timeline is unchanged: features show as rows like any other task.

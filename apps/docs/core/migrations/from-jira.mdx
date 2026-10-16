@@ -1,6 +1,6 @@
 ---
 title: Import from Jira
-description: Move Jira Cloud or Jira Data Center projects into Kaneo, including board columns, issues, priorities, labels, assignees, sub-tasks, issue links, and comments.
+description: Move Jira Cloud or Jira Data Center projects into Kaneo, including board columns, issues, priorities, labels, assignees, epics and sub-tasks, issue links, and comments.
 ---
 
 Each Jira project becomes a Kaneo project. This works with Jira Cloud and Jira Data Center. Read [Import from other tools](/core/migrations) first for the rules that apply to every import.
@@ -41,7 +41,7 @@ If you run Kaneo yourself and Jira is on a private network, for example a Jira D
 | Due date | Due date |
 | Labels | Labels. Jira labels have no colors, so Kaneo picks one for each |
 | Assignee | Assignee, matched by email, or by full name when Jira hides the email |
-| Sub-tasks, and issues that have a parent issue such as an epic | Subtask relations |
+| Epics and other parent issues, with their child issues and sub-tasks | [Features](/core/migrations#parent-items-become-features). The top issue, such as an epic, becomes a feature, and every issue below it becomes one of its tasks. The link between a story and its sub-task is kept as a related relation |
 | Issue links | **Blocks** links stay blocks relations. Other links, such as **Relates**, become related relations |
 | Comments | Comments, with the original author's name and date |
 
@@ -49,7 +49,7 @@ If you run Kaneo yourself and Jira is on a private network, for example a Jira D
 
 - **Attachments.** Download anything you need from Jira before you stop using it.
 - **Sprints.**
-- **Epics**, other than as parent issues. An epic is imported as a task, with its issues as subtasks.
+- **Epics without issues.** An epic only becomes a feature when it has issues in the import. Otherwise it is imported as a plain task.
 - **Components and fix versions.**
 - **Custom fields.**
 - **Worklogs.**

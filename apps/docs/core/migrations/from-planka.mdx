@@ -36,7 +36,7 @@ Invite your team to the Kaneo workspace first. Assignees are matched by email, s
 | Card | Task |
 | Card description | Task description |
 | Checklists | Markdown checkboxes in the description |
-| Checklist items linked to another card | Subtask relations |
+| Checklist items linked to another card | [Features](/core/migrations#parent-items-become-features). The card at the top of the links becomes a feature, and the cards linked below it, at any depth, become its tasks |
 | Due date | Due date |
 | Labels | Labels, with their PLANKA colors |
 | Card members | Assignee: the first member, matched by email |
@@ -126,6 +126,7 @@ Set `PLANKA_PASSWORD` and `KANEO_API_KEY` as environment variables rather than p
 - **Assignees.** The CLI matches card members by email only. Members whose email PLANKA hides are imported unassigned.
 - **Comment authorship.** The comment is created by the API key's owner, but the original PLANKA author is recorded on it and shown in Kaneo, the same way imported GitHub comments are. The original date is added to the comment text. This needs Kaneo 2.17.6 or newer; against older instances the comment still imports, just without the original author.
 - **Reports.** `--dry-run` shows the plan without writing anything, and `--report` writes a JSON report of the run.
+- **Linked cards.** The CLI turns them into features too, but by a simpler rule than the [import in the app](/core/migrations#parent-items-become-features), so a board whose links nest or cross can come out differently. Taking the links in PLANKA's order, a linked card joins the feature at the top of its first parent's chain. Its first parent is the first card whose checklist links to it. The chain goes on to that card's first parent, and so on, and the card at the top becomes the feature. Every other link is kept as a related relation: a second parent, a link from a parent that isn't the feature, and a link that would close a loop. A further link between two cards that are already linked, in either direction, is skipped. For example, with the links A → B, B → C, and D → C, in that order, the CLI makes one feature, A, with tasks B and C, and leaves D a plain task. The app makes two: A with B, and D with C. Against a Kaneo version without features, the linked cards become related tasks instead, and the summary says so. The summary also lists any link it couldn't make as a warning.
 
 ### CLI troubleshooting
 
