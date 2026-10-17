@@ -3134,7 +3134,24 @@
 			"featureSliceAria_one": "{{title}}: {{count}} εργασία, {{start}} έως {{end}}. Ανοίγει τη δυνατότητα.",
 			"featureSliceAria_other": "{{title}}: {{count}} εργασίες, {{start}} έως {{end}}. Ανοίγει τη δυνατότητα.",
 			"featureOverflowAria_one": "{{count}} ακόμα δυνατότητα",
-			"featureOverflowAria_other": "{{count}} ακόμα δυνατότητες"
+			"featureOverflowAria_other": "{{count}} ακόμα δυνατότητες",
+			"featureBar": {
+				"ariaLabel": "Δυνατότητα {{title}}: άνοιγμα ή σύρσιμο για μετακίνηση",
+				"ariaLabelGrouped": "Δυνατότητα {{title}}: άνοιγμα ή σύρσιμο για αναπρογραμματισμό ή επανανάθεση",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} από {{count}} εργασία ολοκληρώθηκε",
+				"progressAria_other": "{{completed}} από {{count}} εργασίες ολοκληρώθηκαν"
+			},
+			"featureLanes": {
+				"noFeature": "Χωρίς δυνατότητα",
+				"open": "Άνοιγμα δυνατότητας {{title}}",
+				"moveTo": "Μετακίνηση στη δυνατότητα {{name}}",
+				"remove": "Αφαίρεση από τη δυνατότητα",
+				"cannotMove": "Δεν είναι δυνατή η μετακίνηση στη δυνατότητα {{name}}",
+				"taskAriaLabel": "{{title}}: άνοιγμα ή σύρσιμο για αναπρογραμματισμό ή μετακίνηση σε άλλη δυνατότητα",
+				"moveError": "Αποτυχία μετακίνησης της εργασίας σε άλλη δυνατότητα",
+				"assignee": "Ανατέθηκε σε {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Διαγραφή εργασίας;",
@@ -3309,7 +3326,8 @@
 			"groupBy": "Ομαδοποίηση κατά",
 			"groupByOptions": {
 				"assignee": "Ανατεθειμένος",
-				"none": "Χωρίς ομαδοποίηση"
+				"none": "Χωρίς ομαδοποίηση",
+				"feature": "Δυνατότητα"
 			}
 		},
 		"filterBar": {

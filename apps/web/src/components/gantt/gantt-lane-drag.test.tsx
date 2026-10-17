@@ -20,9 +20,11 @@ const m = vi.hoisted(() => ({
   component: (() => null) as ComponentType,
   navigate: vi.fn(),
   update: vi.fn(),
+  updateFeature: vi.fn(),
   updateAssignee: vi.fn(),
   toastError: vi.fn(),
   canAssign: true,
+  canUpdate: true,
   groupBy: "assignee",
   project: null as unknown,
   members: [] as { id: string; name: string; image: string | null }[],
@@ -55,11 +57,17 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: m.updateAssignee }),
 }));
+vi.mock("@/hooks/mutations/task/use-update-task-feature", () => ({
+  useUpdateTaskFeature: () => ({ mutateAsync: m.updateFeature }),
+}));
 vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
   default: () => ({ data: [] }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canAssignTasks: () => m.canAssign }),
+  useWorkspacePermission: () => ({
+    canAssignTasks: () => m.canAssign,
+    canUpdateTasks: () => m.canUpdate,
+  }),
 }));
 vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
   default: () => ({ data: m.members, isSuccess: true }),
@@ -133,8 +141,10 @@ function task(
   startDate: string,
   dueDate: string,
   assignee: { userId: string; name: string } | null,
+  hierarchy: { type?: "task" | "feature"; featureId?: string | null } = {},
 ) {
   return {
+    ...hierarchy,
     id,
     projectId: "project",
     title: id,
@@ -225,6 +235,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 7, 31));
   m.canAssign = true;
+  m.canUpdate = true;
   m.groupBy = "assignee";
   m.hit = null;
   m.members = [
@@ -638,6 +649,41 @@ describe("Gantt drag to reassign", () => {
     expect(container.querySelector("[data-drop-target]")).toBeNull();
     expect(m.updateAssignee).not.toHaveBeenCalled();
     expect(m.navigate).not.toHaveBeenCalled();
+  });
+
+  it("keeps the task's feature when reassigning it", () => {
+    setTasks([
+      task("A1", "2026-09-01", "2026-09-03", alice, { featureId: "F" }),
+      task("F", "2026-09-01", "2026-09-10", null, { type: "feature" }),
+      task("B1", "2026-09-02", "2026-09-04", bob),
+    ]);
+    const { container } = show();
+
+    drag(groupedBar("A1"), {
+      dx: 88,
+      dy: 60,
+      over: lane(container, "member:u2"),
+    });
+
+    expect(m.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "A1", userId: "u2" }),
+    );
+    expect(m.updateFeature).not.toHaveBeenCalled();
+  });
+
+  it("reassigns without permission to update tasks", () => {
+    m.canUpdate = false;
+    const { container } = show();
+
+    drag(groupedBar("A1"), {
+      dx: 0,
+      dy: 60,
+      over: lane(container, "member:u2"),
+    });
+
+    expect(m.updateAssignee).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "A1", userId: "u2" }),
+    );
   });
 
   it("only reschedules when the user can't assign tasks", () => {

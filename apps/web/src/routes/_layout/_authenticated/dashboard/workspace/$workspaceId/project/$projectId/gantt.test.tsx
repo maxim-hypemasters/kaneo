@@ -72,8 +72,12 @@ vi.mock("@/store/user-preferences", async (importOriginal) => ({
 }));
 
 const projectMembers: { id: string; name: string; image: string | null }[] = [];
+const membersQuery = vi.fn((_options: { enabled?: boolean }) => ({
+  data: projectMembers,
+  isSuccess: true,
+}));
 vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
-  default: () => ({ data: projectMembers, isSuccess: true }),
+  default: (options: { enabled?: boolean }) => membersQuery(options),
 }));
 
 const projectRelations: {
@@ -86,7 +90,10 @@ vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
   default: () => ({ data: projectRelations }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canAssignTasks: () => true }),
+  useWorkspacePermission: () => ({
+    canAssignTasks: () => true,
+    canUpdateTasks: () => true,
+  }),
 }));
 
 vi.mock("@/hooks/mutations/task/use-update-task", () => ({
@@ -95,6 +102,9 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
 
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: vi.fn() }),
+}));
+vi.mock("@/hooks/mutations/task/use-update-task-feature", () => ({
+  useUpdateTaskFeature: () => ({ mutateAsync: vi.fn() }),
 }));
 
 vi.mock("@/components/common/project-layout", () => ({
@@ -149,8 +159,16 @@ vi.mock("@/components/page-title", () => ({
 }));
 
 vi.mock("@/components/gantt/gantt-task-bar", () => ({
-  GanttTaskBar: ({ task }: { task: { title: string } }) => (
-    <div>{task.title}</div>
+  GanttTaskBar: ({
+    task,
+    showAssignee,
+  }: {
+    task: { id: string; title: string };
+    showAssignee?: boolean;
+  }) => (
+    <div data-bar={task.id} data-bar-assignee={showAssignee ? "" : undefined}>
+      {task.title}
+    </div>
   ),
 }));
 
@@ -254,6 +272,7 @@ afterEach(() => {
   vi.useRealTimers();
   scrollIntoView.mockClear();
   useGetTasks.mockReset();
+  membersQuery.mockClear();
   routeParams.projectId = "project-1";
   preferences.ganttGroupBy = "none";
   projectMembers.length = 0;
@@ -849,6 +868,248 @@ describe("Gantt features on member lines", () => {
     expect(row(container, "search")).not.toBeNull();
     expect(screen.queryByRole("group", { name: "Features" })).toBeNull();
     expect(screen.getByText("5 tasks")).toBeInTheDocument();
+  });
+});
+
+describe("Gantt group by feature", () => {
+  const laneKeys = (container: HTMLElement) =>
+    Array.from(
+      container.querySelectorAll<HTMLElement>("[data-gantt-lane]"),
+    ).map((lane) => lane.dataset.ganttLane);
+  const lane = (container: HTMLElement, key: string) => {
+    const element = container.querySelector<HTMLElement>(
+      `[data-gantt-lane="${key}"]`,
+    );
+    if (!element) throw new Error(`lane ${key} not rendered`);
+    return element;
+  };
+  const rowIds = (element: HTMLElement) =>
+    Array.from(element.querySelectorAll<HTMLElement>("[data-gantt-row]")).map(
+      (row) => row.dataset.ganttRow,
+    );
+  const alice = {
+    userId: "u-al",
+    assigneeId: "u-al",
+    assigneeName: "Alice",
+  };
+
+  function mockFeatureProject() {
+    mockProjectWithTasks([
+      makeTask({
+        id: "checkout",
+        title: "Checkout",
+        type: "feature",
+        startDate: "2026-09-01",
+        dueDate: "2026-09-20",
+      }),
+      makeTask({
+        id: "invoice",
+        title: "Invoice",
+        featureId: "billing",
+        startDate: "2026-09-01",
+        dueDate: "2026-09-02",
+      }),
+      makeTask({
+        id: "cart",
+        title: "Cart page",
+        featureId: "checkout",
+        ...alice,
+        startDate: "2026-09-02",
+        dueDate: "2026-09-04",
+      }),
+      makeTask({
+        id: "pay",
+        title: "Payment form",
+        featureId: "checkout",
+        ...alice,
+        startDate: "2026-09-06",
+        dueDate: "2026-09-08",
+      }),
+      makeTask({
+        id: "loose",
+        title: "Loose end",
+        startDate: "2026-09-02",
+        dueDate: "2026-09-02",
+      }),
+      // Undated, as is Billing: nothing of Search is on the chart.
+      makeTask({ id: "search", title: "Search", type: "feature" }),
+      makeTask({ id: "billing", title: "Billing", type: "feature" }),
+    ]);
+  }
+
+  it("shows a lane per feature as its work starts, then the rest by name, and No feature last", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+
+    expect(laneKeys(container)).toEqual([
+      "feature:checkout",
+      "feature:billing",
+      "feature:search",
+      "no-feature",
+    ]);
+    expect(
+      within(lane(container, "feature:checkout")).getByRole("button", {
+        name: "Checkout 2 tasks",
+      }),
+    ).toHaveAttribute("aria-expanded", "true");
+    // Search has nothing on the chart: still a lane, to drop tasks on.
+    const searchLane = lane(container, "feature:search");
+    expect(within(searchLane).getByText("0 tasks")).toBeInTheDocument();
+    expect(
+      within(searchLane).getByRole("button", { name: "Open feature Search" }),
+    ).toBeInTheDocument();
+    const noFeatureLane = lane(container, "no-feature");
+    expect(
+      within(noFeatureLane).getByRole("button", { name: "No feature 1 task" }),
+    ).toBeInTheDocument();
+    expect(
+      within(noFeatureLane).queryByRole("button", { name: /^Open feature/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("draws a feature's bar in its lane header, above its tasks' rows", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+    const checkoutLane = lane(container, "feature:checkout");
+
+    expect(rowIds(checkoutLane)).toEqual(["checkout", "cart", "pay"]);
+    // The header's row is just the bar; task rows carry their rail.
+    const header = checkoutLane.querySelector('[data-gantt-row="checkout"]');
+    expect(header?.querySelector("[data-gantt-rail]")).toBeNull();
+    // Rows still name the assignee: the lanes are features, not people.
+    expect(within(checkoutLane).getAllByText(/• Alice/)).toHaveLength(2);
+  });
+
+  it("names each task's assignee on its bar, and only when grouped by feature", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    const { container, rerender } = render(<GanttRoute />);
+    const withAssignee = () =>
+      Array.from(
+        container.querySelectorAll<HTMLElement>("[data-bar-assignee]"),
+        (bar) => bar.dataset.bar,
+      );
+
+    // Task bars only: the feature's own bar in its header names no one.
+    expect(withAssignee()).toEqual(["cart", "pay", "invoice", "loose"]);
+
+    for (const groupBy of ["none", "assignee"] as const) {
+      preferences.ganttGroupBy = groupBy;
+      rerender(<GanttRoute />);
+      expect(withAssignee()).toEqual([]);
+    }
+  });
+
+  it("underlines the span of a lane's tasks", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+
+    // Week starts Sunday and the earliest task starts Tue Sep 1, so the
+    // window opens Aug 23. Cart starts Sep 2 (column 11); Payment form ends
+    // Sep 8 (column 17, exclusive end line 18).
+    expect(
+      within(lane(container, "feature:checkout"))
+        .getByTestId("gantt-lane-summary")
+        .getAttribute("style"),
+    ).toContain("grid-column: 11 / 18");
+  });
+
+  it("collapses a lane's tasks but keeps its header and the feature's bar", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+    const checkoutLane = lane(container, "feature:checkout");
+    const toggle = within(checkoutLane).getByRole("button", {
+      name: "Checkout 2 tasks",
+    });
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(within(checkoutLane).queryAllByText("Cart page")).toHaveLength(0);
+    expect(rowIds(checkoutLane)).toEqual(["checkout"]);
+    expect(
+      within(checkoutLane).getByTestId("gantt-lane-summary"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+    expect(rowIds(checkoutLane)).toEqual(["checkout", "cart", "pay"]);
+  });
+
+  it("opens the feature from its lane header", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+    fireEvent.click(
+      within(lane(container, "feature:checkout")).getByRole("button", {
+        name: "Open feature Checkout",
+      }),
+    );
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: ".",
+      search: { taskId: "checkout" },
+      replace: true,
+    });
+  });
+
+  it("keeps the lane of a filtered-out feature with tasks showing, without its bar", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+    searchFor("Cart");
+
+    expect(laneKeys(container)).toEqual(["feature:checkout", "no-feature"]);
+    const checkoutLane = lane(container, "feature:checkout");
+    expect(rowIds(checkoutLane)).toEqual(["cart"]);
+    expect(
+      within(checkoutLane).getByRole("button", { name: "Checkout 1 task" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 of 5 tasks")).toBeInTheDocument();
+  });
+
+  it("counts a feature's bar in its lane header as shown", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    const { container } = render(<GanttRoute />);
+    expect(screen.getByText("5 tasks")).toBeInTheDocument();
+
+    searchFor("Checkout");
+    expect(screen.getByText("1 of 5 tasks")).toBeInTheDocument();
+    expect(rowIds(lane(container, "feature:checkout"))).toEqual(["checkout"]);
+  });
+
+  it("shows the empty state when nothing on the chart matches", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    render(<GanttRoute />);
+    searchFor("no such task");
+
+    expect(
+      screen.getByText("No tasks match your search or filters."),
+    ).toBeInTheDocument();
+  });
+
+  it("doesn't load the project's members", () => {
+    preferences.ganttGroupBy = "feature";
+    mockFeatureProject();
+
+    render(<GanttRoute />);
+
+    expect(membersQuery).toHaveBeenLastCalledWith(
+      expect.objectContaining({ enabled: false }),
+    );
   });
 });
 

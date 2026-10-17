@@ -60,8 +60,14 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: vi.fn() }),
 }));
+vi.mock("@/hooks/mutations/task/use-update-task-feature", () => ({
+  useUpdateTaskFeature: () => ({ mutateAsync: vi.fn() }),
+}));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canAssignTasks: () => true }),
+  useWorkspacePermission: () => ({
+    canAssignTasks: () => true,
+    canUpdateTasks: () => true,
+  }),
 }));
 vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
   default: () => ({ data: [], isSuccess: true }),
@@ -690,10 +696,100 @@ describe("Gantt dependencies", () => {
     expect(linePaths()[0]).toHaveAttribute("data-broken");
     expect(
       screen.getByRole("button", {
-        name: "tasks:gantt.taskAriaLabelGrouped:Checkout",
+        name: "tasks:gantt.featureBar.ariaLabelGrouped:Checkout",
       }),
     ).toHaveAccessibleDescription(
       "tasks:gantt.dependencies.startsBeforeBlocker:Design",
+    );
+  });
+
+  it("attaches a feature's arrows to its lane header when grouped by feature", () => {
+    m.groupBy = "feature";
+    // Design (no feature) blocks the Checkout feature but ends after it
+    // starts.
+    setTasks(
+      task("Design", "2026-09-01", "2026-09-04"),
+      task("Checkout", "2026-09-03", "2026-09-06", { type: "feature" }),
+      task("Cart", "2026-09-04", "2026-09-05", { featureId: "Checkout" }),
+    );
+    m.relations = [blocks("Design", "Checkout")];
+    const { container } = show();
+
+    const header = container.querySelector<HTMLElement>(
+      '[data-gantt-lane="feature:Checkout"] [data-gantt-row="Checkout"]',
+    );
+    if (!header) throw new Error("feature header row not rendered");
+    expect(
+      container.querySelectorAll('[data-gantt-row="Checkout"]'),
+    ).toHaveLength(1);
+    expect(linePaths()).toHaveLength(1);
+    expect(linePaths()[0]).toHaveAttribute("data-broken");
+    expect(
+      within(header).getByRole("button", {
+        name: "tasks:gantt.featureBar.ariaLabel:Checkout",
+      }),
+    ).toHaveAccessibleDescription(
+      "tasks:gantt.dependencies.startsBeforeBlocker:Design",
+    );
+  });
+
+  it("drops a task's arrow while its feature lane is collapsed", () => {
+    m.groupBy = "feature";
+    setTasks(
+      task("Design", "2026-09-01", "2026-09-03"),
+      task("Checkout", "2026-09-03", "2026-09-08", { type: "feature" }),
+      task("Cart", "2026-09-04", "2026-09-06", { featureId: "Checkout" }),
+    );
+    m.relations = [blocks("Design", "Cart")];
+    const { container } = show();
+    const checkoutLane = container.querySelector<HTMLElement>(
+      '[data-gantt-lane="feature:Checkout"]',
+    );
+    if (!checkoutLane) throw new Error("Checkout lane not rendered");
+    const toggle = within(checkoutLane).getByRole("button", {
+      name: "Checkout tasks:gantt.laneTaskCount:1",
+    });
+    expect(linePaths()).toHaveLength(1);
+
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(linePaths()).toHaveLength(0);
+
+    fireEvent.click(toggle);
+    expect(linePaths()).toHaveLength(1);
+  });
+
+  it("asks before a feature's own bar breaks a dependency when grouped by feature", () => {
+    m.groupBy = "feature";
+    // The Checkout feature blocks Ship, which starts the day it ends.
+    setTasks(
+      task("Checkout", "2026-09-01", "2026-09-03", { type: "feature" }),
+      task("Cart", "2026-09-01", "2026-09-02", { featureId: "Checkout" }),
+      task("Ship", "2026-09-03", "2026-09-05"),
+    );
+    m.relations = [blocks("Checkout", "Ship")];
+    show();
+
+    dragBy(
+      screen.getByRole("button", {
+        name: "tasks:gantt.featureBar.ariaLabel:Checkout",
+      }),
+      88,
+    );
+
+    expect(m.update).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "tasks:gantt.dependencies.moveOnly",
+      }),
+    );
+    expect(m.update).toHaveBeenCalledTimes(1);
+    expect(m.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "Checkout",
+        startDate: isoDay(9, 3),
+        dueDate: isoDay(9, 5),
+      }),
     );
   });
 

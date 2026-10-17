@@ -3486,7 +3486,26 @@
 			"featureOverflowAria_one": "Jeszcze {{count}} funkcja",
 			"featureOverflowAria_few": "Jeszcze {{count}} funkcje",
 			"featureOverflowAria_many": "Jeszcze {{count}} funkcji",
-			"featureOverflowAria_other": "Jeszcze {{count}} funkcji"
+			"featureOverflowAria_other": "Jeszcze {{count}} funkcji",
+			"featureBar": {
+				"ariaLabel": "Funkcja {{title}}: otwórz lub przeciągnij, aby przenieść",
+				"ariaLabelGrouped": "Funkcja {{title}}: otwórz lub przeciągnij, aby zmienić termin lub osobę przypisaną",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "Ukończono {{completed}} z {{count}} zadania",
+				"progressAria_few": "Ukończono {{completed}} z {{count}} zadań",
+				"progressAria_many": "Ukończono {{completed}} z {{count}} zadań",
+				"progressAria_other": "Ukończono {{completed}} z {{count}} zadania"
+			},
+			"featureLanes": {
+				"noFeature": "Brak funkcji",
+				"open": "Otwórz funkcję {{title}}",
+				"moveTo": "Przenieś do funkcji {{name}}",
+				"remove": "Usuń z funkcji",
+				"cannotMove": "Nie można przenieść do funkcji {{name}}",
+				"taskAriaLabel": "{{title}}: otwórz lub przeciągnij, aby zmienić termin lub przenieść do innej funkcji",
+				"moveError": "Nie udało się przenieść zadania do innej funkcji",
+				"assignee": "Przypisane do: {{name}}"
+			}
 		},
 		"kanban": {
 			"addTask": "Dodaj zadanie",
@@ -3710,7 +3729,8 @@
 			"groupBy": "Grupuj według",
 			"groupByOptions": {
 				"assignee": "Osoba przypisana",
-				"none": "Bez grupowania"
+				"none": "Bez grupowania",
+				"feature": "Funkcja"
 			}
 		},
 		"filterBar": {

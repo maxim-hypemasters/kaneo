@@ -93,6 +93,17 @@ describe("GanttDependencyLines", () => {
     expect(line).toHaveAttribute("opacity", "0.25");
   });
 
+  it("draws over lane headers' feature bands, under the bars, click-through", () => {
+    draw(new Map());
+
+    // First in the lanes container at z-[1]: over the headers' z-auto
+    // content, under the bars that follow it at z-[1].
+    expect(screen.getByTestId("gantt-dependency-lines")).toHaveClass(
+      "z-[1]",
+      "pointer-events-none",
+    );
+  });
+
   it("skips dependencies on tasks without a dated row", () => {
     expect(
       draw(new Map([["a", span("2026-03-01", "2026-03-03")]])),

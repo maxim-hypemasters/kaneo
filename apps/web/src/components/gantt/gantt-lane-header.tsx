@@ -1,10 +1,10 @@
-import { ChevronRight } from "lucide-react";
-import { useTranslation } from "react-i18next";
 import { AssigneeAvatar } from "@/components/task/properties/assignee-avatar";
 import { cn } from "@/lib/cn";
 import { GanttLaneFeatures } from "./gantt-lane-features";
+import { GanttLaneSummaryLine } from "./gantt-lane-summary-line";
+import { GanttLaneToggle } from "./gantt-lane-toggle";
 import type { GanttLane } from "./gantt-types";
-import { type GanttTimeline, getBarGridColumns } from "./timeline";
+import type { GanttTimeline } from "./timeline";
 
 type GanttLaneHeaderProps = {
   lane: GanttLane;
@@ -30,91 +30,33 @@ export function GanttLaneHeader({
   rowGridTemplateColumns,
   onOpenFeature,
 }: GanttLaneHeaderProps) {
-  const { t } = useTranslation();
-  const count = lane.tasks.length;
-  const countId = `${labelId}-count`;
-  const hasTasks = count > 0;
-  // The member's whole workload at a glance: earliest start to latest end,
-  // clipped to the visible window like a task bar.
-  const summary =
-    lane.start && lane.end
-      ? getBarGridColumns(
-          lane.start,
-          lane.end,
-          timeline.rangeStart,
-          timeline.days.length,
-        )
-      : null;
-
-  const label = (
-    <>
-      {hasTasks && (
-        <ChevronRight
-          aria-hidden="true"
-          className={cn(
-            "size-3 shrink-0 text-muted-foreground transition-transform duration-150 ease-out motion-reduce:transition-none",
-            !collapsed && "rotate-90",
-          )}
-        />
-      )}
-      <span aria-hidden="true" className="shrink-0">
-        <AssigneeAvatar
-          name={lane.name}
-          image={lane.image}
-          assigned={lane.userId !== null}
-          className="size-5"
-          fallbackClassName="text-[9px]"
-        />
-      </span>
-      <span id={labelId} className="min-w-0 truncate">
-        {lane.name}
-      </span>
-      <span
-        aria-hidden="true"
-        className="shrink-0 text-[11px] tabular-nums text-muted-foreground"
-      >
-        {count}
-      </span>
-      <span id={countId} className="sr-only">
-        {t("tasks:gantt.laneTaskCount", { count })}
-      </span>
-    </>
-  );
-
+  const hasTasks = lane.tasks.length > 0;
   const hasFeatures = lane.featureTrackCount > 0;
   // Lanes with tasks get a full touch target for the collapse toggle; empty
   // lanes render compact. Feature tracks grow the header past either.
   const heightClassName = hasTasks
     ? "min-h-[44px] sm:min-h-9"
     : "min-h-9 sm:min-h-8";
-  const labelClassName =
-    "flex min-w-0 items-center gap-2 text-left text-xs font-medium text-foreground";
-  // Empty lanes have nothing to collapse; they're still drop targets.
-  const control = hasTasks ? (
-    <button
-      type="button"
-      aria-expanded={!collapsed}
-      aria-labelledby={`${labelId} ${countId}`}
-      onClick={onToggle}
-      className={cn(
-        labelClassName,
-        "touch-hitbox relative touch-manipulation rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        // In the rail the whole header height toggles, not just the label.
-        showTaskRail ? "w-full self-stretch" : "max-w-[12rem]",
-      )}
-    >
-      {label}
-    </button>
-  ) : (
-    <div
-      className={cn(
-        labelClassName,
-        "relative",
-        showTaskRail ? "w-full" : "max-w-[12rem]",
-      )}
-    >
-      {label}
-    </div>
+  const control = (
+    <GanttLaneToggle
+      labelId={labelId}
+      name={lane.name}
+      count={lane.tasks.length}
+      icon={
+        <span aria-hidden="true" className="shrink-0">
+          <AssigneeAvatar
+            name={lane.name}
+            image={lane.image}
+            assigned={lane.userId !== null}
+            className="size-5"
+            fallbackClassName="text-[9px]"
+          />
+        </span>
+      }
+      collapsed={collapsed}
+      onToggle={onToggle}
+      inRail={showTaskRail}
+    />
   );
 
   return (
@@ -147,27 +89,11 @@ export function GanttLaneHeader({
         )}
         style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}
       >
-        {summary?.barInView && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 bottom-1 grid"
-            style={{ gridTemplateColumns: timeline.gridTemplateColumns }}
-          >
-            {/* A thin underline, so the feature slices above it stay the
-                header's main read. */}
-            <div
-              data-testid="gantt-lane-summary"
-              style={{
-                gridColumn: `${summary.lineStart} / ${summary.lineEnd}`,
-              }}
-              className={cn(
-                "h-1 bg-primary/45",
-                summary.clippedStart ? "rounded-l-none" : "ml-1 rounded-l-full",
-                summary.clippedEnd ? "rounded-r-none" : "mr-1 rounded-r-full",
-              )}
-            />
-          </div>
-        )}
+        <GanttLaneSummaryLine
+          start={lane.start}
+          end={lane.end}
+          timeline={timeline}
+        />
         {showTaskRail ? null : (
           <div
             className={cn(

@@ -3186,7 +3186,25 @@
 			"featureSliceAria_other": "{{title}}: {{count}} attività, da {{start}} a {{end}}. Apre la funzionalità.",
 			"featureOverflowAria_one": "{{count}} altra funzionalità",
 			"featureOverflowAria_many": "{{count}} altre funzionalità",
-			"featureOverflowAria_other": "{{count}} altre funzionalità"
+			"featureOverflowAria_other": "{{count}} altre funzionalità",
+			"featureBar": {
+				"ariaLabel": "Funzionalità {{title}}: apri o trascina per spostare",
+				"ariaLabelGrouped": "Funzionalità {{title}}: apri o trascina per riprogrammare o riassegnare",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} di {{count}} attività completata",
+				"progressAria_many": "{{completed}} di {{count}} attività completate",
+				"progressAria_other": "{{completed}} di {{count}} attività completate"
+			},
+			"featureLanes": {
+				"noFeature": "Nessuna funzionalità",
+				"open": "Apri funzionalità {{title}}",
+				"moveTo": "Sposta in {{name}}",
+				"remove": "Rimuovi dalla funzionalità",
+				"cannotMove": "Impossibile spostare in {{name}}",
+				"taskAriaLabel": "{{title}}: apri o trascina per riprogrammare o spostare in un'altra funzionalità",
+				"moveError": "Impossibile spostare l'attività in un'altra funzionalità",
+				"assignee": "Assegnato a {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Eliminare l'Attività?",
@@ -3368,7 +3386,8 @@
 			"groupBy": "Raggruppa per",
 			"groupByOptions": {
 				"assignee": "Assegnatario",
-				"none": "Nessuno"
+				"none": "Nessuno",
+				"feature": "Funzionalità"
 			}
 		},
 		"filterBar": {

@@ -3096,7 +3096,23 @@
 			"featuresLabel": "기능",
 			"featureOverflow": "+{{count}}",
 			"featureSliceAria_other": "{{title}}: 작업 {{count}}개, {{start}}부터 {{end}}까지. 기능을 엽니다.",
-			"featureOverflowAria_other": "기능 {{count}}개 더"
+			"featureOverflowAria_other": "기능 {{count}}개 더",
+			"featureBar": {
+				"ariaLabel": "기능 {{title}}: 열거나 드래그하여 이동",
+				"ariaLabelGrouped": "기능 {{title}}: 열거나 드래그하여 일정 또는 담당자 변경",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "작업 {{count}}개 중 {{completed}}개 완료"
+			},
+			"featureLanes": {
+				"noFeature": "기능 없음",
+				"open": "기능 {{title}} 열기",
+				"moveTo": "{{name}}(으)로 이동",
+				"remove": "기능에서 제거",
+				"cannotMove": "{{name}}(으)로 이동할 수 없음",
+				"taskAriaLabel": "{{title}}: 열거나 드래그하여 일정 변경 또는 다른 기능으로 이동",
+				"moveError": "작업을 다른 기능으로 이동하지 못했습니다",
+				"assignee": "담당자: {{name}}"
+			}
 		},
 		"delete": {
 			"title": "작업을 삭제하시겠습니까?",
@@ -3250,7 +3266,8 @@
 			"groupBy": "그룹화 기준",
 			"groupByOptions": {
 				"assignee": "담당자",
-				"none": "없음"
+				"none": "없음",
+				"feature": "기능"
 			}
 		},
 		"filterBar": {

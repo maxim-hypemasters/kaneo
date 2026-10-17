@@ -3149,7 +3149,24 @@
 			"featureSliceAria_other": "{{title}}: {{count}} tasks, {{start}} to {{end}}. Opens the feature.",
 			"featureOverflow": "+{{count}}",
 			"featureOverflowAria_one": "{{count}} more feature",
-			"featureOverflowAria_other": "{{count}} more features"
+			"featureOverflowAria_other": "{{count}} more features",
+			"featureBar": {
+				"ariaLabel": "Feature {{title}}: open or drag to move",
+				"ariaLabelGrouped": "Feature {{title}}: open, or drag to reschedule or reassign",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} of {{count}} task done",
+				"progressAria_other": "{{completed}} of {{count}} tasks done"
+			},
+			"featureLanes": {
+				"noFeature": "No feature",
+				"open": "Open feature {{title}}",
+				"moveTo": "Move to {{name}}",
+				"remove": "Remove from feature",
+				"cannotMove": "Can't move to {{name}}",
+				"taskAriaLabel": "{{title}}: open, or drag to reschedule or move to another feature",
+				"moveError": "Failed to move the task to another feature",
+				"assignee": "Assigned to {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Delete Task?",
@@ -3309,7 +3326,8 @@
 			"groupBy": "Group by",
 			"groupByOptions": {
 				"none": "None",
-				"assignee": "Assignee"
+				"assignee": "Assignee",
+				"feature": "Feature"
 			}
 		},
 		"filterBar": {

@@ -1,9 +1,13 @@
 import { addDays, differenceInCalendarDays } from "date-fns";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AssigneeAvatar } from "@/components/task/properties/assignee-avatar";
 import { cn } from "@/lib/cn";
+import { GanttFeatureBarLabel } from "./gantt-feature-bar-label";
 import { GanttLaneHint } from "./gantt-lane-hint";
 import { laneKeyAtPoint } from "./gantt-lane-dom";
+import { GanttResizeHandle } from "./gantt-resize-handle";
+import { GanttSummaryShape } from "./gantt-summary-shape";
 import type {
   GanttLaneDrag,
   GanttLaneTarget,
@@ -20,15 +24,19 @@ const MIN_INLINE_LABEL_PX = 120;
 // the task sheet.
 const MIN_TOUCH_RESIZABLE_PX = 120;
 // Vertical travel (half a row) before a drag starts targeting other lanes, so
-// a slightly wobbly reschedule never reassigns a task by accident.
+// a slightly wobbly reschedule never moves a task to another lane by accident.
 const LANE_ENGAGE_PX = 22;
+// The avatar plus the move button's padding and the bar's inset; resize
+// handles take their own width on top.
+const AVATAR_ROOM_PX = 48;
 
 type GanttTaskBarProps = {
   task: ScheduledTask;
   timeline: Pick<GanttTimeline, "days" | "rangeStart" | "gridTemplateColumns">;
   pixelsPerDay: number;
   isMobile?: boolean;
-  // Present only when the bar may be dragged into another assignee lane.
+  // Present only when the bar may be dragged into another lane (assignee or
+  // feature).
   laneDrag?: GanttLaneDrag;
   onCommit: (edit: GanttTaskEdit) => void;
   onOpenTask: () => void;
@@ -36,6 +44,9 @@ type GanttTaskBarProps = {
   onDragChange?: (dragging: boolean) => void;
   // Read out with the bar, e.g. that it starts before a blocker ends.
   dependencyNote?: string;
+  // Starts a task's bar with its assignee's avatar, for lanes that don't
+  // say who does the work (grouped by feature).
+  showAssignee?: boolean;
 };
 
 type LaneView = {
@@ -67,9 +78,12 @@ export function GanttTaskBar({
   onOpenTask,
   onDragChange,
   dependencyNote,
+  showAssignee = false,
 }: GanttTaskBarProps) {
   const { t } = useTranslation();
   const noteId = useId();
+  const assigneeId = useId();
+  const progressId = useId();
   const [dragDisplay, setDragDisplay] = useState<{
     start: Date;
     end: Date;
@@ -104,12 +118,13 @@ export function GanttTaskBar({
   const displayEnd = dragDisplay?.end ?? task.scheduleEnd;
 
   const trackCount = timeline.days.length;
-  const { barInView, lineStart, lineEnd } = getBarGridColumns(
-    displayStart,
-    displayEnd,
-    timeline.rangeStart,
-    trackCount,
-  );
+  const { barInView, lineStart, lineEnd, clippedStart, clippedEnd } =
+    getBarGridColumns(
+      displayStart,
+      displayEnd,
+      timeline.rangeStart,
+      trackCount,
+    );
 
   const startIsVisible =
     differenceInCalendarDays(task.scheduleStart, timeline.rangeStart) >= 0;
@@ -119,7 +134,12 @@ export function GanttTaskBar({
 
   const commitDates = (start: Date, end: Date) => {
     const { task: current, onCommit: commit } = latestRef.current;
-    commit({ start, end, userId: current.userId || null });
+    commit({
+      start,
+      end,
+      userId: current.userId || null,
+      featureId: current.featureId ?? null,
+    });
   };
 
   // Reports a gesture's drag to the route once, and its end once.
@@ -235,6 +255,14 @@ export function GanttTaskBar({
   };
 
   const laneHintLabel = (target: GanttLaneTarget) => {
+    if (target.kind === "feature") {
+      if (!target.droppable) {
+        return t("tasks:gantt.featureLanes.cannotMove", { name: target.name });
+      }
+      return target.featureId
+        ? t("tasks:gantt.featureLanes.moveTo", { name: target.name })
+        : t("tasks:gantt.featureLanes.remove");
+    }
     if (!target.droppable) {
       return t("tasks:gantt.cannotAssign", { name: target.name });
     }
@@ -402,10 +430,18 @@ export function GanttTaskBar({
         return;
       }
       const { start, end: due } = datesFor(ev.clientX);
+      const dropLane = target?.droppable ? target : null;
       commit({
         start,
         end: due,
-        userId: target?.droppable ? target.userId : current.userId || null,
+        userId:
+          dropLane?.kind === "assignee"
+            ? dropLane.userId
+            : current.userId || null,
+        featureId:
+          dropLane?.kind === "feature"
+            ? dropLane.featureId
+            : (current.featureId ?? null),
       });
     };
 
@@ -439,6 +475,55 @@ export function GanttTaskBar({
     isMobile && barWidthPx < MIN_INLINE_LABEL_PX && lineEnd <= trackCount;
   const showResizeHandles = !isMobile || barWidthPx >= MIN_TOUCH_RESIZABLE_PX;
 
+  const isFeature = task.type === "feature";
+  const counts = isFeature ? task.subtaskCounts : undefined;
+  const progress =
+    counts && counts.total > 0
+      ? {
+          text: t("tasks:gantt.featureBar.progress", {
+            completed: counts.completed,
+            total: counts.total,
+          }),
+          aria: t("tasks:gantt.featureBar.progressAria", {
+            completed: counts.completed,
+            count: counts.total,
+          }),
+        }
+      : null;
+  const assigneeNote =
+    showAssignee && !isFeature
+      ? task.userId
+        ? t("tasks:gantt.featureLanes.assignee", {
+            name: task.assigneeName?.trim() || t("common:people.unknown"),
+          })
+        : t("tasks:assignee.unassigned")
+      : null;
+  // A one-day bar on a desktop has no room for it beside the handles.
+  const showAvatar =
+    assigneeNote !== null &&
+    barWidthPx >=
+      AVATAR_ROOM_PX + (showResizeHandles ? (isMobile ? 48 : 16) : 0);
+  const describedBy =
+    // The dependency note goes first: it ends in a full stop, so a screen
+    // reader pauses before the assignee or progress note that follows.
+    [
+      dependencyNote && noteId,
+      assigneeNote && assigneeId,
+      progress && progressId,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
+
+  const ariaLabel = isFeature
+    ? laneDrag?.kind === "assignee"
+      ? t("tasks:gantt.featureBar.ariaLabelGrouped", { title: task.title })
+      : t("tasks:gantt.featureBar.ariaLabel", { title: task.title })
+    : laneDrag?.kind === "feature"
+      ? t("tasks:gantt.featureLanes.taskAriaLabel", { title: task.title })
+      : laneDrag
+        ? t("tasks:gantt.taskAriaLabelGrouped", { title: task.title })
+        : t("tasks:gantt.taskAriaLabel", { title: task.title });
+
   return (
     <div
       ref={barRef}
@@ -452,36 +537,50 @@ export function GanttTaskBar({
       }}
     >
       <div
+        data-gantt-bar={isFeature ? "feature" : "task"}
         style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
         className={cn(
-          "group relative mx-1 flex min-h-[44px] min-w-0 items-stretch overflow-hidden rounded-md border border-primary/25 bg-background text-left text-sm font-medium leading-none text-foreground shadow-sm transition-colors hover:border-primary/40 sm:h-11 sm:min-h-0",
-          laneView
-            ? "pointer-events-none shadow-lg ring-2 ring-primary/40"
-            : "pointer-events-auto",
+          "relative mx-1 flex min-h-[44px] min-w-0 items-stretch text-left sm:h-11 sm:min-h-0",
+          // A feature keeps a task bar's hit area but only draws the thinner
+          // summary band inside it; the band carries the hover, focus and
+          // lifted styles instead.
+          isFeature
+            ? "group/bar"
+            : "group overflow-hidden rounded-md border border-primary/25 bg-background text-sm font-medium leading-none text-foreground shadow-sm transition-colors hover:border-primary/40",
+          !isFeature && laneView && "shadow-lg ring-2 ring-primary/40",
+          laneView ? "pointer-events-none" : "pointer-events-auto",
         )}
       >
-        {showResizeHandles && (
-          <button
-            type="button"
-            aria-label={t("tasks:gantt.resizeStart")}
-            disabled={!startIsVisible}
-            onPointerDown={handleResizeLeftPointerDown}
+        {isFeature && (
+          // Centred in the row, so dependency arrows still meet its ends.
+          <GanttSummaryShape
+            clippedStart={clippedStart}
+            clippedEnd={clippedEnd}
             className={cn(
-              "relative z-20 shrink-0 cursor-ew-resize touch-none border-r border-primary/15 bg-primary/8 hover:bg-primary/18",
-              "min-h-[44px] w-6 sm:min-h-0 sm:w-2",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+              "inset-x-0 top-1/2 h-6 -translate-y-1/2 shadow-sm group-hover/bar:bg-primary/85",
+              "group-has-[:focus-visible]/bar:ring-2 group-has-[:focus-visible]/bar:ring-ring group-has-[:focus-visible]/bar:ring-offset-2 group-has-[:focus-visible]/bar:ring-offset-background",
+              laneView &&
+                "shadow-lg ring-2 ring-primary/40 ring-offset-2 ring-offset-background",
             )}
+          />
+        )}
+        {showResizeHandles && (
+          <GanttResizeHandle
+            edge="start"
+            label={t("tasks:gantt.resizeStart")}
+            disabled={!startIsVisible}
+            summary={isFeature}
+            onPointerDown={handleResizeLeftPointerDown}
           />
         )}
         <button
           type="button"
-          aria-label={
-            laneDrag
-              ? t("tasks:gantt.taskAriaLabelGrouped", { title: task.title })
-              : t("tasks:gantt.taskAriaLabel", { title: task.title })
-          }
-          aria-describedby={dependencyNote ? noteId : undefined}
-          className="relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5"
+          aria-label={ariaLabel}
+          aria-describedby={describedBy}
+          className={cn(
+            "relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5",
+            isFeature && "flex items-center focus-visible:outline-hidden",
+          )}
           onPointerDown={handleMovePointerDown}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -490,32 +589,63 @@ export function GanttTaskBar({
             }
           }}
         >
-          <div className="absolute inset-0 z-0 bg-primary/12 transition-colors group-hover:bg-primary/18" />
-          <span
-            className={cn(
-              "relative z-10 block truncate",
-              labelOutside && "sr-only",
-            )}
-          >
-            {task.title}
-          </span>
+          {isFeature ? (
+            <GanttFeatureBarLabel
+              title={task.title}
+              progress={progress?.text ?? null}
+              textOutside={labelOutside}
+            />
+          ) : (
+            <>
+              <div className="absolute inset-0 z-0 bg-primary/12 transition-colors group-hover:bg-primary/18" />
+              <span className="relative z-10 flex min-w-0 items-center gap-1.5">
+                {showAvatar && (
+                  <span aria-hidden="true" data-gantt-bar-avatar="">
+                    <AssigneeAvatar
+                      name={task.assigneeName}
+                      image={task.assigneeImage}
+                      assigned={!!task.userId}
+                      className="size-5"
+                      fallbackClassName="text-[9px]"
+                    />
+                  </span>
+                )}
+                <span
+                  className={cn(
+                    "block min-w-0 truncate",
+                    labelOutside && "sr-only",
+                  )}
+                >
+                  {task.title}
+                </span>
+              </span>
+            </>
+          )}
         </button>
+        {/* Hidden, not sr-only: read as the button's description, never a
+            second time as loose text after it. */}
+        {assigneeNote && (
+          <span id={assigneeId} hidden>
+            {assigneeNote}
+          </span>
+        )}
+        {progress && (
+          <span id={progressId} hidden>
+            {progress.aria}
+          </span>
+        )}
         {dependencyNote && (
-          <span id={noteId} className="sr-only">
+          <span id={noteId} hidden>
             {dependencyNote}
           </span>
         )}
         {showResizeHandles && (
-          <button
-            type="button"
-            aria-label={t("tasks:gantt.resizeDue")}
+          <GanttResizeHandle
+            edge="end"
+            label={t("tasks:gantt.resizeDue")}
             disabled={!endIsVisible}
+            summary={isFeature}
             onPointerDown={handleResizeRightPointerDown}
-            className={cn(
-              "relative z-20 shrink-0 cursor-ew-resize touch-none border-l border-primary/15 bg-primary/8 hover:bg-primary/18",
-              "min-h-[44px] w-6 sm:min-h-0 sm:w-2",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-            )}
           />
         )}
       </div>
@@ -523,9 +653,17 @@ export function GanttTaskBar({
         <span
           aria-hidden="true"
           style={{ gridColumn: `${lineEnd} / ${trackCount + 1}` }}
-          className="min-w-0 truncate pl-1 text-xs font-medium text-foreground/80"
+          className={cn(
+            "min-w-0 truncate pl-1 text-xs text-foreground/80",
+            isFeature ? "font-semibold" : "font-medium",
+          )}
         >
           {task.title}
+          {progress && (
+            <span className="ml-1 font-medium tabular-nums text-muted-foreground">
+              {progress.text}
+            </span>
+          )}
         </span>
       )}
       {laneView?.hint && (

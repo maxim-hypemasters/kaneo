@@ -3134,7 +3134,24 @@
 			"featureSliceAria_one": "{{title}}: {{count}} задача, од {{start}} до {{end}}. Ја отвора функционалноста.",
 			"featureSliceAria_other": "{{title}}: {{count}} задачи, од {{start}} до {{end}}. Ја отвора функционалноста.",
 			"featureOverflowAria_one": "Уште {{count}} функционалност",
-			"featureOverflowAria_other": "Уште {{count}} функционалности"
+			"featureOverflowAria_other": "Уште {{count}} функционалности",
+			"featureBar": {
+				"ariaLabel": "Функционалност {{title}}: отвори или повлечи за преместување",
+				"ariaLabelGrouped": "Функционалност {{title}}: отвори или повлечи за презакажување или повторно доделување",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} од {{count}} задача е завршена",
+				"progressAria_other": "{{completed}} од {{count}} задачи се завршени"
+			},
+			"featureLanes": {
+				"noFeature": "Без функционалност",
+				"open": "Отвори ја функционалноста {{title}}",
+				"moveTo": "Премести во {{name}}",
+				"remove": "Отстрани од функционалноста",
+				"cannotMove": "Не може да се премести во {{name}}",
+				"taskAriaLabel": "{{title}}: отвори или повлечи за презакажување или преместување во друга функционалност",
+				"moveError": "Задачата не можеше да се премести во друга функционалност",
+				"assignee": "Доделен на {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Избриши задача?",
@@ -3309,7 +3326,8 @@
 			"groupBy": "Групирај по",
 			"groupByOptions": {
 				"assignee": "Доделен",
-				"none": "Без групирање"
+				"none": "Без групирање",
+				"feature": "Функционалност"
 			}
 		},
 		"filterBar": {

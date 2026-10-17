@@ -3238,7 +3238,26 @@
 			"featureOverflowAria_one": "Ще {{count}} функція",
 			"featureOverflowAria_few": "Ще {{count}} функції",
 			"featureOverflowAria_many": "Ще {{count}} функцій",
-			"featureOverflowAria_other": "Ще {{count}} функції"
+			"featureOverflowAria_other": "Ще {{count}} функції",
+			"featureBar": {
+				"ariaLabel": "Функція {{title}}: відкрити або перетягнути для переміщення",
+				"ariaLabelGrouped": "Функція {{title}}: відкрити або перетягнути для зміни дат чи перепризначення",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "Виконано {{completed}} з {{count}} завдання",
+				"progressAria_few": "Виконано {{completed}} з {{count}} завдань",
+				"progressAria_many": "Виконано {{completed}} з {{count}} завдань",
+				"progressAria_other": "Виконано {{completed}} з {{count}} завдання"
+			},
+			"featureLanes": {
+				"noFeature": "Без функції",
+				"open": "Відкрити функцію {{title}}",
+				"moveTo": "Перемістити до {{name}}",
+				"remove": "Вилучити з функції",
+				"cannotMove": "Не можна перемістити до {{name}}",
+				"taskAriaLabel": "{{title}}: відкрити або перетягнути для зміни дат чи переміщення до іншої функції",
+				"moveError": "Не вдалося перемістити завдання до іншої функції",
+				"assignee": "Виконавець: {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Видалити завдання?",
@@ -3427,7 +3446,8 @@
 			"groupBy": "Групувати за",
 			"groupByOptions": {
 				"assignee": "Виконавець",
-				"none": "Без групування"
+				"none": "Без групування",
+				"feature": "Функція"
 			}
 		},
 		"filterBar": {

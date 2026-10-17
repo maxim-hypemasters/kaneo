@@ -3186,7 +3186,25 @@
 			"featureSliceAria_other": "{{title}}: {{count}} tarefas, de {{start}} a {{end}}. Abre a funcionalidade.",
 			"featureOverflowAria_one": "Mais {{count}} funcionalidade",
 			"featureOverflowAria_many": "Mais {{count}} funcionalidades",
-			"featureOverflowAria_other": "Mais {{count}} funcionalidades"
+			"featureOverflowAria_other": "Mais {{count}} funcionalidades",
+			"featureBar": {
+				"ariaLabel": "Funcionalidade {{title}}: abrir ou arrastar para mover",
+				"ariaLabelGrouped": "Funcionalidade {{title}}: abrir ou arrastar para reagendar ou reatribuir",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} de {{count}} tarefa concluída",
+				"progressAria_many": "{{completed}} de {{count}} tarefas concluídas",
+				"progressAria_other": "{{completed}} de {{count}} tarefas concluídas"
+			},
+			"featureLanes": {
+				"noFeature": "Sem funcionalidade",
+				"open": "Abrir funcionalidade {{title}}",
+				"moveTo": "Mover para {{name}}",
+				"remove": "Remover da funcionalidade",
+				"cannotMove": "Não é possível mover para {{name}}",
+				"taskAriaLabel": "{{title}}: abrir ou arrastar para reagendar ou mover para outra funcionalidade",
+				"moveError": "Falha ao mover a tarefa para outra funcionalidade",
+				"assignee": "Atribuído a {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Excluir tarefa?",
@@ -3368,7 +3386,8 @@
 			"groupBy": "Agrupar por",
 			"groupByOptions": {
 				"assignee": "Responsável",
-				"none": "Nenhum"
+				"none": "Nenhum",
+				"feature": "Funcionalidade"
 			}
 		},
 		"filterBar": {

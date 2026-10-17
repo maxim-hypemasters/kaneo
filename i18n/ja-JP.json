@@ -3096,7 +3096,23 @@
 			"featuresLabel": "機能",
 			"featureOverflow": "+{{count}}",
 			"featureSliceAria_other": "{{title}}: タスク {{count}} 件、{{start}} から {{end}}。機能を開きます。",
-			"featureOverflowAria_other": "ほか {{count}} 件の機能"
+			"featureOverflowAria_other": "ほか {{count}} 件の機能",
+			"featureBar": {
+				"ariaLabel": "機能 {{title}}: 開く、またはドラッグして移動",
+				"ariaLabelGrouped": "機能 {{title}}: 開く、またはドラッグして日程や担当者を変更",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "{{count}} 件中 {{completed}} 件のタスクが完了"
+			},
+			"featureLanes": {
+				"noFeature": "機能なし",
+				"open": "機能 {{title}} を開く",
+				"moveTo": "{{name}} に移動",
+				"remove": "機能から外す",
+				"cannotMove": "{{name}} には移動できません",
+				"taskAriaLabel": "{{title}}: 開く、またはドラッグして日程を変更するか別の機能に移動",
+				"moveError": "タスクを別の機能に移動できませんでした",
+				"assignee": "担当者: {{name}}"
+			}
 		},
 		"delete": {
 			"title": "タスクを削除しますか？",
@@ -3250,7 +3266,8 @@
 			"groupBy": "グループ化",
 			"groupByOptions": {
 				"assignee": "担当者",
-				"none": "なし"
+				"none": "なし",
+				"feature": "機能"
 			}
 		},
 		"filterBar": {

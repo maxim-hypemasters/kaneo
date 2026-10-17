@@ -3096,7 +3096,23 @@
 			"featuresLabel": "功能",
 			"featureOverflow": "+{{count}}",
 			"featureSliceAria_other": "{{title}}：{{count}} 個任務，{{start}} 至 {{end}}。開啟此功能。",
-			"featureOverflowAria_other": "還有 {{count}} 個功能"
+			"featureOverflowAria_other": "還有 {{count}} 個功能",
+			"featureBar": {
+				"ariaLabel": "功能 {{title}}：開啟或拖曳以移動",
+				"ariaLabelGrouped": "功能 {{title}}：開啟，或拖曳以重新排程或變更負責人",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "已完成 {{completed}}/{{count}} 個任務"
+			},
+			"featureLanes": {
+				"noFeature": "未設定功能",
+				"open": "開啟功能 {{title}}",
+				"moveTo": "移至 {{name}}",
+				"remove": "從功能中移除",
+				"cannotMove": "無法移至 {{name}}",
+				"taskAriaLabel": "{{title}}：開啟，或拖曳以重新排程或移至其他功能",
+				"moveError": "無法將任務移至其他功能",
+				"assignee": "負責人：{{name}}"
+			}
 		},
 		"delete": {
 			"title": "刪除任務？",
@@ -3250,7 +3266,8 @@
 			"groupBy": "分組依據",
 			"groupByOptions": {
 				"assignee": "負責人",
-				"none": "無"
+				"none": "無",
+				"feature": "功能"
 			}
 		},
 		"filterBar": {

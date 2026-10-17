@@ -3134,7 +3134,24 @@
 			"featureSliceAria_one": "{{title}}: {{count}} कार्य, {{start}} से {{end}} तक। फ़ीचर खोलता है।",
 			"featureSliceAria_other": "{{title}}: {{count}} कार्य, {{start}} से {{end}} तक। फ़ीचर खोलता है।",
 			"featureOverflowAria_one": "{{count}} और फ़ीचर",
-			"featureOverflowAria_other": "{{count}} और फ़ीचर"
+			"featureOverflowAria_other": "{{count}} और फ़ीचर",
+			"featureBar": {
+				"ariaLabel": "फ़ीचर {{title}}: खोलें या ले जाने के लिए खींचें",
+				"ariaLabelGrouped": "फ़ीचर {{title}}: खोलें, या शेड्यूल बदलने या दोबारा सौंपने के लिए खींचें",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{count}} में से {{completed}} कार्य पूरा",
+				"progressAria_other": "{{count}} में से {{completed}} कार्य पूरे"
+			},
+			"featureLanes": {
+				"noFeature": "कोई फ़ीचर नहीं",
+				"open": "फ़ीचर {{title}} खोलें",
+				"moveTo": "{{name}} में ले जाएँ",
+				"remove": "फ़ीचर से हटाएँ",
+				"cannotMove": "{{name}} में नहीं ले जा सकते",
+				"taskAriaLabel": "{{title}}: खोलें, या शेड्यूल बदलने या किसी दूसरे फ़ीचर में ले जाने के लिए खींचें",
+				"moveError": "कार्य को दूसरे फ़ीचर में ले जाने में विफल",
+				"assignee": "{{name}} को सौंपा गया"
+			}
 		},
 		"delete": {
 			"title": "कार्य हटाएँ?",
@@ -3309,7 +3326,8 @@
 			"groupBy": "इसके अनुसार समूहित करें",
 			"groupByOptions": {
 				"assignee": "सौंपा गया",
-				"none": "कोई नहीं"
+				"none": "कोई नहीं",
+				"feature": "फ़ीचर"
 			}
 		},
 		"filterBar": {

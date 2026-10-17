@@ -52,4 +52,15 @@ describe("GanttGroupByControl", () => {
     await choose("tasks:display.groupByOptions.none");
     expect(useUserPreferencesStore.getState().ganttGroupBy).toBe("none");
   });
+
+  it("groups by feature", async () => {
+    render(<GanttGroupByControl />);
+
+    await choose("tasks:display.groupByOptions.feature");
+
+    expect(useUserPreferencesStore.getState().ganttGroupBy).toBe("feature");
+    expect(
+      screen.getByRole("combobox", { name: "tasks:display.groupBy" }),
+    ).toHaveTextContent("tasks:display.groupByOptions.feature");
+  });
 });

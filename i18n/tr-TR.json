@@ -3134,7 +3134,24 @@
 			"featureSliceAria_one": "{{title}}: {{count}} talep, {{start}} ile {{end}} arası. Epiği açar.",
 			"featureSliceAria_other": "{{title}}: {{count}} talep, {{start}} ile {{end}} arası. Epiği açar.",
 			"featureOverflowAria_one": "{{count}} epik daha",
-			"featureOverflowAria_other": "{{count}} epik daha"
+			"featureOverflowAria_other": "{{count}} epik daha",
+			"featureBar": {
+				"ariaLabel": "Epik {{title}}: açın veya taşımak için sürükleyin",
+				"ariaLabelGrouped": "Epik {{title}}: açın veya yeniden zamanlamak ya da yeniden atamak için sürükleyin",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{count}} talepten {{completed}} tanesi tamamlandı",
+				"progressAria_other": "{{count}} talepten {{completed}} tanesi tamamlandı"
+			},
+			"featureLanes": {
+				"noFeature": "Epik yok",
+				"open": "{{title}} epiğini aç",
+				"moveTo": "{{name}} epiğine taşı",
+				"remove": "Epikten çıkar",
+				"cannotMove": "{{name}} epiğine taşınamaz",
+				"taskAriaLabel": "{{title}}: açın veya yeniden zamanlamak ya da başka bir epiğe taşımak için sürükleyin",
+				"moveError": "Talep başka bir epiğe taşınamadı",
+				"assignee": "{{name}} kişisine atandı"
+			}
 		},
 		"delete": {
 			"title": "Talep Silinsin mi?",
@@ -3309,7 +3326,8 @@
 			"groupBy": "Gruplama ölçütü",
 			"groupByOptions": {
 				"assignee": "Atanan",
-				"none": "Yok"
+				"none": "Yok",
+				"feature": "Epik"
 			}
 		},
 		"filterBar": {

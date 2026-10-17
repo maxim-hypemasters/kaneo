@@ -3123,7 +3123,24 @@
 			"featureSliceAria_one": "{{title}}: {{count}} taak, {{start}} tot {{end}}. Opent de feature.",
 			"featureSliceAria_other": "{{title}}: {{count}} taken, {{start}} tot {{end}}. Opent de feature.",
 			"featureOverflowAria_one": "Nog {{count}} feature",
-			"featureOverflowAria_other": "Nog {{count}} features"
+			"featureOverflowAria_other": "Nog {{count}} features",
+			"featureBar": {
+				"ariaLabel": "Feature {{title}}: openen of slepen om te verplaatsen",
+				"ariaLabelGrouped": "Feature {{title}}: openen, of slepen om opnieuw in te plannen of opnieuw toe te wijzen",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} van {{count}} taak klaar",
+				"progressAria_other": "{{completed}} van {{count}} taken klaar"
+			},
+			"featureLanes": {
+				"noFeature": "Geen feature",
+				"open": "Feature {{title}} openen",
+				"moveTo": "Verplaatsen naar {{name}}",
+				"remove": "Verwijderen uit feature",
+				"cannotMove": "Kan niet verplaatsen naar {{name}}",
+				"taskAriaLabel": "{{title}}: openen, of slepen om opnieuw in te plannen of naar een andere feature te verplaatsen",
+				"moveError": "Kan de taak niet naar een andere feature verplaatsen",
+				"assignee": "Toegewezen aan {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Taak verwijderen?",
@@ -3309,7 +3326,8 @@
 			"groupBy": "Groeperen op",
 			"groupByOptions": {
 				"assignee": "Toegewezen persoon",
-				"none": "Geen"
+				"none": "Geen",
+				"feature": "Feature"
 			}
 		},
 		"filterBar": {

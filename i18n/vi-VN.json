@@ -3082,7 +3082,23 @@
 			"featuresLabel": "Tính năng",
 			"featureOverflow": "+{{count}}",
 			"featureSliceAria_other": "{{title}}: {{count}} công việc, từ {{start}} đến {{end}}. Mở tính năng.",
-			"featureOverflowAria_other": "{{count}} tính năng khác"
+			"featureOverflowAria_other": "{{count}} tính năng khác",
+			"featureBar": {
+				"ariaLabel": "Tính năng {{title}}: mở hoặc kéo để di chuyển",
+				"ariaLabelGrouped": "Tính năng {{title}}: mở, hoặc kéo để lên lịch lại hoặc giao lại",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "Đã xong {{completed}}/{{count}} công việc"
+			},
+			"featureLanes": {
+				"noFeature": "Không có tính năng",
+				"open": "Mở tính năng {{title}}",
+				"moveTo": "Chuyển đến {{name}}",
+				"remove": "Gỡ khỏi tính năng",
+				"cannotMove": "Không thể chuyển đến {{name}}",
+				"taskAriaLabel": "{{title}}: mở, hoặc kéo để lên lịch lại hoặc chuyển sang tính năng khác",
+				"moveError": "Không thể chuyển công việc sang tính năng khác",
+				"assignee": "Đã giao cho {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Xóa công việc?",
@@ -3250,7 +3266,8 @@
 			"groupBy": "Nhóm theo",
 			"groupByOptions": {
 				"assignee": "Người được giao",
-				"none": "Không có"
+				"none": "Không có",
+				"feature": "Tính năng"
 			}
 		},
 		"filterBar": {

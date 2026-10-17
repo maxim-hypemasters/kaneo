@@ -3082,7 +3082,23 @@
 			"featuresLabel": "Fitur",
 			"featureOverflow": "+{{count}}",
 			"featureSliceAria_other": "{{title}}: {{count}} tugas, {{start}} hingga {{end}}. Membuka fitur.",
-			"featureOverflowAria_other": "{{count}} fitur lainnya"
+			"featureOverflowAria_other": "{{count}} fitur lainnya",
+			"featureBar": {
+				"ariaLabel": "Fitur {{title}}: buka atau seret untuk memindahkan",
+				"ariaLabelGrouped": "Fitur {{title}}: buka, atau seret untuk menjadwalkan ulang atau menugaskan ulang",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "{{completed}} dari {{count}} tugas selesai"
+			},
+			"featureLanes": {
+				"noFeature": "Tanpa fitur",
+				"open": "Buka fitur {{title}}",
+				"moveTo": "Pindahkan ke {{name}}",
+				"remove": "Hapus dari fitur",
+				"cannotMove": "Tidak dapat dipindahkan ke {{name}}",
+				"taskAriaLabel": "{{title}}: buka, atau seret untuk menjadwalkan ulang atau memindahkan ke fitur lain",
+				"moveError": "Gagal memindahkan tugas ke fitur lain",
+				"assignee": "Ditugaskan ke {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Hapus Tugas?",
@@ -3250,7 +3266,8 @@
 			"groupBy": "Kelompokkan berdasarkan",
 			"groupByOptions": {
 				"assignee": "Penanggung jawab",
-				"none": "Tidak ada"
+				"none": "Tidak ada",
+				"feature": "Fitur"
 			}
 		},
 		"filterBar": {

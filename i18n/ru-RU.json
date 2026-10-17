@@ -3254,7 +3254,26 @@
 			"featureOverflowAria_one": "Ещё {{count}} фича",
 			"featureOverflowAria_few": "Ещё {{count}} фичи",
 			"featureOverflowAria_many": "Ещё {{count}} фич",
-			"featureOverflowAria_other": "Ещё {{count}} фичи"
+			"featureOverflowAria_other": "Ещё {{count}} фичи",
+			"featureBar": {
+				"ariaLabel": "Фича {{title}}: откройте или перетащите для перемещения",
+				"ariaLabelGrouped": "Фича {{title}}: откройте или перетащите для изменения сроков или переназначения",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "Выполнено {{completed}} из {{count}} задачи",
+				"progressAria_few": "Выполнено {{completed}} из {{count}} задач",
+				"progressAria_many": "Выполнено {{completed}} из {{count}} задач",
+				"progressAria_other": "Выполнено {{completed}} из {{count}} задачи"
+			},
+			"featureLanes": {
+				"noFeature": "Без фичи",
+				"open": "Открыть фичу {{title}}",
+				"moveTo": "Переместить в {{name}}",
+				"remove": "Убрать из фичи",
+				"cannotMove": "Нельзя переместить в {{name}}",
+				"taskAriaLabel": "{{title}}: откройте или перетащите для изменения сроков или перемещения в другую фичу",
+				"moveError": "Не удалось переместить задачу в другую фичу",
+				"assignee": "Исполнитель: {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Удалить задачу?",
@@ -3479,7 +3498,8 @@
 			"groupBy": "Группировать по",
 			"groupByOptions": {
 				"assignee": "Исполнитель",
-				"none": "Без группировки"
+				"none": "Без группировки",
+				"feature": "Фича"
 			}
 		},
 		"filterBar": {

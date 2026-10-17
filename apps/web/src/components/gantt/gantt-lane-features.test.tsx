@@ -79,6 +79,12 @@ const chipBox = (chip: HTMLElement) =>
 
 const sliceName = (title: string, count: number, start: string, end: string) =>
   `tasks:gantt.featureSliceAria(title=${title},count=${count},start=${start},end=${end})`;
+// The bracket tips the summary band draws under its unclipped ends.
+const tips = (slice: HTMLElement) =>
+  Array.from(
+    slice.querySelectorAll<HTMLElement>("[data-gantt-summary-tip]"),
+    (tip) => tip.dataset.ganttSummaryTip,
+  );
 
 describe("GanttLaneFeatures", () => {
   it("renders nothing without tracks", () => {
@@ -101,9 +107,29 @@ describe("GanttLaneFeatures", () => {
     expect(slice).toHaveTextContent("Checkout");
     expect(slice.style.gridColumn).toBe("3 / 6");
     expect(slice).toHaveClass("ml-1", "mr-1");
+    // Drawn as a summary bar, with a bracket tip under each end.
+    expect(slice.querySelector("[data-gantt-summary-shape]")).not.toBeNull();
+    expect(tips(slice)).toEqual(["start", "end"]);
 
     fireEvent.click(slice);
     expect(onOpenFeature).toHaveBeenCalledWith("Checkout");
+  });
+
+  it("leaves dependency arrows over the bands, and keeps their shape in forced colours", () => {
+    show([placed(span("Checkout", "2026-09-03", "2026-09-05"), 0)]);
+
+    // The arrows' layer is z-[1]; a z-index here would paint the solid
+    // bands over every arrow crossing the header.
+    const group = screen.getByRole("group", {
+      name: "tasks:gantt.featuresLabel",
+    });
+    expect(group.className).not.toMatch(/(^|\s)z-/);
+    // Forced colours drop the band's fill and its box-shadow focus ring.
+    const slice = screen.getByRole("button", { name: /title=Checkout/ });
+    expect(slice).toHaveClass("focus-visible:outline-hidden");
+    expect(slice.querySelector("[data-gantt-summary-shape]")).toHaveClass(
+      "forced-colors:border",
+    );
   });
 
   it("stacks tracks, flattens clipped ends and skips features out of view", () => {
@@ -120,11 +146,14 @@ describe("GanttLaneFeatures", () => {
     ).toHaveLength(3);
     const early = screen.getByRole("button", { name: /title=Early/ });
     expect(early.style.gridColumn).toBe("1 / 3");
-    expect(early).toHaveClass("rounded-l-none");
+    expect(tips(early)).toEqual(["end"]);
     expect(early).not.toHaveClass("ml-1");
+    expect(early).toHaveClass("mr-1");
     const late = screen.getByRole("button", { name: /title=Late/ });
     expect(late.style.gridColumn).toBe("25 / 31");
-    expect(late).toHaveClass("rounded-r-none");
+    expect(tips(late)).toEqual(["start"]);
+    expect(late).toHaveClass("ml-1");
+    expect(late).not.toHaveClass("mr-1");
     expect(screen.queryByRole("button", { name: /title=Gone/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /title=Old/ })).toBeNull();
   });
@@ -152,6 +181,11 @@ describe("GanttLaneFeatures", () => {
       "tasks:gantt.featureOverflowAria(count=2)",
     );
     expect(chip).toHaveTextContent("tasks:gantt.featureOverflow(count=2)");
+    // The button fills its track, and 44px on touch screens; only the chip
+    // it draws is the band's height, so a near miss can't open a slice.
+    expect(chip.className).not.toMatch(/(^|\s)(sm:)?h-/);
+    expect(chip).toHaveClass("touch-hitbox");
+    expect(chip).toHaveClass("focus-visible:outline-hidden");
     // In the last track, over the days the two cover between them.
     expect(
       container.querySelector('[data-gantt-feature-track="1"]'),

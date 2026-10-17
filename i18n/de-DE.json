@@ -3134,7 +3134,24 @@
 			"featureSliceAria_one": "{{title}}: {{count}} Aufgabe, {{start}} bis {{end}}. Öffnet das Feature.",
 			"featureSliceAria_other": "{{title}}: {{count}} Aufgaben, {{start}} bis {{end}}. Öffnet das Feature.",
 			"featureOverflowAria_one": "{{count}} weiteres Feature",
-			"featureOverflowAria_other": "{{count}} weitere Features"
+			"featureOverflowAria_other": "{{count}} weitere Features",
+			"featureBar": {
+				"ariaLabel": "Feature {{title}}: öffnen oder ziehen zum Verschieben",
+				"ariaLabelGrouped": "Feature {{title}}: öffnen oder ziehen zum Umplanen oder Neuzuweisen",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} von {{count}} Aufgabe erledigt",
+				"progressAria_other": "{{completed}} von {{count}} Aufgaben erledigt"
+			},
+			"featureLanes": {
+				"noFeature": "Kein Feature",
+				"open": "Feature {{title}} öffnen",
+				"moveTo": "Zu {{name}} verschieben",
+				"remove": "Aus Feature entfernen",
+				"cannotMove": "Verschieben zu {{name}} nicht möglich",
+				"taskAriaLabel": "{{title}}: öffnen oder ziehen zum Umplanen oder Verschieben in ein anderes Feature",
+				"moveError": "Die Aufgabe konnte nicht in ein anderes Feature verschoben werden",
+				"assignee": "Zugewiesen an {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Aufgabe löschen?",
@@ -3309,7 +3326,8 @@
 			"groupBy": "Gruppieren nach",
 			"groupByOptions": {
 				"assignee": "Zugewiesen an",
-				"none": "Keine"
+				"none": "Keine",
+				"feature": "Feature"
 			}
 		},
 		"filterBar": {

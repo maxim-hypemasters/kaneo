@@ -3148,7 +3148,24 @@
 			"featureSliceAria_one": "{{title}}: {{count}} tapşırıq, {{start}} – {{end}}. İmkanı açır.",
 			"featureSliceAria_other": "{{title}}: {{count}} tapşırıq, {{start}} – {{end}}. İmkanı açır.",
 			"featureOverflowAria_one": "Daha {{count}} imkan",
-			"featureOverflowAria_other": "Daha {{count}} imkan"
+			"featureOverflowAria_other": "Daha {{count}} imkan",
+			"featureBar": {
+				"ariaLabel": "İmkan {{title}}: aç və ya köçürmək üçün sürüklə",
+				"ariaLabelGrouped": "İmkan {{title}}: aç və ya tarixini dəyişmək, yaxud yenidən təyin etmək üçün sürüklə",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{count}} tapşırıqdan {{completed}} tamamlanıb",
+				"progressAria_other": "{{count}} tapşırıqdan {{completed}} tamamlanıb"
+			},
+			"featureLanes": {
+				"noFeature": "İmkan yoxdur",
+				"open": "{{title}} imkanını aç",
+				"moveTo": "{{name}} imkanına köçür",
+				"remove": "İmkandan çıxar",
+				"cannotMove": "{{name}} imkanına köçürmək olmur",
+				"taskAriaLabel": "{{title}}: aç və ya tarixini dəyişmək, yaxud başqa imkana köçürmək üçün sürüklə",
+				"moveError": "Tapşırığı başqa imkana köçürmək alınmadı",
+				"assignee": "{{name}} adlı şəxsə təyin edilib"
+			}
 		},
 		"delete": {
 			"title": "Tapşırıq silinsin?",
@@ -3309,7 +3326,8 @@
 			"groupBy": "Qruplaşdırma meyarı",
 			"groupByOptions": {
 				"assignee": "İcraçı",
-				"none": "Heç biri"
+				"none": "Heç biri",
+				"feature": "İmkan"
 			}
 		},
 		"filterBar": {

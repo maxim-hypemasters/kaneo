@@ -3186,7 +3186,25 @@
 			"featureSliceAria_other": "{{title}} : {{count}} tâches, du {{start}} au {{end}}. Ouvre la fonctionnalité.",
 			"featureOverflowAria_one": "{{count}} fonctionnalité de plus",
 			"featureOverflowAria_many": "{{count}} fonctionnalités de plus",
-			"featureOverflowAria_other": "{{count}} fonctionnalités de plus"
+			"featureOverflowAria_other": "{{count}} fonctionnalités de plus",
+			"featureBar": {
+				"ariaLabel": "Fonctionnalité {{title}} : ouvrir ou faire glisser pour déplacer",
+				"ariaLabelGrouped": "Fonctionnalité {{title}} : ouvrir ou faire glisser pour replanifier ou réassigner",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} sur {{count}} tâche terminée",
+				"progressAria_many": "{{completed}} sur {{count}} tâches terminées",
+				"progressAria_other": "{{completed}} sur {{count}} tâches terminées"
+			},
+			"featureLanes": {
+				"noFeature": "Aucune fonctionnalité",
+				"open": "Ouvrir la fonctionnalité {{title}}",
+				"moveTo": "Déplacer vers {{name}}",
+				"remove": "Retirer de la fonctionnalité",
+				"cannotMove": "Impossible de déplacer vers {{name}}",
+				"taskAriaLabel": "{{title}} : ouvrir ou faire glisser pour replanifier ou déplacer vers une autre fonctionnalité",
+				"moveError": "Impossible de déplacer la tâche vers une autre fonctionnalité",
+				"assignee": "Assigné à {{name}}"
+			}
 		},
 		"delete": {
 			"title": "Supprimer la tâche ?",
@@ -3368,7 +3386,8 @@
 			"groupBy": "Regrouper par",
 			"groupByOptions": {
 				"assignee": "Assigné",
-				"none": "Aucun"
+				"none": "Aucun",
+				"feature": "Fonctionnalité"
 			}
 		},
 		"filterBar": {

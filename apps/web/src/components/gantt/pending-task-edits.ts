@@ -26,6 +26,7 @@ export function classifyEdit(task: ScheduledTask, edit: GanttTaskEdit) {
       !sameDay(task.scheduleStart, edit.start) ||
       !sameDay(task.scheduleEnd, edit.end),
     assignee: (task.userId || null) !== edit.userId,
+    feature: (task.featureId ?? null) !== edit.featureId,
   };
 }
 
@@ -43,6 +44,7 @@ export function applyPendingEdit(
     assigneeId: pending.userId,
     assigneeName: pending.assigneeName,
     assigneeImage: pending.assigneeImage,
+    featureId: pending.featureId,
   };
 }
 
@@ -53,6 +55,7 @@ export function pendingEditLanded(
   return (
     sameDay(task.scheduleStart, pending.start) &&
     sameDay(task.scheduleEnd, pending.end) &&
-    (task.userId || null) === pending.userId
+    (task.userId || null) === pending.userId &&
+    (task.featureId ?? null) === pending.featureId
   );
 }
