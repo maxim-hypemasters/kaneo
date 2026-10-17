@@ -150,7 +150,30 @@
 					"rose": "Roos",
 					"crimson": "Karmozijn"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FEATURE",
+				"titleFeature": "Nieuwe feature",
+				"descriptionFeature": "Maak een nieuwe feature aan om taken van een project te groeperen, met een titel, beschrijving en andere details.",
+				"featureTitlePlaceholder": "Featurenaam",
+				"featureDescriptionPlaceholder": "Voeg een beschrijving toe voor je feature...",
+				"successCreatedFeature": "Feature succesvol aangemaakt",
+				"createFeatureError": "Aanmaken van feature mislukt",
+				"createButtonFeature": "Feature aanmaken",
+				"discardTitleFeature": "Feature verwerpen?",
+				"discardDescriptionFeature": "Je niet-opgeslagen featuregegevens gaan verloren.",
+				"discardButtonFeature": "Feature verwerpen",
+				"type": "Type",
+				"typeTask": "Taak",
+				"typeFeature": "Feature",
+				"feature": "Feature",
+				"noFeature": "Geen feature",
+				"searchFeatures": "Feature zoeken of aanmaken...",
+				"noFeaturesFound": "Geen features gevonden",
+				"createFeature": "Feature \"{{name}}\" aanmaken",
+				"newFeatureSuffix": "{{name}} (nieuw)",
+				"chooseProjectForFeature": "Kies een project om een feature te selecteren.",
+				"loadingFeatures": "Features laden...",
+				"loadFeaturesError": "Features konden niet worden geladen."
 			}
 		},
 		"editor": {
@@ -2378,7 +2401,8 @@
 				"navigate": "Navigeren",
 				"open": "Openen",
 				"close": "Sluiten"
-			}
+			},
+			"createFeature": "Feature aanmaken"
 		},
 		"sidebar": {
 			"projects": "Projecten",
@@ -3460,6 +3484,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nieuwe feature",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

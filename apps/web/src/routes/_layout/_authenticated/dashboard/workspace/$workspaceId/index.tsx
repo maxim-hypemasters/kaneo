@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
+import { Layers, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TrialExpiredCallout } from "@/components/billing/trial-expired-callout";
@@ -18,6 +18,7 @@ import useGetAssignedTasks from "@/hooks/queries/task/use-get-assigned-tasks";
 import { useLocalDay } from "@/hooks/use-local-day";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { formatDate } from "@/lib/format";
+import type { TaskType } from "@/types/task";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/workspace/$workspaceId/",
@@ -36,9 +37,12 @@ function RouteComponent() {
   } = useGetAssignedTasks(workspaceId);
   const { data: projects } = useGetProjects({ workspaceId }, true);
   const { canCreateTasks, canCreateProjects } = useWorkspacePermission();
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  // What the open create dialog creates; null while it's closed.
+  const [createType, setCreateType] = useState<TaskType | null>(null);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const needsProjectFirst = projects?.length === 0 && canCreateProjects();
+  const openCreate = (type: TaskType) =>
+    needsProjectFirst ? setIsCreateProjectOpen(true) : setCreateType(type);
   const openCreateProject = canCreateProjects()
     ? () => setIsCreateProjectOpen(true)
     : undefined;
@@ -56,7 +60,7 @@ function RouteComponent() {
         <div className="h-full overflow-y-auto">
           <TrialExpiredCallout workspaceId={workspaceId} className="m-4" />
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-9 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
-            <header className="flex items-end justify-between gap-4">
+            <header className="flex flex-wrap items-end justify-between gap-4">
               <div className="flex flex-col gap-1.5">
                 <p className="font-medium text-[13px] text-muted-foreground">
                   {formatDate(new Date(day), {
@@ -70,17 +74,20 @@ function RouteComponent() {
                 </h1>
               </div>
               {canCreateTasks() && (
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    needsProjectFirst
-                      ? setIsCreateProjectOpen(true)
-                      : setIsCreateTaskOpen(true)
-                  }
-                >
-                  <Plus />
-                  {t("workspace:home.newTask")}
-                </Button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openCreate("feature")}
+                  >
+                    <Layers />
+                    {t("workspace:home.newFeature")}
+                  </Button>
+                  <Button size="sm" onClick={() => openCreate("task")}>
+                    <Plus />
+                    {t("workspace:home.newTask")}
+                  </Button>
+                </div>
               )}
             </header>
 
@@ -119,8 +126,9 @@ function RouteComponent() {
       </WorkspaceLayout>
 
       <CreateTaskModal
-        open={isCreateTaskOpen}
-        onClose={() => setIsCreateTaskOpen(false)}
+        open={createType !== null}
+        type={createType ?? "task"}
+        onClose={() => setCreateType(null)}
       />
       <CreateProjectModal
         open={isCreateProjectOpen}

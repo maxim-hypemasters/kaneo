@@ -150,7 +150,30 @@
 					"rose": "गुलाब",
 					"crimson": "किरमिज़ी"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "फ़ीचर",
+				"titleFeature": "नया फ़ीचर",
+				"descriptionFeature": "किसी प्रोजेक्ट के कार्यों को समूहित करने के लिए शीर्षक, विवरण और अन्य विवरण देकर एक नया फ़ीचर बनाएँ।",
+				"featureTitlePlaceholder": "फ़ीचर का शीर्षक",
+				"featureDescriptionPlaceholder": "अपने फ़ीचर के लिए विवरण जोड़ें...",
+				"successCreatedFeature": "फ़ीचर सफलतापूर्वक बनाया गया",
+				"createFeatureError": "फ़ीचर बनाने में विफल",
+				"createButtonFeature": "फ़ीचर बनाएँ",
+				"discardTitleFeature": "फ़ीचर छोड़ें?",
+				"discardDescriptionFeature": "आपके सहेजे नहीं गए फ़ीचर विवरण खो जाएँगे।",
+				"discardButtonFeature": "फ़ीचर छोड़ें",
+				"type": "प्रकार",
+				"typeTask": "कार्य",
+				"typeFeature": "फ़ीचर",
+				"feature": "फ़ीचर",
+				"noFeature": "कोई फ़ीचर नहीं",
+				"searchFeatures": "फ़ीचर खोजें या बनाएँ...",
+				"noFeaturesFound": "कोई फ़ीचर नहीं मिला",
+				"createFeature": "फ़ीचर \"{{name}}\" बनाएँ",
+				"newFeatureSuffix": "{{name}} (नया)",
+				"chooseProjectForFeature": "फ़ीचर चुनने के लिए प्रोजेक्ट चुनें।",
+				"loadingFeatures": "फ़ीचर लोड हो रहे हैं...",
+				"loadFeaturesError": "फ़ीचर लोड नहीं हो सके।"
 			}
 		},
 		"editor": {
@@ -2378,7 +2401,8 @@
 				"navigate": "नेविगेट करें",
 				"open": "खोलें",
 				"close": "बंद करें"
-			}
+			},
+			"createFeature": "फ़ीचर बनाएँ"
 		},
 		"sidebar": {
 			"projects": "प्रोजेक्ट",
@@ -3460,6 +3484,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "नया फ़ीचर",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

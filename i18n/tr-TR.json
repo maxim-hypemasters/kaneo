@@ -150,7 +150,30 @@
 					"rose": "Gül Kurusu",
 					"crimson": "Koyu Kırmızı"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "EPİK",
+				"titleFeature": "Yeni Epik",
+				"descriptionFeature": "Bir projenin taleplerini gruplamak için başlık, açıklama ve diğer ayrıntıları girerek yeni bir epik oluşturun.",
+				"featureTitlePlaceholder": "Epik başlığı",
+				"featureDescriptionPlaceholder": "Epiğiniz için bir açıklama ekleyin...",
+				"successCreatedFeature": "Epik başarıyla oluşturuldu",
+				"createFeatureError": "Epik oluşturulamadı",
+				"createButtonFeature": "Epik Oluştur",
+				"discardTitleFeature": "Kaydedilmemiş epik taslağı silinsin mi?",
+				"discardDescriptionFeature": "Kaydedilmemiş epik ayrıntıları kaybolacak.",
+				"discardButtonFeature": "Epik taslağını sil",
+				"type": "Tür",
+				"typeTask": "Talep",
+				"typeFeature": "Epik",
+				"feature": "Epik",
+				"noFeature": "Epik yok",
+				"searchFeatures": "Epik ara veya oluştur...",
+				"noFeaturesFound": "Epik bulunamadı",
+				"createFeature": "\"{{name}}\" epiğini oluştur",
+				"newFeatureSuffix": "{{name}} (yeni)",
+				"chooseProjectForFeature": "Epik belirlemek için önce bir proje seçin.",
+				"loadingFeatures": "Epikler yükleniyor...",
+				"loadFeaturesError": "Epikler yüklenemedi."
 			}
 		},
 		"editor": {
@@ -2378,7 +2401,8 @@
 				"navigate": "Gezin",
 				"open": "Aç",
 				"close": "Kapat"
-			}
+			},
+			"createFeature": "Epik oluştur"
 		},
 		"sidebar": {
 			"projects": "Projeler",
@@ -3460,6 +3484,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Yeni epik",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

@@ -13,6 +13,9 @@ type OptionMenuProps = {
   onQueryChange?: (query: string) => void;
   status?: ReactNode;
   inputHint?: ReactNode;
+  // Keys 1-9 pick an option while the search is empty. Off for menus that
+  // also name new things from the search, where a name can start with a digit.
+  numberShortcuts?: boolean;
 };
 
 export function OptionMenu({
@@ -23,6 +26,7 @@ export function OptionMenu({
   onQueryChange,
   status,
   inputHint,
+  numberShortcuts = true,
 }: OptionMenuProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
@@ -32,7 +36,7 @@ export function OptionMenu({
   );
 
   const selectByNumber = (key: string) => {
-    if (query || !/^[1-9]$/.test(key)) return false;
+    if (!numberShortcuts || query || !/^[1-9]$/.test(key)) return false;
     const option = filtered[Number(key) - 1];
     if (!option) return false;
     onSelect(option.value);
@@ -124,6 +128,7 @@ export function OptionMenu({
                       className="shrink-0 text-muted-foreground"
                     />
                   ) : (
+                    numberShortcuts &&
                     !query &&
                     index < 9 && (
                       <span

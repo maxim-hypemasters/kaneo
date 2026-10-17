@@ -150,7 +150,30 @@
 					"rose": "Ροζ",
 					"crimson": "Βυσσινί"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "ΔΥΝΑΤΟΤΗΤΑ",
+				"titleFeature": "Νέα δυνατότητα",
+				"descriptionFeature": "Δημιουργήστε μια νέα δυνατότητα για να ομαδοποιήσετε εργασίες ενός έργου, συμπληρώνοντας τίτλο, περιγραφή και άλλες λεπτομέρειες.",
+				"featureTitlePlaceholder": "Τίτλος δυνατότητας",
+				"featureDescriptionPlaceholder": "Προσθέστε μια περιγραφή για τη δυνατότητά σας...",
+				"successCreatedFeature": "Η δυνατότητα δημιουργήθηκε με επιτυχία",
+				"createFeatureError": "Αποτυχία δημιουργίας δυνατότητας",
+				"createButtonFeature": "Δημιουργία δυνατότητας",
+				"discardTitleFeature": "Απόρριψη δυνατότητας;",
+				"discardDescriptionFeature": "Οι μη αποθηκευμένες λεπτομέρειες της δυνατότητας θα χαθούν.",
+				"discardButtonFeature": "Απόρριψη δυνατότητας",
+				"type": "Τύπος",
+				"typeTask": "Εργασία",
+				"typeFeature": "Δυνατότητα",
+				"feature": "Δυνατότητα",
+				"noFeature": "Χωρίς δυνατότητα",
+				"searchFeatures": "Αναζήτηση ή δημιουργία δυνατότητας...",
+				"noFeaturesFound": "Δεν βρέθηκαν δυνατότητες",
+				"createFeature": "Δημιουργία δυνατότητας \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (νέα)",
+				"chooseProjectForFeature": "Επιλέξτε ένα έργο για να διαλέξετε δυνατότητα.",
+				"loadingFeatures": "Φόρτωση δυνατοτήτων...",
+				"loadFeaturesError": "Δεν ήταν δυνατή η φόρτωση των δυνατοτήτων."
 			}
 		},
 		"editor": {
@@ -2378,7 +2401,8 @@
 				"navigate": "Πλοήγηση",
 				"open": "Άνοιγμα",
 				"close": "Κλείσιμο"
-			}
+			},
+			"createFeature": "Δημιουργία δυνατότητας"
 		},
 		"sidebar": {
 			"projects": "Έργα",
@@ -3460,6 +3484,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Νέα δυνατότητα",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

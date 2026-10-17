@@ -150,7 +150,30 @@
 					"rose": "玫红",
 					"crimson": "深红"
 				},
-				"statusLoadError": "项目状态加载失败。"
+				"statusLoadError": "项目状态加载失败。",
+				"breadcrumbFeature": "功能",
+				"titleFeature": "新建功能",
+				"descriptionFeature": "通过提供标题、描述等详细信息来创建新功能，用于对项目中的任务进行分组。",
+				"featureTitlePlaceholder": "功能标题",
+				"featureDescriptionPlaceholder": "为功能添加描述…",
+				"successCreatedFeature": "功能创建成功",
+				"createFeatureError": "功能创建失败",
+				"createButtonFeature": "创建功能",
+				"discardTitleFeature": "放弃功能？",
+				"discardDescriptionFeature": "未保存的功能详情将会丢失。",
+				"discardButtonFeature": "放弃功能",
+				"type": "类型",
+				"typeTask": "任务",
+				"typeFeature": "功能",
+				"feature": "功能",
+				"noFeature": "未设置功能",
+				"searchFeatures": "搜索或创建功能…",
+				"noFeaturesFound": "未找到功能",
+				"createFeature": "创建功能 \"{{name}}\"",
+				"newFeatureSuffix": "{{name}}（新建）",
+				"chooseProjectForFeature": "选择功能前请先选择项目。",
+				"loadingFeatures": "正在加载功能…",
+				"loadFeaturesError": "功能加载失败。"
 			}
 		},
 		"editor": {
@@ -2336,7 +2359,8 @@
 				"navigate": "导航",
 				"open": "打开",
 				"close": "关闭"
-			}
+			},
+			"createFeature": "创建功能"
 		},
 		"sidebar": {
 			"projects": "项目",
@@ -3397,6 +3421,7 @@
 				"evening": "晚上好",
 				"morning": "早上好"
 			},
+			"newFeature": "新建功能",
 			"newTask": "新建任务",
 			"pageTitle": "首页",
 			"projects": {

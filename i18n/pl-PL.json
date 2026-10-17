@@ -150,7 +150,30 @@
 					"rose": "Róża",
 					"crimson": "Karmazyn"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FUNKCJA",
+				"titleFeature": "Nowa funkcja",
+				"descriptionFeature": "Utwórz nową funkcję, aby pogrupować zadania projektu, podając tytuł, opis i inne szczegóły.",
+				"featureTitlePlaceholder": "Tytuł funkcji",
+				"featureDescriptionPlaceholder": "Dodaj opis funkcji...",
+				"successCreatedFeature": "Funkcja została utworzona",
+				"createFeatureError": "Nie udało się utworzyć funkcji",
+				"createButtonFeature": "Utwórz funkcję",
+				"discardTitleFeature": "Odrzucić funkcję?",
+				"discardDescriptionFeature": "Niezapisane szczegóły funkcji zostaną utracone.",
+				"discardButtonFeature": "Odrzuć funkcję",
+				"type": "Typ",
+				"typeTask": "Zadanie",
+				"typeFeature": "Funkcja",
+				"feature": "Funkcja",
+				"noFeature": "Brak funkcji",
+				"searchFeatures": "Szukaj lub utwórz funkcję...",
+				"noFeaturesFound": "Nie znaleziono funkcji",
+				"createFeature": "Utwórz funkcję „{{name}}”",
+				"newFeatureSuffix": "{{name}} (nowa)",
+				"chooseProjectForFeature": "Wybierz projekt, aby móc wskazać funkcję.",
+				"loadingFeatures": "Ładowanie funkcji...",
+				"loadFeaturesError": "Nie udało się wczytać funkcji."
 			}
 		},
 		"editor": {
@@ -590,7 +613,8 @@
 				"navigate": "Nawiguj",
 				"open": "Otwórz",
 				"close": "Zamknij"
-			}
+			},
+			"createFeature": "Utwórz funkcję"
 		},
 		"sidebar": {
 			"projects": "Projekty",
@@ -936,6 +960,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nowa funkcja",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

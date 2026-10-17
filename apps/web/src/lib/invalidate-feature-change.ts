@@ -10,6 +10,9 @@ export function invalidateFeatureChange(
 ) {
   void queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
   void queryClient.invalidateQueries({
+    queryKey: ["project-features", projectId],
+  });
+  void queryClient.invalidateQueries({
     queryKey: ["project-task-relations", projectId],
   });
   void queryClient.invalidateQueries({ queryKey: ["task-relations"] });

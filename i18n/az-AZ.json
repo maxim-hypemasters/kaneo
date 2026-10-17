@@ -150,7 +150,30 @@
 					"rose": "Çəhrayı",
 					"crimson": "Tünd qırmızı"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "İmkan",
+				"titleFeature": "Yeni imkan",
+				"descriptionFeature": "Layihənin tapşırıqlarını qruplaşdırmaq üçün başlıq, təsvir və digər təfərrüatları daxil edərək yeni imkan yaradın.",
+				"featureTitlePlaceholder": "İmkanın başlığı",
+				"featureDescriptionPlaceholder": "İmkanınız üçün təsvir əlavə edin...",
+				"successCreatedFeature": "İmkan uğurla yaradıldı",
+				"createFeatureError": "İmkanı yaratmaq alınmadı",
+				"createButtonFeature": "İmkan yarat",
+				"discardTitleFeature": "İmkandan imtina edilsin?",
+				"discardDescriptionFeature": "Yadda saxlanmamış imkan təfərrüatları itiriləcək.",
+				"discardButtonFeature": "İmkandan imtina et",
+				"type": "Növ",
+				"typeTask": "Tapşırıq",
+				"typeFeature": "İmkan",
+				"feature": "İmkan",
+				"noFeature": "İmkan yoxdur",
+				"searchFeatures": "İmkanları axtar və ya yenisini yarat...",
+				"noFeaturesFound": "İmkan tapılmadı",
+				"createFeature": "\"{{name}}\" adlı imkan yarat",
+				"newFeatureSuffix": "{{name}} (yeni)",
+				"chooseProjectForFeature": "İmkan seçmək üçün layihə seçin.",
+				"loadingFeatures": "İmkanlar yüklənir...",
+				"loadFeaturesError": "İmkanları yükləmək alınmadı."
 			}
 		},
 		"editor": {
@@ -2378,7 +2401,8 @@
 				"navigate": "Keçid et",
 				"open": "Aç",
 				"close": "Bağla"
-			}
+			},
+			"createFeature": "İmkan yarat"
 		},
 		"sidebar": {
 			"projects": "Layihələr",
@@ -3460,6 +3484,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Yeni imkan",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

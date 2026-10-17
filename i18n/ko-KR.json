@@ -150,7 +150,30 @@
 					"rose": "로즈",
 					"crimson": "크림슨"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "기능",
+				"titleFeature": "새 기능",
+				"descriptionFeature": "제목, 설명 및 기타 세부 정보를 지정하여 프로젝트의 작업을 묶는 새 기능을 만듭니다.",
+				"featureTitlePlaceholder": "기능 제목",
+				"featureDescriptionPlaceholder": "기능에 대한 설명을 추가하세요...",
+				"successCreatedFeature": "기능이 생성되었습니다",
+				"createFeatureError": "기능 생성에 실패했습니다",
+				"createButtonFeature": "기능 만들기",
+				"discardTitleFeature": "작성 중인 기능을 버릴까요?",
+				"discardDescriptionFeature": "저장하지 않은 기능 세부 정보가 손실됩니다.",
+				"discardButtonFeature": "기능 버리기",
+				"type": "유형",
+				"typeTask": "작업",
+				"typeFeature": "기능",
+				"feature": "기능",
+				"noFeature": "기능 없음",
+				"searchFeatures": "기능 검색 또는 만들기...",
+				"noFeaturesFound": "기능을 찾을 수 없음",
+				"createFeature": "기능 \"{{name}}\" 만들기",
+				"newFeatureSuffix": "{{name}} (신규)",
+				"chooseProjectForFeature": "기능을 선택하려면 프로젝트를 선택하세요.",
+				"loadingFeatures": "기능 로딩 중...",
+				"loadFeaturesError": "기능을 불러올 수 없습니다."
 			}
 		},
 		"editor": {
@@ -2336,7 +2359,8 @@
 				"navigate": "이동",
 				"open": "열기",
 				"close": "닫기"
-			}
+			},
+			"createFeature": "기능 만들기"
 		},
 		"sidebar": {
 			"projects": "프로젝트",
@@ -3397,6 +3421,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "새 기능",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

@@ -150,7 +150,30 @@
 					"rose": "ローズ",
 					"crimson": "クリムゾン"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "機能",
+				"titleFeature": "新規機能",
+				"descriptionFeature": "タイトル、説明、その他の詳細を入力して、プロジェクトのタスクをまとめる新しい機能を作成します。",
+				"featureTitlePlaceholder": "機能名",
+				"featureDescriptionPlaceholder": "機能の説明を追加...",
+				"successCreatedFeature": "機能を作成しました",
+				"createFeatureError": "機能の作成に失敗しました",
+				"createButtonFeature": "機能を作成",
+				"discardTitleFeature": "機能を破棄しますか？",
+				"discardDescriptionFeature": "保存されていない機能の詳細は失われます。",
+				"discardButtonFeature": "機能を破棄",
+				"type": "種類",
+				"typeTask": "タスク",
+				"typeFeature": "機能",
+				"feature": "機能",
+				"noFeature": "機能なし",
+				"searchFeatures": "機能を検索または作成...",
+				"noFeaturesFound": "機能が見つかりません",
+				"createFeature": "機能「{{name}}」を作成",
+				"newFeatureSuffix": "{{name}}（新規）",
+				"chooseProjectForFeature": "機能を選択するにはプロジェクトを選択してください。",
+				"loadingFeatures": "機能を読み込み中...",
+				"loadFeaturesError": "機能を読み込めませんでした。"
 			}
 		},
 		"editor": {
@@ -2336,7 +2359,8 @@
 				"navigate": "移動",
 				"open": "開く",
 				"close": "閉じる"
-			}
+			},
+			"createFeature": "機能を作成"
 		},
 		"sidebar": {
 			"projects": "プロジェクト",
@@ -3397,6 +3421,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "新規機能",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

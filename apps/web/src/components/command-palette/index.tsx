@@ -31,6 +31,7 @@ import type { ShortcutId } from "@/lib/shortcuts/catalog";
 import { authClient } from "@/lib/auth-client";
 import { hasInstanceAdminRole } from "@/lib/instance-admin";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import type { TaskType } from "@/types/task";
 import CreateProjectModal from "../shared/modals/create-project-modal";
 
 type PaletteActionItem = {
@@ -59,7 +60,8 @@ function CommandPalette() {
     isAdmin || (config !== undefined && !config.disableWorkspaceCreation);
   const [open, setOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+  // What the open create dialog creates; null while it's closed.
+  const [createType, setCreateType] = useState<TaskType | null>(null);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [isCreateWorkspaceOpen, setIsCreateWorkspaceOpen] = useState(false);
   const projectIdFromRoute =
@@ -69,7 +71,7 @@ function CommandPalette() {
   const openShortcutsPanel = useShortcutsPanelStore((state) => state.setOpen);
 
   useShortcut("openCommandMenu", () => setOpen((prev) => !prev));
-  useShortcut("createTask", () => setIsCreateTaskOpen(true));
+  useShortcut("createTask", () => setCreateType("task"));
   useShortcut("createProject", () => setIsCreateProjectOpen(true));
 
   const runCommand = useCallback((command: () => void) => {
@@ -114,7 +116,12 @@ function CommandPalette() {
             value: "create-task",
             label: t("navigation:commandPalette.createTask"),
             shortcutId: "createTask",
-            onRun: () => setIsCreateTaskOpen(true),
+            onRun: () => setCreateType("task"),
+          },
+          {
+            value: "create-feature",
+            label: t("navigation:commandPalette.createFeature"),
+            onRun: () => setCreateType("feature"),
           },
           {
             value: "create-project",
@@ -249,10 +256,11 @@ function CommandPalette() {
 
       <SearchCommandMenu open={isSearchOpen} setOpen={setIsSearchOpen} />
       <CreateTaskModal
-        open={isCreateTaskOpen}
+        open={createType !== null}
+        type={createType ?? "task"}
         projectId={projectIdFromRoute}
         status={isBacklogView ? "planned" : undefined}
-        onClose={() => setIsCreateTaskOpen(false)}
+        onClose={() => setCreateType(null)}
         instant
       />
       <CreateWorkspaceModal

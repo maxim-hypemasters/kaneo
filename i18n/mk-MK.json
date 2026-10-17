@@ -150,7 +150,30 @@
 					"rose": "Роза",
 					"crimson": "Гримизна"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "ФУНКЦИОНАЛНОСТ",
+				"titleFeature": "Нова функционалност",
+				"descriptionFeature": "Креирај нова функционалност за да ги групираш задачите од проектот, со наслов, опис и други детали.",
+				"featureTitlePlaceholder": "Наслов на функционалност",
+				"featureDescriptionPlaceholder": "Додади опис за твојата функционалност...",
+				"successCreatedFeature": "Функционалноста е успешно креирана",
+				"createFeatureError": "Неуспешно креирање на функционалност",
+				"createButtonFeature": "Креирај функционалност",
+				"discardTitleFeature": "Да се отфрли функционалноста?",
+				"discardDescriptionFeature": "Незачуваните детали за функционалноста ќе се изгубат.",
+				"discardButtonFeature": "Отфрли ја функционалноста",
+				"type": "Тип",
+				"typeTask": "Задача",
+				"typeFeature": "Функционалност",
+				"feature": "Функционалност",
+				"noFeature": "Без функционалност",
+				"searchFeatures": "Пребарај или креирај функционалност...",
+				"noFeaturesFound": "Не се пронајдени функционалности",
+				"createFeature": "Креирај функционалност \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (нова)",
+				"chooseProjectForFeature": "Избери проект за да избереш функционалност.",
+				"loadingFeatures": "Се вчитуваат функционалности...",
+				"loadFeaturesError": "Функционалностите не може да се вчитаат."
 			}
 		},
 		"editor": {
@@ -2378,7 +2401,8 @@
 				"navigate": "Навигирај",
 				"open": "Отвори",
 				"close": "Затвори"
-			}
+			},
+			"createFeature": "Креирај функционалност"
 		},
 		"sidebar": {
 			"projects": "Проекти",
@@ -3460,6 +3484,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Нова функционалност",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

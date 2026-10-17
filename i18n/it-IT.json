@@ -150,7 +150,30 @@
 					"rose": "Rosa",
 					"crimson": "Cremisi"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FUNZIONALITÀ",
+				"titleFeature": "Nuova Funzionalità",
+				"descriptionFeature": "Crea una nuova funzionalità per raggruppare le attività di un progetto, con titolo, descrizione e altri dettagli.",
+				"featureTitlePlaceholder": "Titolo funzionalità",
+				"featureDescriptionPlaceholder": "Aggiungi una descrizione per la tua funzionalità...",
+				"successCreatedFeature": "Funzionalità creata con successo",
+				"createFeatureError": "Creazione funzionalità fallita",
+				"createButtonFeature": "Crea Funzionalità",
+				"discardTitleFeature": "Scartare la funzionalità?",
+				"discardDescriptionFeature": "I dettagli non salvati della funzionalità andranno persi.",
+				"discardButtonFeature": "Scarta funzionalità",
+				"type": "Tipo",
+				"typeTask": "Attività",
+				"typeFeature": "Funzionalità",
+				"feature": "Funzionalità",
+				"noFeature": "Nessuna funzionalità",
+				"searchFeatures": "Cerca o crea una funzionalità...",
+				"noFeaturesFound": "Nessuna funzionalità trovata",
+				"createFeature": "Crea funzionalità \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (nuova)",
+				"chooseProjectForFeature": "Scegli un progetto per selezionare una funzionalità.",
+				"loadingFeatures": "Caricamento funzionalità...",
+				"loadFeaturesError": "Impossibile caricare le funzionalità."
 			}
 		},
 		"editor": {
@@ -2420,7 +2443,8 @@
 				"navigate": "Naviga",
 				"open": "Apri",
 				"close": "Chiudi"
-			}
+			},
+			"createFeature": "Crea funzionalità"
 		},
 		"sidebar": {
 			"projects": "Progetti",
@@ -3523,6 +3547,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nuova funzionalità",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

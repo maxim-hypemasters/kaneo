@@ -150,7 +150,30 @@
 					"rose": "Rosa",
 					"crimson": "Carmesim"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FUNCIONALIDADE",
+				"titleFeature": "Nova funcionalidade",
+				"descriptionFeature": "Crie uma nova funcionalidade para agrupar tarefas de um projeto, com título, descrição e outros detalhes.",
+				"featureTitlePlaceholder": "Título da funcionalidade",
+				"featureDescriptionPlaceholder": "Adicione uma descrição para sua funcionalidade...",
+				"successCreatedFeature": "Funcionalidade criada com sucesso",
+				"createFeatureError": "Falha ao criar funcionalidade",
+				"createButtonFeature": "Criar funcionalidade",
+				"discardTitleFeature": "Descartar funcionalidade?",
+				"discardDescriptionFeature": "Os detalhes não salvos da funcionalidade serão perdidos.",
+				"discardButtonFeature": "Descartar funcionalidade",
+				"type": "Tipo",
+				"typeTask": "Tarefa",
+				"typeFeature": "Funcionalidade",
+				"feature": "Funcionalidade",
+				"noFeature": "Sem funcionalidade",
+				"searchFeatures": "Buscar ou criar uma funcionalidade...",
+				"noFeaturesFound": "Nenhuma funcionalidade encontrada",
+				"createFeature": "Criar funcionalidade \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (nova)",
+				"chooseProjectForFeature": "Escolha um projeto para selecionar uma funcionalidade.",
+				"loadingFeatures": "Carregando funcionalidades...",
+				"loadFeaturesError": "Não foi possível carregar as funcionalidades."
 			}
 		},
 		"editor": {
@@ -2420,7 +2443,8 @@
 				"navigate": "Navegar",
 				"open": "Abrir",
 				"close": "Fechar"
-			}
+			},
+			"createFeature": "Criar funcionalidade"
 		},
 		"sidebar": {
 			"projects": "Projetos",
@@ -3523,6 +3547,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nova funcionalidade",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

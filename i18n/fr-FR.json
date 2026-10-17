@@ -150,7 +150,30 @@
 					"rose": "Rose",
 					"crimson": "Cramoisi"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FONCTIONNALITÉ",
+				"titleFeature": "Nouvelle fonctionnalité",
+				"descriptionFeature": "Créez une nouvelle fonctionnalité pour regrouper les tâches d'un projet, en fournissant un titre, une description et d'autres détails.",
+				"featureTitlePlaceholder": "Titre de la fonctionnalité",
+				"featureDescriptionPlaceholder": "Ajoutez une description pour votre fonctionnalité...",
+				"successCreatedFeature": "Fonctionnalité créée avec succès",
+				"createFeatureError": "Échec de la création de la fonctionnalité",
+				"createButtonFeature": "Créer la fonctionnalité",
+				"discardTitleFeature": "Abandonner la fonctionnalité ?",
+				"discardDescriptionFeature": "Les détails non enregistrés de la fonctionnalité seront perdus.",
+				"discardButtonFeature": "Abandonner la fonctionnalité",
+				"type": "Type",
+				"typeTask": "Tâche",
+				"typeFeature": "Fonctionnalité",
+				"feature": "Fonctionnalité",
+				"noFeature": "Aucune fonctionnalité",
+				"searchFeatures": "Rechercher ou créer une fonctionnalité...",
+				"noFeaturesFound": "Aucune fonctionnalité trouvée",
+				"createFeature": "Créer la fonctionnalité \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (nouvelle)",
+				"chooseProjectForFeature": "Choisissez un projet pour sélectionner une fonctionnalité.",
+				"loadingFeatures": "Chargement des fonctionnalités...",
+				"loadFeaturesError": "Impossible de charger les fonctionnalités."
 			}
 		},
 		"editor": {
@@ -2420,7 +2443,8 @@
 				"navigate": "Naviguer",
 				"open": "Ouvrir",
 				"close": "Fermer"
-			}
+			},
+			"createFeature": "Créer une fonctionnalité"
 		},
 		"sidebar": {
 			"projects": "Projets",
@@ -3523,6 +3547,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nouvelle fonctionnalité",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

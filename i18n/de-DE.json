@@ -150,7 +150,30 @@
 					"rose": "Rosa",
 					"crimson": "Karmesinrot"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FEATURE",
+				"titleFeature": "Neues Feature",
+				"descriptionFeature": "Erstelle ein neues Feature, um Aufgaben eines Projekts zu gruppieren, mit einem Titel, einer Beschreibung und weiteren Details.",
+				"featureTitlePlaceholder": "Feature-Titel",
+				"featureDescriptionPlaceholder": "Füge eine Beschreibung für dein Feature hinzu...",
+				"successCreatedFeature": "Feature erfolgreich erstellt",
+				"createFeatureError": "Feature konnte nicht erstellt werden",
+				"createButtonFeature": "Feature erstellen",
+				"discardTitleFeature": "Feature verwerfen?",
+				"discardDescriptionFeature": "Deine ungespeicherten Feature-Details gehen verloren.",
+				"discardButtonFeature": "Feature verwerfen",
+				"type": "Typ",
+				"typeTask": "Aufgabe",
+				"typeFeature": "Feature",
+				"feature": "Feature",
+				"noFeature": "Kein Feature",
+				"searchFeatures": "Feature suchen oder erstellen...",
+				"noFeaturesFound": "Keine Features gefunden",
+				"createFeature": "Feature \"{{name}}\" erstellen",
+				"newFeatureSuffix": "{{name}} (neu)",
+				"chooseProjectForFeature": "Wähle ein Projekt aus, um ein Feature auszuwählen.",
+				"loadingFeatures": "Features werden geladen...",
+				"loadFeaturesError": "Features konnten nicht geladen werden."
 			}
 		},
 		"editor": {
@@ -2378,7 +2401,8 @@
 				"navigate": "Navigieren",
 				"open": "Öffnen",
 				"close": "Schließen"
-			}
+			},
+			"createFeature": "Feature erstellen"
 		},
 		"sidebar": {
 			"projects": "Projekte",
@@ -3460,6 +3484,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Neues Feature",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

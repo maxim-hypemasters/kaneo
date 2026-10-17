@@ -150,7 +150,30 @@
 					"terracotta": "Terracotta",
 					"rose": "Rose",
 					"crimson": "Crimson"
-				}
+				},
+				"breadcrumbFeature": "FEATURE",
+				"titleFeature": "New Feature",
+				"descriptionFeature": "Create a new feature to group tasks of a project, with a title, description, and other details.",
+				"featureTitlePlaceholder": "Feature title",
+				"featureDescriptionPlaceholder": "Add a description for your feature...",
+				"successCreatedFeature": "Feature created successfully",
+				"createFeatureError": "Failed to create feature",
+				"createButtonFeature": "Create Feature",
+				"discardTitleFeature": "Discard feature?",
+				"discardDescriptionFeature": "Your unsaved feature details will be lost.",
+				"discardButtonFeature": "Discard feature",
+				"type": "Type",
+				"typeTask": "Task",
+				"typeFeature": "Feature",
+				"feature": "Feature",
+				"noFeature": "No feature",
+				"searchFeatures": "Search or create a feature...",
+				"noFeaturesFound": "No features found",
+				"createFeature": "Create feature \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (new)",
+				"chooseProjectForFeature": "Choose a project to pick a feature.",
+				"loadingFeatures": "Loading features...",
+				"loadFeaturesError": "Features couldn’t be loaded."
 			}
 		},
 		"editor": {
@@ -2378,7 +2401,8 @@
 				"navigate": "Navigate",
 				"open": "Open",
 				"close": "Close"
-			}
+			},
+			"createFeature": "Create feature"
 		},
 		"sidebar": {
 			"projects": "Projects",
@@ -3479,7 +3503,8 @@
 				"updated": "updated the task",
 				"empty": "Nothing has happened in the last 30 days.",
 				"loadError": "Activity couldn't be loaded."
-			}
+			},
+			"newFeature": "New feature"
 		},
 		"myWork": {
 			"empty": "Nothing assigned to you",

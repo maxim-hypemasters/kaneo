@@ -150,7 +150,30 @@
 					"rose": "玫瑰紅",
 					"crimson": "緋紅"
 				},
-				"statusLoadError": "無法載入專案狀態。"
+				"statusLoadError": "無法載入專案狀態。",
+				"breadcrumbFeature": "功能",
+				"titleFeature": "新增功能",
+				"descriptionFeature": "輸入標題、說明與其他詳細資料，即可建立新功能，用來將專案中的任務分組。",
+				"featureTitlePlaceholder": "功能標題",
+				"featureDescriptionPlaceholder": "新增功能說明...",
+				"successCreatedFeature": "功能已建立",
+				"createFeatureError": "無法建立功能",
+				"createButtonFeature": "建立功能",
+				"discardTitleFeature": "要捨棄功能嗎？",
+				"discardDescriptionFeature": "尚未儲存的功能內容將會遺失。",
+				"discardButtonFeature": "捨棄功能",
+				"type": "類型",
+				"typeTask": "任務",
+				"typeFeature": "功能",
+				"feature": "功能",
+				"noFeature": "未設定功能",
+				"searchFeatures": "搜尋或建立功能...",
+				"noFeaturesFound": "找不到功能",
+				"createFeature": "建立功能「{{name}}」",
+				"newFeatureSuffix": "{{name}}（新）",
+				"chooseProjectForFeature": "請先選擇專案再選擇功能。",
+				"loadingFeatures": "正在載入功能...",
+				"loadFeaturesError": "無法載入功能。"
 			}
 		},
 		"editor": {
@@ -2336,7 +2359,8 @@
 				"navigate": "移動",
 				"open": "開啟",
 				"close": "關閉"
-			}
+			},
+			"createFeature": "建立功能"
 		},
 		"sidebar": {
 			"projects": "專案",
@@ -3413,7 +3437,8 @@
 				"updated": "更新了任務",
 				"empty": "過去 30 天沒有任何動態。",
 				"loadError": "無法載入動態。"
-			}
+			},
+			"newFeature": "新增功能"
 		},
 		"myWork": {
 			"empty": "沒有指派給你的任務",

@@ -150,7 +150,30 @@
 					"rose": "Hồng",
 					"crimson": "Đỏ thẫm"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "TÍNH NĂNG",
+				"titleFeature": "Tính năng mới",
+				"descriptionFeature": "Tạo một tính năng mới để nhóm các công việc của dự án, với tiêu đề, mô tả và các chi tiết khác.",
+				"featureTitlePlaceholder": "Tiêu đề tính năng",
+				"featureDescriptionPlaceholder": "Thêm mô tả cho tính năng của bạn...",
+				"successCreatedFeature": "Tạo tính năng thành công",
+				"createFeatureError": "Không thể tạo tính năng",
+				"createButtonFeature": "Tạo tính năng",
+				"discardTitleFeature": "Hủy tính năng?",
+				"discardDescriptionFeature": "Các chi tiết tính năng chưa lưu sẽ bị mất.",
+				"discardButtonFeature": "Hủy tính năng",
+				"type": "Loại",
+				"typeTask": "Công việc",
+				"typeFeature": "Tính năng",
+				"feature": "Tính năng",
+				"noFeature": "Không có tính năng",
+				"searchFeatures": "Tìm hoặc tạo tính năng...",
+				"noFeaturesFound": "Không tìm thấy tính năng",
+				"createFeature": "Tạo tính năng \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (mới)",
+				"chooseProjectForFeature": "Chọn một dự án trước khi chọn tính năng.",
+				"loadingFeatures": "Đang tải tính năng...",
+				"loadFeaturesError": "Không thể tải các tính năng."
 			}
 		},
 		"editor": {
@@ -2336,7 +2359,8 @@
 				"navigate": "Điều hướng",
 				"open": "Mở",
 				"close": "Đóng"
-			}
+			},
+			"createFeature": "Tạo tính năng"
 		},
 		"sidebar": {
 			"projects": "Dự án",
@@ -3397,6 +3421,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Tính năng mới",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

@@ -150,7 +150,30 @@
 					"rose": "Merah Mawar",
 					"crimson": "Merah Tua"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FITUR",
+				"titleFeature": "Fitur Baru",
+				"descriptionFeature": "Buat fitur baru untuk mengelompokkan tugas-tugas dalam proyek, dengan judul, deskripsi, dan detail lainnya.",
+				"featureTitlePlaceholder": "Judul fitur",
+				"featureDescriptionPlaceholder": "Tambahkan deskripsi untuk fitur Anda...",
+				"successCreatedFeature": "Fitur berhasil dibuat",
+				"createFeatureError": "Gagal membuat fitur",
+				"createButtonFeature": "Buat Fitur",
+				"discardTitleFeature": "Buang fitur?",
+				"discardDescriptionFeature": "Detail fitur yang belum disimpan akan hilang.",
+				"discardButtonFeature": "Buang fitur",
+				"type": "Jenis",
+				"typeTask": "Tugas",
+				"typeFeature": "Fitur",
+				"feature": "Fitur",
+				"noFeature": "Tanpa fitur",
+				"searchFeatures": "Cari atau buat fitur...",
+				"noFeaturesFound": "Fitur tidak ditemukan",
+				"createFeature": "Buat fitur \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (baru)",
+				"chooseProjectForFeature": "Pilih proyek terlebih dahulu untuk memilih fitur.",
+				"loadingFeatures": "Memuat fitur...",
+				"loadFeaturesError": "Fitur tidak dapat dimuat."
 			}
 		},
 		"editor": {
@@ -2336,7 +2359,8 @@
 				"navigate": "Navigasi",
 				"open": "Buka",
 				"close": "Tutup"
-			}
+			},
+			"createFeature": "Buat fitur"
 		},
 		"sidebar": {
 			"projects": "Proyek",
@@ -3397,6 +3421,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Fitur baru",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

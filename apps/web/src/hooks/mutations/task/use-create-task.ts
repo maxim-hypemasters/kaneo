@@ -46,6 +46,11 @@ function useCreateTask() {
       void queryClient.invalidateQueries({
         queryKey: ["custom-field-values", variables.projectId],
       });
+      if (variables.type === "feature") {
+        void queryClient.invalidateQueries({
+          queryKey: ["project-features", variables.projectId],
+        });
+      }
       if (variables.featureId) {
         void queryClient.invalidateQueries({
           queryKey: ["task", variables.featureId],

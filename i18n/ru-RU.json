@@ -150,7 +150,30 @@
 					"rose": "Роза",
 					"crimson": "Малиновый"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "ФИЧА",
+				"titleFeature": "Новая фича",
+				"descriptionFeature": "Создайте новую фичу, чтобы сгруппировать задачи проекта, указав название, описание и другие детали.",
+				"featureTitlePlaceholder": "Название фичи",
+				"featureDescriptionPlaceholder": "Добавьте описание фичи...",
+				"successCreatedFeature": "Фича успешно создана",
+				"createFeatureError": "Не удалось создать фичу",
+				"createButtonFeature": "Создать фичу",
+				"discardTitleFeature": "Отменить фичу?",
+				"discardDescriptionFeature": "Несохранённые данные фичи будут потеряны.",
+				"discardButtonFeature": "Отменить фичу",
+				"type": "Тип",
+				"typeTask": "Задача",
+				"typeFeature": "Фича",
+				"feature": "Фича",
+				"noFeature": "Без фичи",
+				"searchFeatures": "Поиск или создание фичи...",
+				"noFeaturesFound": "Фичи не найдены",
+				"createFeature": "Создать фичу «{{name}}»",
+				"newFeatureSuffix": "{{name}} (новая)",
+				"chooseProjectForFeature": "Выберите проект, чтобы указать фичу.",
+				"loadingFeatures": "Загрузка фич...",
+				"loadFeaturesError": "Не удалось загрузить фичи."
 			}
 		},
 		"editor": {
@@ -2470,7 +2493,8 @@
 				"navigate": "Навигация",
 				"open": "Открыть",
 				"close": "Закрыть"
-			}
+			},
+			"createFeature": "Создать фичу"
 		},
 		"sidebar": {
 			"projects": "Проекты",
@@ -3638,6 +3662,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Новая фича",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

@@ -150,7 +150,30 @@
 					"rose": "Троянда",
 					"crimson": "Багряний"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "ФУНКЦІЯ",
+				"titleFeature": "Нова функція",
+				"descriptionFeature": "Створіть нову функцію, щоб згрупувати завдання проєкту, вказавши назву, опис та інші деталі.",
+				"featureTitlePlaceholder": "Назва функції",
+				"featureDescriptionPlaceholder": "Додайте опис до вашої функції...",
+				"successCreatedFeature": "Функцію успішно створено",
+				"createFeatureError": "Не вдалося створити функцію",
+				"createButtonFeature": "Створити функцію",
+				"discardTitleFeature": "Відхилити функцію?",
+				"discardDescriptionFeature": "Незбережені дані функції буде втрачено.",
+				"discardButtonFeature": "Відхилити функцію",
+				"type": "Тип",
+				"typeTask": "Завдання",
+				"typeFeature": "Функція",
+				"feature": "Функція",
+				"noFeature": "Без функції",
+				"searchFeatures": "Знайдіть або створіть функцію...",
+				"noFeaturesFound": "Функції не знайдено",
+				"createFeature": "Створити функцію «{{name}}»",
+				"newFeatureSuffix": "{{name}} (нова)",
+				"chooseProjectForFeature": "Оберіть проєкт, щоб вибрати функцію.",
+				"loadingFeatures": "Завантаження функцій...",
+				"loadFeaturesError": "Не вдалося завантажити функції."
 			}
 		},
 		"editor": {
@@ -2462,7 +2485,8 @@
 				"navigate": "Навігація",
 				"open": "Відкрити",
 				"close": "Закрити"
-			}
+			},
+			"createFeature": "Створити функцію"
 		},
 		"sidebar": {
 			"projects": "Проєкти",
@@ -3586,6 +3610,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Нова функція",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {
