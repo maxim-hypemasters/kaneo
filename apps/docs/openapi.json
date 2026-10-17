@@ -1419,12 +1419,19 @@
                   "string",
                   "null"
                 ]
+              },
+              "assigneeImage": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
               "columnId",
               "assigneeName",
-              "assigneeId"
+              "assigneeId",
+              "assigneeImage"
             ]
           }
         ]

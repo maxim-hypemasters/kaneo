@@ -28,6 +28,9 @@ async function getTask(taskId: string, board = false, userId?: string) {
       userId: taskTable.userId,
       assigneeName: userTable.name,
       assigneeId: userTable.id,
+      // A board patched from this read (a realtime update) must not keep
+      // the previous assignee's photo.
+      assigneeImage: userTable.image,
       projectId: taskTable.projectId,
       type: taskTable.type,
       featureId: taskTable.featureId,

@@ -79,6 +79,7 @@ export const taskWithAssigneeSchema = taskSchema
       }),
     assigneeName: z.string().nullable(),
     assigneeId: z.string().nullable(),
+    assigneeImage: z.string().nullable(),
   })
   .openapi("TaskWithAssignee");
 
