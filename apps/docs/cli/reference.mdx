@@ -150,7 +150,7 @@ Lists the open tasks assigned to you in the current workspace, soonest due first
 kaneo task view <task>
 ```
 
-Shows a task with its details and description.
+Shows a task with its details and description. It also shows the task's feature, or the tasks of a feature.
 
 ### `kaneo task create`
 
@@ -171,7 +171,8 @@ Creates a task. In a terminal, the title is asked for when you leave it out.
 | `--due` | Due date |
 | `--start` | Start date |
 | `--label` | Add a workspace label by name. Repeatable. |
-| `--parent` | Create it as a subtask of this task, such as `KAN-12`. The project defaults to the parent's. |
+| `--type` | `task` or `feature`. Default: `task`. A [feature](/core/functional/plan-and-execute-tasks#group-work-into-features) groups other tasks. |
+| `--feature` | Create it in this feature, such as `KAN-12`. The project defaults to the feature's. `--parent` still works as another name for it. |
 
 ```bash
 kaneo task create "Fix login redirect" -p KAN --priority high --due tomorrow --label Bug
@@ -183,7 +184,7 @@ kaneo task create "Fix login redirect" -p KAN --priority high --due tomorrow --l
 kaneo task edit <task> [flags]
 ```
 
-Changes a task's title, description, priority, dates or labels.
+Changes a task's title, description, priority, dates, labels, type or feature.
 
 | Flag | Description |
 | --- | --- |
@@ -195,6 +196,8 @@ Changes a task's title, description, priority, dates or labels.
 | `--start` | Start date, or `none` to clear it |
 | `--add-label` | Add a workspace label by name. Repeatable. |
 | `--remove-label` | Remove a label by name. Repeatable. |
+| `--type` | `feature` makes it a feature and takes it out of its own feature. `task` turns a feature back into a task, once it has no tasks. |
+| `--feature` | Put it in this feature of its project, such as `KAN-12`, or `none` to take it out of its feature. |
 
 ### `kaneo task open`
 
@@ -218,7 +221,7 @@ Moves a task to another column of its project. The column is a slug or a name, s
 kaneo task move <task> [-p <project>] [-s <status>]
 ```
 
-Moves a task to another project. `-s`, `--status` picks the column in the destination project. By default the task keeps the same column, or goes to the first one.
+Moves a task to another project. `-s`, `--status` picks the column in the destination project. By default the task keeps the same column, or goes to the first one. The task leaves its feature. A feature that still has tasks can't be moved.
 
 ### `kaneo task duplicate`
 
@@ -226,7 +229,7 @@ Moves a task to another project. `-s`, `--status` picks the column in the destin
 kaneo task duplicate <task> [--title <title>] [-p <project>]
 ```
 
-Copies a task with its description, labels and custom fields. `--title` sets the title of the copy. `-p` puts the copy in another project.
+Copies a task with its description, labels and custom fields. The copy stays in the task's feature. A copy of a feature is a feature without tasks. `--title` sets the title of the copy. `-p` puts the copy in another project, which takes it out of its feature.
 
 ### `kaneo task bulk`
 
@@ -304,7 +307,7 @@ Shows the images in a task description inline, or lists their links when the ter
 kaneo task relation list <task>
 ```
 
-Shows the parent, subtasks and linked tasks of a task.
+Shows the feature of a task, the tasks of a feature, and the linked tasks.
 
 ### `kaneo task relation add`
 
@@ -312,7 +315,9 @@ Shows the parent, subtasks and linked tasks of a task.
 kaneo task relation add <task> <type> <other-task>
 ```
 
-Links two tasks. `<type>` says how the first task relates to the other: `subtask-of`, `parent-of`, `blocks`, `blocked-by` or `relates-to`.
+Links two tasks. `<type>` says how the first task relates to the other: `blocks`, `blocked-by` or `relates-to`.
+
+`subtask-of` and `parent-of` still work, but are deprecated. `KAN-3 subtask-of KAN-1` adds `KAN-3` to the feature `KAN-1`, or to the feature `KAN-1` is in. When `KAN-1` is a plain task in no feature, it becomes a feature first. `parent-of` works the other way round. Use `kaneo task create --feature` or `kaneo task edit --feature` instead.
 
 ```bash
 kaneo task relation add KAN-3 blocked-by KAN-4
@@ -324,7 +329,7 @@ kaneo task relation add KAN-3 blocked-by KAN-4
 kaneo task relation remove <task> <other-task> [-t <type>] [--yes]
 ```
 
-Unlinks two tasks. `-t`, `--type` removes only that relation. When several relations would be removed, the CLI asks first.
+Unlinks two tasks. `-t`, `--type` removes only that relation. When several relations would be removed, the CLI asks first. Removing the link between a task and its feature takes the task out of the feature.
 
 ### `kaneo task link list`
 

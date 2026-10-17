@@ -5,12 +5,17 @@ import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
 import { useUpdateTaskDueDate } from "@/hooks/mutations/task/use-update-task-due-date";
 import useGetTask from "@/hooks/queries/task/use-get-task";
-import useGetTaskRelations from "@/hooks/queries/task-relation/use-get-task-relations";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useShortcut } from "@/lib/shortcuts/use-shortcut";
 import { toast } from "@/lib/toast";
+import { useFeatureTasks } from "./features/use-feature-tasks";
+import { useTaskFeature } from "./features/use-task-feature";
 import { useTaskCopyActions } from "./header/use-task-copy-actions";
-import { clickTaskAction, focusTaskAction } from "./task-action-target";
+import {
+  clickTaskAction,
+  findTaskAction,
+  focusTaskAction,
+} from "./task-action-target";
 import { useRelationPickerStore } from "./task-relation-picker-store";
 
 type TaskShortcutsProps = {
@@ -31,7 +36,12 @@ export function TaskShortcuts({
   const { user } = useAuth();
   const { data: task } = useGetTask(taskId);
   const copyActions = useTaskCopyActions({ taskId, projectId, workspaceId });
-  const { data: relations = [] } = useGetTaskRelations(taskId);
+  const isFeature = task?.type === "feature";
+  const feature = useTaskFeature(task);
+  const { tasks: featureTasks } = useFeatureTasks(
+    isFeature ? taskId : "",
+    task?.projectId ?? projectId,
+  );
   const { mutateAsync: updateAssignee } = useUpdateTaskAssignee();
   const { mutateAsync: updateDueDate } = useUpdateTaskDueDate();
   const openRelationPicker = useRelationPickerStore((state) => state.open);
@@ -40,11 +50,11 @@ export function TaskShortcuts({
   const editable = { enabled: active.enabled && canUpdateTasks() };
   const assignable = { enabled: active.enabled && canAssignTasks() };
 
-  const openTask = (id: string | undefined) => {
-    if (!id) return;
+  const openTask = (target: { id: string; projectId: string } | undefined) => {
+    if (!target) return;
     navigate({
       to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
-      params: { workspaceId, projectId, taskId: id },
+      params: { workspaceId, projectId: target.projectId, taskId: target.id },
     });
   };
 
@@ -55,7 +65,9 @@ export function TaskShortcuts({
   useShortcut("setDueDate", () => clickTaskAction("dueDate"), editable);
   useShortcut("moveToProject", () => clickTaskAction("move"), editable);
   useShortcut("addLink", () => clickTaskAction("addLink"), editable);
-  useShortcut("createSubtask", () => clickTaskAction("addSubtask"), editable);
+  useShortcut("createSubtask", () => clickTaskAction("addSubtask"), {
+    enabled: editable.enabled && isFeature,
+  });
   useShortcut("toggleResources", () => clickTaskAction("resources"), active);
   useShortcut("renameTask", () => focusTaskAction("title"), editable);
   useShortcut(
@@ -117,36 +129,24 @@ export function TaskShortcuts({
     () => openRelationPicker(taskId, "related"),
     editable,
   );
+  // The Feature property where it's on screen, else the relation picker.
   useShortcut(
     "setParent",
-    () => openRelationPicker(taskId, "parent"),
-    editable,
+    () => {
+      if (findTaskAction("feature")) clickTaskAction("feature");
+      else openRelationPicker(taskId, "feature");
+    },
+    { enabled: editable.enabled && !isFeature },
   );
-
   useShortcut(
     "openParent",
     () =>
-      openTask(
-        relations.find(
-          (relation) =>
-            relation.relationType === "subtask" &&
-            relation.targetTaskId === taskId,
-        )?.sourceTaskId,
-      ),
-    active,
+      openTask(feature?.title === null ? undefined : (feature ?? undefined)),
+    { enabled: active.enabled && Boolean(task?.featureId) },
   );
-  useShortcut(
-    "openSubtask",
-    () =>
-      openTask(
-        relations.find(
-          (relation) =>
-            relation.relationType === "subtask" &&
-            relation.sourceTaskId === taskId,
-        )?.targetTaskId,
-      ),
-    active,
-  );
+  useShortcut("openSubtask", () => openTask(featureTasks[0]?.task), {
+    enabled: active.enabled && isFeature,
+  });
 
   useShortcut("copyTaskId", copyActions.copyId, active);
   useShortcut("copyTaskTitle", copyActions.copyTitle, active);

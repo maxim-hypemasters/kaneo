@@ -150,7 +150,30 @@
 					"rose": "로즈",
 					"crimson": "크림슨"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "기능",
+				"titleFeature": "새 기능",
+				"descriptionFeature": "제목, 설명 및 기타 세부 정보를 지정하여 프로젝트의 작업을 묶는 새 기능을 만듭니다.",
+				"featureTitlePlaceholder": "기능 제목",
+				"featureDescriptionPlaceholder": "기능에 대한 설명을 추가하세요...",
+				"successCreatedFeature": "기능이 생성되었습니다",
+				"createFeatureError": "기능 생성에 실패했습니다",
+				"createButtonFeature": "기능 만들기",
+				"discardTitleFeature": "작성 중인 기능을 버릴까요?",
+				"discardDescriptionFeature": "저장하지 않은 기능 세부 정보가 손실됩니다.",
+				"discardButtonFeature": "기능 버리기",
+				"type": "유형",
+				"typeTask": "작업",
+				"typeFeature": "기능",
+				"feature": "기능",
+				"noFeature": "기능 없음",
+				"searchFeatures": "기능 검색 또는 만들기...",
+				"noFeaturesFound": "기능을 찾을 수 없음",
+				"createFeature": "기능 \"{{name}}\" 만들기",
+				"newFeatureSuffix": "{{name}} (신규)",
+				"chooseProjectForFeature": "기능을 선택하려면 프로젝트를 선택하세요.",
+				"loadingFeatures": "기능 로딩 중...",
+				"loadFeaturesError": "기능을 불러올 수 없습니다."
 			}
 		},
 		"editor": {
@@ -366,8 +389,8 @@
 					"description": "작업이 진행되면 카드가 열에서 열로 이동합니다. 이 카드를 다음 열로 드래그하거나, 열어서 상태를 바꿔 보세요."
 				},
 				"details": {
-					"title": "이 작업을 열고 하위 작업 추가하기",
-					"description": "작업에는 설명, 하위 작업, 라벨, 담당자, 마감일을 넣을 수 있습니다. 이 작업에 하위 작업을 하나 추가해 보세요."
+					"title": "이 작업을 열고 기능으로 만들기",
+					"description": "작업에는 설명, 라벨, 담당자, 마감일을 넣을 수 있습니다. 이 작업을 기능으로 만든 다음, 작업을 추가해 그 아래에 업무를 묶어 보세요."
 				},
 				"invite": {
 					"title": "팀 초대하기",
@@ -2336,7 +2359,8 @@
 				"navigate": "이동",
 				"open": "열기",
 				"close": "닫기"
-			}
+			},
+			"createFeature": "기능 만들기"
 		},
 		"sidebar": {
 			"projects": "프로젝트",
@@ -2455,10 +2479,10 @@
 				"editDescription": "설명 편집",
 				"commentOnTask": "댓글 달기",
 				"moveToProject": "다른 프로젝트로 이동",
-				"createSubtask": "하위 작업 만들기",
-				"setParent": "상위 작업 설정",
-				"openParent": "상위 작업 열기",
-				"openSubtask": "하위 작업 열기",
+				"createSubtask": "이 기능에 작업 추가",
+				"setParent": "기능 설정",
+				"openParent": "기능 열기",
+				"openSubtask": "이 기능의 작업 열기",
 				"markBlockedBy": "차단됨으로 표시",
 				"markBlocking": "차단 중으로 표시",
 				"markRelated": "관련됨으로 표시",
@@ -2703,7 +2727,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "{{forge}}에 댓글을 남김"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "작업을 기능 \"{{feature}}\"에 추가함",
+		"removedFromFeature": "작업을 기능 \"{{feature}}\"에서 제거함",
+		"changedFeature": "작업을 기능 \"{{from}}\"에서 \"{{to}}\"(으)로 이동함",
+		"madeFeature": "이 작업을 기능으로 전환함",
+		"madeTask": "이 기능을 작업으로 전환함"
 	},
 	"tasks": {
 		"title": "작업",
@@ -2742,7 +2771,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "상위 작업",
+			"subtaskOf": "기능",
 			"activity": "활동",
 			"noActivity": "활동을 찾을 수 없음",
 			"openInFullPage": "전체 페이지에서 열기",
@@ -2878,22 +2907,22 @@
 				"blocked_by": "차단됨"
 			},
 			"blockedBy": "차단한 작업",
-			"parentPlaceholder": "상위 작업 설정…"
+			"parentPlaceholder": "기능 설정…"
 		},
 		"subtasks": {
-			"title": "하위 작업",
-			"inputPlaceholder": "하위 작업 제목...",
+			"title": "작업",
+			"inputPlaceholder": "작업 제목...",
 			"addAction": "추가",
-			"empty": "아직 하위 작업이 없습니다",
-			"createError": "하위 작업 생성에 실패했습니다",
+			"empty": "아직 이 기능에 작업이 없습니다",
+			"createError": "작업 생성에 실패했습니다",
 			"deleteSuccess": "작업이 삭제되었습니다",
 			"deleteError": "작업 삭제에 실패했습니다",
 			"deleteDialogTitle": "작업을 삭제하시겠습니까?",
 			"deleteDialogDescription": "작업과 모든 데이터가 영구적으로 제거됩니다. 이 작업은 취소할 수 없습니다.",
 			"deleteAction": "작업 삭제",
-			"completeAria": "하위 작업을 완료로 표시",
-			"progress": "하위 작업 {{total}}개 중 {{completed}}개 완료",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "작업을 완료로 표시",
+			"progress": "작업 {{total}}개 중 {{completed}}개 완료",
+			"noCompletionColumn": "이 프로젝트에는 이 작업을 완료하거나 다시 열 수 있는 일치하는 열이 없습니다."
 		},
 		"properties": {
 			"title": "속성",
@@ -3063,6 +3092,26 @@
 				"movesLabel": "이동될 작업",
 				"startsBeforeBlocker": "{{title}}이(가) 끝나기 전에 시작합니다.",
 				"title_other": "이 변경으로 종속성 {{count}}개가 깨집니다"
+			},
+			"featuresLabel": "기능",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_other": "{{title}}: 작업 {{count}}개, {{start}}부터 {{end}}까지. 기능을 엽니다.",
+			"featureOverflowAria_other": "기능 {{count}}개 더",
+			"featureBar": {
+				"ariaLabel": "기능 {{title}}: 열거나 드래그하여 이동",
+				"ariaLabelGrouped": "기능 {{title}}: 열거나 드래그하여 일정 또는 담당자 변경",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "작업 {{count}}개 중 {{completed}}개 완료"
+			},
+			"featureLanes": {
+				"noFeature": "기능 없음",
+				"open": "기능 {{title}} 열기",
+				"moveTo": "{{name}}(으)로 이동",
+				"remove": "기능에서 제거",
+				"cannotMove": "{{name}}(으)로 이동할 수 없음",
+				"taskAriaLabel": "{{title}}: 열거나 드래그하여 일정 변경 또는 다른 기능으로 이동",
+				"moveError": "작업을 다른 기능으로 이동하지 못했습니다",
+				"assignee": "담당자: {{name}}"
 			}
 		},
 		"delete": {
@@ -3217,7 +3266,8 @@
 			"groupBy": "그룹화 기준",
 			"groupByOptions": {
 				"assignee": "담당자",
-				"none": "없음"
+				"none": "없음",
+				"feature": "기능"
 			}
 		},
 		"filterBar": {
@@ -3256,6 +3306,26 @@
 			"startsOn": "시작: {{date}}",
 			"beforeStart": "{{date}}은(는) 시작일 이전입니다",
 			"afterDue": "{{date}}은(는) 마감일 이후입니다"
+		},
+		"features": {
+			"badge": "기능",
+			"chipLabel": "기능: {{title}}",
+			"unknown": "알 수 없는 기능",
+			"property": "기능",
+			"none": "기능 없음",
+			"searchPlaceholder": "기능 검색…",
+			"empty": "아직 이 프로젝트에 기능이 없습니다",
+			"remove": "기능에서 제거",
+			"updateError": "기능 업데이트에 실패했습니다",
+			"type": "유형",
+			"typeTask": "작업",
+			"typeFeature": "기능",
+			"convertToFeature": "기능으로 전환",
+			"convertToTask": "작업으로 전환",
+			"typeError": "작업 유형 변경에 실패했습니다",
+			"convertBlocked": "작업으로 전환하기 전에 이 기능의 작업을 밖으로 옮기세요.",
+			"openFeature": "기능 {{title}} 열기",
+			"inProject": "프로젝트의 기능"
 		}
 	},
 	"invitations": {
@@ -3368,6 +3438,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "새 기능",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

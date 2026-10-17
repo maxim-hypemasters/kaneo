@@ -9,12 +9,10 @@ import {
   customFieldValueTable,
   labelTable,
   projectTable,
-  taskRelationTable,
   taskTable,
   userTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
-import { projectAccessCondition } from "../../project-access/project-access-condition";
 import { contentReferencesAsset } from "../../storage/cleanup-assets";
 import { copyTaskAssetObject, deleteS3Object } from "../../storage/s3";
 import { filterUsersWithProjectAccess } from "../../project-access/filter-users-with-project-access";
@@ -26,6 +24,8 @@ import {
   assertRequiredCustomFields,
   assertValidTaskStatus,
 } from "../validate-task-fields";
+import { lockFeature } from "../feature-hierarchy/assign-feature";
+import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
 
@@ -124,12 +124,10 @@ async function duplicateDescriptionAssets({
 async function duplicateTask({
   taskId,
   currentUserId,
-  canUpdateTasks,
   title,
 }: {
   taskId: string;
   currentUserId: string;
-  canUpdateTasks: boolean;
   title?: string;
 }) {
   const sourceTask = await db.query.taskTable.findFirst({
@@ -232,32 +230,6 @@ async function duplicateTask({
       ),
     );
 
-  // A duplicated subtask stays a subtask of the same parents. The source's own
-  // subtasks are not duplicated: a copy is one task, not a tree.
-  const parentRelations = await db
-    .select({
-      parentTaskId: taskRelationTable.sourceTaskId,
-      parentProjectId: taskTable.projectId,
-      relationType: taskRelationTable.relationType,
-    })
-    .from(taskRelationTable)
-    .innerJoin(taskTable, eq(taskRelationTable.sourceTaskId, taskTable.id))
-    .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
-    .where(
-      and(
-        eq(taskRelationTable.targetTaskId, sourceTask.id),
-        eq(projectTable.workspaceId, project.workspaceId),
-        eq(taskRelationTable.relationType, "subtask"),
-        projectAccessCondition(currentUserId, taskTable.projectId),
-      ),
-    );
-
-  if (parentRelations.length > 0 && !canUpdateTasks) {
-    throw new HTTPException(403, {
-      message: "Duplicating parent links requires task:update permission",
-    });
-  }
-
   // The destination object keys embed the new task id, so it is generated up front
   // instead of being left to the insert.
   const duplicatedTaskId = createId();
@@ -268,13 +240,15 @@ async function duplicateTask({
     workspaceId: project.workspaceId,
   });
 
-  let duplicated: {
-    task: typeof taskTable.$inferSelect;
-    relations: (typeof taskRelationTable.$inferSelect)[];
-  };
+  let duplicated: { task: typeof taskTable.$inferSelect };
 
   try {
     duplicated = await db.transaction(async (tx) => {
+      // A copy of a task stays in its feature; a copy of a feature is an
+      // empty feature (a copy is one task, not a tree).
+      if (sourceTask.featureId) {
+        await lockFeature(tx, sourceTask.featureId, sourceTask.projectId);
+      }
       const taskNumber = await claimTaskNumber(sourceTask.projectId, tx);
       const nextPosition = await nextTaskPosition(
         tx,
@@ -298,6 +272,8 @@ async function duplicateTask({
           priority: sourceTask.priority,
           number: taskNumber,
           position: nextPosition,
+          type: sourceTask.type,
+          featureId: sourceTask.featureId,
         })
         .returning();
 
@@ -328,21 +304,7 @@ async function duplicateTask({
         await tx.insert(assetTable).values(assets);
       }
 
-      const relations =
-        parentRelations.length > 0
-          ? await tx
-              .insert(taskRelationTable)
-              .values(
-                parentRelations.map((relation) => ({
-                  sourceTaskId: relation.parentTaskId,
-                  targetTaskId: task.id,
-                  relationType: relation.relationType,
-                })),
-              )
-              .returning()
-          : [];
-
-      return { task, relations };
+      return { task };
     });
   } catch (error) {
     await discardCopiedObjects(assets.map((asset) => asset.objectKey));
@@ -367,15 +329,10 @@ async function duplicateTask({
     content: null,
   });
 
-  for (const relation of duplicated.relations) {
-    const parentProjectId = parentRelations.find(
-      (parentRelation) => parentRelation.parentTaskId === relation.sourceTaskId,
-    )?.parentProjectId;
-
-    await publishEvent("task-relation.created", {
-      ...relation,
-      taskId: relation.sourceTaskId,
-      projectId: parentProjectId ?? sourceTask.projectId,
+  if (duplicatedTask.featureId) {
+    await publishFeatureChange({
+      projectId: duplicatedTask.projectId,
+      featureIds: [duplicatedTask.featureId],
       userId: currentUserId,
     });
   }

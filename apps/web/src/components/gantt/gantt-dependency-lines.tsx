@@ -42,10 +42,13 @@ function sameRows(
 
 // Draws "blocks" dependencies as arrows from the end of the blocking bar to
 // the start of the blocked one, red and dashed when the blocked task starts
-// before its blocker ends. Sits behind the bars inside the lanes container (so it
-// scrolls with them and slides under the sticky task rail) and measures the
-// rendered rows ([data-gantt-row]) for the vertical positions; tasks that
-// aren't rendered (filtered out, collapsed, unscheduled) get no line.
+// before its blocker ends. Sits inside the lanes container, so it scrolls with
+// the rows, and measures the rendered rows ([data-gantt-row]) for the vertical
+// positions; tasks that aren't rendered (filtered out, collapsed, unscheduled)
+// get no line. At z-[1] and first in the container, the arrows draw over lane
+// headers and their feature bands but under the bars (z-[1], later in the
+// DOM), the sticky name chips (z-[2]), a dragged bar (z-[10]) and the task
+// rail (z-[11]). Click-through, so everything under them stays clickable.
 export function GanttDependencyLines({
   dependencies,
   spans,
@@ -126,7 +129,7 @@ export function GanttDependencyLines({
       ref={svgRef}
       aria-hidden="true"
       data-testid="gantt-dependency-lines"
-      className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden"
+      className="pointer-events-none absolute inset-0 z-[1] h-full w-full overflow-hidden"
     >
       <defs>
         {(["ok", "broken"] as const).map((state) => (

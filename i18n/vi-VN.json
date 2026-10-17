@@ -150,7 +150,30 @@
 					"rose": "Hồng",
 					"crimson": "Đỏ thẫm"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "TÍNH NĂNG",
+				"titleFeature": "Tính năng mới",
+				"descriptionFeature": "Tạo một tính năng mới để nhóm các công việc của dự án, với tiêu đề, mô tả và các chi tiết khác.",
+				"featureTitlePlaceholder": "Tiêu đề tính năng",
+				"featureDescriptionPlaceholder": "Thêm mô tả cho tính năng của bạn...",
+				"successCreatedFeature": "Tạo tính năng thành công",
+				"createFeatureError": "Không thể tạo tính năng",
+				"createButtonFeature": "Tạo tính năng",
+				"discardTitleFeature": "Hủy tính năng?",
+				"discardDescriptionFeature": "Các chi tiết tính năng chưa lưu sẽ bị mất.",
+				"discardButtonFeature": "Hủy tính năng",
+				"type": "Loại",
+				"typeTask": "Công việc",
+				"typeFeature": "Tính năng",
+				"feature": "Tính năng",
+				"noFeature": "Không có tính năng",
+				"searchFeatures": "Tìm hoặc tạo tính năng...",
+				"noFeaturesFound": "Không tìm thấy tính năng",
+				"createFeature": "Tạo tính năng \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (mới)",
+				"chooseProjectForFeature": "Chọn một dự án trước khi chọn tính năng.",
+				"loadingFeatures": "Đang tải tính năng...",
+				"loadFeaturesError": "Không thể tải các tính năng."
 			}
 		},
 		"editor": {
@@ -366,8 +389,8 @@
 					"description": "Các thẻ chuyển từ cột này sang cột khác khi công việc tiến triển. Kéo thẻ này sang cột tiếp theo, hoặc mở nó và đổi trạng thái."
 				},
 				"details": {
-					"title": "Mở nhiệm vụ này và thêm một nhiệm vụ con",
-					"description": "Một nhiệm vụ có thể có mô tả, nhiệm vụ con, nhãn, người phụ trách và hạn chót. Hãy thử thêm một nhiệm vụ con vào nhiệm vụ này."
+					"title": "Mở nhiệm vụ này và chuyển nó thành một tính năng",
+					"description": "Một nhiệm vụ có thể có mô tả, nhãn, người phụ trách và hạn chót. Hãy chuyển nhiệm vụ này thành một tính năng, rồi thêm các nhiệm vụ vào để nhóm công việc dưới tính năng đó."
 				},
 				"invite": {
 					"title": "Mời nhóm của bạn",
@@ -2336,7 +2359,8 @@
 				"navigate": "Điều hướng",
 				"open": "Mở",
 				"close": "Đóng"
-			}
+			},
+			"createFeature": "Tạo tính năng"
 		},
 		"sidebar": {
 			"projects": "Dự án",
@@ -2455,10 +2479,10 @@
 				"editDescription": "Sửa mô tả",
 				"commentOnTask": "Bình luận",
 				"moveToProject": "Chuyển sang dự án khác",
-				"createSubtask": "Tạo công việc con",
-				"setParent": "Đặt công việc cha",
-				"openParent": "Mở công việc cha",
-				"openSubtask": "Mở công việc con",
+				"createSubtask": "Thêm công việc vào tính năng này",
+				"setParent": "Đặt tính năng",
+				"openParent": "Mở tính năng",
+				"openSubtask": "Mở một công việc của tính năng này",
 				"markBlockedBy": "Đánh dấu bị chặn bởi",
 				"markBlocking": "Đánh dấu đang chặn",
 				"markRelated": "Đánh dấu liên quan",
@@ -2703,7 +2727,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "đã bình luận trên {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "đã thêm công việc vào tính năng \"{{feature}}\"",
+		"removedFromFeature": "đã gỡ công việc khỏi tính năng \"{{feature}}\"",
+		"changedFeature": "đã chuyển công việc từ tính năng \"{{from}}\" sang \"{{to}}\"",
+		"madeFeature": "đã chuyển công việc này thành tính năng",
+		"madeTask": "đã chuyển tính năng này thành công việc"
 	},
 	"tasks": {
 		"title": "Nhiệm vụ",
@@ -2742,7 +2771,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Công việc con của",
+			"subtaskOf": "Tính năng",
 			"activity": "Hoạt động",
 			"noActivity": "Không tìm thấy hoạt động nào",
 			"openInFullPage": "Mở ở trang đầy đủ",
@@ -2878,22 +2907,22 @@
 				"related": "liên quan đến"
 			},
 			"blockedBy": "Bị chặn bởi",
-			"parentPlaceholder": "Đặt công việc cha…"
+			"parentPlaceholder": "Đặt tính năng…"
 		},
 		"subtasks": {
-			"title": "Công việc con",
-			"inputPlaceholder": "Tiêu đề công việc con...",
+			"title": "Công việc",
+			"inputPlaceholder": "Tiêu đề công việc...",
 			"addAction": "Thêm",
-			"empty": "Chưa có công việc con nào",
-			"createError": "Không thể tạo công việc con",
+			"empty": "Tính năng này chưa có công việc nào",
+			"createError": "Không thể tạo công việc",
 			"deleteSuccess": "Xóa công việc thành công",
 			"deleteError": "Không thể xóa công việc",
 			"deleteDialogTitle": "Xóa công việc?",
 			"deleteDialogDescription": "Thao tác này sẽ xóa vĩnh viễn công việc và toàn bộ dữ liệu của nó. Bạn không thể hoàn tác hành động này.",
 			"deleteAction": "Xóa công việc",
-			"completeAria": "Đánh dấu hoàn thành công việc con",
-			"progress": "Đã hoàn thành {{completed}} trên {{total}} công việc con",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Đánh dấu hoàn thành công việc",
+			"progress": "Đã hoàn thành {{completed}} trên {{total}} công việc",
+			"noCompletionColumn": "Dự án này không có cột phù hợp để hoàn thành hoặc mở lại công việc này."
 		},
 		"properties": {
 			"title": "Thuộc tính",
@@ -3049,6 +3078,26 @@
 				"movesLabel": "Các công việc sẽ được di chuyển",
 				"startsBeforeBlocker": "Bắt đầu trước khi {{title}} kết thúc.",
 				"title_other": "Thay đổi này phá vỡ {{count}} quan hệ phụ thuộc"
+			},
+			"featuresLabel": "Tính năng",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_other": "{{title}}: {{count}} công việc, từ {{start}} đến {{end}}. Mở tính năng.",
+			"featureOverflowAria_other": "{{count}} tính năng khác",
+			"featureBar": {
+				"ariaLabel": "Tính năng {{title}}: mở hoặc kéo để di chuyển",
+				"ariaLabelGrouped": "Tính năng {{title}}: mở, hoặc kéo để lên lịch lại hoặc giao lại",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "Đã xong {{completed}}/{{count}} công việc"
+			},
+			"featureLanes": {
+				"noFeature": "Không có tính năng",
+				"open": "Mở tính năng {{title}}",
+				"moveTo": "Chuyển đến {{name}}",
+				"remove": "Gỡ khỏi tính năng",
+				"cannotMove": "Không thể chuyển đến {{name}}",
+				"taskAriaLabel": "{{title}}: mở, hoặc kéo để lên lịch lại hoặc chuyển sang tính năng khác",
+				"moveError": "Không thể chuyển công việc sang tính năng khác",
+				"assignee": "Đã giao cho {{name}}"
 			}
 		},
 		"delete": {
@@ -3217,7 +3266,8 @@
 			"groupBy": "Nhóm theo",
 			"groupByOptions": {
 				"assignee": "Người được giao",
-				"none": "Không có"
+				"none": "Không có",
+				"feature": "Tính năng"
 			}
 		},
 		"filterBar": {
@@ -3256,6 +3306,26 @@
 			"startsOn": "Bắt đầu {{date}}",
 			"beforeStart": "{{date}} trước ngày bắt đầu",
 			"afterDue": "{{date}} sau hạn chót"
+		},
+		"features": {
+			"badge": "Tính năng",
+			"chipLabel": "Tính năng: {{title}}",
+			"unknown": "Tính năng không xác định",
+			"property": "Tính năng",
+			"none": "Không có tính năng",
+			"searchPlaceholder": "Tìm tính năng…",
+			"empty": "Dự án này chưa có tính năng nào",
+			"remove": "Gỡ khỏi tính năng",
+			"updateError": "Không thể cập nhật tính năng",
+			"type": "Loại",
+			"typeTask": "Công việc",
+			"typeFeature": "Tính năng",
+			"convertToFeature": "Chuyển thành tính năng",
+			"convertToTask": "Chuyển thành công việc",
+			"typeError": "Không thể thay đổi loại công việc",
+			"convertBlocked": "Hãy chuyển các công việc ra khỏi tính năng này trước khi đổi nó thành công việc.",
+			"openFeature": "Mở tính năng {{title}}",
+			"inProject": "Tính năng trong dự án"
 		}
 	},
 	"invitations": {
@@ -3368,6 +3438,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Tính năng mới",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

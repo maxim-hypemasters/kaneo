@@ -8,9 +8,11 @@ import {
   workspaceTable,
   workspaceUserTable,
 } from "../../database/schema";
+import { redactInaccessibleActivity } from "../../activity/redaction/redact-inaccessible-activity";
 import { canAccessProject } from "../../project-access/can-access-project";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
 import { escapeLikePattern } from "../like-pattern";
+import { redactedActivityScore } from "../redacted-activity-score";
 import { TASK_SHORT_ID_PATTERN } from "../task-short-id";
 
 type SearchParams = {
@@ -91,6 +93,16 @@ function getActivitySearchContent(
       return `changed due date from ${String(data.oldDueDate)} to ${String(data.newDueDate)}`;
     case "title_changed":
       return `changed title from "${String(data.oldTitle ?? "")}" to "${String(data.newTitle ?? "")}"`;
+    case "feature_changed":
+      if (!data.newFeatureId) return "removed the task from its feature";
+      // A title from a project the viewer can't see was redacted to null.
+      return data.newFeatureTitle
+        ? `added the task to feature "${String(data.newFeatureTitle)}"`
+        : "added the task to a feature";
+    case "type_changed":
+      return data.newType === "feature"
+        ? "made the task a feature"
+        : "made the feature a task";
     case "task":
       return "created the task";
     default:
@@ -456,9 +468,15 @@ async function globalSearch(params: SearchParams): Promise<{
       .orderBy(desc(activityRelevanceScore), desc(activityTable.createdAt))
       .limit(limit);
 
-    const activities = await activityQuery;
+    const found = await activityQuery;
+    const redacted = await redactInaccessibleActivity(resolvedUserId, found);
 
-    for (const activity of activities) {
+    for (const [index, activity] of redacted.entries()) {
+      const relevanceScore =
+        activity === found[index]
+          ? activity.relevanceScore
+          : redactedActivityScore(activity, query, activity.relevanceScore);
+      if (relevanceScore === null) continue;
       const isComment = activity.type === "comment";
       const activityContent = getActivitySearchContent(
         activity.type,
@@ -480,7 +498,7 @@ async function globalSearch(params: SearchParams): Promise<{
         userId: activity.userId || undefined,
         userName: activity.userName || undefined,
         createdAt: activity.createdAt,
-        relevanceScore: activity.relevanceScore,
+        relevanceScore,
         taskNumber: activity.taskNumber || undefined,
       });
     }

@@ -150,7 +150,30 @@
 					"rose": "Роза",
 					"crimson": "Гримизна"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "ФУНКЦИОНАЛНОСТ",
+				"titleFeature": "Нова функционалност",
+				"descriptionFeature": "Креирај нова функционалност за да ги групираш задачите од проектот, со наслов, опис и други детали.",
+				"featureTitlePlaceholder": "Наслов на функционалност",
+				"featureDescriptionPlaceholder": "Додади опис за твојата функционалност...",
+				"successCreatedFeature": "Функционалноста е успешно креирана",
+				"createFeatureError": "Неуспешно креирање на функционалност",
+				"createButtonFeature": "Креирај функционалност",
+				"discardTitleFeature": "Да се отфрли функционалноста?",
+				"discardDescriptionFeature": "Незачуваните детали за функционалноста ќе се изгубат.",
+				"discardButtonFeature": "Отфрли ја функционалноста",
+				"type": "Тип",
+				"typeTask": "Задача",
+				"typeFeature": "Функционалност",
+				"feature": "Функционалност",
+				"noFeature": "Без функционалност",
+				"searchFeatures": "Пребарај или креирај функционалност...",
+				"noFeaturesFound": "Не се пронајдени функционалности",
+				"createFeature": "Креирај функционалност \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (нова)",
+				"chooseProjectForFeature": "Избери проект за да избереш функционалност.",
+				"loadingFeatures": "Се вчитуваат функционалности...",
+				"loadFeaturesError": "Функционалностите не може да се вчитаат."
 			}
 		},
 		"editor": {
@@ -367,8 +390,8 @@
 					"description": "Картичките се движат од колона во колона како што напредува работата. Повлечи ја оваа во следната колона, или отвори ја и смени ѝ го статусот."
 				},
 				"details": {
-					"title": "Отвори ја оваа задача и додај подзадача",
-					"description": "Задачата може да има опис, подзадачи, ознаки, задолжено лице и рок. Додај подзадача на оваа за да пробаш."
+					"title": "Отвори ја оваа задача и направи ја функционалност",
+					"description": "Задачата може да има опис, ознаки, задолжено лице и рок. Направи ја оваа задача функционалност, а потоа додај задачи во неа за да ја групираш работата."
 				},
 				"invite": {
 					"title": "Покани го твојот тим",
@@ -2378,7 +2401,8 @@
 				"navigate": "Навигирај",
 				"open": "Отвори",
 				"close": "Затвори"
-			}
+			},
+			"createFeature": "Креирај функционалност"
 		},
 		"sidebar": {
 			"projects": "Проекти",
@@ -2497,10 +2521,10 @@
 				"editDescription": "Уреди опис",
 				"commentOnTask": "Коментирај",
 				"moveToProject": "Премести во друг проект",
-				"createSubtask": "Креирај подзадача",
-				"setParent": "Постави матична задача",
-				"openParent": "Отвори матична задача",
-				"openSubtask": "Отвори подзадача",
+				"createSubtask": "Додај задача во оваа функционалност",
+				"setParent": "Постави функционалност",
+				"openParent": "Отвори функционалност",
+				"openSubtask": "Отвори задача од оваа функционалност",
 				"markBlockedBy": "Означи како блокирана од",
 				"markBlocking": "Означи како блокирачка",
 				"markRelated": "Означи како поврзана",
@@ -2750,7 +2774,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "коментираше на {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "ја додаде задачата во функционалноста \"{{feature}}\"",
+		"removedFromFeature": "ја отстрани задачата од функционалноста \"{{feature}}\"",
+		"changedFeature": "ја премести задачата од функционалноста \"{{from}}\" во \"{{to}}\"",
+		"madeFeature": "ја претвори оваа задача во функционалност",
+		"madeTask": "ја претвори оваа функционалност во задача"
 	},
 	"tasks": {
 		"title": "Задачи",
@@ -2789,7 +2818,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Подзадача на",
+			"subtaskOf": "Функционалност",
 			"activity": "Активност",
 			"noActivity": "Нема пронајдена активност",
 			"openInFullPage": "Отвори на цела страница",
@@ -2925,22 +2954,22 @@
 				"blocked_by": "блокирана од"
 			},
 			"blockedBy": "Блокирана од",
-			"parentPlaceholder": "Постави матична задача…"
+			"parentPlaceholder": "Постави функционалност…"
 		},
 		"subtasks": {
-			"title": "Подзадачи",
-			"inputPlaceholder": "Наслов на подзадача...",
+			"title": "Задачи",
+			"inputPlaceholder": "Наслов на задача...",
 			"addAction": "Додади",
-			"empty": "Нема подзадачи засега",
-			"createError": "Неуспешно креирање на подзадача",
+			"empty": "Нема задачи во оваа функционалност засега",
+			"createError": "Неуспешно креирање на задача",
 			"deleteSuccess": "Задачата е успешно избришана",
 			"deleteError": "Неуспешно бришење на задача",
 			"deleteDialogTitle": "Избриши задача?",
 			"deleteDialogDescription": "Ова трајно ќе ја отстрани задачата и сите нејзини податоци. Не можеш да ја вратиш оваа акција.",
 			"deleteAction": "Избриши задача",
-			"completeAria": "Означи ја подзадачата како завршена",
-			"progress": "Завршени се {{completed}} од {{total}} подзадачи",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Означи ја задачата како завршена",
+			"progress": "Завршени се {{completed}} од {{total}} задачи",
+			"noCompletionColumn": "Овој проект нема соодветна колона за завршување или повторно отворање на оваа задача."
 		},
 		"properties": {
 			"title": "Својства",
@@ -3099,6 +3128,29 @@
 				"startsBeforeBlocker": "Започнува пред да заврши {{title}}.",
 				"title_one": "Оваа промена нарушува {{count}} зависност",
 				"title_other": "Оваа промена нарушува {{count}} зависности"
+			},
+			"featuresLabel": "Функционалности",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} задача, од {{start}} до {{end}}. Ја отвора функционалноста.",
+			"featureSliceAria_other": "{{title}}: {{count}} задачи, од {{start}} до {{end}}. Ја отвора функционалноста.",
+			"featureOverflowAria_one": "Уште {{count}} функционалност",
+			"featureOverflowAria_other": "Уште {{count}} функционалности",
+			"featureBar": {
+				"ariaLabel": "Функционалност {{title}}: отвори или повлечи за преместување",
+				"ariaLabelGrouped": "Функционалност {{title}}: отвори или повлечи за презакажување или повторно доделување",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} од {{count}} задача е завршена",
+				"progressAria_other": "{{completed}} од {{count}} задачи се завршени"
+			},
+			"featureLanes": {
+				"noFeature": "Без функционалност",
+				"open": "Отвори ја функционалноста {{title}}",
+				"moveTo": "Премести во {{name}}",
+				"remove": "Отстрани од функционалноста",
+				"cannotMove": "Не може да се премести во {{name}}",
+				"taskAriaLabel": "{{title}}: отвори или повлечи за презакажување или преместување во друга функционалност",
+				"moveError": "Задачата не можеше да се премести во друга функционалност",
+				"assignee": "Доделен на {{name}}"
 			}
 		},
 		"delete": {
@@ -3274,7 +3326,8 @@
 			"groupBy": "Групирај по",
 			"groupByOptions": {
 				"assignee": "Доделен",
-				"none": "Без групирање"
+				"none": "Без групирање",
+				"feature": "Функционалност"
 			}
 		},
 		"filterBar": {
@@ -3316,6 +3369,26 @@
 			"startsOn": "Почнува: {{date}}",
 			"beforeStart": "{{date}} е пред датумот на почеток",
 			"afterDue": "{{date}} е по рокот"
+		},
+		"features": {
+			"badge": "Функционалност",
+			"chipLabel": "Функционалност: {{title}}",
+			"unknown": "Непозната функционалност",
+			"property": "Функционалност",
+			"none": "Без функционалност",
+			"searchPlaceholder": "Пребарај функционалности…",
+			"empty": "Нема функционалности во овој проект засега",
+			"remove": "Отстрани од функционалноста",
+			"updateError": "Неуспешно ажурирање на функционалноста",
+			"type": "Тип",
+			"typeTask": "Задача",
+			"typeFeature": "Функционалност",
+			"convertToFeature": "Претвори во функционалност",
+			"convertToTask": "Претвори во задача",
+			"typeError": "Неуспешна промена на типот на задачата",
+			"convertBlocked": "Извади ги задачите од оваа функционалност пред да ја претвориш во задача.",
+			"openFeature": "Отвори ја функционалноста {{title}}",
+			"inProject": "Функционалности во проект"
 		}
 	},
 	"invitations": {
@@ -3429,6 +3502,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Нова функционалност",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

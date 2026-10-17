@@ -118,7 +118,8 @@ For headless or sandboxed environments where opening a browser is impractical, s
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
 - Search: `search`
 - Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `list_project_columns`
-- Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_due_date`, `list_task_activity`
+- Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_due_date`, `list_task_activity`
+- Features: `set_task_feature`, `set_task_type`
 - Time entries: `list_task_time_entries`, `get_time_entry`, `create_time_entry`, `update_time_entry`
 - Comments: `list_task_comments`, `create_task_comment`, `update_task_comment`, `delete_task_comment`
 - Labels: `list_workspace_labels`, `create_label`, `attach_label_to_task`, `detach_label_from_task`, `delete_label`
@@ -132,6 +133,21 @@ pass `workspaceId` or `projectId` to select one.
 `list_workspace_members` resolves the user IDs the assignee tools expect.
 Time entries have no delete endpoint on the API, so there is no
 `delete_time_entry` tool.
+
+A feature is a task with `type: "feature"` that groups other tasks of the same
+project; it stays on the board with its own status, assignee and dates. Every
+task carries `type` and `featureId` (its feature, or `null`), and a task belongs
+to at most one feature. Create a task inside a feature in one call with
+`create_task` and `featureId`, or create a feature with `type: "feature"`.
+`set_task_feature` moves an existing task into a feature or, with a `null`
+`featureId`, out of it; `set_task_type` turns a task into a feature and back (a
+feature can become a task only once it has no tasks). `update_task` leaves the
+type and feature as they are.
+
+`create_task_relation` still accepts the deprecated `subtask` relation type,
+which puts the target into the source's feature, and `get_task_relations` lists
+feature links as `subtask` entries. Prefer `set_task_feature` and the task's
+`featureId`.
 
 ## Releasing
 

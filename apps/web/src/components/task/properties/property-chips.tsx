@@ -8,6 +8,10 @@ import { formatDateShort } from "@/lib/format";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { TaskCustomFieldChips } from "../custom-fields/task-custom-field-chips";
+import { FeatureValue } from "../features/feature-value";
+import { TaskFeaturePopover } from "../features/task-feature-popover";
+import { TaskTypeMenu } from "../features/task-type-menu";
+import { TaskTypeValue } from "../features/task-type-value";
 import TaskAssigneePopover from "../task-assignee-popover";
 import TaskDueDatePopover from "../task-due-date-popover";
 import TaskLabelsPopover from "../task-labels-popover";
@@ -41,8 +45,19 @@ export function PropertyChips({
   className,
 }: PropertyChipsProps) {
   const { t } = useTranslation();
-  const { task, project, labels, status, assignee, dueStatus, canMoveTask } =
-    useTaskProperties(taskId, projectId, workspaceId);
+  const {
+    task,
+    project,
+    labels,
+    status,
+    assignee,
+    dueStatus,
+    canMoveTask,
+    isFeature,
+    feature,
+    featureDisplayId,
+    hasFeatureTasks,
+  } = useTaskProperties(taskId, projectId, workspaceId);
 
   if (!task) return null;
 
@@ -151,6 +166,26 @@ export function PropertyChips({
           <span className={cn(chip, "hover:bg-accent/30")}>
             {projectContent}
           </span>
+        )}
+        <TaskTypeMenu task={task} hasTasks={hasFeatureTasks}>
+          <button type="button" className={chip}>
+            <TaskTypeValue type={task.type} />
+          </button>
+        </TaskTypeMenu>
+        {!isFeature && (
+          <TaskFeaturePopover
+            task={task}
+            feature={feature}
+            workspaceId={workspaceId}
+          >
+            <button type="button" data-task-action="feature" className={chip}>
+              <FeatureValue
+                feature={feature}
+                displayId={featureDisplayId}
+                className="max-w-40"
+              />
+            </button>
+          </TaskFeaturePopover>
         )}
         <TaskCustomFieldChips
           taskId={taskId}

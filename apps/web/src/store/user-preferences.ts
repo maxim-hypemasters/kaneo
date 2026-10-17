@@ -8,7 +8,7 @@ export function isWeekStartDay(value: number): value is WeekStartDay {
   return WEEK_START_DAYS.some((day) => day === value);
 }
 
-export const GANTT_GROUP_BY_OPTIONS = ["none", "assignee"] as const;
+export const GANTT_GROUP_BY_OPTIONS = ["none", "assignee", "feature"] as const;
 export type GanttGroupBy = (typeof GANTT_GROUP_BY_OPTIONS)[number];
 
 export function isGanttGroupBy(value: unknown): value is GanttGroupBy {

@@ -150,7 +150,30 @@
 					"rose": "玫红",
 					"crimson": "深红"
 				},
-				"statusLoadError": "项目状态加载失败。"
+				"statusLoadError": "项目状态加载失败。",
+				"breadcrumbFeature": "功能",
+				"titleFeature": "新建功能",
+				"descriptionFeature": "通过提供标题、描述等详细信息来创建新功能，用于对项目中的任务进行分组。",
+				"featureTitlePlaceholder": "功能标题",
+				"featureDescriptionPlaceholder": "为功能添加描述…",
+				"successCreatedFeature": "功能创建成功",
+				"createFeatureError": "功能创建失败",
+				"createButtonFeature": "创建功能",
+				"discardTitleFeature": "放弃功能？",
+				"discardDescriptionFeature": "未保存的功能详情将会丢失。",
+				"discardButtonFeature": "放弃功能",
+				"type": "类型",
+				"typeTask": "任务",
+				"typeFeature": "功能",
+				"feature": "功能",
+				"noFeature": "未设置功能",
+				"searchFeatures": "搜索或创建功能…",
+				"noFeaturesFound": "未找到功能",
+				"createFeature": "创建功能 \"{{name}}\"",
+				"newFeatureSuffix": "{{name}}（新建）",
+				"chooseProjectForFeature": "选择功能前请先选择项目。",
+				"loadingFeatures": "正在加载功能…",
+				"loadFeaturesError": "功能加载失败。"
 			}
 		},
 		"editor": {
@@ -366,8 +389,8 @@
 					"description": "随着工作推进，卡片会从一列移到下一列。把这张卡片拖到下一列，或打开它修改状态。"
 				},
 				"details": {
-					"title": "打开这个任务并添加子任务",
-					"description": "任务可以包含描述、子任务、标签、负责人和截止日期。试着给这个任务添加一个子任务。"
+					"title": "打开这个任务并将其转换为功能",
+					"description": "任务可以包含描述、标签、负责人和截止日期。把这个任务转换为功能，然后向其中添加任务，将相关工作归入其下。"
 				},
 				"invite": {
 					"title": "邀请你的团队",
@@ -2336,7 +2359,8 @@
 				"navigate": "导航",
 				"open": "打开",
 				"close": "关闭"
-			}
+			},
+			"createFeature": "创建功能"
 		},
 		"sidebar": {
 			"projects": "项目",
@@ -2455,10 +2479,10 @@
 				"editDescription": "编辑描述",
 				"commentOnTask": "评论",
 				"moveToProject": "移至其他项目",
-				"createSubtask": "创建子任务",
-				"setParent": "设置父任务",
-				"openParent": "打开父任务",
-				"openSubtask": "打开子任务",
+				"createSubtask": "向此功能添加任务",
+				"setParent": "设置功能",
+				"openParent": "打开功能",
+				"openSubtask": "打开此功能下的任务",
 				"markBlockedBy": "标记为被阻塞",
 				"markBlocking": "标记为阻塞",
 				"markRelated": "标记为相关",
@@ -2703,7 +2727,12 @@
 			"importedBy": "由 {{name}} 导入",
 			"commentedOnForge": "在 {{forge}} 上评论"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "将任务添加到功能 \"{{feature}}\"",
+		"removedFromFeature": "将任务从功能 \"{{feature}}\" 中移除",
+		"changedFeature": "将任务从功能 \"{{from}}\" 移动到 \"{{to}}\"",
+		"madeFeature": "将此任务转换为功能",
+		"madeTask": "将此功能转换为任务"
 	},
 	"tasks": {
 		"title": "任务",
@@ -2742,7 +2771,7 @@
 			"customFields": "自定义字段"
 		},
 		"detail": {
-			"subtaskOf": "子任务属于",
+			"subtaskOf": "功能",
 			"activity": "活动",
 			"noActivity": "暂无活动",
 			"openInFullPage": "在新页面打开",
@@ -2878,22 +2907,22 @@
 				"related": "关联"
 			},
 			"blockedBy": "被阻塞于",
-			"parentPlaceholder": "设置父任务…"
+			"parentPlaceholder": "设置功能…"
 		},
 		"subtasks": {
-			"title": "子任务",
-			"inputPlaceholder": "子任务标题…",
+			"title": "任务",
+			"inputPlaceholder": "任务标题…",
 			"addAction": "添加",
-			"empty": "暂无子任务",
-			"createError": "创建子任务失败",
+			"empty": "此功能下暂无任务",
+			"createError": "创建任务失败",
 			"deleteSuccess": "任务已删除",
 			"deleteError": "删除任务失败",
 			"deleteDialogTitle": "删除任务？",
 			"deleteDialogDescription": "这将永久删除任务及其所有数据，此操作不可撤销。",
 			"deleteAction": "删除任务",
-			"completeAria": "将子任务标记为完成",
-			"progress": "已完成 {{completed}}/{{total}} 个子任务",
-			"noCompletionColumn": "此项目没有可用于完成或重新打开该子任务的列。"
+			"completeAria": "将任务标记为完成",
+			"progress": "已完成 {{completed}}/{{total}} 个任务",
+			"noCompletionColumn": "此项目没有可用于完成或重新打开该任务的列。"
 		},
 		"properties": {
 			"title": "属性",
@@ -3063,6 +3092,26 @@
 				"movesLabel": "将被移动的任务",
 				"startsBeforeBlocker": "在“{{title}}”结束前开始。",
 				"title_other": "此更改会破坏 {{count}} 个依赖关系"
+			},
+			"featuresLabel": "功能",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_other": "{{title}}：{{count}} 个任务，{{start}} 至 {{end}}。打开该功能。",
+			"featureOverflowAria_other": "还有 {{count}} 个功能",
+			"featureBar": {
+				"ariaLabel": "功能 {{title}}：打开或拖动以移动",
+				"ariaLabelGrouped": "功能 {{title}}：打开，或拖动以重新排期或更改负责人",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "已完成 {{completed}}/{{count}} 个任务"
+			},
+			"featureLanes": {
+				"noFeature": "未设置功能",
+				"open": "打开功能 {{title}}",
+				"moveTo": "移至 {{name}}",
+				"remove": "从功能中移除",
+				"cannotMove": "无法移至 {{name}}",
+				"taskAriaLabel": "{{title}}：打开，或拖动以重新排期或移至其他功能",
+				"moveError": "无法将任务移至其他功能",
+				"assignee": "负责人：{{name}}"
 			}
 		},
 		"delete": {
@@ -3217,7 +3266,8 @@
 			"groupBy": "分组方式",
 			"groupByOptions": {
 				"assignee": "负责人",
-				"none": "无"
+				"none": "无",
+				"feature": "功能"
 			}
 		},
 		"filterBar": {
@@ -3256,6 +3306,26 @@
 			"startsOn": "开始于 {{date}}",
 			"beforeStart": "{{date}} 早于开始日期",
 			"afterDue": "{{date}} 晚于截止日期"
+		},
+		"features": {
+			"badge": "功能",
+			"chipLabel": "功能：{{title}}",
+			"unknown": "未知功能",
+			"property": "功能",
+			"none": "未设置功能",
+			"searchPlaceholder": "搜索功能…",
+			"empty": "此项目暂无功能",
+			"remove": "从功能中移除",
+			"updateError": "更新功能失败",
+			"type": "类型",
+			"typeTask": "任务",
+			"typeFeature": "功能",
+			"convertToFeature": "转换为功能",
+			"convertToTask": "转换为任务",
+			"typeError": "更改任务类型失败",
+			"convertBlocked": "请先将此功能下的任务移出，再将其转换为任务。",
+			"openFeature": "打开功能 {{title}}",
+			"inProject": "项目内功能"
 		}
 	},
 	"invitations": {
@@ -3368,6 +3438,7 @@
 				"evening": "晚上好",
 				"morning": "早上好"
 			},
+			"newFeature": "新建功能",
 			"newTask": "新建任务",
 			"pageTitle": "首页",
 			"projects": {

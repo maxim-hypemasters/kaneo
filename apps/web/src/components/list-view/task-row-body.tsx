@@ -4,8 +4,10 @@ import { useTaskCardFields } from "@/components/custom-fields/use-task-card-fiel
 import TaskPriorityPopover from "@/components/task/task-priority-popover";
 import { TaskPullRequests } from "@/components/task/task-pull-requests";
 import { AssigneeButton } from "@/components/task-chips/assignee-button";
+import { BoardFeatureChip } from "@/components/task-chips/board-feature-chip";
 import { ChecklistChip } from "@/components/task-chips/checklist-chip";
 import { DueDateChip } from "@/components/task-chips/due-date-chip";
+import { FeatureBadge } from "@/components/task-chips/feature-badge";
 import { LabelChips } from "@/components/task-chips/label-chips";
 import { stopCardEvents } from "@/components/task-chips/stop-card-events";
 import { SubtasksChip } from "@/components/task-chips/subtasks-chip";
@@ -79,11 +81,19 @@ export function TaskRowBody({
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <span className="truncate text-foreground text-sm">{task.title}</span>
         <div className="flex shrink-0 items-center gap-0.5">
-          <SubtasksChip
-            task={task}
-            workspaceId={workspaceId}
-            className={inlineMetaClass}
-          />
+          {task.type === "feature" && (
+            <FeatureBadge
+              className={cn(inlineMetaClass, "hover:text-muted-foreground")}
+            />
+          )}
+          <SubtasksChip task={task} className={inlineMetaClass} />
+          {task.featureId && (
+            <BoardFeatureChip
+              projectId={task.projectId}
+              featureId={task.featureId}
+              className={inlineMetaClass}
+            />
+          )}
           {showTaskItemCounts && (
             <ChecklistChip task={task} className={inlineMetaClass} />
           )}

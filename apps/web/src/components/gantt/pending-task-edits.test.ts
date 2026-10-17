@@ -27,6 +27,7 @@ const task: ScheduledTask = {
   assigneeName: "Alice",
   assigneeImage: "alice.png",
   projectId: "project",
+  featureId: "checkout",
   scheduleStart: day("2026-09-01"),
   scheduleEnd: day("2026-09-03"),
 };
@@ -35,6 +36,7 @@ const pending: PendingTaskEdit = {
   start: day("2026-09-04"),
   end: day("2026-09-06"),
   userId: "bob",
+  featureId: "checkout",
   seq: 1,
   assigneeName: "Bob",
   assigneeImage: null,
@@ -44,29 +46,58 @@ const pending: PendingTaskEdit = {
 
 describe("classifyEdit", () => {
   it("tells date changes and assignee changes apart", () => {
-    const sameDates = { start: task.scheduleStart, end: task.scheduleEnd };
+    const sameDates = {
+      start: task.scheduleStart,
+      end: task.scheduleEnd,
+      featureId: "checkout",
+    };
     expect(classifyEdit(task, { ...sameDates, userId: "alice" })).toEqual({
       dates: false,
       assignee: false,
+      feature: false,
     });
     expect(classifyEdit(task, { ...sameDates, userId: "bob" })).toEqual({
       dates: false,
       assignee: true,
+      feature: false,
     });
     expect(
       classifyEdit(task, {
         start: day("2026-09-02"),
         end: day("2026-09-04"),
         userId: "alice",
+        featureId: "checkout",
       }),
-    ).toEqual({ dates: true, assignee: false });
+    ).toEqual({ dates: true, assignee: false, feature: false });
     expect(
       classifyEdit(task, {
         start: task.scheduleStart,
         end: day("2026-09-05"),
         userId: null,
+        featureId: "checkout",
       }),
-    ).toEqual({ dates: true, assignee: true });
+    ).toEqual({ dates: true, assignee: true, feature: false });
+  });
+
+  it("tells a feature change apart", () => {
+    const sameDates = { start: task.scheduleStart, end: task.scheduleEnd };
+    expect(
+      classifyEdit(task, {
+        ...sameDates,
+        userId: "alice",
+        featureId: "billing",
+      }),
+    ).toEqual({ dates: false, assignee: false, feature: true });
+    expect(
+      classifyEdit(task, { ...sameDates, userId: "alice", featureId: null })
+        .feature,
+    ).toBe(true);
+    expect(
+      classifyEdit(
+        { ...task, featureId: undefined },
+        { ...sameDates, userId: "alice", featureId: null },
+      ).feature,
+    ).toBe(false);
   });
 
   it("compares calendar days, not instants", () => {
@@ -75,6 +106,7 @@ describe("classifyEdit", () => {
         start: parseISO("2026-09-01T15:30"),
         end: parseISO("2026-09-03T08:00"),
         userId: "alice",
+        featureId: "checkout",
       }).dates,
     ).toBe(false);
   });
@@ -83,7 +115,12 @@ describe("classifyEdit", () => {
     expect(
       classifyEdit(
         { ...task, userId: "" },
-        { start: task.scheduleStart, end: task.scheduleEnd, userId: null },
+        {
+          start: task.scheduleStart,
+          end: task.scheduleEnd,
+          userId: null,
+          featureId: "checkout",
+        },
       ).assignee,
     ).toBe(false);
   });
@@ -103,6 +140,15 @@ describe("applyPendingEdit", () => {
       startDate: toIsoDay(pending.start),
       dueDate: toIsoDay(pending.end),
     });
+  });
+
+  it("shows the pending feature in place of the server's", () => {
+    expect(
+      applyPendingEdit(task, { ...pending, featureId: "billing" }).featureId,
+    ).toBe("billing");
+    expect(
+      applyPendingEdit(task, { ...pending, featureId: null }).featureId,
+    ).toBeNull();
   });
 
   it("carries which date fields the task will have once saved", () => {
@@ -135,5 +181,25 @@ describe("pendingEditLanded", () => {
         pending,
       ),
     ).toBe(false);
+  });
+
+  it("waits for the feature as well", () => {
+    const landed = {
+      ...task,
+      userId: "bob",
+      scheduleStart: pending.start,
+      scheduleEnd: pending.end,
+    };
+    const moved = { ...pending, featureId: "billing" };
+    expect(pendingEditLanded(landed, moved)).toBe(false);
+    expect(pendingEditLanded({ ...landed, featureId: "billing" }, moved)).toBe(
+      true,
+    );
+    expect(
+      pendingEditLanded(
+        { ...landed, featureId: undefined },
+        { ...pending, featureId: null },
+      ),
+    ).toBe(true);
   });
 });

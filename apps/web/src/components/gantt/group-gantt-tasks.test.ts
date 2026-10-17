@@ -1,6 +1,6 @@
-import { parseISO } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { describe, expect, it } from "vite-plus/test";
-import type { ScheduledTask } from "./gantt-types";
+import type { GanttLane, ScheduledTask } from "./gantt-types";
 import {
   assigneeLaneVisible,
   groupGanttTasks,
@@ -13,6 +13,7 @@ function task(
   start: string,
   end: string,
   assignee: { userId: string; name?: string | null; image?: string } | null,
+  hierarchy: Pick<ScheduledTask, "type" | "featureId"> = {},
 ): ScheduledTask {
   return {
     id,
@@ -32,10 +33,16 @@ function task(
     projectId: "project",
     scheduleStart: parseISO(start),
     scheduleEnd: parseISO(end),
+    ...hierarchy,
   };
 }
 
-const labels = { unassignedLabel: "Unassigned", unknownLabel: "Unknown" };
+const labels = {
+  unassignedLabel: "Unassigned",
+  unknownLabel: "Unknown",
+  features: new Map<string, { title: string }>(),
+  unknownFeatureLabel: "Unknown feature",
+};
 const noFilter = { values: null, negated: false };
 
 describe("groupGanttTasks", () => {
@@ -224,6 +231,171 @@ describe("groupGanttTasks", () => {
         assigneeFilter: noFilter,
       }).map((lane) => lane.key),
     ).toEqual([UNASSIGNED_LANE_KEY]);
+  });
+});
+
+describe("groupGanttTasks features", () => {
+  const alice = { userId: "a", name: "Alice" };
+  const bob = { userId: "b", name: "Bob" };
+  const inFeature = (featureId: string) => ({
+    type: "task" as const,
+    featureId,
+  });
+  const asFeature = { type: "feature" as const, featureId: null };
+  const options = {
+    ...labels,
+    members: [],
+    membersLoaded: false,
+    assigneeFilter: noFilter,
+    features: new Map([
+      ["checkout", { title: "Checkout" }],
+      ["search", { title: "Search" }],
+    ]),
+  };
+  const slices = (lane: GanttLane | undefined) =>
+    lane?.features.map((feature) => ({
+      id: feature.featureId,
+      title: feature.title,
+      start: format(feature.start, "yyyy-MM-dd"),
+      end: format(feature.end, "yyyy-MM-dd"),
+      tasks: feature.taskCount,
+      track: feature.track,
+    }));
+  const laneOf = (lanes: GanttLane[], key: string) =>
+    lanes.find((lane) => lane.key === key);
+
+  it("spans each member's own tasks in a feature on their line", () => {
+    const lanes = groupGanttTasks(
+      [
+        task("checkout", "2026-08-20", "2026-09-30", bob, asFeature),
+        task("cart", "2026-09-01", "2026-09-04", alice, inFeature("checkout")),
+        task("pay", "2026-09-08", "2026-09-12", alice, inFeature("checkout")),
+        task("tax", "2026-09-03", "2026-09-05", bob, inFeature("checkout")),
+        task("loose", "2026-09-20", "2026-09-22", alice),
+      ],
+      options,
+    );
+
+    expect(slices(laneOf(lanes, "member:a"))).toEqual([
+      {
+        id: "checkout",
+        title: "Checkout",
+        start: "2026-09-01",
+        end: "2026-09-12",
+        tasks: 2,
+        track: 0,
+      },
+    ]);
+    expect(slices(laneOf(lanes, "member:b"))).toEqual([
+      {
+        id: "checkout",
+        title: "Checkout",
+        start: "2026-09-03",
+        end: "2026-09-05",
+        tasks: 1,
+        track: 0,
+      },
+    ]);
+    // The feature leaves the rows (and Bob's count and workload bar); a task
+    // without a feature only feeds the workload bar.
+    expect(laneOf(lanes, "member:b")?.tasks.map((item) => item.id)).toEqual([
+      "tax",
+    ]);
+    expect(laneOf(lanes, "member:b")?.start).toEqual(parseISO("2026-09-03"));
+    expect(laneOf(lanes, "member:a")?.end).toEqual(parseISO("2026-09-22"));
+    expect(laneOf(lanes, UNASSIGNED_LANE_KEY)?.featureTrackCount).toBe(0);
+  });
+
+  it("follows the tasks it's given, so filters and pending edits apply", () => {
+    const lanes = groupGanttTasks(
+      // "pay" was filtered out, and "cart" was dragged to new dates.
+      [task("cart", "2026-09-10", "2026-09-11", alice, inFeature("checkout"))],
+      options,
+    );
+
+    expect(slices(laneOf(lanes, "member:a"))).toEqual([
+      {
+        id: "checkout",
+        title: "Checkout",
+        start: "2026-09-10",
+        end: "2026-09-11",
+        tasks: 1,
+        track: 0,
+      },
+    ]);
+  });
+
+  it("keeps a feature as a row when none of its tasks are on the chart", () => {
+    const lanes = groupGanttTasks(
+      [task("checkout", "2026-09-01", "2026-09-30", bob, asFeature)],
+      options,
+    );
+
+    expect(laneOf(lanes, "member:b")?.tasks.map((item) => item.id)).toEqual([
+      "checkout",
+    ]);
+    expect(laneOf(lanes, "member:b")?.features).toEqual([]);
+  });
+
+  it("keeps a feature it's asked to keep as a row, still drawing its slices", () => {
+    const lanes = groupGanttTasks(
+      [
+        task("checkout", "2026-09-01", "2026-09-30", bob, asFeature),
+        task("cart", "2026-09-01", "2026-09-04", alice, inFeature("checkout")),
+      ],
+      { ...options, featureRowIds: new Set(["checkout"]) },
+    );
+
+    expect(laneOf(lanes, "member:b")?.tasks.map((item) => item.id)).toEqual([
+      "checkout",
+    ]);
+    expect(
+      laneOf(lanes, "member:a")?.features.map((feature) => feature.featureId),
+    ).toEqual(["checkout"]);
+  });
+
+  it("stacks overlapping features and overflows past three tracks", () => {
+    const features = ["f1", "f2", "f3", "f4"];
+    const lanes = groupGanttTasks(
+      [
+        ...features.map((id) =>
+          task(`${id}-task`, "2026-09-01", "2026-09-05", alice, inFeature(id)),
+        ),
+        task("later", "2026-09-06", "2026-09-07", alice, inFeature("checkout")),
+      ],
+      options,
+    );
+    const aliceLane = laneOf(lanes, "member:a");
+
+    expect(aliceLane?.featureTrackCount).toBe(3);
+    expect(
+      aliceLane?.features.map((feature) => [feature.featureId, feature.track]),
+    ).toEqual([
+      ["f1", 0],
+      ["f2", 1],
+      ["f3", 2],
+      ["checkout", 0],
+    ]);
+    expect(
+      aliceLane?.overflowFeatures.map((feature) => feature.featureId),
+    ).toEqual(["f4"]);
+  });
+
+  it("titles features missing from the board with the unknown label", () => {
+    const lanes = groupGanttTasks(
+      [
+        task("orphan", "2026-09-01", "2026-09-02", alice, inFeature("gone")),
+        task("blank", "2026-09-05", "2026-09-06", alice, inFeature("blank")),
+      ],
+      {
+        ...options,
+        features: new Map([["blank", { title: "  " }]]),
+      },
+    );
+
+    expect(
+      laneOf(lanes, "member:a")?.features.map((feature) => feature.title),
+    ).toEqual(["Unknown feature", "Unknown feature"]);
   });
 });
 

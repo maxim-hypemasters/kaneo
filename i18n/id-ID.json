@@ -150,7 +150,30 @@
 					"rose": "Merah Mawar",
 					"crimson": "Merah Tua"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FITUR",
+				"titleFeature": "Fitur Baru",
+				"descriptionFeature": "Buat fitur baru untuk mengelompokkan tugas-tugas dalam proyek, dengan judul, deskripsi, dan detail lainnya.",
+				"featureTitlePlaceholder": "Judul fitur",
+				"featureDescriptionPlaceholder": "Tambahkan deskripsi untuk fitur Anda...",
+				"successCreatedFeature": "Fitur berhasil dibuat",
+				"createFeatureError": "Gagal membuat fitur",
+				"createButtonFeature": "Buat Fitur",
+				"discardTitleFeature": "Buang fitur?",
+				"discardDescriptionFeature": "Detail fitur yang belum disimpan akan hilang.",
+				"discardButtonFeature": "Buang fitur",
+				"type": "Jenis",
+				"typeTask": "Tugas",
+				"typeFeature": "Fitur",
+				"feature": "Fitur",
+				"noFeature": "Tanpa fitur",
+				"searchFeatures": "Cari atau buat fitur...",
+				"noFeaturesFound": "Fitur tidak ditemukan",
+				"createFeature": "Buat fitur \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (baru)",
+				"chooseProjectForFeature": "Pilih proyek terlebih dahulu untuk memilih fitur.",
+				"loadingFeatures": "Memuat fitur...",
+				"loadFeaturesError": "Fitur tidak dapat dimuat."
 			}
 		},
 		"editor": {
@@ -366,8 +389,8 @@
 					"description": "Kartu berpindah dari kolom ke kolom seiring pekerjaan berjalan. Seret kartu ini ke kolom berikutnya, atau buka dan ubah statusnya."
 				},
 				"details": {
-					"title": "Buka tugas ini dan tambahkan subtugas",
-					"description": "Tugas bisa berisi deskripsi, subtugas, label, penanggung jawab, dan tenggat. Tambahkan subtugas ke tugas ini untuk mencobanya."
+					"title": "Buka tugas ini dan jadikan fitur",
+					"description": "Tugas bisa berisi deskripsi, label, penanggung jawab, dan tenggat. Jadikan tugas ini fitur, lalu tambahkan tugas ke dalamnya untuk mengelompokkan pekerjaan di bawahnya."
 				},
 				"invite": {
 					"title": "Undang tim Anda",
@@ -2336,7 +2359,8 @@
 				"navigate": "Navigasi",
 				"open": "Buka",
 				"close": "Tutup"
-			}
+			},
+			"createFeature": "Buat fitur"
 		},
 		"sidebar": {
 			"projects": "Proyek",
@@ -2455,10 +2479,10 @@
 				"editDescription": "Edit deskripsi",
 				"commentOnTask": "Komentari",
 				"moveToProject": "Pindahkan ke proyek lain",
-				"createSubtask": "Buat subtugas",
-				"setParent": "Atur tugas induk",
-				"openParent": "Buka tugas induk",
-				"openSubtask": "Buka subtugas",
+				"createSubtask": "Tambahkan tugas ke fitur ini",
+				"setParent": "Atur fitur",
+				"openParent": "Buka fitur",
+				"openSubtask": "Buka tugas dari fitur ini",
 				"markBlockedBy": "Tandai diblokir oleh",
 				"markBlocking": "Tandai sebagai pemblokir",
 				"markRelated": "Tandai sebagai terkait",
@@ -2703,7 +2727,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "berkomentar di {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "menambahkan tugas ke fitur \"{{feature}}\"",
+		"removedFromFeature": "menghapus tugas dari fitur \"{{feature}}\"",
+		"changedFeature": "memindahkan tugas dari fitur \"{{from}}\" ke \"{{to}}\"",
+		"madeFeature": "menjadikan tugas ini fitur",
+		"madeTask": "menjadikan fitur ini tugas"
 	},
 	"tasks": {
 		"title": "Tugas",
@@ -2742,7 +2771,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Subtugas dari",
+			"subtaskOf": "Fitur",
 			"activity": "Aktivitas",
 			"noActivity": "Tidak ada aktivitas ditemukan",
 			"openInFullPage": "Buka di halaman penuh",
@@ -2878,22 +2907,22 @@
 				"related": "terkait dengan"
 			},
 			"blockedBy": "Diblokir oleh",
-			"parentPlaceholder": "Atur tugas induk…"
+			"parentPlaceholder": "Atur fitur…"
 		},
 		"subtasks": {
-			"title": "Subtugas",
-			"inputPlaceholder": "Judul subtugas...",
+			"title": "Tugas",
+			"inputPlaceholder": "Judul tugas...",
 			"addAction": "Tambah",
-			"empty": "Belum ada subtugas",
-			"createError": "Gagal membuat subtugas",
+			"empty": "Belum ada tugas di fitur ini",
+			"createError": "Gagal membuat tugas",
 			"deleteSuccess": "Tugas berhasil dihapus",
 			"deleteError": "Gagal menghapus tugas",
 			"deleteDialogTitle": "Hapus Tugas?",
 			"deleteDialogDescription": "Ini akan menghapus tugas dan semua datanya secara permanen. Anda tidak dapat membatalkan tindakan ini.",
 			"deleteAction": "Hapus Tugas",
-			"completeAria": "Tandai subtugas selesai",
-			"progress": "{{completed}} dari {{total}} subtugas selesai",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Tandai tugas selesai",
+			"progress": "{{completed}} dari {{total}} tugas selesai",
+			"noCompletionColumn": "Proyek ini tidak memiliki kolom yang sesuai untuk menyelesaikan atau membuka kembali tugas ini."
 		},
 		"properties": {
 			"title": "Properti",
@@ -3049,6 +3078,26 @@
 				"movesLabel": "Tugas yang akan dipindahkan",
 				"startsBeforeBlocker": "Dimulai sebelum {{title}} selesai.",
 				"title_other": "Perubahan ini melanggar {{count}} dependensi"
+			},
+			"featuresLabel": "Fitur",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_other": "{{title}}: {{count}} tugas, {{start}} hingga {{end}}. Membuka fitur.",
+			"featureOverflowAria_other": "{{count}} fitur lainnya",
+			"featureBar": {
+				"ariaLabel": "Fitur {{title}}: buka atau seret untuk memindahkan",
+				"ariaLabelGrouped": "Fitur {{title}}: buka, atau seret untuk menjadwalkan ulang atau menugaskan ulang",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "{{completed}} dari {{count}} tugas selesai"
+			},
+			"featureLanes": {
+				"noFeature": "Tanpa fitur",
+				"open": "Buka fitur {{title}}",
+				"moveTo": "Pindahkan ke {{name}}",
+				"remove": "Hapus dari fitur",
+				"cannotMove": "Tidak dapat dipindahkan ke {{name}}",
+				"taskAriaLabel": "{{title}}: buka, atau seret untuk menjadwalkan ulang atau memindahkan ke fitur lain",
+				"moveError": "Gagal memindahkan tugas ke fitur lain",
+				"assignee": "Ditugaskan ke {{name}}"
 			}
 		},
 		"delete": {
@@ -3217,7 +3266,8 @@
 			"groupBy": "Kelompokkan berdasarkan",
 			"groupByOptions": {
 				"assignee": "Penanggung jawab",
-				"none": "Tidak ada"
+				"none": "Tidak ada",
+				"feature": "Fitur"
 			}
 		},
 		"filterBar": {
@@ -3256,6 +3306,26 @@
 			"startsOn": "Mulai {{date}}",
 			"beforeStart": "{{date}} sebelum tanggal mulai",
 			"afterDue": "{{date}} setelah tenggat"
+		},
+		"features": {
+			"badge": "Fitur",
+			"chipLabel": "Fitur: {{title}}",
+			"unknown": "Fitur tidak dikenal",
+			"property": "Fitur",
+			"none": "Tanpa fitur",
+			"searchPlaceholder": "Cari fitur…",
+			"empty": "Belum ada fitur di proyek ini",
+			"remove": "Hapus dari fitur",
+			"updateError": "Gagal memperbarui fitur",
+			"type": "Jenis",
+			"typeTask": "Tugas",
+			"typeFeature": "Fitur",
+			"convertToFeature": "Ubah menjadi fitur",
+			"convertToTask": "Ubah menjadi tugas",
+			"typeError": "Gagal mengubah jenis tugas",
+			"convertBlocked": "Pindahkan tugas-tugas fitur ini keluar darinya sebelum menjadikannya tugas.",
+			"openFeature": "Buka fitur {{title}}",
+			"inProject": "Fitur dalam proyek"
 		}
 	},
 	"invitations": {
@@ -3368,6 +3438,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Fitur baru",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

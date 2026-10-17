@@ -8,27 +8,31 @@ import {
 } from "../../database/schema";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
 import { taskIsCompleted } from "../../task/task-is-completed";
+import { featureLinksOf } from "../feature-links";
 
 async function getTaskRelations(
   taskId: string,
   workspaceId: string,
   userId: string,
 ) {
-  const relations = await db
-    .select({
-      id: taskRelationTable.id,
-      sourceTaskId: taskRelationTable.sourceTaskId,
-      targetTaskId: taskRelationTable.targetTaskId,
-      relationType: taskRelationTable.relationType,
-      createdAt: taskRelationTable.createdAt,
-    })
-    .from(taskRelationTable)
-    .where(
-      or(
-        eq(taskRelationTable.sourceTaskId, taskId),
-        eq(taskRelationTable.targetTaskId, taskId),
-      ),
-    );
+  const relations = [
+    ...(await db
+      .select({
+        id: taskRelationTable.id,
+        sourceTaskId: taskRelationTable.sourceTaskId,
+        targetTaskId: taskRelationTable.targetTaskId,
+        relationType: taskRelationTable.relationType,
+        createdAt: taskRelationTable.createdAt,
+      })
+      .from(taskRelationTable)
+      .where(
+        or(
+          eq(taskRelationTable.sourceTaskId, taskId),
+          eq(taskRelationTable.targetTaskId, taskId),
+        ),
+      )),
+    ...(await featureLinksOf(taskId)),
+  ];
 
   const taskIds = new Set<string>();
   for (const rel of relations) {

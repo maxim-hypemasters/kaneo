@@ -64,11 +64,59 @@ Open a task to edit its description and properties. Use **Open in full page** fr
 
 Use the attachment button, paste, or drag a file into the editor to add supporting material. Images appear inline; other files appear as attachments. On self-hosted instances, an operator must [configure file storage](/core/installation/object-storage-and-image-uploads) first.
 
-## Break work into subtasks
+## Group work into features
 
-In the task’s **Sub-tasks** section, enter a title and choose **Add**. Each subtask is a task with its own status and assignee. Open it to add more detail. The **Subtask of** link takes you back to its parent.
+A feature is a task that groups other tasks, like an epic. Use one for a larger piece of work that several tasks deliver together, such as “New onboarding flow.” A feature stays on the board as a card, with its own status, assignee, dates, and comments.
 
-Use checkboxes in the description for a simple checklist. Use subtasks when each piece needs its own owner or progress tracking.
+Use checkboxes in the description for a simple checklist. Use a feature when each piece needs its own owner or progress tracking.
+
+### Make a feature
+
+To create a new feature, choose **New feature** on the home page, or **Create feature** in the command menu. In the new task window you can also switch **Type** from **Task** to **Feature** before you create it.
+
+To turn an existing task into a feature, open it, select **Type** in its properties (it shows **Task**), and choose **Convert to feature**. You can also right-click its card on the board, or its row in List, and choose **Convert to feature**. The card then shows a **Feature** badge.
+
+To turn a feature back into a task, choose **Convert to task** in the same places. A feature that still has tasks can't become a task. Take its tasks out of it first.
+
+### Add tasks to a feature
+
+- When you create a task, select **Feature** and pick one of the project's features. Type a name that isn't there yet and choose **Create feature** to make a new one. When you create the task, Kaneo creates the feature first and then the task in it. If the task can't be created, the feature stays and is still chosen when you try again. The list shows the features of the task's project, so choose the project first.
+- Open the feature. In its **Tasks** section, choose **+**, enter a title, and choose **Add**. The new task is created inside the feature.
+- Open a task, select its **Feature** property, and pick one of the project's features.
+
+A task belongs to one feature at most, and only to a feature in its own project. A feature can't belong to another feature, so it has no **Feature** property, and turning a task into a feature takes it out of its feature.
+
+To take a task out of its feature, do one of these:
+
+- Pick **No feature** in the task's **Feature** property.
+- Choose **Remove from feature** (**×**) next to the feature's name at the top of the task.
+- Right-click the task's card or row and choose **Remove from feature**.
+- In the feature's **Tasks** section, hover the task and choose **Remove from feature** (**×**).
+
+The task itself stays. To move it to another feature, pick that feature in its **Feature** property.
+
+### Follow a feature's progress
+
+A feature's card shows how many of its tasks are done, such as **2/5**. Hover or select the count to list the tasks, and select one to open it. Each task in a feature shows the feature's name on its card and in List. Select the name to open the feature. In an open task, the **Feature** link at the top takes you to its feature. On the Gantt chart, features have [their own bar style](/core/functional/calendar-and-gantt#features), and you can [group tasks by feature](/core/functional/calendar-and-gantt#group-by-feature).
+
+The task's activity records when you add it to a feature, take it out, or change its feature, and when its type changes. It also records when the task leaves its feature because it moved to another project or its feature was deleted. Creating a task inside a feature records only its creation.
+
+### What happens to the tasks
+
+- **Deleting a feature** keeps its tasks. They just leave the feature.
+- **Moving a task to another project** takes it out of its feature.
+- **Moving a feature to another project** works only when it has no tasks. Take its tasks out first.
+- **Duplicating a task** puts the copy in the same feature. A copy of a feature is a new feature without tasks.
+
+### Subtasks from earlier versions
+
+Earlier versions of Kaneo had subtasks. When your instance is upgraded, they are converted automatically:
+
+- A top-level task that had subtasks becomes a feature, and its subtasks become its tasks.
+- Deeper levels are flattened. A subtask of a subtask becomes a task of the top feature too, and its link to the subtask above it is kept as a **Related** relation.
+- Other links that don't fit, such as a second parent or a link to a task in another project, are also kept as **Related** relations.
+
+No task is deleted. Operators can find the details in [Upgrade Kaneo](/core/operations/upgrades#subtasks-become-features).
 
 ## Link related work
 

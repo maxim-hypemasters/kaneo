@@ -4,8 +4,11 @@ import {
   CircleDot,
   Clock,
   Copy,
+  LayersMinus,
+  LayersPlus,
   LinkIcon,
   Trash2,
+  Unlink2,
   UserRound,
 } from "lucide-react";
 import { useMemo } from "react";
@@ -24,9 +27,11 @@ import { useDuplicateTask } from "@/hooks/mutations/task/use-duplicate-task";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
 import { useUpdateTaskDescription } from "@/hooks/mutations/task/use-update-task-description";
+import { useUpdateTaskFeature } from "@/hooks/mutations/task/use-update-task-feature";
 import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-status";
 import { useUpdateTaskPriority } from "@/hooks/mutations/task/use-update-task-status-priority";
 import { useUpdateTaskTitle } from "@/hooks/mutations/task/use-update-task-title";
+import { useUpdateTaskType } from "@/hooks/mutations/task/use-update-task-type";
 import type getProjects from "@/fetchers/project/get-projects";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
@@ -89,12 +94,18 @@ export default function TaskCardContextMenuContent({
   const { mutateAsync: updateTaskTitle } = useUpdateTaskTitle();
   const { mutateAsync: updateTaskDescription } = useUpdateTaskDescription();
   const { mutate: duplicateTask } = useDuplicateTask();
+  const { mutateAsync: updateTaskType } = useUpdateTaskType();
+  const { mutateAsync: updateTaskFeature } = useUpdateTaskFeature();
   const { canCreateTasks, canUpdateTasks, canDeleteTasks, canAssignTasks } =
     useWorkspacePermission();
   const canCreate = canCreateTasks();
   const canEdit = canUpdateTasks();
   const canDelete = canDeleteTasks();
   const canAssign = canAssignTasks();
+
+  const isFeature = task.type === "feature";
+  // The API refuses to make a feature with tasks a task.
+  const convertBlocked = isFeature && (task.subtaskCounts?.total ?? 0) > 0;
 
   const usersOptions = useMemo(() => {
     return projectMembers?.map((member) => ({
@@ -131,6 +142,22 @@ export default function TaskCardContextMenuContent({
       taskId: task.id,
       title: t("tasks:duplicate.titleSuffix", { title: task.title }),
     });
+  };
+
+  const handleConvert = async () => {
+    try {
+      await updateTaskType({ task, type: isFeature ? "task" : "feature" });
+    } catch {
+      toast.error(t("tasks:features.typeError"));
+    }
+  };
+
+  const handleRemoveFromFeature = async () => {
+    try {
+      await updateTaskFeature({ task, featureId: null });
+    } catch {
+      toast.error(t("tasks:features.updateError"));
+    }
   };
 
   const handleChange = async (field: keyof Task, value: string | Date) => {
@@ -275,6 +302,46 @@ export default function TaskCardContextMenuContent({
             ))}
           </ContextMenuSubContent>
         </ContextMenuSub>
+      )}
+
+      {canEdit && (
+        <>
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            className="[&>svg]:mx-0"
+            disabled={convertBlocked}
+            onClick={handleConvert}
+          >
+            {isFeature ? (
+              <LayersMinus className="size-3.5 text-muted-foreground" />
+            ) : (
+              <LayersPlus className="size-3.5 text-muted-foreground" />
+            )}
+            <span className="flex min-w-0 flex-col">
+              <span>
+                {t(
+                  isFeature
+                    ? "tasks:features.convertToTask"
+                    : "tasks:features.convertToFeature",
+                )}
+              </span>
+              {convertBlocked && (
+                <span className="text-muted-foreground text-xs">
+                  {t("tasks:features.convertBlocked")}
+                </span>
+              )}
+            </span>
+          </ContextMenuItem>
+          {task.featureId && (
+            <ContextMenuItem
+              className="[&>svg]:mx-0"
+              onClick={handleRemoveFromFeature}
+            >
+              <Unlink2 className="size-3.5 text-muted-foreground" />
+              <span>{t("tasks:features.remove")}</span>
+            </ContextMenuItem>
+          )}
+        </>
       )}
 
       {(canCreate || canEdit || canDelete) && (

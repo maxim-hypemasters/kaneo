@@ -150,7 +150,30 @@
 					"rose": "गुलाब",
 					"crimson": "किरमिज़ी"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "फ़ीचर",
+				"titleFeature": "नया फ़ीचर",
+				"descriptionFeature": "किसी प्रोजेक्ट के कार्यों को समूहित करने के लिए शीर्षक, विवरण और अन्य विवरण देकर एक नया फ़ीचर बनाएँ।",
+				"featureTitlePlaceholder": "फ़ीचर का शीर्षक",
+				"featureDescriptionPlaceholder": "अपने फ़ीचर के लिए विवरण जोड़ें...",
+				"successCreatedFeature": "फ़ीचर सफलतापूर्वक बनाया गया",
+				"createFeatureError": "फ़ीचर बनाने में विफल",
+				"createButtonFeature": "फ़ीचर बनाएँ",
+				"discardTitleFeature": "फ़ीचर छोड़ें?",
+				"discardDescriptionFeature": "आपके सहेजे नहीं गए फ़ीचर विवरण खो जाएँगे।",
+				"discardButtonFeature": "फ़ीचर छोड़ें",
+				"type": "प्रकार",
+				"typeTask": "कार्य",
+				"typeFeature": "फ़ीचर",
+				"feature": "फ़ीचर",
+				"noFeature": "कोई फ़ीचर नहीं",
+				"searchFeatures": "फ़ीचर खोजें या बनाएँ...",
+				"noFeaturesFound": "कोई फ़ीचर नहीं मिला",
+				"createFeature": "फ़ीचर \"{{name}}\" बनाएँ",
+				"newFeatureSuffix": "{{name}} (नया)",
+				"chooseProjectForFeature": "फ़ीचर चुनने के लिए प्रोजेक्ट चुनें।",
+				"loadingFeatures": "फ़ीचर लोड हो रहे हैं...",
+				"loadFeaturesError": "फ़ीचर लोड नहीं हो सके।"
 			}
 		},
 		"editor": {
@@ -367,8 +390,8 @@
 					"description": "काम आगे बढ़ने के साथ कार्ड एक कॉलम से दूसरे कॉलम में जाते हैं। इसे अगले कॉलम में खींचें, या इसे खोलकर इसका स्टेटस बदलें।"
 				},
 				"details": {
-					"title": "इस टास्क को खोलें और एक सबटास्क जोड़ें",
-					"description": "एक टास्क में विवरण, सबटास्क, लेबल, असाइनी और ड्यू डेट हो सकती है। आज़माने के लिए इसमें एक सबटास्क जोड़ें।"
+					"title": "इस टास्क को खोलें और इसे फ़ीचर बनाएँ",
+					"description": "एक टास्क में विवरण, लेबल, असाइनी और ड्यू डेट हो सकती है। इसे फ़ीचर बनाएँ, फिर काम को इसके अंतर्गत समूहित करने के लिए इसमें टास्क जोड़ें।"
 				},
 				"invite": {
 					"title": "अपनी टीम को आमंत्रित करें",
@@ -2378,7 +2401,8 @@
 				"navigate": "नेविगेट करें",
 				"open": "खोलें",
 				"close": "बंद करें"
-			}
+			},
+			"createFeature": "फ़ीचर बनाएँ"
 		},
 		"sidebar": {
 			"projects": "प्रोजेक्ट",
@@ -2497,10 +2521,10 @@
 				"editDescription": "विवरण संपादित करें",
 				"commentOnTask": "टिप्पणी करें",
 				"moveToProject": "दूसरे प्रोजेक्ट में ले जाएँ",
-				"createSubtask": "उप-कार्य बनाएँ",
-				"setParent": "मूल कार्य सेट करें",
-				"openParent": "मूल कार्य खोलें",
-				"openSubtask": "उप-कार्य खोलें",
+				"createSubtask": "इस फ़ीचर में कार्य जोड़ें",
+				"setParent": "फ़ीचर सेट करें",
+				"openParent": "फ़ीचर खोलें",
+				"openSubtask": "इस फ़ीचर का एक कार्य खोलें",
 				"markBlockedBy": "इसके द्वारा अवरुद्ध चिह्नित करें",
 				"markBlocking": "अवरोधक के रूप में चिह्नित करें",
 				"markRelated": "संबंधित के रूप में चिह्नित करें",
@@ -2750,7 +2774,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "{{forge}} पर टिप्पणी की"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "कार्य को फ़ीचर \"{{feature}}\" में जोड़ा",
+		"removedFromFeature": "कार्य को फ़ीचर \"{{feature}}\" से हटाया",
+		"changedFeature": "कार्य को फ़ीचर \"{{from}}\" से \"{{to}}\" में ले गए",
+		"madeFeature": "इस कार्य को फ़ीचर बनाया",
+		"madeTask": "इस फ़ीचर को कार्य बनाया"
 	},
 	"tasks": {
 		"title": "कार्य",
@@ -2789,7 +2818,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "उप-कार्य",
+			"subtaskOf": "फ़ीचर",
 			"activity": "गतिविधि",
 			"noActivity": "कोई गतिविधि नहीं मिली",
 			"openInFullPage": "पूरे पेज में खोलें",
@@ -2925,22 +2954,22 @@
 				"related": "संबंधित है"
 			},
 			"blockedBy": "इसके द्वारा अवरुद्ध",
-			"parentPlaceholder": "मूल कार्य सेट करें…"
+			"parentPlaceholder": "फ़ीचर सेट करें…"
 		},
 		"subtasks": {
-			"title": "उप-कार्य",
-			"inputPlaceholder": "उप-कार्य शीर्षक...",
+			"title": "कार्य",
+			"inputPlaceholder": "कार्य शीर्षक...",
 			"addAction": "जोड़ें",
-			"empty": "अभी तक कोई उप-कार्य नहीं",
-			"createError": "उप-कार्य बनाने में विफल",
+			"empty": "इस फ़ीचर में अभी तक कोई कार्य नहीं",
+			"createError": "कार्य बनाने में विफल",
 			"deleteSuccess": "कार्य सफलतापूर्वक हटाया गया",
 			"deleteError": "कार्य हटाने में विफल",
 			"deleteDialogTitle": "कार्य हटाएँ?",
 			"deleteDialogDescription": "यह कार्य और इसका सभी डेटा स्थायी रूप से हटा दिया जाएगा। यह कार्रवाई पूर्ववत नहीं की जा सकती।",
 			"deleteAction": "कार्य हटाएँ",
-			"completeAria": "उप-कार्य को पूर्ण चिह्नित करें",
-			"progress": "{{total}} में से {{completed}} उपकार्य पूरे हुए",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "कार्य को पूर्ण चिह्नित करें",
+			"progress": "{{total}} में से {{completed}} कार्य पूरे हुए",
+			"noCompletionColumn": "इस प्रोजेक्ट में इस कार्य को पूरा करने या फिर से खोलने के लिए कोई मेल खाता कॉलम नहीं है।"
 		},
 		"properties": {
 			"title": "गुण",
@@ -3099,6 +3128,29 @@
 				"startsBeforeBlocker": "{{title}} के समाप्त होने से पहले शुरू होता है।",
 				"title_one": "इस बदलाव से {{count}} निर्भरता टूटती है",
 				"title_other": "इस बदलाव से {{count}} निर्भरताएँ टूटती हैं"
+			},
+			"featuresLabel": "फ़ीचर",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} कार्य, {{start}} से {{end}} तक। फ़ीचर खोलता है।",
+			"featureSliceAria_other": "{{title}}: {{count}} कार्य, {{start}} से {{end}} तक। फ़ीचर खोलता है।",
+			"featureOverflowAria_one": "{{count}} और फ़ीचर",
+			"featureOverflowAria_other": "{{count}} और फ़ीचर",
+			"featureBar": {
+				"ariaLabel": "फ़ीचर {{title}}: खोलें या ले जाने के लिए खींचें",
+				"ariaLabelGrouped": "फ़ीचर {{title}}: खोलें, या शेड्यूल बदलने या दोबारा सौंपने के लिए खींचें",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{count}} में से {{completed}} कार्य पूरा",
+				"progressAria_other": "{{count}} में से {{completed}} कार्य पूरे"
+			},
+			"featureLanes": {
+				"noFeature": "कोई फ़ीचर नहीं",
+				"open": "फ़ीचर {{title}} खोलें",
+				"moveTo": "{{name}} में ले जाएँ",
+				"remove": "फ़ीचर से हटाएँ",
+				"cannotMove": "{{name}} में नहीं ले जा सकते",
+				"taskAriaLabel": "{{title}}: खोलें, या शेड्यूल बदलने या किसी दूसरे फ़ीचर में ले जाने के लिए खींचें",
+				"moveError": "कार्य को दूसरे फ़ीचर में ले जाने में विफल",
+				"assignee": "{{name}} को सौंपा गया"
 			}
 		},
 		"delete": {
@@ -3274,7 +3326,8 @@
 			"groupBy": "इसके अनुसार समूहित करें",
 			"groupByOptions": {
 				"assignee": "सौंपा गया",
-				"none": "कोई नहीं"
+				"none": "कोई नहीं",
+				"feature": "फ़ीचर"
 			}
 		},
 		"filterBar": {
@@ -3316,6 +3369,26 @@
 			"startsOn": "शुरुआत: {{date}}",
 			"beforeStart": "{{date}} प्रारंभ तारीख से पहले है",
 			"afterDue": "{{date}} नियत तारीख के बाद है"
+		},
+		"features": {
+			"badge": "फ़ीचर",
+			"chipLabel": "फ़ीचर: {{title}}",
+			"unknown": "अज्ञात फ़ीचर",
+			"property": "फ़ीचर",
+			"none": "कोई फ़ीचर नहीं",
+			"searchPlaceholder": "फ़ीचर खोजें…",
+			"empty": "इस प्रोजेक्ट में अभी तक कोई फ़ीचर नहीं",
+			"remove": "फ़ीचर से हटाएँ",
+			"updateError": "फ़ीचर अपडेट करने में विफल",
+			"type": "प्रकार",
+			"typeTask": "कार्य",
+			"typeFeature": "फ़ीचर",
+			"convertToFeature": "फ़ीचर में बदलें",
+			"convertToTask": "कार्य में बदलें",
+			"typeError": "कार्य का प्रकार बदलने में विफल",
+			"convertBlocked": "इसे कार्य बनाने से पहले इस फ़ीचर के कार्यों को इससे बाहर ले जाएँ।",
+			"openFeature": "फ़ीचर {{title}} खोलें",
+			"inProject": "प्रोजेक्ट में फ़ीचर"
 		}
 	},
 	"invitations": {
@@ -3429,6 +3502,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "नया फ़ीचर",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

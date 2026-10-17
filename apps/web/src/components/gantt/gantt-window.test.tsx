@@ -49,11 +49,17 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: m.update }),
 }));
+vi.mock("@/hooks/mutations/task/use-update-task-feature", () => ({
+  useUpdateTaskFeature: () => ({ mutateAsync: vi.fn() }),
+}));
 vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
   default: () => ({ data: [] }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canAssignTasks: () => true }),
+  useWorkspacePermission: () => ({
+    canAssignTasks: () => true,
+    canUpdateTasks: () => true,
+  }),
 }));
 vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
   default: () => ({ data: [], isSuccess: true }),

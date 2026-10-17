@@ -99,3 +99,80 @@ it("keeps details in the rendered open column despite a final column sharing its
   expect(screen.queryByText("Regression label")).not.toBeInTheDocument();
   expect(screen.getByText("Open work")).toBeVisible();
 });
+
+const baseTask: Task = {
+  id: "cart",
+  title: "Cart page",
+  status: "shared",
+  projectId: "project",
+  number: 2,
+  description: null,
+  priority: null,
+  startDate: null,
+  dueDate: null,
+  position: 2,
+  createdAt: "2026-10-01T00:00:00Z",
+  userId: null,
+  assigneeId: null,
+  assigneeName: null,
+  type: "task",
+  featureId: null,
+  subtaskCounts: { completed: 0, total: 0 },
+};
+
+it("marks a feature card and shows its tasks' progress", () => {
+  render(
+    <TaskCard
+      task={{
+        ...baseTask,
+        id: "checkout",
+        title: "Checkout",
+        type: "feature",
+        subtaskCounts: { completed: 1, total: 3 },
+      }}
+      isFinalColumn={false}
+    />,
+    { wrapper },
+  );
+  expect(screen.getByText("tasks:features.badge")).toBeVisible();
+  expect(
+    screen.getByRole("button", { name: "tasks:subtasks.progress" }),
+  ).toHaveTextContent("1/3");
+});
+
+it("names a task's feature from the cached board", () => {
+  queryClient.setQueryData(["tasks", "project"], {
+    id: "project",
+    columns: [
+      {
+        id: "shared",
+        slug: "shared",
+        tasks: [
+          { ...baseTask, id: "checkout", title: "Checkout", type: "feature" },
+        ],
+      },
+    ],
+    plannedTasks: [],
+    archivedTasks: [],
+  });
+  render(
+    <TaskCard
+      task={{ ...baseTask, featureId: "checkout" }}
+      isFinalColumn={false}
+    />,
+    { wrapper },
+  );
+  expect(
+    screen.getByRole("button", { name: "tasks:features.chipLabel" }),
+  ).toHaveTextContent("Checkout");
+  expect(screen.queryByText("tasks:features.badge")).not.toBeInTheDocument();
+  queryClient.clear();
+});
+
+it("adds nothing to a plain task", () => {
+  render(<TaskCard task={baseTask} isFinalColumn={false} />, { wrapper });
+  expect(screen.queryByText("tasks:features.badge")).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /tasks:features|tasks:subtasks/ }),
+  ).not.toBeInTheDocument();
+});

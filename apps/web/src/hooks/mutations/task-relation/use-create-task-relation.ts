@@ -3,11 +3,18 @@ import createTaskRelation from "@/fetchers/task-relation/create-task-relation";
 
 import { invalidateRelationTaskProject } from "./invalidate-relation-task-project";
 
+type Variables = {
+  sourceTaskId: string;
+  targetTaskId: string;
+  // Feature membership has its own route: useUpdateTaskFeature.
+  relationType: "blocks" | "related";
+};
+
 function useCreateTaskRelation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createTaskRelation,
+    mutationFn: (variables: Variables) => createTaskRelation(variables),
     onSuccess: (_, variables) => {
       void invalidateRelationTaskProject(queryClient, variables.sourceTaskId);
       queryClient.invalidateQueries({

@@ -150,7 +150,30 @@
 					"rose": "Róża",
 					"crimson": "Karmazyn"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FUNKCJA",
+				"titleFeature": "Nowa funkcja",
+				"descriptionFeature": "Utwórz nową funkcję, aby pogrupować zadania projektu, podając tytuł, opis i inne szczegóły.",
+				"featureTitlePlaceholder": "Tytuł funkcji",
+				"featureDescriptionPlaceholder": "Dodaj opis funkcji...",
+				"successCreatedFeature": "Funkcja została utworzona",
+				"createFeatureError": "Nie udało się utworzyć funkcji",
+				"createButtonFeature": "Utwórz funkcję",
+				"discardTitleFeature": "Odrzucić funkcję?",
+				"discardDescriptionFeature": "Niezapisane szczegóły funkcji zostaną utracone.",
+				"discardButtonFeature": "Odrzuć funkcję",
+				"type": "Typ",
+				"typeTask": "Zadanie",
+				"typeFeature": "Funkcja",
+				"feature": "Funkcja",
+				"noFeature": "Brak funkcji",
+				"searchFeatures": "Szukaj lub utwórz funkcję...",
+				"noFeaturesFound": "Nie znaleziono funkcji",
+				"createFeature": "Utwórz funkcję „{{name}}”",
+				"newFeatureSuffix": "{{name}} (nowa)",
+				"chooseProjectForFeature": "Wybierz projekt, aby móc wskazać funkcję.",
+				"loadingFeatures": "Ładowanie funkcji...",
+				"loadFeaturesError": "Nie udało się wczytać funkcji."
 			}
 		},
 		"editor": {
@@ -369,8 +392,8 @@
 					"description": "Karty przechodzą z kolumny do kolumny wraz z postępem pracy. Przeciągnij tę do następnej kolumny albo otwórz ją i zmień jej status."
 				},
 				"details": {
-					"title": "Otwórz to zadanie i dodaj podzadanie",
-					"description": "Zadanie może mieć opis, podzadania, etykiety, osobę przypisaną i termin. Dodaj podzadanie do tego zadania, żeby to wypróbować."
+					"title": "Otwórz to zadanie i przekształć je w funkcję",
+					"description": "Zadanie może mieć opis, etykiety, osobę przypisaną i termin. Przekształć to zadanie w funkcję, a potem dodaj do niej zadania, żeby pogrupować pod nią pracę."
 				},
 				"invite": {
 					"title": "Zaproś swój zespół",
@@ -590,7 +613,8 @@
 				"navigate": "Nawiguj",
 				"open": "Otwórz",
 				"close": "Zamknij"
-			}
+			},
+			"createFeature": "Utwórz funkcję"
 		},
 		"sidebar": {
 			"projects": "Projekty",
@@ -709,10 +733,10 @@
 				"editDescription": "Edytuj opis",
 				"commentOnTask": "Skomentuj",
 				"moveToProject": "Przenieś do innego projektu",
-				"createSubtask": "Utwórz podzadanie",
-				"setParent": "Ustaw zadanie nadrzędne",
-				"openParent": "Otwórz zadanie nadrzędne",
-				"openSubtask": "Otwórz podzadanie",
+				"createSubtask": "Dodaj zadanie do tej funkcji",
+				"setParent": "Ustaw funkcję",
+				"openParent": "Otwórz funkcję",
+				"openSubtask": "Otwórz zadanie tej funkcji",
 				"markBlockedBy": "Oznacz jako zablokowane przez",
 				"markBlocking": "Oznacz jako blokujące",
 				"markRelated": "Oznacz jako powiązane",
@@ -936,6 +960,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nowa funkcja",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {
@@ -1254,7 +1279,12 @@
 		"moved": "przeniósł(ęła) zadanie z \"{{from}}\" do \"{{to}}\"",
 		"setDueDate": "ustawił(a) termin na {{date}}",
 		"unassigned": "usunął(ęła) przypisanie zadania",
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "dodał(a) zadanie do funkcji \"{{feature}}\"",
+		"removedFromFeature": "usunął(ęła) zadanie z funkcji \"{{feature}}\"",
+		"changedFeature": "przeniósł(ęła) zadanie z funkcji \"{{from}}\" do \"{{to}}\"",
+		"madeFeature": "przekształcił(a) to zadanie w funkcję",
+		"madeTask": "przekształcił(a) tę funkcję w zadanie"
 	},
 	"settings": {
 		"advancedSettings": "Ustawienia zaawansowane",
@@ -3367,7 +3397,7 @@
 			},
 			"noActivity": "Nie znaleziono aktywności",
 			"openInFullPage": "Otwórz na pełnej stronie",
-			"subtaskOf": "Podzadanie zadania",
+			"subtaskOf": "Funkcja",
 			"titlePlaceholder": "Kliknij, aby dodać tytuł"
 		},
 		"dueDate": {
@@ -3446,6 +3476,35 @@
 				"title_many": "Ta zmiana narusza {{count}} zależności",
 				"title_one": "Ta zmiana narusza {{count}} zależność",
 				"title_other": "Ta zmiana narusza {{count}} zależności"
+			},
+			"featuresLabel": "Funkcje",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} zadanie, od {{start}} do {{end}}. Otwiera funkcję.",
+			"featureSliceAria_few": "{{title}}: {{count}} zadania, od {{start}} do {{end}}. Otwiera funkcję.",
+			"featureSliceAria_many": "{{title}}: {{count}} zadań, od {{start}} do {{end}}. Otwiera funkcję.",
+			"featureSliceAria_other": "{{title}}: {{count}} zadania, od {{start}} do {{end}}. Otwiera funkcję.",
+			"featureOverflowAria_one": "Jeszcze {{count}} funkcja",
+			"featureOverflowAria_few": "Jeszcze {{count}} funkcje",
+			"featureOverflowAria_many": "Jeszcze {{count}} funkcji",
+			"featureOverflowAria_other": "Jeszcze {{count}} funkcji",
+			"featureBar": {
+				"ariaLabel": "Funkcja {{title}}: otwórz lub przeciągnij, aby przenieść",
+				"ariaLabelGrouped": "Funkcja {{title}}: otwórz lub przeciągnij, aby zmienić termin lub osobę przypisaną",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "Ukończono {{completed}} z {{count}} zadania",
+				"progressAria_few": "Ukończono {{completed}} z {{count}} zadań",
+				"progressAria_many": "Ukończono {{completed}} z {{count}} zadań",
+				"progressAria_other": "Ukończono {{completed}} z {{count}} zadania"
+			},
+			"featureLanes": {
+				"noFeature": "Brak funkcji",
+				"open": "Otwórz funkcję {{title}}",
+				"moveTo": "Przenieś do funkcji {{name}}",
+				"remove": "Usuń z funkcji",
+				"cannotMove": "Nie można przenieść do funkcji {{name}}",
+				"taskAriaLabel": "{{title}}: otwórz lub przeciągnij, aby zmienić termin lub przenieść do innej funkcji",
+				"moveError": "Nie udało się przenieść zadania do innej funkcji",
+				"assignee": "Przypisane do: {{name}}"
 			}
 		},
 		"kanban": {
@@ -3563,7 +3622,7 @@
 				"related": "powiązane z"
 			},
 			"blockedBy": "Zablokowane przez",
-			"parentPlaceholder": "Ustaw zadanie nadrzędne…"
+			"parentPlaceholder": "Ustaw funkcję…"
 		},
 		"sort": {
 			"ascending": "Rosnąco",
@@ -3589,18 +3648,18 @@
 		},
 		"subtasks": {
 			"addAction": "Dodaj",
-			"completeAria": "Oznacz podzadanie jako ukończone",
-			"createError": "Nie udało się utworzyć podzadania",
+			"completeAria": "Oznacz zadanie jako ukończone",
+			"createError": "Nie udało się utworzyć zadania",
 			"deleteAction": "Usuń zadanie",
 			"deleteDialogDescription": "Zadanie i wszystkie jego dane zostaną trwale usunięte. Tej operacji nie można cofnąć.",
 			"deleteDialogTitle": "Usunąć zadanie?",
 			"deleteError": "Nie udało się usunąć zadania",
 			"deleteSuccess": "Zadanie usunięto pomyślnie",
-			"empty": "Brak podzadań",
-			"inputPlaceholder": "Tytuł podzadania...",
-			"title": "Podzadania",
-			"progress": "Ukończone podzadania: {{completed}} z {{total}}",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"empty": "Brak zadań w tej funkcji",
+			"inputPlaceholder": "Tytuł zadania...",
+			"title": "Zadania",
+			"progress": "Ukończone zadania: {{completed}} z {{total}}",
+			"noCompletionColumn": "Ten projekt nie ma odpowiedniej kolumny do ukończenia lub ponownego otwarcia tego zadania."
 		},
 		"update": {
 			"error": "Nie udało się zaktualizować zadania"
@@ -3670,7 +3729,8 @@
 			"groupBy": "Grupuj według",
 			"groupByOptions": {
 				"assignee": "Osoba przypisana",
-				"none": "Bez grupowania"
+				"none": "Bez grupowania",
+				"feature": "Funkcja"
 			}
 		},
 		"filterBar": {
@@ -3718,6 +3778,26 @@
 			"startsOn": "Początek: {{date}}",
 			"beforeStart": "{{date}} jest przed datą rozpoczęcia",
 			"afterDue": "{{date}} jest po terminie"
+		},
+		"features": {
+			"badge": "Funkcja",
+			"chipLabel": "Funkcja: {{title}}",
+			"unknown": "Nieznana funkcja",
+			"property": "Funkcja",
+			"none": "Brak funkcji",
+			"searchPlaceholder": "Szukaj funkcji…",
+			"empty": "Brak funkcji w tym projekcie",
+			"remove": "Usuń z funkcji",
+			"updateError": "Nie udało się zaktualizować funkcji",
+			"type": "Typ",
+			"typeTask": "Zadanie",
+			"typeFeature": "Funkcja",
+			"convertToFeature": "Przekształć w funkcję",
+			"convertToTask": "Przekształć w zadanie",
+			"typeError": "Nie udało się zmienić typu zadania",
+			"convertBlocked": "Przenieś zadania z tej funkcji, zanim przekształcisz ją w zadanie.",
+			"openFeature": "Otwórz funkcję {{title}}",
+			"inProject": "Funkcje w projekcie"
 		}
 	},
 	"press": {

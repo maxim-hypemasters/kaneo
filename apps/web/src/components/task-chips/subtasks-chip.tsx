@@ -15,35 +15,20 @@ import { taskChipClass } from "./task-chip-class";
 
 type SubtasksChipProps = {
   task: Task;
-  workspaceId: string;
   className?: string;
 };
 
-export function SubtasksChip({
-  task,
-  workspaceId,
-  className,
-}: SubtasksChipProps) {
+// A feature's task progress; its hover list shows the feature's tasks.
+export function SubtasksChip({ task, className }: SubtasksChipProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const counts = task.subtaskCounts;
   if (!counts?.total) return null;
 
-  const openTask = (subtask: Pick<Task, "id" | "projectId">) => {
+  const openTask = (taskId: string) => {
     setOpen(false);
-    if (subtask.projectId === task.projectId) {
-      navigate({ to: ".", search: { taskId: subtask.id } });
-      return;
-    }
-    navigate({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
-      params: {
-        workspaceId,
-        projectId: subtask.projectId,
-        taskId: subtask.id,
-      },
-    });
+    navigate({ to: ".", search: { taskId } });
   };
 
   return (
@@ -82,8 +67,8 @@ export function SubtasksChip({
       >
         {open && (
           <SubtasksHoverList
-            taskId={task.id}
-            workspaceId={workspaceId}
+            featureId={task.id}
+            projectId={task.projectId}
             onOpenTask={openTask}
           />
         )}

@@ -23,10 +23,13 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import ProjectLayout from "@/components/common/project-layout";
+import { GanttFeatureLaneHeader } from "@/components/gantt/gantt-feature-lane-header";
+import { GanttLaneGroup } from "@/components/gantt/gantt-lane-group";
 import { GanttLaneHeader } from "@/components/gantt/gantt-lane-header";
 import { GanttPeriodControls } from "@/components/gantt/gantt-period-controls";
 import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
 import type {
+  GanttLaneDrag,
   GanttLaneDragState,
   GanttLaneTarget,
   GanttTaskEdit,
@@ -36,6 +39,8 @@ import {
   groupGanttTasks,
   laneKeyForAssignee,
 } from "@/components/gantt/group-gantt-tasks";
+import { groupGanttTasksByFeature } from "@/components/gantt/group-gantt-tasks-by-feature";
+import { groupedRowTasks } from "@/components/gantt/grouped-row-tasks";
 import {
   blockingDependencies,
   type GanttSpan,
@@ -71,6 +76,7 @@ import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-projec
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
+import { getFeatureIndex } from "@/lib/features/feature-index";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
 type GanttSearchParams = {
@@ -110,16 +116,17 @@ function RouteComponent() {
   const groupByPreference = useUserPreferencesStore(
     (state) => state.ganttGroupBy,
   );
-  // Anything but an explicit "assignee" (including a stale stored value)
+  // Anything but an explicit grouping (including a stale stored value)
   // renders the flat timeline.
   const groupByAssignee = groupByPreference === "assignee";
+  const groupByFeature = groupByPreference === "feature";
   const { data: projectMembers, isSuccess: membersLoaded } =
     useGetProjectMembers({
       workspaceId,
       projectId,
       enabled: groupByAssignee,
     });
-  const { canAssignTasks } = useWorkspacePermission();
+  const { canAssignTasks, canUpdateTasks } = useWorkspacePermission();
   const goToView = useGoToProjectView({
     workspaceId,
     projectId,
@@ -259,9 +266,11 @@ function RouteComponent() {
     taskId: string;
     edit: GanttTaskEdit;
     assignee: TaskAssignee;
-    // A plain move or resize takes whoever is assigned when it's saved, so a
-    // reassignment made meanwhile isn't undone.
+    // A plain move or resize takes whoever is assigned, and whichever
+    // feature the task is in, when it's saved, so a reassignment or a move
+    // to another feature made meanwhile isn't undone.
     changesAssignee: boolean;
+    changesFeature: boolean;
     brokenIds: ReadonlySet<string>;
   } | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
@@ -283,13 +292,21 @@ function RouteComponent() {
   const heldTask = heldEdit ? savedTasksById.get(heldEdit.taskId) : undefined;
   const heldDraft = useMemo(() => {
     if (!heldEdit || !heldTask) return null;
-    if (heldEdit.changesAssignee) return heldEdit;
+    const { edit, changesAssignee, changesFeature } = heldEdit;
     return {
-      edit: { ...heldEdit.edit, userId: heldTask.userId || null },
-      assignee: {
-        name: heldTask.assigneeName,
-        image: heldTask.assigneeImage ?? null,
+      edit: {
+        ...edit,
+        userId: changesAssignee ? edit.userId : heldTask.userId || null,
+        featureId: changesFeature
+          ? edit.featureId
+          : (heldTask.featureId ?? null),
       },
+      assignee: changesAssignee
+        ? heldEdit.assignee
+        : {
+            name: heldTask.assigneeName,
+            image: heldTask.assigneeImage ?? null,
+          },
     };
   }, [heldEdit, heldTask]);
   const heldPlan = useMemo(
@@ -331,7 +348,8 @@ function RouteComponent() {
   }, [savedTasks, heldEdit, heldDraft]);
   const spans = useMemo(() => spansOf(displayedTasks), [displayedTasks]);
   // Bars whose drag moves an arrow; only they report drags, so other drags
-  // never re-render the chart.
+  // never re-render the chart. Grouped by assignee, a feature among them
+  // keeps its row.
   const dependentTaskIds = useMemo(
     () =>
       new Set(
@@ -367,22 +385,30 @@ function RouteComponent() {
       )
       .join(" ");
 
+  // What passes the view's filters, dated or not.
+  const visibleTasks = useMemo(
+    () => [
+      ...(filteredProject?.columns.flatMap((column) => column.tasks) ?? []),
+      ...(filteredProject?.plannedTasks ?? []),
+    ],
+    [filteredProject],
+  );
   const scheduledTasks = useMemo(() => {
-    const visibleIds = new Set(
-      [
-        ...(filteredProject?.columns.flatMap((column) => column.tasks) ?? []),
-        ...(filteredProject?.plannedTasks ?? []),
-      ].map((task) => task.id),
-    );
+    const visibleIds = new Set(visibleTasks.map((task) => task.id));
     return displayedTasks.filter((task) => visibleIds.has(task.id));
-  }, [displayedTasks, filteredProject]);
+  }, [displayedTasks, visibleTasks]);
 
   const unassignedLabel = t("tasks:assignee.unassigned");
   const unknownLabel = t("common:people.unknown");
+  const unknownFeatureLabel = t("tasks:features.unknown");
+  const noFeatureLabel = t("tasks:gantt.featureLanes.noFeature");
+  // From the whole board (planned and archived included), so a slice keeps
+  // its title while the feature itself is filtered out or undated.
+  const boardFeatures = getFeatureIndex(project).features;
   const assigneeFilterValues = view.filters.filters.assignee;
   const assigneeFilterNegated =
     view.filters.filters.negated?.includes("assignee") ?? false;
-  const lanes = useMemo(
+  const assigneeLanes = useMemo(
     () =>
       groupByAssignee
         ? groupGanttTasks(scheduledTasks, {
@@ -394,6 +420,9 @@ function RouteComponent() {
             },
             unassignedLabel,
             unknownLabel,
+            features: boardFeatures,
+            unknownFeatureLabel,
+            featureRowIds: dependentTaskIds,
           })
         : null,
     [
@@ -405,39 +434,124 @@ function RouteComponent() {
       assigneeFilterNegated,
       unassignedLabel,
       unknownLabel,
+      boardFeatures,
+      unknownFeatureLabel,
+      dependentTaskIds,
     ],
   );
-  const lanesByKey = useMemo(
-    () => new Map((lanes ?? []).map((lane) => [lane.key, lane])),
-    [lanes],
+  const featureLanes = useMemo(
+    () =>
+      groupByFeature
+        ? groupGanttTasksByFeature(scheduledTasks, {
+            listedFeatureIds: visibleTasks
+              .filter((task) => task.type === "feature")
+              .map((task) => task.id),
+            features: boardFeatures,
+            noFeatureLabel,
+            unknownFeatureLabel,
+          })
+        : null,
+    [
+      groupByFeature,
+      scheduledTasks,
+      visibleTasks,
+      boardFeatures,
+      noFeatureLabel,
+      unknownFeatureLabel,
+    ],
   );
+  // Grouped by assignee, features with tasks on the chart leave the rows for
+  // their members' lane headers, unless they're in a dependency (its arrows
+  // and early-start warning need their row); the count and empty state
+  // follow what's drawn. Grouped by feature, every task on the chart is
+  // drawn once: as a row, or a feature as the bar in its lane's header.
+  const rowCount = assigneeLanes
+    ? assigneeLanes.reduce((count, lane) => count + lane.tasks.length, 0)
+    : scheduledTasks.length;
+  const totalRowCount = useMemo(
+    () =>
+      groupByAssignee
+        ? groupedRowTasks(parsedTasks, dependentTaskIds).length
+        : parsedTasks.length,
+    [groupByAssignee, parsedTasks, dependentTaskIds],
+  );
+  const assigneeLanesByKey = useMemo(
+    () => new Map((assigneeLanes ?? []).map((lane) => [lane.key, lane])),
+    [assigneeLanes],
+  );
+  const laneTargets = useMemo(() => {
+    const targets = new Map<string, GanttLaneTarget>();
+    for (const lane of assigneeLanes ?? []) {
+      targets.set(lane.key, {
+        kind: "assignee",
+        key: lane.key,
+        userId: lane.userId,
+        name: lane.name,
+        droppable: lane.droppable,
+      });
+    }
+    for (const lane of featureLanes ?? []) {
+      targets.set(lane.key, {
+        kind: "feature",
+        key: lane.key,
+        featureId: lane.featureId,
+        name: lane.name,
+        droppable: lane.droppable,
+      });
+    }
+    return targets;
+  }, [assigneeLanes, featureLanes]);
   const resolveLane = useCallback(
-    (laneKey: string): GanttLaneTarget | null =>
-      lanesByKey.get(laneKey) ?? null,
-    [lanesByKey],
+    (laneKey: string) => laneTargets.get(laneKey) ?? null,
+    [laneTargets],
   );
-  // Which rows are on screen and in what order; the dependency lines
-  // measure them again whenever this changes.
-  const renderedRowsKey = lanes
-    ? lanes
+  const visibleRowIds = (laneKey: string, tasks: readonly ScheduledTask[]) =>
+    collapsedLaneKeys.has(laneKey)
+      ? ""
+      : tasks.map((task) => task.id).join(",");
+  // Which rows are on screen and in what order, how many feature tracks tall
+  // each assignee lane header is, and which feature lane headers draw their
+  // feature's bar; the dependency lines measure them again whenever this
+  // changes.
+  const renderedRowsKey = assigneeLanes
+    ? assigneeLanes
         .map(
           (lane) =>
-            `${lane.key}:${
-              collapsedLaneKeys.has(lane.key)
-                ? ""
-                : lane.tasks.map((task) => task.id).join(",")
-            }`,
+            `${lane.key}:${lane.featureTrackCount}:${visibleRowIds(lane.key, lane.tasks)}`,
         )
         .join("|")
-    : scheduledTasks.map((task) => task.id).join(",");
-  const laneDragEnabled = groupByAssignee && canAssignTasks();
+    : featureLanes
+      ? featureLanes
+          .map(
+            (lane) =>
+              `${lane.key}:${lane.feature ? "bar" : ""}:${visibleRowIds(lane.key, lane.tasks)}`,
+          )
+          .join("|")
+      : scheduledTasks.map((task) => task.id).join(",");
+  // Dragging a bar into another lane reassigns it, or moves it to another
+  // feature; each needs its own permission.
+  const laneDragKind: GanttLaneDrag["kind"] | null =
+    groupByAssignee && canAssignTasks()
+      ? "assignee"
+      : groupByFeature && canUpdateTasks()
+        ? "feature"
+        : null;
+  const laneDragFor = (laneKey: string): GanttLaneDrag | undefined =>
+    laneDragKind
+      ? {
+          kind: laneDragKind,
+          laneKey,
+          resolveLane,
+          onChange: setLaneDragState,
+        }
+      : undefined;
   const dropTargetLaneKey = laneDragState?.targetLaneKey ?? null;
 
   const commitTaskEdit = (task: ScheduledTask, edit: GanttTaskEdit) => {
     const keepsAssignee = edit.userId === (task.userId || null);
     const targetLane = keepsAssignee
       ? null
-      : lanesByKey.get(laneKeyForAssignee(edit.userId));
+      : assigneeLanesByKey.get(laneKeyForAssignee(edit.userId));
     const assignee = {
       name: keepsAssignee
         ? task.assigneeName
@@ -448,7 +562,8 @@ function RouteComponent() {
         ? (task.assigneeImage ?? null)
         : (targetLane?.image ?? null),
     };
-    const broken = classifyEdit(task, edit).dates
+    const changes = classifyEdit(task, edit);
+    const broken = changes.dates
       ? planDependencyMoves(savedSpans, dependencies, task.id, edit).broken
       : [];
     if (broken.length > 0) {
@@ -457,6 +572,7 @@ function RouteComponent() {
         edit,
         assignee,
         changesAssignee: !keepsAssignee,
+        changesFeature: changes.feature,
         brokenIds: new Set(broken.map((dependency) => dependency.id)),
       });
       return;
@@ -472,14 +588,16 @@ function RouteComponent() {
     for (const move of heldPlan?.moves ?? []) {
       const related = savedTasksById.get(move.taskId);
       if (!related) continue;
-      // Only once the task the user moved has saved: if that fails, the
-      // tasks moved to make room for it stay where they were.
+      // Only once the moved task's dates have saved (not its feature move):
+      // if they fail, the tasks moved to make room for it stay where they
+      // were.
       commit(
         related,
         {
           start: move.to.start,
           end: move.to.end,
           userId: related.userId || null,
+          featureId: related.featureId ?? null,
         },
         {
           name: related.assigneeName,
@@ -510,6 +628,10 @@ function RouteComponent() {
     setDraggingTaskId((current) =>
       dragging ? taskId : current === taskId ? null : current,
     );
+  const dragChangeFor = (taskId: string) =>
+    dependentTaskIds.has(taskId)
+      ? (dragging: boolean) => trackDrag(taskId, dragging)
+      : undefined;
 
   const openTask = (taskId: string) =>
     navigate({
@@ -529,6 +651,38 @@ function RouteComponent() {
     railWidthRem,
     scrollElement,
   });
+
+  const renderTaskRow = (
+    task: ScheduledTask,
+    {
+      showAssignee,
+      showBarAssignee = false,
+      laneDrag,
+    }: {
+      showAssignee: boolean;
+      showBarAssignee?: boolean;
+      laneDrag?: GanttLaneDrag;
+    },
+  ) =>
+    timeline && (
+      <GanttTaskRow
+        key={task.id}
+        task={task}
+        projectSlug={project?.slug}
+        timeline={timeline}
+        pixelsPerDay={pixelsPerDay}
+        isMobile={isMobile}
+        showTaskRail={showTaskRail}
+        rowGridTemplateColumns={rowGridTemplateColumns}
+        showAssignee={showAssignee}
+        showBarAssignee={showBarAssignee}
+        laneDrag={laneDrag}
+        onOpenTask={() => openTask(task.id)}
+        onCommit={(edit) => commitTaskEdit(task, edit)}
+        onDragChange={dragChangeFor(task.id)}
+        dependencyNote={dependencyNote(task.id)}
+      />
+    );
 
   // Whether today's column is rendered; "Jump to today" re-centres the span
   // first when it isn't.
@@ -644,9 +798,7 @@ function RouteComponent() {
           }
         />
       }
-      summary={
-        <TaskCount shown={scheduledTasks.length} total={parsedTasks.length} />
-      }
+      summary={<TaskCount shown={rowCount} total={totalRowCount} />}
       filterBar={
         <ActiveFiltersBar
           subjects={view.subjects}
@@ -677,7 +829,7 @@ function RouteComponent() {
               className="h-9 touch-manipulation sm:h-auto"
               aria-label={t("tasks:gantt.jumpToToday")}
               onClick={jumpToToday}
-              disabled={scheduledTasks.length === 0}
+              disabled={rowCount === 0}
             >
               <Calendar className="size-3.5" />
               <span className="hidden sm:inline">
@@ -726,7 +878,7 @@ function RouteComponent() {
               </Button>
             </div>
           </div>
-        ) : scheduledTasks.length === 0 ? (
+        ) : rowCount === 0 ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <div className="max-w-sm text-center">
               <h2 className="text-sm font-semibold text-foreground">
@@ -842,36 +994,19 @@ function RouteComponent() {
                       draggingTaskId={draggingTaskId}
                     />
                   )}
-                  {lanes
-                    ? lanes.map((lane) => {
+                  {assigneeLanes
+                    ? assigneeLanes.map((lane) => {
                         const collapsed =
                           lane.tasks.length > 0 &&
                           collapsedLaneKeys.has(lane.key);
                         const labelId = `${laneLabelIdPrefix}-${lane.key}`;
-                        const laneDrag = laneDragEnabled
-                          ? {
-                              laneKey: lane.key,
-                              resolveLane,
-                              onChange: setLaneDragState,
-                            }
-                          : undefined;
+                        const laneDrag = laneDragFor(lane.key);
                         return (
-                          // No z-index/transform here: a lane must not form
-                          // a stacking context, or a bar dragged out of it
-                          // would paint underneath the other lanes.
-                          <div
+                          <GanttLaneGroup
                             key={lane.key}
-                            role="group"
-                            aria-labelledby={labelId}
-                            data-gantt-lane={lane.key}
-                            data-drop-target={
-                              dropTargetLaneKey === lane.key ? "" : undefined
-                            }
-                            className={cn(
-                              "relative",
-                              dropTargetLaneKey === lane.key &&
-                                "after:pointer-events-none after:absolute after:inset-0 after:z-[12] after:bg-primary/5 after:ring-2 after:ring-inset after:ring-primary/50",
-                            )}
+                            laneKey={lane.key}
+                            labelId={labelId}
+                            dropTarget={dropTargetLaneKey === lane.key}
                           >
                             <GanttLaneHeader
                               lane={lane}
@@ -880,61 +1015,76 @@ function RouteComponent() {
                               onToggle={() => toggleLane(lane.key)}
                               timeline={timeline}
                               showTaskRail={showTaskRail}
+                              railWidthRem={railWidthRem}
                               rowGridTemplateColumns={rowGridTemplateColumns}
+                              onOpenFeature={openTask}
                             />
                             {collapsed
                               ? null
-                              : lane.tasks.map((task) => (
-                                  <GanttTaskRow
-                                    key={task.id}
-                                    task={task}
-                                    projectSlug={project?.slug}
-                                    timeline={timeline}
-                                    pixelsPerDay={pixelsPerDay}
-                                    isMobile={isMobile}
-                                    showTaskRail={showTaskRail}
-                                    rowGridTemplateColumns={
-                                      rowGridTemplateColumns
-                                    }
-                                    showAssignee={false}
-                                    laneDrag={laneDrag}
-                                    onOpenTask={() => openTask(task.id)}
-                                    onCommit={(edit) =>
-                                      commitTaskEdit(task, edit)
-                                    }
-                                    onDragChange={
-                                      dependentTaskIds.has(task.id)
-                                        ? (dragging) =>
-                                            trackDrag(task.id, dragging)
-                                        : undefined
-                                    }
-                                    dependencyNote={dependencyNote(task.id)}
-                                  />
-                                ))}
-                          </div>
+                              : lane.tasks.map((task) =>
+                                  renderTaskRow(task, {
+                                    showAssignee: false,
+                                    laneDrag,
+                                  }),
+                                )}
+                          </GanttLaneGroup>
                         );
                       })
-                    : scheduledTasks.map((task) => (
-                        <GanttTaskRow
-                          key={task.id}
-                          task={task}
-                          projectSlug={project?.slug}
-                          timeline={timeline}
-                          pixelsPerDay={pixelsPerDay}
-                          isMobile={isMobile}
-                          showTaskRail={showTaskRail}
-                          rowGridTemplateColumns={rowGridTemplateColumns}
-                          showAssignee
-                          onOpenTask={() => openTask(task.id)}
-                          onCommit={(edit) => commitTaskEdit(task, edit)}
-                          onDragChange={
-                            dependentTaskIds.has(task.id)
-                              ? (dragging) => trackDrag(task.id, dragging)
-                              : undefined
-                          }
-                          dependencyNote={dependencyNote(task.id)}
-                        />
-                      ))}
+                    : featureLanes
+                      ? featureLanes.map((lane) => {
+                          const collapsed =
+                            lane.tasks.length > 0 &&
+                            collapsedLaneKeys.has(lane.key);
+                          const labelId = `${laneLabelIdPrefix}-${lane.key}`;
+                          const laneDrag = laneDragFor(lane.key);
+                          const { feature } = lane;
+                          return (
+                            <GanttLaneGroup
+                              key={lane.key}
+                              laneKey={lane.key}
+                              labelId={labelId}
+                              dropTarget={dropTargetLaneKey === lane.key}
+                            >
+                              <GanttFeatureLaneHeader
+                                lane={lane}
+                                labelId={labelId}
+                                collapsed={collapsed}
+                                onToggle={() => toggleLane(lane.key)}
+                                timeline={timeline}
+                                pixelsPerDay={pixelsPerDay}
+                                isMobile={isMobile}
+                                showTaskRail={showTaskRail}
+                                rowGridTemplateColumns={rowGridTemplateColumns}
+                                onOpenFeature={openTask}
+                                onCommitFeature={(edit) => {
+                                  if (feature) commitTaskEdit(feature, edit);
+                                }}
+                                onFeatureDragChange={
+                                  feature
+                                    ? dragChangeFor(feature.id)
+                                    : undefined
+                                }
+                                featureDependencyNote={
+                                  feature
+                                    ? dependencyNote(feature.id)
+                                    : undefined
+                                }
+                              />
+                              {collapsed
+                                ? null
+                                : lane.tasks.map((task) =>
+                                    renderTaskRow(task, {
+                                      showAssignee: true,
+                                      showBarAssignee: true,
+                                      laneDrag,
+                                    }),
+                                  )}
+                            </GanttLaneGroup>
+                          );
+                        })
+                      : scheduledTasks.map((task) =>
+                          renderTaskRow(task, { showAssignee: true }),
+                        )}
                 </div>
               </div>
             </div>

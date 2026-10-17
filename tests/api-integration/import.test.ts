@@ -607,21 +607,28 @@ describe("API integration: import from other tools", () => {
           tasks.map((task) => task.id),
         ),
       );
-    expect(relations).toEqual(
+    expect(relations).toEqual([
+      {
+        sourceTaskId: first?.id,
+        targetTaskId: someday?.id,
+        relationType: "blocks",
+      },
+    ]);
+    // The subtask link became a feature: Ship it is a task of First.
+    const hierarchy = await db
+      .select({
+        id: schema.taskTable.id,
+        type: schema.taskTable.type,
+        featureId: schema.taskTable.featureId,
+      })
+      .from(schema.taskTable)
+      .where(inArray(schema.taskTable.id, [first?.id ?? "", shipIt?.id ?? ""]));
+    expect(hierarchy).toEqual(
       expect.arrayContaining([
-        {
-          sourceTaskId: first?.id,
-          targetTaskId: shipIt?.id,
-          relationType: "subtask",
-        },
-        {
-          sourceTaskId: first?.id,
-          targetTaskId: someday?.id,
-          relationType: "blocks",
-        },
+        { id: first?.id, type: "feature", featureId: null },
+        { id: shipIt?.id, type: "task", featureId: first?.id },
       ]),
     );
-    expect(relations).toHaveLength(2);
 
     const notifications = await db.select().from(schema.notificationTable);
     expect(notifications).toEqual([]);

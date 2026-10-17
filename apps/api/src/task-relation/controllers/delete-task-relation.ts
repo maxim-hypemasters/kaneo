@@ -8,12 +8,14 @@ import {
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
+import { parseFeatureLinkId, unlinkFeatureLink } from "../feature-links";
 
 async function deleteTaskRelation(
   id: string,
   userId: string,
   workspaceId: string,
 ) {
+  if (parseFeatureLinkId(id)) return unlinkFeatureLink(id, userId, workspaceId);
   const workspaceTasks = db
     .select({ id: taskTable.id })
     .from(taskTable)

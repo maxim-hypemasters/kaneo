@@ -51,16 +51,16 @@ export function renderTaskDetail(ui: Ui, view: TaskDetailView): string[] {
       : hasTrackedTime(task.time)
         ? fit(timeValue(ui, task.time))
         : null;
-  const parent = task.parent
+  const feature = task.feature
     ? fit([
-        statusDot(ui, task.parent.status, task.parent.completed),
+        statusDot(ui, task.feature.status, task.feature.completed),
         text(" "),
         text(
-          task.parent.ticketId ?? task.parent.id.slice(0, 8),
+          task.feature.ticketId ?? task.feature.id.slice(0, 8),
           theme.muted,
-          task.parent.url,
+          task.feature.url,
         ),
-        text(` ${task.parent.title}`),
+        text(` ${task.feature.title}`),
       ])
     : null;
   const rows: ReadonlyArray<readonly [string, string | null]> = [
@@ -87,7 +87,9 @@ export function renderTaskDetail(ui: Ui, view: TaskDetailView): string[] {
       "Project",
       `${task.projectName} ${theme.muted(`${glyphs.separator} ${task.projectKey}`)}`,
     ],
-    ["Parent", parent],
+    // A feature is in no feature, so at most one of these shows.
+    ["Type", task.type === "feature" ? "Feature" : null],
+    ["Feature", feature],
   ];
 
   const lines = [

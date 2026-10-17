@@ -45,6 +45,40 @@ Keep the backup until you are satisfied with the result.
 
 Capture the failing container logs and stop the new application container with `docker compose stop kaneo` while you investigate.
 
-Do not assume an old image can read a newly migrated database. Unless the release explicitly supports that downgrade, recover using the previous application image plus its matching database and file backup. Follow [Backups and recovery](/core/operations/backups), and account for any work created since the backup.
+Do not assume an old image can read a newly migrated database. Unless the release explicitly supports that downgrade, recover using the previous application image plus its matching database and file backup. Follow [Backups and recovery](/core/operations/backups), and account for any work created since the backup. When a release has its own way back, the [upgrade notes](#upgrade-notes) describe it.
 
 Never use `docker compose down -v` as an upgrade or troubleshooting step. It removes the named data volumes.
+
+## Upgrade notes
+
+### Subtasks become features
+
+Kaneo replaced subtasks with [features](/core/functional/plan-and-execute-tasks#group-work-into-features): a feature is a task that groups other tasks, one level deep. When the API starts on a version with features, it converts existing subtasks for you:
+
+- A top-level task with subtasks becomes a feature, and its subtasks, at any depth, become its tasks.
+- Links that don't fit, such as a second parent, a link between two levels below the feature, or a link to another project, become related relations.
+- Before changing anything, Kaneo copies every converted subtask link to the `legacy_subtask_relation` table. Keep that table: the undo script below needs it.
+
+The conversion runs on every start. Subtask links that an older server writes during a rolling update are converted on the next start. An older server can also move a task away from its feature's project; the next start takes that task out of the feature and keeps a related link between the two in its place. If a project can't be converted, the log says so, its subtasks stay as they are, and the server still starts. Kaneo tries that project again on the next start.
+
+Older versions of the CLI, the MCP package, and `@kaneo/planka-import` still send subtask links. They keep working: each one becomes a feature link. A link that features can't hold, such as one to a task in another project, or one that would put a feature into a feature, is refused with an error.
+
+After the upgrade, open a project that used subtasks and check that its features and their tasks look right.
+
+To go back to an earlier version, undo the conversion first. `apps/api/src/migrations/feature-hierarchy-undo.sql` in the Kaneo source does that. It is not in the Docker image, so take it from the source of the release you upgraded to.
+
+1. Stop every Kaneo API instance that uses the database, for example with `docker compose stop kaneo`. With the Helm chart, scale the Kaneo deployment to zero replicas.
+2. Make a [database backup](/core/operations/backups).
+3. Run the script once:
+
+   ```bash
+   docker compose exec -T postgres sh -c \
+     'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
+     < feature-hierarchy-undo.sql
+   ```
+
+   With a managed database, run the same file with `psql` against it.
+
+4. Set `KANEO_IMAGE_TAG` back to the earlier release and start it with `docker compose up -d kaneo`. With the Helm chart, run `helm upgrade` with `kaneo.image.tag` set to the earlier release, and scale the deployment back up if it is still at zero.
+
+The script brings back the subtask links from before the upgrade, including the ones that were kept as related relations. Tasks added to a feature since then become subtasks of it too, and every feature becomes a plain task again. A task taken out of its feature after the upgrade gets its old parent back. Other changes made since the upgrade are kept. Once the links are back, the script empties `legacy_subtask_relation`. If you upgrade again later, Kaneo converts the subtasks again and backs them up afresh, so the script can undo that upgrade too.

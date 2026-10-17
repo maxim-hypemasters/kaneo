@@ -10,9 +10,14 @@ function useDeleteTaskRelation(taskId: string) {
     mutationFn: deleteTaskRelation,
     onSuccess: (relation) => {
       void invalidateRelationTaskProject(queryClient, relation.sourceTaskId);
-      queryClient.invalidateQueries({
-        queryKey: ["task-relations", taskId],
-      });
+      // Both ends list the relation.
+      for (const id of new Set([
+        taskId,
+        relation.sourceTaskId,
+        relation.targetTaskId,
+      ])) {
+        queryClient.invalidateQueries({ queryKey: ["task-relations", id] });
+      }
       queryClient.invalidateQueries({ queryKey: ["project-task-relations"] });
     },
   });

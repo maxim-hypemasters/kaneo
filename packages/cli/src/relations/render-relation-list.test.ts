@@ -34,13 +34,13 @@ const view = {
 };
 
 describe("renderRelationList", () => {
-  it("groups the parent, subtasks and other relations", () => {
+  it("groups the feature, its tasks and other relations", () => {
     expect(
       renderRelationList(ui(80), {
         ...view,
         relations: {
-          parent: task("KAN-1", "Auth overhaul", "in-progress"),
-          subtasks: [
+          feature: task("KAN-1", "Auth overhaul", "in-progress"),
+          tasks: [
             task("KAN-4", "Write tests", "done", true),
             task("KAN-10", "Update docs"),
           ],
@@ -67,10 +67,10 @@ describe("renderRelationList", () => {
       "",
       "  KAN-3 Fix login redirect · Relations",
       "",
-      "  Parent",
+      "  Feature",
       "    ● KAN-1   Auth overhaul    In Progress",
       "",
-      "  Subtasks 1 of 2 done",
+      "  Tasks 1 of 2 done",
       "    ● KAN-4   Write tests      Done",
       "    ● KAN-10  Update docs      To Do",
       "",
@@ -90,8 +90,8 @@ describe("renderRelationList", () => {
     const lines = renderRelationList(ui(80), {
       ...view,
       relations: {
-        parent: null,
-        subtasks: [task("KAN-4", "A".repeat(120))],
+        feature: null,
+        tasks: [task("KAN-4", "A".repeat(120))],
         relations: [],
       },
     });
@@ -103,7 +103,7 @@ describe("renderRelationList", () => {
     expect(
       renderRelationList(ui(80), {
         ...view,
-        relations: { parent: null, subtasks: [], relations: [] },
+        relations: { feature: null, tasks: [], relations: [] },
       }),
     ).toEqual([
       "",

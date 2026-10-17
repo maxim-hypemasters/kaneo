@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
+import { useUpdateTaskFeature } from "@/hooks/mutations/task/use-update-task-feature";
 import { toast } from "@/lib/toast";
 import type { GanttTaskEdit, ScheduledTask } from "./gantt-types";
 import {
@@ -32,15 +33,19 @@ const NO_PENDING_EDITS: ReadonlyMap<string, PendingTaskEdit> = new Map();
 // predecessor's own failure is the one the user is told about.
 const PREDECESSOR_FAILED = Symbol("gantt-predecessor-failed");
 
-// Saves Gantt drags. Each gesture becomes exactly one request: a lane-only
-// drop uses the narrow assignee endpoint (it never rewrites dates or other
-// fields), anything that moves dates is one full update carrying the new
-// assignee too. Requests are serialised per task, and the edit is shown
-// optimistically until the refetched task matches it.
+// Saves Gantt drags. A gesture becomes one request for its dates and
+// assignee: a lane-only drop uses the narrow assignee endpoint (it never
+// rewrites dates or other fields), anything that moves dates is one full
+// update carrying the new assignee too. A drop on another feature's lane
+// then sends the feature change, which the full update leaves alone; if
+// only that fails, the dates and assignee stay saved, so edits built on
+// them still go out. Requests are serialised per task, and the edit is
+// shown optimistically until the refetched task matches it.
 export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
   const { t } = useTranslation();
   const { mutateAsync: updateTask } = useUpdateTask();
   const { mutateAsync: updateTaskAssignee } = useUpdateTaskAssignee();
+  const { mutateAsync: updateTaskFeature } = useUpdateTaskFeature();
   const [pending, setPending] = useState(NO_PENDING_EDITS);
   const nextSeqRef = useRef(0);
   const queuesRef = useRef(new Map<string, Promise<unknown>>());
@@ -76,6 +81,8 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
     });
   }, [tasks]);
 
+  // Resolves once the edit's dates and assignee are saved: that is what moves
+  // made on top of it wait for, not its feature move.
   const commit = useCallback(
     (
       task: ScheduledTask,
@@ -84,7 +91,9 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
       options: CommitOptions = {},
     ): Promise<unknown> => {
       const kind = classifyEdit(task, edit);
-      if (!kind.dates && !kind.assignee) return Promise.resolve();
+      if (!kind.dates && !kind.assignee && !kind.feature) {
+        return Promise.resolve();
+      }
 
       nextSeqRef.current += 1;
       const seq = nextSeqRef.current;
@@ -105,16 +114,40 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
         }),
       );
 
-      const send = () => {
+      const sendFields = async () => {
         sentRef.current.add(seq);
-        return kind.dates
-          ? updateTask({
-              ...task,
-              startDate: hasStartDate ? toIsoDay(edit.start) : null,
-              dueDate: hasDueDate ? toIsoDay(edit.end) : null,
-              userId: edit.userId,
-            })
-          : updateTaskAssignee({ ...task, userId: edit.userId });
+        if (kind.dates) {
+          await updateTask({
+            ...task,
+            startDate: hasStartDate ? toIsoDay(edit.start) : null,
+            dueDate: hasDueDate ? toIsoDay(edit.end) : null,
+            userId: edit.userId,
+          });
+        } else if (kind.assignee) {
+          await updateTaskAssignee({ ...task, userId: edit.userId });
+        }
+      };
+      const sendFeature = async () => {
+        try {
+          await updateTaskFeature({ task, featureId: edit.featureId });
+        } catch (error) {
+          // The dates and assignee did save: keep showing them until the
+          // refetch, back in the feature the task is still in. A later edit
+          // made on top of this one goes back there too.
+          setPending((current) => {
+            const shown = current.get(task.id);
+            if (shown?.featureId !== edit.featureId) return current;
+            return new Map(current).set(task.id, {
+              ...shown,
+              featureId: task.featureId ?? null,
+            });
+          });
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : t("tasks:gantt.featureLanes.moveError"),
+          );
+        }
       };
 
       // Send right away unless an earlier drag of this task is still in
@@ -125,14 +158,24 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
       );
       // Waits for every prerequisite to settle, even after one fails, so
       // this task's queue never moves on while its earlier save is in flight.
-      const queued: Promise<unknown> =
+      const fieldsSaved: Promise<unknown> =
         prerequisites.length > 0
           ? Promise.allSettled(prerequisites).then((results) =>
               results.every((result) => result.status === "fulfilled")
-                ? send()
+                ? sendFields()
                 : Promise.reject(PREDECESSOR_FAILED),
             )
-          : send();
+          : sendFields();
+      // The feature move goes last, once the dates and assignee have saved;
+      // with nothing to wait for (a lane-only move) it goes out at once. Its
+      // failure doesn't fail the edit, whose dates and assignee stay saved.
+      const featureWaits =
+        kind.dates || kind.assignee || prerequisites.length > 0;
+      const queued = !kind.feature
+        ? fieldsSaved
+        : featureWaits
+          ? fieldsSaved.then(sendFeature)
+          : sendFeature();
       queuesRef.current.set(task.id, queued);
 
       queued
@@ -159,9 +202,9 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
             queuesRef.current.delete(task.id);
           }
         });
-      return queued;
+      return fieldsSaved;
     },
-    [t, updateTask, updateTaskAssignee],
+    [t, updateTask, updateTaskAssignee, updateTaskFeature],
   );
 
   return { pending, commit };

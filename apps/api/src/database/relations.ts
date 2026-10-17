@@ -148,6 +148,12 @@ export const taskTableRelations = relations(taskTable, ({ one, many }) => ({
     fields: [taskTable.columnId],
     references: [columnTable.id],
   }),
+  feature: one(taskTable, {
+    fields: [taskTable.featureId],
+    references: [taskTable.id],
+    relationName: "feature",
+  }),
+  featureTasks: many(taskTable, { relationName: "feature" }),
   timeEntries: many(timeEntryTable),
   activities: many(activityTable),
   comments: many(commentTable),

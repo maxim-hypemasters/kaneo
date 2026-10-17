@@ -18,6 +18,8 @@ const task: TaskViewJson = {
   ticketId: "KAN-12",
   number: 12,
   title: "Fix login redirect after device approval",
+  type: "task",
+  featureId: null,
   description:
     "## Steps\n\n1. Sign in with **device** flow\n2. See [the bug](https://kaneo.test/b)",
   status: "in-progress",
@@ -33,6 +35,8 @@ const task: TaskViewJson = {
   workspaceId: "workspace-1",
   url: "https://kaneo.test/dashboard/workspace/workspace-1/project/project-1/task/task-1",
   labels: [],
+  feature: null,
+  tasks: [],
   parent: null,
   subtasks: [],
   relations: [],
@@ -140,7 +144,7 @@ describe("renderTaskDetail rows", () => {
     return lines.slice(3, lines.indexOf("", 3));
   };
 
-  it("shows labels as chips, tracked time with the running timer, and the parent", () => {
+  it("shows labels as chips, tracked time with the running timer, and the feature", () => {
     expect(
       rows({
         labels: [
@@ -156,7 +160,8 @@ describe("renderTaskDetail rows", () => {
             },
           ],
         },
-        parent: {
+        featureId: "task-4",
+        feature: {
           id: "task-4",
           ticketId: "KAN-4",
           title: "Auth overhaul",
@@ -175,7 +180,14 @@ describe("renderTaskDetail rows", () => {
       "    Created    Sep 30",
       "    Time       2h 30m · ● Timer running (Ada Lovelace)",
       "    Project    Kaneo Web · KAN",
-      "    Parent     ● KAN-4 Auth overhaul",
+      "    Feature    ● KAN-4 Auth overhaul",
+    ]);
+  });
+
+  it("marks a feature", () => {
+    expect(rows({ type: "feature" }).slice(-2)).toEqual([
+      "    Project    Kaneo Web · KAN",
+      "    Type       Feature",
     ]);
   });
 
@@ -186,17 +198,17 @@ describe("renderTaskDetail rows", () => {
     expect(rows({}).some((line) => line.includes("Time"))).toBe(false);
   });
 
-  it("cuts long label and parent rows to the terminal width", () => {
+  it("cuts long label and feature rows to the terminal width", () => {
     const lines = rows(
       {
         labels: Array.from({ length: 12 }, (_, index) => ({
           name: `label-${index}`,
           color: "gray",
         })),
-        parent: {
+        feature: {
           id: "task-4",
           ticketId: "KAN-4",
-          title: "A parent task with a title that is much longer than the row",
+          title: "A feature with a title that is much longer than the row",
           status: "to-do",
           completed: false,
           url: "https://kaneo.test/task-4",
@@ -208,6 +220,6 @@ describe("renderTaskDetail rows", () => {
     expect(lines.find((line) => line.includes("Labels"))).toBe(
       "    Labels     ● label-0  ● label-1  ● label-2  +9",
     );
-    expect(lines.find((line) => line.includes("Parent"))).toMatch(/…$/u);
+    expect(lines.find((line) => line.includes("Feature"))).toMatch(/…$/u);
   });
 });

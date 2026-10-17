@@ -150,7 +150,30 @@
 					"rose": "Rosa",
 					"crimson": "Cremisi"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FUNZIONALITÀ",
+				"titleFeature": "Nuova Funzionalità",
+				"descriptionFeature": "Crea una nuova funzionalità per raggruppare le attività di un progetto, con titolo, descrizione e altri dettagli.",
+				"featureTitlePlaceholder": "Titolo funzionalità",
+				"featureDescriptionPlaceholder": "Aggiungi una descrizione per la tua funzionalità...",
+				"successCreatedFeature": "Funzionalità creata con successo",
+				"createFeatureError": "Creazione funzionalità fallita",
+				"createButtonFeature": "Crea Funzionalità",
+				"discardTitleFeature": "Scartare la funzionalità?",
+				"discardDescriptionFeature": "I dettagli non salvati della funzionalità andranno persi.",
+				"discardButtonFeature": "Scarta funzionalità",
+				"type": "Tipo",
+				"typeTask": "Attività",
+				"typeFeature": "Funzionalità",
+				"feature": "Funzionalità",
+				"noFeature": "Nessuna funzionalità",
+				"searchFeatures": "Cerca o crea una funzionalità...",
+				"noFeaturesFound": "Nessuna funzionalità trovata",
+				"createFeature": "Crea funzionalità \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (nuova)",
+				"chooseProjectForFeature": "Scegli un progetto per selezionare una funzionalità.",
+				"loadingFeatures": "Caricamento funzionalità...",
+				"loadFeaturesError": "Impossibile caricare le funzionalità."
 			}
 		},
 		"editor": {
@@ -368,8 +391,8 @@
 					"description": "Le schede passano da una colonna all'altra man mano che il lavoro procede. Trascina questa nella colonna successiva, oppure aprila e cambia il suo stato."
 				},
 				"details": {
-					"title": "Apri questa attività e aggiungi una sottoattività",
-					"description": "Un'attività può avere una descrizione, sottoattività, etichette, un assegnatario e una scadenza. Aggiungi una sottoattività a questa per provare."
+					"title": "Apri questa attività e rendila una funzionalità",
+					"description": "Un'attività può avere una descrizione, etichette, un assegnatario e una scadenza. Rendi questa una funzionalità, poi aggiungile delle attività per raggruppare il lavoro sotto di essa."
 				},
 				"invite": {
 					"title": "Invita il tuo team",
@@ -2420,7 +2443,8 @@
 				"navigate": "Naviga",
 				"open": "Apri",
 				"close": "Chiudi"
-			}
+			},
+			"createFeature": "Crea funzionalità"
 		},
 		"sidebar": {
 			"projects": "Progetti",
@@ -2539,10 +2563,10 @@
 				"editDescription": "Modifica descrizione",
 				"commentOnTask": "Commenta",
 				"moveToProject": "Sposta in un altro progetto",
-				"createSubtask": "Crea sottoattività",
-				"setParent": "Imposta attività principale",
-				"openParent": "Apri attività principale",
-				"openSubtask": "Apri sottoattività",
+				"createSubtask": "Aggiungi un'attività a questa funzionalità",
+				"setParent": "Imposta funzionalità",
+				"openParent": "Apri funzionalità",
+				"openSubtask": "Apri un'attività di questa funzionalità",
 				"markBlockedBy": "Segna come bloccata da",
 				"markBlocking": "Segna come bloccante",
 				"markRelated": "Segna come correlata",
@@ -2797,7 +2821,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "ha commentato su {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "ha aggiunto l'attività alla funzionalità \"{{feature}}\"",
+		"removedFromFeature": "ha rimosso l'attività dalla funzionalità \"{{feature}}\"",
+		"changedFeature": "ha spostato l'attività dalla funzionalità \"{{from}}\" a \"{{to}}\"",
+		"madeFeature": "ha trasformato questa attività in una funzionalità",
+		"madeTask": "ha trasformato questa funzionalità in un'attività"
 	},
 	"tasks": {
 		"title": "Attività",
@@ -2836,7 +2865,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Sotto-attività di",
+			"subtaskOf": "Funzionalità",
 			"activity": "Attività",
 			"noActivity": "Nessuna attività trovata",
 			"openInFullPage": "Apri a pagina intera",
@@ -2972,22 +3001,22 @@
 				"related": "correlata a"
 			},
 			"blockedBy": "Bloccata da",
-			"parentPlaceholder": "Imposta attività principale…"
+			"parentPlaceholder": "Imposta funzionalità…"
 		},
 		"subtasks": {
-			"title": "Sotto-attività",
-			"inputPlaceholder": "Titolo sotto-attività...",
+			"title": "Attività",
+			"inputPlaceholder": "Titolo attività...",
 			"addAction": "Aggiungi",
-			"empty": "Nessuna sotto-attività ancora",
-			"createError": "Creazione sotto-attività fallita",
+			"empty": "Ancora nessuna attività in questa funzionalità",
+			"createError": "Creazione attività fallita",
 			"deleteSuccess": "Attività eliminata con successo",
 			"deleteError": "Eliminazione attività fallita",
 			"deleteDialogTitle": "Eliminare l'Attività?",
 			"deleteDialogDescription": "Questo rimuoverà permanentemente l'attività e tutti i suoi dati. Non puoi annullare questa azione.",
 			"deleteAction": "Elimina Attività",
-			"completeAria": "Segna sotto-attività come completata",
-			"progress": "{{completed}} di {{total}} sottoattività completate",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Segna attività come completata",
+			"progress": "{{completed}} di {{total}} attività completate",
+			"noCompletionColumn": "Questo progetto non ha una colonna corrispondente per completare o riaprire questa attività."
 		},
 		"properties": {
 			"title": "Proprietà",
@@ -3149,6 +3178,32 @@
 				"title_many": "Questa modifica viola {{count}} dipendenze",
 				"title_one": "Questa modifica viola {{count}} dipendenza",
 				"title_other": "Questa modifica viola {{count}} dipendenze"
+			},
+			"featuresLabel": "Funzionalità",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} attività, da {{start}} a {{end}}. Apre la funzionalità.",
+			"featureSliceAria_many": "{{title}}: {{count}} attività, da {{start}} a {{end}}. Apre la funzionalità.",
+			"featureSliceAria_other": "{{title}}: {{count}} attività, da {{start}} a {{end}}. Apre la funzionalità.",
+			"featureOverflowAria_one": "{{count}} altra funzionalità",
+			"featureOverflowAria_many": "{{count}} altre funzionalità",
+			"featureOverflowAria_other": "{{count}} altre funzionalità",
+			"featureBar": {
+				"ariaLabel": "Funzionalità {{title}}: apri o trascina per spostare",
+				"ariaLabelGrouped": "Funzionalità {{title}}: apri o trascina per riprogrammare o riassegnare",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} di {{count}} attività completata",
+				"progressAria_many": "{{completed}} di {{count}} attività completate",
+				"progressAria_other": "{{completed}} di {{count}} attività completate"
+			},
+			"featureLanes": {
+				"noFeature": "Nessuna funzionalità",
+				"open": "Apri funzionalità {{title}}",
+				"moveTo": "Sposta in {{name}}",
+				"remove": "Rimuovi dalla funzionalità",
+				"cannotMove": "Impossibile spostare in {{name}}",
+				"taskAriaLabel": "{{title}}: apri o trascina per riprogrammare o spostare in un'altra funzionalità",
+				"moveError": "Impossibile spostare l'attività in un'altra funzionalità",
+				"assignee": "Assegnato a {{name}}"
 			}
 		},
 		"delete": {
@@ -3331,7 +3386,8 @@
 			"groupBy": "Raggruppa per",
 			"groupByOptions": {
 				"assignee": "Assegnatario",
-				"none": "Nessuno"
+				"none": "Nessuno",
+				"feature": "Funzionalità"
 			}
 		},
 		"filterBar": {
@@ -3376,6 +3432,26 @@
 			"startsOn": "Inizia {{date}}",
 			"beforeStart": "{{date}} è prima della data di inizio",
 			"afterDue": "{{date}} è dopo la scadenza"
+		},
+		"features": {
+			"badge": "Funzionalità",
+			"chipLabel": "Funzionalità: {{title}}",
+			"unknown": "Funzionalità sconosciuta",
+			"property": "Funzionalità",
+			"none": "Nessuna funzionalità",
+			"searchPlaceholder": "Cerca funzionalità…",
+			"empty": "Ancora nessuna funzionalità in questo progetto",
+			"remove": "Rimuovi dalla funzionalità",
+			"updateError": "Aggiornamento della funzionalità fallito",
+			"type": "Tipo",
+			"typeTask": "Attività",
+			"typeFeature": "Funzionalità",
+			"convertToFeature": "Converti in funzionalità",
+			"convertToTask": "Converti in attività",
+			"typeError": "Modifica del tipo di attività fallita",
+			"convertBlocked": "Sposta fuori le attività di questa funzionalità prima di trasformarla in un'attività.",
+			"openFeature": "Apri funzionalità {{title}}",
+			"inProject": "Funzionalità nel progetto"
 		}
 	},
 	"invitations": {
@@ -3490,6 +3566,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nuova funzionalità",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

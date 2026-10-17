@@ -150,7 +150,30 @@
 					"rose": "Троянда",
 					"crimson": "Багряний"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "ФУНКЦІЯ",
+				"titleFeature": "Нова функція",
+				"descriptionFeature": "Створіть нову функцію, щоб згрупувати завдання проєкту, вказавши назву, опис та інші деталі.",
+				"featureTitlePlaceholder": "Назва функції",
+				"featureDescriptionPlaceholder": "Додайте опис до вашої функції...",
+				"successCreatedFeature": "Функцію успішно створено",
+				"createFeatureError": "Не вдалося створити функцію",
+				"createButtonFeature": "Створити функцію",
+				"discardTitleFeature": "Відхилити функцію?",
+				"discardDescriptionFeature": "Незбережені дані функції буде втрачено.",
+				"discardButtonFeature": "Відхилити функцію",
+				"type": "Тип",
+				"typeTask": "Завдання",
+				"typeFeature": "Функція",
+				"feature": "Функція",
+				"noFeature": "Без функції",
+				"searchFeatures": "Знайдіть або створіть функцію...",
+				"noFeaturesFound": "Функції не знайдено",
+				"createFeature": "Створити функцію «{{name}}»",
+				"newFeatureSuffix": "{{name}} (нова)",
+				"chooseProjectForFeature": "Оберіть проєкт, щоб вибрати функцію.",
+				"loadingFeatures": "Завантаження функцій...",
+				"loadFeaturesError": "Не вдалося завантажити функції."
 			}
 		},
 		"editor": {
@@ -369,8 +392,8 @@
 					"description": "Картки переходять з колонки в колонку в міру того, як просувається робота. Перетягніть цю до наступної колонки або відкрийте її та змініть статус."
 				},
 				"details": {
-					"title": "Відкрийте це завдання й додайте підзавдання",
-					"description": "Завдання може мати опис, підзавдання, мітки, виконавця та термін. Додайте підзавдання до цього, щоб спробувати."
+					"title": "Відкрийте це завдання й зробіть його функцією",
+					"description": "Завдання може мати опис, мітки, виконавця та термін. Зробіть це завдання функцією, а потім додайте до неї завдання, щоб згрупувати під нею роботу."
 				},
 				"invite": {
 					"title": "Запросіть команду",
@@ -2462,7 +2485,8 @@
 				"navigate": "Навігація",
 				"open": "Відкрити",
 				"close": "Закрити"
-			}
+			},
+			"createFeature": "Створити функцію"
 		},
 		"sidebar": {
 			"projects": "Проєкти",
@@ -2581,10 +2605,10 @@
 				"editDescription": "Редагувати опис",
 				"commentOnTask": "Коментувати",
 				"moveToProject": "Перемістити до іншого проєкту",
-				"createSubtask": "Створити підзавдання",
-				"setParent": "Задати батьківське завдання",
-				"openParent": "Відкрити батьківське завдання",
-				"openSubtask": "Відкрити підзавдання",
+				"createSubtask": "Додати завдання до цієї функції",
+				"setParent": "Задати функцію",
+				"openParent": "Відкрити функцію",
+				"openSubtask": "Відкрити завдання цієї функції",
 				"markBlockedBy": "Позначити як заблоковане",
 				"markBlocking": "Позначити як блокувальне",
 				"markRelated": "Позначити як пов'язане",
@@ -2844,7 +2868,12 @@
 		},
 		"moved": "перемістив завдання з «{{from}}» до «{{to}}»",
 		"created": "створив це завдання",
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "додав завдання до функції «{{feature}}»",
+		"removedFromFeature": "вилучив завдання з функції «{{feature}}»",
+		"changedFeature": "перемістив завдання з функції «{{from}}» до «{{to}}»",
+		"madeFeature": "зробив це завдання функцією",
+		"madeTask": "зробив цю функцію завданням"
 	},
 	"tasks": {
 		"title": "Завдання",
@@ -2883,7 +2912,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Підзавдання",
+			"subtaskOf": "Функція",
 			"activity": "Активність",
 			"noActivity": "Активність не знайдено",
 			"openInFullPage": "Відкрити на повну сторінку",
@@ -3019,22 +3048,22 @@
 				"blocked_by": "заблоковано"
 			},
 			"blockedBy": "Блокується",
-			"parentPlaceholder": "Задати батьківське завдання…"
+			"parentPlaceholder": "Задати функцію…"
 		},
 		"subtasks": {
-			"title": "Підзавдання",
-			"inputPlaceholder": "Назва підзавдання...",
+			"title": "Завдання",
+			"inputPlaceholder": "Назва завдання...",
 			"addAction": "Додати",
-			"empty": "Підзавдань ще немає",
-			"createError": "Не вдалося створити підзавдання",
+			"empty": "У цій функції ще немає завдань",
+			"createError": "Не вдалося створити завдання",
 			"deleteSuccess": "Завдання успішно видалено",
 			"deleteError": "Не вдалося видалити завдання",
 			"deleteDialogTitle": "Видалити завдання?",
 			"deleteDialogDescription": "Це назавжди видалить завдання та всі його дані. Цю дію неможливо скасувати.",
 			"deleteAction": "Видалити завдання",
-			"completeAria": "Позначити підзавдання виконаним",
-			"progress": "Виконано підзавдань: {{completed}} із {{total}}",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Позначити завдання виконаним",
+			"progress": "Виконано завдань: {{completed}} із {{total}}",
+			"noCompletionColumn": "У цьому проєкті немає відповідної колонки, щоб завершити або знову відкрити це завдання."
 		},
 		"properties": {
 			"title": "Властивості",
@@ -3199,6 +3228,35 @@
 				"title_many": "Ця зміна порушує {{count}} залежностей",
 				"title_one": "Ця зміна порушує {{count}} залежність",
 				"title_other": "Ця зміна порушує {{count}} залежності"
+			},
+			"featuresLabel": "Функції",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} завдання, з {{start}} по {{end}}. Відкриває функцію.",
+			"featureSliceAria_few": "{{title}}: {{count}} завдання, з {{start}} по {{end}}. Відкриває функцію.",
+			"featureSliceAria_many": "{{title}}: {{count}} завдань, з {{start}} по {{end}}. Відкриває функцію.",
+			"featureSliceAria_other": "{{title}}: {{count}} завдання, з {{start}} по {{end}}. Відкриває функцію.",
+			"featureOverflowAria_one": "Ще {{count}} функція",
+			"featureOverflowAria_few": "Ще {{count}} функції",
+			"featureOverflowAria_many": "Ще {{count}} функцій",
+			"featureOverflowAria_other": "Ще {{count}} функції",
+			"featureBar": {
+				"ariaLabel": "Функція {{title}}: відкрити або перетягнути для переміщення",
+				"ariaLabelGrouped": "Функція {{title}}: відкрити або перетягнути для зміни дат чи перепризначення",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "Виконано {{completed}} з {{count}} завдання",
+				"progressAria_few": "Виконано {{completed}} з {{count}} завдань",
+				"progressAria_many": "Виконано {{completed}} з {{count}} завдань",
+				"progressAria_other": "Виконано {{completed}} з {{count}} завдання"
+			},
+			"featureLanes": {
+				"noFeature": "Без функції",
+				"open": "Відкрити функцію {{title}}",
+				"moveTo": "Перемістити до {{name}}",
+				"remove": "Вилучити з функції",
+				"cannotMove": "Не можна перемістити до {{name}}",
+				"taskAriaLabel": "{{title}}: відкрити або перетягнути для зміни дат чи переміщення до іншої функції",
+				"moveError": "Не вдалося перемістити завдання до іншої функції",
+				"assignee": "Виконавець: {{name}}"
 			}
 		},
 		"delete": {
@@ -3388,7 +3446,8 @@
 			"groupBy": "Групувати за",
 			"groupByOptions": {
 				"assignee": "Виконавець",
-				"none": "Без групування"
+				"none": "Без групування",
+				"feature": "Функція"
 			}
 		},
 		"filterBar": {
@@ -3436,6 +3495,26 @@
 			"startsOn": "Початок: {{date}}",
 			"beforeStart": "{{date}} раніше за дату початку",
 			"afterDue": "{{date}} пізніше за термін"
+		},
+		"features": {
+			"badge": "Функція",
+			"chipLabel": "Функція: {{title}}",
+			"unknown": "Невідома функція",
+			"property": "Функція",
+			"none": "Без функції",
+			"searchPlaceholder": "Пошук функцій…",
+			"empty": "У цьому проєкті ще немає функцій",
+			"remove": "Вилучити з функції",
+			"updateError": "Не вдалося оновити функцію",
+			"type": "Тип",
+			"typeTask": "Завдання",
+			"typeFeature": "Функція",
+			"convertToFeature": "Перетворити на функцію",
+			"convertToTask": "Перетворити на завдання",
+			"typeError": "Не вдалося змінити тип завдання",
+			"convertBlocked": "Перемістіть завдання з цієї функції, перш ніж перетворити її на завдання.",
+			"openFeature": "Відкрити функцію {{title}}",
+			"inProject": "Функції в проєкті"
 		}
 	},
 	"invitations": {
@@ -3551,6 +3630,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Нова функція",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

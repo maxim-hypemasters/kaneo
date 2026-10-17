@@ -25,7 +25,7 @@ const baseRoutes: Routes = {
   "/api/project/p1": () => json(resolvedTask.project),
   "/api/column/p1": () => json(resolvedTask.columns),
   "/api/label/task/t12": () => json(sectionValue(sectionsFixture.labels)),
-  "/api/task-relation/t12": () => json(relationsFixture.slice(0, 8)),
+  "/api/task-relation/t12": () => json(relationsFixture.slice(0, 7)),
   "/api/external-link/task/t12": () =>
     json(sectionValue(sectionsFixture.links)),
   "/api/custom-field/task/t12": () =>
@@ -72,7 +72,7 @@ describe("loadTaskView", () => {
     const loaded = Result.getOrThrow(await result);
     expect(loaded.resolved).toEqual(resolvedTask);
     expect(loaded.sections.labels._tag).toBe("Loaded");
-    expect(sectionValue(loaded.sections.relations)).toHaveLength(8);
+    expect(sectionValue(loaded.sections.relations)).toHaveLength(7);
     expect(sectionValue(loaded.sections.comments)).toHaveLength(5);
     expect(loaded.projectSlugs).toEqual(new Map([["p1", "kan"]]));
     expect(paths()).toEqual([

@@ -1,9 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FolderInputIcon } from "lucide-react";
+import { invalidateFeatureChange } from "@/lib/invalidate-feature-change";
 import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import { useTranslation } from "react-i18next";
 import moveTask from "@/fetchers/task/move-task";
 import { toast } from "@/lib/toast";
+import { findCachedFeatureId } from "./find-cached-feature-id";
 
 export function useMoveTask() {
   const { t } = useTranslation();
@@ -11,7 +13,12 @@ export function useMoveTask() {
 
   return useMutation({
     mutationFn: moveTask,
-    onSuccess: (result, variables) => {
+    // A task leaves its feature when it moves to another project; the answer
+    // no longer names that feature.
+    onMutate: ({ taskId }) => ({
+      featureId: findCachedFeatureId(queryClient, taskId),
+    }),
+    onSuccess: (result, variables, context) => {
       invalidateMyWork(queryClient);
       toast.success(t("tasks:move.success"), { icon: FolderInputIcon });
       queryClient.invalidateQueries({
@@ -20,9 +27,15 @@ export function useMoveTask() {
       queryClient.invalidateQueries({
         queryKey: ["task", variables.taskId],
       });
-      queryClient.invalidateQueries({
-        queryKey: ["tasks", result.sourceProjectId],
-      });
+      // Both refresh the source board.
+      if (context?.featureId)
+        invalidateFeatureChange(queryClient, result.sourceProjectId, [
+          context.featureId,
+        ]);
+      else
+        queryClient.invalidateQueries({
+          queryKey: ["tasks", result.sourceProjectId],
+        });
       queryClient.invalidateQueries({
         queryKey: ["tasks", result.destinationProjectId],
       });

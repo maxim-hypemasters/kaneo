@@ -2,15 +2,11 @@ import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { projectTable, assetTable } from "../../database/schema";
-import { publishEvent } from "../../events";
 import { queueStorageCleanup } from "../../storage/cleanup-queue";
-import { getProjectSubtaskParentProjects } from "../../task/get-subtask-parent-projects";
 import getProject from "./get-project";
 
 async function deleteProject(id: string, workspaceId: string) {
   const existingProject = await getProject(id, workspaceId);
-
-  const parents = await getProjectSubtaskParentProjects(id);
 
   const deletedProject = await db.transaction(async (tx) => {
     // Lock the owner before collecting keys so uploads cannot race the cascade.
@@ -44,10 +40,6 @@ async function deleteProject(id: string, workspaceId: string) {
       message: "Failed to delete project",
     });
   }
-
-  await publishEvent("subtask-parents.refresh", {
-    projects: parents.filter((parent) => parent.projectId !== id),
-  });
 
   return existingProject;
 }

@@ -26,10 +26,7 @@ import {
   verifyTaskAssetUpload,
 } from "../storage/s3";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
-import {
-  hasWorkspacePermission,
-  requireWorkspacePermission,
-} from "../utils/require-workspace-permission";
+import { requireWorkspacePermission } from "../utils/require-workspace-permission";
 import {
   validateAndParseDate,
   validateDateRange,
@@ -45,6 +42,7 @@ import getTaskByTicketId from "./controllers/get-task-by-ticket-id";
 import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
 import importTasks from "./controllers/import-tasks";
+import listProjectFeatures from "./controllers/list-project-features";
 import moveTask from "./controllers/move-task";
 import reorderTasks from "./controllers/reorder-tasks";
 import {
@@ -63,6 +61,8 @@ import updateTaskDueDate from "./controllers/update-task-due-date";
 import updateTaskPriority from "./controllers/update-task-priority";
 import updateTaskStatus from "./controllers/update-task-status";
 import updateTaskTitle from "./controllers/update-task-title";
+import updateTaskFeature from "./controllers/update-task-feature";
+import updateTaskType from "./controllers/update-task-type";
 import {
   getDeferredDescriptionMatches,
   getDescriptionPage,
@@ -76,6 +76,7 @@ import {
   finalizedAssetSchema,
   imageUploadSchema,
   moveTaskResultSchema,
+  projectFeatureListSchema,
   taskByTicketIdSchema,
   taskExportSchema,
   taskImportResultSchema,
@@ -108,6 +109,8 @@ import {
   updateStatusBody,
   updateTaskBody,
   updateTitleBody,
+  updateFeatureBody,
+  updateTypeBody,
 } from "./schema";
 
 const listAssignedTasksRoute = createRoute({
@@ -128,6 +131,28 @@ const listAssignedTasksRoute = createRoute({
     400: errorResponse("Invalid workspace ID or query parameters"),
     403: errorResponse("Missing project:read or task:read permission"),
     404: errorResponse("Workspace not found"),
+  },
+});
+
+const listProjectFeaturesRoute = createRoute({
+  method: "get",
+  operationId: "listProjectFeatures",
+  path: "/features/{projectId}",
+  tags: ["Tasks"],
+  summary: "List project features",
+  description:
+    "Get the project's features (tasks of type feature), by title, with their status. Lighter than the board for picking a feature.",
+  middleware: [
+    workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
+  request: { params: projectIdParam },
+  responses: {
+    200: jsonResponse("The project's features", projectFeatureListSchema),
+    403: errorResponse(
+      "No access to the project, or missing task:read permission",
+    ),
+    404: errorResponse("Project not found"),
   },
 });
 
@@ -301,7 +326,8 @@ const createTaskRoute = createRoute({
     403: errorResponse(
       "No access to the project, or missing task:create permission",
     ),
-    404: errorResponse("Project not found"),
+    404: errorResponse("Project or feature not found"),
+    409: errorResponse("featureId isn't a feature, or the task is a feature"),
   },
 });
 
@@ -312,7 +338,7 @@ const duplicateTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Duplicate a task",
   description:
-    "Copy a task into the same project and column, including custom fields, labels, description assets and same-workspace parent links. Copying parent links also requires task:update. Comments, time entries and child tasks are not copied.",
+    "Copy a task into the same project and column, including custom fields, labels, description assets, its type and its feature. Comments, time entries and a feature's tasks are not copied.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["create"] }),
@@ -330,7 +356,7 @@ const duplicateTaskRoute = createRoute({
     400: errorResponse("Invalid task fields or request"),
     401: errorResponse("Unauthorized"),
     403: errorResponse(
-      "No access to the project, missing task:create, or missing task:update when copying parent links",
+      "No access to the project, or missing task:create permission",
     ),
     404: errorResponse("Task or project not found"),
     409: errorResponse("Task column has reached its capacity"),
@@ -345,7 +371,7 @@ const getTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Get task",
   description:
-    "Get a single task by ID, with its assignee name. The board view omits descriptions above 64 KiB and includes task and same-project parent subtask progress.",
+    "Get a single task by ID, with its assignee name. The board view omits descriptions above 64 KiB and includes the task's own feature progress and its feature's.",
   middleware: [workspaceAccess.fromTask()] as const,
   request: {
     params: taskParam,
@@ -658,6 +684,70 @@ const updateTaskTitleRoute = createRoute({
   },
 });
 
+const updateTaskFeatureRoute = createRoute({
+  method: "put",
+  operationId: "updateTaskFeature",
+  path: "/feature/{id}",
+  tags: ["Tasks"],
+  summary: "Update task feature",
+  description:
+    "Put a task into a feature of its project, or take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one.",
+  middleware: [
+    workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: taskParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateFeatureBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("The updated task", taskSchema),
+    400: errorResponse("Invalid body"),
+    403: errorResponse(
+      "No access to the project, or missing task:update permission",
+    ),
+    404: errorResponse("Task or feature not found"),
+    409: errorResponse(
+      "The target isn't a feature, or the task is itself a feature",
+    ),
+  },
+});
+
+const updateTaskTypeRoute = createRoute({
+  method: "put",
+  operationId: "updateTaskType",
+  path: "/type/{id}",
+  tags: ["Tasks"],
+  summary: "Update task type",
+  description:
+    "Turn a task into a feature, or a feature back into a task. A task that becomes a feature leaves its own feature.",
+  middleware: [
+    workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: taskParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateTypeBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("The updated task", taskSchema),
+    400: errorResponse("Invalid body"),
+    403: errorResponse(
+      "No access to the project, or missing task:update permission",
+    ),
+    404: errorResponse("Task not found"),
+    409: errorResponse("The feature still has tasks"),
+  },
+});
+
 const createTaskImageUploadRoute = createRoute({
   method: "put",
   operationId: "createTaskImageUpload",
@@ -814,6 +904,10 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       200,
     );
   })
+  .openapi(listProjectFeaturesRoute, async (c) => {
+    const { projectId } = c.req.valid("param");
+    return c.json(await listProjectFeatures(projectId), 200);
+  })
   .openapi(listTasksRoute, async (c) => {
     const { projectId } = c.req.valid("param");
     const filters = c.req.valid("query") || {};
@@ -889,6 +983,8 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       userId,
       customFields,
       draftAssetIds,
+      type,
+      featureId,
     } = c.req.valid("json");
 
     const parsedStartDate =
@@ -914,6 +1010,8 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       status,
       customFields,
       draftAssetIds,
+      type,
+      featureId,
     });
 
     return c.json(task, 200);
@@ -926,7 +1024,6 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
         taskId: id,
         title,
         currentUserId: c.get("userId"),
-        canUpdateTasks: await hasWorkspacePermission(c, { task: ["update"] }),
       }),
       200,
     );
@@ -1078,6 +1175,23 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const task = await updateTaskTitle({ id, title, currentUserId });
 
     return c.json(task, 200);
+  })
+  .openapi(updateTaskFeatureRoute, async (c) => {
+    const { id } = c.req.valid("param");
+    const { featureId } = c.req.valid("json");
+    const currentUserId = c.get("userId");
+
+    return c.json(
+      await updateTaskFeature({ id, featureId, currentUserId }),
+      200,
+    );
+  })
+  .openapi(updateTaskTypeRoute, async (c) => {
+    const { id } = c.req.valid("param");
+    const { type } = c.req.valid("json");
+    const currentUserId = c.get("userId");
+
+    return c.json(await updateTaskType({ id, type, currentUserId }), 200);
   })
   .openapi(createTaskImageUploadRoute, async (c) => {
     const { id } = c.req.valid("param");

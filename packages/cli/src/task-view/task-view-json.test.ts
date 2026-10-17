@@ -32,23 +32,19 @@ describe("toTaskViewJson", () => {
       { name: "bug", color: "red" },
       { name: "auth", color: "#8e51ff" },
     ]);
-    expect(json.parent).toEqual({
-      id: "t4",
-      ticketId: "KAN-4",
-      title: "Auth overhaul",
-      status: "to-do",
-      completed: false,
-      url: taskUrl("p1", "t4"),
-    });
-    expect(
-      json.subtasks?.map((task) => [task.ticketId, task.completed]),
-    ).toEqual([
+    expect([json.type, json.featureId, json.feature]).toEqual([
+      "feature",
+      null,
+      null,
+    ]);
+    expect(json.tasks?.map((task) => [task.ticketId, task.completed])).toEqual([
       ["KAN-13", true],
       ["KAN-14", true],
       ["KAN-15", false],
       ["KAN-16", false],
       ["KAN-17", false],
     ]);
+    expect(json.subtasks).toEqual(json.tasks);
     expect(
       json.relations?.map((relation) => [
         relation.type,
@@ -115,9 +111,51 @@ describe("toTaskViewJson", () => {
     expect(json).not.toHaveProperty("errors");
   });
 
+  it("names a task's feature, and keeps it as parent for one release", () => {
+    const feature = {
+      id: "t4",
+      title: "Auth overhaul",
+      status: "to-do",
+      isCompleted: false,
+      number: 4,
+      projectId: "p1",
+    };
+    const json = build({
+      resolved: {
+        ...resolvedTask,
+        task: { ...resolvedTask.task, type: "task", featureId: "t4" },
+      },
+      sections: {
+        ...sectionsFixture,
+        relations: loaded([
+          {
+            id: "feature:t12:t4",
+            sourceTaskId: "t4",
+            targetTaskId: "t12",
+            relationType: "subtask",
+            sourceTask: feature,
+            targetTask: { ...feature, id: "t12", number: 12 },
+          },
+        ]),
+      },
+    });
+    expect(json.feature).toEqual({
+      id: "t4",
+      ticketId: "KAN-4",
+      title: "Auth overhaul",
+      status: "to-do",
+      completed: false,
+      url: taskUrl("p1", "t4"),
+    });
+    expect(json.parent).toEqual(json.feature);
+    expect([json.featureId, json.tasks]).toEqual(["t4", []]);
+  });
+
   it("puts the new keys after the existing ones", () => {
-    expect(Object.keys(build()).slice(-8)).toEqual([
+    expect(Object.keys(build()).slice(-10)).toEqual([
       "labels",
+      "feature",
+      "tasks",
       "parent",
       "subtasks",
       "relations",
@@ -136,6 +174,8 @@ describe("toTaskViewJson", () => {
         time: failed("Time tracking is off."),
       },
     });
+    expect(json.feature).toBeNull();
+    expect(json.tasks).toBeNull();
     expect(json.parent).toBeNull();
     expect(json.subtasks).toBeNull();
     expect(json.relations).toBeNull();
@@ -172,6 +212,8 @@ describe("toTaskViewJson", () => {
     });
     expect(json).toMatchObject({
       labels: [],
+      feature: null,
+      tasks: [],
       parent: null,
       subtasks: [],
       relations: [],

@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { EASE_OUT } from "@/lib/motion";
 import type Task from "@/types/task";
+import { RemoveFromFeatureButton } from "./features/remove-from-feature-button";
 import { ReferenceAssigneeButton } from "./sections/reference-assignee-button";
 import { ReferenceStatusButton } from "./sections/reference-status-button";
 import { TaskReferenceRow } from "./sections/task-reference-row";
@@ -28,8 +29,10 @@ type SubtaskRowProps = {
   onToggleComplete: () => void;
   onNavigate: () => void;
   onDeleteClick: () => void;
+  onRemoveFromFeature: () => void;
 };
 
+// One task in a feature's Tasks section.
 export default function SubtaskRow({
   task,
   tasks,
@@ -46,6 +49,7 @@ export default function SubtaskRow({
   onToggleComplete,
   onNavigate,
   onDeleteClick,
+  onRemoveFromFeature,
 }: SubtaskRowProps) {
   const reduceMotion = useReducedMotion();
   const { t } = useTranslation();
@@ -80,6 +84,14 @@ export default function SubtaskRow({
             title={task.title}
             done={isCompleted}
             onOpen={onNavigate}
+            tag={
+              canEdit && (
+                <RemoveFromFeatureButton
+                  className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
+                  onClick={onRemoveFromFeature}
+                />
+              )
+            }
             assignee={
               <ReferenceAssigneeButton
                 tasks={tasks}

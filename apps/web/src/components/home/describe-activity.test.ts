@@ -85,6 +85,35 @@ describe("describeActivity", () => {
     );
   });
 
+  it("describes feature membership and type changes", () => {
+    expect(
+      describeActivity(
+        activity({
+          type: "feature_changed",
+          eventData: {
+            oldFeatureId: "f1",
+            oldFeatureTitle: "Checkout",
+            newFeatureId: "f2",
+            newFeatureTitle: "Payments",
+          },
+        }),
+        t,
+      ),
+    ).toBe('activity:changedFeature {"from":"Checkout","to":"Payments"}');
+    expect(
+      describeActivity(
+        activity({
+          type: "type_changed",
+          eventData: { oldType: "task", newType: "feature" },
+        }),
+        t,
+      ),
+    ).toBe("activity:madeFeature");
+    expect(describeActivity(activity({ type: "type_changed" }), t)).toBe(
+      "workspace:home.activity.updated",
+    );
+  });
+
   it("falls back to the stored text for events without event data", () => {
     expect(
       describeActivity(

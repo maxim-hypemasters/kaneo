@@ -1,7 +1,7 @@
 import { responseTimestamp, z } from "../openapi";
 
 const relationTypeDescription =
-  "How the two tasks relate: `subtask`, `blocks`, or `related`.";
+  "How the two tasks relate: `blocks` or `related`. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead.";
 
 const relatedTaskSchema = z
   .object({
@@ -33,11 +33,11 @@ export const projectTaskRelationSchema = z
   .object({
     id: z.string(),
     sourceTaskId: z.string().openapi({
-      description:
-        "The blocking task for `blocks`, the parent task for `subtask`.",
+      description: "The blocking task for `blocks`, the feature for `subtask`.",
     }),
     targetTaskId: z.string().openapi({
-      description: "The blocked task for `blocks`, the subtask for `subtask`.",
+      description:
+        "The blocked task for `blocks`, the feature's task for `subtask`.",
     }),
     relationType: z.string().openapi({ description: relationTypeDescription }),
   })

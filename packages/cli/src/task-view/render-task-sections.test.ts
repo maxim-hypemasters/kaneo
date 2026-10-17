@@ -46,7 +46,7 @@ describe("renderTaskSections", () => {
   it("renders the sections in order, each followed by a blank line", () => {
     const lines = render(json());
     expect(titles(lines)).toEqual([
-      "  Subtasks 2 of 5 done",
+      "  Tasks 2 of 5 done",
       "  Relations",
       "  Links",
       "  Custom fields",
@@ -58,10 +58,10 @@ describe("renderTaskSections", () => {
     expect(lines.at(-1)).toBe("");
   });
 
-  it("groups subtasks and relations with status dots and done markers", () => {
+  it("groups a feature's tasks and relations with status dots and done markers", () => {
     const lines = render(json());
     expect(lines.slice(0, 11)).toEqual([
-      "  Subtasks 2 of 5 done",
+      "  Tasks 2 of 5 done",
       "    ● KAN-13  Reproduce on Safari                           ✓",
       "    ● KAN-14  Add a regression test                         ✓",
       "    ● KAN-15  Handle expired device codes",

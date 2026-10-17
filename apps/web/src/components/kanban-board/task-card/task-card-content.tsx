@@ -16,8 +16,10 @@ import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { CardFieldList } from "@/components/custom-fields/card-field-list";
 import { CheckboxMark } from "@/components/custom-fields/checkbox-mark";
 import { AssigneeButton } from "@/components/task-chips/assignee-button";
+import { BoardFeatureChip } from "@/components/task-chips/board-feature-chip";
 import { ChecklistChip } from "@/components/task-chips/checklist-chip";
 import { DueDateChip } from "@/components/task-chips/due-date-chip";
+import { FeatureBadge } from "@/components/task-chips/feature-badge";
 import { LabelChips } from "@/components/task-chips/label-chips";
 import { PriorityChip } from "@/components/task-chips/priority-chip";
 import { SubtasksChip } from "@/components/task-chips/subtasks-chip";
@@ -184,9 +186,16 @@ function TaskCardContent({
 
             {!taskIsCompleted && (
               <div className="mt-2.5 flex flex-wrap items-center gap-1 empty:hidden">
+                {task.type === "feature" && <FeatureBadge />}
+                <SubtasksChip task={task} />
+                {task.featureId && (
+                  <BoardFeatureChip
+                    projectId={task.projectId}
+                    featureId={task.featureId}
+                  />
+                )}
                 {showPriority && hasPriority && <PriorityChip task={task} />}
                 {showDueDates && <DueDateChip task={task} />}
-                <SubtasksChip task={task} workspaceId={workspaceId} />
                 {showTaskItemCounts && <ChecklistChip task={task} />}
                 <TaskPullRequests
                   externalLinks={task.externalLinks}

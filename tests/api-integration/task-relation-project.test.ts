@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import db, { schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
@@ -13,7 +14,7 @@ import { createRestrictedWorkspace } from "./helpers/project-access/create-restr
 
 beforeEach(resetTestDatabase);
 
-type RelationType = "subtask" | "blocks" | "related";
+type RelationType = "blocks" | "related";
 
 async function seedTask(projectId: string, number: number) {
   const [task] = await db
@@ -60,8 +61,23 @@ async function projectWithRelations() {
   const outside = await seedTask(otherProject.id, 1);
 
   const blocks = await seedRelation(first.id, second.id, "blocks");
-  const subtask = await seedRelation(first.id, third.id, "subtask");
   const related = await seedRelation(second.id, third.id, "related");
+  // Third is a task of the feature First; old clients read that as a
+  // subtask relation with a synthetic id.
+  await db
+    .update(schema.taskTable)
+    .set({ type: "feature" })
+    .where(eq(schema.taskTable.id, first.id));
+  await db
+    .update(schema.taskTable)
+    .set({ featureId: first.id })
+    .where(eq(schema.taskTable.id, third.id));
+  const subtask = {
+    id: `feature:${third.id}:${first.id}`,
+    sourceTaskId: first.id,
+    targetTaskId: third.id,
+    relationType: "subtask",
+  };
   // Cross-project relations in either direction stay out of both projects.
   await seedRelation(first.id, outside.id, "blocks");
   await seedRelation(outside.id, third.id, "blocks");
@@ -79,8 +95,8 @@ describe("GET /task-relation/project/{projectId}", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([
       ctx.blocks,
-      ctx.subtask,
       ctx.related,
+      ctx.subtask,
     ]);
     const other = await getProjectRelations(ctx.otherProject.id);
     expect(other.status).toBe(200);

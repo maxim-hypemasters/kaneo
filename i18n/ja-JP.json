@@ -150,7 +150,30 @@
 					"rose": "ローズ",
 					"crimson": "クリムゾン"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "機能",
+				"titleFeature": "新規機能",
+				"descriptionFeature": "タイトル、説明、その他の詳細を入力して、プロジェクトのタスクをまとめる新しい機能を作成します。",
+				"featureTitlePlaceholder": "機能名",
+				"featureDescriptionPlaceholder": "機能の説明を追加...",
+				"successCreatedFeature": "機能を作成しました",
+				"createFeatureError": "機能の作成に失敗しました",
+				"createButtonFeature": "機能を作成",
+				"discardTitleFeature": "機能を破棄しますか？",
+				"discardDescriptionFeature": "保存されていない機能の詳細は失われます。",
+				"discardButtonFeature": "機能を破棄",
+				"type": "種類",
+				"typeTask": "タスク",
+				"typeFeature": "機能",
+				"feature": "機能",
+				"noFeature": "機能なし",
+				"searchFeatures": "機能を検索または作成...",
+				"noFeaturesFound": "機能が見つかりません",
+				"createFeature": "機能「{{name}}」を作成",
+				"newFeatureSuffix": "{{name}}（新規）",
+				"chooseProjectForFeature": "機能を選択するにはプロジェクトを選択してください。",
+				"loadingFeatures": "機能を読み込み中...",
+				"loadFeaturesError": "機能を読み込めませんでした。"
 			}
 		},
 		"editor": {
@@ -366,8 +389,8 @@
 					"description": "作業が進むにつれて、カードは列から列へ移動します。このカードを次の列へドラッグするか、開いてステータスを変更してください。"
 				},
 				"details": {
-					"title": "このタスクを開いてサブタスクを追加する",
-					"description": "タスクには説明、サブタスク、ラベル、担当者、期日を設定できます。試しにこのタスクにサブタスクを追加してみましょう。"
+					"title": "このタスクを開いて機能にする",
+					"description": "タスクには説明、ラベル、担当者、期日を設定できます。このタスクを機能にしてからタスクを追加し、作業をその下にまとめてみましょう。"
 				},
 				"invite": {
 					"title": "チームを招待する",
@@ -2336,7 +2359,8 @@
 				"navigate": "移動",
 				"open": "開く",
 				"close": "閉じる"
-			}
+			},
+			"createFeature": "機能を作成"
 		},
 		"sidebar": {
 			"projects": "プロジェクト",
@@ -2455,10 +2479,10 @@
 				"editDescription": "説明を編集",
 				"commentOnTask": "コメント",
 				"moveToProject": "別のプロジェクトに移動",
-				"createSubtask": "サブタスクを作成",
-				"setParent": "親タスクを設定",
-				"openParent": "親タスクを開く",
-				"openSubtask": "サブタスクを開く",
+				"createSubtask": "この機能にタスクを追加",
+				"setParent": "機能を設定",
+				"openParent": "機能を開く",
+				"openSubtask": "この機能のタスクを開く",
 				"markBlockedBy": "ブロックされている状態にする",
 				"markBlocking": "ブロックしている状態にする",
 				"markRelated": "関連としてマーク",
@@ -2703,7 +2727,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "{{forge}} でコメント"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "がタスクを機能「{{feature}}」に追加しました",
+		"removedFromFeature": "がタスクを機能「{{feature}}」から外しました",
+		"changedFeature": "がタスクを機能「{{from}}」から「{{to}}」に移動しました",
+		"madeFeature": "がこのタスクを機能にしました",
+		"madeTask": "がこの機能をタスクにしました"
 	},
 	"tasks": {
 		"title": "タスク",
@@ -2742,7 +2771,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "親タスク:",
+			"subtaskOf": "機能",
 			"activity": "アクティビティ",
 			"noActivity": "アクティビティはありません",
 			"openInFullPage": "フルページで開く",
@@ -2878,22 +2907,22 @@
 				"related": "関連"
 			},
 			"blockedBy": "ブロック元",
-			"parentPlaceholder": "親タスクを設定…"
+			"parentPlaceholder": "機能を設定…"
 		},
 		"subtasks": {
-			"title": "サブタスク",
-			"inputPlaceholder": "サブタスクのタイトル...",
+			"title": "タスク",
+			"inputPlaceholder": "タスクのタイトル...",
 			"addAction": "追加",
-			"empty": "サブタスクはまだありません",
-			"createError": "サブタスクの作成に失敗しました",
+			"empty": "この機能にはまだタスクがありません",
+			"createError": "タスクの作成に失敗しました",
 			"deleteSuccess": "タスクを削除しました",
 			"deleteError": "タスクの削除に失敗しました",
 			"deleteDialogTitle": "タスクを削除しますか？",
 			"deleteDialogDescription": "これにより、タスクとそのすべてのデータが完全に削除されます。この操作は取り消せません。",
 			"deleteAction": "タスクを削除",
-			"completeAria": "サブタスクを完了にする",
-			"progress": "サブタスク {{total}} 件中 {{completed}} 件完了",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "タスクを完了にする",
+			"progress": "タスク {{total}} 件中 {{completed}} 件完了",
+			"noCompletionColumn": "このプロジェクトには、このタスクを完了または再開するための対応する列がありません。"
 		},
 		"properties": {
 			"title": "プロパティ",
@@ -3063,6 +3092,26 @@
 				"movesLabel": "移動されるタスク",
 				"startsBeforeBlocker": "{{title}} が終わる前に開始します。",
 				"title_other": "この変更で {{count}} 件の依存関係が崩れます"
+			},
+			"featuresLabel": "機能",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_other": "{{title}}: タスク {{count}} 件、{{start}} から {{end}}。機能を開きます。",
+			"featureOverflowAria_other": "ほか {{count}} 件の機能",
+			"featureBar": {
+				"ariaLabel": "機能 {{title}}: 開く、またはドラッグして移動",
+				"ariaLabelGrouped": "機能 {{title}}: 開く、またはドラッグして日程や担当者を変更",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_other": "{{count}} 件中 {{completed}} 件のタスクが完了"
+			},
+			"featureLanes": {
+				"noFeature": "機能なし",
+				"open": "機能 {{title}} を開く",
+				"moveTo": "{{name}} に移動",
+				"remove": "機能から外す",
+				"cannotMove": "{{name}} には移動できません",
+				"taskAriaLabel": "{{title}}: 開く、またはドラッグして日程を変更するか別の機能に移動",
+				"moveError": "タスクを別の機能に移動できませんでした",
+				"assignee": "担当者: {{name}}"
 			}
 		},
 		"delete": {
@@ -3217,7 +3266,8 @@
 			"groupBy": "グループ化",
 			"groupByOptions": {
 				"assignee": "担当者",
-				"none": "なし"
+				"none": "なし",
+				"feature": "機能"
 			}
 		},
 		"filterBar": {
@@ -3256,6 +3306,26 @@
 			"startsOn": "開始: {{date}}",
 			"beforeStart": "{{date}} は開始日より前です",
 			"afterDue": "{{date}} は期日より後です"
+		},
+		"features": {
+			"badge": "機能",
+			"chipLabel": "機能: {{title}}",
+			"unknown": "不明な機能",
+			"property": "機能",
+			"none": "機能なし",
+			"searchPlaceholder": "機能を検索…",
+			"empty": "このプロジェクトにはまだ機能がありません",
+			"remove": "機能から外す",
+			"updateError": "機能の更新に失敗しました",
+			"type": "種類",
+			"typeTask": "タスク",
+			"typeFeature": "機能",
+			"convertToFeature": "機能に変換",
+			"convertToTask": "タスクに変換",
+			"typeError": "タスクの種類の変更に失敗しました",
+			"convertBlocked": "タスクにする前に、この機能のタスクを機能から外してください。",
+			"openFeature": "機能 {{title}} を開く",
+			"inProject": "プロジェクト内の機能"
 		}
 	},
 	"invitations": {
@@ -3368,6 +3438,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "新規機能",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

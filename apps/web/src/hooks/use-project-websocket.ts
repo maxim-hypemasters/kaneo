@@ -67,7 +67,9 @@ export function useProjectWebSocket(projectId: string) {
     let retryTimeout: ReturnType<typeof setTimeout> | null = null;
     let healthyTimeout: ReturnType<typeof setTimeout> | null = null;
     let requestSequence = 0;
-    const parentCountVersions = new Map<string, number>();
+    // The newest read that set each feature card's progress: a feature's own
+    // read and its tasks' reads (parentSubtaskCounts) can finish out of order.
+    const featureCountVersions = new Map<string, number>();
     let pingInterval: ReturnType<typeof setInterval> | null = null;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -123,6 +125,12 @@ export function useProjectWebSocket(projectId: string) {
         queryClient.invalidateQueries({
           queryKey: ["task", message.taskId],
         });
+        // Joining or leaving a feature announces the task and its features
+        // this way; their relation lists show the feature links.
+        if (message.type === "TASK_UPDATED" && message.taskId)
+          queryClient.invalidateQueries({
+            queryKey: ["task-relations", message.taskId],
+          });
       }
 
       if (message.type === "TASK_LABEL_UPDATED") {
@@ -446,7 +454,7 @@ export function useProjectWebSocket(projectId: string) {
                       return;
                     }
                     const staleOwnCounts =
-                      (parentCountVersions.get(taskId) ?? 0) > sequence;
+                      (featureCountVersions.get(taskId) ?? 0) > sequence;
                     if (task.projectId === projectId)
                       patchSyncTaskTitles(
                         queryClient,
@@ -454,12 +462,16 @@ export function useProjectWebSocket(projectId: string) {
                         taskId,
                         task.title,
                       );
-                    const { subtaskCounts, ...taskFields } = task;
+                    const {
+                      subtaskCounts,
+                      parentSubtaskCounts = [],
+                      ...taskFields
+                    } = task;
                     if (staleOwnCounts)
                       void queryClient.invalidateQueries({
                         queryKey: ["tasks", projectId],
                       });
-                    else parentCountVersions.set(taskId, sequence);
+                    else featureCountVersions.set(taskId, sequence);
                     queryClient.setQueryData<ProjectWithTasks>(
                       ["tasks", projectId],
                       (board) =>
@@ -480,9 +492,10 @@ export function useProjectWebSocket(projectId: string) {
                             }) ?? board)
                           : board,
                     );
-                    for (const progress of task.parentSubtaskCounts ?? []) {
+                    // The task's feature, whose card shows its progress.
+                    for (const progress of parentSubtaskCounts) {
                       if (
-                        (parentCountVersions.get(progress.taskId) ?? 0) >
+                        (featureCountVersions.get(progress.taskId) ?? 0) >
                         sequence
                       ) {
                         void queryClient.invalidateQueries({
@@ -490,7 +503,7 @@ export function useProjectWebSocket(projectId: string) {
                         });
                         continue;
                       }
-                      parentCountVersions.set(progress.taskId, sequence);
+                      featureCountVersions.set(progress.taskId, sequence);
                       queryClient.setQueryData<ProjectWithTasks>(
                         ["tasks", projectId],
                         (board) =>

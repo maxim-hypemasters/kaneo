@@ -1,6 +1,9 @@
 import { Calendar, CalendarClock, CalendarX } from "lucide-react";
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { TaskProgressBadges } from "@/components/task/task-progress-badges";
+import { FeatureBadge } from "@/components/task-chips/feature-badge";
+import { FeatureChip } from "@/components/task-chips/feature-chip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   dueDateStatusColors,
@@ -20,6 +23,8 @@ type PublicTaskCardProps = {
     labels?: Array<{ id: string; name: string; color: string }>;
     externalLinks?: Array<ExternalLink>;
   };
+  // The feature the task belongs to, when the board holds it.
+  feature?: Task;
   projectSlug: string;
   // Passed by views that hold the column, so completion comes from isFinal
   // rather than the slug fallback.
@@ -29,10 +34,12 @@ type PublicTaskCardProps = {
 
 export function PublicTaskCard({
   task,
+  feature,
   projectSlug,
   isCompleted,
   onTaskClick,
 }: PublicTaskCardProps) {
+  const { t } = useTranslation();
   const taskIsCompleted = isCompleted ?? isTaskCompleted(task.status);
   const labels = task.labels || [];
   const externalLinks = task.externalLinks || [];
@@ -75,7 +82,9 @@ export function PublicTaskCard({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => onTaskClick(task)}
-        aria-label={`View details for task ${task.title}`}
+        aria-label={t("publicProject:taskCard.viewDetailsAria", {
+          title: task.title,
+        })}
       />
       <div className="pointer-events-none">
         <div className="text-[10px] font-mono text-muted-foreground mb-2">
@@ -121,7 +130,16 @@ export function PublicTaskCard({
         )}
 
         <div className="flex flex-wrap items-center gap-2">
+          {task.type === "feature" && <FeatureBadge />}
           <TaskProgressBadges task={task} asText />
+          {feature && (
+            <span className="pointer-events-auto relative flex min-w-0">
+              <FeatureChip
+                feature={feature}
+                onOpen={() => onTaskClick(feature)}
+              />
+            </span>
+          )}
           {task.priority && (
             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-sidebar text-[10px] font-medium text-muted-foreground">
               {getPriorityIcon(task.priority ?? "")}

@@ -36,13 +36,17 @@ export const runRelationList = Effect.fn("command.task.relation.list")(
       webUrl: session.webUrl,
     });
 
-    yield* emit(json, (ui, value) =>
-      renderRelationList(ui, {
-        label: resolved.ticketId ?? resolved.task.id.slice(0, 8),
-        title: resolved.task.title,
-        url: resolved.url,
-        relations: value,
-      }),
+    // parent and subtasks are the names from before features, kept for one
+    // release.
+    yield* emit(
+      { ...json, parent: json.feature, subtasks: json.tasks },
+      (ui, value) =>
+        renderRelationList(ui, {
+          label: resolved.ticketId ?? resolved.task.id.slice(0, 8),
+          title: resolved.task.title,
+          url: resolved.url,
+          relations: value,
+        }),
     );
   },
 );
@@ -57,7 +61,7 @@ export const relationList = Command.make(
   (options) => runRelationList(options),
 ).pipe(
   Command.withDescription(
-    "Show the parent, subtasks and linked tasks of a task",
+    "Show the feature of a task, the tasks of a feature, and linked tasks",
   ),
   Command.provide(ApiLayer),
 );

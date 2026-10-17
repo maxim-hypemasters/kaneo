@@ -150,7 +150,30 @@
 					"rose": "Rosa",
 					"crimson": "Carmesí"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FUNCIONALIDAD",
+				"titleFeature": "Nueva funcionalidad",
+				"descriptionFeature": "Crear una nueva funcionalidad para agrupar tareas de un proyecto, con título, descripción y otra información.",
+				"featureTitlePlaceholder": "Título de la funcionalidad",
+				"featureDescriptionPlaceholder": "Añade una descripción para la funcionalidad...",
+				"successCreatedFeature": "Funcionalidad creada satisfactoriamente",
+				"createFeatureError": "Error al crear la funcionalidad",
+				"createButtonFeature": "Crear funcionalidad",
+				"discardTitleFeature": "¿Descartar funcionalidad?",
+				"discardDescriptionFeature": "Los detalles de la funcionalidad que no hayas guardado se perderán.",
+				"discardButtonFeature": "Descartar funcionalidad",
+				"type": "Tipo",
+				"typeTask": "Tarea",
+				"typeFeature": "Funcionalidad",
+				"feature": "Funcionalidad",
+				"noFeature": "Sin funcionalidad",
+				"searchFeatures": "Buscar o crear una funcionalidad...",
+				"noFeaturesFound": "No se han encontrado funcionalidades",
+				"createFeature": "Crear funcionalidad \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (nueva)",
+				"chooseProjectForFeature": "Elige un proyecto para seleccionar una funcionalidad.",
+				"loadingFeatures": "Cargando funcionalidades...",
+				"loadFeaturesError": "No se pudieron cargar las funcionalidades."
 			}
 		},
 		"editor": {
@@ -368,8 +391,8 @@
 					"description": "Las tarjetas pasan de columna en columna a medida que avanza el trabajo. Arrastra esta a la siguiente columna, o ábrela y cambia su estado."
 				},
 				"details": {
-					"title": "Abre esta tarea y añade una subtarea",
-					"description": "Una tarea puede tener descripción, subtareas, etiquetas, una persona asignada y fecha límite. Añade una subtarea a esta para probarlo."
+					"title": "Abre esta tarea y conviértela en una funcionalidad",
+					"description": "Una tarea puede tener descripción, etiquetas, una persona asignada y fecha límite. Convierte esta tarea en una funcionalidad y luego añádele tareas para agrupar el trabajo en ella."
 				},
 				"invite": {
 					"title": "Invita a tu equipo",
@@ -2420,7 +2443,8 @@
 				"navigate": "Navegar",
 				"open": "Abrir",
 				"close": "Cerrar"
-			}
+			},
+			"createFeature": "Crear una funcionalidad"
 		},
 		"sidebar": {
 			"projects": "Proyectos",
@@ -2539,10 +2563,10 @@
 				"editDescription": "Editar descripción",
 				"commentOnTask": "Comentar",
 				"moveToProject": "Mover a otro proyecto",
-				"createSubtask": "Crear subtarea",
-				"setParent": "Establecer tarea principal",
-				"openParent": "Abrir tarea principal",
-				"openSubtask": "Abrir subtarea",
+				"createSubtask": "Añadir una tarea a esta funcionalidad",
+				"setParent": "Establecer funcionalidad",
+				"openParent": "Abrir funcionalidad",
+				"openSubtask": "Abrir una tarea de esta funcionalidad",
 				"markBlockedBy": "Marcar como bloqueada por",
 				"markBlocking": "Marcar como bloqueante",
 				"markRelated": "Marcar como relacionada",
@@ -2797,7 +2821,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "comentado en {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "ha añadido la tarea a la funcionalidad \"{{feature}}\"",
+		"removedFromFeature": "ha quitado la tarea de la funcionalidad \"{{feature}}\"",
+		"changedFeature": "ha movido la tarea de la funcionalidad \"{{from}}\" a \"{{to}}\"",
+		"madeFeature": "ha convertido esta tarea en una funcionalidad",
+		"madeTask": "ha convertido esta funcionalidad en una tarea"
 	},
 	"tasks": {
 		"title": "Tareas",
@@ -2836,7 +2865,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Subtarea de",
+			"subtaskOf": "Funcionalidad",
 			"activity": "Actividad",
 			"noActivity": "No hay actividad",
 			"openInFullPage": "Abrir en página completa",
@@ -2972,22 +3001,22 @@
 				"blocked_by": "bloqueada por"
 			},
 			"blockedBy": "Bloqueada por",
-			"parentPlaceholder": "Establecer tarea principal…"
+			"parentPlaceholder": "Establecer funcionalidad…"
 		},
 		"subtasks": {
-			"title": "Sub-tareas",
-			"inputPlaceholder": "Título de la subtarea...",
+			"title": "Tareas",
+			"inputPlaceholder": "Título de la tarea...",
 			"addAction": "Añadir",
-			"empty": "No hay subtareas aún",
-			"createError": "Error al crear subtarea",
+			"empty": "Aún no hay tareas en esta funcionalidad",
+			"createError": "Error al crear la tarea",
 			"deleteSuccess": "Tarea eliminada correctamente",
 			"deleteError": "Error al eliminar tarea",
 			"deleteDialogTitle": "¿Eliminar tarea?",
 			"deleteDialogDescription": "Esto eliminará permanentemente la tarea y sus datos. Esta acción no puede deshacerse.",
 			"deleteAction": "Eliminar tarea",
-			"completeAria": "Marcar subtarea como completada",
-			"progress": "{{completed}} de {{total}} subtareas completadas",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Marcar tarea como completada",
+			"progress": "{{completed}} de {{total}} tareas completadas",
+			"noCompletionColumn": "Este proyecto no tiene una columna adecuada para completar o reabrir esta tarea."
 		},
 		"properties": {
 			"title": "Propiedades",
@@ -3138,6 +3167,32 @@
 				"title_many": "Este cambio rompe {{count}} dependencias",
 				"title_one": "Este cambio rompe {{count}} dependencia",
 				"title_other": "Este cambio rompe {{count}} dependencias"
+			},
+			"featuresLabel": "Funcionalidades",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} tarea, de {{start}} a {{end}}. Abre la funcionalidad.",
+			"featureSliceAria_many": "{{title}}: {{count}} tareas, de {{start}} a {{end}}. Abre la funcionalidad.",
+			"featureSliceAria_other": "{{title}}: {{count}} tareas, de {{start}} a {{end}}. Abre la funcionalidad.",
+			"featureOverflowAria_one": "{{count}} funcionalidad más",
+			"featureOverflowAria_many": "{{count}} funcionalidades más",
+			"featureOverflowAria_other": "{{count}} funcionalidades más",
+			"featureBar": {
+				"ariaLabel": "Funcionalidad {{title}}: abrir o arrastrar para mover",
+				"ariaLabelGrouped": "Funcionalidad {{title}}: abrir o arrastrar para reprogramar o reasignar",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} de {{count}} tarea completada",
+				"progressAria_many": "{{completed}} de {{count}} tareas completadas",
+				"progressAria_other": "{{completed}} de {{count}} tareas completadas"
+			},
+			"featureLanes": {
+				"noFeature": "Sin funcionalidad",
+				"open": "Abrir funcionalidad {{title}}",
+				"moveTo": "Mover a {{name}}",
+				"remove": "Quitar de la funcionalidad",
+				"cannotMove": "No se puede mover a {{name}}",
+				"taskAriaLabel": "{{title}}: abrir o arrastrar para reprogramar o mover a otra funcionalidad",
+				"moveError": "No se pudo mover la tarea a otra funcionalidad",
+				"assignee": "Asignada a {{name}}"
 			}
 		},
 		"delete": {
@@ -3331,7 +3386,8 @@
 			"groupBy": "Agrupar por",
 			"groupByOptions": {
 				"assignee": "Asignado",
-				"none": "Ninguno"
+				"none": "Ninguno",
+				"feature": "Funcionalidad"
 			}
 		},
 		"filterBar": {
@@ -3376,6 +3432,26 @@
 			"startsOn": "Empieza: {{date}}",
 			"beforeStart": "{{date}} es anterior a la fecha de inicio",
 			"afterDue": "{{date}} es posterior a la fecha límite"
+		},
+		"features": {
+			"badge": "Funcionalidad",
+			"chipLabel": "Funcionalidad: {{title}}",
+			"unknown": "Funcionalidad desconocida",
+			"property": "Funcionalidad",
+			"none": "Sin funcionalidad",
+			"searchPlaceholder": "Buscar funcionalidades…",
+			"empty": "Aún no hay funcionalidades en este proyecto",
+			"remove": "Quitar de la funcionalidad",
+			"updateError": "Error al actualizar la funcionalidad",
+			"type": "Tipo",
+			"typeTask": "Tarea",
+			"typeFeature": "Funcionalidad",
+			"convertToFeature": "Convertir en funcionalidad",
+			"convertToTask": "Convertir en tarea",
+			"typeError": "Error al cambiar el tipo de la tarea",
+			"convertBlocked": "Saca las tareas de esta funcionalidad antes de convertirla en tarea.",
+			"openFeature": "Abrir funcionalidad {{title}}",
+			"inProject": "Funcionalidades en el proyecto"
 		}
 	},
 	"invitations": {
@@ -3490,6 +3566,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nueva funcionalidad",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

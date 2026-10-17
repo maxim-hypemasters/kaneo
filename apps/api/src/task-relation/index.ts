@@ -16,6 +16,7 @@ import { validateWorkspaceAccess } from "../utils/validate-workspace-access";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import createTaskRelation from "./controllers/create-task-relation";
 import deleteTaskRelation from "./controllers/delete-task-relation";
+import { parseFeatureLinkId } from "./feature-links";
 import getProjectTaskRelations from "./controllers/get-project-task-relations";
 import getTaskRelations from "./controllers/get-task-relations";
 import {
@@ -82,12 +83,16 @@ async function scopeToSourceTask(c: Context, next: Next) {
 async function scopeToRelation(c: Context, next: Next) {
   const userId = requireUserId(c);
 
-  const id = c.req.param("id");
-  const [rel] = await db
-    .select({ sourceTaskId: taskRelationTable.sourceTaskId })
-    .from(taskRelationTable)
-    .where(eq(taskRelationTable.id, id ?? ""))
-    .limit(1);
+  const id = c.req.param("id") ?? "";
+  // A feature link's id names its task (see feature-links.ts).
+  const featureLink = parseFeatureLinkId(id);
+  const [rel] = featureLink
+    ? [{ sourceTaskId: featureLink.taskId }]
+    : await db
+        .select({ sourceTaskId: taskRelationTable.sourceTaskId })
+        .from(taskRelationTable)
+        .where(eq(taskRelationTable.id, id))
+        .limit(1);
   if (!rel) {
     throw new HTTPException(404, { message: "Task relation not found" });
   }

@@ -150,7 +150,30 @@
 					"rose": "Çəhrayı",
 					"crimson": "Tünd qırmızı"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "İmkan",
+				"titleFeature": "Yeni imkan",
+				"descriptionFeature": "Layihənin tapşırıqlarını qruplaşdırmaq üçün başlıq, təsvir və digər təfərrüatları daxil edərək yeni imkan yaradın.",
+				"featureTitlePlaceholder": "İmkanın başlığı",
+				"featureDescriptionPlaceholder": "İmkanınız üçün təsvir əlavə edin...",
+				"successCreatedFeature": "İmkan uğurla yaradıldı",
+				"createFeatureError": "İmkanı yaratmaq alınmadı",
+				"createButtonFeature": "İmkan yarat",
+				"discardTitleFeature": "İmkandan imtina edilsin?",
+				"discardDescriptionFeature": "Yadda saxlanmamış imkan təfərrüatları itiriləcək.",
+				"discardButtonFeature": "İmkandan imtina et",
+				"type": "Növ",
+				"typeTask": "Tapşırıq",
+				"typeFeature": "İmkan",
+				"feature": "İmkan",
+				"noFeature": "İmkan yoxdur",
+				"searchFeatures": "İmkanları axtar və ya yenisini yarat...",
+				"noFeaturesFound": "İmkan tapılmadı",
+				"createFeature": "\"{{name}}\" adlı imkan yarat",
+				"newFeatureSuffix": "{{name}} (yeni)",
+				"chooseProjectForFeature": "İmkan seçmək üçün layihə seçin.",
+				"loadingFeatures": "İmkanlar yüklənir...",
+				"loadFeaturesError": "İmkanları yükləmək alınmadı."
 			}
 		},
 		"editor": {
@@ -367,8 +390,8 @@
 					"description": "İş irəlilədikcə kartlar sütundan sütuna keçir. Bunu növbəti sütuna sürükləyin və ya açıb statusunu dəyişin."
 				},
 				"details": {
-					"title": "Bu tapşırığı açın və alt tapşırıq əlavə edin",
-					"description": "Tapşırıqda təsvir, alt tapşırıqlar, etiketlər, icraçı və son tarix ola bilər. Sınamaq üçün buna bir alt tapşırıq əlavə edin."
+					"title": "Bu tapşırığı açın və onu imkana çevirin",
+					"description": "Tapşırıqda təsvir, etiketlər, icraçı və son tarix ola bilər. Bunu imkana çevirin, sonra işi onun altında qruplaşdırmaq üçün ona tapşırıqlar əlavə edin."
 				},
 				"invite": {
 					"title": "Komandanızı dəvət edin",
@@ -2378,7 +2401,8 @@
 				"navigate": "Keçid et",
 				"open": "Aç",
 				"close": "Bağla"
-			}
+			},
+			"createFeature": "İmkan yarat"
 		},
 		"sidebar": {
 			"projects": "Layihələr",
@@ -2497,10 +2521,10 @@
 				"editDescription": "Təsviri redaktə et",
 				"commentOnTask": "Şərh yaz",
 				"moveToProject": "Başqa layihəyə köçür",
-				"createSubtask": "Alt tapşırıq yarat",
-				"setParent": "Əsas tapşırığı təyin et",
-				"openParent": "Əsas tapşırığı aç",
-				"openSubtask": "Alt tapşırığı aç",
+				"createSubtask": "Bu imkana tapşırıq əlavə et",
+				"setParent": "İmkanı təyin et",
+				"openParent": "İmkanı aç",
+				"openSubtask": "Bu imkanın tapşırığını aç",
 				"markBlockedBy": "Bloklanmış kimi qeyd et",
 				"markBlocking": "Bloklayan kimi qeyd et",
 				"markRelated": "Əlaqəli kimi qeyd et",
@@ -2750,7 +2774,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "{{forge}}-da şərh yazdı"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "Tapşırığı \"{{feature}}\" imkanına əlavə etdi",
+		"removedFromFeature": "Tapşırığı \"{{feature}}\" imkanından çıxardı",
+		"changedFeature": "Tapşırığı \"{{from}}\" imkanından \"{{to}}\" imkanına köçürdü",
+		"madeFeature": "Bu tapşırığı imkana çevirdi",
+		"madeTask": "Bu imkanı tapşırığa çevirdi"
 	},
 	"tasks": {
 		"title": "Tapşırıqlar",
@@ -2789,7 +2818,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Əsas tapşırıq",
+			"subtaskOf": "İmkan",
 			"activity": "Fəaliyyət",
 			"noActivity": "Fəaliyyət tapılmadı",
 			"openInFullPage": "Tam səhifədə aç",
@@ -2925,22 +2954,22 @@
 				"related": "Əlaqəlidir"
 			},
 			"blockedBy": "Bloklayan",
-			"parentPlaceholder": "Əsas tapşırığı təyin et…"
+			"parentPlaceholder": "İmkanı təyin et…"
 		},
 		"subtasks": {
-			"title": "Alt tapşırıqlar",
-			"inputPlaceholder": "Alt tapşırığın başlığı...",
+			"title": "Tapşırıqlar",
+			"inputPlaceholder": "Tapşırığın başlığı...",
 			"addAction": "Əlavə et",
-			"empty": "Hələ alt tapşırıq yoxdur",
-			"createError": "Alt tapşırığı yaratmaq alınmadı",
+			"empty": "Bu imkanda hələ tapşırıq yoxdur",
+			"createError": "Tapşırığı yaratmaq alınmadı",
 			"deleteSuccess": "Tapşırıq uğurla silindi",
 			"deleteError": "Tapşırığı silmək alınmadı",
 			"deleteDialogTitle": "Tapşırıq silinsin?",
 			"deleteDialogDescription": "Bu, tapşırığı və bütün məlumatlarını həmişəlik siləcək. Bu əməliyyatı geri qaytara bilməzsiniz.",
 			"deleteAction": "Tapşırığı sil",
-			"completeAria": "Alt tapşırığı tamamlanmış kimi işarələ",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask.",
-			"progress": "{{completed}} of {{total}} subtasks completed"
+			"completeAria": "Tapşırığı tamamlanmış kimi işarələ",
+			"noCompletionColumn": "Bu layihədə bu tapşırığı tamamlamaq və ya yenidən açmaq üçün uyğun sütun yoxdur.",
+			"progress": "{{total}} tapşırıqdan {{completed}} tamamlanıb"
 		},
 		"properties": {
 			"title": "Xüsusiyyətlər",
@@ -3113,6 +3142,29 @@
 				"startsBeforeBlocker": "{{title}} bitməzdən əvvəl başlayır.",
 				"title_one": "Bu dəyişiklik {{count}} asılılığı pozur",
 				"title_other": "Bu dəyişiklik {{count}} asılılığı pozur"
+			},
+			"featuresLabel": "İmkanlar",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} tapşırıq, {{start}} – {{end}}. İmkanı açır.",
+			"featureSliceAria_other": "{{title}}: {{count}} tapşırıq, {{start}} – {{end}}. İmkanı açır.",
+			"featureOverflowAria_one": "Daha {{count}} imkan",
+			"featureOverflowAria_other": "Daha {{count}} imkan",
+			"featureBar": {
+				"ariaLabel": "İmkan {{title}}: aç və ya köçürmək üçün sürüklə",
+				"ariaLabelGrouped": "İmkan {{title}}: aç və ya tarixini dəyişmək, yaxud yenidən təyin etmək üçün sürüklə",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{count}} tapşırıqdan {{completed}} tamamlanıb",
+				"progressAria_other": "{{count}} tapşırıqdan {{completed}} tamamlanıb"
+			},
+			"featureLanes": {
+				"noFeature": "İmkan yoxdur",
+				"open": "{{title}} imkanını aç",
+				"moveTo": "{{name}} imkanına köçür",
+				"remove": "İmkandan çıxar",
+				"cannotMove": "{{name}} imkanına köçürmək olmur",
+				"taskAriaLabel": "{{title}}: aç və ya tarixini dəyişmək, yaxud başqa imkana köçürmək üçün sürüklə",
+				"moveError": "Tapşırığı başqa imkana köçürmək alınmadı",
+				"assignee": "{{name}} adlı şəxsə təyin edilib"
 			}
 		},
 		"delete": {
@@ -3274,7 +3326,8 @@
 			"groupBy": "Qruplaşdırma meyarı",
 			"groupByOptions": {
 				"assignee": "İcraçı",
-				"none": "Heç biri"
+				"none": "Heç biri",
+				"feature": "İmkan"
 			}
 		},
 		"filterBar": {
@@ -3316,6 +3369,26 @@
 			"startsOn": "Başlayır: {{date}}",
 			"beforeStart": "{{date}} başlama tarixindən əvvəldir",
 			"afterDue": "{{date}} son tarixdən sonradır"
+		},
+		"features": {
+			"badge": "İmkan",
+			"chipLabel": "İmkan: {{title}}",
+			"unknown": "Naməlum imkan",
+			"property": "İmkan",
+			"none": "İmkan yoxdur",
+			"searchPlaceholder": "İmkanları axtar…",
+			"empty": "Bu layihədə hələ imkan yoxdur",
+			"remove": "İmkandan çıxar",
+			"updateError": "İmkanı yeniləmək alınmadı",
+			"type": "Növ",
+			"typeTask": "Tapşırıq",
+			"typeFeature": "İmkan",
+			"convertToFeature": "İmkana çevir",
+			"convertToTask": "Tapşırığa çevir",
+			"typeError": "Tapşırığın növünü dəyişmək alınmadı",
+			"convertBlocked": "Bu imkanı tapşırığa çevirməzdən əvvəl onun tapşırıqlarını oradan çıxarın.",
+			"openFeature": "{{title}} imkanını aç",
+			"inProject": "Layihədəki imkanlar"
 		}
 	},
 	"invitations": {
@@ -3429,6 +3502,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Yeni imkan",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

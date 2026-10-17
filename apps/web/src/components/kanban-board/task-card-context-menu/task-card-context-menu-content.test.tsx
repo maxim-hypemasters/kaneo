@@ -5,8 +5,22 @@ import TaskCardContextMenuContent from "./task-card-context-menu-content";
 
 const duplicateTask = vi.fn();
 const canCreateTasks = vi.fn(() => true);
+const { updateTaskType, updateTaskFeature, toastError } = vi.hoisted(() => ({
+  updateTaskType: vi.fn(),
+  updateTaskFeature: vi.fn(),
+  toastError: vi.fn(),
+}));
 vi.mock("@/hooks/mutations/task/use-duplicate-task", () => ({
   useDuplicateTask: () => ({ mutate: duplicateTask }),
+}));
+vi.mock("@/hooks/mutations/task/use-update-task-type", () => ({
+  useUpdateTaskType: () => ({ mutateAsync: updateTaskType }),
+}));
+vi.mock("@/hooks/mutations/task/use-update-task-feature", () => ({
+  useUpdateTaskFeature: () => ({ mutateAsync: updateTaskFeature }),
+}));
+vi.mock("@/lib/toast", () => ({
+  toast: { error: toastError, success: vi.fn() },
 }));
 
 afterEach(() => {
@@ -24,11 +38,13 @@ vi.mock("@/components/ui/context-menu", () => ({
   ContextMenuItem: ({
     children,
     onClick,
+    disabled,
   }: {
     children: React.ReactNode;
     onClick?: () => void;
+    disabled?: boolean;
   }): React.JSX.Element => (
-    <button type="button" onClick={onClick}>
+    <button type="button" onClick={onClick} disabled={disabled}>
       {children}
     </button>
   ),
@@ -197,4 +213,70 @@ it("hides duplication without task-create permission", () => {
   canCreateTasks.mockReturnValue(false);
   renderTask(task);
   expect(screen.queryByText("tasks:actions.duplicate")).toBeNull();
+});
+
+describe("feature actions", () => {
+  it("converts a task into a feature", () => {
+    renderTask(task);
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:features.convertToFeature" }),
+    );
+    expect(updateTaskType).toHaveBeenCalledWith({ task, type: "feature" });
+    expect(screen.queryByText("tasks:features.convertToTask")).toBeNull();
+    expect(screen.queryByText("tasks:features.remove")).toBeNull();
+  });
+
+  it("converts an empty feature into a task", () => {
+    const feature = {
+      ...task,
+      type: "feature" as const,
+      subtaskCounts: { completed: 0, total: 0 },
+    };
+    renderTask(feature);
+    const convert = screen.getByRole("button", {
+      name: "tasks:features.convertToTask",
+    });
+    expect(convert).toBeEnabled();
+    fireEvent.click(convert);
+    expect(updateTaskType).toHaveBeenCalledWith({
+      task: feature,
+      type: "task",
+    });
+  });
+
+  it("explains why a feature with tasks can't become a task", () => {
+    renderTask({
+      ...task,
+      type: "feature",
+      subtaskCounts: { completed: 1, total: 3 },
+    });
+    const convert = screen.getByRole("button", {
+      name: /tasks:features.convertToTask/,
+    });
+    expect(convert).toBeDisabled();
+    expect(convert).toHaveTextContent("tasks:features.convertBlocked");
+  });
+
+  it("takes a task out of its feature", () => {
+    const member = { ...task, featureId: "feature-1" };
+    renderTask(member);
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:features.remove" }),
+    );
+    expect(updateTaskFeature).toHaveBeenCalledWith({
+      task: member,
+      featureId: null,
+    });
+  });
+
+  it("reports a failed conversion", async () => {
+    updateTaskType.mockRejectedValueOnce(new Error("409"));
+    renderTask(task);
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:features.convertToFeature" }),
+    );
+    await vi.waitFor(() =>
+      expect(toastError).toHaveBeenCalledWith("tasks:features.typeError"),
+    );
+  });
 });

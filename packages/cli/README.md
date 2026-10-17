@@ -85,7 +85,7 @@ Credentials are resolved in this order: `--token`, then `KANEO_API_KEY`, then th
 | `kaneo task status`, `move`, `assign`, `field` | Change a task's column, project, assignee or custom fields |
 | `kaneo task bulk` | Apply one change to many tasks at once |
 | `kaneo task attach`, `images` | Upload files to a task, show the images in its description |
-| `kaneo task relation`, `link`, `activity` | Subtasks and blockers, links, and the task's history |
+| `kaneo task relation`, `link`, `activity` | Features, blockers and related tasks, links, and the task's history |
 | `kaneo task export`, `import` | Export a project's tasks as JSON and create tasks from such a file |
 | `kaneo comment list`, `add`, `edit`, `delete` | Read and manage task comments |
 | `kaneo label list`, `create`, `edit`, `delete` | Manage workspace labels |
@@ -107,6 +107,17 @@ Credentials are resolved in this order: `--token`, then `KANEO_API_KEY`, then th
 The [command reference](https://kaneo.app/docs/cli/reference) lists every argument and flag. Run any command with `--help` for the same information, and `kaneo --completions zsh` (or `bash`, `fish`, `sh`) to print a shell completion script.
 
 Tasks are addressed by their ticket ID, such as `KAN-123`, or by id. When a required workspace, project or column is missing and you are in a terminal, the CLI offers a searchable picker. In scripts it fails with an error that says which flag to pass.
+
+A feature is a task that groups the tasks of one piece of work, and each task belongs to at most one feature of its project:
+
+```bash
+kaneo task create "Onboarding" -p KAN --type feature   # a feature, KAN-12
+kaneo task create "Write the welcome email" --feature KAN-12
+kaneo task edit KAN-14 --feature KAN-12                # or --feature none to take it out
+kaneo task edit KAN-9 --type feature                   # --type task turns a feature without tasks back
+```
+
+`kaneo task view` and `kaneo task relation list` show a task's feature, or a feature's tasks. `--parent` on `task create` and the `subtask-of` and `parent-of` relation words still work but are deprecated: they put the task into a feature. In JSON, `parent` and `subtasks` repeat `feature` and `tasks` for one release.
 
 Commands that delete or remove data ask for confirmation in a terminal and need `--yes` in scripts. Comments and descriptions can be read from a file with `-F <file>`, or from stdin with `-`.
 

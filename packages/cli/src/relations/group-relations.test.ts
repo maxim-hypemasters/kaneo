@@ -16,7 +16,7 @@ const task = (id: string, number: number, done = false): RelatedTask => ({
 
 const tasks = {
   me: task("me", 3),
-  parent: task("parent", 1),
+  feature: task("feature", 1),
   child1: task("child1", 10),
   child2: task("child2", 4, true),
   blocker: task("blocker", 7),
@@ -48,23 +48,23 @@ const all = [
   relation(tasks.related, tasks.me, "related"),
   relation(tasks.me, tasks.child1, "subtask"),
   relation(tasks.blocker, tasks.me, "blocks"),
-  relation(tasks.parent, tasks.me, "subtask"),
+  relation(tasks.feature, tasks.me, "subtask"),
   relation(tasks.me, tasks.blocked, "blocks"),
   relation(tasks.me, tasks.child2, "subtask"),
 ];
 
 describe("groupRelations", () => {
-  it("splits the parent, subtasks and other relations", () => {
+  it("splits the feature, its tasks and other relations", () => {
     const grouped = groupRelations(all, "me", context);
-    expect(grouped.parent).toEqual({
-      id: "parent",
+    expect(grouped.feature).toEqual({
+      id: "feature",
       ticketId: "KAN-1",
-      title: "Task parent",
+      title: "Task feature",
       status: "to-do",
       completed: false,
-      url: "https://kaneo.test/dashboard/workspace/w1/project/p1/task/parent",
+      url: "https://kaneo.test/dashboard/workspace/w1/project/p1/task/feature",
     });
-    expect(grouped.subtasks.map((item) => item.ticketId)).toEqual([
+    expect(grouped.tasks.map((item) => item.ticketId)).toEqual([
       "KAN-4",
       "KAN-10",
     ]);
@@ -81,20 +81,20 @@ describe("groupRelations", () => {
     ]);
   });
 
-  it("keeps extra parents as subtask-of relations", () => {
-    const second = task("second", 2);
+  it("reads a feature's tasks from its synthetic feature links", () => {
     const grouped = groupRelations(
       [
-        relation(tasks.parent, tasks.me, "subtask"),
-        relation(second, tasks.me, "subtask"),
+        {
+          ...relation(tasks.me, tasks.child1, "subtask"),
+          id: "feature:child1:me",
+        },
       ],
       "me",
       context,
     );
-    expect(grouped.parent?.id).toBe("parent");
-    expect(grouped.relations).toEqual([
-      expect.objectContaining({ type: "subtask-of", direction: "incoming" }),
-    ]);
+    expect(grouped.feature).toBeNull();
+    expect(grouped.tasks.map((item) => item.id)).toEqual(["child1"]);
+    expect(grouped.relations).toEqual([]);
   });
 
   it("leaves the ticket id null for unknown projects", () => {
@@ -108,8 +108,8 @@ describe("groupRelations", () => {
 
   it("is empty without relations", () => {
     expect(groupRelations([], "me", context)).toEqual({
-      parent: null,
-      subtasks: [],
+      feature: null,
+      tasks: [],
       relations: [],
     });
   });

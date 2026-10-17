@@ -54,6 +54,9 @@ let storedProject: { id: string; columns: unknown[] } | null = null;
 let uploadAsset: ((file: File) => Promise<unknown>) | undefined;
 const stageUpload = vi.fn();
 let customFieldDefs: unknown[] | undefined;
+let projectFeatures:
+  | { id: string; title: string; number: number | null; status: string }[]
+  | undefined;
 vi.mock("@/lib/upload-draft-asset", () => ({
   uploadDraftAsset: (...args: unknown[]) => stageUpload(...args),
 }));
@@ -65,7 +68,11 @@ beforeEach(() => {
     { id: "project-2", name: "Beta", slug: "bet" },
   ];
   storedProject = null;
+  setProject.mockReset();
   customFieldDefs = undefined;
+  projectFeatures = [
+    { id: "checkout", title: "Checkout", number: 3, status: "to-do" },
+  ];
   columnsError = false;
   columnsFetching = false;
   refetchColumns.mockImplementation(async () => ({
@@ -78,7 +85,7 @@ beforeEach(() => {
   useLocation.mockReturnValue({ pathname: "/dashboard/workspace/workspace-1" });
 });
 const createTask = vi.fn(async (input: Record<string, unknown>) => ({
-  id: "task-1",
+  id: input.type === "feature" ? "feature-1" : "task-1",
   title: input.title,
   status: input.status,
   projectId: input.projectId,
@@ -178,13 +185,21 @@ vi.mock(
   }),
 );
 
+vi.mock("@/hooks/queries/task/use-get-project-features", () => ({
+  useGetProjectFeatures: () => ({
+    data: projectFeatures,
+    isPending: projectFeatures === undefined,
+  }),
+}));
+
 vi.mock("@/hooks/queries/project/use-get-projects", () => ({
   default: () => ({ data: projects }),
 }));
 
-vi.mock("@/store/project", () => ({
-  default: () => ({ project: storedProject, setProject }),
-}));
+vi.mock("@/store/project", () => {
+  const state = () => ({ project: storedProject, setProject });
+  return { default: Object.assign(state, { getState: state }) };
+});
 
 vi.mock("@/lib/toast", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
@@ -741,5 +756,553 @@ describe("CreateTaskModal custom fields", () => {
         }),
       ),
     );
+  });
+});
+
+const featureChip = (name = "common:modals.createTask.feature") =>
+  screen.getByRole("button", { name });
+
+async function openFeaturePicker(name?: string) {
+  fireEvent.click(featureChip(name));
+  return screen.findByPlaceholderText(
+    "common:modals.createTask.searchFeatures",
+  );
+}
+
+async function pickFeature(option: RegExp) {
+  await openFeaturePicker();
+  await act(async () => {
+    fireEvent.click(await screen.findByRole("option", { name: option }));
+  });
+}
+
+async function chooseNewFeature(title: string) {
+  const search = await openFeaturePicker();
+  fireEvent.change(search, { target: { value: title } });
+  await act(async () => {
+    fireEvent.click(
+      await screen.findByRole("option", {
+        name: /common:modals.createTask.createFeature/,
+      }),
+    );
+  });
+}
+
+const sentRequests = () =>
+  createTask.mock.calls.map(([input]) => ({
+    title: input.title,
+    type: input.type,
+    featureId: input.featureId,
+  }));
+
+describe("CreateTaskModal features", () => {
+  it("creates a feature, in the feature's words, without a feature of its own", async () => {
+    const { toast } = await import("@/lib/toast");
+    render(<CreateTaskModal open type="feature" onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+
+    expect(
+      screen.getByText("common:modals.createTask.titleFeature"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("common:modals.createTask.createButtonFeature"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "common:modals.createTask.feature",
+      }),
+    ).toBeNull();
+    fireEvent.change(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+      { target: { value: "Checkout v2" } },
+    );
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(createTask).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: "project-2", type: "feature" }),
+    );
+    expect(sentRequests()).toEqual([
+      { title: "Checkout v2", type: "feature", featureId: undefined },
+    ]);
+    expect(toast.success).toHaveBeenCalledWith(
+      "common:modals.createTask.successCreatedFeature",
+      expect.anything(),
+    );
+  });
+
+  it("switches a task to a feature with the Type chip", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickFeature(/Checkout/);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "common:modals.createTask.type common:modals.createTask.typeTask",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitemradio", {
+        name: /common:modals.createTask.typeFeature/,
+      }),
+    );
+
+    expect(
+      await screen.findByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "common:modals.createTask.feature Checkout",
+      }),
+    ).toBeNull();
+    fireEvent.change(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+      { target: { value: "Payments" } },
+    );
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentRequests()).toEqual([
+      { title: "Payments", type: "feature", featureId: undefined },
+    ]);
+  });
+
+  it("explains that a project comes first", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+
+    fireEvent.click(featureChip());
+
+    expect(
+      await screen.findByText(
+        "common:modals.createTask.chooseProjectForFeature",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("creates the task in the picked feature", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickFeature(/Checkout/);
+
+    expect(
+      featureChip("common:modals.createTask.feature Checkout"),
+    ).toBeInTheDocument();
+    enterTitle("Card form");
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentRequests()).toEqual([
+      { title: "Card form", type: "task", featureId: "checkout" },
+    ]);
+  });
+
+  it("creates a new feature first, then the task in it", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+
+    expect(
+      featureChip(
+        "common:modals.createTask.feature common:modals.createTask.newFeatureSuffix",
+      ),
+    ).toBeInTheDocument();
+    expect(createTask).not.toHaveBeenCalled();
+    enterTitle("Card form");
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(2));
+    expect(sentRequests()).toEqual([
+      { title: "Payments", type: "feature", featureId: undefined },
+      { title: "Card form", type: "task", featureId: "feature-1" },
+    ]);
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      projectId: "project-2",
+      status: "to-do",
+      description: "",
+    });
+  });
+
+  it("creates nothing for a new feature when the dialog is discarded", async () => {
+    const onClose = vi.fn();
+    render(<CreateTaskModal open onClose={onClose} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+    enterTitle("Card form");
+
+    fireEvent.click(screen.getByText("common:actions.cancel"));
+    fireEvent.click(
+      await screen.findByText("common:modals.createTask.discardButton"),
+    );
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(createTask).not.toHaveBeenCalled();
+  });
+
+  it("clears the feature when the project changes", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickFeature(/Checkout/);
+
+    fireEvent.click(screen.getByText("Beta"));
+    fireEvent.click(await screen.findByText("Alpha"));
+
+    expect(featureChip()).toBeInTheDocument();
+    enterTitle("Card form");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentRequests()).toEqual([
+      { title: "Card form", type: "task", featureId: undefined },
+    ]);
+  });
+
+  it("retries a failed task in the feature it already created", async () => {
+    const { toast } = await import("@/lib/toast");
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+    enterTitle("Card form");
+    createTask.mockImplementationOnce(async (input) => ({
+      id: "feature-1",
+      title: input.title,
+      status: input.status,
+      projectId: input.projectId,
+      createdAt: "2026-08-05T00:00:00.000Z",
+    }));
+    createTask.mockRejectedValueOnce(new Error("Task failed"));
+
+    submit();
+
+    await vi.waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Task failed"),
+    );
+    expect(
+      featureChip("common:modals.createTask.feature Payments"),
+    ).toBeInTheDocument();
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(3));
+    expect(sentRequests()).toEqual([
+      { title: "Payments", type: "feature", featureId: undefined },
+      { title: "Card form", type: "task", featureId: "feature-1" },
+      { title: "Card form", type: "task", featureId: "feature-1" },
+    ]);
+  });
+
+  it("keeps creating features with Create more", async () => {
+    render(<CreateTaskModal open type="feature" onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    fireEvent.click(
+      screen.getByLabelText("common:modals.createTask.createMore"),
+    );
+    const title = screen.getByPlaceholderText(
+      "common:modals.createTask.featureTitlePlaceholder",
+    );
+    fireEvent.change(title, { target: { value: "Payments" } });
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(title).toHaveValue(""));
+    expect(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+    ).toBe(title);
+  });
+
+  it("keeps the type and the feature for the next one with Create more", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+    fireEvent.click(
+      screen.getByLabelText("common:modals.createTask.createMore"),
+    );
+    enterTitle("Card form");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(2));
+
+    await vi.waitFor(() =>
+      expect(
+        screen.getByPlaceholderText(
+          "common:modals.createTask.taskTitlePlaceholder",
+        ),
+      ).toHaveValue(""),
+    );
+    expect(
+      featureChip("common:modals.createTask.feature Payments"),
+    ).toBeInTheDocument();
+    enterTitle("Card errors");
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(3));
+    expect(sentRequests()[2]).toEqual({
+      title: "Card errors",
+      type: "task",
+      featureId: "feature-1",
+    });
+  });
+});
+
+async function chooseType(option: RegExp) {
+  fireEvent.click(
+    screen.getByRole("button", { name: /^common:modals.createTask.type / }),
+  );
+  fireEvent.click(await screen.findByRole("menuitemradio", { name: option }));
+}
+
+const featureCreated = (input: Record<string, unknown>) => ({
+  id: "feature-1",
+  title: input.title,
+  status: input.status,
+  projectId: input.projectId,
+  createdAt: "2026-08-05T00:00:00.000Z",
+});
+
+describe("CreateTaskModal new features", () => {
+  it("creates only the feature once the Type chip makes it a feature", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+
+    await chooseType(/common:modals.createTask.typeFeature/);
+    fireEvent.change(
+      await screen.findByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+      { target: { value: "Checkout v2" } },
+    );
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentRequests()).toEqual([
+      { title: "Checkout v2", type: "feature", featureId: undefined },
+    ]);
+  });
+
+  it("gives the new feature only its title, not the task's details", async () => {
+    render(
+      <CreateTaskModal
+        open
+        projectId="project-2"
+        status="in-progress"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    await chooseNewFeature("Payments");
+    enterTitle("Card form");
+    fireEvent.change(screen.getByTestId("description-editor"), {
+      target: { value: "Task notes" },
+    });
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(2));
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      title: "Payments",
+      type: "feature",
+      projectId: "project-2",
+      status: "in-progress",
+      description: "",
+      userId: "",
+      priority: "no-priority",
+    });
+    expect(createTask.mock.calls[0][0]).not.toHaveProperty("featureId");
+    expect(createTask.mock.calls[1][0]).toMatchObject({
+      title: "Card form",
+      type: "task",
+      featureId: "feature-1",
+      status: "in-progress",
+      description: "Task notes",
+    });
+  });
+
+  it("gives the new feature the project's required custom fields", async () => {
+    customFieldDefs = [
+      customField("customer", "text", true),
+      customField("points", "number", false),
+    ];
+    render(<CreateTaskModal open onClose={vi.fn()} projectId="project-2" />, {
+      wrapper: createWrapper(),
+    });
+    enterTitle("Card form");
+    for (const [id, value] of [
+      ["customer", "Acme Corp"],
+      ["points", "3"],
+    ]) {
+      fireEvent.click(
+        document.querySelector(`[data-custom-field="${id}"]`) as HTMLElement,
+      );
+      const input = await screen.findByLabelText(id);
+      fireEvent.change(input, { target: { value } });
+      fireEvent.keyDown(input, { key: "Enter" });
+    }
+    await chooseNewFeature("Payments");
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(2));
+    // A project requires its required fields of features too; the rest stay
+    // the task's own.
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      type: "feature",
+      customFields: [{ fieldId: "customer", value: "Acme Corp" }],
+    });
+    expect(createTask.mock.calls[1][0]).toMatchObject({
+      type: "task",
+      customFields: [
+        { fieldId: "customer", value: "Acme Corp" },
+        { fieldId: "points", value: "3" },
+      ],
+    });
+  });
+
+  it("lets a new feature's name start with a digit", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} projectId="project-2" />, {
+      wrapper: createWrapper(),
+    });
+    const search = await openFeaturePicker();
+
+    fireEvent.keyDown(search, { key: "2" });
+    fireEvent.change(search, { target: { value: "2FA" } });
+
+    expect(
+      await screen.findByRole("option", {
+        name: /common:modals\.createTask\.createFeature/,
+      }),
+    ).toBeInTheDocument();
+    expect(featureChip()).toBeInTheDocument();
+  });
+
+  it("creates the new feature once when submitted twice", async () => {
+    let finishFeature!: () => void;
+    createTask.mockImplementationOnce(
+      (input) =>
+        new Promise((resolve) => {
+          finishFeature = () => resolve(featureCreated(input));
+        }),
+    );
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+    enterTitle("Card form");
+
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    submit();
+    fireEvent.keyDown(document, { key: "Enter", metaKey: true });
+    await act(async () => finishFeature());
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(2));
+    await act(async () => {});
+    expect(sentRequests()).toEqual([
+      { title: "Payments", type: "feature", featureId: undefined },
+      { title: "Card form", type: "task", featureId: "feature-1" },
+    ]);
+  });
+
+  it("creates no task when the new feature fails, and tries the feature again", async () => {
+    const { toast } = await import("@/lib/toast");
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+    enterTitle("Card form");
+    createTask.mockRejectedValueOnce(new Error("Feature failed"));
+
+    submit();
+
+    await vi.waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Feature failed"),
+    );
+    expect(createTask).toHaveBeenCalledOnce();
+    expect(
+      featureChip(
+        "common:modals.createTask.feature common:modals.createTask.newFeatureSuffix",
+      ),
+    ).toBeInTheDocument();
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(3));
+    expect(sentRequests()).toEqual([
+      { title: "Payments", type: "feature", featureId: undefined },
+      { title: "Payments", type: "feature", featureId: undefined },
+      { title: "Card form", type: "task", featureId: "feature-1" },
+    ]);
+  });
+
+  it("keeps the new feature on the open board when its task joins it", async () => {
+    storedProject = { id: "project-2", columns: [{ id: "to-do", tasks: [] }] };
+    setProject.mockImplementation((next) => {
+      storedProject = next;
+    });
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+    enterTitle("Card form");
+    submit();
+
+    await vi.waitFor(() => expect(setProject).toHaveBeenCalledTimes(2));
+    const board = storedProject as unknown as {
+      columns: { tasks: { id: string; featureId?: string }[] }[];
+    };
+    expect(board.columns[0].tasks.map(({ id }) => id)).toEqual([
+      "feature-1",
+      "task-1",
+    ]);
+  });
+
+  it("asks to discard a feature in the feature's words", async () => {
+    render(<CreateTaskModal open type="feature" onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+      { target: { value: "Payments" } },
+    );
+
+    fireEvent.click(screen.getByText("common:actions.cancel"));
+
+    expect(
+      await screen.findByText("common:modals.createTask.discardTitleFeature"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("common:modals.createTask.discardDescriptionFeature"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("common:modals.createTask.discardButtonFeature"),
+    ).toBeInTheDocument();
   });
 });

@@ -8,10 +8,12 @@ import { assignImportTaskNumbers } from "./assign-import-task-numbers";
 import { loadAssignableMembers } from "./load-assignable-members";
 import { createAssigneeMatcher } from "./match-assignees";
 import { planImportColumns } from "./plan-import-columns";
+import { planImportFeatures } from "./plan-import-features";
 import { planImportRelations } from "./plan-import-relations";
 import { planImportTasks } from "./plan-import-tasks";
 import { writeImportColumns } from "./write-import-columns";
 import { writeImportComments } from "./write-import-comments";
+import { writeImportFeatures } from "./write-import-features";
 import { writeImportLabels } from "./write-import-labels";
 import { writeImportRelations } from "./write-import-relations";
 import { writeImportTasks } from "./write-import-tasks";
@@ -89,13 +91,18 @@ export async function writeProjectContent(
       })
     : 0;
 
-  const relations = await writeImportRelations(
-    tx,
+  const hierarchy = planImportFeatures(
     planImportRelations(
       project.relations,
       new Map(tasks.map((task) => [task.key, task.id])),
     ),
+    tasks.map((task) => task.id),
   );
+  await writeImportFeatures(tx, hierarchy);
+  // Feature links count as relations, as the subtask links they came from.
+  const relations =
+    (await writeImportRelations(tx, hierarchy.relations)) +
+    hierarchy.memberships.size;
 
   const unmatched = assignees.warning();
   return {

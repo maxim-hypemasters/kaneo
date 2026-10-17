@@ -150,7 +150,30 @@
 					"rose": "Роза",
 					"crimson": "Малиновый"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "ФИЧА",
+				"titleFeature": "Новая фича",
+				"descriptionFeature": "Создайте новую фичу, чтобы сгруппировать задачи проекта, указав название, описание и другие детали.",
+				"featureTitlePlaceholder": "Название фичи",
+				"featureDescriptionPlaceholder": "Добавьте описание фичи...",
+				"successCreatedFeature": "Фича успешно создана",
+				"createFeatureError": "Не удалось создать фичу",
+				"createButtonFeature": "Создать фичу",
+				"discardTitleFeature": "Отменить фичу?",
+				"discardDescriptionFeature": "Несохранённые данные фичи будут потеряны.",
+				"discardButtonFeature": "Отменить фичу",
+				"type": "Тип",
+				"typeTask": "Задача",
+				"typeFeature": "Фича",
+				"feature": "Фича",
+				"noFeature": "Без фичи",
+				"searchFeatures": "Поиск или создание фичи...",
+				"noFeaturesFound": "Фичи не найдены",
+				"createFeature": "Создать фичу «{{name}}»",
+				"newFeatureSuffix": "{{name}} (новая)",
+				"chooseProjectForFeature": "Выберите проект, чтобы указать фичу.",
+				"loadingFeatures": "Загрузка фич...",
+				"loadFeaturesError": "Не удалось загрузить фичи."
 			}
 		},
 		"editor": {
@@ -369,8 +392,8 @@
 					"description": "Карточки переходят из колонки в колонку по мере продвижения работы. Перетащите эту в следующую колонку или откройте её и измените статус."
 				},
 				"details": {
-					"title": "Откройте эту задачу и добавьте подзадачу",
-					"description": "У задачи могут быть описание, подзадачи, метки, исполнитель и срок. Добавьте подзадачу к этой, чтобы попробовать."
+					"title": "Откройте эту задачу и сделайте её фичей",
+					"description": "У задачи могут быть описание, метки, исполнитель и срок. Сделайте эту задачу фичей, а затем добавьте в неё задачи, чтобы сгруппировать работу."
 				},
 				"invite": {
 					"title": "Пригласите команду",
@@ -2470,7 +2493,8 @@
 				"navigate": "Навигация",
 				"open": "Открыть",
 				"close": "Закрыть"
-			}
+			},
+			"createFeature": "Создать фичу"
 		},
 		"sidebar": {
 			"projects": "Проекты",
@@ -2589,10 +2613,10 @@
 				"editDescription": "Редактировать описание",
 				"commentOnTask": "Комментировать",
 				"moveToProject": "Переместить в другой проект",
-				"createSubtask": "Создать подзадачу",
-				"setParent": "Задать родительскую задачу",
-				"openParent": "Открыть родительскую задачу",
-				"openSubtask": "Открыть подзадачу",
+				"createSubtask": "Добавить задачу в эту фичу",
+				"setParent": "Задать фичу",
+				"openParent": "Открыть фичу",
+				"openSubtask": "Открыть задачу этой фичи",
 				"markBlockedBy": "Отметить как заблокированную",
 				"markBlocking": "Отметить как блокирующую",
 				"markRelated": "Отметить как связанную",
@@ -2852,7 +2876,12 @@
 		},
 		"moved": "переместил задачу из «{{from}}» в «{{to}}»",
 		"created": "создал эту задачу",
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "добавил задачу в фичу «{{feature}}»",
+		"removedFromFeature": "убрал задачу из фичи «{{feature}}»",
+		"changedFeature": "переместил задачу из фичи «{{from}}» в «{{to}}»",
+		"madeFeature": "сделал эту задачу фичей",
+		"madeTask": "сделал эту фичу задачей"
 	},
 	"tasks": {
 		"title": "Задачи",
@@ -2891,7 +2920,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Подзадача",
+			"subtaskOf": "Фича",
 			"activity": "Активность",
 			"noActivity": "Активность не найдена",
 			"openInFullPage": "Открыть на полной странице",
@@ -3027,22 +3056,22 @@
 				"blocked_by": "заблокирована"
 			},
 			"blockedBy": "Блокируется",
-			"parentPlaceholder": "Задать родительскую задачу…"
+			"parentPlaceholder": "Задать фичу…"
 		},
 		"subtasks": {
-			"title": "Подзадачи",
-			"inputPlaceholder": "Название подзадачи...",
+			"title": "Задачи",
+			"inputPlaceholder": "Название задачи...",
 			"addAction": "Добавить",
-			"empty": "Подзадач пока нет",
-			"createError": "Не удалось создать подзадачу",
+			"empty": "В этой фиче пока нет задач",
+			"createError": "Не удалось создать задачу",
 			"deleteSuccess": "Задача успешно удалена",
 			"deleteError": "Не удалось удалить задачу",
 			"deleteDialogTitle": "Удалить задачу?",
 			"deleteDialogDescription": "Задача и все её данные будут безвозвратно удалены. Это действие нельзя отменить.",
 			"deleteAction": "Удалить задачу",
-			"completeAria": "Отметить подзадачу выполненной",
-			"progress": "Выполнено подзадач: {{completed}} из {{total}}",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Отметить задачу выполненной",
+			"progress": "Выполнено задач: {{completed}} из {{total}}",
+			"noCompletionColumn": "В этом проекте нет подходящей колонки, чтобы завершить или снова открыть эту задачу."
 		},
 		"properties": {
 			"title": "Свойства",
@@ -3215,6 +3244,35 @@
 				"title_many": "Это изменение нарушает {{count}} зависимостей",
 				"title_one": "Это изменение нарушает {{count}} зависимость",
 				"title_other": "Это изменение нарушает {{count}} зависимости"
+			},
+			"featuresLabel": "Фичи",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} задача, с {{start}} по {{end}}. Открывает фичу.",
+			"featureSliceAria_few": "{{title}}: {{count}} задачи, с {{start}} по {{end}}. Открывает фичу.",
+			"featureSliceAria_many": "{{title}}: {{count}} задач, с {{start}} по {{end}}. Открывает фичу.",
+			"featureSliceAria_other": "{{title}}: {{count}} задачи, с {{start}} по {{end}}. Открывает фичу.",
+			"featureOverflowAria_one": "Ещё {{count}} фича",
+			"featureOverflowAria_few": "Ещё {{count}} фичи",
+			"featureOverflowAria_many": "Ещё {{count}} фич",
+			"featureOverflowAria_other": "Ещё {{count}} фичи",
+			"featureBar": {
+				"ariaLabel": "Фича {{title}}: откройте или перетащите для перемещения",
+				"ariaLabelGrouped": "Фича {{title}}: откройте или перетащите для изменения сроков или переназначения",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "Выполнено {{completed}} из {{count}} задачи",
+				"progressAria_few": "Выполнено {{completed}} из {{count}} задач",
+				"progressAria_many": "Выполнено {{completed}} из {{count}} задач",
+				"progressAria_other": "Выполнено {{completed}} из {{count}} задачи"
+			},
+			"featureLanes": {
+				"noFeature": "Без фичи",
+				"open": "Открыть фичу {{title}}",
+				"moveTo": "Переместить в {{name}}",
+				"remove": "Убрать из фичи",
+				"cannotMove": "Нельзя переместить в {{name}}",
+				"taskAriaLabel": "{{title}}: откройте или перетащите для изменения сроков или перемещения в другую фичу",
+				"moveError": "Не удалось переместить задачу в другую фичу",
+				"assignee": "Исполнитель: {{name}}"
 			}
 		},
 		"delete": {
@@ -3440,7 +3498,8 @@
 			"groupBy": "Группировать по",
 			"groupByOptions": {
 				"assignee": "Исполнитель",
-				"none": "Без группировки"
+				"none": "Без группировки",
+				"feature": "Фича"
 			}
 		},
 		"filterBar": {
@@ -3488,6 +3547,26 @@
 			"startsOn": "Начало: {{date}}",
 			"beforeStart": "{{date}} раньше даты начала",
 			"afterDue": "{{date}} позже срока"
+		},
+		"features": {
+			"badge": "Фича",
+			"chipLabel": "Фича: {{title}}",
+			"unknown": "Неизвестная фича",
+			"property": "Фича",
+			"none": "Без фичи",
+			"searchPlaceholder": "Поиск фич…",
+			"empty": "В этом проекте пока нет фич",
+			"remove": "Убрать из фичи",
+			"updateError": "Не удалось обновить фичу",
+			"type": "Тип",
+			"typeTask": "Задача",
+			"typeFeature": "Фича",
+			"convertToFeature": "Преобразовать в фичу",
+			"convertToTask": "Преобразовать в задачу",
+			"typeError": "Не удалось изменить тип задачи",
+			"convertBlocked": "Уберите задачи из этой фичи, прежде чем преобразовать её в задачу.",
+			"openFeature": "Открыть фичу {{title}}",
+			"inProject": "Фичи в проекте"
 		}
 	},
 	"invitations": {
@@ -3603,6 +3682,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Новая фича",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

@@ -53,6 +53,17 @@ Tasks keep their numbers from the source, so `WEB-12` stays `WEB-12`. A task wit
 
 Trello boards have no key, so Kaneo makes one from the board name. PLANKA boards have no key or task numbers either, so Kaneo makes a key from the new project's name and numbers the tasks from 1 in board order.
 
+### Parent items become features
+
+Kaneo groups work one level deep: a [feature](/core/functional/plan-and-execute-tasks#group-work-into-features) and its tasks. Sources that nest items, such as Jira epics with stories and sub-tasks, or Linear and Plane sub-issues, are converted like this:
+
+- The top item of each tree becomes a feature. Every item below it, at any depth, becomes one of its tasks.
+- The link between two items below the feature, such as a story and its sub-task, is kept as a related relation.
+- An item with several parents joins one feature. Its other parent links are kept as related relations.
+- An item without children in the import, even an epic, becomes a plain task.
+
+This is the same conversion an upgrade applies to the subtasks of earlier Kaneo versions.
+
 ### Invite your team first
 
 Assignees are matched to workspace members by email. Anyone who isn't a member when you import gets their tasks imported unassigned. [Invite your team](/core/functional/collaborate-with-team) before you start.

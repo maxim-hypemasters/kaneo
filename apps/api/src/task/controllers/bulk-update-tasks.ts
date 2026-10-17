@@ -1,3 +1,4 @@
+import { recordFeatureDeletion } from "../feature-hierarchy/record-feature-deletion";
 import { queueStorageCleanup } from "../../storage/cleanup-queue";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -18,7 +19,6 @@ import { removeLabelFromGitHub } from "../../plugins/github/utils/sync-label-to-
 import { removeLabelFromGitlab } from "../../plugins/gitlab/utils/sync-label-to-gitlab";
 import { assertAssignableUser } from "../../utils/assert-assignable-user";
 import { publishTaskMutation } from "./task-mutation-effects";
-import { getSubtaskParentProjects } from "../get-subtask-parent-projects";
 import {
   assertValidPriority,
   assertValidTaskStatus,
@@ -167,17 +167,12 @@ async function bulkUpdateTasks({
         return { updatedTasks: result, beforeById };
       });
       updatedCount = updatedTasks.length;
-      const parentProjects = await getSubtaskParentProjects(foundIds);
-      await publishEvent("subtask-parents.refresh", {
-        projects: parentProjects,
-      });
       for (const updatedTask of updatedTasks) {
         const before = beforeById.get(updatedTask.id)!;
+        // One relation refresh per project below covers feature progress.
         await publishTaskMutation(before, updatedTask, userId, {
           fields: ["status"],
           skipRelationRefresh: true,
-
-          skipSubtaskParentRefresh: true,
         });
         if (before.status === updatedTask.status)
           await publishEvent("task.updated", {
@@ -304,8 +299,6 @@ async function bulkUpdateTasks({
     }
 
     case "delete": {
-      // Relations cascade away with the children, so capture parents first.
-      const parentProjects = await getSubtaskParentProjects(foundIds);
       const result = await db.transaction(async (tx) => {
         const locked = await tx
           .select({ id: taskTable.id, projectId: taskTable.projectId })
@@ -333,6 +326,7 @@ async function bulkUpdateTasks({
           tx,
           assets.map((asset) => asset.objectKey),
         );
+        await recordFeatureDeletion(tx, foundIds, userId);
         return tx.delete(taskTable).where(inArray(taskTable.id, foundIds));
       });
 
@@ -346,9 +340,10 @@ async function bulkUpdateTasks({
           title: task.title,
         });
       }
-      await publishEvent("subtask-parents.refresh", {
-        projects: parentProjects,
-      });
+      // Deleting tasks changes their features' progress, and deleting a
+      // feature takes its tasks out of it, so each board refreshes once.
+      for (const projectId of new Set(tasks.map((task) => task.projectId)))
+        await publishEvent("task-relation.refresh", { projectId, userId });
       break;
     }
 

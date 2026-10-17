@@ -20,6 +20,8 @@ function useCreateTask() {
       priority,
       customFields,
       draftAssetIds,
+      type,
+      featureId,
     }: CreateTaskRequest) =>
       createTask(
         title,
@@ -32,6 +34,7 @@ function useCreateTask() {
         priority,
         customFields,
         draftAssetIds,
+        { type, featureId },
       ),
     onSuccess: (_data, variables) => {
       invalidateMyWork(queryClient);
@@ -43,6 +46,16 @@ function useCreateTask() {
       void queryClient.invalidateQueries({
         queryKey: ["custom-field-values", variables.projectId],
       });
+      if (variables.type === "feature") {
+        void queryClient.invalidateQueries({
+          queryKey: ["project-features", variables.projectId],
+        });
+      }
+      if (variables.featureId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["task", variables.featureId],
+        });
+      }
     },
   });
 }

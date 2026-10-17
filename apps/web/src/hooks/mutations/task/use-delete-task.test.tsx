@@ -35,6 +35,8 @@ function makeTask(id: string): Task {
     assigneeId: null,
     assigneeName: null,
     projectId: "project-1",
+    type: "task",
+    featureId: null,
   };
 }
 
@@ -94,6 +96,8 @@ describe("useDeleteTask", () => {
     const deletedTask = {
       ...makeTask("delete-me"),
       priority: "no-priority",
+      type: "task" as const,
+      featureId: null,
     };
     queryClient.setQueryData(["tasks", project.id], project);
     queryClient.setQueryData(["task", deletedTask.id], deletedTask);
@@ -146,5 +150,56 @@ describe("useDeleteTask", () => {
     expect(queryClient.getQueryData(["tasks", project.id])).toEqual(project);
     expect(queryClient.getQueryData(["task", task.id])).toEqual(task);
     expect(useProjectStore.getState().project).toEqual(project);
+  });
+
+  it("refreshes the feature of a deleted task", async () => {
+    const project = makeProject();
+    const deletedTask = {
+      ...makeTask("delete-me"),
+      priority: "no-priority",
+      type: "task" as const,
+      featureId: "feature-1",
+    };
+    queryClient.setQueryData(["tasks", project.id], project);
+    queryClient.setQueryData(["task", "feature-1"], makeTask("feature-1"));
+    vi.mocked(deleteTask).mockResolvedValue(deletedTask);
+    const { result } = renderHook(() => useDeleteTask(), { wrapper: Wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync(deletedTask.id);
+    });
+
+    expect(
+      queryClient.getQueryState(["task", "feature-1"])?.isInvalidated,
+    ).toBe(true);
+    expect(
+      queryClient.getQueryState(["tasks", project.id])?.isInvalidated,
+    ).toBe(true);
+  });
+
+  it("refreshes the tasks of a deleted feature", async () => {
+    const project = makeProject();
+    const member = { ...makeTask("keep-me"), featureId: "delete-me" };
+    project.columns[0].tasks = [
+      { ...makeTask("delete-me"), type: "feature" },
+      member,
+    ];
+    queryClient.setQueryData(["tasks", project.id], project);
+    queryClient.setQueryData(["task", member.id], member);
+    vi.mocked(deleteTask).mockResolvedValue({
+      ...makeTask("delete-me"),
+      priority: "no-priority",
+      type: "feature",
+      featureId: null,
+    });
+    const { result } = renderHook(() => useDeleteTask(), { wrapper: Wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync("delete-me");
+    });
+
+    expect(queryClient.getQueryState(["task", member.id])?.isInvalidated).toBe(
+      true,
+    );
   });
 });

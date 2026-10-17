@@ -10,6 +10,7 @@ export type TaskActionName =
   | "comment"
   | "addLink"
   | "addSubtask"
+  | "feature"
   | "resources";
 
 const FIELDS = [

@@ -150,7 +150,30 @@
 					"rose": "Roos",
 					"crimson": "Karmozijn"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FEATURE",
+				"titleFeature": "Nieuwe feature",
+				"descriptionFeature": "Maak een nieuwe feature aan om taken van een project te groeperen, met een titel, beschrijving en andere details.",
+				"featureTitlePlaceholder": "Featurenaam",
+				"featureDescriptionPlaceholder": "Voeg een beschrijving toe voor je feature...",
+				"successCreatedFeature": "Feature succesvol aangemaakt",
+				"createFeatureError": "Aanmaken van feature mislukt",
+				"createButtonFeature": "Feature aanmaken",
+				"discardTitleFeature": "Feature verwerpen?",
+				"discardDescriptionFeature": "Je niet-opgeslagen featuregegevens gaan verloren.",
+				"discardButtonFeature": "Feature verwerpen",
+				"type": "Type",
+				"typeTask": "Taak",
+				"typeFeature": "Feature",
+				"feature": "Feature",
+				"noFeature": "Geen feature",
+				"searchFeatures": "Feature zoeken of aanmaken...",
+				"noFeaturesFound": "Geen features gevonden",
+				"createFeature": "Feature \"{{name}}\" aanmaken",
+				"newFeatureSuffix": "{{name}} (nieuw)",
+				"chooseProjectForFeature": "Kies een project om een feature te selecteren.",
+				"loadingFeatures": "Features laden...",
+				"loadFeaturesError": "Features konden niet worden geladen."
 			}
 		},
 		"editor": {
@@ -367,8 +390,8 @@
 					"description": "Kaarten schuiven van kolom naar kolom naarmate het werk vordert. Sleep deze naar de volgende kolom, of open hem en wijzig de status."
 				},
 				"details": {
-					"title": "Open deze taak en voeg een subtaak toe",
-					"description": "Een taak kan een beschrijving, subtaken, labels, een toegewezen persoon en een deadline hebben. Voeg een subtaak toe aan deze taak om het te proberen."
+					"title": "Open deze taak en maak er een feature van",
+					"description": "Een taak kan een beschrijving, labels, een toegewezen persoon en een deadline hebben. Maak van deze taak een feature en voeg er daarna taken aan toe om werk eronder te groeperen."
 				},
 				"invite": {
 					"title": "Nodig je team uit",
@@ -2378,7 +2401,8 @@
 				"navigate": "Navigeren",
 				"open": "Openen",
 				"close": "Sluiten"
-			}
+			},
+			"createFeature": "Feature aanmaken"
 		},
 		"sidebar": {
 			"projects": "Projecten",
@@ -2497,10 +2521,10 @@
 				"editDescription": "Beschrijving bewerken",
 				"commentOnTask": "Reageren",
 				"moveToProject": "Naar ander project verplaatsen",
-				"createSubtask": "Subtaak maken",
-				"setParent": "Bovenliggende taak instellen",
-				"openParent": "Bovenliggende taak openen",
-				"openSubtask": "Subtaak openen",
+				"createSubtask": "Taak aan deze feature toevoegen",
+				"setParent": "Feature instellen",
+				"openParent": "Feature openen",
+				"openSubtask": "Taak van deze feature openen",
 				"markBlockedBy": "Markeren als geblokkeerd door",
 				"markBlocking": "Markeren als blokkerend",
 				"markRelated": "Markeren als gerelateerd",
@@ -2750,7 +2774,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "heeft gereageerd op {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "heeft de taak toegevoegd aan feature \"{{feature}}\"",
+		"removedFromFeature": "heeft de taak verwijderd uit feature \"{{feature}}\"",
+		"changedFeature": "heeft de taak van feature \"{{from}}\" naar \"{{to}}\" verplaatst",
+		"madeFeature": "heeft van deze taak een feature gemaakt",
+		"madeTask": "heeft van deze feature een taak gemaakt"
 	},
 	"tasks": {
 		"title": "Taken",
@@ -2789,7 +2818,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Subtaak van",
+			"subtaskOf": "Feature",
 			"activity": "Activiteit",
 			"noActivity": "Geen activiteit gevonden",
 			"openInFullPage": "Openen op volledige pagina",
@@ -2925,22 +2954,22 @@
 				"blocked_by": "geblokkeerd door"
 			},
 			"blockedBy": "Geblokkeerd door",
-			"parentPlaceholder": "Bovenliggende taak instellen…"
+			"parentPlaceholder": "Feature instellen…"
 		},
 		"subtasks": {
-			"title": "Subtaken",
-			"inputPlaceholder": "Titel subtaak...",
+			"title": "Taken",
+			"inputPlaceholder": "Titel taak...",
 			"addAction": "Toevoegen",
-			"empty": "Nog geen subtaken",
-			"createError": "Aanmaken subtaak mislukt",
+			"empty": "Nog geen taken in deze feature",
+			"createError": "Aanmaken taak mislukt",
 			"deleteSuccess": "Taak succesvol verwijderd",
 			"deleteError": "Verwijderen taak mislukt",
 			"deleteDialogTitle": "Taak verwijderen?",
 			"deleteDialogDescription": "Dit zal de taak en alle data permanent verwijderen. Dit kan niet ongedaan worden gemaakt.",
 			"deleteAction": "Taak verwijderen",
-			"completeAria": "Markeer subtaak als voltooid",
-			"progress": "{{completed}} van {{total}} subtaken voltooid",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Markeer taak als voltooid",
+			"progress": "{{completed}} van {{total}} taken voltooid",
+			"noCompletionColumn": "Dit project heeft geen passende kolom om deze taak te voltooien of te heropenen."
 		},
 		"properties": {
 			"title": "Eigenschappen",
@@ -3088,6 +3117,29 @@
 				"startsBeforeBlocker": "Begint voordat {{title}} eindigt.",
 				"title_one": "Deze wijziging verbreekt {{count}} afhankelijkheid",
 				"title_other": "Deze wijziging verbreekt {{count}} afhankelijkheden"
+			},
+			"featuresLabel": "Features",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} taak, {{start}} tot {{end}}. Opent de feature.",
+			"featureSliceAria_other": "{{title}}: {{count}} taken, {{start}} tot {{end}}. Opent de feature.",
+			"featureOverflowAria_one": "Nog {{count}} feature",
+			"featureOverflowAria_other": "Nog {{count}} features",
+			"featureBar": {
+				"ariaLabel": "Feature {{title}}: openen of slepen om te verplaatsen",
+				"ariaLabelGrouped": "Feature {{title}}: openen, of slepen om opnieuw in te plannen of opnieuw toe te wijzen",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} van {{count}} taak klaar",
+				"progressAria_other": "{{completed}} van {{count}} taken klaar"
+			},
+			"featureLanes": {
+				"noFeature": "Geen feature",
+				"open": "Feature {{title}} openen",
+				"moveTo": "Verplaatsen naar {{name}}",
+				"remove": "Verwijderen uit feature",
+				"cannotMove": "Kan niet verplaatsen naar {{name}}",
+				"taskAriaLabel": "{{title}}: openen, of slepen om opnieuw in te plannen of naar een andere feature te verplaatsen",
+				"moveError": "Kan de taak niet naar een andere feature verplaatsen",
+				"assignee": "Toegewezen aan {{name}}"
 			}
 		},
 		"delete": {
@@ -3274,7 +3326,8 @@
 			"groupBy": "Groeperen op",
 			"groupByOptions": {
 				"assignee": "Toegewezen persoon",
-				"none": "Geen"
+				"none": "Geen",
+				"feature": "Feature"
 			}
 		},
 		"filterBar": {
@@ -3316,6 +3369,26 @@
 			"startsOn": "Begint {{date}}",
 			"beforeStart": "{{date}} ligt vóór de startdatum",
 			"afterDue": "{{date}} ligt na de vervaldatum"
+		},
+		"features": {
+			"badge": "Feature",
+			"chipLabel": "Feature: {{title}}",
+			"unknown": "Onbekende feature",
+			"property": "Feature",
+			"none": "Geen feature",
+			"searchPlaceholder": "Zoek features…",
+			"empty": "Nog geen features in dit project",
+			"remove": "Verwijderen uit feature",
+			"updateError": "Bijwerken feature mislukt",
+			"type": "Type",
+			"typeTask": "Taak",
+			"typeFeature": "Feature",
+			"convertToFeature": "Omzetten naar feature",
+			"convertToTask": "Omzetten naar taak",
+			"typeError": "Wijzigen taaktype mislukt",
+			"convertBlocked": "Haal de taken uit deze feature voordat je er een taak van maakt.",
+			"openFeature": "Feature {{title}} openen",
+			"inProject": "Features in project"
 		}
 	},
 	"invitations": {
@@ -3429,6 +3502,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Nieuwe feature",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

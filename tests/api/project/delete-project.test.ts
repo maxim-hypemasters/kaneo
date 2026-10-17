@@ -6,7 +6,6 @@ const mocks = vi.hoisted(() => ({
   queueStorageCleanup: vi.fn(),
   retryStorageCleanup: vi.fn(),
   publishEvent: vi.fn(),
-  getProjectSubtaskParentProjects: vi.fn(),
 }));
 vi.mock("../../../apps/api/src/database", () => ({
   default: {
@@ -21,9 +20,6 @@ vi.mock("../../../apps/api/src/storage/cleanup-queue", () => ({
 }));
 vi.mock("../../../apps/api/src/events", () => ({
   publishEvent: mocks.publishEvent,
-}));
-vi.mock("../../../apps/api/src/task/get-subtask-parent-projects", () => ({
-  getProjectSubtaskParentProjects: mocks.getProjectSubtaskParentProjects,
 }));
 import deleteProject from "../../../apps/api/src/project/controllers/delete-project";
 function seed(backgroundObjectKey: string | null, assets: string[] = []) {
@@ -53,9 +49,6 @@ describe("deleteProject", () => {
       workspaceId: "workspace-1",
       tasks: [],
     });
-    mocks.getProjectSubtaskParentProjects.mockResolvedValue([
-      { projectId: "parent-project" },
-    ]);
     mocks.retryStorageCleanup.mockResolvedValue({ degraded: false });
   });
   it("queues all attachment keys and the background before the cascade", async () => {
@@ -69,9 +62,9 @@ describe("deleteProject", () => {
     expect(mocks.queueStorageCleanup.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.delete.mock.invocationCallOrder[0],
     );
-    expect(mocks.publishEvent).toHaveBeenCalledWith("subtask-parents.refresh", {
-      projects: [{ projectId: "parent-project" }],
-    });
+    // A project's features and their tasks all go with it; no other board
+    // depends on them.
+    expect(mocks.publishEvent).not.toHaveBeenCalled();
   });
   it("still succeeds while durable cleanup waits for storage recovery", async () => {
     seed("background");

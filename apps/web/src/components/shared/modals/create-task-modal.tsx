@@ -77,6 +77,11 @@ import { useAutoGrowTextarea } from "@/hooks/use-auto-grow-textarea";
 import { stripLineBreaks } from "@/lib/strip-line-breaks";
 import useProjectStore from "@/store/project";
 import type Task from "@/types/task";
+import type { TaskType } from "@/types/task";
+import { createDialogCopy } from "./create-task/create-dialog-copy";
+import { FeaturePickerChip } from "./create-task/feature-picker-chip";
+import type { FeatureChoice } from "./create-task/feature-picker-options";
+import { TaskTypeChip } from "./create-task/task-type-chip";
 import { getInitialTaskColumn } from "./initial-task-column";
 
 type CreateTaskModalProps = {
@@ -85,6 +90,8 @@ type CreateTaskModalProps = {
   status?: string;
   projectId?: string;
   instant?: boolean;
+  // What the dialog starts out creating; its Type chip can switch it.
+  type?: TaskType;
 };
 
 type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
@@ -138,9 +145,17 @@ function CreateTaskModalContent({
   status,
   projectId,
   instant = false,
+  type = "task",
 }: CreateTaskModalProps) {
   const { t } = useTranslation();
-  const { project, setProject } = useProjectStore();
+  const [taskType, setTaskType] = useState<TaskType>(type);
+  const copy = createDialogCopy(t, taskType);
+  const [featureChoice, setFeatureChoice] = useState<FeatureChoice | null>(
+    null,
+  );
+  // A feature can't belong to a feature.
+  const chosenFeature = taskType === "task" ? featureChoice : null;
+  const { setProject } = useProjectStore();
 
   const labelColors = useMemo(
     () =>
@@ -377,6 +392,7 @@ function CreateTaskModalContent({
     startDate ||
     dueDate ||
     selectedProjectId ||
+    chosenFeature ||
     labels.length > 0 ||
     stagedAssetsRef.current.length > 0 ||
     hasCustomFieldChanges,
@@ -413,6 +429,9 @@ function CreateTaskModalContent({
 
   const syncTaskIntoProject = useCallback(
     (task: Task) => {
+      // Read now, not from the render that submitted: a new feature and its
+      // task are synced one after the other in the same submit.
+      const { project } = useProjectStore.getState();
       if (!activeRef.current || project?.id !== task.projectId) return;
 
       const updatedProject = produce(project, (draft) => {
@@ -463,7 +482,7 @@ function CreateTaskModalContent({
 
       setProject(updatedProject);
     },
-    [project, setProject, workspaceUsers?.members],
+    [setProject, workspaceUsers?.members],
   );
 
   const stageAsset = useCallback(
@@ -525,6 +544,45 @@ function CreateTaskModalContent({
         submitStatus = getInitialTaskColumn(workflow.data)?.slug ?? "planned";
       }
       didSubmitRef.current = true;
+      let featureId =
+        chosenFeature?.kind === "existing" ? chosenFeature.id : undefined;
+      if (chosenFeature?.kind === "new") {
+        // Created first so the task can join it. Kept chosen as an existing
+        // feature, so a retry after a failed task doesn't create it twice.
+        // It gets only the task's required custom fields: the project
+        // requires them of every task, features included.
+        const feature = normalizeTask(
+          await createTask({
+            title: chosenFeature.title,
+            description: "",
+            userId: "",
+            priority: "no-priority",
+            projectId: resolvedProjectId,
+            status: submitStatus,
+            type: "feature",
+            customFields: customFields
+              .filter(
+                (field) =>
+                  field.required &&
+                  !isCustomFieldValueEmpty(
+                    field.type,
+                    customFieldValues[field.id] ?? "",
+                  ),
+              )
+              .map((field) => ({
+                fieldId: field.id,
+                value: customFieldValues[field.id] ?? "",
+              })),
+          }),
+        );
+        setFeatureChoice({
+          kind: "existing",
+          id: feature.id,
+          title: feature.title,
+        });
+        syncTaskIntoProject(feature);
+        featureId = feature.id;
+      }
       const savedTask = normalizeTask(
         await createTask({
           title: title.trim(),
@@ -535,6 +593,8 @@ function CreateTaskModalContent({
           startDate: startDate ? startDate.toISOString() : undefined,
           dueDate: dueDate ? dueDate.toISOString() : undefined,
           status: submitStatus,
+          type: taskType,
+          featureId,
           draftAssetIds: stagedAssetsRef.current.filter((id) =>
             description.includes(`/asset/${id}`),
           ),
@@ -569,7 +629,7 @@ function CreateTaskModalContent({
       stagedAssetsRef.current = [];
       if (!activeRef.current) return;
       syncTaskIntoProject(savedTask);
-      toast.success(t("common:modals.createTask.successCreated"), {
+      toast.success(copy.created, {
         icon: SquarePlusIcon,
       });
 
@@ -599,11 +659,7 @@ function CreateTaskModalContent({
       if (!activeRef.current) {
         return;
       }
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("common:modals.createTask.createError"),
-      );
+      toast.error(error instanceof Error ? error.message : copy.createError);
     } finally {
       submittingRef.current = false;
       if (activeRef.current) setIsSubmitting(false);
@@ -749,18 +805,17 @@ function CreateTaskModalContent({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="text-muted-foreground font-semibold tracking-wider text-sm">
-                  {resolvedProject?.slug?.toUpperCase() ||
-                    t("common:modals.createTask.breadcrumbTask")}
+                  {resolvedProject?.slug?.toUpperCase() || copy.breadcrumb}
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem className="text-foreground font-medium text-sm">
-                  {t("common:modals.createTask.title")}
+                  {copy.title}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </DialogTitle>
           <DialogDescription className="sr-only">
-            {t("common:modals.createTask.description")}
+            {copy.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -782,8 +837,8 @@ function CreateTaskModalContent({
                 }
               }}
               autoFocus
-              placeholder={t("common:modals.createTask.taskTitlePlaceholder")}
-              aria-label={t("common:modals.createTask.taskTitlePlaceholder")}
+              placeholder={copy.titlePlaceholder}
+              aria-label={copy.titlePlaceholder}
               className="block w-full resize-none overflow-hidden border-0 bg-transparent px-0 py-3 font-semibold text-2xl text-foreground leading-tight tracking-tight outline-none placeholder:text-muted-foreground"
               required
             />
@@ -793,9 +848,7 @@ function CreateTaskModalContent({
                 key={editorVersion}
                 value={description}
                 onChange={setDescription}
-                placeholder={t(
-                  "common:modals.createTask.descriptionPlaceholder",
-                )}
+                placeholder={copy.descriptionPlaceholder}
                 projectId={resolvedProjectId || undefined}
                 uploadAsset={stageAsset}
               />
@@ -824,6 +877,11 @@ function CreateTaskModalContent({
             )}
 
             <div className="flex flex-wrap items-center gap-2 py-2">
+              <TaskTypeChip
+                value={taskType}
+                onChange={setTaskType}
+                disabled={isSubmitting}
+              />
               {!explicitProjectId && (
                 <Popover>
                   <PopoverTrigger asChild>
@@ -861,6 +919,9 @@ function CreateTaskModalContent({
                               stagedAssetsRef.current.length === 0 &&
                               !submittingRef.current
                             ) {
+                              if (workspaceProject.id !== resolvedProjectId) {
+                                setFeatureChoice(null);
+                              }
                               setSelectedProjectId(workspaceProject.id);
                             }
                           }}
@@ -876,6 +937,15 @@ function CreateTaskModalContent({
                     </div>
                   </PopoverContent>
                 </Popover>
+              )}
+              {taskType === "task" && (
+                <FeaturePickerChip
+                  projectId={resolvedProjectId}
+                  projectSlug={resolvedProject?.slug}
+                  value={featureChoice}
+                  onChange={setFeatureChoice}
+                  disabled={isSubmitting}
+                />
               )}
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-accent/50 text-foreground rounded-md text-xs font-medium border border-border">
                 {getColumnIcon(
@@ -1301,7 +1371,7 @@ function CreateTaskModalContent({
             >
               {isPreparingDraft
                 ? t("activity:comment.editor.uploadingFile")
-                : t("common:modals.createTask.createButton")}
+                : copy.createButton}
             </Button>
           </DialogFooter>
         </form>
@@ -1313,11 +1383,9 @@ function CreateTaskModalContent({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("common:modals.createTask.discardTitle")}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{copy.discardTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("common:modals.createTask.discardDescription")}
+              {copy.discardDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1332,7 +1400,7 @@ function CreateTaskModalContent({
               size="sm"
               onClick={closeAndReset}
             >
-              {t("common:modals.createTask.discardButton")}
+              {copy.discardButton}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

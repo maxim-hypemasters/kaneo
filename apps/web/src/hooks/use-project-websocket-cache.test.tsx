@@ -207,7 +207,7 @@ it("preserves distinct task effects across pagination and a disconnect before re
   }
 });
 
-it("does not overwrite a parent's newer progress with an older child's response", async () => {
+it("does not overwrite a feature's newer progress with an older task's response", async () => {
   let finish!: (value: unknown) => void;
   mocks.getTask
     .mockImplementationOnce(
@@ -223,13 +223,13 @@ it("does not overwrite a parent's newer progress with an older child's response"
       parentSubtaskCounts: [{ taskId: "a", completed: 2, total: 2 }],
     });
   renderHook(() => useProjectWebSocket("p"));
-  Socket.current.message("TASK_UPDATED", { taskId: "old-child" });
+  Socket.current.message("TASK_UPDATED", { taskId: "old-task" });
   Socket.current.message("TASK_UPDATED", { taskId: "b" });
   await Promise.resolve();
   await Promise.resolve();
   await Promise.resolve();
   finish({
-    id: "old-child",
+    id: "old-task",
     projectId: "p",
     status: "todo",
     parentSubtaskCounts: [{ taskId: "a", completed: 1, total: 2 }],
@@ -248,7 +248,7 @@ it("does not overwrite a parent's newer progress with an older child's response"
   });
 });
 
-it("preserves newer parent progress when an earlier parent refresh finishes last", async () => {
+it("preserves newer feature progress when the feature's earlier read finishes last", async () => {
   let finish!: (value: unknown) => void;
   mocks.getTask
     .mockImplementationOnce(
@@ -693,4 +693,88 @@ it("shares one authorized task read between the board and sync samples", async (
     expect(mocks.client.setQueriesData).toHaveBeenCalled(),
   );
   expect(mocks.getTask).toHaveBeenCalledOnce();
+});
+
+describe("feature changes", () => {
+  type Board = {
+    columns: { tasks: Record<string, unknown>[] }[];
+  };
+  const cardOf = (id: string) =>
+    (mocks.board as Board).columns[0].tasks.find((task) => task.id === id);
+  const flush = async () => {
+    for (let i = 0; i < 4; i++) await Promise.resolve();
+  };
+
+  it("patches a task's type and feature, including a cleared feature", async () => {
+    (mocks.board as Board).columns[0].tasks = [
+      {
+        id: "a",
+        projectId: "p",
+        status: "todo",
+        position: 0,
+        type: "task",
+        featureId: "f",
+      },
+    ];
+    mocks.getTask.mockReset().mockResolvedValueOnce({
+      id: "a",
+      projectId: "p",
+      status: "todo",
+      position: 0,
+      type: "feature",
+      featureId: null,
+      subtaskCounts: { completed: 0, total: 0 },
+      parentSubtaskCounts: [],
+    });
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("TASK_UPDATED", { taskId: "a" });
+    await flush();
+
+    expect(cardOf("a")).toMatchObject({ type: "feature", featureId: null });
+    expect(cardOf("a")).not.toHaveProperty("parentSubtaskCounts");
+    expect(mocks.client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["task-relations", "a"],
+    });
+  });
+
+  it("updates the feature card's progress from its task's read", async () => {
+    (mocks.board as Board).columns[0].tasks = [
+      {
+        id: "f",
+        projectId: "p",
+        status: "todo",
+        position: 0,
+        type: "feature",
+        featureId: null,
+        subtaskCounts: { completed: 0, total: 1 },
+      },
+      {
+        id: "a",
+        projectId: "p",
+        status: "todo",
+        position: 1,
+        type: "task",
+        featureId: null,
+      },
+    ];
+    mocks.getTask.mockReset().mockResolvedValueOnce({
+      id: "a",
+      projectId: "p",
+      status: "todo",
+      position: 1,
+      type: "task",
+      featureId: "f",
+      subtaskCounts: { completed: 0, total: 0 },
+      parentSubtaskCounts: [{ taskId: "f", completed: 1, total: 2 }],
+    });
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("TASK_UPDATED", { taskId: "a" });
+    await flush();
+
+    expect(cardOf("a")).toMatchObject({ featureId: "f" });
+    expect(cardOf("f")).toMatchObject({
+      type: "feature",
+      subtaskCounts: { completed: 1, total: 2 },
+    });
+  });
 });

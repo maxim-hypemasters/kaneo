@@ -1,3 +1,4 @@
+import { type TaskType, taskTypeOf } from "../api/task-features.js";
 import type { ResolvedTask } from "./resolve-task.js";
 
 export type TaskDetailJson = {
@@ -5,6 +6,8 @@ export type TaskDetailJson = {
   readonly ticketId: string | null;
   readonly number: number | null;
   readonly title: string;
+  readonly type: TaskType;
+  readonly featureId: string | null;
   readonly description: string | null;
   readonly status: string;
   readonly statusName: string;
@@ -33,6 +36,8 @@ export function toTaskDetailJson(resolved: ResolvedTask): TaskDetailJson {
     ticketId: resolved.ticketId,
     number: task.number,
     title: task.title,
+    type: taskTypeOf(task),
+    featureId: task.featureId ?? null,
     description: task.description,
     status: task.status,
     statusName: column?.name ?? task.status,

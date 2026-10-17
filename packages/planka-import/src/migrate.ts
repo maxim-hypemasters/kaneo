@@ -16,7 +16,10 @@ import {
   toProjectKey,
   uniqueKey,
 } from "@kaneo/importers/planka";
+import { collectCardLinks } from "./card-links.js";
 import type { KaneoClient } from "./kaneo.js";
+import { planFeatures } from "./plan-features.js";
+import { writeCardLinks } from "./write-card-links.js";
 
 export type BoardTarget = {
   project: PlankaProject;
@@ -36,6 +39,9 @@ export type BoardReport = {
   comments: number;
   assignees: number;
   checklistItems: number;
+  // Cards that link others from a checklist, imported as features.
+  features: number;
+  // Linked checklist items, imported as a feature's tasks or related links.
   relations: number;
   skippedLists: string[];
   skippedAttachments: number;
@@ -101,6 +107,7 @@ export async function migrate(options: MigrateOptions): Promise<BoardReport[]> {
       comments: 0,
       assignees: 0,
       checklistItems: 0,
+      features: 0,
       relations: 0,
       skippedLists: [],
       skippedAttachments: 0,
@@ -201,9 +208,19 @@ async function migrateBoard(context: {
     (included.users ?? []).map((user) => [user.id, user]),
   );
 
+  const plan = planFeatures(
+    collectCardLinks(
+      new Set(cards.map((card) => card.id)),
+      taskLists,
+      checklistItems,
+    ),
+  );
+  const featureCardIds = new Set(plan.featureOf.values());
+
   report.columns = columns.length;
   report.tasks = cards.length;
   report.checklistItems = checklistItems.length;
+  report.features = featureCardIds.size;
   report.skippedAttachments = (included.attachments ?? []).length;
 
   const usedLabelIds = new Set(
@@ -219,6 +236,7 @@ async function migrateBoard(context: {
     report.comments = skipComments
       ? 0
       : cards.reduce((total, card) => total + (card.commentsTotal ?? 0), 0);
+    report.relations = plan.featureOf.size + plan.related.length;
     report.projectKey = toProjectKey(projectName);
     return;
   }
@@ -259,6 +277,11 @@ async function migrateBoard(context: {
   }
 
   const taskIdByCardId = new Map<string, string>();
+  // Feature card -> its task, once created as a feature. A card whose feature
+  // already exists is created straight into it.
+  const featureTaskIdByCardId = new Map<string, string>();
+  const joinedCardIds = new Set<string>();
+  let withoutFeatures = false;
   let noEmailFromPlanka = 0;
   let notAWorkspaceMember = 0;
 
@@ -290,6 +313,10 @@ async function migrateBoard(context: {
     }
 
     const dueDate = toDueDate(card);
+    const featureCardId = plan.featureOf.get(card.id);
+    const featureId = featureCardId
+      ? featureTaskIdByCardId.get(featureCardId)
+      : undefined;
 
     const task = await kaneo.createTask(project.id, {
       title: card.name,
@@ -298,9 +325,17 @@ async function migrateBoard(context: {
       priority: DEFAULT_PRIORITY,
       ...(dueDate ? { dueDate } : {}),
       ...(assignee.userId ? { userId: assignee.userId } : {}),
+      ...(featureCardIds.has(card.id) ? { type: "feature" as const } : {}),
+      ...(featureId ? { featureId } : {}),
     });
 
     taskIdByCardId.set(card.id, task.id);
+    if (featureId) joinedCardIds.add(card.id);
+    if (task.type === "feature") featureTaskIdByCardId.set(card.id, task.id);
+    // Servers from before features return no type, and ignore it.
+    if (featureCardIds.has(card.id) && task.type === undefined) {
+      withoutFeatures = true;
+    }
 
     for (const link of cardLabels) {
       if (link.cardId !== card.id) continue;
@@ -331,36 +366,23 @@ async function migrateBoard(context: {
     }
   }
 
-  // Relations need every task to exist first, so they run after the card loop.
-  for (const item of checklistItems) {
-    if (!item.linkedCardId) continue;
-
-    const parentCardId = taskLists.find(
-      (list) => list.id === item.taskListId,
-    )?.cardId;
-    if (!parentCardId) continue;
-
-    const sourceTaskId = taskIdByCardId.get(parentCardId);
-    const targetTaskId = taskIdByCardId.get(item.linkedCardId);
-    if (!sourceTaskId || !targetTaskId || sourceTaskId === targetTaskId) {
-      continue;
-    }
-
-    try {
-      await kaneo.createTaskRelation({
-        sourceTaskId,
-        targetTaskId,
-        relationType: "subtask",
-      });
-      report.relations++;
-    } catch (error) {
-      report.warnings.push(
-        `Could not link "${item.name}" as a subtask: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
-  }
+  // Cards created before their feature, and the related links, need every
+  // task to exist first, so they run after the card loop.
+  const links = await writeCardLinks({
+    kaneo,
+    plan: {
+      ...plan,
+      featureOf: new Map(
+        [...plan.featureOf].filter(([cardId]) => !joinedCardIds.has(cardId)),
+      ),
+    },
+    taskIdByCardId,
+    cardNames: new Map(cards.map((card) => [card.id, card.name])),
+    withoutFeatures,
+  });
+  report.relations = joinedCardIds.size + links.links;
+  if (withoutFeatures) report.features = 0;
+  report.warnings.push(...links.warnings);
 
   if (noEmailFromPlanka > 0) {
     report.warnings.push(

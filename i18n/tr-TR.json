@@ -150,7 +150,30 @@
 					"rose": "Gül Kurusu",
 					"crimson": "Koyu Kırmızı"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "EPİK",
+				"titleFeature": "Yeni Epik",
+				"descriptionFeature": "Bir projenin taleplerini gruplamak için başlık, açıklama ve diğer ayrıntıları girerek yeni bir epik oluşturun.",
+				"featureTitlePlaceholder": "Epik başlığı",
+				"featureDescriptionPlaceholder": "Epiğiniz için bir açıklama ekleyin...",
+				"successCreatedFeature": "Epik başarıyla oluşturuldu",
+				"createFeatureError": "Epik oluşturulamadı",
+				"createButtonFeature": "Epik Oluştur",
+				"discardTitleFeature": "Kaydedilmemiş epik taslağı silinsin mi?",
+				"discardDescriptionFeature": "Kaydedilmemiş epik ayrıntıları kaybolacak.",
+				"discardButtonFeature": "Epik taslağını sil",
+				"type": "Tür",
+				"typeTask": "Talep",
+				"typeFeature": "Epik",
+				"feature": "Epik",
+				"noFeature": "Epik yok",
+				"searchFeatures": "Epik ara veya oluştur...",
+				"noFeaturesFound": "Epik bulunamadı",
+				"createFeature": "\"{{name}}\" epiğini oluştur",
+				"newFeatureSuffix": "{{name}} (yeni)",
+				"chooseProjectForFeature": "Epik belirlemek için önce bir proje seçin.",
+				"loadingFeatures": "Epikler yükleniyor...",
+				"loadFeaturesError": "Epikler yüklenemedi."
 			}
 		},
 		"editor": {
@@ -367,8 +390,8 @@
 					"description": "İş ilerledikçe kartlar sütundan sütuna geçer. Bu kartı bir sonraki sütuna sürükleyin ya da açıp durumunu değiştirin."
 				},
 				"details": {
-					"title": "Bu görevi açın ve bir alt görev ekleyin",
-					"description": "Bir görevde açıklama, alt görevler, etiketler, atanan kişi ve bitiş tarihi olabilir. Denemek için bu göreve bir alt görev ekleyin."
+					"title": "Bu görevi açın ve bir epiğe dönüştürün",
+					"description": "Bir görevde açıklama, etiketler, atanan kişi ve bitiş tarihi olabilir. Bu görevi bir epiğe dönüştürün, ardından işleri altında gruplamak için ona görevler ekleyin."
 				},
 				"invite": {
 					"title": "Ekibinizi davet edin",
@@ -2378,7 +2401,8 @@
 				"navigate": "Gezin",
 				"open": "Aç",
 				"close": "Kapat"
-			}
+			},
+			"createFeature": "Epik oluştur"
 		},
 		"sidebar": {
 			"projects": "Projeler",
@@ -2497,10 +2521,10 @@
 				"editDescription": "Açıklamayı düzenle",
 				"commentOnTask": "Yorum yap",
 				"moveToProject": "Başka projeye taşı",
-				"createSubtask": "Alt talep oluştur",
-				"setParent": "Üst talebi belirle",
-				"openParent": "Üst talebi aç",
-				"openSubtask": "Alt talebi aç",
+				"createSubtask": "Bu epiğe talep ekle",
+				"setParent": "Epik belirle",
+				"openParent": "Epiği aç",
+				"openSubtask": "Bu epiğin bir talebini aç",
 				"markBlockedBy": "Engellenen olarak işaretle",
 				"markBlocking": "Engelleyen olarak işaretle",
 				"markRelated": "İlişkili olarak işaretle",
@@ -2750,7 +2774,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "{{forge}}'da yorum yaptı"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "talebi \"{{feature}}\" epiğine ekledi",
+		"removedFromFeature": "talebi \"{{feature}}\" epiğinden çıkardı",
+		"changedFeature": "talebi \"{{from}}\" epiğinden \"{{to}}\" epiğine taşıdı",
+		"madeFeature": "bu talebi bir epiğe dönüştürdü",
+		"madeTask": "bu epiği bir talebe dönüştürdü"
 	},
 	"tasks": {
 		"title": "Görevler",
@@ -2789,7 +2818,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Şunun alt talebi:",
+			"subtaskOf": "Epik",
 			"activity": "Aktivite",
 			"noActivity": "Aktivite bulunamadı",
 			"openInFullPage": "Tam sayfada aç",
@@ -2925,22 +2954,22 @@
 				"related": "ilişkilidir"
 			},
 			"blockedBy": "Engelleyen",
-			"parentPlaceholder": "Üst talebi belirle…"
+			"parentPlaceholder": "Epik belirle…"
 		},
 		"subtasks": {
-			"title": "Alt talepler",
-			"inputPlaceholder": "Alt talep başlığı...",
+			"title": "Talepler",
+			"inputPlaceholder": "Talep başlığı...",
 			"addAction": "Ekle",
-			"empty": "Henüz alt talep yok",
-			"createError": "Alt talep oluşturulamadı",
+			"empty": "Bu epikte henüz talep yok",
+			"createError": "Talep oluşturulamadı",
 			"deleteSuccess": "Talep başarıyla silindi",
 			"deleteError": "Talep silinemedi",
 			"deleteDialogTitle": "Talep Silinsin mi?",
 			"deleteDialogDescription": "Bu, talebi ve tüm verilerini kalıcı olarak kaldıracak. Bu işlemi geri alamazsınız.",
 			"deleteAction": "Talebi Sil",
-			"completeAria": "Alt talebi tamamlandı olarak işaretle",
-			"progress": "{{total}} alt görevin {{completed}} tanesi tamamlandı",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Talebi tamamlandı olarak işaretle",
+			"progress": "{{total}} talebin {{completed}} tanesi tamamlandı",
+			"noCompletionColumn": "Bu projede bu talebi tamamlamak veya yeniden açmak için eşleşen bir sütun yok."
 		},
 		"properties": {
 			"title": "Özellikler",
@@ -3099,6 +3128,29 @@
 				"startsBeforeBlocker": "{{title}} bitmeden başlıyor.",
 				"title_one": "Bu değişiklik {{count}} bağımlılığı bozuyor",
 				"title_other": "Bu değişiklik {{count}} bağımlılığı bozuyor"
+			},
+			"featuresLabel": "Epikler",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} talep, {{start}} ile {{end}} arası. Epiği açar.",
+			"featureSliceAria_other": "{{title}}: {{count}} talep, {{start}} ile {{end}} arası. Epiği açar.",
+			"featureOverflowAria_one": "{{count}} epik daha",
+			"featureOverflowAria_other": "{{count}} epik daha",
+			"featureBar": {
+				"ariaLabel": "Epik {{title}}: açın veya taşımak için sürükleyin",
+				"ariaLabelGrouped": "Epik {{title}}: açın veya yeniden zamanlamak ya da yeniden atamak için sürükleyin",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{count}} talepten {{completed}} tanesi tamamlandı",
+				"progressAria_other": "{{count}} talepten {{completed}} tanesi tamamlandı"
+			},
+			"featureLanes": {
+				"noFeature": "Epik yok",
+				"open": "{{title}} epiğini aç",
+				"moveTo": "{{name}} epiğine taşı",
+				"remove": "Epikten çıkar",
+				"cannotMove": "{{name}} epiğine taşınamaz",
+				"taskAriaLabel": "{{title}}: açın veya yeniden zamanlamak ya da başka bir epiğe taşımak için sürükleyin",
+				"moveError": "Talep başka bir epiğe taşınamadı",
+				"assignee": "{{name}} kişisine atandı"
 			}
 		},
 		"delete": {
@@ -3274,7 +3326,8 @@
 			"groupBy": "Gruplama ölçütü",
 			"groupByOptions": {
 				"assignee": "Atanan",
-				"none": "Yok"
+				"none": "Yok",
+				"feature": "Epik"
 			}
 		},
 		"filterBar": {
@@ -3316,6 +3369,26 @@
 			"startsOn": "Başlangıç: {{date}}",
 			"beforeStart": "{{date}} başlangıç tarihinden önce",
 			"afterDue": "{{date}} bitiş tarihinden sonra"
+		},
+		"features": {
+			"badge": "Epik",
+			"chipLabel": "Epik: {{title}}",
+			"unknown": "Bilinmeyen epik",
+			"property": "Epik",
+			"none": "Epik yok",
+			"searchPlaceholder": "Epik ara…",
+			"empty": "Bu projede henüz epik yok",
+			"remove": "Epikten çıkar",
+			"updateError": "Epik güncellenemedi",
+			"type": "Tür",
+			"typeTask": "Talep",
+			"typeFeature": "Epik",
+			"convertToFeature": "Epiğe dönüştür",
+			"convertToTask": "Talebe dönüştür",
+			"typeError": "Talep türü değiştirilemedi",
+			"convertBlocked": "Bu epiği talebe dönüştürmeden önce içindeki talepleri dışarı taşıyın.",
+			"openFeature": "{{title}} epiğini aç",
+			"inProject": "Projedeki epikler"
 		}
 	},
 	"invitations": {
@@ -3429,6 +3502,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Yeni epik",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

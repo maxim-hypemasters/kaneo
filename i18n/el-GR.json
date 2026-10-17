@@ -150,7 +150,30 @@
 					"rose": "Ροζ",
 					"crimson": "Βυσσινί"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "ΔΥΝΑΤΟΤΗΤΑ",
+				"titleFeature": "Νέα δυνατότητα",
+				"descriptionFeature": "Δημιουργήστε μια νέα δυνατότητα για να ομαδοποιήσετε εργασίες ενός έργου, συμπληρώνοντας τίτλο, περιγραφή και άλλες λεπτομέρειες.",
+				"featureTitlePlaceholder": "Τίτλος δυνατότητας",
+				"featureDescriptionPlaceholder": "Προσθέστε μια περιγραφή για τη δυνατότητά σας...",
+				"successCreatedFeature": "Η δυνατότητα δημιουργήθηκε με επιτυχία",
+				"createFeatureError": "Αποτυχία δημιουργίας δυνατότητας",
+				"createButtonFeature": "Δημιουργία δυνατότητας",
+				"discardTitleFeature": "Απόρριψη δυνατότητας;",
+				"discardDescriptionFeature": "Οι μη αποθηκευμένες λεπτομέρειες της δυνατότητας θα χαθούν.",
+				"discardButtonFeature": "Απόρριψη δυνατότητας",
+				"type": "Τύπος",
+				"typeTask": "Εργασία",
+				"typeFeature": "Δυνατότητα",
+				"feature": "Δυνατότητα",
+				"noFeature": "Χωρίς δυνατότητα",
+				"searchFeatures": "Αναζήτηση ή δημιουργία δυνατότητας...",
+				"noFeaturesFound": "Δεν βρέθηκαν δυνατότητες",
+				"createFeature": "Δημιουργία δυνατότητας \"{{name}}\"",
+				"newFeatureSuffix": "{{name}} (νέα)",
+				"chooseProjectForFeature": "Επιλέξτε ένα έργο για να διαλέξετε δυνατότητα.",
+				"loadingFeatures": "Φόρτωση δυνατοτήτων...",
+				"loadFeaturesError": "Δεν ήταν δυνατή η φόρτωση των δυνατοτήτων."
 			}
 		},
 		"editor": {
@@ -367,8 +390,8 @@
 					"description": "Οι κάρτες μετακινούνται από στήλη σε στήλη καθώς προχωρά η δουλειά. Σύρετε αυτή στην επόμενη στήλη ή ανοίξτε την και αλλάξτε την κατάστασή της."
 				},
 				"details": {
-					"title": "Ανοίξτε αυτή την εργασία και προσθέστε μια υποεργασία",
-					"description": "Μια εργασία μπορεί να έχει περιγραφή, υποεργασίες, ετικέτες, υπεύθυνο και ημερομηνία λήξης. Προσθέστε μια υποεργασία σε αυτή για να το δοκιμάσετε."
+					"title": "Ανοίξτε αυτή την εργασία και μετατρέψτε την σε δυνατότητα",
+					"description": "Μια εργασία μπορεί να έχει περιγραφή, ετικέτες, υπεύθυνο και ημερομηνία λήξης. Μετατρέψτε αυτή την εργασία σε δυνατότητα και έπειτα προσθέστε της εργασίες για να ομαδοποιήσετε τη δουλειά κάτω από αυτή."
 				},
 				"invite": {
 					"title": "Προσκαλέστε την ομάδα σας",
@@ -2378,7 +2401,8 @@
 				"navigate": "Πλοήγηση",
 				"open": "Άνοιγμα",
 				"close": "Κλείσιμο"
-			}
+			},
+			"createFeature": "Δημιουργία δυνατότητας"
 		},
 		"sidebar": {
 			"projects": "Έργα",
@@ -2497,10 +2521,10 @@
 				"editDescription": "Επεξεργασία περιγραφής",
 				"commentOnTask": "Σχόλιο",
 				"moveToProject": "Μετακίνηση σε άλλο έργο",
-				"createSubtask": "Δημιουργία υποεργασίας",
-				"setParent": "Ορισμός γονικής εργασίας",
-				"openParent": "Άνοιγμα γονικής εργασίας",
-				"openSubtask": "Άνοιγμα υποεργασίας",
+				"createSubtask": "Προσθήκη εργασίας σε αυτή τη δυνατότητα",
+				"setParent": "Ορισμός δυνατότητας",
+				"openParent": "Άνοιγμα δυνατότητας",
+				"openSubtask": "Άνοιγμα εργασίας αυτής της δυνατότητας",
 				"markBlockedBy": "Σήμανση ως μπλοκαρισμένη από",
 				"markBlocking": "Σήμανση ως μπλοκάρουσα",
 				"markRelated": "Σήμανση ως σχετική",
@@ -2750,7 +2774,12 @@
 			"importedBy": "Imported by {{name}}",
 			"commentedOnForge": "σχολίασε στο {{forge}}"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "πρόσθεσε την εργασία στη δυνατότητα \"{{feature}}\"",
+		"removedFromFeature": "αφαίρεσε την εργασία από τη δυνατότητα \"{{feature}}\"",
+		"changedFeature": "μετακίνησε την εργασία από τη δυνατότητα \"{{from}}\" στη \"{{to}}\"",
+		"madeFeature": "μετέτρεψε αυτή την εργασία σε δυνατότητα",
+		"madeTask": "μετέτρεψε αυτή τη δυνατότητα σε εργασία"
 	},
 	"tasks": {
 		"title": "Εργασίες",
@@ -2789,7 +2818,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Υποεργασία του",
+			"subtaskOf": "Δυνατότητα",
 			"activity": "Δραστηριότητα",
 			"noActivity": "Δεν βρέθηκε δραστηριότητα",
 			"openInFullPage": "Άνοιγμα σε πλήρη σελίδα",
@@ -2925,22 +2954,22 @@
 				"blocked_by": "μπλοκάρεται από"
 			},
 			"blockedBy": "Μπλοκάρεται από",
-			"parentPlaceholder": "Ορισμός γονικής εργασίας…"
+			"parentPlaceholder": "Ορισμός δυνατότητας…"
 		},
 		"subtasks": {
-			"title": "Υποεργασίες",
-			"inputPlaceholder": "Τίτλος υποεργασίας...",
+			"title": "Εργασίες",
+			"inputPlaceholder": "Τίτλος εργασίας...",
 			"addAction": "Προσθήκη",
-			"empty": "Δεν υπάρχουν ακόμα υποεργασίες",
-			"createError": "Αποτυχία δημιουργίας υποεργασίας",
+			"empty": "Δεν υπάρχουν ακόμα εργασίες σε αυτή τη δυνατότητα",
+			"createError": "Αποτυχία δημιουργίας εργασίας",
 			"deleteSuccess": "Η εργασία διαγράφηκε με επιτυχία",
 			"deleteError": "Αποτυχία διαγραφής εργασίας",
 			"deleteDialogTitle": "Διαγραφή εργασίας;",
 			"deleteDialogDescription": "Αυτό θα αφαιρέσει οριστικά την εργασία και όλα τα δεδομένα της. Δεν μπορείτε να αναιρέσετε αυτήν την ενέργεια.",
 			"deleteAction": "Διαγραφή εργασίας",
-			"completeAria": "Επισήμανση υποεργασίας ως ολοκληρωμένης",
-			"progress": "Ολοκληρώθηκαν {{completed}} από {{total}} υποεργασίες",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Επισήμανση εργασίας ως ολοκληρωμένης",
+			"progress": "Ολοκληρώθηκαν {{completed}} από {{total}} εργασίες",
+			"noCompletionColumn": "Αυτό το έργο δεν έχει κατάλληλη στήλη για την ολοκλήρωση ή το εκ νέου άνοιγμα αυτής της εργασίας."
 		},
 		"properties": {
 			"title": "Ιδιότητες",
@@ -3099,6 +3128,29 @@
 				"startsBeforeBlocker": "Ξεκινά πριν ολοκληρωθεί η εργασία {{title}}.",
 				"title_one": "Αυτή η αλλαγή παραβιάζει {{count}} εξάρτηση",
 				"title_other": "Αυτή η αλλαγή παραβιάζει {{count}} εξαρτήσεις"
+			},
+			"featuresLabel": "Δυνατότητες",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} εργασία, {{start}} έως {{end}}. Ανοίγει τη δυνατότητα.",
+			"featureSliceAria_other": "{{title}}: {{count}} εργασίες, {{start}} έως {{end}}. Ανοίγει τη δυνατότητα.",
+			"featureOverflowAria_one": "{{count}} ακόμα δυνατότητα",
+			"featureOverflowAria_other": "{{count}} ακόμα δυνατότητες",
+			"featureBar": {
+				"ariaLabel": "Δυνατότητα {{title}}: άνοιγμα ή σύρσιμο για μετακίνηση",
+				"ariaLabelGrouped": "Δυνατότητα {{title}}: άνοιγμα ή σύρσιμο για αναπρογραμματισμό ή επανανάθεση",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} από {{count}} εργασία ολοκληρώθηκε",
+				"progressAria_other": "{{completed}} από {{count}} εργασίες ολοκληρώθηκαν"
+			},
+			"featureLanes": {
+				"noFeature": "Χωρίς δυνατότητα",
+				"open": "Άνοιγμα δυνατότητας {{title}}",
+				"moveTo": "Μετακίνηση στη δυνατότητα {{name}}",
+				"remove": "Αφαίρεση από τη δυνατότητα",
+				"cannotMove": "Δεν είναι δυνατή η μετακίνηση στη δυνατότητα {{name}}",
+				"taskAriaLabel": "{{title}}: άνοιγμα ή σύρσιμο για αναπρογραμματισμό ή μετακίνηση σε άλλη δυνατότητα",
+				"moveError": "Αποτυχία μετακίνησης της εργασίας σε άλλη δυνατότητα",
+				"assignee": "Ανατέθηκε σε {{name}}"
 			}
 		},
 		"delete": {
@@ -3274,7 +3326,8 @@
 			"groupBy": "Ομαδοποίηση κατά",
 			"groupByOptions": {
 				"assignee": "Ανατεθειμένος",
-				"none": "Χωρίς ομαδοποίηση"
+				"none": "Χωρίς ομαδοποίηση",
+				"feature": "Δυνατότητα"
 			}
 		},
 		"filterBar": {
@@ -3316,6 +3369,26 @@
 			"startsOn": "Ξεκινά {{date}}",
 			"beforeStart": "Η {{date}} είναι πριν από την ημερομηνία έναρξης",
 			"afterDue": "Η {{date}} είναι μετά την προθεσμία"
+		},
+		"features": {
+			"badge": "Δυνατότητα",
+			"chipLabel": "Δυνατότητα: {{title}}",
+			"unknown": "Άγνωστη δυνατότητα",
+			"property": "Δυνατότητα",
+			"none": "Χωρίς δυνατότητα",
+			"searchPlaceholder": "Αναζήτηση δυνατοτήτων…",
+			"empty": "Δεν υπάρχουν ακόμα δυνατότητες σε αυτό το έργο",
+			"remove": "Αφαίρεση από τη δυνατότητα",
+			"updateError": "Αποτυχία ενημέρωσης της δυνατότητας",
+			"type": "Τύπος",
+			"typeTask": "Εργασία",
+			"typeFeature": "Δυνατότητα",
+			"convertToFeature": "Μετατροπή σε δυνατότητα",
+			"convertToTask": "Μετατροπή σε εργασία",
+			"typeError": "Αποτυχία αλλαγής του τύπου της εργασίας",
+			"convertBlocked": "Αφαιρέστε τις εργασίες από αυτή τη δυνατότητα πριν τη μετατρέψετε σε εργασία.",
+			"openFeature": "Άνοιγμα δυνατότητας {{title}}",
+			"inProject": "Δυνατότητες στο έργο"
 		}
 	},
 	"invitations": {
@@ -3429,6 +3502,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Νέα δυνατότητα",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

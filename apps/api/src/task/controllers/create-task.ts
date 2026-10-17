@@ -21,6 +21,11 @@ import {
   assertValidTaskStatus,
   isCustomFieldValueEmpty,
 } from "../validate-task-fields";
+import {
+  lockFeature,
+  type TaskType,
+} from "../feature-hierarchy/assign-feature";
+import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
 
@@ -57,6 +62,8 @@ async function createTask({
   priority,
   customFields,
   draftAssetIds,
+  type = "task",
+  featureId,
 }: {
   projectId: string;
   currentUserId: string;
@@ -69,7 +76,14 @@ async function createTask({
   priority?: string;
   customFields?: CustomFieldInput[];
   draftAssetIds?: string[];
+  type?: TaskType;
+  featureId?: string;
 }) {
+  if (type === "feature" && featureId) {
+    throw new HTTPException(400, {
+      message: "A feature can't belong to another feature",
+    });
+  }
   const resolvedStatus = status || "to-do";
   const resolvedPriority = priority || "no-priority";
   const normalizedCustomFields = deduplicateCustomFields(customFields);
@@ -133,6 +147,7 @@ async function createTask({
   });
 
   const createdTask = await db.transaction(async (tx) => {
+    if (featureId) await lockFeature(tx, featureId, projectId);
     const taskNumber = await claimTaskNumber(projectId, tx);
     const nextPosition = await nextTaskPosition(
       tx,
@@ -155,6 +170,8 @@ async function createTask({
         priority: resolvedPriority,
         number: taskNumber,
         position: nextPosition,
+        type,
+        featureId: featureId ?? null,
       })
       .returning();
 
@@ -223,6 +240,13 @@ async function createTask({
     type: "created",
     content: null,
   });
+  if (createdTask.featureId) {
+    await publishFeatureChange({
+      projectId,
+      featureIds: [createdTask.featureId],
+      userId: currentUserId,
+    });
+  }
 
   return {
     ...createdTask,

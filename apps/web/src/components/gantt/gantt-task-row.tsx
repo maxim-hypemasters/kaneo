@@ -1,4 +1,6 @@
 import { format } from "date-fns";
+import { Layers } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
 import { GanttTaskBar } from "./gantt-task-bar";
@@ -17,8 +19,10 @@ type GanttTaskRowProps = {
   isMobile: boolean;
   showTaskRail: boolean;
   rowGridTemplateColumns: string;
-  // Lanes already name the assignee, so grouped rows leave it out.
+  // Assignee lanes already name the assignee, so their rows leave it out.
   showAssignee: boolean;
+  // Feature lanes don't say who does the work, so their bars show it.
+  showBarAssignee?: boolean;
   laneDrag?: GanttLaneDrag;
   onOpenTask: () => void;
   onCommit: (edit: GanttTaskEdit) => void;
@@ -35,12 +39,17 @@ export function GanttTaskRow({
   showTaskRail,
   rowGridTemplateColumns,
   showAssignee,
+  showBarAssignee = false,
   laneDrag,
   onOpenTask,
   onCommit,
   onDragChange,
   dependencyNote,
 }: GanttTaskRowProps) {
+  const { t } = useTranslation();
+  const isFeature = task.type === "feature";
+  const counts = isFeature ? task.subtaskCounts : undefined;
+
   return (
     <div
       data-gantt-row={task.id}
@@ -65,15 +74,44 @@ export function GanttTaskRow({
                 {projectSlug}-{task.number}
               </span>
             </div>
-            <p className="w-full line-clamp-1 text-xs font-medium leading-tight text-foreground">
-              {task.title}
-            </p>
+            {isFeature ? (
+              // The icon is no taller than the line, so the row keeps its
+              // height.
+              <p className="flex w-full min-w-0 items-center gap-1 text-xs font-semibold leading-tight text-foreground">
+                <Layers
+                  aria-hidden="true"
+                  className="size-3 shrink-0 text-muted-foreground"
+                />
+                <span className="sr-only">{t("tasks:features.badge")}</span>{" "}
+                <span className="min-w-0 truncate">{task.title}</span>
+              </p>
+            ) : (
+              <p className="w-full line-clamp-1 text-xs font-medium leading-tight text-foreground">
+                {task.title}
+              </p>
+            )}
             <p className="w-full truncate text-[11px] leading-tight text-muted-foreground">
               {format(task.scheduleStart, "MMM d, yyyy")} -{" "}
               {format(task.scheduleEnd, "MMM d, yyyy")}
               {showAssignee && task.assigneeName
                 ? ` • ${task.assigneeName}`
                 : ""}
+              {counts && counts.total > 0 ? (
+                <>
+                  <span aria-hidden="true" className="tabular-nums">
+                    {` • ${t("tasks:gantt.featureBar.progress", {
+                      completed: counts.completed,
+                      total: counts.total,
+                    })}`}
+                  </span>
+                  <span className="sr-only">
+                    {`, ${t("tasks:gantt.featureBar.progressAria", {
+                      completed: counts.completed,
+                      count: counts.total,
+                    })}`}
+                  </span>
+                </>
+              ) : null}
             </p>
           </button>
         </div>
@@ -100,6 +138,7 @@ export function GanttTaskRow({
           onOpenTask={onOpenTask}
           onDragChange={onDragChange}
           dependencyNote={dependencyNote}
+          showAssignee={showBarAssignee}
         />
       </div>
     </div>

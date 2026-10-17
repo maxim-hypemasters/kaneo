@@ -1,7 +1,15 @@
 export type KaneoWorkspace = { id: string; name: string; slug?: string };
 export type KaneoProject = { id: string; name: string; slug: string };
 export type KaneoColumn = { id: string; name: string; slug: string };
-export type KaneoTask = { id: string; title: string; number: number };
+export type KaneoTaskType = "task" | "feature";
+// type and featureId are missing on servers from before features.
+export type KaneoTask = {
+  id: string;
+  title: string;
+  number: number;
+  type?: KaneoTaskType;
+  featureId?: string | null;
+};
 export type KaneoLabel = { id: string; name: string; color: string };
 export type KaneoMember = { id: string; name: string; email: string };
 
@@ -87,6 +95,8 @@ export class KaneoClient {
       priority: string;
       dueDate?: string;
       userId?: string;
+      type?: KaneoTaskType;
+      featureId?: string;
     },
   ): Promise<KaneoTask> {
     return this.request<KaneoTask>(
@@ -109,10 +119,18 @@ export class KaneoClient {
     });
   }
 
+  // Puts a task into a feature of its project.
+  setTaskFeature(taskId: string, featureId: string): Promise<KaneoTask> {
+    return this.request<KaneoTask>(
+      `/api/task/feature/${encodeURIComponent(taskId)}`,
+      { method: "PUT", body: JSON.stringify({ featureId }) },
+    );
+  }
+
   createTaskRelation(input: {
     sourceTaskId: string;
     targetTaskId: string;
-    relationType: "subtask" | "blocks" | "related";
+    relationType: "blocks" | "related";
   }): Promise<unknown> {
     return this.request("/api/task-relation", {
       method: "POST",

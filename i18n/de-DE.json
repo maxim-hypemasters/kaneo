@@ -150,7 +150,30 @@
 					"rose": "Rosa",
 					"crimson": "Karmesinrot"
 				},
-				"statusLoadError": "Project statuses couldn’t be loaded."
+				"statusLoadError": "Project statuses couldn’t be loaded.",
+				"breadcrumbFeature": "FEATURE",
+				"titleFeature": "Neues Feature",
+				"descriptionFeature": "Erstelle ein neues Feature, um Aufgaben eines Projekts zu gruppieren, mit einem Titel, einer Beschreibung und weiteren Details.",
+				"featureTitlePlaceholder": "Feature-Titel",
+				"featureDescriptionPlaceholder": "Füge eine Beschreibung für dein Feature hinzu...",
+				"successCreatedFeature": "Feature erfolgreich erstellt",
+				"createFeatureError": "Feature konnte nicht erstellt werden",
+				"createButtonFeature": "Feature erstellen",
+				"discardTitleFeature": "Feature verwerfen?",
+				"discardDescriptionFeature": "Deine ungespeicherten Feature-Details gehen verloren.",
+				"discardButtonFeature": "Feature verwerfen",
+				"type": "Typ",
+				"typeTask": "Aufgabe",
+				"typeFeature": "Feature",
+				"feature": "Feature",
+				"noFeature": "Kein Feature",
+				"searchFeatures": "Feature suchen oder erstellen...",
+				"noFeaturesFound": "Keine Features gefunden",
+				"createFeature": "Feature \"{{name}}\" erstellen",
+				"newFeatureSuffix": "{{name}} (neu)",
+				"chooseProjectForFeature": "Wähle ein Projekt aus, um ein Feature auszuwählen.",
+				"loadingFeatures": "Features werden geladen...",
+				"loadFeaturesError": "Features konnten nicht geladen werden."
 			}
 		},
 		"editor": {
@@ -367,8 +390,8 @@
 					"description": "Karten wandern von Spalte zu Spalte, während die Arbeit vorankommt. Zieh diese Karte in die nächste Spalte oder öffne sie und ändere ihren Status."
 				},
 				"details": {
-					"title": "Öffne diese Aufgabe und füge eine Unteraufgabe hinzu",
-					"description": "Eine Aufgabe kann eine Beschreibung, Unteraufgaben, Labels, eine zuständige Person und ein Fälligkeitsdatum haben. Füge dieser Aufgabe zum Ausprobieren eine Unteraufgabe hinzu."
+					"title": "Öffne diese Aufgabe und mache ein Feature daraus",
+					"description": "Eine Aufgabe kann eine Beschreibung, Labels, eine zuständige Person und ein Fälligkeitsdatum haben. Mache aus dieser Aufgabe ein Feature und füge ihm dann Aufgaben hinzu, um Arbeit darunter zu bündeln."
 				},
 				"invite": {
 					"title": "Lade dein Team ein",
@@ -2378,7 +2401,8 @@
 				"navigate": "Navigieren",
 				"open": "Öffnen",
 				"close": "Schließen"
-			}
+			},
+			"createFeature": "Feature erstellen"
 		},
 		"sidebar": {
 			"projects": "Projekte",
@@ -2497,10 +2521,10 @@
 				"editDescription": "Beschreibung bearbeiten",
 				"commentOnTask": "Kommentieren",
 				"moveToProject": "In anderes Projekt verschieben",
-				"createSubtask": "Unteraufgabe erstellen",
-				"setParent": "Übergeordnete Aufgabe festlegen",
-				"openParent": "Übergeordnete Aufgabe öffnen",
-				"openSubtask": "Unteraufgabe öffnen",
+				"createSubtask": "Aufgabe zu diesem Feature hinzufügen",
+				"setParent": "Feature festlegen",
+				"openParent": "Feature öffnen",
+				"openSubtask": "Aufgabe dieses Features öffnen",
 				"markBlockedBy": "Als blockiert durch markieren",
 				"markBlocking": "Als blockierend markieren",
 				"markRelated": "Als verwandt markieren",
@@ -2750,7 +2774,12 @@
 			"importedBy": "Importiert von {{name}}",
 			"commentedOnForge": "hat auf {{forge}} kommentiert"
 		},
-		"movedFromOtherProject": "moved task from another project to \"{{to}}\""
+		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
+		"addedToFeature": "hat die Aufgabe zum Feature \"{{feature}}\" hinzugefügt",
+		"removedFromFeature": "hat die Aufgabe aus dem Feature \"{{feature}}\" entfernt",
+		"changedFeature": "hat die Aufgabe von Feature \"{{from}}\" nach \"{{to}}\" verschoben",
+		"madeFeature": "hat diese Aufgabe zu einem Feature gemacht",
+		"madeTask": "hat dieses Feature zu einer Aufgabe gemacht"
 	},
 	"tasks": {
 		"title": "Aufgaben",
@@ -2789,7 +2818,7 @@
 			"customFields": "Custom Fields"
 		},
 		"detail": {
-			"subtaskOf": "Teilaufgabe von",
+			"subtaskOf": "Feature",
 			"activity": "Aktivität",
 			"noActivity": "Keine Aktivität gefunden",
 			"openInFullPage": "Auf ganzer Seite öffnen",
@@ -2925,22 +2954,22 @@
 				"blocked_by": "blockiert von"
 			},
 			"blockedBy": "Blockiert durch",
-			"parentPlaceholder": "Übergeordnete Aufgabe festlegen…"
+			"parentPlaceholder": "Feature festlegen…"
 		},
 		"subtasks": {
-			"title": "Teilaufgaben",
-			"inputPlaceholder": "Titel der Teilaufgabe...",
+			"title": "Aufgaben",
+			"inputPlaceholder": "Titel der Aufgabe...",
 			"addAction": "Hinzufügen",
-			"empty": "Noch keine Teilaufgaben",
-			"createError": "Teilaufgabe konnte nicht erstellt werden",
+			"empty": "Noch keine Aufgaben in diesem Feature",
+			"createError": "Aufgabe konnte nicht erstellt werden",
 			"deleteSuccess": "Aufgabe erfolgreich gelöscht",
 			"deleteError": "Aufgabe konnte nicht gelöscht werden",
 			"deleteDialogTitle": "Aufgabe löschen?",
 			"deleteDialogDescription": "Dadurch wird die Aufgabe und alle zugehörigen Daten dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
 			"deleteAction": "Aufgabe löschen",
-			"completeAria": "Teilaufgabe als erledigt markieren",
-			"progress": "{{completed}} von {{total}} Unteraufgaben abgeschlossen",
-			"noCompletionColumn": "This project has no matching column for completing or reopening this subtask."
+			"completeAria": "Aufgabe als erledigt markieren",
+			"progress": "{{completed}} von {{total}} Aufgaben abgeschlossen",
+			"noCompletionColumn": "Dieses Projekt hat keine passende Spalte, um diese Aufgabe abzuschließen oder wieder zu öffnen."
 		},
 		"properties": {
 			"title": "Eigenschaften",
@@ -3099,6 +3128,29 @@
 				"startsBeforeBlocker": "Beginnt, bevor {{title}} endet.",
 				"title_one": "Diese Änderung verletzt {{count}} Abhängigkeit",
 				"title_other": "Diese Änderung verletzt {{count}} Abhängigkeiten"
+			},
+			"featuresLabel": "Features",
+			"featureOverflow": "+{{count}}",
+			"featureSliceAria_one": "{{title}}: {{count}} Aufgabe, {{start}} bis {{end}}. Öffnet das Feature.",
+			"featureSliceAria_other": "{{title}}: {{count}} Aufgaben, {{start}} bis {{end}}. Öffnet das Feature.",
+			"featureOverflowAria_one": "{{count}} weiteres Feature",
+			"featureOverflowAria_other": "{{count}} weitere Features",
+			"featureBar": {
+				"ariaLabel": "Feature {{title}}: öffnen oder ziehen zum Verschieben",
+				"ariaLabelGrouped": "Feature {{title}}: öffnen oder ziehen zum Umplanen oder Neuzuweisen",
+				"progress": "{{completed}}/{{total}}",
+				"progressAria_one": "{{completed}} von {{count}} Aufgabe erledigt",
+				"progressAria_other": "{{completed}} von {{count}} Aufgaben erledigt"
+			},
+			"featureLanes": {
+				"noFeature": "Kein Feature",
+				"open": "Feature {{title}} öffnen",
+				"moveTo": "Zu {{name}} verschieben",
+				"remove": "Aus Feature entfernen",
+				"cannotMove": "Verschieben zu {{name}} nicht möglich",
+				"taskAriaLabel": "{{title}}: öffnen oder ziehen zum Umplanen oder Verschieben in ein anderes Feature",
+				"moveError": "Die Aufgabe konnte nicht in ein anderes Feature verschoben werden",
+				"assignee": "Zugewiesen an {{name}}"
 			}
 		},
 		"delete": {
@@ -3274,7 +3326,8 @@
 			"groupBy": "Gruppieren nach",
 			"groupByOptions": {
 				"assignee": "Zugewiesen an",
-				"none": "Keine"
+				"none": "Keine",
+				"feature": "Feature"
 			}
 		},
 		"filterBar": {
@@ -3316,6 +3369,26 @@
 			"startsOn": "Beginnt {{date}}",
 			"beforeStart": "{{date}} liegt vor dem Startdatum",
 			"afterDue": "{{date}} liegt nach dem Fälligkeitsdatum"
+		},
+		"features": {
+			"badge": "Feature",
+			"chipLabel": "Feature: {{title}}",
+			"unknown": "Unbekanntes Feature",
+			"property": "Feature",
+			"none": "Kein Feature",
+			"searchPlaceholder": "Features suchen…",
+			"empty": "Noch keine Features in diesem Projekt",
+			"remove": "Aus Feature entfernen",
+			"updateError": "Feature konnte nicht aktualisiert werden",
+			"type": "Typ",
+			"typeTask": "Aufgabe",
+			"typeFeature": "Feature",
+			"convertToFeature": "In Feature umwandeln",
+			"convertToTask": "In Aufgabe umwandeln",
+			"typeError": "Aufgabentyp konnte nicht geändert werden",
+			"convertBlocked": "Entferne die Aufgaben aus diesem Feature, bevor du es in eine Aufgabe umwandelst.",
+			"openFeature": "Feature {{title}} öffnen",
+			"inProject": "Features im Projekt"
 		}
 	},
 	"invitations": {
@@ -3429,6 +3502,7 @@
 				"evening": "Good evening",
 				"morning": "Good morning"
 			},
+			"newFeature": "Neues Feature",
 			"newTask": "New task",
 			"pageTitle": "Home",
 			"projects": {

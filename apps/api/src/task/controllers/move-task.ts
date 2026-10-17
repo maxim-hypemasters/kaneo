@@ -1,4 +1,4 @@
-import { and, asc, eq, isNotNull, notInArray } from "drizzle-orm";
+import { and, asc, count, eq, isNotNull, notInArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import createActivities from "../../activity/controllers/create-activities";
 import db from "../../database";
@@ -13,6 +13,8 @@ import {
 import { publishEvent } from "../../events";
 import { assertProjectAccess } from "../../project-access/assert-project-access";
 import { filterUsersWithProjectAccess } from "../../project-access/filter-users-with-project-access";
+import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
+import { recordFeatureChange } from "../feature-hierarchy/record-feature-change";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
 
@@ -119,7 +121,7 @@ async function moveTask({
     destinationStatus,
   );
 
-  const movedTask = await db.transaction(async (tx) => {
+  const { movedTask, leftFeatureId } = await db.transaction(async (tx) => {
     for (const projectId of [sourceProject.id, destinationProjectId].sort()) {
       const [project] = await tx
         .select({ id: projectTable.id })
@@ -144,6 +146,24 @@ async function moveTask({
       resolvedColumn.id,
     );
 
+    // Read under the lock, so a feature the task joined since the read
+    // above is the one it leaves (and the one whose progress changes).
+    const [current] = await tx
+      .select({ featureId: taskTable.featureId })
+      .from(taskTable)
+      .where(
+        and(
+          eq(taskTable.id, taskId),
+          eq(taskTable.projectId, sourceProject.id),
+        ),
+      )
+      .for("update");
+    if (!current) {
+      throw new HTTPException(409, {
+        message: "Task was moved concurrently, please try again",
+      });
+    }
+
     const [updatedTask] = await tx
       .update(taskTable)
       .set({
@@ -152,6 +172,8 @@ async function moveTask({
         columnId: resolvedColumn.id,
         number: nextTaskNumber,
         position: nextPosition,
+        // Features stay within a project, so the task leaves its feature.
+        featureId: null,
       })
       .where(
         and(
@@ -164,6 +186,31 @@ async function moveTask({
     if (!updatedTask) {
       throw new HTTPException(409, {
         message: "Task was moved concurrently, please try again",
+      });
+    }
+
+    // Counted after the update holds the feature's row lock, so a task can't
+    // join it meanwhile (joining locks the feature FOR SHARE).
+    if (updatedTask.type === "feature") {
+      const [members] = await tx
+        .select({ count: count() })
+        .from(taskTable)
+        .where(eq(taskTable.featureId, taskId));
+      if ((members?.count ?? 0) > 0) {
+        throw new HTTPException(409, {
+          message:
+            "This feature still has tasks. Take them out of it before moving it to another project.",
+        });
+      }
+    }
+
+    if (current.featureId) {
+      await recordFeatureChange(tx, {
+        taskIds: [taskId],
+        projectId: sourceProject.id,
+        from: current.featureId,
+        to: null,
+        userId: currentUserId,
       });
     }
 
@@ -220,7 +267,7 @@ async function moveTask({
       .set({ projectId: destinationProjectId })
       .where(eq(assetTable.taskId, taskId));
 
-    return movedTask;
+    return { movedTask, leftFeatureId: current.featureId };
   });
 
   await publishEvent("task.moved", {
@@ -234,6 +281,13 @@ async function moveTask({
     oldStatus: existingTask.status,
     newStatus: resolvedColumn.slug,
   });
+  if (leftFeatureId) {
+    await publishFeatureChange({
+      projectId: sourceProject.id,
+      featureIds: [leftFeatureId],
+      userId: currentUserId,
+    });
+  }
 
   return {
     task: movedTask,
