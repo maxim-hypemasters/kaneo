@@ -112,6 +112,19 @@ const taskExternalLinkSchema = z
   })
   .openapi("TaskExternalLink");
 
+export const projectFeatureListSchema = z
+  .array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      number: z.number().nullable(),
+      status: z.string().openapi({
+        description: "The feature's column slug, or planned or archived.",
+      }),
+    }),
+  )
+  .openapi("ProjectFeatureList");
+
 export const boardTaskSchema = z
   .object({
     id: z.string(),

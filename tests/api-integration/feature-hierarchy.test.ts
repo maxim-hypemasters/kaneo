@@ -489,3 +489,43 @@ describe("subtask relations from older clients", () => {
     expect(await read(ctx.task.id)).toMatchObject({ featureId: newer.id });
   });
 });
+
+describe("listing a project's features", () => {
+  it("returns only the project's features, by title", async () => {
+    const ctx = await setup();
+    const second = await addTask(ctx.project.id, {
+      type: "feature",
+      title: "Billing",
+      status: "planned",
+    });
+    await addTask(ctx.otherProject.id, { type: "feature", title: "Elsewhere" });
+
+    const response = await call("GET", `/task/features/${ctx.project.id}`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      {
+        id: second.id,
+        title: "Billing",
+        number: second.number,
+        status: "planned",
+      },
+      {
+        id: ctx.feature.id,
+        title: "Checkout",
+        number: ctx.feature.number,
+        status: ctx.feature.status,
+      },
+    ]);
+  });
+
+  it("refuses a project the caller can't see", async () => {
+    const ctx = await setup();
+    const stranger = await createWorkspaceMember();
+    mockAuthenticatedSession(stranger.user);
+
+    const response = await call("GET", `/task/features/${ctx.project.id}`);
+
+    expect([403, 404]).toContain(response.status);
+  });
+});

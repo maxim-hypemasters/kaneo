@@ -42,6 +42,7 @@ import getTaskByTicketId from "./controllers/get-task-by-ticket-id";
 import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
 import importTasks from "./controllers/import-tasks";
+import listProjectFeatures from "./controllers/list-project-features";
 import moveTask from "./controllers/move-task";
 import reorderTasks from "./controllers/reorder-tasks";
 import {
@@ -75,6 +76,7 @@ import {
   finalizedAssetSchema,
   imageUploadSchema,
   moveTaskResultSchema,
+  projectFeatureListSchema,
   taskByTicketIdSchema,
   taskExportSchema,
   taskImportResultSchema,
@@ -129,6 +131,28 @@ const listAssignedTasksRoute = createRoute({
     400: errorResponse("Invalid workspace ID or query parameters"),
     403: errorResponse("Missing project:read or task:read permission"),
     404: errorResponse("Workspace not found"),
+  },
+});
+
+const listProjectFeaturesRoute = createRoute({
+  method: "get",
+  operationId: "listProjectFeatures",
+  path: "/features/{projectId}",
+  tags: ["Tasks"],
+  summary: "List project features",
+  description:
+    "Get the project's features (tasks of type feature), by title, with their status. Lighter than the board for picking a feature.",
+  middleware: [
+    workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
+  request: { params: projectIdParam },
+  responses: {
+    200: jsonResponse("The project's features", projectFeatureListSchema),
+    403: errorResponse(
+      "No access to the project, or missing task:read permission",
+    ),
+    404: errorResponse("Project not found"),
   },
 });
 
@@ -879,6 +903,10 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       ),
       200,
     );
+  })
+  .openapi(listProjectFeaturesRoute, async (c) => {
+    const { projectId } = c.req.valid("param");
+    return c.json(await listProjectFeatures(projectId), 200);
   })
   .openapi(listTasksRoute, async (c) => {
     const { projectId } = c.req.valid("param");

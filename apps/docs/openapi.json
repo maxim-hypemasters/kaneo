@@ -1110,6 +1110,36 @@
           "labels"
         ]
       },
+      "ProjectFeatureList": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "number": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "description": "The feature's column slug, or planned or archived."
+            }
+          },
+          "required": [
+            "id",
+            "title",
+            "number",
+            "status"
+          ]
+        }
+      },
       "BoardResponse": {
         "type": "object",
         "properties": {
@@ -10570,6 +10600,71 @@
           },
           "404": {
             "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/task/features/{projectId}": {
+      "get": {
+        "operationId": "listProjectFeatures",
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "List project features",
+        "description": "Get the project's features (tasks of type feature), by title, with their status. Lighter than the board for picking a feature.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The project's features",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectFeatureList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, or missing task:read permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
             "content": {
               "application/json": {
                 "schema": {
