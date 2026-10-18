@@ -99,7 +99,11 @@ describe("project WebSocket lifecycle", () => {
     expect(old.close).toHaveBeenCalledOnce();
     expect(old.send).not.toHaveBeenCalled();
     expect(current.send).toHaveBeenCalledWith('{"type":"ping"}');
-    expect(client.invalidateQueries).not.toHaveBeenCalled();
+    // Only each socket's own catch-up on opening; nothing from the late events.
+    expect(client.invalidateQueries.mock.calls).toEqual([
+      [{ queryKey: ["releases", "project-a"] }, { cancelRefetch: false }],
+      [{ queryKey: ["releases", "project-b"] }, { cancelRefetch: false }],
+    ]);
     unmount();
     act(() => current.onclose?.());
     expect(current.close).toHaveBeenCalledOnce();

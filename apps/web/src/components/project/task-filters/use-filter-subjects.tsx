@@ -1,8 +1,10 @@
-import { CalendarDays, CircleDot, Tag, UserRound } from "lucide-react";
+import { CalendarDays, CircleDot, Rocket, Tag, UserRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getColumnIcon } from "@/lib/column";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
+import { sortReleases } from "@/lib/releases/sort-releases";
+import { useReleaseToday } from "@/lib/releases/use-release-today";
 import { countValues } from "@/lib/task-filters/count-values";
 import { DUE_DATE_OPTIONS } from "@/lib/task-filters/due-date-options";
 import { customFieldSubjectId } from "@/lib/task-filters/filter-subject-id";
@@ -11,6 +13,7 @@ import {
   isLabelGroupSelected,
   toggleLabelGroup,
 } from "@/lib/task-filters/label-groups";
+import { NO_RELEASE } from "@/lib/task-filters/release-filter-values";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
 import { customFieldIcon } from "@/components/custom-fields/custom-field-icon";
@@ -40,6 +43,7 @@ export function useFilterSubjects({
   showStatus,
 }: UseFilterSubjectsInput): FilterSubject[] {
   const { t } = useTranslation();
+  const today = useReleaseToday();
   const { filters, toggleFilter, updateFilter, setNegated } = controls;
   const empty = t("tasks:boardFilters.noValuesUsedYet");
   const negated = new Set(filters.negated ?? []);
@@ -62,7 +66,7 @@ export function useFilterSubjects({
   });
 
   const listSubject = (
-    key: "status" | "priority" | "assignee" | "dueDate",
+    key: "status" | "priority" | "assignee" | "dueDate" | "release",
     fields: Pick<FilterSubject, "label" | "icon" | "options">,
   ) =>
     subject(key, {
@@ -85,7 +89,17 @@ export function useFilterSubjects({
         groupIdByLabel.get(`${label.name}|${label.color}`),
       ),
     ),
+    release: countValues(tasks, (task) => [task.releaseId ?? NO_RELEASE]),
   };
+
+  // Ordered as the release picker lists them. A filtered release that is no
+  // longer in the project (deleted) stays listed so it can be cleared.
+  const { active, upcoming, past } = sortReleases(options.releases, today);
+  const releases = [...active, ...upcoming, ...past];
+  const releaseIds = new Set(releases.map((release) => release.id));
+  const missingReleaseIds = (filters.release ?? []).filter(
+    (id) => id !== NO_RELEASE && !releaseIds.has(id),
+  );
 
   const core = [
     ...(showStatus
@@ -156,6 +170,29 @@ export function useFilterSubjects({
       },
       "include",
     ),
+    listSubject("release", {
+      label: t("tasks:boardFilters.subjects.release"),
+      icon: <Rocket />,
+      options: [
+        {
+          value: NO_RELEASE,
+          label: t("tasks:releases.none"),
+          count: counts.release[NO_RELEASE],
+        },
+        ...releases.map((release) => ({
+          value: release.id,
+          label: release.name,
+          count: counts.release[release.id],
+        })),
+        ...missingReleaseIds.map((id) => ({
+          value: id,
+          label: options.releasesLoading
+            ? t("common:empty.loading")
+            : t("tasks:releases.unknown"),
+          count: counts.release[id],
+        })),
+      ],
+    }),
     listSubject("dueDate", {
       label: t("tasks:boardFilters.subjects.dueDate"),
       icon: <CalendarDays />,

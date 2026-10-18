@@ -4,6 +4,8 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { ArrowDownIcon, ArrowUpIcon, CornerDownLeftIcon } from "lucide-react";
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ReleaseDialog } from "@/components/releases/dialog/release-dialog";
+import { useReleasePermissions } from "@/components/releases/use-release-permissions";
 import SearchCommandMenu from "@/components/search-command-menu";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import CreateWorkspaceModal from "@/components/shared/modals/create-workspace-modal";
@@ -64,9 +66,18 @@ function CommandPalette() {
   const [createType, setCreateType] = useState<TaskType | null>(null);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [isCreateWorkspaceOpen, setIsCreateWorkspaceOpen] = useState(false);
+  const [isCreateReleaseOpen, setIsCreateReleaseOpen] = useState(false);
   const projectIdFromRoute =
     location.pathname.match(/\/project\/([^/]+)/)?.[1] ?? undefined;
+  const workspaceIdFromRoute =
+    location.pathname.match(/\/workspace\/([^/]+)\/project\//)?.[1] ??
+    workspace?.id;
+  // A task created on a release's page starts in that release.
+  const releaseIdFromRoute =
+    location.pathname.match(/\/project\/[^/]+\/releases\/([^/]+)/)?.[1] ??
+    undefined;
   const isBacklogView = location.pathname.endsWith("/backlog");
+  const { canManage: canManageReleases } = useReleasePermissions();
 
   const openShortcutsPanel = useShortcutsPanelStore((state) => state.setOpen);
 
@@ -129,6 +140,33 @@ function CommandPalette() {
             shortcutId: "createProject",
             onRun: () => setIsCreateProjectOpen(true),
           },
+          ...(projectIdFromRoute && workspaceIdFromRoute
+            ? [
+                {
+                  value: "go-to-releases",
+                  label: t("navigation:commandPalette.goToReleases"),
+                  shortcutId: "goToReleases" as const,
+                  onRun: () => {
+                    navigate({
+                      to: "/dashboard/workspace/$workspaceId/project/$projectId/releases",
+                      params: {
+                        workspaceId: workspaceIdFromRoute,
+                        projectId: projectIdFromRoute,
+                      },
+                    });
+                  },
+                },
+                ...(canManageReleases
+                  ? [
+                      {
+                        value: "create-release",
+                        label: t("navigation:commandPalette.createRelease"),
+                        onRun: () => setIsCreateReleaseOpen(true),
+                      },
+                    ]
+                  : []),
+              ]
+            : []),
         ],
       },
       {
@@ -175,6 +213,9 @@ function CommandPalette() {
       workspace?.id,
       canCreateWorkspace,
       openShortcutsPanel,
+      projectIdFromRoute,
+      workspaceIdFromRoute,
+      canManageReleases,
     ],
   );
 
@@ -260,9 +301,28 @@ function CommandPalette() {
         type={createType ?? "task"}
         projectId={projectIdFromRoute}
         status={isBacklogView ? "planned" : undefined}
+        releaseId={releaseIdFromRoute}
         onClose={() => setCreateType(null)}
         instant
       />
+      {projectIdFromRoute && workspaceIdFromRoute ? (
+        <ReleaseDialog
+          open={isCreateReleaseOpen}
+          onOpenChange={setIsCreateReleaseOpen}
+          projectId={projectIdFromRoute}
+          release={null}
+          onCreated={(release) =>
+            navigate({
+              to: "/dashboard/workspace/$workspaceId/project/$projectId/releases/$releaseId",
+              params: {
+                workspaceId: workspaceIdFromRoute,
+                projectId: release.projectId,
+                releaseId: release.id,
+              },
+            })
+          }
+        />
+      ) : null}
       <CreateWorkspaceModal
         open={isCreateWorkspaceOpen}
         onClose={() => setIsCreateWorkspaceOpen(false)}

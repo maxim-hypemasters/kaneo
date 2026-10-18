@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (nuova)",
 				"chooseProjectForFeature": "Scegli un progetto per selezionare una funzionalità.",
 				"loadingFeatures": "Caricamento funzionalità...",
-				"loadFeaturesError": "Impossibile caricare le funzionalità."
+				"loadFeaturesError": "Impossibile caricare le funzionalità.",
+				"release": "Release",
+				"noRelease": "Nessuna release",
+				"searchReleases": "Cerca release...",
+				"releaseFromFeature": "{{name}} (dalla funzionalità)",
+				"chooseProjectForRelease": "Scegli un progetto per selezionare una release.",
+				"loadingReleases": "Caricamento release...",
+				"loadReleasesError": "Impossibile caricare le release.",
+				"noReleasesFound": "Nessuna release trovata"
 			}
 		},
 		"editor": {
@@ -2444,7 +2452,9 @@
 				"open": "Apri",
 				"close": "Chiudi"
 			},
-			"createFeature": "Crea funzionalità"
+			"createFeature": "Crea funzionalità",
+			"goToReleases": "Vai alle release",
+			"createRelease": "Crea release"
 		},
 		"sidebar": {
 			"projects": "Progetti",
@@ -2614,7 +2624,9 @@
 				"editorNumberedList": "Elenco numerato",
 				"editorCodeBlock": "Blocco di codice",
 				"editorUndo": "Annulla",
-				"editorRedo": "Ripeti"
+				"editorRedo": "Ripeti",
+				"goToReleases": "Vai alle release",
+				"setRelease": "Imposta release"
 			},
 			"title": "Scorciatoie da Tastiera",
 			"searchPlaceholder": "Cerca per azione o tasto",
@@ -2826,7 +2838,10 @@
 		"removedFromFeature": "ha rimosso l'attività dalla funzionalità \"{{feature}}\"",
 		"changedFeature": "ha spostato l'attività dalla funzionalità \"{{from}}\" a \"{{to}}\"",
 		"madeFeature": "ha trasformato questa attività in una funzionalità",
-		"madeTask": "ha trasformato questa funzionalità in un'attività"
+		"madeTask": "ha trasformato questa funzionalità in un'attività",
+		"addedToRelease": "ha aggiunto l'attività alla release \"{{release}}\"",
+		"removedFromRelease": "ha rimosso l'attività dalla release \"{{release}}\"",
+		"changedRelease": "ha spostato l'attività dalla release \"{{from}}\" a \"{{to}}\""
 	},
 	"tasks": {
 		"title": "Attività",
@@ -2852,7 +2867,8 @@
 			"list": "Elenco",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Vista"
+			"heading": "Vista",
+			"releases": "Release"
 		},
 		"common": {
 			"selectTask": "Seleziona attività",
@@ -3124,7 +3140,8 @@
 				"priority": "Priorità",
 				"assignee": "Assegnatario",
 				"dueDate": "Data scadenza",
-				"labels": "Etichette"
+				"labels": "Etichette",
+				"release": "Release"
 			},
 			"operators": {
 				"isAnyOf": "è uno di",
@@ -3452,6 +3469,170 @@
 			"convertBlocked": "Sposta fuori le attività di questa funzionalità prima di trasformarla in un'attività.",
 			"openFeature": "Apri funzionalità {{title}}",
 			"inProject": "Funzionalità nel progetto"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Release",
+			"count_one": "{{count}} release",
+			"count_many": "{{count}} release",
+			"count_other": "{{count}} release",
+			"new": "Nuova release",
+			"edit": "Modifica release",
+			"delete": "Elimina release",
+			"property": "Release",
+			"none": "Nessuna release",
+			"unknown": "Release sconosciuta",
+			"searchPlaceholder": "Cerca release…",
+			"pickerEmpty": "Ancora nessuna release in questo progetto",
+			"updateError": "Aggiornamento della release fallito",
+			"featureReleaseHint": "Release della funzionalità",
+			"followNote": "Le attività che seguono questa funzionalità si spostano con essa.",
+			"movedWithFeature_one": "Spostata anche {{count}} attività di questa funzionalità",
+			"movedWithFeature_many": "Spostate anche {{count}} attività di questa funzionalità",
+			"movedWithFeature_other": "Spostate anche {{count}} attività di questa funzionalità",
+			"loadError": "Impossibile caricare le release.",
+			"retry": "Riprova",
+			"sections": {
+				"active": "Attive",
+				"upcoming": "In arrivo",
+				"past": "Passate"
+			},
+			"phase": {
+				"upcoming": "In arrivo",
+				"inProgress": "In corso",
+				"codeFreeze": "Code freeze",
+				"pastSubmission": "Dopo l'invio"
+			},
+			"dates": {
+				"start": "Inizio",
+				"codeFreeze": "Code freeze",
+				"submission": "Invio"
+			},
+			"countdown": {
+				"startsIn_one": "Inizia tra {{count}} giorno",
+				"startsIn_many": "Inizia tra {{count}} giorni",
+				"startsIn_other": "Inizia tra {{count}} giorni",
+				"startsToday": "Inizia oggi",
+				"freezeIn_one": "Code freeze tra {{count}} giorno",
+				"freezeIn_many": "Code freeze tra {{count}} giorni",
+				"freezeIn_other": "Code freeze tra {{count}} giorni",
+				"freezeToday": "Code freeze oggi",
+				"submissionIn_one": "Invio tra {{count}} giorno",
+				"submissionIn_many": "Invio tra {{count}} giorni",
+				"submissionIn_other": "Invio tra {{count}} giorni",
+				"submissionToday": "Invio oggi",
+				"submittedAgo_one": "Inviata {{count}} giorno fa",
+				"submittedAgo_many": "Inviata {{count}} giorni fa",
+				"submittedAgo_other": "Inviata {{count}} giorni fa"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{completed}} di {{count}} attività completata",
+			"progressAria_many": "{{completed}} di {{count}} attività completate",
+			"progressAria_other": "{{completed}} di {{count}} attività completate",
+			"counts": {
+				"features_one": "{{count}} funzionalità",
+				"features_many": "{{count}} funzionalità",
+				"features_other": "{{count}} funzionalità",
+				"tasks_one": "{{count}} attività",
+				"tasks_many": "{{count}} attività",
+				"tasks_other": "{{count}} attività",
+				"unfinished_one": "{{count}} da completare",
+				"unfinished_many": "{{count}} da completare",
+				"unfinished_other": "{{count}} da completare"
+			},
+			"empty": {
+				"title": "Ancora nessuna release",
+				"description": "Pianifica una release con una data di inizio, un code freeze e una data di invio, poi aggiungici funzionalità e attività.",
+				"readOnly": "Le release pianificate per questo progetto appariranno qui."
+			},
+			"dialog": {
+				"createTitle": "Nuova release",
+				"editTitle": "Modifica release",
+				"createDescription": "Una release ha una data di inizio, un code freeze e una data di invio, in quest'ordine.",
+				"nameLabel": "Nome",
+				"namePlaceholder": "es. 2.4",
+				"nameRequired": "Inserisci un nome",
+				"dateRequired": "Scegli una data",
+				"startLabel": "Inizio",
+				"codeFreezeLabel": "Code freeze",
+				"submissionLabel": "Invio",
+				"pickDate": "Scegli una data",
+				"descriptionLabel": "Descrizione",
+				"descriptionPlaceholder": "Cosa porta questa release (opzionale)",
+				"create": "Crea release",
+				"save": "Salva",
+				"createSuccess": "Release creata",
+				"updateSuccess": "Release aggiornata",
+				"createError": "Creazione della release fallita",
+				"updateError": "Aggiornamento della release fallito",
+				"beforeStart": "{{date}} è prima della data di inizio",
+				"afterCodeFreeze": "{{date}} è dopo il code freeze",
+				"beforeCodeFreeze": "{{date}} è prima del code freeze",
+				"afterSubmission": "{{date}} è dopo la data di invio",
+				"limitHint": "Tra {{start}} e {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Eliminare la release {{name}}?",
+				"description_one": "{{count}} attività o funzionalità al suo interno resta nel progetto, senza release.",
+				"description_many": "Le {{count}} attività e funzionalità al suo interno restano nel progetto, senza release.",
+				"description_other": "Le {{count}} attività e funzionalità al suo interno restano nel progetto, senza release.",
+				"descriptionEmpty": "Questa release non contiene attività né funzionalità.",
+				"confirm": "Elimina release",
+				"success": "Release eliminata",
+				"error": "Eliminazione della release fallita"
+			},
+			"moveUnfinished": {
+				"action": "Sposta elementi da completare…",
+				"title": "Sposta elementi da completare",
+				"description": "Le attività e le funzionalità non completate vengono spostate una per una. Quelle completate restano nella release {{name}}.",
+				"target": "Sposta in",
+				"noRelease": "Nessuna release",
+				"summary_one": "{{count}} elemento da completare verrà spostato.",
+				"summary_many": "{{count}} elementi da completare verranno spostati.",
+				"summary_other": "{{count}} elementi da completare verranno spostati.",
+				"none": "Tutto in questa release è completato.",
+				"noTargets": "Nessun'altra release",
+				"confirm": "Sposta elementi",
+				"success_one": "{{count}} elemento spostato in {{name}}",
+				"success_many": "{{count}} elementi spostati in {{name}}",
+				"success_other": "{{count}} elementi spostati in {{name}}",
+				"successNoRelease_one": "{{count}} elemento rimosso dalla release",
+				"successNoRelease_many": "{{count}} elementi rimossi dalla release",
+				"successNoRelease_other": "{{count}} elementi rimossi dalla release",
+				"error": "Spostamento degli elementi fallito"
+			},
+			"detail": {
+				"back": "Tutte le release",
+				"notFound": "Questa release non esiste o è stata eliminata.",
+				"backToReleases": "Torna alle release",
+				"standaloneHeading": "Attività senza funzionalità",
+				"empty": "Ancora niente in questa release",
+				"emptyHint": "Imposta la release di un'attività o di una funzionalità, oppure aggiungi qui un'attività.",
+				"addTask": "Aggiungi attività",
+				"featureElsewhere": "Funzionalità non in questa release",
+				"tasksElsewhere_one": "{{count}} altra attività fuori da questa release",
+				"tasksElsewhere_many": "{{count}} altre attività fuori da questa release",
+				"tasksElsewhere_other": "{{count}} altre attività fuori da questa release",
+				"today": "Oggi",
+				"loadingTasks": "Caricamento attività…",
+				"timelineLabel": "Cronologia della release"
+			},
+			"gantt": {
+				"strip": "Release",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Inizio: {{date}}",
+					"codeFreeze": "Code freeze: {{date}}",
+					"submission": "Invio: {{date}}"
+				},
+				"actionsFor": "Azioni per {{name}}",
+				"loading": "Caricamento release…",
+				"tasksLoadError": "Impossibile caricare le attività."
+			},
+			"ux": {
+				"nameTaken": "Una release con questo nome esiste già"
+			}
 		}
 	},
 	"invitations": {

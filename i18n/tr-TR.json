@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (yeni)",
 				"chooseProjectForFeature": "Epik belirlemek için önce bir proje seçin.",
 				"loadingFeatures": "Epikler yükleniyor...",
-				"loadFeaturesError": "Epikler yüklenemedi."
+				"loadFeaturesError": "Epikler yüklenemedi.",
+				"release": "Sürüm",
+				"noRelease": "Sürüm yok",
+				"searchReleases": "Sürüm ara...",
+				"releaseFromFeature": "{{name}} (epikten)",
+				"chooseProjectForRelease": "Sürüm belirlemek için önce bir proje seçin.",
+				"loadingReleases": "Sürümler yükleniyor...",
+				"loadReleasesError": "Sürümler yüklenemedi.",
+				"noReleasesFound": "Sürüm bulunamadı"
 			}
 		},
 		"editor": {
@@ -2402,7 +2410,9 @@
 				"open": "Aç",
 				"close": "Kapat"
 			},
-			"createFeature": "Epik oluştur"
+			"createFeature": "Epik oluştur",
+			"goToReleases": "Sürümlere git",
+			"createRelease": "Sürüm oluştur"
 		},
 		"sidebar": {
 			"projects": "Projeler",
@@ -2572,7 +2582,9 @@
 				"editorNumberedList": "Numaralı liste",
 				"editorCodeBlock": "Kod bloğu",
 				"editorUndo": "Geri al",
-				"editorRedo": "Yinele"
+				"editorRedo": "Yinele",
+				"goToReleases": "Sürümlere git",
+				"setRelease": "Sürüm belirle"
 			},
 			"title": "Klavye Kısayolları",
 			"searchPlaceholder": "Eylem veya tuşa göre ara",
@@ -2779,7 +2791,10 @@
 		"removedFromFeature": "talebi \"{{feature}}\" epiğinden çıkardı",
 		"changedFeature": "talebi \"{{from}}\" epiğinden \"{{to}}\" epiğine taşıdı",
 		"madeFeature": "bu talebi bir epiğe dönüştürdü",
-		"madeTask": "bu epiği bir talebe dönüştürdü"
+		"madeTask": "bu epiği bir talebe dönüştürdü",
+		"addedToRelease": "talebi \"{{release}}\" sürümüne ekledi",
+		"removedFromRelease": "talebi \"{{release}}\" sürümünden çıkardı",
+		"changedRelease": "talebi \"{{from}}\" sürümünden \"{{to}}\" sürümüne taşıdı"
 	},
 	"tasks": {
 		"title": "Görevler",
@@ -2805,7 +2820,8 @@
 			"list": "Liste",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Görünüm"
+			"heading": "Görünüm",
+			"releases": "Sürümler"
 		},
 		"common": {
 			"selectTask": "Talep seç",
@@ -3077,7 +3093,8 @@
 				"priority": "Öncelik",
 				"assignee": "Atanan",
 				"dueDate": "Bitiş tarihi",
-				"labels": "Etiketler"
+				"labels": "Etiketler",
+				"release": "Sürüm"
 			},
 			"operators": {
 				"isAnyOf": "herhangi biri",
@@ -3389,6 +3406,155 @@
 			"convertBlocked": "Bu epiği talebe dönüştürmeden önce içindeki talepleri dışarı taşıyın.",
 			"openFeature": "{{title}} epiğini aç",
 			"inProject": "Projedeki epikler"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Sürümler",
+			"count_one": "{{count}} sürüm",
+			"count_other": "{{count}} sürüm",
+			"new": "Yeni sürüm",
+			"edit": "Sürümü düzenle",
+			"delete": "Sürümü sil",
+			"property": "Sürüm",
+			"none": "Sürüm yok",
+			"unknown": "Bilinmeyen sürüm",
+			"searchPlaceholder": "Sürüm ara…",
+			"pickerEmpty": "Bu projede henüz sürüm yok",
+			"updateError": "Sürüm güncellenemedi",
+			"featureReleaseHint": "Epiğin sürümü",
+			"followNote": "Sürümünü bu epikten alan talepler de onunla birlikte taşınır.",
+			"movedWithFeature_one": "Bu epiğin {{count}} talebi de taşındı",
+			"movedWithFeature_other": "Bu epiğin {{count}} talebi de taşındı",
+			"loadError": "Sürümler yüklenemedi.",
+			"retry": "Tekrar dene",
+			"sections": {
+				"active": "Etkin",
+				"upcoming": "Yaklaşan",
+				"past": "Geçmiş"
+			},
+			"phase": {
+				"upcoming": "Yaklaşan",
+				"inProgress": "Devam ediyor",
+				"codeFreeze": "Kod dondurma",
+				"pastSubmission": "Gönderim tarihi geçti"
+			},
+			"dates": {
+				"start": "Başlangıç",
+				"codeFreeze": "Kod dondurma",
+				"submission": "Gönderim"
+			},
+			"countdown": {
+				"startsIn_one": "{{count}} gün içinde başlıyor",
+				"startsIn_other": "{{count}} gün içinde başlıyor",
+				"startsToday": "Bugün başlıyor",
+				"freezeIn_one": "Kod dondurmaya {{count}} gün kaldı",
+				"freezeIn_other": "Kod dondurmaya {{count}} gün kaldı",
+				"freezeToday": "Kod dondurma bugün",
+				"submissionIn_one": "Gönderime {{count}} gün kaldı",
+				"submissionIn_other": "Gönderime {{count}} gün kaldı",
+				"submissionToday": "Gönderim bugün",
+				"submittedAgo_one": "{{count}} gün önce gönderildi",
+				"submittedAgo_other": "{{count}} gün önce gönderildi"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{count}} talepten {{completed}} tanesi tamamlandı",
+			"progressAria_other": "{{count}} talepten {{completed}} tanesi tamamlandı",
+			"counts": {
+				"features_one": "{{count}} epik",
+				"features_other": "{{count}} epik",
+				"tasks_one": "{{count}} talep",
+				"tasks_other": "{{count}} talep",
+				"unfinished_one": "{{count}} tamamlanmamış",
+				"unfinished_other": "{{count}} tamamlanmamış"
+			},
+			"empty": {
+				"title": "Henüz sürüm yok",
+				"description": "Başlangıç tarihi, kod dondurma ve gönderim tarihi olan bir sürüm planlayın, ardından içine epikler ve talepler ekleyin.",
+				"readOnly": "Bu proje için planlanan sürümler burada görünecek."
+			},
+			"dialog": {
+				"createTitle": "Yeni sürüm",
+				"editTitle": "Sürümü düzenle",
+				"createDescription": "Bir sürümün sırasıyla başlangıç tarihi, kod dondurma ve gönderim tarihi olur.",
+				"nameLabel": "Ad",
+				"namePlaceholder": "örn. 2.4",
+				"nameRequired": "Bir ad girin",
+				"dateRequired": "Bir tarih seçin",
+				"startLabel": "Başlangıç",
+				"codeFreezeLabel": "Kod dondurma",
+				"submissionLabel": "Gönderim",
+				"pickDate": "Tarih seç",
+				"descriptionLabel": "Açıklama",
+				"descriptionPlaceholder": "Bu sürümün neler getireceği (isteğe bağlı)",
+				"create": "Sürüm oluştur",
+				"save": "Kaydet",
+				"createSuccess": "Sürüm oluşturuldu",
+				"updateSuccess": "Sürüm güncellendi",
+				"createError": "Sürüm oluşturulamadı",
+				"updateError": "Sürüm güncellenemedi",
+				"beforeStart": "{{date}} başlangıç tarihinden önce",
+				"afterCodeFreeze": "{{date}} kod dondurmadan sonra",
+				"beforeCodeFreeze": "{{date}} kod dondurmadan önce",
+				"afterSubmission": "{{date}} gönderim tarihinden sonra",
+				"limitHint": "{{start}} ile {{end}} arası"
+			},
+			"deleteDialog": {
+				"title": "{{name}} sürümü silinsin mi?",
+				"description_one": "İçindeki {{count}} talep veya epik, sürüm olmadan projede kalır.",
+				"description_other": "İçindeki {{count}} talep ve epik, sürüm olmadan projede kalır.",
+				"descriptionEmpty": "Bu sürümde talep veya epik yok.",
+				"confirm": "Sürümü sil",
+				"success": "Sürüm silindi",
+				"error": "Sürüm silinemedi"
+			},
+			"moveUnfinished": {
+				"action": "Tamamlanmamışları taşı…",
+				"title": "Tamamlanmamış öğeleri taşı",
+				"description": "Tamamlanmamış talepler ve epikler tek tek taşınır. Tamamlananlar {{name}} sürümünde kalır.",
+				"target": "Şuraya taşı",
+				"noRelease": "Sürüm yok",
+				"summary_one": "{{count}} tamamlanmamış öğe taşınacak.",
+				"summary_other": "{{count}} tamamlanmamış öğe taşınacak.",
+				"none": "Bu sürümdeki her şey tamamlandı.",
+				"noTargets": "Başka sürüm yok",
+				"confirm": "Öğeleri taşı",
+				"success_one": "{{count}} öğe {{name}} sürümüne taşındı",
+				"success_other": "{{count}} öğe {{name}} sürümüne taşındı",
+				"successNoRelease_one": "{{count}} öğe sürümden çıkarıldı",
+				"successNoRelease_other": "{{count}} öğe sürümden çıkarıldı",
+				"error": "Öğeler taşınamadı"
+			},
+			"detail": {
+				"back": "Tüm sürümler",
+				"notFound": "Bu sürüm mevcut değil veya silinmiş.",
+				"backToReleases": "Sürümlere dön",
+				"standaloneHeading": "Epiği olmayan talepler",
+				"empty": "Bu sürümde henüz bir şey yok",
+				"emptyHint": "Bir talebin veya epiğin sürümünü belirleyin ya da buraya bir talep ekleyin.",
+				"addTask": "Talep ekle",
+				"featureElsewhere": "Epik bu sürümde değil",
+				"tasksElsewhere_one": "Bu sürümün dışında {{count}} talep daha",
+				"tasksElsewhere_other": "Bu sürümün dışında {{count}} talep daha",
+				"today": "Bugün",
+				"loadingTasks": "Talepler yükleniyor…",
+				"timelineLabel": "Sürüm zaman çizelgesi"
+			},
+			"gantt": {
+				"strip": "Sürümler",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Başlangıç: {{date}}",
+					"codeFreeze": "Kod dondurma: {{date}}",
+					"submission": "Gönderim: {{date}}"
+				},
+				"actionsFor": "{{name}} için işlemler",
+				"loading": "Sürümler yükleniyor…",
+				"tasksLoadError": "Talepler yüklenemedi."
+			},
+			"ux": {
+				"nameTaken": "Bu ada sahip bir sürüm zaten var"
+			}
 		}
 	},
 	"invitations": {

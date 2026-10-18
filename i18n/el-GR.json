@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (νέα)",
 				"chooseProjectForFeature": "Επιλέξτε ένα έργο για να διαλέξετε δυνατότητα.",
 				"loadingFeatures": "Φόρτωση δυνατοτήτων...",
-				"loadFeaturesError": "Δεν ήταν δυνατή η φόρτωση των δυνατοτήτων."
+				"loadFeaturesError": "Δεν ήταν δυνατή η φόρτωση των δυνατοτήτων.",
+				"release": "Έκδοση",
+				"noRelease": "Χωρίς έκδοση",
+				"searchReleases": "Αναζήτηση εκδόσεων...",
+				"releaseFromFeature": "{{name}} (από τη δυνατότητα)",
+				"chooseProjectForRelease": "Επιλέξτε ένα έργο για να διαλέξετε έκδοση.",
+				"loadingReleases": "Φόρτωση εκδόσεων...",
+				"loadReleasesError": "Δεν ήταν δυνατή η φόρτωση των εκδόσεων.",
+				"noReleasesFound": "Δεν βρέθηκαν εκδόσεις"
 			}
 		},
 		"editor": {
@@ -2402,7 +2410,9 @@
 				"open": "Άνοιγμα",
 				"close": "Κλείσιμο"
 			},
-			"createFeature": "Δημιουργία δυνατότητας"
+			"createFeature": "Δημιουργία δυνατότητας",
+			"goToReleases": "Μετάβαση στις εκδόσεις",
+			"createRelease": "Δημιουργία έκδοσης"
 		},
 		"sidebar": {
 			"projects": "Έργα",
@@ -2572,7 +2582,9 @@
 				"editorNumberedList": "Αριθμημένη λίστα",
 				"editorCodeBlock": "Μπλοκ κώδικα",
 				"editorUndo": "Αναίρεση",
-				"editorRedo": "Επανάληψη"
+				"editorRedo": "Επανάληψη",
+				"goToReleases": "Μετάβαση στις εκδόσεις",
+				"setRelease": "Ορισμός έκδοσης"
 			},
 			"title": "Συντομεύσεις πληκτρολογίου",
 			"searchPlaceholder": "Αναζήτηση με ενέργεια ή πλήκτρο",
@@ -2779,7 +2791,10 @@
 		"removedFromFeature": "αφαίρεσε την εργασία από τη δυνατότητα \"{{feature}}\"",
 		"changedFeature": "μετακίνησε την εργασία από τη δυνατότητα \"{{from}}\" στη \"{{to}}\"",
 		"madeFeature": "μετέτρεψε αυτή την εργασία σε δυνατότητα",
-		"madeTask": "μετέτρεψε αυτή τη δυνατότητα σε εργασία"
+		"madeTask": "μετέτρεψε αυτή τη δυνατότητα σε εργασία",
+		"addedToRelease": "πρόσθεσε την εργασία στην έκδοση \"{{release}}\"",
+		"removedFromRelease": "αφαίρεσε την εργασία από την έκδοση \"{{release}}\"",
+		"changedRelease": "μετακίνησε την εργασία από την έκδοση \"{{from}}\" στην έκδοση \"{{to}}\""
 	},
 	"tasks": {
 		"title": "Εργασίες",
@@ -2805,7 +2820,8 @@
 			"list": "Λίστα",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Προβολή"
+			"heading": "Προβολή",
+			"releases": "Εκδόσεις"
 		},
 		"common": {
 			"selectTask": "Επιλέξτε εργασία",
@@ -3077,7 +3093,8 @@
 				"priority": "Προτεραιότητα",
 				"assignee": "Ανατεθειμένος",
 				"dueDate": "Ημερομηνία λήξης",
-				"labels": "Ετικέτες"
+				"labels": "Ετικέτες",
+				"release": "Έκδοση"
 			},
 			"operators": {
 				"isAnyOf": "είναι ένα από",
@@ -3389,6 +3406,155 @@
 			"convertBlocked": "Αφαιρέστε τις εργασίες από αυτή τη δυνατότητα πριν τη μετατρέψετε σε εργασία.",
 			"openFeature": "Άνοιγμα δυνατότητας {{title}}",
 			"inProject": "Δυνατότητες στο έργο"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Εκδόσεις",
+			"count_one": "{{count}} έκδοση",
+			"count_other": "{{count}} εκδόσεις",
+			"new": "Νέα έκδοση",
+			"edit": "Επεξεργασία έκδοσης",
+			"delete": "Διαγραφή έκδοσης",
+			"property": "Έκδοση",
+			"none": "Χωρίς έκδοση",
+			"unknown": "Άγνωστη έκδοση",
+			"searchPlaceholder": "Αναζήτηση εκδόσεων…",
+			"pickerEmpty": "Δεν υπάρχουν ακόμα εκδόσεις σε αυτό το έργο",
+			"updateError": "Αποτυχία ενημέρωσης της έκδοσης",
+			"featureReleaseHint": "Έκδοση της δυνατότητας",
+			"followNote": "Οι εργασίες που ακολουθούν αυτή τη δυνατότητα μετακινούνται μαζί της.",
+			"movedWithFeature_one": "Μετακινήθηκε επίσης {{count}} εργασία αυτής της δυνατότητας",
+			"movedWithFeature_other": "Μετακινήθηκαν επίσης {{count}} εργασίες αυτής της δυνατότητας",
+			"loadError": "Δεν ήταν δυνατή η φόρτωση των εκδόσεων.",
+			"retry": "Δοκιμάστε ξανά",
+			"sections": {
+				"active": "Ενεργές",
+				"upcoming": "Επερχόμενες",
+				"past": "Παλαιότερες"
+			},
+			"phase": {
+				"upcoming": "Επερχόμενη",
+				"inProgress": "Σε εξέλιξη",
+				"codeFreeze": "Πάγωμα κώδικα",
+				"pastSubmission": "Μετά την υποβολή"
+			},
+			"dates": {
+				"start": "Έναρξη",
+				"codeFreeze": "Πάγωμα κώδικα",
+				"submission": "Υποβολή"
+			},
+			"countdown": {
+				"startsIn_one": "Ξεκινά σε {{count}} ημέρα",
+				"startsIn_other": "Ξεκινά σε {{count}} ημέρες",
+				"startsToday": "Ξεκινά σήμερα",
+				"freezeIn_one": "Πάγωμα κώδικα σε {{count}} ημέρα",
+				"freezeIn_other": "Πάγωμα κώδικα σε {{count}} ημέρες",
+				"freezeToday": "Πάγωμα κώδικα σήμερα",
+				"submissionIn_one": "Υποβολή σε {{count}} ημέρα",
+				"submissionIn_other": "Υποβολή σε {{count}} ημέρες",
+				"submissionToday": "Υποβολή σήμερα",
+				"submittedAgo_one": "Υποβλήθηκε πριν από {{count}} ημέρα",
+				"submittedAgo_other": "Υποβλήθηκε πριν από {{count}} ημέρες"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{completed}} από {{count}} εργασία ολοκληρώθηκε",
+			"progressAria_other": "{{completed}} από {{count}} εργασίες ολοκληρώθηκαν",
+			"counts": {
+				"features_one": "{{count}} δυνατότητα",
+				"features_other": "{{count}} δυνατότητες",
+				"tasks_one": "{{count}} εργασία",
+				"tasks_other": "{{count}} εργασίες",
+				"unfinished_one": "{{count}} μη ολοκληρωμένη",
+				"unfinished_other": "{{count}} μη ολοκληρωμένες"
+			},
+			"empty": {
+				"title": "Δεν υπάρχουν ακόμα εκδόσεις",
+				"description": "Σχεδιάστε μια έκδοση με ημερομηνία έναρξης, πάγωμα κώδικα και ημερομηνία υποβολής και, στη συνέχεια, προσθέστε σε αυτήν δυνατότητες και εργασίες.",
+				"readOnly": "Οι εκδόσεις που σχεδιάζονται για αυτό το έργο θα εμφανίζονται εδώ."
+			},
+			"dialog": {
+				"createTitle": "Νέα έκδοση",
+				"editTitle": "Επεξεργασία έκδοσης",
+				"createDescription": "Μια έκδοση έχει ημερομηνία έναρξης, πάγωμα κώδικα και ημερομηνία υποβολής, με αυτή τη σειρά.",
+				"nameLabel": "Όνομα",
+				"namePlaceholder": "π.χ. 2.4",
+				"nameRequired": "Εισαγάγετε όνομα",
+				"dateRequired": "Επιλέξτε ημερομηνία",
+				"startLabel": "Έναρξη",
+				"codeFreezeLabel": "Πάγωμα κώδικα",
+				"submissionLabel": "Υποβολή",
+				"pickDate": "Επιλογή ημερομηνίας",
+				"descriptionLabel": "Περιγραφή",
+				"descriptionPlaceholder": "Τι φέρνει αυτή η έκδοση (προαιρετικό)",
+				"create": "Δημιουργία έκδοσης",
+				"save": "Αποθήκευση",
+				"createSuccess": "Η έκδοση δημιουργήθηκε",
+				"updateSuccess": "Η έκδοση ενημερώθηκε",
+				"createError": "Αποτυχία δημιουργίας της έκδοσης",
+				"updateError": "Αποτυχία ενημέρωσης της έκδοσης",
+				"beforeStart": "Η {{date}} είναι πριν από την ημερομηνία έναρξης",
+				"afterCodeFreeze": "Η {{date}} είναι μετά το πάγωμα κώδικα",
+				"beforeCodeFreeze": "Η {{date}} είναι πριν από το πάγωμα κώδικα",
+				"afterSubmission": "Η {{date}} είναι μετά την ημερομηνία υποβολής",
+				"limitHint": "Μεταξύ {{start}} και {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Διαγραφή της έκδοσης {{name}};",
+				"description_one": "{{count}} εργασία ή δυνατότητα που περιέχει θα παραμείνει στο έργο, χωρίς έκδοση.",
+				"description_other": "Οι {{count}} εργασίες και δυνατότητες που περιέχει θα παραμείνουν στο έργο, χωρίς έκδοση.",
+				"descriptionEmpty": "Δεν υπάρχουν εργασίες ή δυνατότητες σε αυτή την έκδοση.",
+				"confirm": "Διαγραφή έκδοσης",
+				"success": "Η έκδοση διαγράφηκε",
+				"error": "Αποτυχία διαγραφής της έκδοσης"
+			},
+			"moveUnfinished": {
+				"action": "Μετακίνηση μη ολοκληρωμένων…",
+				"title": "Μετακίνηση μη ολοκληρωμένων στοιχείων",
+				"description": "Οι εργασίες και οι δυνατότητες που δεν έχουν ολοκληρωθεί μετακινούνται μία προς μία. Οι ολοκληρωμένες παραμένουν στην έκδοση {{name}}.",
+				"target": "Μετακίνηση σε",
+				"noRelease": "Χωρίς έκδοση",
+				"summary_one": "Θα μετακινηθεί {{count}} μη ολοκληρωμένο στοιχείο.",
+				"summary_other": "Θα μετακινηθούν {{count}} μη ολοκληρωμένα στοιχεία.",
+				"none": "Όλα σε αυτή την έκδοση έχουν ολοκληρωθεί.",
+				"noTargets": "Δεν υπάρχουν άλλες εκδόσεις",
+				"confirm": "Μετακίνηση στοιχείων",
+				"success_one": "Μετακινήθηκε {{count}} στοιχείο στην έκδοση {{name}}",
+				"success_other": "Μετακινήθηκαν {{count}} στοιχεία στην έκδοση {{name}}",
+				"successNoRelease_one": "Αφαιρέθηκε {{count}} στοιχείο από την έκδοση",
+				"successNoRelease_other": "Αφαιρέθηκαν {{count}} στοιχεία από την έκδοση",
+				"error": "Αποτυχία μετακίνησης των στοιχείων"
+			},
+			"detail": {
+				"back": "Όλες οι εκδόσεις",
+				"notFound": "Αυτή η έκδοση δεν υπάρχει ή έχει διαγραφεί.",
+				"backToReleases": "Επιστροφή στις εκδόσεις",
+				"standaloneHeading": "Εργασίες χωρίς δυνατότητα",
+				"empty": "Δεν υπάρχει ακόμα τίποτα σε αυτή την έκδοση",
+				"emptyHint": "Ορίστε την έκδοση μιας εργασίας ή δυνατότητας ή προσθέστε μια εργασία εδώ.",
+				"addTask": "Προσθήκη εργασίας",
+				"featureElsewhere": "Η δυνατότητα δεν ανήκει σε αυτή την έκδοση",
+				"tasksElsewhere_one": "{{count}} ακόμα εργασία εκτός αυτής της έκδοσης",
+				"tasksElsewhere_other": "{{count}} ακόμα εργασίες εκτός αυτής της έκδοσης",
+				"today": "Σήμερα",
+				"loadingTasks": "Φόρτωση εργασιών…",
+				"timelineLabel": "Χρονολόγιο έκδοσης"
+			},
+			"gantt": {
+				"strip": "Εκδόσεις",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Ξεκινά {{date}}",
+					"codeFreeze": "Πάγωμα κώδικα {{date}}",
+					"submission": "Υποβολή {{date}}"
+				},
+				"actionsFor": "Ενέργειες για {{name}}",
+				"loading": "Φόρτωση εκδόσεων…",
+				"tasksLoadError": "Δεν ήταν δυνατή η φόρτωση των εργασιών."
+			},
+			"ux": {
+				"nameTaken": "Υπάρχει ήδη έκδοση με αυτό το όνομα"
+			}
 		}
 	},
 	"invitations": {

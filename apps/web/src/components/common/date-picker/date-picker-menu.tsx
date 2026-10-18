@@ -22,6 +22,10 @@ type DatePickerMenuProps = {
   onChange: (date: Date | null) => void;
   bounds?: DateBounds;
   formatLimit?: (date: string) => string;
+  // Replaces the hint built with formatLimit, e.g. for a day with two bounds.
+  limitHint?: string;
+  // What a typed day outside the bounds says; `date` is already formatted.
+  outOfRangeLabel?: (side: "before" | "after", date: string) => string;
   canClear?: boolean;
 };
 
@@ -44,6 +48,8 @@ export function DatePickerMenu({
   onChange,
   bounds,
   formatLimit,
+  limitHint: limitHintOverride,
+  outOfRangeLabel,
   canClear = value !== null,
 }: DatePickerMenuProps) {
   const { t } = useTranslation();
@@ -57,14 +63,18 @@ export function DatePickerMenu({
   );
   const typed = parseDateQuery(query, now, weekStartsOn, bounds?.before);
   const typedDate = typed && isAllowed(typed, bounds) ? typed : null;
+  const typedSide =
+    bounds?.before && typed && typed < bounds.before ? "before" : "after";
   const typedOutOfRange =
     typed && !typedDate
-      ? t(
-          bounds?.before && typed < bounds.before
-            ? "tasks:datePicker.beforeStart"
-            : "tasks:datePicker.afterDue",
-          { date: formatPickerDay(typed) },
-        )
+      ? outOfRangeLabel
+        ? outOfRangeLabel(typedSide, formatPickerDay(typed))
+        : t(
+            typedSide === "before"
+              ? "tasks:datePicker.beforeStart"
+              : "tasks:datePicker.afterDue",
+            { date: formatPickerDay(typed) },
+          )
       : undefined;
 
   const options: OptionMenuItem[] = [
@@ -95,7 +105,8 @@ export function DatePickerMenu({
 
   const limit = bounds?.before ?? bounds?.after;
   const limitHint =
-    limit && formatLimit ? formatLimit(formatPickerDay(limit)) : null;
+    limitHintOverride ??
+    (limit && formatLimit ? formatLimit(formatPickerDay(limit)) : null);
 
   const disabledDays: Matcher[] = [];
   if (bounds?.before) disabledDays.push({ before: bounds.before });

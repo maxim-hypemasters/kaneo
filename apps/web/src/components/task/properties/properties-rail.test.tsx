@@ -30,6 +30,9 @@ vi.mock("../task-move-popover", () => ({ default: passThrough }));
 vi.mock("../features/task-feature-popover", () => ({
   TaskFeaturePopover: passThrough,
 }));
+vi.mock("../releases/task-release-popover", () => ({
+  TaskReleasePopover: passThrough,
+}));
 vi.mock("../features/task-type-menu", () => ({
   TaskTypeMenu: (props: { hasTasks: boolean; children: ReactNode }) => {
     mocks.typeMenu(props.hasTasks);
@@ -69,6 +72,7 @@ function renderRail(values: Record<string, unknown>) {
     feature: null,
     featureDisplayId: null,
     hasFeatureTasks: false,
+    release: null,
     ...values,
   };
   return render(
@@ -79,6 +83,11 @@ function renderRail(values: Record<string, unknown>) {
     />,
   );
 }
+
+const rowLabels = () =>
+  screen
+    .getAllByText(/^tasks:(features\.(type|property)|releases\.property)$/)
+    .map((label) => label.textContent);
 
 afterEach(() => {
   cleanup();
@@ -123,5 +132,41 @@ describe("PropertiesRail", () => {
       screen.queryByText("tasks:features.property"),
     ).not.toBeInTheDocument();
     expect(mocks.typeMenu).toHaveBeenCalledWith(true);
+  });
+
+  it("shows the release after the feature, for tasks and features", () => {
+    renderRail({ release: { id: "r24", name: "2.4" } });
+
+    expect(rowLabels()).toEqual([
+      "tasks:features.type",
+      "tasks:features.property",
+      "tasks:releases.property",
+    ]);
+    expect(screen.getByRole("button", { name: "2.4" })).toHaveAttribute(
+      "data-task-action",
+      "release",
+    );
+
+    cleanup();
+    renderRail({
+      task: { ...task, type: "feature", featureId: null },
+      isFeature: true,
+      release: null,
+    });
+    expect(rowLabels()).toEqual([
+      "tasks:features.type",
+      "tasks:releases.property",
+    ]);
+    expect(
+      screen.getByRole("button", { name: "tasks:releases.none" }),
+    ).toHaveAttribute("data-task-action", "release");
+  });
+
+  it("names a release the project doesn't list as unknown", () => {
+    renderRail({ release: "unknown" });
+
+    expect(
+      screen.getByRole("button", { name: "tasks:releases.unknown" }),
+    ).toHaveAttribute("data-task-action", "release");
   });
 });

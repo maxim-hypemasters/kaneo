@@ -81,6 +81,14 @@ import type { TaskType } from "@/types/task";
 import { createDialogCopy } from "./create-task/create-dialog-copy";
 import { FeaturePickerChip } from "./create-task/feature-picker-chip";
 import type { FeatureChoice } from "./create-task/feature-picker-options";
+import {
+  FOLLOW_FEATURE_RELEASE,
+  initialReleaseChoice,
+  type ReleaseChoice,
+  releaseRequest,
+  sameReleaseChoice,
+} from "./create-task/release-choice";
+import { ReleasePickerChip } from "./create-task/release-picker-chip";
 import { TaskTypeChip } from "./create-task/task-type-chip";
 import { getInitialTaskColumn } from "./initial-task-column";
 
@@ -92,6 +100,8 @@ type CreateTaskModalProps = {
   instant?: boolean;
   // What the dialog starts out creating; its Type chip can switch it.
   type?: TaskType;
+  // The release the dialog starts out with; its Release chip can change it.
+  releaseId?: string;
 };
 
 type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
@@ -146,6 +156,7 @@ function CreateTaskModalContent({
   projectId,
   instant = false,
   type = "task",
+  releaseId,
 }: CreateTaskModalProps) {
   const { t } = useTranslation();
   const [taskType, setTaskType] = useState<TaskType>(type);
@@ -155,6 +166,9 @@ function CreateTaskModalContent({
   );
   // A feature can't belong to a feature.
   const chosenFeature = taskType === "task" ? featureChoice : null;
+  const [releaseChoice, setReleaseChoice] = useState<ReleaseChoice>(() =>
+    initialReleaseChoice(releaseId),
+  );
   const { setProject } = useProjectStore();
 
   const labelColors = useMemo(
@@ -393,6 +407,7 @@ function CreateTaskModalContent({
     dueDate ||
     selectedProjectId ||
     chosenFeature ||
+    !sameReleaseChoice(releaseChoice, initialReleaseChoice(releaseId)) ||
     labels.length > 0 ||
     stagedAssetsRef.current.length > 0 ||
     hasCustomFieldChanges,
@@ -550,7 +565,8 @@ function CreateTaskModalContent({
         // Created first so the task can join it. Kept chosen as an existing
         // feature, so a retry after a failed task doesn't create it twice.
         // It gets only the task's required custom fields: the project
-        // requires them of every task, features included.
+        // requires them of every task, features included. A picked release
+        // is the feature's too.
         const feature = normalizeTask(
           await createTask({
             title: chosenFeature.title,
@@ -560,6 +576,7 @@ function CreateTaskModalContent({
             projectId: resolvedProjectId,
             status: submitStatus,
             type: "feature",
+            ...releaseRequest(releaseChoice),
             customFields: customFields
               .filter(
                 (field) =>
@@ -579,6 +596,7 @@ function CreateTaskModalContent({
           kind: "existing",
           id: feature.id,
           title: feature.title,
+          releaseId: feature.releaseId,
         });
         syncTaskIntoProject(feature);
         featureId = feature.id;
@@ -595,6 +613,7 @@ function CreateTaskModalContent({
           status: submitStatus,
           type: taskType,
           featureId,
+          ...releaseRequest(releaseChoice),
           draftAssetIds: stagedAssetsRef.current.filter((id) =>
             description.includes(`/asset/${id}`),
           ),
@@ -921,6 +940,7 @@ function CreateTaskModalContent({
                             ) {
                               if (workspaceProject.id !== resolvedProjectId) {
                                 setFeatureChoice(null);
+                                setReleaseChoice(FOLLOW_FEATURE_RELEASE);
                               }
                               setSelectedProjectId(workspaceProject.id);
                             }
@@ -947,6 +967,13 @@ function CreateTaskModalContent({
                   disabled={isSubmitting}
                 />
               )}
+              <ReleasePickerChip
+                projectId={resolvedProjectId}
+                value={releaseChoice}
+                feature={chosenFeature}
+                onChange={setReleaseChoice}
+                disabled={isSubmitting}
+              />
               <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-accent/50 text-foreground rounded-md text-xs font-medium border border-border">
                 {getColumnIcon(
                   taskStatus,
@@ -1428,7 +1455,12 @@ function CreateTaskModal(props: CreateTaskModalProps) {
   // upload drafts, instead of carrying confidential fields into a new context.
   return (
     <CreateTaskModalContent
-      key={JSON.stringify([workspace?.id, location.pathname, props.projectId])}
+      key={JSON.stringify([
+        workspace?.id,
+        location.pathname,
+        props.projectId,
+        props.releaseId,
+      ])}
       {...props}
     />
   );

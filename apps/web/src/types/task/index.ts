@@ -45,6 +45,7 @@ type Task = {
   // Optional while older cached data and hand-built tasks lack them.
   type?: TaskType;
   featureId?: string | null;
+  releaseId?: string | null;
   // For a feature: its tasks, and how many are done.
   subtaskCounts?: { completed: number; total: number };
   labels?: TaskLabel[];

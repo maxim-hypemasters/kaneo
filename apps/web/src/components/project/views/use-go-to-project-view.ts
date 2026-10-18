@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import {
+  isTaskLayoutView,
   PROJECT_ROUTE_PATHS,
   type ProjectRoute,
   type ProjectView,
@@ -24,9 +25,11 @@ export function useGoToProjectView({
   return useCallback(
     (view: ProjectView) => {
       if (view === "board" || view === "list") setViewMode(view);
-      if (view !== "backlog") setTaskLayout(view);
+      if (isTaskLayoutView(view)) setTaskLayout(view);
       const route = routeForView(view);
-      if (route === currentRoute) return;
+      // A release's page shares the Releases route; going to Releases from
+      // there opens the list.
+      if (route === currentRoute && route !== "releases") return;
       navigate({
         to: PROJECT_ROUTE_PATHS[route],
         params: { workspaceId, projectId },

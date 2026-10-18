@@ -98,6 +98,7 @@ describe("useDeleteTask", () => {
       priority: "no-priority",
       type: "task" as const,
       featureId: null,
+      releaseId: null,
     };
     queryClient.setQueryData(["tasks", project.id], project);
     queryClient.setQueryData(["task", deletedTask.id], deletedTask);
@@ -159,6 +160,7 @@ describe("useDeleteTask", () => {
       priority: "no-priority",
       type: "task" as const,
       featureId: "feature-1",
+      releaseId: null,
     };
     queryClient.setQueryData(["tasks", project.id], project);
     queryClient.setQueryData(["task", "feature-1"], makeTask("feature-1"));
@@ -191,6 +193,7 @@ describe("useDeleteTask", () => {
       priority: "no-priority",
       type: "feature",
       featureId: null,
+      releaseId: null,
     });
     const { result } = renderHook(() => useDeleteTask(), { wrapper: Wrapper });
 

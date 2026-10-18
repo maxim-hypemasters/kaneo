@@ -3,6 +3,7 @@ import {
   CircleAlert,
   History,
   Layers,
+  Rocket,
   UserRound,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -20,6 +21,7 @@ import {
 import { TimelineContent, TimelineItem } from "../ui/timeline";
 import CommentCard from "./comment-card";
 import { describeHierarchyActivity } from "./describe-hierarchy-activity";
+import { describeReleaseActivity } from "./describe-release-activity";
 import { isCommentActivity } from "./utils";
 
 type ActivityItem = {
@@ -70,6 +72,8 @@ function getActivityTypeIcon(type: string) {
     case "feature_changed":
     case "type_changed":
       return <Layers className={iconClass} />;
+    case "release_changed":
+      return <Rocket className={iconClass} />;
     default:
       return <History className={iconClass} />;
   }
@@ -414,6 +418,11 @@ function renderActivityContent({
   );
   if (hierarchyChange) {
     return <span className="text-muted-foreground">{hierarchyChange}</span>;
+  }
+
+  const releaseChange = describeReleaseActivity(activity.type, eventData, t);
+  if (releaseChange) {
+    return <span className="text-muted-foreground">{releaseChange}</span>;
   }
 
   if (["create", "created", "task"].includes(activity.type)) {

@@ -90,8 +90,14 @@ vi.mock("@/components/project/task-filters/use-task-filter-options", () => ({
     labels: [],
     customFields: [],
     usedCustomFieldValues: {},
+    releases: [],
+    releasesLoading: false,
   }),
 }));
+vi.mock("@/hooks/queries/release/use-get-releases", () => {
+  const noReleases = { data: [], isPending: false };
+  return { useGetReleases: () => noReleases };
+});
 const noCustomFieldValues = () => [];
 vi.mock(
   "@/hooks/queries/custom-field/use-get-all-custom-field-values-by-project",

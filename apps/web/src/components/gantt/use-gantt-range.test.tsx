@@ -317,6 +317,62 @@ describe("useGanttRange", () => {
     expect(firstDay(hook)).toEqual(GANTT_FIRST_DAY);
   });
 
+  it("opens on the extra spans as well as the tasks, once they're ready", () => {
+    const tasks = [task("2026-09-14", "2026-09-18")];
+    type Span = { scheduleStart: Date; scheduleEnd: Date };
+    const release: Span = {
+      scheduleStart: parseISO("2026-08-17"),
+      scheduleEnd: parseISO("2027-05-01"),
+    };
+    const noSpans: Span[] = [];
+    const { result, rerender } = renderHook(
+      ({ extraSpans, ready }: { extraSpans: Span[]; ready: boolean }) =>
+        useGanttRange({
+          projectId: "project",
+          tasks,
+          extraSpans,
+          ready,
+          weekStartsOn: 1,
+          dayColumnWidthRem: 2.75,
+          railWidthRem: 20,
+          scrollElement: null,
+        }),
+      { initialProps: { extraSpans: noSpans, ready: false } },
+    );
+    expect(result.current.timeline?.rangeStart).toEqual(parseISO("2026-09-07"));
+
+    rerender({ extraSpans: [release], ready: true });
+
+    // A week before the release's first week to four weeks after its last.
+    expect(result.current.timeline?.rangeStart).toEqual(parseISO("2026-08-10"));
+    expect(result.current.timeline?.rangeEnd).toEqual(parseISO("2027-05-30"));
+
+    rerender({ extraSpans: noSpans, ready: true });
+    expect(result.current.timeline?.rangeStart).toEqual(parseISO("2026-08-10"));
+  });
+
+  it("doesn't open a chart on extra spans alone", () => {
+    const { result } = renderHook(() =>
+      useGanttRange({
+        projectId: "project",
+        tasks: [],
+        extraSpans: [
+          {
+            scheduleStart: parseISO("2026-10-01"),
+            scheduleEnd: parseISO("2026-10-20"),
+          },
+        ],
+        ready: true,
+        weekStartsOn: 1,
+        dayColumnWidthRem: 2.75,
+        railWidthRem: 20,
+        scrollElement: null,
+      }),
+    );
+
+    expect(result.current.timeline).toBeNull();
+  });
+
   it("does nothing without a scroll container to measure", () => {
     const { result } = renderHook(() =>
       useGanttRange({

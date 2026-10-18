@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (नया)",
 				"chooseProjectForFeature": "फ़ीचर चुनने के लिए प्रोजेक्ट चुनें।",
 				"loadingFeatures": "फ़ीचर लोड हो रहे हैं...",
-				"loadFeaturesError": "फ़ीचर लोड नहीं हो सके।"
+				"loadFeaturesError": "फ़ीचर लोड नहीं हो सके।",
+				"release": "रिलीज़",
+				"noRelease": "कोई रिलीज़ नहीं",
+				"searchReleases": "रिलीज़ खोजें...",
+				"releaseFromFeature": "{{name}} (फ़ीचर से)",
+				"chooseProjectForRelease": "रिलीज़ चुनने के लिए प्रोजेक्ट चुनें।",
+				"loadingReleases": "रिलीज़ लोड हो रही हैं...",
+				"loadReleasesError": "रिलीज़ लोड नहीं हो सकीं।",
+				"noReleasesFound": "कोई रिलीज़ नहीं मिली"
 			}
 		},
 		"editor": {
@@ -2402,7 +2410,9 @@
 				"open": "खोलें",
 				"close": "बंद करें"
 			},
-			"createFeature": "फ़ीचर बनाएँ"
+			"createFeature": "फ़ीचर बनाएँ",
+			"goToReleases": "रिलीज़ पर जाएँ",
+			"createRelease": "रिलीज़ बनाएँ"
 		},
 		"sidebar": {
 			"projects": "प्रोजेक्ट",
@@ -2572,7 +2582,9 @@
 				"editorNumberedList": "क्रमांकित सूची",
 				"editorCodeBlock": "कोड ब्लॉक",
 				"editorUndo": "पूर्ववत करें",
-				"editorRedo": "फिर से करें"
+				"editorRedo": "फिर से करें",
+				"goToReleases": "रिलीज़ पर जाएँ",
+				"setRelease": "रिलीज़ सेट करें"
 			},
 			"title": "कीबोर्ड शॉर्टकट",
 			"searchPlaceholder": "क्रिया या कुंजी से खोजें",
@@ -2779,7 +2791,10 @@
 		"removedFromFeature": "कार्य को फ़ीचर \"{{feature}}\" से हटाया",
 		"changedFeature": "कार्य को फ़ीचर \"{{from}}\" से \"{{to}}\" में ले गए",
 		"madeFeature": "इस कार्य को फ़ीचर बनाया",
-		"madeTask": "इस फ़ीचर को कार्य बनाया"
+		"madeTask": "इस फ़ीचर को कार्य बनाया",
+		"addedToRelease": "कार्य को रिलीज़ \"{{release}}\" में जोड़ा",
+		"removedFromRelease": "कार्य को रिलीज़ \"{{release}}\" से हटाया",
+		"changedRelease": "कार्य को रिलीज़ \"{{from}}\" से \"{{to}}\" में ले गए"
 	},
 	"tasks": {
 		"title": "कार्य",
@@ -2805,7 +2820,8 @@
 			"list": "सूची",
 			"backlog": "बैकलॉग",
 			"gantt": "गैंट",
-			"heading": "व्यू"
+			"heading": "व्यू",
+			"releases": "रिलीज़"
 		},
 		"common": {
 			"selectTask": "कार्य चुनें",
@@ -3077,7 +3093,8 @@
 				"priority": "प्राथमिकता",
 				"assignee": "सौंपा गया",
 				"dueDate": "नियत तारीख",
-				"labels": "लेबल"
+				"labels": "लेबल",
+				"release": "रिलीज़"
 			},
 			"operators": {
 				"isAnyOf": "में से कोई है",
@@ -3389,6 +3406,155 @@
 			"convertBlocked": "इसे कार्य बनाने से पहले इस फ़ीचर के कार्यों को इससे बाहर ले जाएँ।",
 			"openFeature": "फ़ीचर {{title}} खोलें",
 			"inProject": "प्रोजेक्ट में फ़ीचर"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – रिलीज़",
+			"count_one": "{{count}} रिलीज़",
+			"count_other": "{{count}} रिलीज़",
+			"new": "नई रिलीज़",
+			"edit": "रिलीज़ संपादित करें",
+			"delete": "रिलीज़ हटाएँ",
+			"property": "रिलीज़",
+			"none": "कोई रिलीज़ नहीं",
+			"unknown": "अज्ञात रिलीज़",
+			"searchPlaceholder": "रिलीज़ खोजें…",
+			"pickerEmpty": "इस प्रोजेक्ट में अभी तक कोई रिलीज़ नहीं",
+			"updateError": "रिलीज़ अपडेट करने में विफल",
+			"featureReleaseHint": "फ़ीचर की रिलीज़",
+			"followNote": "जो कार्य इस फ़ीचर की रिलीज़ अपनाते हैं, वे भी इसके साथ चले जाते हैं।",
+			"movedWithFeature_one": "इस फ़ीचर का {{count}} कार्य भी ले जाया गया",
+			"movedWithFeature_other": "इस फ़ीचर के {{count}} कार्य भी ले जाए गए",
+			"loadError": "रिलीज़ लोड नहीं हो सकीं।",
+			"retry": "पुनः प्रयास करें",
+			"sections": {
+				"active": "सक्रिय",
+				"upcoming": "आगामी",
+				"past": "पिछली"
+			},
+			"phase": {
+				"upcoming": "आगामी",
+				"inProgress": "प्रगति में",
+				"codeFreeze": "कोड फ़्रीज़",
+				"pastSubmission": "सबमिशन के बाद"
+			},
+			"dates": {
+				"start": "शुरुआत",
+				"codeFreeze": "कोड फ़्रीज़",
+				"submission": "सबमिशन"
+			},
+			"countdown": {
+				"startsIn_one": "{{count}} दिन में शुरू होगी",
+				"startsIn_other": "{{count}} दिन में शुरू होगी",
+				"startsToday": "आज शुरू हो रही है",
+				"freezeIn_one": "{{count}} दिन में कोड फ़्रीज़",
+				"freezeIn_other": "{{count}} दिन में कोड फ़्रीज़",
+				"freezeToday": "आज कोड फ़्रीज़",
+				"submissionIn_one": "{{count}} दिन में सबमिशन",
+				"submissionIn_other": "{{count}} दिन में सबमिशन",
+				"submissionToday": "आज सबमिशन",
+				"submittedAgo_one": "{{count}} दिन पहले सबमिट की गई",
+				"submittedAgo_other": "{{count}} दिन पहले सबमिट की गई"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{count}} में से {{completed}} कार्य पूरा",
+			"progressAria_other": "{{count}} में से {{completed}} कार्य पूरे",
+			"counts": {
+				"features_one": "{{count}} फ़ीचर",
+				"features_other": "{{count}} फ़ीचर",
+				"tasks_one": "{{count}} कार्य",
+				"tasks_other": "{{count}} कार्य",
+				"unfinished_one": "{{count}} अधूरा",
+				"unfinished_other": "{{count}} अधूरे"
+			},
+			"empty": {
+				"title": "अभी तक कोई रिलीज़ नहीं",
+				"description": "शुरू की तारीख, कोड फ़्रीज़ और सबमिशन की तारीख के साथ एक रिलीज़ की योजना बनाएँ, फिर उसमें फ़ीचर और कार्य जोड़ें।",
+				"readOnly": "इस प्रोजेक्ट के लिए नियोजित रिलीज़ यहाँ दिखेंगी।"
+			},
+			"dialog": {
+				"createTitle": "नई रिलीज़",
+				"editTitle": "रिलीज़ संपादित करें",
+				"createDescription": "हर रिलीज़ में क्रम से शुरू की तारीख, कोड फ़्रीज़ और सबमिशन की तारीख होती है।",
+				"nameLabel": "नाम",
+				"namePlaceholder": "जैसे 2.4",
+				"nameRequired": "नाम दर्ज करें",
+				"dateRequired": "तारीख चुनें",
+				"startLabel": "शुरुआत",
+				"codeFreezeLabel": "कोड फ़्रीज़",
+				"submissionLabel": "सबमिशन",
+				"pickDate": "तारीख चुनें",
+				"descriptionLabel": "विवरण",
+				"descriptionPlaceholder": "यह रिलीज़ क्या लाएगी (वैकल्पिक)",
+				"create": "रिलीज़ बनाएँ",
+				"save": "सहेजें",
+				"createSuccess": "रिलीज़ बनाई गई",
+				"updateSuccess": "रिलीज़ अपडेट की गई",
+				"createError": "रिलीज़ बनाने में विफल",
+				"updateError": "रिलीज़ अपडेट करने में विफल",
+				"beforeStart": "{{date}} शुरू की तारीख से पहले है",
+				"afterCodeFreeze": "{{date}} कोड फ़्रीज़ के बाद है",
+				"beforeCodeFreeze": "{{date}} कोड फ़्रीज़ से पहले है",
+				"afterSubmission": "{{date}} सबमिशन की तारीख के बाद है",
+				"limitHint": "{{start}} से {{end}} के बीच"
+			},
+			"deleteDialog": {
+				"title": "रिलीज़ {{name}} हटाएँ?",
+				"description_one": "इसका {{count}} कार्य या फ़ीचर बिना रिलीज़ के प्रोजेक्ट में बना रहेगा।",
+				"description_other": "इसके {{count}} कार्य और फ़ीचर बिना रिलीज़ के प्रोजेक्ट में बने रहेंगे।",
+				"descriptionEmpty": "इस रिलीज़ में कोई कार्य या फ़ीचर नहीं है।",
+				"confirm": "रिलीज़ हटाएँ",
+				"success": "रिलीज़ हटाई गई",
+				"error": "रिलीज़ हटाने में विफल"
+			},
+			"moveUnfinished": {
+				"action": "अधूरे आइटम ले जाएँ…",
+				"title": "अधूरे आइटम ले जाएँ",
+				"description": "जो कार्य और फ़ीचर पूरे नहीं हुए हैं, वे एक-एक करके ले जाए जाते हैं। पूरे हो चुके आइटम {{name}} में ही रहते हैं।",
+				"target": "यहाँ ले जाएँ",
+				"noRelease": "कोई रिलीज़ नहीं",
+				"summary_one": "{{count}} अधूरा आइटम ले जाया जाएगा।",
+				"summary_other": "{{count}} अधूरे आइटम ले जाए जाएँगे।",
+				"none": "इस रिलीज़ में सब कुछ पूरा हो चुका है।",
+				"noTargets": "कोई अन्य रिलीज़ नहीं",
+				"confirm": "आइटम ले जाएँ",
+				"success_one": "{{count}} आइटम {{name}} में ले जाया गया",
+				"success_other": "{{count}} आइटम {{name}} में ले जाए गए",
+				"successNoRelease_one": "{{count}} आइटम रिलीज़ से हटाया गया",
+				"successNoRelease_other": "{{count}} आइटम रिलीज़ से हटाए गए",
+				"error": "आइटम ले जाने में विफल"
+			},
+			"detail": {
+				"back": "सभी रिलीज़",
+				"notFound": "यह रिलीज़ मौजूद नहीं है या हटा दी गई है।",
+				"backToReleases": "रिलीज़ पर वापस जाएँ",
+				"standaloneHeading": "बिना फ़ीचर वाले कार्य",
+				"empty": "इस रिलीज़ में अभी कुछ नहीं है",
+				"emptyHint": "किसी कार्य या फ़ीचर की रिलीज़ सेट करें, या यहाँ कार्य जोड़ें।",
+				"addTask": "कार्य जोड़ें",
+				"featureElsewhere": "फ़ीचर इस रिलीज़ में नहीं है",
+				"tasksElsewhere_one": "इस रिलीज़ के बाहर {{count}} और कार्य",
+				"tasksElsewhere_other": "इस रिलीज़ के बाहर {{count}} और कार्य",
+				"today": "आज",
+				"loadingTasks": "कार्य लोड हो रहे हैं…",
+				"timelineLabel": "रिलीज़ टाइमलाइन"
+			},
+			"gantt": {
+				"strip": "रिलीज़",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "शुरुआत: {{date}}",
+					"codeFreeze": "कोड फ़्रीज़: {{date}}",
+					"submission": "सबमिशन: {{date}}"
+				},
+				"actionsFor": "{{name}} के लिए कार्रवाइयाँ",
+				"loading": "रिलीज़ लोड हो रही हैं…",
+				"tasksLoadError": "कार्य लोड नहीं हो सके।"
+			},
+			"ux": {
+				"nameTaken": "इस नाम की रिलीज़ पहले से मौजूद है"
+			}
 		}
 	},
 	"invitations": {

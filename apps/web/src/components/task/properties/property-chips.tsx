@@ -12,6 +12,8 @@ import { FeatureValue } from "../features/feature-value";
 import { TaskFeaturePopover } from "../features/task-feature-popover";
 import { TaskTypeMenu } from "../features/task-type-menu";
 import { TaskTypeValue } from "../features/task-type-value";
+import { ReleaseValue } from "../releases/release-value";
+import { TaskReleasePopover } from "../releases/task-release-popover";
 import TaskAssigneePopover from "../task-assignee-popover";
 import TaskDueDatePopover from "../task-due-date-popover";
 import TaskLabelsPopover from "../task-labels-popover";
@@ -57,6 +59,7 @@ export function PropertyChips({
     feature,
     featureDisplayId,
     hasFeatureTasks,
+    release,
   } = useTaskProperties(taskId, projectId, workspaceId);
 
   if (!task) return null;
@@ -187,6 +190,12 @@ export function PropertyChips({
             </button>
           </TaskFeaturePopover>
         )}
+        <TaskReleasePopover task={task}>
+          <button type="button" data-task-action="release" className={chip}>
+            <span className="sr-only">{t("tasks:releases.property")}</span>{" "}
+            <ReleaseValue release={release} className="max-w-40" />
+          </button>
+        </TaskReleasePopover>
         <TaskCustomFieldChips
           taskId={taskId}
           projectId={projectId}

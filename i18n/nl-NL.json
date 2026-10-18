@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (nieuw)",
 				"chooseProjectForFeature": "Kies een project om een feature te selecteren.",
 				"loadingFeatures": "Features laden...",
-				"loadFeaturesError": "Features konden niet worden geladen."
+				"loadFeaturesError": "Features konden niet worden geladen.",
+				"release": "Release",
+				"noRelease": "Geen release",
+				"searchReleases": "Releases zoeken...",
+				"releaseFromFeature": "{{name}} (van feature)",
+				"chooseProjectForRelease": "Kies een project om een release te selecteren.",
+				"loadingReleases": "Releases laden...",
+				"loadReleasesError": "Releases konden niet worden geladen.",
+				"noReleasesFound": "Geen releases gevonden"
 			}
 		},
 		"editor": {
@@ -2402,7 +2410,9 @@
 				"open": "Openen",
 				"close": "Sluiten"
 			},
-			"createFeature": "Feature aanmaken"
+			"createFeature": "Feature aanmaken",
+			"goToReleases": "Naar releases",
+			"createRelease": "Release aanmaken"
 		},
 		"sidebar": {
 			"projects": "Projecten",
@@ -2572,7 +2582,9 @@
 				"editorNumberedList": "Genummerde lijst",
 				"editorCodeBlock": "Codeblok",
 				"editorUndo": "Ongedaan maken",
-				"editorRedo": "Opnieuw"
+				"editorRedo": "Opnieuw",
+				"goToReleases": "Naar releases",
+				"setRelease": "Release instellen"
 			},
 			"title": "Sneltoetsen",
 			"searchPlaceholder": "Zoeken op actie of toets",
@@ -2779,7 +2791,10 @@
 		"removedFromFeature": "heeft de taak verwijderd uit feature \"{{feature}}\"",
 		"changedFeature": "heeft de taak van feature \"{{from}}\" naar \"{{to}}\" verplaatst",
 		"madeFeature": "heeft van deze taak een feature gemaakt",
-		"madeTask": "heeft van deze feature een taak gemaakt"
+		"madeTask": "heeft van deze feature een taak gemaakt",
+		"addedToRelease": "heeft de taak toegevoegd aan release \"{{release}}\"",
+		"removedFromRelease": "heeft de taak verwijderd uit release \"{{release}}\"",
+		"changedRelease": "heeft de taak van release \"{{from}}\" naar \"{{to}}\" verplaatst"
 	},
 	"tasks": {
 		"title": "Taken",
@@ -2805,7 +2820,8 @@
 			"list": "Lijst",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Weergave"
+			"heading": "Weergave",
+			"releases": "Releases"
 		},
 		"common": {
 			"selectTask": "Selecteer taak",
@@ -3066,7 +3082,8 @@
 				"priority": "Prioriteit",
 				"assignee": "Toegewezen persoon",
 				"dueDate": "Einddatum",
-				"labels": "Labels"
+				"labels": "Labels",
+				"release": "Release"
 			},
 			"operators": {
 				"isAnyOf": "is een van",
@@ -3389,6 +3406,155 @@
 			"convertBlocked": "Haal de taken uit deze feature voordat je er een taak van maakt.",
 			"openFeature": "Feature {{title}} openen",
 			"inProject": "Features in project"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Releases",
+			"count_one": "{{count}} release",
+			"count_other": "{{count}} releases",
+			"new": "Nieuwe release",
+			"edit": "Release bewerken",
+			"delete": "Release verwijderen",
+			"property": "Release",
+			"none": "Geen release",
+			"unknown": "Onbekende release",
+			"searchPlaceholder": "Zoek releases…",
+			"pickerEmpty": "Nog geen releases in dit project",
+			"updateError": "Bijwerken van release mislukt",
+			"featureReleaseHint": "Release van de feature",
+			"followNote": "Taken die deze feature volgen, worden mee verplaatst.",
+			"movedWithFeature_one": "Ook {{count}} taak van deze feature verplaatst",
+			"movedWithFeature_other": "Ook {{count}} taken van deze feature verplaatst",
+			"loadError": "Releases konden niet worden geladen.",
+			"retry": "Opnieuw proberen",
+			"sections": {
+				"active": "Actief",
+				"upcoming": "Aankomend",
+				"past": "Afgelopen"
+			},
+			"phase": {
+				"upcoming": "Aankomend",
+				"inProgress": "Bezig",
+				"codeFreeze": "Codefreeze",
+				"pastSubmission": "Na indiening"
+			},
+			"dates": {
+				"start": "Start",
+				"codeFreeze": "Codefreeze",
+				"submission": "Indiening"
+			},
+			"countdown": {
+				"startsIn_one": "Begint over {{count}} dag",
+				"startsIn_other": "Begint over {{count}} dagen",
+				"startsToday": "Begint vandaag",
+				"freezeIn_one": "Codefreeze over {{count}} dag",
+				"freezeIn_other": "Codefreeze over {{count}} dagen",
+				"freezeToday": "Codefreeze vandaag",
+				"submissionIn_one": "Indiening over {{count}} dag",
+				"submissionIn_other": "Indiening over {{count}} dagen",
+				"submissionToday": "Indiening vandaag",
+				"submittedAgo_one": "{{count}} dag geleden ingediend",
+				"submittedAgo_other": "{{count}} dagen geleden ingediend"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{completed}} van {{count}} taak klaar",
+			"progressAria_other": "{{completed}} van {{count}} taken klaar",
+			"counts": {
+				"features_one": "{{count}} feature",
+				"features_other": "{{count}} features",
+				"tasks_one": "{{count}} taak",
+				"tasks_other": "{{count}} taken",
+				"unfinished_one": "{{count}} open",
+				"unfinished_other": "{{count}} open"
+			},
+			"empty": {
+				"title": "Nog geen releases",
+				"description": "Plan een release met een startdatum, een codefreeze en een indieningsdatum, en zet er daarna features en taken in.",
+				"readOnly": "Releases die voor dit project gepland zijn, verschijnen hier."
+			},
+			"dialog": {
+				"createTitle": "Nieuwe release",
+				"editTitle": "Release bewerken",
+				"createDescription": "Een release heeft een startdatum, een codefreeze en een indieningsdatum, in die volgorde.",
+				"nameLabel": "Naam",
+				"namePlaceholder": "bijv. 2.4",
+				"nameRequired": "Voer een naam in",
+				"dateRequired": "Kies een datum",
+				"startLabel": "Start",
+				"codeFreezeLabel": "Codefreeze",
+				"submissionLabel": "Indiening",
+				"pickDate": "Kies een datum",
+				"descriptionLabel": "Beschrijving",
+				"descriptionPlaceholder": "Wat deze release oplevert (optioneel)",
+				"create": "Release aanmaken",
+				"save": "Opslaan",
+				"createSuccess": "Release aangemaakt",
+				"updateSuccess": "Release bijgewerkt",
+				"createError": "Aanmaken van release mislukt",
+				"updateError": "Bijwerken van release mislukt",
+				"beforeStart": "{{date}} ligt vóór de startdatum",
+				"afterCodeFreeze": "{{date}} ligt na de codefreeze",
+				"beforeCodeFreeze": "{{date}} ligt vóór de codefreeze",
+				"afterSubmission": "{{date}} ligt na de indieningsdatum",
+				"limitHint": "Tussen {{start}} en {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Release {{name}} verwijderen?",
+				"description_one": "De {{count}} taak of feature erin blijft in het project, zonder release.",
+				"description_other": "De {{count}} taken en features erin blijven in het project, zonder release.",
+				"descriptionEmpty": "Er zitten geen taken of features in deze release.",
+				"confirm": "Release verwijderen",
+				"success": "Release verwijderd",
+				"error": "Verwijderen van release mislukt"
+			},
+			"moveUnfinished": {
+				"action": "Open items verplaatsen…",
+				"title": "Open items verplaatsen",
+				"description": "Taken en features die niet klaar zijn, worden afzonderlijk verplaatst. Voltooide items blijven in {{name}}.",
+				"target": "Verplaatsen naar",
+				"noRelease": "Geen release",
+				"summary_one": "{{count}} open item wordt verplaatst.",
+				"summary_other": "{{count}} open items worden verplaatst.",
+				"none": "Alles in deze release is klaar.",
+				"noTargets": "Geen andere releases",
+				"confirm": "Items verplaatsen",
+				"success_one": "{{count}} item verplaatst naar {{name}}",
+				"success_other": "{{count}} items verplaatst naar {{name}}",
+				"successNoRelease_one": "{{count}} item uit de release gehaald",
+				"successNoRelease_other": "{{count}} items uit de release gehaald",
+				"error": "Verplaatsen van items mislukt"
+			},
+			"detail": {
+				"back": "Alle releases",
+				"notFound": "Deze release bestaat niet of is verwijderd.",
+				"backToReleases": "Terug naar releases",
+				"standaloneHeading": "Taken zonder feature",
+				"empty": "Nog niets in deze release",
+				"emptyHint": "Stel de release van een taak of feature in, of voeg hier een taak toe.",
+				"addTask": "Taak toevoegen",
+				"featureElsewhere": "Feature niet in deze release",
+				"tasksElsewhere_one": "Nog {{count}} taak buiten deze release",
+				"tasksElsewhere_other": "Nog {{count}} taken buiten deze release",
+				"today": "Vandaag",
+				"loadingTasks": "Taken laden…",
+				"timelineLabel": "Tijdlijn van de release"
+			},
+			"gantt": {
+				"strip": "Releases",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Begint op {{date}}",
+					"codeFreeze": "Codefreeze op {{date}}",
+					"submission": "Indiening op {{date}}"
+				},
+				"actionsFor": "Acties voor {{name}}",
+				"loading": "Releases laden…",
+				"tasksLoadError": "Taken konden niet worden geladen."
+			},
+			"ux": {
+				"nameTaken": "Er bestaat al een release met deze naam"
+			}
 		}
 	},
 	"invitations": {

@@ -211,6 +211,83 @@ describe("useTaskFiltersWithLabelsSupport", () => {
     },
   );
 
+  it("reads stored filters from before releases with no release filter", () => {
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ priority: ["high"], negated: ["priority"] }),
+    );
+
+    const { result } = renderHook(
+      () => useTaskFiltersWithLabelsSupport(null, "project-1"),
+      { wrapper: createWrapper() },
+    );
+
+    expect(result.current.filters.release).toBeNull();
+    expect(result.current.activeFilterCount).toBe(1);
+  });
+
+  it("filters by release, including No release, and stores the choice", () => {
+    const item = (id: string, releaseId?: string | null) => ({
+      id,
+      title: id,
+      number: 1,
+      description: null,
+      status: "planned",
+      priority: null,
+      dueDate: null,
+      userId: null,
+      labels: [],
+      releaseId,
+    });
+    const project = {
+      id: "project-1",
+      slug: "PROJ",
+      columns: [
+        {
+          id: "todo",
+          tasks: [item("in-r1", "r1"), item("in-r2", "r2"), item("none-1")],
+        },
+      ],
+      plannedTasks: [item("planned-r1", "r1"), item("none-2", null)],
+      archivedTasks: [],
+    } as unknown as Parameters<typeof useTaskFiltersWithLabelsSupport>[0];
+    const shown = (
+      filtered: ReturnType<
+        typeof useTaskFiltersWithLabelsSupport
+      >["filteredProject"],
+    ) => [
+      ...(filtered?.columns.flatMap((column) => column.tasks) ?? []),
+      ...(filtered?.plannedTasks ?? []),
+    ];
+
+    const { result } = renderHook(
+      () => useTaskFiltersWithLabelsSupport(project, "project-1"),
+      { wrapper: createWrapper() },
+    );
+
+    act(() => result.current.toggleFilter("release", "r1"));
+    act(() => result.current.toggleFilter("release", "none"));
+
+    expect(result.current.filters.release).toEqual(["r1", "none"]);
+    expect(result.current.activeFilterCount).toBe(1);
+    expect(
+      shown(result.current.filteredProject).map((task) => task.id),
+    ).toEqual(["in-r1", "none-1", "planned-r1", "none-2"]);
+    expect(
+      JSON.parse(window.localStorage.getItem(storageKey) ?? "{}").release,
+    ).toEqual(["r1", "none"]);
+
+    act(() => result.current.setNegated("release", true));
+    expect(
+      shown(result.current.filteredProject).map((task) => task.id),
+    ).toEqual(["in-r2"]);
+
+    act(() => result.current.toggleFilter("release", "r1"));
+    act(() => result.current.toggleFilter("release", "none"));
+    expect(result.current.filters.release).toBeNull();
+    expect(result.current.filters.negated).toBeNull();
+  });
+
   it("keeps an ignored status filter stored but out of the backlog", () => {
     window.localStorage.setItem(
       storageKey,

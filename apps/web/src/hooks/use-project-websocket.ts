@@ -15,6 +15,7 @@ import getLabelsByTask from "@/fetchers/label/get-labels-by-task";
 import getExternalLinks from "@/fetchers/external-link/get-external-links";
 import type { ResumePreview } from "@/fetchers/integration-sync/types";
 import { patchBoardTask } from "@/lib/patch-board-task";
+import { releasesKey } from "@/hooks/queries/release/use-get-releases";
 import type { ProjectWithTasks } from "@/types/project";
 import {
   hasSyncTaskSample,
@@ -33,6 +34,24 @@ const BASE_DELAY = 1000; // 1 second
 // Cloudflare closes idle WebSocket connections after 100 seconds of no traffic.
 // We send a lightweight ping every 30 seconds to keep the connection alive.
 const WS_PING_INTERVAL_MS = 30_000;
+
+// Task changes can change release progress, which only the Releases pages
+// show, and they count from the board. These messages only mark the release
+// list stale, so task views don't read it again on every edit; release edits
+// send RELEASES_UPDATED, which refetches it.
+const RELEASE_PROGRESS_MESSAGES = [
+  "TASK_CREATED",
+  "TASK_UPDATED",
+  "TASK_DELETED",
+  "TASK_MOVED",
+  "TASKS_REORDERED",
+  "PROJECT_UPDATED",
+];
+// Release edits in quick succession share one refresh of the list.
+const RELEASES_REFRESH_DELAY_MS = 300;
+// A list read this recently, while the socket was down, needs no second read
+// when it connects: views fetch it on mount just before their socket opens.
+const RELEASES_RECENT_MS = 5_000;
 
 export function useProjectWebSocket(projectId: string) {
   const queryClient = useQueryClient();
@@ -72,6 +91,33 @@ export function useProjectWebSocket(projectId: string) {
     const featureCountVersions = new Map<string, number>();
     let pingInterval: ReturnType<typeof setInterval> | null = null;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+    let releasesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    // When release messages stopped arriving: null while connected.
+    let offlineSince: number | null = Date.now();
+    function refreshReleases() {
+      if (releasesRefreshTimer !== null) return;
+      releasesRefreshTimer = setTimeout(() => {
+        releasesRefreshTimer = null;
+        if (!disposed)
+          void queryClient.invalidateQueries({
+            queryKey: releasesKey(projectId),
+          });
+      }, RELEASES_REFRESH_DELAY_MS);
+    }
+    function reconcileReleases(since: number) {
+      const state = queryClient.getQueryState(releasesKey(projectId));
+      if (
+        state &&
+        state.dataUpdatedAt >= since &&
+        Date.now() - state.dataUpdatedAt < RELEASES_RECENT_MS
+      )
+        return;
+      // An in-flight read (a view's mount fetch) answers this too.
+      void queryClient.invalidateQueries(
+        { queryKey: releasesKey(projectId) },
+        { cancelRefetch: false },
+      );
+    }
 
     function invalidateDetails(message: {
       type: string;
@@ -174,6 +220,9 @@ export function useProjectWebSocket(projectId: string) {
 
       ws.onopen = () => {
         if (disposed || activeSocket !== ws) return;
+        // Release events missed while disconnected are not replayed.
+        if (offlineSince !== null) reconcileReleases(offlineSince);
+        offlineSince = null;
         needsReconcile = true;
         flushPending();
         if (healthyTimeout !== null) clearTimeout(healthyTimeout);
@@ -208,6 +257,15 @@ export function useProjectWebSocket(projectId: string) {
             });
             return;
           }
+          if (message.type === "RELEASES_UPDATED") {
+            refreshReleases();
+            return;
+          }
+          if (RELEASE_PROGRESS_MESSAGES.includes(message.type))
+            void queryClient.invalidateQueries({
+              queryKey: releasesKey(projectId),
+              refetchType: "none",
+            });
           if (
             message.taskId &&
             [
@@ -542,6 +600,7 @@ export function useProjectWebSocket(projectId: string) {
 
       ws.onclose = (event) => {
         if (disposed || activeSocket !== ws) return;
+        offlineSince ??= Date.now();
         clearPing();
         if (healthyTimeout !== null) {
           clearTimeout(healthyTimeout);
@@ -592,6 +651,9 @@ export function useProjectWebSocket(projectId: string) {
             });
             void queryClient.invalidateQueries({
               queryKey: ["project-task-relations", projectId],
+            });
+            void queryClient.invalidateQueries({
+              queryKey: releasesKey(projectId),
             });
           }, 30_000);
           flushPending();
@@ -659,6 +721,7 @@ export function useProjectWebSocket(projectId: string) {
       if (healthyTimeout !== null) clearTimeout(healthyTimeout);
       pendingMessages.clear();
       if (burstReconcileTimer !== null) clearTimeout(burstReconcileTimer);
+      if (releasesRefreshTimer !== null) clearTimeout(releasesRefreshTimer);
       disposed = true;
       clearPing();
       if (fallbackInterval !== null) clearInterval(fallbackInterval);

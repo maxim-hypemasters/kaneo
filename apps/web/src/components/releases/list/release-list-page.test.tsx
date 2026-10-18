@@ -1,0 +1,411 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
+import type { ReactNode } from "react";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vite-plus/test";
+import getTasks from "@/fetchers/task/get-tasks";
+import type { Release } from "@/types/release";
+import { ReleaseListPage } from "./release-list-page";
+
+const m = vi.hoisted(() => ({
+  releases: {
+    data: undefined as Release[] | undefined,
+    isError: false,
+    isFetching: false,
+    refetch: vi.fn(),
+  },
+  permissions: {
+    canManage: true,
+    canMoveItems: true,
+    canDelete: true,
+    canCreateTasks: true,
+  },
+}));
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      options && "count" in options ? `${key}:${options.count}` : key,
+  }),
+}));
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({
+    to,
+    params,
+    children,
+    className,
+  }: {
+    to: string;
+    params: Record<string, string>;
+    children: ReactNode;
+    className?: string;
+  }) => (
+    <a
+      className={className}
+      href={Object.entries(params).reduce(
+        (path, [key, value]) => path.replace(`$${key}`, value),
+        to,
+      )}
+    >
+      {children}
+    </a>
+  ),
+}));
+vi.mock("@/components/common/project-layout", () => ({
+  default: (props: {
+    toolbar?: ReactNode;
+    summary?: ReactNode;
+    children: ReactNode;
+  }) => (
+    <div>
+      <div data-testid="toolbar">{props.toolbar}</div>
+      <div data-testid="summary">{props.summary}</div>
+      {props.children}
+    </div>
+  ),
+}));
+vi.mock("@/components/page-title", () => ({ default: () => null }));
+vi.mock("@/hooks/queries/project/use-get-project", () => ({
+  default: () => ({ data: { name: "Web" } }),
+}));
+vi.mock("@/hooks/queries/release/use-get-releases", () => ({
+  releasesKey: (projectId: string) => ["releases", projectId],
+  useGetReleases: () => m.releases,
+}));
+// The real useGetTasks loads the board through this; it stays loading unless
+// a test gives it a board.
+vi.mock("@/fetchers/task/get-tasks", () => ({
+  default: vi.fn(() => new Promise(() => {})),
+}));
+vi.mock("@/lib/releases/use-release-today", () => ({
+  useReleaseToday: () => "2026-10-17",
+}));
+vi.mock("../use-release-permissions", () => ({
+  useReleasePermissions: () => m.permissions,
+}));
+vi.mock("../dialog/release-dialog", () => ({
+  ReleaseDialog: (props: { open: boolean; release: Release | null }) =>
+    props.open ? (
+      <div role="dialog" aria-label="release-form">
+        {props.release?.name ?? "new"}
+      </div>
+    ) : null,
+}));
+vi.mock("../delete-release-dialog", () => ({
+  DeleteReleaseDialog: (props: {
+    open: boolean;
+    release: Release | null;
+    itemCount: number;
+  }) =>
+    props.open ? (
+      <div role="dialog" aria-label="delete-release">
+        {props.release?.name} {props.itemCount}
+      </div>
+    ) : null,
+}));
+vi.mock("../move-unfinished-dialog", () => ({
+  MoveUnfinishedDialog: (props: { open: boolean; unfinished: number }) =>
+    props.open ? (
+      <div role="dialog" aria-label="move-unfinished">
+        {props.unfinished}
+      </div>
+    ) : null,
+}));
+
+const release = (
+  id: string,
+  startDate: string,
+  codeFreezeDate: string,
+  submissionDate: string,
+  unfinished = 2,
+): Release => ({
+  id,
+  projectId: "project-1",
+  name: `Release ${id}`,
+  description: null,
+  startDate,
+  codeFreezeDate,
+  submissionDate,
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+  progress: {
+    tasks: { total: 5, completed: 3 },
+    features: { total: 1, completed: 0 },
+    unfinished,
+  },
+});
+
+const active = release("a", "2026-10-01", "2026-10-15", "2026-10-20");
+const upcoming = release("u", "2026-11-01", "2026-11-15", "2026-11-20");
+const past = release("p", "2026-09-01", "2026-09-10", "2026-09-12", 0);
+
+// Two tasks in release a, one of them done.
+const board = {
+  id: "project-1",
+  columns: [
+    {
+      id: "to-do",
+      slug: "to-do",
+      name: "To Do",
+      isFinal: false,
+      tasks: [{ id: "t1", type: "task", status: "to-do", releaseId: "a" }],
+    },
+    {
+      id: "done",
+      slug: "done",
+      name: "Done",
+      isFinal: true,
+      tasks: [{ id: "t2", type: "task", status: "done", releaseId: "a" }],
+    },
+  ],
+  plannedTasks: [],
+  archivedTasks: [],
+};
+
+function renderPage() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={queryClient}>
+      <ReleaseListPage workspaceId="workspace-1" projectId="project-1" />
+    </QueryClientProvider>,
+  );
+  return queryClient;
+}
+
+beforeEach(() => {
+  m.releases = {
+    data: [past, active, upcoming],
+    isError: false,
+    isFetching: false,
+    refetch: vi.fn(),
+  };
+  m.permissions = {
+    canManage: true,
+    canMoveItems: true,
+    canDelete: true,
+    canCreateTasks: true,
+  };
+  Object.defineProperty(Element.prototype, "getAnimations", {
+    configurable: true,
+    value: () => [],
+  });
+});
+
+afterEach(cleanup);
+
+describe("ReleaseListPage", () => {
+  it("lists active and upcoming releases with past ones collapsed", () => {
+    renderPage();
+
+    const activeSection = screen.getByRole("region", {
+      name: /tasks:releases\.sections\.active/,
+    });
+    const link = within(activeSection).getByRole("link", {
+      name: "Release a",
+    });
+    expect(link).toHaveAttribute(
+      "href",
+      "/dashboard/workspace/workspace-1/project/project-1/releases/a",
+    );
+    expect(
+      within(activeSection).getByText("tasks:releases.phase.codeFreeze"),
+    ).toBeInTheDocument();
+    expect(
+      within(activeSection).getByText(
+        "tasks:releases.countdown.submissionIn:3",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Release u" })).toBeInTheDocument();
+
+    const pastToggle = screen.getByRole("button", {
+      name: /tasks:releases\.sections\.past/,
+    });
+    expect(pastToggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: "Release p" })).toBeNull();
+
+    fireEvent.click(pastToggle);
+
+    expect(pastToggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("link", { name: "Release p" })).toBeInTheDocument();
+    expect(screen.getByTestId("summary")).toHaveTextContent(
+      "tasks:releases.count:3",
+    );
+  });
+
+  it("shows past releases open when nothing else is current", () => {
+    m.releases.data = [past];
+    renderPage();
+
+    expect(
+      screen.queryByRole("button", { name: /tasks:releases\.sections\.past/ }),
+    ).toBeNull();
+    expect(screen.getByRole("link", { name: "Release p" })).toBeInTheDocument();
+  });
+
+  it("reads progress for screen readers and shows the counts", () => {
+    m.releases.data = [active];
+    renderPage();
+
+    expect(
+      screen.getByText("tasks:releases.progressAria:5"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "tasks:releases.counts.features:1 · tasks:releases.counts.tasks:5 · tasks:releases.counts.unfinished:2",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("counts from the board once it loads, from the API's progress until then", async () => {
+    m.releases.data = [active];
+    let finishBoard = (_board: typeof board) => {};
+    vi.mocked(getTasks).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finishBoard = resolve;
+      }) as never,
+    );
+    const queryClient = renderPage();
+
+    expect(
+      screen.getByText("tasks:releases.progressAria:5"),
+    ).toBeInTheDocument();
+    await act(async () => finishBoard(board));
+    expect(
+      await screen.findByText("tasks:releases.progressAria:2"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "tasks:releases.counts.tasks:2 · tasks:releases.counts.unfinished:1",
+      ),
+    ).toBeInTheDocument();
+
+    // A burst of remote changes has the board read again; its counts stay
+    // until the new read lands, rather than the older list's.
+    await act(async () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks", "project-1"] });
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    expect(queryClient.getQueryState(["tasks", "project-1"])?.fetchStatus).toBe(
+      "fetching",
+    );
+    expect(
+      screen.getByText("tasks:releases.progressAria:2"),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the create, edit, delete and move dialogs", async () => {
+    m.releases.data = [active];
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "tasks:releases.new" }));
+    expect(
+      screen.getByRole("dialog", { name: "release-form" }),
+    ).toHaveTextContent("new");
+
+    const menu = screen.getByRole("button", {
+      name: "tasks:releases.pages.actionsFor",
+    });
+    for (const [item, dialog, text] of [
+      ["tasks:releases.edit", "release-form", "Release a"],
+      ["tasks:releases.moveUnfinished.action", "move-unfinished", "2"],
+      ["tasks:releases.delete", "delete-release", "Release a 6"],
+    ] as const) {
+      await act(async () => {
+        fireEvent.click(menu);
+      });
+      await act(async () => {
+        fireEvent.click(await screen.findByRole("menuitem", { name: item }));
+      });
+      expect(screen.getByRole("dialog", { name: dialog })).toHaveTextContent(
+        text,
+      );
+    }
+  });
+
+  it("offers only what the viewer may do", () => {
+    m.permissions = {
+      canManage: false,
+      canMoveItems: false,
+      canDelete: false,
+      canCreateTasks: true,
+    };
+    m.releases.data = [active];
+    renderPage();
+
+    expect(
+      screen.queryByRole("button", { name: "tasks:releases.new" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", {
+        name: "tasks:releases.pages.actionsFor",
+      }),
+    ).toBeNull();
+  });
+
+  it("invites a manager to plan the first release", () => {
+    m.releases.data = [];
+    renderPage();
+
+    expect(
+      screen.getByText("tasks:releases.empty.description"),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(
+        screen
+          .getByText("tasks:releases.empty.title")
+          .closest("[data-slot=empty]") as HTMLElement,
+      ).getByRole("button", { name: "tasks:releases.new" }),
+    );
+    expect(
+      screen.getByRole("dialog", { name: "release-form" }),
+    ).toBeInTheDocument();
+  });
+
+  it("tells a member where releases will show", () => {
+    m.permissions = { ...m.permissions, canManage: false, canDelete: false };
+    m.releases.data = [];
+    renderPage();
+
+    expect(
+      screen.getByText("tasks:releases.empty.readOnly"),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("offers a retry when the releases can't load", () => {
+    m.releases = { ...m.releases, data: undefined, isError: true };
+    renderPage();
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "tasks:releases.loadError",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:releases.retry" }),
+    );
+    expect(m.releases.refetch).toHaveBeenCalled();
+  });
+
+  it("shows a loading state first", () => {
+    m.releases = { ...m.releases, data: undefined };
+    renderPage();
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "tasks:releases.pages.loading",
+    );
+  });
+});

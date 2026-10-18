@@ -114,6 +114,41 @@ describe("describeActivity", () => {
     );
   });
 
+  it("describes release changes, naming hidden releases as unknown", () => {
+    expect(
+      describeActivity(
+        activity({
+          type: "release_changed",
+          eventData: {
+            oldReleaseId: null,
+            oldReleaseName: null,
+            newReleaseId: "r24",
+            newReleaseName: "2.4",
+          },
+        }),
+        t,
+      ),
+    ).toBe('activity:addedToRelease {"release":"2.4"}');
+    expect(
+      describeActivity(
+        activity({
+          type: "release_changed",
+          eventData: {
+            projectId: null,
+            oldReleaseId: "r24",
+            oldReleaseName: null,
+            newReleaseId: null,
+            newReleaseName: null,
+          },
+        }),
+        t,
+      ),
+    ).toBe('activity:removedFromRelease {"release":"tasks:releases.unknown"}');
+    expect(describeActivity(activity({ type: "release_changed" }), t)).toBe(
+      "workspace:home.activity.updated",
+    );
+  });
+
   it("falls back to the stored text for events without event data", () => {
     expect(
       describeActivity(

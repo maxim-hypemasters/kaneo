@@ -45,6 +45,13 @@ vi.mock("@/fetchers/external-link/get-external-links", () => ({
   default: () => Promise.resolve([]),
 }));
 
+// Invalidations other than the release list's, which
+// use-project-websocket-releases.test.tsx covers.
+const otherInvalidations = () =>
+  mocks.client.invalidateQueries.mock.calls
+    .map(([options]) => options)
+    .filter((options) => options?.queryKey?.[0] !== "releases");
+
 class Socket {
   static current: Socket;
   onopen: (() => void) | null = null;
@@ -134,7 +141,7 @@ describe("board realtime races", () => {
     Socket.current.message("TASK_UPDATED", { taskId: "a" });
     Socket.current.message("TASK_UPDATED", { taskId: "a" });
     expect(mocks.getTask).not.toHaveBeenCalled();
-    expect(mocks.client.invalidateQueries).not.toHaveBeenCalled();
+    expect(otherInvalidations()).toEqual([]);
     mocks.client.getQueryState.mockReturnValue({ fetchStatus: "idle" });
     mocks.subscribe.mock.calls[0][0]({
       query: { queryKey: ["tasks", "p"], state: { fetchStatus: "idle" } },
@@ -162,15 +169,13 @@ it("reconciles the initial handshake after active pagination completes", async (
   renderHook(() => useProjectWebSocket("p"));
   Socket.current.onopen?.();
   await Promise.resolve();
-  expect(mocks.client.invalidateQueries).not.toHaveBeenCalled();
+  expect(otherInvalidations()).toEqual([]);
   mocks.client.getQueryState.mockReturnValue({ fetchStatus: "idle" });
   mocks.subscribe.mock.calls[0][0]({
     query: { queryKey: ["tasks", "p"], state: { fetchStatus: "idle" } },
   });
   await Promise.resolve();
-  expect(
-    mocks.client.invalidateQueries.mock.calls.map(([options]) => options),
-  ).toEqual([
+  expect(otherInvalidations()).toEqual([
     { queryKey: ["tasks", "p"] },
     { queryKey: ["project-task-relations", "p"] },
   ]);

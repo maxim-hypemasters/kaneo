@@ -106,6 +106,21 @@ describe("featurePickerOptions", () => {
 });
 
 describe("choiceOf", () => {
+  it("keeps the feature's release, as the feature list gives it", () => {
+    const [, released] = featurePickerOptions({
+      features: [{ ...feature("checkout", "Checkout", 3), releaseId: "r24" }],
+      query: "",
+      choice: null,
+      slug: "WEB",
+    });
+    expect(choiceOf(released)).toEqual({
+      kind: "existing",
+      id: "checkout",
+      title: "Checkout",
+      releaseId: "r24",
+    });
+  });
+
   it("turns an option into what the dialog keeps", () => {
     const [none, chosenNew, checkout] = featurePickerOptions({
       features,

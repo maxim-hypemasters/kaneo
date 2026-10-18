@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (mới)",
 				"chooseProjectForFeature": "Chọn một dự án trước khi chọn tính năng.",
 				"loadingFeatures": "Đang tải tính năng...",
-				"loadFeaturesError": "Không thể tải các tính năng."
+				"loadFeaturesError": "Không thể tải các tính năng.",
+				"release": "Bản phát hành",
+				"noRelease": "Không có bản phát hành",
+				"searchReleases": "Tìm bản phát hành...",
+				"releaseFromFeature": "{{name}} (theo tính năng)",
+				"chooseProjectForRelease": "Chọn một dự án trước khi chọn bản phát hành.",
+				"loadingReleases": "Đang tải bản phát hành...",
+				"loadReleasesError": "Không thể tải các bản phát hành.",
+				"noReleasesFound": "Không tìm thấy bản phát hành"
 			}
 		},
 		"editor": {
@@ -2360,7 +2368,9 @@
 				"open": "Mở",
 				"close": "Đóng"
 			},
-			"createFeature": "Tạo tính năng"
+			"createFeature": "Tạo tính năng",
+			"goToReleases": "Đến bản phát hành",
+			"createRelease": "Tạo bản phát hành"
 		},
 		"sidebar": {
 			"projects": "Dự án",
@@ -2530,7 +2540,9 @@
 				"editorNumberedList": "Danh sách đánh số",
 				"editorCodeBlock": "Khối mã",
 				"editorUndo": "Hoàn tác",
-				"editorRedo": "Làm lại"
+				"editorRedo": "Làm lại",
+				"goToReleases": "Đến bản phát hành",
+				"setRelease": "Đặt bản phát hành"
 			},
 			"title": "Phím tắt",
 			"searchPlaceholder": "Tìm theo thao tác hoặc phím",
@@ -2732,7 +2744,10 @@
 		"removedFromFeature": "đã gỡ công việc khỏi tính năng \"{{feature}}\"",
 		"changedFeature": "đã chuyển công việc từ tính năng \"{{from}}\" sang \"{{to}}\"",
 		"madeFeature": "đã chuyển công việc này thành tính năng",
-		"madeTask": "đã chuyển tính năng này thành công việc"
+		"madeTask": "đã chuyển tính năng này thành công việc",
+		"addedToRelease": "đã thêm công việc vào bản phát hành \"{{release}}\"",
+		"removedFromRelease": "đã gỡ công việc khỏi bản phát hành \"{{release}}\"",
+		"changedRelease": "đã chuyển công việc từ bản phát hành \"{{from}}\" sang \"{{to}}\""
 	},
 	"tasks": {
 		"title": "Nhiệm vụ",
@@ -2758,7 +2773,8 @@
 			"list": "Danh sách",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Chế độ xem"
+			"heading": "Chế độ xem",
+			"releases": "Bản phát hành"
 		},
 		"common": {
 			"selectTask": "Chọn công việc",
@@ -3030,7 +3046,8 @@
 				"priority": "Mức ưu tiên",
 				"assignee": "Người được giao",
 				"dueDate": "Ngày đến hạn",
-				"labels": "Nhãn"
+				"labels": "Nhãn",
+				"release": "Bản phát hành"
 			},
 			"operators": {
 				"isAnyOf": "là một trong",
@@ -3326,6 +3343,140 @@
 			"convertBlocked": "Hãy chuyển các công việc ra khỏi tính năng này trước khi đổi nó thành công việc.",
 			"openFeature": "Mở tính năng {{title}}",
 			"inProject": "Tính năng trong dự án"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Bản phát hành",
+			"count_other": "{{count}} bản phát hành",
+			"new": "Bản phát hành mới",
+			"edit": "Chỉnh sửa bản phát hành",
+			"delete": "Xóa bản phát hành",
+			"property": "Bản phát hành",
+			"none": "Không có bản phát hành",
+			"unknown": "Bản phát hành không xác định",
+			"searchPlaceholder": "Tìm bản phát hành…",
+			"pickerEmpty": "Dự án này chưa có bản phát hành nào",
+			"updateError": "Không thể cập nhật bản phát hành",
+			"featureReleaseHint": "Bản phát hành của tính năng",
+			"followNote": "Các công việc đi theo tính năng này cũng sẽ được chuyển cùng.",
+			"movedWithFeature_other": "Đã chuyển cả {{count}} công việc của tính năng này",
+			"loadError": "Không thể tải các bản phát hành.",
+			"retry": "Thử lại",
+			"sections": {
+				"active": "Đang diễn ra",
+				"upcoming": "Sắp tới",
+				"past": "Đã qua"
+			},
+			"phase": {
+				"upcoming": "Sắp tới",
+				"inProgress": "Đang thực hiện",
+				"codeFreeze": "Đóng băng mã",
+				"pastSubmission": "Đã qua ngày nộp"
+			},
+			"dates": {
+				"start": "Ngày bắt đầu",
+				"codeFreeze": "Đóng băng mã",
+				"submission": "Ngày nộp"
+			},
+			"countdown": {
+				"startsIn_other": "Bắt đầu sau {{count}} ngày",
+				"startsToday": "Bắt đầu hôm nay",
+				"freezeIn_other": "Đóng băng mã sau {{count}} ngày",
+				"freezeToday": "Đóng băng mã hôm nay",
+				"submissionIn_other": "Nộp sau {{count}} ngày",
+				"submissionToday": "Nộp hôm nay",
+				"submittedAgo_other": "Đã nộp {{count}} ngày trước"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_other": "Đã xong {{completed}}/{{count}} công việc",
+			"counts": {
+				"features_other": "{{count}} tính năng",
+				"tasks_other": "{{count}} công việc",
+				"unfinished_other": "{{count}} chưa xong"
+			},
+			"empty": {
+				"title": "Chưa có bản phát hành nào",
+				"description": "Lên kế hoạch cho một bản phát hành với ngày bắt đầu, ngày đóng băng mã và ngày nộp, rồi đưa tính năng và công việc vào đó.",
+				"readOnly": "Các bản phát hành được lên kế hoạch cho dự án này sẽ hiển thị ở đây."
+			},
+			"dialog": {
+				"createTitle": "Bản phát hành mới",
+				"editTitle": "Chỉnh sửa bản phát hành",
+				"createDescription": "Mỗi bản phát hành có ngày bắt đầu, ngày đóng băng mã và ngày nộp, theo đúng thứ tự đó.",
+				"nameLabel": "Tên",
+				"namePlaceholder": "ví dụ: 2.4",
+				"nameRequired": "Nhập tên",
+				"dateRequired": "Chọn ngày",
+				"startLabel": "Ngày bắt đầu",
+				"codeFreezeLabel": "Đóng băng mã",
+				"submissionLabel": "Ngày nộp",
+				"pickDate": "Chọn ngày",
+				"descriptionLabel": "Mô tả",
+				"descriptionPlaceholder": "Bản phát hành này mang lại những gì (không bắt buộc)",
+				"create": "Tạo bản phát hành",
+				"save": "Lưu",
+				"createSuccess": "Đã tạo bản phát hành",
+				"updateSuccess": "Đã cập nhật bản phát hành",
+				"createError": "Không thể tạo bản phát hành",
+				"updateError": "Không thể cập nhật bản phát hành",
+				"beforeStart": "{{date}} trước ngày bắt đầu",
+				"afterCodeFreeze": "{{date}} sau ngày đóng băng mã",
+				"beforeCodeFreeze": "{{date}} trước ngày đóng băng mã",
+				"afterSubmission": "{{date}} sau ngày nộp",
+				"limitHint": "Từ {{start}} đến {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Xóa “{{name}}”?",
+				"description_other": "{{count}} công việc và tính năng trong đó vẫn ở lại dự án, không thuộc bản phát hành nào.",
+				"descriptionEmpty": "Bản phát hành này không có công việc hay tính năng nào.",
+				"confirm": "Xóa bản phát hành",
+				"success": "Đã xóa bản phát hành",
+				"error": "Không thể xóa bản phát hành"
+			},
+			"moveUnfinished": {
+				"action": "Chuyển mục chưa xong…",
+				"title": "Chuyển các mục chưa xong",
+				"description": "Các công việc và tính năng chưa xong được chuyển riêng từng mục. Các mục đã xong vẫn ở lại {{name}}.",
+				"target": "Chuyển đến",
+				"noRelease": "Không có bản phát hành",
+				"summary_other": "{{count}} mục chưa xong sẽ được chuyển.",
+				"none": "Mọi mục trong bản phát hành này đã xong.",
+				"noTargets": "Không có bản phát hành nào khác",
+				"confirm": "Chuyển các mục",
+				"success_other": "Đã chuyển {{count}} mục đến {{name}}",
+				"successNoRelease_other": "Đã gỡ {{count}} mục khỏi bản phát hành",
+				"error": "Không thể chuyển các mục"
+			},
+			"detail": {
+				"back": "Tất cả bản phát hành",
+				"notFound": "Bản phát hành này không tồn tại hoặc đã bị xóa.",
+				"backToReleases": "Quay lại danh sách bản phát hành",
+				"standaloneHeading": "Công việc không thuộc tính năng nào",
+				"empty": "Bản phát hành này chưa có gì",
+				"emptyHint": "Đặt bản phát hành cho một công việc hoặc tính năng, hoặc thêm công việc tại đây.",
+				"addTask": "Thêm công việc",
+				"featureElsewhere": "Tính năng không thuộc bản phát hành này",
+				"tasksElsewhere_other": "Còn {{count}} công việc khác ngoài bản phát hành này",
+				"today": "Hôm nay",
+				"loadingTasks": "Đang tải công việc…",
+				"timelineLabel": "Dòng thời gian bản phát hành"
+			},
+			"gantt": {
+				"strip": "Bản phát hành",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Bắt đầu {{date}}",
+					"codeFreeze": "Đóng băng mã {{date}}",
+					"submission": "Nộp {{date}}"
+				},
+				"actionsFor": "Thao tác cho {{name}}",
+				"loading": "Đang tải bản phát hành…",
+				"tasksLoadError": "Không thể tải các công việc."
+			},
+			"ux": {
+				"nameTaken": "Đã tồn tại bản phát hành với tên này"
+			}
 		}
 	},
 	"invitations": {

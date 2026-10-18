@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (baru)",
 				"chooseProjectForFeature": "Pilih proyek terlebih dahulu untuk memilih fitur.",
 				"loadingFeatures": "Memuat fitur...",
-				"loadFeaturesError": "Fitur tidak dapat dimuat."
+				"loadFeaturesError": "Fitur tidak dapat dimuat.",
+				"release": "Rilis",
+				"noRelease": "Tanpa rilis",
+				"searchReleases": "Cari rilis...",
+				"releaseFromFeature": "{{name}} (dari fitur)",
+				"chooseProjectForRelease": "Pilih proyek terlebih dahulu untuk memilih rilis.",
+				"loadingReleases": "Memuat rilis...",
+				"loadReleasesError": "Rilis tidak dapat dimuat.",
+				"noReleasesFound": "Rilis tidak ditemukan"
 			}
 		},
 		"editor": {
@@ -2360,7 +2368,9 @@
 				"open": "Buka",
 				"close": "Tutup"
 			},
-			"createFeature": "Buat fitur"
+			"createFeature": "Buat fitur",
+			"goToReleases": "Ke rilis",
+			"createRelease": "Buat rilis"
 		},
 		"sidebar": {
 			"projects": "Proyek",
@@ -2530,7 +2540,9 @@
 				"editorNumberedList": "Daftar bernomor",
 				"editorCodeBlock": "Blok kode",
 				"editorUndo": "Urungkan",
-				"editorRedo": "Ulangi"
+				"editorRedo": "Ulangi",
+				"goToReleases": "Ke rilis",
+				"setRelease": "Atur rilis"
 			},
 			"title": "Pintasan Keyboard",
 			"searchPlaceholder": "Cari berdasarkan aksi atau tombol",
@@ -2732,7 +2744,10 @@
 		"removedFromFeature": "menghapus tugas dari fitur \"{{feature}}\"",
 		"changedFeature": "memindahkan tugas dari fitur \"{{from}}\" ke \"{{to}}\"",
 		"madeFeature": "menjadikan tugas ini fitur",
-		"madeTask": "menjadikan fitur ini tugas"
+		"madeTask": "menjadikan fitur ini tugas",
+		"addedToRelease": "menambahkan tugas ke rilis \"{{release}}\"",
+		"removedFromRelease": "menghapus tugas dari rilis \"{{release}}\"",
+		"changedRelease": "memindahkan tugas dari rilis \"{{from}}\" ke \"{{to}}\""
 	},
 	"tasks": {
 		"title": "Tugas",
@@ -2758,7 +2773,8 @@
 			"list": "Daftar",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Tampilan"
+			"heading": "Tampilan",
+			"releases": "Rilis"
 		},
 		"common": {
 			"selectTask": "Pilih tugas",
@@ -3030,7 +3046,8 @@
 				"priority": "Prioritas",
 				"assignee": "Penanggung jawab",
 				"dueDate": "Tenggat",
-				"labels": "Label"
+				"labels": "Label",
+				"release": "Rilis"
 			},
 			"operators": {
 				"isAnyOf": "adalah salah satu dari",
@@ -3326,6 +3343,140 @@
 			"convertBlocked": "Pindahkan tugas-tugas fitur ini keluar darinya sebelum menjadikannya tugas.",
 			"openFeature": "Buka fitur {{title}}",
 			"inProject": "Fitur dalam proyek"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Rilis",
+			"count_other": "{{count}} rilis",
+			"new": "Rilis baru",
+			"edit": "Edit rilis",
+			"delete": "Hapus rilis",
+			"property": "Rilis",
+			"none": "Tanpa rilis",
+			"unknown": "Rilis tidak dikenal",
+			"searchPlaceholder": "Cari rilis…",
+			"pickerEmpty": "Belum ada rilis di proyek ini",
+			"updateError": "Gagal memperbarui rilis",
+			"featureReleaseHint": "Rilis milik fitur",
+			"followNote": "Tugas yang mengikuti fitur ini ikut dipindahkan bersamanya.",
+			"movedWithFeature_other": "Juga memindahkan {{count}} tugas dari fitur ini",
+			"loadError": "Rilis tidak dapat dimuat.",
+			"retry": "Coba lagi",
+			"sections": {
+				"active": "Aktif",
+				"upcoming": "Mendatang",
+				"past": "Sebelumnya"
+			},
+			"phase": {
+				"upcoming": "Mendatang",
+				"inProgress": "Sedang berjalan",
+				"codeFreeze": "Pembekuan kode",
+				"pastSubmission": "Setelah pengajuan"
+			},
+			"dates": {
+				"start": "Mulai",
+				"codeFreeze": "Pembekuan kode",
+				"submission": "Pengajuan"
+			},
+			"countdown": {
+				"startsIn_other": "Mulai dalam {{count}} hari",
+				"startsToday": "Mulai hari ini",
+				"freezeIn_other": "Pembekuan kode dalam {{count}} hari",
+				"freezeToday": "Pembekuan kode hari ini",
+				"submissionIn_other": "Pengajuan dalam {{count}} hari",
+				"submissionToday": "Pengajuan hari ini",
+				"submittedAgo_other": "Diajukan {{count}} hari yang lalu"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_other": "{{completed}} dari {{count}} tugas selesai",
+			"counts": {
+				"features_other": "{{count}} fitur",
+				"tasks_other": "{{count}} tugas",
+				"unfinished_other": "{{count}} belum selesai"
+			},
+			"empty": {
+				"title": "Belum ada rilis",
+				"description": "Rencanakan rilis dengan tanggal mulai, pembekuan kode, dan tanggal pengajuan, lalu masukkan fitur dan tugas ke dalamnya.",
+				"readOnly": "Rilis yang direncanakan untuk proyek ini akan muncul di sini."
+			},
+			"dialog": {
+				"createTitle": "Rilis baru",
+				"editTitle": "Edit rilis",
+				"createDescription": "Rilis memiliki tanggal mulai, pembekuan kode, dan tanggal pengajuan, sesuai urutan tersebut.",
+				"nameLabel": "Nama",
+				"namePlaceholder": "mis. 2.4",
+				"nameRequired": "Masukkan nama",
+				"dateRequired": "Pilih tanggal",
+				"startLabel": "Mulai",
+				"codeFreezeLabel": "Pembekuan kode",
+				"submissionLabel": "Pengajuan",
+				"pickDate": "Pilih tanggal",
+				"descriptionLabel": "Deskripsi",
+				"descriptionPlaceholder": "Apa yang dihadirkan rilis ini (opsional)",
+				"create": "Buat rilis",
+				"save": "Simpan",
+				"createSuccess": "Rilis dibuat",
+				"updateSuccess": "Rilis diperbarui",
+				"createError": "Gagal membuat rilis",
+				"updateError": "Gagal memperbarui rilis",
+				"beforeStart": "{{date}} sebelum tanggal mulai",
+				"afterCodeFreeze": "{{date}} setelah pembekuan kode",
+				"beforeCodeFreeze": "{{date}} sebelum pembekuan kode",
+				"afterSubmission": "{{date}} setelah tanggal pengajuan",
+				"limitHint": "Antara {{start}} dan {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Hapus rilis {{name}}?",
+				"description_other": "{{count}} tugas dan fitur di dalamnya tetap berada di proyek, tanpa rilis.",
+				"descriptionEmpty": "Tidak ada tugas atau fitur di rilis ini.",
+				"confirm": "Hapus rilis",
+				"success": "Rilis dihapus",
+				"error": "Gagal menghapus rilis"
+			},
+			"moveUnfinished": {
+				"action": "Pindahkan yang belum selesai…",
+				"title": "Pindahkan item yang belum selesai",
+				"description": "Tugas dan fitur yang belum selesai dipindahkan satu per satu. Yang sudah selesai tetap di {{name}}.",
+				"target": "Pindahkan ke",
+				"noRelease": "Tanpa rilis",
+				"summary_other": "{{count}} item yang belum selesai akan dipindahkan.",
+				"none": "Semua yang ada di rilis ini sudah selesai.",
+				"noTargets": "Tidak ada rilis lain",
+				"confirm": "Pindahkan item",
+				"success_other": "Memindahkan {{count}} item ke {{name}}",
+				"successNoRelease_other": "Mengeluarkan {{count}} item dari rilis",
+				"error": "Gagal memindahkan item"
+			},
+			"detail": {
+				"back": "Semua rilis",
+				"notFound": "Rilis ini tidak ada atau telah dihapus.",
+				"backToReleases": "Kembali ke rilis",
+				"standaloneHeading": "Tugas tanpa fitur",
+				"empty": "Belum ada apa pun di rilis ini",
+				"emptyHint": "Atur rilis untuk tugas atau fitur, atau tambahkan tugas di sini.",
+				"addTask": "Tambah tugas",
+				"featureElsewhere": "Fitur tidak ada di rilis ini",
+				"tasksElsewhere_other": "{{count}} tugas lainnya di luar rilis ini",
+				"today": "Hari ini",
+				"loadingTasks": "Memuat tugas…",
+				"timelineLabel": "Linimasa rilis"
+			},
+			"gantt": {
+				"strip": "Rilis",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Mulai {{date}}",
+					"codeFreeze": "Pembekuan kode {{date}}",
+					"submission": "Pengajuan {{date}}"
+				},
+				"actionsFor": "Tindakan untuk {{name}}",
+				"loading": "Memuat rilis…",
+				"tasksLoadError": "Tugas tidak dapat dimuat."
+			},
+			"ux": {
+				"nameTaken": "Rilis dengan nama tersebut sudah ada"
+			}
 		}
 	},
 	"invitations": {

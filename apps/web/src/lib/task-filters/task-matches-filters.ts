@@ -11,6 +11,7 @@ import {
 } from "@/hooks/use-task-filters";
 import type Task from "@/types/task";
 import { customFieldSubjectId } from "./filter-subject-id";
+import { NO_RELEASE } from "./release-filter-values";
 
 export type TaskFilterContext = {
   query?: string;
@@ -105,6 +106,11 @@ export function taskMatchesFilters(
       "labels",
       filters.labels,
       () => filters.labels?.some((id) => labelIds.includes(id)) ?? false,
+    ],
+    [
+      "release",
+      filters.release,
+      () => filters.release?.includes(task.releaseId ?? NO_RELEASE) ?? false,
     ],
   ];
 

@@ -27,6 +27,9 @@ import { GanttFeatureLaneHeader } from "@/components/gantt/gantt-feature-lane-he
 import { GanttLaneGroup } from "@/components/gantt/gantt-lane-group";
 import { GanttLaneHeader } from "@/components/gantt/gantt-lane-header";
 import { GanttPeriodControls } from "@/components/gantt/gantt-period-controls";
+import { GanttReleaseMarkerLabels } from "@/components/gantt/gantt-release-marker-labels";
+import { GanttReleaseMarkers } from "@/components/gantt/gantt-release-markers";
+import { ganttReleases } from "@/components/gantt/gantt-releases";
 import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
 import type {
   GanttLaneDrag,
@@ -49,10 +52,12 @@ import {
 } from "@/components/gantt/gantt-dependencies";
 import { GanttDependencyDialog } from "@/components/gantt/gantt-dependency-dialog";
 import { GanttDependencyLines } from "@/components/gantt/gantt-dependency-lines";
+import { openingReleaseSpans } from "@/components/gantt/opening-release-spans";
 import {
   applyPendingEdit,
   classifyEdit,
 } from "@/components/gantt/pending-task-edits";
+import { releaseMarkerDays } from "@/components/gantt/release-marker-days";
 import { paddedSchedule, parseTaskDate } from "@/components/gantt/timeline";
 import { useDragToPan } from "@/components/gantt/use-drag-to-pan";
 import { useGanttRange } from "@/components/gantt/use-gantt-range";
@@ -70,6 +75,7 @@ import { LayoutSwitch } from "@/components/project/views/layout-switch";
 import { useGoToProjectView } from "@/components/project/views/use-go-to-project-view";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { Button } from "@/components/ui/button";
+import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import useGetProjectTaskRelations from "@/hooks/queries/task-relation/use-get-project-task-relations";
 import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
@@ -77,13 +83,17 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 import { getFeatureIndex } from "@/lib/features/feature-index";
+import { releaseSummaries } from "@/lib/releases/release-summaries";
+import { useReleaseToday } from "@/lib/releases/use-release-today";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import type { ReleaseSummary } from "@/types/release";
 
 type GanttSearchParams = {
   taskId?: string;
 };
 
 const NO_COLLAPSED_LANES: ReadonlySet<string> = new Set();
+const NO_RELEASES: ReleaseSummary[] = [];
 
 type TaskAssignee = { name: string | null; image: string | null };
 
@@ -112,6 +122,13 @@ function RouteComponent() {
   // isSuccess stays false while only streamed pages of a large board are
   // in, so the chart waits for all tasks before choosing its opening span.
   const { data: project, isSuccess: tasksLoaded } = useGetTasks(projectId);
+  // Without progress, so a completion elsewhere doesn't redraw every row.
+  const { data: releases = NO_RELEASES, isPending: releasesLoading } =
+    useGetReleases(projectId, { select: releaseSummaries });
+  // The opening span also covers current releases, so it waits for them too
+  // (not for a failed load: the chart then opens on the tasks alone).
+  const rangeReady = tasksLoaded && !releasesLoading;
+  const releaseToday = useReleaseToday();
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const groupByPreference = useUserPreferencesStore(
     (state) => state.ganttGroupBy,
@@ -139,6 +156,17 @@ function RouteComponent() {
     scope: "schedule",
   });
   const filteredProject = view.filters.filteredProject;
+  const shownReleases = useMemo(
+    () => ganttReleases(releases, view.filters.filters),
+    [releases, view.filters.filters],
+  );
+  const showReleaseStrip = shownReleases.length > 0;
+  // Every current release, whatever the filters, as the span covers every
+  // task.
+  const openingSpans = useMemo(
+    () => openingReleaseSpans(releases, releaseToday),
+    [releases, releaseToday],
+  );
   // Collapsed lanes are per visit and per project: a lane collapsed long ago
   // shouldn't silently hide work in a planning view.
   const [collapsedLanes, setCollapsedLanes] = useState<{
@@ -645,7 +673,8 @@ function RouteComponent() {
   const { timeline, viewport, scrollToDate, scrollByPage } = useGanttRange({
     projectId,
     tasks: parsedTasks,
-    ready: tasksLoaded,
+    extraSpans: openingSpans,
+    ready: rangeReady,
     weekStartsOn,
     dayColumnWidthRem,
     railWidthRem,
@@ -694,10 +723,17 @@ function RouteComponent() {
   // work. The rendered span is padded to a minimum width, so today can be in
   // it while the work sits months away.
   const todayNearSchedule = useMemo(() => {
-    const schedule = paddedSchedule(parsedTasks, weekStartsOn);
+    const schedule = paddedSchedule(
+      [...parsedTasks, ...openingSpans],
+      weekStartsOn,
+    );
     const today = startOfToday();
     return !!schedule && today >= schedule.start && today <= schedule.end;
-  }, [parsedTasks, weekStartsOn]);
+  }, [parsedTasks, openingSpans, weekStartsOn]);
+  const markerDays = useMemo(
+    () => (timeline ? releaseMarkerDays(shownReleases, timeline) : []),
+    [shownReleases, timeline],
+  );
 
   // The task rail is `position: sticky; left: 0`, so it stays pinned over the
   // left edge of the scroll container's viewport rather than scrolling away
@@ -755,7 +791,7 @@ function RouteComponent() {
   useLayoutEffect(() => {
     if (
       hasCenteredOnTodayRef.current ||
-      !tasksLoaded ||
+      !rangeReady ||
       !timeline ||
       !scrollElement
     )
@@ -763,7 +799,7 @@ function RouteComponent() {
     hasCenteredOnTodayRef.current = true;
     if (todayInRange && todayNearSchedule) scrollToToday("auto");
   }, [
-    tasksLoaded,
+    rangeReady,
     timeline,
     scrollElement,
     todayInRange,
@@ -906,55 +942,78 @@ function RouteComponent() {
                 {showTaskRail ? (
                   <div
                     data-gantt-rail=""
-                    className="sticky left-0 z-30 shrink-0 border-r border-border bg-background px-2 py-2.5 sm:w-80 sm:px-4 sm:py-3"
+                    className="sticky left-0 z-30 flex shrink-0 flex-col border-r border-border bg-background sm:w-80"
                     style={{
                       width: isMobile ? `${taskColumnWidthRem}rem` : undefined,
                     }}
                   >
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <p className="flex-1 px-2 py-2.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:px-4 sm:py-3">
                       {t("tasks:gantt.taskHeader")}
                     </p>
+                    {showReleaseStrip ? (
+                      // The strip's list carries the same name.
+                      <p
+                        aria-hidden="true"
+                        className="flex h-6 items-center border-t border-border/70 px-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:px-4"
+                      >
+                        {t("tasks:releases.gantt.strip")}
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
-                <div
-                  className="grid shrink-0 cursor-grab select-none"
-                  style={{
-                    gridTemplateColumns: timeline.gridTemplateColumns,
-                    minWidth: `${timeline.timelineMinWidthRem}rem`,
-                  }}
-                >
-                  {timeline.days.map((day, index) => {
-                    const showMonth =
-                      index === 0 ||
-                      !isSameMonth(day, timeline.days[index - 1] ?? day);
+                <div className="flex shrink-0 flex-col">
+                  <div
+                    className="grid shrink-0 cursor-grab select-none"
+                    style={{
+                      gridTemplateColumns: timeline.gridTemplateColumns,
+                      minWidth: `${timeline.timelineMinWidthRem}rem`,
+                    }}
+                  >
+                    {timeline.days.map((day, index) => {
+                      const showMonth =
+                        index === 0 ||
+                        !isSameMonth(day, timeline.days[index - 1] ?? day);
 
-                    const isCurrentDay = isToday(day);
+                      const isCurrentDay = isToday(day);
 
-                    return (
-                      <div
-                        key={day.toISOString()}
-                        ref={isCurrentDay ? todayCellRef : undefined}
-                        aria-current={isCurrentDay ? "date" : undefined}
-                        className={cn(
-                          "border-r border-border/70 px-0.5 py-2 text-center sm:px-1",
-                          isWeekend(day) && "bg-muted/25",
-                        )}
-                      >
-                        <div className="h-4 text-[10px] font-medium text-muted-foreground">
-                          {showMonth ? format(day, "MMM") : ""}
-                        </div>
+                      return (
                         <div
+                          key={day.toISOString()}
+                          ref={isCurrentDay ? todayCellRef : undefined}
+                          aria-current={isCurrentDay ? "date" : undefined}
                           className={cn(
-                            "mx-auto flex size-6 items-center justify-center rounded-full text-xs font-medium",
-                            isCurrentDay &&
-                              "bg-primary text-primary-foreground",
+                            "border-r border-border/70 px-0.5 py-2 text-center sm:px-1",
+                            isWeekend(day) && "bg-muted/25",
                           )}
                         >
-                          {format(day, "d")}
+                          <div className="h-4 text-[10px] font-medium text-muted-foreground">
+                            {showMonth ? format(day, "MMM") : ""}
+                          </div>
+                          <div
+                            className={cn(
+                              "mx-auto flex size-6 items-center justify-center rounded-full text-xs font-medium",
+                              isCurrentDay &&
+                                "bg-primary text-primary-foreground",
+                            )}
+                          >
+                            {format(day, "d")}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
+                  {/* Kept while the filter shows any release, even with none
+                      of its dates in view, so the header doesn't jump. */}
+                  {showReleaseStrip ? (
+                    <GanttReleaseMarkerLabels
+                      days={markerDays}
+                      timeline={timeline}
+                      dayColumnWidthRem={dayColumnWidthRem}
+                      workspaceId={workspaceId}
+                      projectId={projectId}
+                      today={releaseToday}
+                    />
+                  ) : null}
                 </div>
               </div>
 
@@ -978,6 +1037,13 @@ function RouteComponent() {
                     />
                   ))}
                 </div>
+                {markerDays.length > 0 && (
+                  <GanttReleaseMarkers
+                    days={markerDays}
+                    timeline={timeline}
+                    left={taskRailWidth}
+                  />
+                )}
 
                 <div
                   data-gantt-lanes=""

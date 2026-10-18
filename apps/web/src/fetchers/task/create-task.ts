@@ -18,7 +18,8 @@ async function createTask(
   priority: CreateTaskRequest["priority"],
   customFields?: { fieldId: string; value: string }[],
   draftAssetIds?: string[],
-  hierarchy: Pick<CreateTaskRequest, "type" | "featureId"> = {},
+  // releaseId: omitted, the task starts in its feature's release; null is none.
+  placement: Pick<CreateTaskRequest, "type" | "featureId" | "releaseId"> = {},
 ) {
   if (!projectId) {
     throw new Error("No project selected for task creation");
@@ -35,8 +36,11 @@ async function createTask(
       priority,
       customFields,
       draftAssetIds,
-      ...(hierarchy.type ? { type: hierarchy.type } : {}),
-      ...(hierarchy.featureId ? { featureId: hierarchy.featureId } : {}),
+      ...(placement.type ? { type: placement.type } : {}),
+      ...(placement.featureId ? { featureId: placement.featureId } : {}),
+      ...(placement.releaseId !== undefined
+        ? { releaseId: placement.releaseId }
+        : {}),
     },
     param: { projectId },
   });

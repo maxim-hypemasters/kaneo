@@ -30,6 +30,9 @@ vi.mock("../task-move-popover", () => ({ default: passThrough }));
 vi.mock("../features/task-feature-popover", () => ({
   TaskFeaturePopover: passThrough,
 }));
+vi.mock("../releases/task-release-popover", () => ({
+  TaskReleasePopover: passThrough,
+}));
 vi.mock("../features/task-type-menu", () => ({
   TaskTypeMenu: (props: { hasTasks: boolean; children: ReactNode }) => {
     mocks.typeMenu(props.hasTasks);
@@ -66,6 +69,7 @@ function renderChips(values: Record<string, unknown>) {
     feature: null,
     featureDisplayId: null,
     hasFeatureTasks: false,
+    release: null,
     ...values,
   };
   return render(
@@ -117,5 +121,27 @@ describe("PropertyChips", () => {
       document.querySelector('[data-task-action="feature"]'),
     ).not.toBeInTheDocument();
     expect(mocks.typeMenu).toHaveBeenCalledWith(true);
+  });
+
+  it("shows the release chip after the feature chip, for tasks and features", () => {
+    renderChips({ release: { id: "r24", name: "2.4" } });
+
+    const feature = document.querySelector('[data-task-action="feature"]');
+    const release = screen.getByRole("button", {
+      name: "tasks:releases.property 2.4",
+    });
+    expect(release).toHaveAttribute("data-task-action", "release");
+    expect(feature?.nextElementSibling).toBe(release);
+
+    cleanup();
+    renderChips({
+      task: { ...task, type: "feature", featureId: null },
+      isFeature: true,
+    });
+    expect(
+      screen.getByRole("button", {
+        name: "tasks:releases.property tasks:releases.none",
+      }),
+    ).toHaveAttribute("data-task-action", "release");
   });
 });

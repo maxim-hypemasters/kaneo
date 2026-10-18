@@ -52,6 +52,40 @@ describe("createTask", () => {
     },
   );
 
+  it.each([
+    ["a release", "release-1", { releaseId: "release-1" }],
+    ["no release", null, { releaseId: null }],
+    ["the feature's release", undefined, {}],
+  ])("sends %s as asked", async (_name, releaseId, sent) => {
+    await createTask(
+      "Released task",
+      "",
+      "project-1",
+      undefined,
+      "to-do",
+      undefined,
+      undefined,
+      "no-priority",
+      undefined,
+      undefined,
+      { featureId: "feature-1", releaseId },
+    );
+
+    expect(mocks.post).toHaveBeenCalledWith({
+      json: {
+        title: "Released task",
+        description: "",
+        status: "to-do",
+        startDate: undefined,
+        dueDate: undefined,
+        priority: "no-priority",
+        featureId: "feature-1",
+        ...sent,
+      },
+      param: { projectId: "project-1" },
+    });
+  });
+
   it("preserves an assigned userId", async () => {
     await createTask(
       "Assigned task",

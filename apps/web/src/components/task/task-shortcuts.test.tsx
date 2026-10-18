@@ -123,6 +123,7 @@ vi.mock("@/lib/toast", () => ({
 const onStatus = vi.fn();
 const onAddSubtask = vi.fn();
 const onFeature = vi.fn();
+const onRelease = vi.fn();
 
 function renderTaskShortcuts(
   enabled = true,
@@ -144,6 +145,7 @@ function renderTaskShortcuts(
             onClick={onFeature}
           />
         )}
+        <button type="button" data-task-action="release" onClick={onRelease} />
       </div>
       <TaskShortcuts
         taskId="task-1"
@@ -333,17 +335,32 @@ describe("TaskShortcuts", () => {
     expect(useRelationPickerStore.getState().request).toBeNull();
   });
 
+  it("opens the Release property of a task or a feature", () => {
+    const { unmount } = renderTaskShortcuts();
+    press({ key: "C", code: "KeyC", shiftKey: true });
+    expect(onRelease).toHaveBeenCalledTimes(1);
+    unmount();
+    shortcutRegistry.reset();
+
+    mocks.task = { ...plainTask, type: "feature" };
+    renderTaskShortcuts();
+    press({ key: "C", code: "KeyC", shiftKey: true });
+    expect(onRelease).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps copy shortcuts but blocks edits without update permission", async () => {
     mocks.canUpdateTasks.mockReturnValue(false);
     renderTaskShortcuts();
 
     press({ key: "s", code: "KeyS" });
+    press({ key: "C", code: "KeyC", shiftKey: true });
     press({ key: "m", code: "KeyM" });
     press({ key: "b", code: "KeyB" });
     press({ key: ".", code: "Period", ctrlKey: true });
     await act(async () => {});
 
     expect(onStatus).not.toHaveBeenCalled();
+    expect(onRelease).not.toHaveBeenCalled();
     expect(useRelationPickerStore.getState().request).toBeNull();
     expect(mocks.writeText).toHaveBeenCalledWith("KAN-42");
   });

@@ -1,4 +1,5 @@
 import { describeHierarchyActivity } from "@/components/activity/describe-hierarchy-activity";
+import { describeReleaseActivity } from "@/components/activity/describe-release-activity";
 import type { WorkspaceActivity } from "@/fetchers/activity/get-workspace-activities";
 import { formatDateMedium } from "@/lib/format";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
@@ -106,6 +107,11 @@ export function describeActivity(activity: WorkspaceActivity, t: Translate) {
         eventData,
         t,
       );
+      if (description) return description;
+      break;
+    }
+    case "release_changed": {
+      const description = describeReleaseActivity(activity.type, eventData, t);
       if (description) return description;
       break;
     }

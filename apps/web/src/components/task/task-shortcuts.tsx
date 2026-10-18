@@ -138,6 +138,7 @@ export function TaskShortcuts({
     },
     { enabled: editable.enabled && !isFeature },
   );
+  useShortcut("setRelease", () => clickTaskAction("release"), editable);
   useShortcut(
     "openParent",
     () =>

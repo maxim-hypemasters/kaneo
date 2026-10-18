@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (nueva)",
 				"chooseProjectForFeature": "Elige un proyecto para seleccionar una funcionalidad.",
 				"loadingFeatures": "Cargando funcionalidades...",
-				"loadFeaturesError": "No se pudieron cargar las funcionalidades."
+				"loadFeaturesError": "No se pudieron cargar las funcionalidades.",
+				"release": "Versión",
+				"noRelease": "Sin versión",
+				"searchReleases": "Buscar versiones...",
+				"releaseFromFeature": "{{name}} (de la funcionalidad)",
+				"chooseProjectForRelease": "Elige un proyecto para seleccionar una versión.",
+				"loadingReleases": "Cargando versiones...",
+				"loadReleasesError": "No se pudieron cargar las versiones.",
+				"noReleasesFound": "No se han encontrado versiones"
 			}
 		},
 		"editor": {
@@ -2444,7 +2452,9 @@
 				"open": "Abrir",
 				"close": "Cerrar"
 			},
-			"createFeature": "Crear una funcionalidad"
+			"createFeature": "Crear una funcionalidad",
+			"goToReleases": "Ir a las versiones",
+			"createRelease": "Crear una versión"
 		},
 		"sidebar": {
 			"projects": "Proyectos",
@@ -2614,7 +2624,9 @@
 				"editorNumberedList": "Lista numerada",
 				"editorCodeBlock": "Bloque de código",
 				"editorUndo": "Deshacer",
-				"editorRedo": "Rehacer"
+				"editorRedo": "Rehacer",
+				"goToReleases": "Ir a las versiones",
+				"setRelease": "Establecer versión"
 			},
 			"title": "Atajos de teclado",
 			"searchPlaceholder": "Buscar por acción o tecla",
@@ -2826,7 +2838,10 @@
 		"removedFromFeature": "ha quitado la tarea de la funcionalidad \"{{feature}}\"",
 		"changedFeature": "ha movido la tarea de la funcionalidad \"{{from}}\" a \"{{to}}\"",
 		"madeFeature": "ha convertido esta tarea en una funcionalidad",
-		"madeTask": "ha convertido esta funcionalidad en una tarea"
+		"madeTask": "ha convertido esta funcionalidad en una tarea",
+		"addedToRelease": "ha añadido la tarea a la versión \"{{release}}\"",
+		"removedFromRelease": "ha quitado la tarea de la versión \"{{release}}\"",
+		"changedRelease": "ha movido la tarea de la versión \"{{from}}\" a \"{{to}}\""
 	},
 	"tasks": {
 		"title": "Tareas",
@@ -2852,7 +2867,8 @@
 			"list": "Lista",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Vista"
+			"heading": "Vista",
+			"releases": "Versiones"
 		},
 		"common": {
 			"selectTask": "Seleccionar tarea",
@@ -3113,7 +3129,8 @@
 				"priority": "Prioridad",
 				"assignee": "Asignado",
 				"dueDate": "Fecha de vencimiento",
-				"labels": "Etiquetas"
+				"labels": "Etiquetas",
+				"release": "Versión"
 			},
 			"operators": {
 				"isAnyOf": "es alguno de",
@@ -3452,6 +3469,170 @@
 			"convertBlocked": "Saca las tareas de esta funcionalidad antes de convertirla en tarea.",
 			"openFeature": "Abrir funcionalidad {{title}}",
 			"inProject": "Funcionalidades en el proyecto"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Versiones",
+			"count_one": "{{count}} versión",
+			"count_many": "{{count}} versiones",
+			"count_other": "{{count}} versiones",
+			"new": "Nueva versión",
+			"edit": "Editar versión",
+			"delete": "Eliminar versión",
+			"property": "Versión",
+			"none": "Sin versión",
+			"unknown": "Versión desconocida",
+			"searchPlaceholder": "Buscar versiones…",
+			"pickerEmpty": "Aún no hay versiones en este proyecto",
+			"updateError": "Error al actualizar la versión",
+			"featureReleaseHint": "Versión de la funcionalidad",
+			"followNote": "Las tareas que siguen a esta funcionalidad se mueven con ella.",
+			"movedWithFeature_one": "También se ha movido {{count}} tarea de esta funcionalidad",
+			"movedWithFeature_many": "También se han movido {{count}} tareas de esta funcionalidad",
+			"movedWithFeature_other": "También se han movido {{count}} tareas de esta funcionalidad",
+			"loadError": "No se pudieron cargar las versiones.",
+			"retry": "Intentar de nuevo",
+			"sections": {
+				"active": "Activas",
+				"upcoming": "Próximas",
+				"past": "Pasadas"
+			},
+			"phase": {
+				"upcoming": "Próxima",
+				"inProgress": "En curso",
+				"codeFreeze": "Congelación de código",
+				"pastSubmission": "Tras el envío"
+			},
+			"dates": {
+				"start": "Inicio",
+				"codeFreeze": "Congelación de código",
+				"submission": "Envío"
+			},
+			"countdown": {
+				"startsIn_one": "Empieza en {{count}} día",
+				"startsIn_many": "Empieza en {{count}} días",
+				"startsIn_other": "Empieza en {{count}} días",
+				"startsToday": "Empieza hoy",
+				"freezeIn_one": "Congelación de código en {{count}} día",
+				"freezeIn_many": "Congelación de código en {{count}} días",
+				"freezeIn_other": "Congelación de código en {{count}} días",
+				"freezeToday": "Congelación de código hoy",
+				"submissionIn_one": "Envío en {{count}} día",
+				"submissionIn_many": "Envío en {{count}} días",
+				"submissionIn_other": "Envío en {{count}} días",
+				"submissionToday": "Envío hoy",
+				"submittedAgo_one": "Enviada hace {{count}} día",
+				"submittedAgo_many": "Enviada hace {{count}} días",
+				"submittedAgo_other": "Enviada hace {{count}} días"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{completed}} de {{count}} tarea completada",
+			"progressAria_many": "{{completed}} de {{count}} tareas completadas",
+			"progressAria_other": "{{completed}} de {{count}} tareas completadas",
+			"counts": {
+				"features_one": "{{count}} funcionalidad",
+				"features_many": "{{count}} funcionalidades",
+				"features_other": "{{count}} funcionalidades",
+				"tasks_one": "{{count}} tarea",
+				"tasks_many": "{{count}} tareas",
+				"tasks_other": "{{count}} tareas",
+				"unfinished_one": "{{count}} sin terminar",
+				"unfinished_many": "{{count}} sin terminar",
+				"unfinished_other": "{{count}} sin terminar"
+			},
+			"empty": {
+				"title": "Aún no hay versiones",
+				"description": "Planifica una versión con una fecha de inicio, una congelación de código y una fecha de envío, y después añádele funcionalidades y tareas.",
+				"readOnly": "Las versiones planificadas para este proyecto aparecerán aquí."
+			},
+			"dialog": {
+				"createTitle": "Nueva versión",
+				"editTitle": "Editar versión",
+				"createDescription": "Una versión tiene una fecha de inicio, una congelación de código y una fecha de envío, en ese orden.",
+				"nameLabel": "Nombre",
+				"namePlaceholder": "p. ej. 2.4",
+				"nameRequired": "Introduce un nombre",
+				"dateRequired": "Elige una fecha",
+				"startLabel": "Inicio",
+				"codeFreezeLabel": "Congelación de código",
+				"submissionLabel": "Envío",
+				"pickDate": "Elegir una fecha",
+				"descriptionLabel": "Descripción",
+				"descriptionPlaceholder": "Qué incluye esta versión (opcional)",
+				"create": "Crear versión",
+				"save": "Guardar",
+				"createSuccess": "Versión creada",
+				"updateSuccess": "Versión actualizada",
+				"createError": "Error al crear la versión",
+				"updateError": "Error al actualizar la versión",
+				"beforeStart": "{{date}} es anterior a la fecha de inicio",
+				"afterCodeFreeze": "{{date}} es posterior a la congelación de código",
+				"beforeCodeFreeze": "{{date}} es anterior a la congelación de código",
+				"afterSubmission": "{{date}} es posterior a la fecha de envío",
+				"limitHint": "Entre {{start}} y {{end}}"
+			},
+			"deleteDialog": {
+				"title": "¿Eliminar la versión {{name}}?",
+				"description_one": "La {{count}} tarea o funcionalidad que contiene se queda en el proyecto, sin versión.",
+				"description_many": "Las {{count}} tareas y funcionalidades que contiene se quedan en el proyecto, sin versión.",
+				"description_other": "Las {{count}} tareas y funcionalidades que contiene se quedan en el proyecto, sin versión.",
+				"descriptionEmpty": "No hay tareas ni funcionalidades en esta versión.",
+				"confirm": "Eliminar versión",
+				"success": "Versión eliminada",
+				"error": "Error al eliminar la versión"
+			},
+			"moveUnfinished": {
+				"action": "Mover elementos sin terminar…",
+				"title": "Mover elementos sin terminar",
+				"description": "Las tareas y funcionalidades que no están terminadas se mueven una a una. Las terminadas se quedan en la versión {{name}}.",
+				"target": "Mover a",
+				"noRelease": "Sin versión",
+				"summary_one": "Se moverá {{count}} elemento sin terminar.",
+				"summary_many": "Se moverán {{count}} elementos sin terminar.",
+				"summary_other": "Se moverán {{count}} elementos sin terminar.",
+				"none": "Todo lo de esta versión está terminado.",
+				"noTargets": "No hay otras versiones",
+				"confirm": "Mover elementos",
+				"success_one": "{{count}} elemento movido a {{name}}",
+				"success_many": "{{count}} elementos movidos a {{name}}",
+				"success_other": "{{count}} elementos movidos a {{name}}",
+				"successNoRelease_one": "{{count}} elemento sacado de la versión",
+				"successNoRelease_many": "{{count}} elementos sacados de la versión",
+				"successNoRelease_other": "{{count}} elementos sacados de la versión",
+				"error": "Error al mover los elementos"
+			},
+			"detail": {
+				"back": "Todas las versiones",
+				"notFound": "Esta versión no existe o se ha eliminado.",
+				"backToReleases": "Volver a las versiones",
+				"standaloneHeading": "Tareas sin funcionalidad",
+				"empty": "Aún no hay nada en esta versión",
+				"emptyHint": "Establece la versión de una tarea o funcionalidad, o añade una tarea aquí.",
+				"addTask": "Añadir tarea",
+				"featureElsewhere": "Funcionalidad fuera de esta versión",
+				"tasksElsewhere_one": "{{count}} tarea más fuera de esta versión",
+				"tasksElsewhere_many": "{{count}} tareas más fuera de esta versión",
+				"tasksElsewhere_other": "{{count}} tareas más fuera de esta versión",
+				"today": "Hoy",
+				"loadingTasks": "Cargando tareas…",
+				"timelineLabel": "Cronograma de la versión"
+			},
+			"gantt": {
+				"strip": "Versiones",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Inicio: {{date}}",
+					"codeFreeze": "Congelación de código: {{date}}",
+					"submission": "Envío: {{date}}"
+				},
+				"actionsFor": "Acciones para {{name}}",
+				"loading": "Cargando versiones…",
+				"tasksLoadError": "No se pudieron cargar las tareas."
+			},
+			"ux": {
+				"nameTaken": "Ya existe una versión con este nombre"
+			}
 		}
 	},
 	"invitations": {
