@@ -59,6 +59,12 @@ const releaseCalls = () =>
     ([filters]) =>
       filters?.queryKey?.[0] === "releases" && filters.queryKey[1] === "p",
   );
+const progressCalls = () =>
+  mocks.client.invalidateQueries.mock.calls.filter(
+    ([filters]) =>
+      filters?.queryKey?.[0] === "release-progress" &&
+      filters.queryKey[1] === "p",
+  );
 // Invalidations that read the list again, and those that only mark it stale.
 const releasesRefreshes = () =>
   releaseCalls().filter(([filters]) => filters.refetchType !== "none").length;
@@ -90,12 +96,13 @@ afterEach(() => {
 });
 
 describe("release list realtime", () => {
-  it("refreshes only the release list on RELEASES_UPDATED", () => {
+  it("refreshes release metadata and chart without loading the board", () => {
     renderHook(() => useProjectWebSocket("p"));
     Socket.current.message("RELEASES_UPDATED");
     vi.advanceTimersByTime(300);
     expect(mocks.client.invalidateQueries.mock.calls).toEqual([
       [{ queryKey: ["releases", "p"] }],
+      [{ queryKey: ["release-progress", "p"] }],
     ]);
     expect(mocks.client.setQueryData).not.toHaveBeenCalled();
   });
@@ -112,6 +119,7 @@ describe("release list realtime", () => {
     vi.advanceTimersByTime(300);
     expect(releasesMarkedStale()).toBe(1);
     expect(releasesRefreshes()).toBe(0);
+    expect(progressCalls()).toHaveLength(1);
   });
 
   it("only marks it stale after a reorder, which can change statuses", () => {
@@ -122,6 +130,16 @@ describe("release list realtime", () => {
     vi.advanceTimersByTime(300);
     expect(releasesMarkedStale()).toBe(1);
     expect(releasesRefreshes()).toBe(0);
+    expect(progressCalls()).toHaveLength(1);
+  });
+
+  it("does not refresh chart history for a position-only reorder", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("TASKS_REORDERED", {
+      tasks: [{ id: "a", position: 1 }],
+    });
+    vi.advanceTimersByTime(300);
+    expect(progressCalls()).toEqual([]);
   });
 
   it.each(["TASK_LABEL_UPDATED", "COMMENT_UPDATED", "TASK_RELATION_UPDATED"])(
@@ -131,6 +149,7 @@ describe("release list realtime", () => {
       Socket.current.message(type, { taskId: "a" });
       vi.advanceTimersByTime(300);
       expect(releaseCalls()).toEqual([]);
+      expect(progressCalls()).toEqual([]);
     },
   );
 
@@ -142,12 +161,15 @@ describe("release list realtime", () => {
     }
     vi.advanceTimersByTime(300);
     expect(releasesRefreshes()).toBe(1);
+    expect(progressCalls()).toHaveLength(1);
     Socket.current.message("TASK_UPDATED", { taskId: "g" });
     vi.advanceTimersByTime(300);
     expect(releasesRefreshes()).toBe(1);
+    expect(progressCalls()).toHaveLength(2);
     Socket.current.message("RELEASES_UPDATED");
     vi.advanceTimersByTime(300);
     expect(releasesRefreshes()).toBe(2);
+    expect(progressCalls()).toHaveLength(3);
   });
 
   it("catches up when the socket opens", () => {
@@ -155,6 +177,9 @@ describe("release list realtime", () => {
     Socket.current.onopen?.();
     expect(releaseCalls()).toEqual([
       [{ queryKey: ["releases", "p"] }, { cancelRefetch: false }],
+    ]);
+    expect(progressCalls()).toEqual([
+      [{ queryKey: ["release-progress", "p"] }, { cancelRefetch: false }],
     ]);
   });
 
@@ -174,6 +199,20 @@ describe("release list realtime", () => {
     vi.advanceTimersByTime(5_000);
     Socket.current.onopen?.();
     expect(releasesRefreshes()).toBe(1);
+    expect(progressCalls()).toHaveLength(1);
+  });
+
+  it("polls chart history after all reconnect attempts fail", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    for (let retry = 0; retry < 5; retry++) {
+      Socket.current.onclose?.();
+      vi.advanceTimersByTime(1_000 * 2 ** retry);
+    }
+    Socket.current.onclose?.();
+    vi.advanceTimersByTime(30_000);
+    expect(progressCalls()).toEqual([
+      [{ queryKey: ["release-progress", "p"] }],
+    ]);
   });
 
   it("reads it again after reconnecting, though it was fetched recently", () => {
@@ -195,5 +234,6 @@ describe("release list realtime", () => {
     unmount();
     vi.advanceTimersByTime(300);
     expect(releasesRefreshes()).toBe(0);
+    expect(progressCalls()).toHaveLength(0);
   });
 });

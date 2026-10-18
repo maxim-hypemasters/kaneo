@@ -20,6 +20,9 @@ export function useMoveTask() {
     }),
     onSuccess: (result, variables, context) => {
       invalidateMyWork(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: ["release-progress", result.destinationProjectId],
+      });
       toast.success(t("tasks:move.success"), { icon: FolderInputIcon });
       queryClient.invalidateQueries({
         queryKey: ["external-links", variables.taskId],
@@ -32,10 +35,14 @@ export function useMoveTask() {
         invalidateFeatureChange(queryClient, result.sourceProjectId, [
           context.featureId,
         ]);
-      else
+      else {
         queryClient.invalidateQueries({
           queryKey: ["tasks", result.sourceProjectId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["release-progress", result.sourceProjectId],
+        });
+      }
       queryClient.invalidateQueries({
         queryKey: ["tasks", result.destinationProjectId],
       });

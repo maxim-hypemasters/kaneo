@@ -56,6 +56,12 @@ beforeEach(() => {
   });
   queryClient.setQueryData(["tasks", "p"], board());
   queryClient.setQueryData(["releases", "p"], []);
+  queryClient.setQueryData(["release-progress", "p", "r1", "UTC"], {});
+  queryClient.setQueryData(
+    ["release-progress", "p", "r2", "Europe/Belgrade"],
+    {},
+  );
+  queryClient.setQueryData(["release-progress", "other", "r3", "UTC"], {});
 });
 afterEach(() => queryClient.clear());
 
@@ -82,6 +88,15 @@ it("patches a plain task on the board without refetching it", async () => {
   expect(queryClient.getQueryState(["releases", "p"])?.isInvalidated).toBe(
     true,
   );
+  for (const key of [
+    ["release-progress", "p", "r1", "UTC"],
+    ["release-progress", "p", "r2", "Europe/Belgrade"],
+  ])
+    expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
+  expect(
+    queryClient.getQueryState(["release-progress", "other", "r3", "UTC"])
+      ?.isInvalidated,
+  ).toBe(false);
 });
 
 it("patches a feature and the tasks that followed it, without reloading the board", async () => {

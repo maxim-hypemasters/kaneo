@@ -39,6 +39,8 @@ afterEach(() => queryClient.clear());
 
 it("replaces the edited release, keeping its progress and the start order", async () => {
   const before = release("2.4", "2026-10-01");
+  queryClient.setQueryData(["release-progress", "p", "2.4", "UTC"], {});
+  queryClient.setQueryData(["release-progress", "p", "2.5", "UTC"], {});
   queryClient.setQueryData(
     ["releases", "p"],
     [before, release("2.5", "2026-11-01")],
@@ -67,4 +69,12 @@ it("replaces the edited release, keeping its progress and the start order", asyn
   expect(queryClient.getQueryState(["releases", "p"])?.isInvalidated).toBe(
     true,
   );
+  expect(
+    queryClient.getQueryState(["release-progress", "p", "2.4", "UTC"])
+      ?.isInvalidated,
+  ).toBe(true);
+  expect(
+    queryClient.getQueryState(["release-progress", "p", "2.5", "UTC"])
+      ?.isInvalidated,
+  ).toBe(false);
 });

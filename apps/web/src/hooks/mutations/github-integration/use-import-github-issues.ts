@@ -8,6 +8,9 @@ function useImportGithubIssues() {
     onSettled: async (_data, _error, variables) => {
       // A failed request can follow successfully persisted pages.
       await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["release-progress", variables.projectId],
+        }),
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
         queryClient.invalidateQueries({ queryKey: ["labels"] }),
         queryClient.invalidateQueries({ queryKey: ["projects"] }),
