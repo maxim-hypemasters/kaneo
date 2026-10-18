@@ -37,7 +37,7 @@ Switch the layout to **List** when you want to compare task properties without o
 
 Use the search icon, or press ⌘F (Ctrl+F on Windows and Linux), to find tasks by title, description, or task number.
 
-Use **Filter** to narrow the view by status, assignee, priority, labels, due date, or custom fields. Hover a property to pick its values, or type in **Add filter…** to search every value at once. Each filter appears as a chip above the tasks:
+Use **Filter** to narrow the view by status, assignee, priority, labels, release, due date, or custom fields. Hover a property to pick its values, or type in **Add filter…** to search every value at once. Each filter appears as a chip above the tasks:
 
 - Click the operator, such as **is**, to switch it to **is not** and hide matching tasks instead.
 - Click the values to change them.
@@ -60,6 +60,7 @@ Open a task to edit its description and properties. Use **Open in full page** fr
 - **Priority:** show what needs attention first. A task can have no priority.
 - **Dates:** add start and due dates when the work has a schedule.
 - **Labels:** group related work across projects. Removing a label from one task does not delete the workspace label.
+- **Release:** put the task in one of the project's [releases](/core/functional/releases), or choose **No release**. In an open task, **Shift+C** changes it.
 - **Comments:** ask questions and record decisions where everyone following the task can find them.
 
 Use the attachment button, paste, or drag a file into the editor to add supporting material. Images appear inline; other files appear as attachments. On self-hosted instances, an operator must [configure file storage](/core/installation/object-storage-and-image-uploads) first.
@@ -104,9 +105,13 @@ The task's activity records when you add it to a feature, take it out, or change
 ### What happens to the tasks
 
 - **Deleting a feature** keeps its tasks. They just leave the feature.
-- **Moving a task to another project** takes it out of its feature.
+- **Moving a task to another project** takes it out of its feature and its release.
 - **Moving a feature to another project** works only when it has no tasks. Take its tasks out first.
-- **Duplicating a task** puts the copy in the same feature. A copy of a feature is a new feature without tasks.
+- **Duplicating a task** puts the copy in the same feature and release. A copy of a feature is a new feature in the same release, without tasks.
+
+### Features and releases
+
+When you put a feature in a [release](/core/functional/releases), its tasks that were in the feature's previous release move with it. A task you create in the feature starts in its release, and a task without a release takes the feature's release when it joins. A task you put in another release on its own stays there, and taking a task out of its feature keeps its release. See [How tasks follow their feature](/core/functional/releases#how-tasks-follow-their-feature) for examples.
 
 ### Subtasks from earlier versions
 
