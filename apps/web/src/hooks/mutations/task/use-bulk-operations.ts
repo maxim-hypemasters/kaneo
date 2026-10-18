@@ -11,12 +11,22 @@ export function useBulkOperations() {
     queryClientRef.invalidateQueries({ queryKey: ["projects"] });
     invalidateMyWork(queryClientRef);
   };
+  const invalidateProgress = () => {
+    invalidateCommon();
+    // Bulk selections may span projects, and the response carries no project ids.
+    void queryClientRef.invalidateQueries({ queryKey: ["release-progress"] });
+  };
 
   const bulkDelete = useMutation({
     mutationFn: async (taskIds: string[]) => {
-      await Promise.all(taskIds.map((id) => deleteTask(id)));
+      const results = await Promise.allSettled(
+        taskIds.map((id) => deleteTask(id)),
+      );
+      const failure = results.find((result) => result.status === "rejected");
+      if (failure?.status === "rejected") throw failure.reason;
     },
-    onSuccess: invalidateCommon,
+    // Earlier deletions may have committed before another deletion failed.
+    onSettled: invalidateProgress,
   });
 
   const bulkArchive = useMutation({
@@ -27,7 +37,7 @@ export function useBulkOperations() {
         value: "archived",
       });
     },
-    onSuccess: invalidateCommon,
+    onSuccess: invalidateProgress,
   });
 
   const bulkChangeStatus = useMutation({
@@ -44,7 +54,7 @@ export function useBulkOperations() {
         value: status,
       });
     },
-    onSuccess: invalidateCommon,
+    onSuccess: invalidateProgress,
   });
 
   const bulkAssign = useMutation({
@@ -72,7 +82,7 @@ export function useBulkOperations() {
         value: "planned",
       });
     },
-    onSuccess: invalidateCommon,
+    onSuccess: invalidateProgress,
   });
 
   const bulkMoveToBoard = useMutation({
@@ -89,7 +99,7 @@ export function useBulkOperations() {
         value: status,
       });
     },
-    onSuccess: invalidateCommon,
+    onSuccess: invalidateProgress,
   });
 
   const bulkPriority = useMutation({

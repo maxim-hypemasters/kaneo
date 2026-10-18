@@ -12,6 +12,11 @@ import deleteRelease from "./controllers/delete-release";
 import moveUnfinishedItems from "./controllers/move-unfinished-items";
 import updateRelease from "./controllers/update-release";
 import { getRelease, listReleases } from "./read-releases";
+import { readReleaseProgress } from "./progress/read-release-progress";
+import {
+  releaseProgressHistorySchema,
+  releaseProgressQuery,
+} from "./progress/response";
 import {
   deletedReleaseSchema,
   movedReleaseItemsSchema,
@@ -59,6 +64,28 @@ const getReleaseRoute = createRoute({
     403: errorResponse("No access to the release's project"),
     404: errorResponse("Release not found"),
     503: errorResponse("Release request timed out"),
+  },
+});
+
+const getReleaseProgressRoute = createRoute({
+  method: "get",
+  operationId: "getReleaseProgress",
+  path: "/{id}/progress",
+  tags: ["Releases"],
+  summary: "Get release progress history",
+  description:
+    "Daily task scope, started and completed totals in the requested timezone. Started includes completed tasks and tasks in nonfinal columns after the first nonfinal column. Archived tasks remain in scope. History begins when tracking was installed; earlier values are unknown. Future days are omitted, and unchanged days after submission are trimmed.",
+  middleware: [workspaceAccess.fromRelease("id")] as const,
+  request: { params: releaseParam, query: releaseProgressQuery },
+  responses: {
+    200: jsonResponse(
+      "The release's task progress history",
+      releaseProgressHistorySchema,
+    ),
+    400: errorResponse("Invalid timezone"),
+    403: errorResponse("No access to the release's project"),
+    404: errorResponse("Release not found"),
+    503: errorResponse("Progress history unavailable or request timed out"),
   },
 });
 
@@ -193,6 +220,15 @@ const release = apiRouter()
   )
   .openapi(getReleaseRoute, async (c) =>
     c.json(await getRelease(c.req.valid("param").id), 200),
+  )
+  .openapi(getReleaseProgressRoute, async (c) =>
+    c.json(
+      await readReleaseProgress(
+        c.req.valid("param").id,
+        c.req.valid("query").timeZone,
+      ),
+      200,
+    ),
   )
   .openapi(createReleaseRoute, async (c) =>
     c.json(

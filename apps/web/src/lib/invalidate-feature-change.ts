@@ -18,6 +18,9 @@ export function invalidateFeatureChange(
     queryKey: ["project-task-relations", projectId],
   });
   void queryClient.invalidateQueries({ queryKey: releasesKey(projectId) });
+  void queryClient.invalidateQueries({
+    queryKey: ["release-progress", projectId],
+  });
   void queryClient.invalidateQueries({ queryKey: ["task-relations"] });
   for (const id of new Set(taskIds)) {
     if (!id) continue;

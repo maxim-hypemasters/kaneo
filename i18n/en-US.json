@@ -3458,6 +3458,21 @@
 			"progress": "{{completed}}/{{total}}",
 			"progressAria_one": "{{completed}} of {{count}} task done",
 			"progressAria_other": "{{completed}} of {{count}} tasks done",
+			"chart": {
+				"title": "Progress over time",
+				"tasksOnly": "Tasks only",
+				"predicted": "Predicted",
+				"started": "Started",
+				"completed": "Completed",
+				"explore": "Explore release progress by day",
+				"instructions": "Use the left and right arrow keys to explore each day, Home or End to jump to the first or last day, and Escape to close the details.",
+				"point": "{{date}}: {{predicted}} predicted, {{started}} started, {{completed}} completed",
+				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
+				"upcoming": "Progress will appear when this release starts.",
+				"empty": "No tasks in this release yet.",
+				"loading": "Loading progress history…",
+				"loadError": "Progress history couldn’t be loaded."
+			},
 			"counts": {
 				"features_one": "{{count}} feature",
 				"features_other": "{{count}} features",

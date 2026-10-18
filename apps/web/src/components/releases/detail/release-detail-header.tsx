@@ -7,11 +7,8 @@ import { releasePhase } from "@/lib/releases/release-phase";
 import type { Release } from "@/types/release";
 import { ReleaseActionsMenu } from "../release-actions-menu";
 import { releaseCountdown } from "../release-countdown";
-import { ReleaseCounts } from "../release-counts-text";
 import { ReleasePhaseBadge } from "../release-phase-badge";
-import { ReleaseProgressBar } from "../release-progress-bar";
 import type { ReleasePermissions } from "../use-release-permissions";
-import { ReleaseTimeline } from "./release-timeline";
 
 type ReleaseDetailHeaderProps = {
   release: Release;
@@ -43,7 +40,7 @@ export function ReleaseDetailHeader({
     canMove && (phase === "codeFreeze" || phase === "pastSubmission");
 
   return (
-    <header className="space-y-5 border-border/80 border-b px-4 py-5 sm:px-6">
+    <header className="space-y-4 px-4 pt-5 pb-2 sm:px-6">
       <Link
         to="/dashboard/workspace/$workspaceId/project/$projectId/releases"
         params={{ workspaceId, projectId: release.projectId }}
@@ -87,16 +84,6 @@ export function ReleaseDetailHeader({
           {release.description}
         </p>
       ) : null}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(14rem,1fr)] lg:items-end lg:gap-10">
-        <ReleaseTimeline release={release} today={today} />
-        <div className="space-y-1.5">
-          <ReleaseProgressBar
-            completed={counts.completedTasks}
-            total={counts.tasks}
-          />
-          <ReleaseCounts counts={counts} />
-        </div>
-      </div>
     </header>
   );
 }

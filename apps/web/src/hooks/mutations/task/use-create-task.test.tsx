@@ -18,6 +18,7 @@ beforeEach(() => {
     defaultOptions: { mutations: { retry: false } },
   });
   queryClient.setQueryData(["releases", "p"], []);
+  queryClient.setQueryData(["release-progress", "p", "r1", "UTC"], {});
 });
 afterEach(() => queryClient.clear());
 
@@ -47,5 +48,9 @@ it.each([
     expect(queryClient.getQueryState(["releases", "p"])?.isInvalidated).toBe(
       refreshed,
     );
+    expect(
+      queryClient.getQueryState(["release-progress", "p", "r1", "UTC"])
+        ?.isInvalidated,
+    ).toBe(refreshed);
   },
 );

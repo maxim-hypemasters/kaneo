@@ -76,6 +76,9 @@ function KanbanBoard({
     onSuccess: (_result, variables) => {
       if (variables.tasks.some((task) => task.status !== undefined)) {
         invalidateMyWork(queryClient);
+        void queryClient.invalidateQueries({
+          queryKey: ["release-progress", variables.projectId],
+        });
         void queryClient.invalidateQueries({ queryKey: ["projects"] });
       }
       void queryClient.invalidateQueries({

@@ -17,6 +17,7 @@ import {
 } from "vite-plus/test";
 import type { Release } from "@/types/release";
 import type Task from "@/types/task";
+import type { ReleaseItemCounts } from "@/lib/releases/release-progress";
 import { ReleaseDetailPage } from "./release-detail-page";
 
 const m = vi.hoisted(() => ({
@@ -30,6 +31,7 @@ const m = vi.hoisted(() => ({
   today: "2026-10-17",
   canCreateTasks: true,
   createTask: vi.fn(),
+  progressSection: vi.fn(),
 }));
 
 vi.mock("react-i18next", () => ({
@@ -105,6 +107,16 @@ vi.mock("../move-unfinished-dialog", () => ({
 vi.mock("@/hooks/queries/release/use-get-releases", () => ({
   releasesKey: (projectId: string) => ["releases", projectId],
   useGetReleases: () => ({ ...m.releases, refetch: vi.fn() }),
+}));
+vi.mock("./release-progress-section", () => ({
+  ReleaseProgressSection: (props: {
+    release: Release;
+    counts: ReleaseItemCounts;
+    today: string;
+  }) => {
+    m.progressSection(props);
+    return <section aria-label="progress-history">{props.release.id}</section>;
+  },
 }));
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
   useGetTasks: () => ({ ...m.board, refetch: vi.fn() }),
@@ -213,6 +225,7 @@ beforeEach(() => {
   m.today = "2026-10-17";
   m.canCreateTasks = true;
   m.createTask.mockClear();
+  m.progressSection.mockClear();
 });
 
 afterEach(cleanup);
@@ -220,6 +233,10 @@ afterEach(cleanup);
 describe("ReleaseDetailPage", () => {
   it("shows the release with its features, then the tasks without one", () => {
     renderPage();
+
+    expect(
+      screen.getByRole("region", { name: "progress-history" }),
+    ).toHaveTextContent("r1");
 
     expect(
       screen.getByRole("heading", { level: 1, name: "2.4" }),
@@ -262,17 +279,31 @@ describe("ReleaseDetailPage", () => {
     expect(rows[1]).toHaveAttribute("data-task-id", "Shipped");
   });
 
-  it("counts progress from the board", () => {
+  it("gives the unified progress section board counts and today's local date", () => {
     renderPage();
 
+    expect(m.progressSection).toHaveBeenCalledWith({
+      release,
+      counts: {
+        tasks: 4,
+        completedTasks: 1,
+        features: 1,
+        completedFeatures: 0,
+        unfinished: 4,
+      },
+      today: "2026-10-17",
+    });
     expect(
-      screen.getByText("tasks:releases.progressAria:4"),
-    ).toBeInTheDocument();
+      screen.getAllByRole("region", { name: "progress-history" }),
+    ).toHaveLength(1);
     expect(
-      screen.getByText(
-        "tasks:releases.counts.features:1 · tasks:releases.counts.tasks:4 · tasks:releases.counts.unfinished:4",
-      ),
-    ).toBeInTheDocument();
+      screen.queryByRole("region", {
+        name: "tasks:releases.detail.timelineLabel",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/^tasks:releases.progressAria/),
+    ).not.toBeInTheDocument();
   });
 
   it("puts Move unfinished up front from code freeze on", () => {

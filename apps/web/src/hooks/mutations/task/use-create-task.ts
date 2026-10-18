@@ -61,6 +61,9 @@ function useCreateTask() {
       // Picked or taken from its feature, the release's progress changed.
       if (data.releaseId) {
         void queryClient.invalidateQueries({
+          queryKey: ["release-progress", variables.projectId],
+        });
+        void queryClient.invalidateQueries({
           queryKey: releasesKey(variables.projectId),
         });
       }

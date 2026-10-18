@@ -19,10 +19,14 @@ export function useDuplicateTask() {
       // A copy of a task joins its feature; both refresh the board.
       if (task.featureId)
         invalidateFeatureChange(queryClient, task.projectId, [task.featureId]);
-      else
+      else {
         void queryClient.invalidateQueries({
           queryKey: ["tasks", task.projectId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["release-progress", task.projectId],
+        });
+      }
     },
     onError: (error) => {
       toast.error(

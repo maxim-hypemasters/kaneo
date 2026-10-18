@@ -3554,6 +3554,21 @@
 			},
 			"ux": {
 				"nameTaken": "Er bestaat al een release met deze naam"
+			},
+			"chart": {
+				"completed": "Completed",
+				"empty": "No tasks in this release yet.",
+				"explore": "Explore release progress by day",
+				"instructions": "Use the left and right arrow keys to explore each day, Home or End to jump to the first or last day, and Escape to close the details.",
+				"loadError": "Progress history couldn’t be loaded.",
+				"loading": "Loading progress history…",
+				"point": "{{date}}: {{predicted}} predicted, {{started}} started, {{completed}} completed",
+				"predicted": "Predicted",
+				"started": "Started",
+				"tasksOnly": "Tasks only",
+				"title": "Progress over time",
+				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
+				"upcoming": "Progress will appear when this release starts."
 			}
 		}
 	},

@@ -93,7 +93,17 @@ Each change of a task's release appears in its activity, in an entry such as **a
 
 Select a release in the list to open its page. **All releases** takes you back.
 
-The page shows the release's phase, countdown, and description, then a timeline from start to submission with marks for the code freeze and today. Below that are its progress and its work:
+The page shows the release's phase, countdown, and description, then one **Progress over time** chart with its start, code freeze, submission, and today marked on the same timeline. The dates and feature, task, and unfinished counts appear alongside the chart, which tracks its tasks by day:
+
+- **Predicted** is a straight dashed guide from zero at the start to the current task count at code freeze. It shows the steady pace needed to finish that scope by code freeze, rather than estimating future work from past activity. Its legend shows the expected count and percentage for today. Changing the release's task count updates the guide.
+- **Started** includes tasks in workflow columns after the first unfinished column, including In Review and Done. Completed tasks stay included. Planned and archived tasks don't count as started.
+- **Completed** counts tasks in columns with **Done** turned on.
+
+The task count includes archived tasks; features don't add to it. The chart uses your device's time zone. Smooth curves connect the recorded daily totals for Started and Completed; tooltips show the exact counts for each day. Hover or tap a day to see its expected, started, and completed counts, or focus the chart and use the arrow keys. **Home** and **End** jump to the first and last recorded day. Started and Completed have no future values, while the Predicted guide runs to code freeze. Its expected count stays at the full scope after code freeze. When start and code freeze are the same day, the guide is vertical and that day expects the full scope.
+
+History begins when progress tracking becomes available on your instance; a shaded gap marks earlier dates whose progress is unknown. The Predicted guide still covers that period because it describes the plan, independently of recorded activity. Editing dates doesn't invent earlier history. Changes after submission still appear, while days with no further change don't keep stretching a past release's chart.
+
+Below the chart is the release's work:
 
 - One group for each feature in the release, with the feature's tasks that are in it.
 - A group for a feature that isn't in the release but has tasks in it, marked **Feature not in this release**.

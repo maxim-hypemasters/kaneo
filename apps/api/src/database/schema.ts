@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
+  bigserial,
   boolean,
   check,
   customType,
@@ -503,6 +504,64 @@ export const releaseTable = pgTable(
     check(
       "release_dates_order_check",
       sql`${table.startDate} <= ${table.codeFreezeDate} and ${table.codeFreezeDate} <= ${table.submissionDate}`,
+    ),
+  ],
+);
+
+// Append-only status buckets keep release history after tasks are deleted.
+// A null status with a zero delta marks when trustworthy tracking began.
+export const releaseProgressEventTable = pgTable(
+  "release_progress_event",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    releaseId: text("release_id")
+      .notNull()
+      .references(() => releaseTable.id, { onDelete: "cascade" }),
+    recordedAt: timestamp("recorded_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    status: text("status"),
+    delta: integer("delta").notNull(),
+  },
+  (table) => [
+    uniqueIndex("release_progress_event_baseline_idx")
+      .on(table.releaseId)
+      .where(sql`${table.status} is null`),
+    check(
+      "release_progress_event_baseline_check",
+      sql`${table.status} is not null or ${table.delta} = 0`,
+    ),
+    index("release_progress_event_release_time_idx").on(
+      table.releaseId,
+      table.recordedAt,
+      table.id,
+    ),
+  ],
+);
+
+// Column definitions are historical too: changing final flags or ordering
+// changes progress from that day onwards, without rewriting earlier days.
+export const projectWorkflowHistoryTable = pgTable(
+  "project_workflow_history",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, { onDelete: "cascade" }),
+    columnId: text("column_id").notNull(),
+    recordedAt: timestamp("recorded_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    slug: text("slug").notNull(),
+    position: integer("position").notNull(),
+    isFinal: boolean("is_final").notNull(),
+    present: boolean("present").notNull(),
+  },
+  (table) => [
+    index("project_workflow_history_project_time_idx").on(
+      table.projectId,
+      table.recordedAt,
+      table.id,
     ),
   ],
 );

@@ -10,6 +10,9 @@ export function useUpdateTaskStatus() {
     mutationFn: (task: Task) => updateTaskStatus(task.id, task),
     onSuccess: (_, variables) => {
       invalidateMyWork(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: ["release-progress", variables.projectId],
+      });
       queryClient.invalidateQueries({
         queryKey: ["task", variables.id],
       });

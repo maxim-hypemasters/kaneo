@@ -39,7 +39,12 @@ export function useDeleteTask() {
       // Both refresh the board.
       if (changed.length)
         invalidateFeatureChange(queryClient, deletedTask.projectId, changed);
-      else void queryClient.invalidateQueries({ queryKey: boardKey });
+      else {
+        void queryClient.invalidateQueries({ queryKey: boardKey });
+        void queryClient.invalidateQueries({
+          queryKey: ["release-progress", deletedTask.projectId],
+        });
+      }
 
       const { project, setProject } = useProjectStore.getState();
       if (project?.id === deletedTask.projectId) {

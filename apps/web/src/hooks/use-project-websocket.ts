@@ -35,10 +35,9 @@ const BASE_DELAY = 1000; // 1 second
 // We send a lightweight ping every 30 seconds to keep the connection alive.
 const WS_PING_INTERVAL_MS = 30_000;
 
-// Task changes can change release progress, which only the Releases pages
-// show, and they count from the board. These messages only mark the release
-// list stale, so task views don't read it again on every edit; release edits
-// send RELEASES_UPDATED, which refetches it.
+// Task messages only mark the release list stale, so task views don't read it
+// again on every edit. The independently fetched detail chart can refresh
+// without reloading the release list or paginated board.
 const RELEASE_PROGRESS_MESSAGES = [
   "TASK_CREATED",
   "TASK_UPDATED",
@@ -92,6 +91,7 @@ export function useProjectWebSocket(projectId: string) {
     let pingInterval: ReturnType<typeof setInterval> | null = null;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
     let releasesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    let progressRefreshTimer: ReturnType<typeof setTimeout> | null = null;
     // When release messages stopped arriving: null while connected.
     let offlineSince: number | null = Date.now();
     function refreshReleases() {
@@ -101,6 +101,16 @@ export function useProjectWebSocket(projectId: string) {
         if (!disposed)
           void queryClient.invalidateQueries({
             queryKey: releasesKey(projectId),
+          });
+      }, RELEASES_REFRESH_DELAY_MS);
+    }
+    function refreshProgress() {
+      if (progressRefreshTimer !== null) return;
+      progressRefreshTimer = setTimeout(() => {
+        progressRefreshTimer = null;
+        if (!disposed)
+          void queryClient.invalidateQueries({
+            queryKey: ["release-progress", projectId],
           });
       }, RELEASES_REFRESH_DELAY_MS);
     }
@@ -221,7 +231,13 @@ export function useProjectWebSocket(projectId: string) {
       ws.onopen = () => {
         if (disposed || activeSocket !== ws) return;
         // Release events missed while disconnected are not replayed.
-        if (offlineSince !== null) reconcileReleases(offlineSince);
+        if (offlineSince !== null) {
+          reconcileReleases(offlineSince);
+          void queryClient.invalidateQueries(
+            { queryKey: ["release-progress", projectId] },
+            { cancelRefetch: false },
+          );
+        }
         offlineSince = null;
         needsReconcile = true;
         flushPending();
@@ -259,13 +275,23 @@ export function useProjectWebSocket(projectId: string) {
           }
           if (message.type === "RELEASES_UPDATED") {
             refreshReleases();
+            refreshProgress();
             return;
           }
-          if (RELEASE_PROGRESS_MESSAGES.includes(message.type))
+          if (RELEASE_PROGRESS_MESSAGES.includes(message.type)) {
             void queryClient.invalidateQueries({
               queryKey: releasesKey(projectId),
               refetchType: "none",
             });
+            if (
+              message.type !== "TASKS_REORDERED" ||
+              (Array.isArray(message.tasks) &&
+                message.tasks.some(
+                  (task: { status?: string }) => task.status !== undefined,
+                ))
+            )
+              refreshProgress();
+          }
           if (
             message.taskId &&
             [
@@ -655,6 +681,9 @@ export function useProjectWebSocket(projectId: string) {
             void queryClient.invalidateQueries({
               queryKey: releasesKey(projectId),
             });
+            void queryClient.invalidateQueries({
+              queryKey: ["release-progress", projectId],
+            });
           }, 30_000);
           flushPending();
         }
@@ -722,6 +751,7 @@ export function useProjectWebSocket(projectId: string) {
       pendingMessages.clear();
       if (burstReconcileTimer !== null) clearTimeout(burstReconcileTimer);
       if (releasesRefreshTimer !== null) clearTimeout(releasesRefreshTimer);
+      if (progressRefreshTimer !== null) clearTimeout(progressRefreshTimer);
       disposed = true;
       clearPing();
       if (fallbackInterval !== null) clearInterval(fallbackInterval);

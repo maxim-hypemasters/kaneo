@@ -18,6 +18,9 @@ export function useUpdateRelease() {
         releases ? upsertRelease(releases, release) : releases,
       );
       void queryClient.invalidateQueries({ queryKey: releasesKey(projectId) });
+      void queryClient.invalidateQueries({
+        queryKey: ["release-progress", projectId, release.id],
+      });
     },
   });
 }

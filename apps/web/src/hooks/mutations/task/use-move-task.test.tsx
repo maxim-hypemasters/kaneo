@@ -27,6 +27,8 @@ beforeEach(() => {
     sourceProjectId: "source",
     destinationProjectId: "dest",
   } as Awaited<ReturnType<typeof moveTask>>);
+  for (const projectId of ["source", "dest", "other"])
+    queryClient.setQueryData(["release-progress", projectId, "r", "UTC"], {});
 });
 afterEach(() => queryClient.clear());
 
@@ -47,6 +49,15 @@ it("refreshes the feature the moved task left", async () => {
   expect(queryClient.getQueryState(["tasks", "source"])?.isInvalidated).toBe(
     true,
   );
+  for (const projectId of ["source", "dest"])
+    expect(
+      queryClient.getQueryState(["release-progress", projectId, "r", "UTC"])
+        ?.isInvalidated,
+    ).toBe(true);
+  expect(
+    queryClient.getQueryState(["release-progress", "other", "r", "UTC"])
+      ?.isInvalidated,
+  ).toBe(false);
 });
 
 it("refreshes the source board for a task without a feature", async () => {

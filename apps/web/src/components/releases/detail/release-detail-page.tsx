@@ -26,6 +26,7 @@ import { ReleaseDetailSkeleton } from "./release-detail-skeleton";
 import { ReleaseItemGroups } from "./release-item-groups";
 import { ReleaseItemsSkeleton } from "./release-items-skeleton";
 import { ReleaseNotFound } from "./release-not-found";
+import { ReleaseProgressSection } from "./release-progress-section";
 
 const NO_RELEASES: Release[] = [];
 
@@ -122,6 +123,12 @@ export function ReleaseDetailPage({
           onEdit={() => setFormOpen(true)}
           onDelete={() => setDeleteOpen(true)}
           onMoveUnfinished={() => setMoveOpen(true)}
+        />
+        <ReleaseProgressSection
+          key={release.id}
+          release={release}
+          counts={counts}
+          today={today}
         />
         {items}
       </div>

@@ -13,8 +13,11 @@ const useImportTasks = () => {
       projectId: string;
       tasks: TaskToImport[];
     }) => importTasks(projectId, tasks),
-    onSuccess: () => {
+    onSuccess: (_, { projectId }) => {
       invalidateMyWork(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: ["release-progress", projectId],
+      });
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
   });

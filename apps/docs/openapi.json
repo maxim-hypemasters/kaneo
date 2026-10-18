@@ -1832,6 +1832,82 @@
         ],
         "description": "A planned delivery in one project, holding its features and tasks. Dates are calendar days (YYYY-MM-DD) with no time zone, ordered start ≤ code freeze ≤ submission. The phase isn't stored: compare the viewer's local today with the dates. Upcoming before the start date; in progress from the start date until the day before code freeze; code freeze from the code freeze date through the submission date; past submission after the submission date."
       },
+      "ReleaseProgressHistory": {
+        "type": "object",
+        "properties": {
+          "trackedFrom": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Tracking began at this instant. Earlier totals are unknown."
+          },
+          "today": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-20"
+          },
+          "current": {
+            "type": "object",
+            "properties": {
+              "scope": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "started": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "completed": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "scope",
+              "started",
+              "completed"
+            ]
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "scope": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "started": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "completed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-20"
+                }
+              },
+              "required": [
+                "scope",
+                "started",
+                "completed",
+                "date"
+              ]
+            }
+          }
+        },
+        "required": [
+          "trackedFrom",
+          "today",
+          "current",
+          "points"
+        ]
+      },
       "DeletedRelease": {
         "type": "object",
         "properties": {
@@ -14691,6 +14767,105 @@
           },
           "429": {
             "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/release/{id}/progress": {
+      "get": {
+        "operationId": "getReleaseProgress",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Get release progress history",
+        "description": "Daily task scope, started and completed totals in the requested timezone. Started includes completed tasks and tasks in nonfinal columns after the first nonfinal column. Archived tasks remain in scope. History begins when tracking was installed; earlier values are unknown. Future days are omitted, and unchanged days after submission are trimmed.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "UTC",
+              "description": "IANA timezone used for calendar-day totals. Defaults to UTC.",
+              "example": "Europe/Belgrade"
+            },
+            "required": false,
+            "description": "IANA timezone used for calendar-day totals. Defaults to UTC.",
+            "name": "timeZone",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The release's task progress history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseProgressHistory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid timezone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the release's project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Progress history unavailable or request timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           }
         }
       }
