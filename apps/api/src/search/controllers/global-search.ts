@@ -99,6 +99,12 @@ function getActivitySearchContent(
       return data.newFeatureTitle
         ? `added the task to feature "${String(data.newFeatureTitle)}"`
         : "added the task to a feature";
+    case "release_changed":
+      if (!data.newReleaseId) return "removed the task from its release";
+      // A name from a project the viewer can't see was redacted to null.
+      return data.newReleaseName
+        ? `added the task to release "${String(data.newReleaseName)}"`
+        : "added the task to a release";
     case "type_changed":
       return data.newType === "feature"
         ? "made the task a feature"

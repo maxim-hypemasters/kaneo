@@ -1,0 +1,223 @@
+import { requireEntitlement } from "../billing/require-entitlement-middleware";
+import {
+  apiRouter,
+  createRoute,
+  errorResponse,
+  jsonResponse,
+} from "../openapi";
+import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import { workspaceAccess } from "../utils/workspace-access-middleware";
+import createRelease from "./controllers/create-release";
+import deleteRelease from "./controllers/delete-release";
+import moveUnfinishedItems from "./controllers/move-unfinished-items";
+import updateRelease from "./controllers/update-release";
+import { getRelease, listReleases } from "./read-releases";
+import {
+  deletedReleaseSchema,
+  movedReleaseItemsSchema,
+  releaseListSchema,
+  releaseSchema,
+  releaseWithProgressSchema,
+} from "./response";
+import {
+  createReleaseBody,
+  moveUnfinishedBody,
+  projectIdParam,
+  releaseParam,
+  updateReleaseBody,
+} from "./schema";
+
+const listProjectReleasesRoute = createRoute({
+  method: "get",
+  operationId: "listProjectReleases",
+  path: "/project/{projectId}",
+  tags: ["Releases"],
+  summary: "List releases",
+  description:
+    "Get a project's releases with their progress, ordered by start date, then name.",
+  middleware: [workspaceAccess.fromProject("projectId")] as const,
+  request: { params: projectIdParam },
+  responses: {
+    200: jsonResponse("The project's releases", releaseListSchema),
+    403: errorResponse("No access to the project"),
+    404: errorResponse("Project not found"),
+    503: errorResponse("Release request timed out"),
+  },
+});
+
+const getReleaseRoute = createRoute({
+  method: "get",
+  operationId: "getRelease",
+  path: "/{id}",
+  tags: ["Releases"],
+  summary: "Get release",
+  description: "Get a release with its progress.",
+  middleware: [workspaceAccess.fromRelease("id")] as const,
+  request: { params: releaseParam },
+  responses: {
+    200: jsonResponse("The release", releaseWithProgressSchema),
+    403: errorResponse("No access to the release's project"),
+    404: errorResponse("Release not found"),
+    503: errorResponse("Release request timed out"),
+  },
+});
+
+const createReleaseRoute = createRoute({
+  method: "post",
+  operationId: "createRelease",
+  path: "/project/{projectId}",
+  tags: ["Releases"],
+  summary: "Create release",
+  description:
+    "Add a release to a project. Its name must be unique in the project, and its dates must run start ≤ code freeze ≤ submission.",
+  middleware: [
+    workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ project: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: projectIdParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: createReleaseBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("The created release", releaseSchema),
+    400: errorResponse("Invalid body, or dates out of order"),
+    402: errorResponse("Workspace plan has expired"),
+    403: errorResponse(
+      "No access to the project, or missing project:update permission",
+    ),
+    404: errorResponse("Project not found"),
+    409: errorResponse("A release with this name already exists"),
+  },
+});
+
+const updateReleaseRoute = createRoute({
+  method: "put",
+  operationId: "updateRelease",
+  path: "/{id}",
+  tags: ["Releases"],
+  summary: "Update release",
+  description:
+    "Update a release. Omitted fields are left unchanged; the date order is checked against the stored dates.",
+  middleware: [
+    workspaceAccess.fromRelease("id"),
+    requireWorkspacePermission({ project: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: releaseParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateReleaseBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("The updated release", releaseSchema),
+    400: errorResponse("Invalid body, or dates out of order"),
+    402: errorResponse("Workspace plan has expired"),
+    403: errorResponse(
+      "No access to the release's project, or missing project:update permission",
+    ),
+    404: errorResponse("Release not found"),
+    409: errorResponse("A release with this name already exists"),
+  },
+});
+
+const deleteReleaseRoute = createRoute({
+  method: "delete",
+  operationId: "deleteRelease",
+  path: "/{id}",
+  tags: ["Releases"],
+  summary: "Delete release",
+  description:
+    "Delete a release. Its features and tasks stay in the project, out of every release, and each records the change in its activity.",
+  middleware: [
+    workspaceAccess.fromRelease("id"),
+    requireWorkspacePermission({ project: ["update"], task: ["update"] }),
+  ] as const,
+  request: { params: releaseParam },
+  responses: {
+    200: jsonResponse("The deleted release's id", deletedReleaseSchema),
+    403: errorResponse(
+      "No access to the release's project, or missing project:update or task:update permission",
+    ),
+    404: errorResponse("Release not found"),
+    409: errorResponse(
+      "Tasks kept joining or changing the release while it was deleted; try again",
+    ),
+  },
+});
+
+const moveUnfinishedRoute = createRoute({
+  method: "post",
+  operationId: "moveUnfinishedReleaseItems",
+  path: "/{id}/move-unfinished",
+  tags: ["Releases"],
+  summary: "Move unfinished items",
+  description:
+    "Move the release's unfinished tasks and features (neither archived nor in a final column; planned ones count) to another release of the project, or out of every release with null. Each item moves on its own: a feature's tasks don't follow it, and finished items stay.",
+  middleware: [
+    workspaceAccess.fromRelease("id"),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: releaseParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: moveUnfinishedBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("The items that moved", movedReleaseItemsSchema),
+    400: errorResponse("Invalid body, or the target is this release"),
+    402: errorResponse("Workspace plan has expired"),
+    403: errorResponse(
+      "No access to the release's project, or missing task:update permission",
+    ),
+    404: errorResponse(
+      "Release not found, or the target isn't a release of its project",
+    ),
+    409: errorResponse(
+      "Another edit changed these items at the same time; try again",
+    ),
+  },
+});
+
+const release = apiRouter()
+  .openapi(listProjectReleasesRoute, async (c) =>
+    c.json(await listReleases(c.req.valid("param").projectId), 200),
+  )
+  .openapi(getReleaseRoute, async (c) =>
+    c.json(await getRelease(c.req.valid("param").id), 200),
+  )
+  .openapi(createReleaseRoute, async (c) =>
+    c.json(
+      await createRelease(c.req.valid("param").projectId, c.req.valid("json")),
+      200,
+    ),
+  )
+  .openapi(updateReleaseRoute, async (c) =>
+    c.json(
+      await updateRelease(c.req.valid("param").id, c.req.valid("json")),
+      200,
+    ),
+  )
+  .openapi(deleteReleaseRoute, async (c) =>
+    c.json(await deleteRelease(c.req.valid("param").id, c.get("userId")), 200),
+  )
+  .openapi(moveUnfinishedRoute, async (c) =>
+    c.json(
+      await moveUnfinishedItems(
+        c.req.valid("param").id,
+        c.req.valid("json").targetReleaseId,
+        c.get("userId"),
+      ),
+      200,
+    ),
+  );
+
+export default release;

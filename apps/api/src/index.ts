@@ -28,7 +28,7 @@ import config from "./config";
 import customField from "./custom-field";
 import db, { getDatabase, schema } from "./database";
 import { apiErrorSchema } from "./errors/api-error-schema";
-import { httpExceptionResponse } from "./errors/http-exception-response";
+import { appErrorResponse } from "./errors/app-error-response";
 import {
   notFoundResponse,
   withJsonNotFound,
@@ -67,6 +67,7 @@ import { createRoute, errorResponse, jsonResponse, z } from "./openapi";
 import { initializePlugins } from "./plugins";
 import { migrateGitHubIntegration } from "./plugins/github/migration";
 import project from "./project";
+import release from "./release";
 import { assertProjectAccess } from "./project-access/assert-project-access";
 import { getPublicProject } from "./project/controllers/get-public-project";
 import { initializeScheduler, shutdownScheduler } from "./scheduler";
@@ -186,20 +187,9 @@ export function createApp() {
   const app = new Hono<AppVariables>();
   app.use("*", clientIpMiddleware());
 
-  app.onError((err) => {
-    if (err instanceof HTTPException) {
-      // expected errors (401/404/...) are not reported; real failures are
-      if (err.status >= 500) {
-        Sentry.captureException(err);
-      }
-      return httpExceptionResponse(err);
-    }
-
-    Sentry.captureException(err);
-    return httpExceptionResponse(
-      new HTTPException(500, { message: "Internal Server Error" }),
-    );
-  });
+  app.onError((err) =>
+    appErrorResponse(err, (error) => Sentry.captureException(error)),
+  );
 
   app.notFound((c) => {
     const path = c.req.path;
@@ -340,7 +330,7 @@ export function createApp() {
         security: [],
         request: {
           params: z.object({ id: z.string() }),
-          query: listTasksQuery,
+          query: listTasksQuery.omit({ releaseId: true }),
         },
         responses: {
           200: jsonResponse(
@@ -831,6 +821,7 @@ export function createApp() {
   const calendarFeedApi = api.route("/calendar-feed", calendarFeed);
   const taskApi = api.route("/task", task);
   const columnApi = api.route("/column", column);
+  const releaseApi = api.route("/release", release);
   const activityApi = api.route("/activity", activity);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
@@ -994,6 +985,7 @@ export function createApp() {
     projectApi,
     calendarFeedApi,
     publicProjectApi,
+    releaseApi,
     searchApi,
     mattermostIntegrationApi,
     slackIntegrationApi,
@@ -1129,6 +1121,7 @@ const {
   projectApi,
   calendarFeedApi,
   publicProjectApi,
+  releaseApi,
   searchApi,
   slackIntegrationApi,
   taskApi,
@@ -1161,6 +1154,7 @@ export type AppType =
   | typeof calendarFeedApi
   | typeof taskApi
   | typeof columnApi
+  | typeof releaseApi
   | typeof activityApi
   | typeof commentApi
   | typeof timeEntryApi

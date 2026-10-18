@@ -25,6 +25,7 @@ import {
   assertValidTaskStatus,
 } from "../validate-task-fields";
 import { lockFeature } from "../feature-hierarchy/assign-feature";
+import { findLockedRelease } from "../../release/membership/assign-release";
 import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
@@ -250,6 +251,15 @@ async function duplicateTask({
         await lockFeature(tx, sourceTask.featureId, sourceTask.projectId);
       }
       const taskNumber = await claimTaskNumber(sourceTask.projectId, tx);
+      // The copy keeps the source's own release, or none if it was deleted
+      // since the source was read.
+      const release = sourceTask.releaseId
+        ? await findLockedRelease(
+            tx,
+            sourceTask.releaseId,
+            sourceTask.projectId,
+          )
+        : null;
       const nextPosition = await nextTaskPosition(
         tx,
         sourceTask.projectId,
@@ -274,6 +284,7 @@ async function duplicateTask({
           position: nextPosition,
           type: sourceTask.type,
           featureId: sourceTask.featureId,
+          releaseId: release?.id ?? null,
         })
         .returning();
 

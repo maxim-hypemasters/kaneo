@@ -26,6 +26,8 @@ import {
   type TaskType,
 } from "../feature-hierarchy/assign-feature";
 import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
+import { lockRelease } from "../../release/membership/assign-release";
+import { releaseForNewTask } from "../../release/membership/follow-feature-release";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
 
@@ -64,6 +66,7 @@ async function createTask({
   draftAssetIds,
   type = "task",
   featureId,
+  releaseId,
 }: {
   projectId: string;
   currentUserId: string;
@@ -78,6 +81,8 @@ async function createTask({
   draftAssetIds?: string[];
   type?: TaskType;
   featureId?: string;
+  // Omitted follows the feature; null is no release.
+  releaseId?: string | null;
 }) {
   if (type === "feature" && featureId) {
     throw new HTTPException(400, {
@@ -147,8 +152,11 @@ async function createTask({
   });
 
   const createdTask = await db.transaction(async (tx) => {
-    if (featureId) await lockFeature(tx, featureId, projectId);
+    const feature = featureId
+      ? await lockFeature(tx, featureId, projectId)
+      : null;
     const taskNumber = await claimTaskNumber(projectId, tx);
+    if (releaseId) await lockRelease(tx, releaseId, projectId);
     const nextPosition = await nextTaskPosition(
       tx,
       projectId,
@@ -172,6 +180,7 @@ async function createTask({
         position: nextPosition,
         type,
         featureId: featureId ?? null,
+        releaseId: releaseForNewTask(releaseId, feature?.releaseId ?? null),
       })
       .returning();
 

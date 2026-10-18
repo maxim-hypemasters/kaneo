@@ -12,6 +12,11 @@ const featureIdSchema = z.string().nullable().openapi({
     "The feature this task belongs to, in the same project. Always null for a feature.",
 });
 
+const releaseIdSchema = z.string().nullable().openapi({
+  description:
+    "The release this task or feature is planned in, from its own project. Always null on public boards.",
+});
+
 export const taskSchema = z
   .object({
     id: z.string(),
@@ -41,11 +46,21 @@ export const taskSchema = z
     createdAt: responseTimestamp,
     type: taskTypeSchema,
     featureId: featureIdSchema,
+    releaseId: releaseIdSchema,
     customFields: z
       .array(z.object({ fieldId: z.string(), value: z.string() }))
       .optional(),
   })
   .openapi("Task");
+
+export const taskReleaseResultSchema = taskSchema
+  .extend({
+    movedTaskIds: z.array(z.string()).openapi({
+      description:
+        "For a feature, its tasks that moved with it, ordered by id. Empty for a task.",
+    }),
+  })
+  .openapi("TaskReleaseResult");
 
 export const taskWithAssigneeSchema = taskSchema
   .extend({
@@ -122,6 +137,7 @@ export const projectFeatureListSchema = z
       status: z.string().openapi({
         description: "The feature's column slug, or planned or archived.",
       }),
+      releaseId: releaseIdSchema,
     }),
   )
   .openapi("ProjectFeatureList");
@@ -149,6 +165,7 @@ export const boardTaskSchema = z
     projectId: z.string(),
     type: taskTypeSchema,
     featureId: featureIdSchema,
+    releaseId: releaseIdSchema,
     subtaskCounts: z
       .object({
         completed: z.number().int().nonnegative(),

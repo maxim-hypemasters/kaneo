@@ -15,6 +15,7 @@ import {
   labelTable,
   notificationTable,
   projectTable,
+  releaseTable,
   sessionTable,
   taskRelationTable,
   taskReminderSentTable,
@@ -105,6 +106,7 @@ export const projectTableRelations = relations(
     tasks: many(taskTable),
     assets: many(assetTable),
     columns: many(columnTable),
+    releases: many(releaseTable),
     workflowRules: many(workflowRuleTable),
     githubIntegration: many(githubIntegrationTable),
     integrations: many(integrationTable),
@@ -120,6 +122,17 @@ export const columnTableRelations = relations(columnTable, ({ one, many }) => ({
   tasks: many(taskTable),
   workflowRules: many(workflowRuleTable),
 }));
+
+export const releaseTableRelations = relations(
+  releaseTable,
+  ({ one, many }) => ({
+    project: one(projectTable, {
+      fields: [releaseTable.projectId],
+      references: [projectTable.id],
+    }),
+    tasks: many(taskTable),
+  }),
+);
 
 export const workflowRuleTableRelations = relations(
   workflowRuleTable,
@@ -147,6 +160,10 @@ export const taskTableRelations = relations(taskTable, ({ one, many }) => ({
   column: one(columnTable, {
     fields: [taskTable.columnId],
     references: [columnTable.id],
+  }),
+  release: one(releaseTable, {
+    fields: [taskTable.releaseId],
+    references: [releaseTable.id],
   }),
   feature: one(taskTable, {
     fields: [taskTable.featureId],
