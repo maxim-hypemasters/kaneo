@@ -51,6 +51,50 @@ Never use `docker compose down -v` as an upgrade or troubleshooting step. It rem
 
 ## Upgrade notes
 
+### Project releases
+
+Kaneo added [releases](/core/functional/releases) to projects. The database migration only adds things: a `release` table and an empty `release_id` column on tasks. Existing tasks start with no release, and no other data changes.
+
+During a rolling update, older API servers keep running next to newer ones for a while, for example with several Helm replicas. An older server doesn't know about releases:
+
+- It can't move a task that's in a release to another project. The database refuses the move and the server returns an error. Try again once every server runs the new version.
+- Tasks it adds to a feature don't take the feature's release. The same goes for subtask links it writes, which the next start turns into feature links.
+- When it duplicates a task, the copy has no release.
+- It shows release names in task activity and search without hiding them from members who can't see the release's project.
+
+After the update, check the release of any task that joined a feature while the update ran.
+
+To go back to a version without releases, take every task out of its release first, and remove the release names from task activity. Otherwise the older version can't move those tasks to another project, and it shows those names to members who can't see the release's project.
+
+1. Stop every Kaneo API instance that uses the database, for example with `docker compose stop kaneo`. With the Helm chart, scale the Kaneo deployment to zero replicas.
+2. Make a [database backup](/core/operations/backups).
+3. Take every task out of its release:
+
+   ```bash
+   docker compose exec -T postgres sh -c \
+     'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "UPDATE task SET release_id = NULL;"'
+   ```
+
+   With a managed database, run `UPDATE task SET release_id = NULL;` with `psql` against it.
+
+4. Remove the release names from task activity:
+
+   ```bash
+   docker compose exec -T postgres sh -c \
+     'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+   UPDATE activity
+   SET event_data = event_data - 'projectId' - 'oldReleaseName' - 'newReleaseName'
+   WHERE type = 'release_changed';
+   SQL
+   ```
+
+   With a managed database, run the same `UPDATE` with `psql` against it. The entries stay in each task's activity without naming the release.
+
+5. If the earlier version also predates features, [undo the feature conversion](#subtasks-become-features) now as well: run its script and remove the feature titles from task activity.
+6. Set `KANEO_IMAGE_TAG` back to the earlier version and start it with `docker compose up -d kaneo`. With the Helm chart, run `helm upgrade` with `kaneo.image.tag` set to the earlier version, and scale the deployment back up.
+
+The releases themselves stay in the database, and the older version ignores them. If you upgrade again later, they come back without their tasks.
+
 ### Subtasks become features
 
 Kaneo replaced subtasks with [features](/core/functional/plan-and-execute-tasks#group-work-into-features): a feature is a task that groups other tasks, one level deep. When the API starts on a version with features, it converts existing subtasks for you:
@@ -59,7 +103,7 @@ Kaneo replaced subtasks with [features](/core/functional/plan-and-execute-tasks#
 - Links that don't fit, such as a second parent, a link between two levels below the feature, or a link to another project, become related relations.
 - Before changing anything, Kaneo copies every converted subtask link to the `legacy_subtask_relation` table. Keep that table: the undo script below needs it.
 
-The conversion runs on every start. Subtask links that an older server writes during a rolling update are converted on the next start. An older server can also move a task away from its feature's project; the next start takes that task out of the feature and keeps a related link between the two in its place. If a project can't be converted, the log says so, its subtasks stay as they are, and the server still starts. Kaneo tries that project again on the next start.
+The conversion runs on every start. Subtask links that an older server writes during a rolling update are converted on the next start. An older server can also move a task away from its feature's project; the next start takes that task out of the feature and keeps a related link between the two in its place. Until every server runs the new version, an older one shows feature titles in task activity and search without hiding them from members who can't see the feature's project. If a project can't be converted, the log says so, its subtasks stay as they are, and the server still starts. Kaneo tries that project again on the next start.
 
 Older versions of the CLI, the MCP package, and `@kaneo/planka-import` still send subtask links. They keep working: each one becomes a feature link. A link that features can't hold, such as one to a task in another project, or one that would put a feature into a feature, is refused with an error.
 
@@ -79,6 +123,19 @@ To go back to an earlier version, undo the conversion first. `apps/api/src/migra
 
    With a managed database, run the same file with `psql` against it.
 
-4. Set `KANEO_IMAGE_TAG` back to the earlier release and start it with `docker compose up -d kaneo`. With the Helm chart, run `helm upgrade` with `kaneo.image.tag` set to the earlier release, and scale the deployment back up if it is still at zero.
+4. Remove the feature titles from task activity. Versions before features show them to every member who can open the task, even one who can't see the feature's project:
+
+   ```bash
+   docker compose exec -T postgres sh -c \
+     'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+   UPDATE activity
+   SET event_data = event_data - 'projectId' - 'oldFeatureTitle' - 'newFeatureTitle'
+   WHERE type = 'feature_changed';
+   SQL
+   ```
+
+   With a managed database, run the same `UPDATE` with `psql` against it.
+
+5. Set `KANEO_IMAGE_TAG` back to the earlier release and start it with `docker compose up -d kaneo`. With the Helm chart, run `helm upgrade` with `kaneo.image.tag` set to the earlier release, and scale the deployment back up if it is still at zero.
 
 The script brings back the subtask links from before the upgrade, including the ones that were kept as related relations. Tasks added to a feature since then become subtasks of it too, and every feature becomes a plain task again. A task taken out of its feature after the upgrade gets its old parent back. Other changes made since the upgrade are kept. Once the links are back, the script empties `legacy_subtask_relation`. If you upgrade again later, Kaneo converts the subtasks again and backs them up afresh, so the script can undo that upgrade too.

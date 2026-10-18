@@ -4,6 +4,7 @@ import {
   boolean,
   check,
   customType,
+  date,
   foreignKey,
   index,
   integer,
@@ -468,6 +469,44 @@ export const columnTable = pgTable(
   (table) => [index("column_projectId_idx").on(table.projectId)],
 );
 
+// A planned delivery (like a sprint or cycle) in one project. The three
+// dates are calendar days: string mode keeps them as YYYY-MM-DD, where Date
+// mode would shift the day under a session time zone other than UTC.
+export const releaseTable = pgTable(
+  "release",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    name: text("name").notNull(),
+    description: text("description"),
+    startDate: date("start_date", { mode: "string" }).notNull(),
+    codeFreezeDate: date("code_freeze_date", { mode: "string" }).notNull(),
+    submissionDate: date("submission_date", { mode: "string" }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("release_project_id_id_unique").on(table.projectId, table.id),
+    unique("release_project_name_unique").on(table.projectId, table.name),
+    check(
+      "release_dates_order_check",
+      sql`${table.startDate} <= ${table.codeFreezeDate} and ${table.codeFreezeDate} <= ${table.submissionDate}`,
+    ),
+  ],
+);
+
 export const workflowRuleTable = pgTable(
   "workflow_rule",
   {
@@ -556,6 +595,7 @@ export const taskTable = pgTable(
     // can't itself belong to one.
     type: text("type").$type<"task" | "feature">().default("task").notNull(),
     featureId: text("feature_id"),
+    releaseId: text("release_id"),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(utcNow)
       .notNull(),
@@ -580,6 +620,17 @@ export const taskTable = pgTable(
       sql`${table.type} in ('task', 'feature') and (${table.type} = 'task' or ${table.featureId} is null) and ${table.featureId} <> ${table.id}`,
     ),
     index("task_featureId_idx").on(table.featureId),
+    // The database keeps a task in its own project's releases. No ON DELETE
+    // action (SET NULL of one column needs PostgreSQL 15): deleting a release
+    // unlinks its tasks first, recording their activity.
+    foreignKey({
+      columns: [table.projectId, table.releaseId],
+      foreignColumns: [releaseTable.projectId, releaseTable.id],
+      name: "task_release_fk",
+    }),
+    index("task_releaseId_idx")
+      .on(table.releaseId)
+      .where(sql`${table.releaseId} is not null`),
     index("task_projectId_idx").on(table.projectId),
     index("task_project_scheduled_id_idx")
       .on(table.projectId, table.id)

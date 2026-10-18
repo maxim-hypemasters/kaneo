@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (nova)",
 				"chooseProjectForFeature": "Escolha um projeto para selecionar uma funcionalidade.",
 				"loadingFeatures": "Carregando funcionalidades...",
-				"loadFeaturesError": "Não foi possível carregar as funcionalidades."
+				"loadFeaturesError": "Não foi possível carregar as funcionalidades.",
+				"release": "Versão",
+				"noRelease": "Sem versão",
+				"searchReleases": "Buscar versões...",
+				"releaseFromFeature": "{{name}} (da funcionalidade)",
+				"chooseProjectForRelease": "Escolha um projeto para selecionar uma versão.",
+				"loadingReleases": "Carregando versões...",
+				"loadReleasesError": "Não foi possível carregar as versões.",
+				"noReleasesFound": "Nenhuma versão encontrada"
 			}
 		},
 		"editor": {
@@ -2444,7 +2452,9 @@
 				"open": "Abrir",
 				"close": "Fechar"
 			},
-			"createFeature": "Criar funcionalidade"
+			"createFeature": "Criar funcionalidade",
+			"goToReleases": "Ir para as versões",
+			"createRelease": "Criar versão"
 		},
 		"sidebar": {
 			"projects": "Projetos",
@@ -2614,7 +2624,9 @@
 				"editorNumberedList": "Lista numerada",
 				"editorCodeBlock": "Bloco de código",
 				"editorUndo": "Desfazer",
-				"editorRedo": "Refazer"
+				"editorRedo": "Refazer",
+				"goToReleases": "Ir para as versões",
+				"setRelease": "Definir versão"
 			},
 			"title": "Atalhos de teclado",
 			"searchPlaceholder": "Buscar por ação ou tecla",
@@ -2826,7 +2838,10 @@
 		"removedFromFeature": "removeu a tarefa da funcionalidade \"{{feature}}\"",
 		"changedFeature": "moveu a tarefa da funcionalidade \"{{from}}\" para \"{{to}}\"",
 		"madeFeature": "transformou esta tarefa em uma funcionalidade",
-		"madeTask": "transformou esta funcionalidade em uma tarefa"
+		"madeTask": "transformou esta funcionalidade em uma tarefa",
+		"addedToRelease": "adicionou a tarefa à versão \"{{release}}\"",
+		"removedFromRelease": "removeu a tarefa da versão \"{{release}}\"",
+		"changedRelease": "moveu a tarefa da versão \"{{from}}\" para \"{{to}}\""
 	},
 	"tasks": {
 		"title": "Tarefas",
@@ -2852,7 +2867,8 @@
 			"list": "Lista",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Visualização"
+			"heading": "Visualização",
+			"releases": "Versões"
 		},
 		"common": {
 			"selectTask": "Selecionar tarefa",
@@ -3124,7 +3140,8 @@
 				"priority": "Prioridade",
 				"assignee": "Responsável",
 				"dueDate": "Data de vencimento",
-				"labels": "Etiquetas"
+				"labels": "Etiquetas",
+				"release": "Versão"
 			},
 			"operators": {
 				"isAnyOf": "é qualquer um de",
@@ -3452,6 +3469,170 @@
 			"convertBlocked": "Retire as tarefas desta funcionalidade antes de transformá-la em uma tarefa.",
 			"openFeature": "Abrir funcionalidade {{title}}",
 			"inProject": "Funcionalidades no projeto"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Versões",
+			"count_one": "{{count}} versão",
+			"count_many": "{{count}} versões",
+			"count_other": "{{count}} versões",
+			"new": "Nova versão",
+			"edit": "Editar versão",
+			"delete": "Excluir versão",
+			"property": "Versão",
+			"none": "Sem versão",
+			"unknown": "Versão desconhecida",
+			"searchPlaceholder": "Buscar versões…",
+			"pickerEmpty": "Ainda não há versões neste projeto",
+			"updateError": "Falha ao atualizar a versão",
+			"featureReleaseHint": "Versão da funcionalidade",
+			"followNote": "As tarefas que acompanham esta funcionalidade são movidas junto com ela.",
+			"movedWithFeature_one": "{{count}} tarefa desta funcionalidade também foi movida",
+			"movedWithFeature_many": "{{count}} tarefas desta funcionalidade também foram movidas",
+			"movedWithFeature_other": "{{count}} tarefas desta funcionalidade também foram movidas",
+			"loadError": "Não foi possível carregar as versões.",
+			"retry": "Tentar novamente",
+			"sections": {
+				"active": "Ativas",
+				"upcoming": "Próximas",
+				"past": "Anteriores"
+			},
+			"phase": {
+				"upcoming": "Em breve",
+				"inProgress": "Em andamento",
+				"codeFreeze": "Congelamento de código",
+				"pastSubmission": "Após o envio"
+			},
+			"dates": {
+				"start": "Início",
+				"codeFreeze": "Congelamento de código",
+				"submission": "Envio"
+			},
+			"countdown": {
+				"startsIn_one": "Começa em {{count}} dia",
+				"startsIn_many": "Começa em {{count}} dias",
+				"startsIn_other": "Começa em {{count}} dias",
+				"startsToday": "Começa hoje",
+				"freezeIn_one": "Congelamento de código em {{count}} dia",
+				"freezeIn_many": "Congelamento de código em {{count}} dias",
+				"freezeIn_other": "Congelamento de código em {{count}} dias",
+				"freezeToday": "Congelamento de código hoje",
+				"submissionIn_one": "Envio em {{count}} dia",
+				"submissionIn_many": "Envio em {{count}} dias",
+				"submissionIn_other": "Envio em {{count}} dias",
+				"submissionToday": "Envio hoje",
+				"submittedAgo_one": "Enviada há {{count}} dia",
+				"submittedAgo_many": "Enviada há {{count}} dias",
+				"submittedAgo_other": "Enviada há {{count}} dias"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{completed}} de {{count}} tarefa concluída",
+			"progressAria_many": "{{completed}} de {{count}} tarefas concluídas",
+			"progressAria_other": "{{completed}} de {{count}} tarefas concluídas",
+			"counts": {
+				"features_one": "{{count}} funcionalidade",
+				"features_many": "{{count}} funcionalidades",
+				"features_other": "{{count}} funcionalidades",
+				"tasks_one": "{{count}} tarefa",
+				"tasks_many": "{{count}} tarefas",
+				"tasks_other": "{{count}} tarefas",
+				"unfinished_one": "{{count}} não concluída",
+				"unfinished_many": "{{count}} não concluídas",
+				"unfinished_other": "{{count}} não concluídas"
+			},
+			"empty": {
+				"title": "Ainda não há versões",
+				"description": "Planeje uma versão com uma data de início, um congelamento de código e uma data de envio e, depois, adicione funcionalidades e tarefas a ela.",
+				"readOnly": "As versões planejadas para este projeto aparecerão aqui."
+			},
+			"dialog": {
+				"createTitle": "Nova versão",
+				"editTitle": "Editar versão",
+				"createDescription": "Uma versão tem uma data de início, um congelamento de código e uma data de envio, nessa ordem.",
+				"nameLabel": "Nome",
+				"namePlaceholder": "ex.: 2.4",
+				"nameRequired": "Digite um nome",
+				"dateRequired": "Escolha uma data",
+				"startLabel": "Início",
+				"codeFreezeLabel": "Congelamento de código",
+				"submissionLabel": "Envio",
+				"pickDate": "Escolher uma data",
+				"descriptionLabel": "Descrição",
+				"descriptionPlaceholder": "O que esta versão entrega (opcional)",
+				"create": "Criar versão",
+				"save": "Salvar",
+				"createSuccess": "Versão criada",
+				"updateSuccess": "Versão atualizada",
+				"createError": "Falha ao criar a versão",
+				"updateError": "Falha ao atualizar a versão",
+				"beforeStart": "{{date}} é antes da data de início",
+				"afterCodeFreeze": "{{date}} é depois do congelamento de código",
+				"beforeCodeFreeze": "{{date}} é antes do congelamento de código",
+				"afterSubmission": "{{date}} é depois da data de envio",
+				"limitHint": "Entre {{start}} e {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Excluir a versão {{name}}?",
+				"description_one": "{{count}} tarefa ou funcionalidade continuará no projeto, sem versão.",
+				"description_many": "{{count}} tarefas e funcionalidades continuarão no projeto, sem versão.",
+				"description_other": "{{count}} tarefas e funcionalidades continuarão no projeto, sem versão.",
+				"descriptionEmpty": "Não há tarefas nem funcionalidades nesta versão.",
+				"confirm": "Excluir versão",
+				"success": "Versão excluída",
+				"error": "Falha ao excluir a versão"
+			},
+			"moveUnfinished": {
+				"action": "Mover itens não concluídos…",
+				"title": "Mover itens não concluídos",
+				"description": "Tarefas e funcionalidades não concluídas são movidas individualmente. As concluídas permanecem na versão {{name}}.",
+				"target": "Mover para",
+				"noRelease": "Sem versão",
+				"summary_one": "{{count}} item não concluído será movido.",
+				"summary_many": "{{count}} itens não concluídos serão movidos.",
+				"summary_other": "{{count}} itens não concluídos serão movidos.",
+				"none": "Tudo nesta versão está concluído.",
+				"noTargets": "Nenhuma outra versão",
+				"confirm": "Mover itens",
+				"success_one": "{{count}} item movido para a versão {{name}}",
+				"success_many": "{{count}} itens movidos para a versão {{name}}",
+				"success_other": "{{count}} itens movidos para a versão {{name}}",
+				"successNoRelease_one": "{{count}} item retirado da versão",
+				"successNoRelease_many": "{{count}} itens retirados da versão",
+				"successNoRelease_other": "{{count}} itens retirados da versão",
+				"error": "Falha ao mover os itens"
+			},
+			"detail": {
+				"back": "Todas as versões",
+				"notFound": "Esta versão não existe ou foi excluída.",
+				"backToReleases": "Voltar para as versões",
+				"standaloneHeading": "Tarefas sem funcionalidade",
+				"empty": "Ainda não há nada nesta versão",
+				"emptyHint": "Defina a versão de uma tarefa ou funcionalidade, ou adicione uma tarefa aqui.",
+				"addTask": "Adicionar tarefa",
+				"featureElsewhere": "Funcionalidade fora desta versão",
+				"tasksElsewhere_one": "Mais {{count}} tarefa fora desta versão",
+				"tasksElsewhere_many": "Mais {{count}} tarefas fora desta versão",
+				"tasksElsewhere_other": "Mais {{count}} tarefas fora desta versão",
+				"today": "Hoje",
+				"loadingTasks": "Carregando tarefas…",
+				"timelineLabel": "Linha do tempo da versão"
+			},
+			"gantt": {
+				"strip": "Versões",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Início: {{date}}",
+					"codeFreeze": "Congelamento de código: {{date}}",
+					"submission": "Envio: {{date}}"
+				},
+				"actionsFor": "Ações para a versão {{name}}",
+				"loading": "Carregando versões…",
+				"tasksLoadError": "Não foi possível carregar as tarefas."
+			},
+			"ux": {
+				"nameTaken": "Já existe uma versão com esse nome"
+			}
 		}
 	},
 	"invitations": {

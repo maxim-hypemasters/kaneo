@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}}（新建）",
 				"chooseProjectForFeature": "选择功能前请先选择项目。",
 				"loadingFeatures": "正在加载功能…",
-				"loadFeaturesError": "功能加载失败。"
+				"loadFeaturesError": "功能加载失败。",
+				"release": "版本",
+				"noRelease": "未设置版本",
+				"searchReleases": "搜索版本…",
+				"releaseFromFeature": "{{name}}（来自功能）",
+				"chooseProjectForRelease": "选择版本前请先选择项目。",
+				"loadingReleases": "正在加载版本…",
+				"loadReleasesError": "版本加载失败。",
+				"noReleasesFound": "未找到版本"
 			}
 		},
 		"editor": {
@@ -2360,7 +2368,9 @@
 				"open": "打开",
 				"close": "关闭"
 			},
-			"createFeature": "创建功能"
+			"createFeature": "创建功能",
+			"goToReleases": "前往版本",
+			"createRelease": "创建版本"
 		},
 		"sidebar": {
 			"projects": "项目",
@@ -2530,7 +2540,9 @@
 				"editorNumberedList": "有序列表",
 				"editorCodeBlock": "代码块",
 				"editorUndo": "撤销",
-				"editorRedo": "重做"
+				"editorRedo": "重做",
+				"goToReleases": "前往版本",
+				"setRelease": "设置版本"
 			},
 			"title": "键盘快捷键",
 			"searchPlaceholder": "按操作或按键搜索",
@@ -2732,7 +2744,10 @@
 		"removedFromFeature": "将任务从功能 \"{{feature}}\" 中移除",
 		"changedFeature": "将任务从功能 \"{{from}}\" 移动到 \"{{to}}\"",
 		"madeFeature": "将此任务转换为功能",
-		"madeTask": "将此功能转换为任务"
+		"madeTask": "将此功能转换为任务",
+		"addedToRelease": "将任务添加到版本 \"{{release}}\"",
+		"removedFromRelease": "将任务从版本 \"{{release}}\" 中移除",
+		"changedRelease": "将任务从版本 \"{{from}}\" 移动到 \"{{to}}\""
 	},
 	"tasks": {
 		"title": "任务",
@@ -2758,7 +2773,8 @@
 			"list": "列表",
 			"backlog": "待办",
 			"gantt": "甘特图",
-			"heading": "视图"
+			"heading": "视图",
+			"releases": "版本"
 		},
 		"common": {
 			"selectTask": "选择任务",
@@ -3030,7 +3046,8 @@
 				"priority": "优先级",
 				"assignee": "负责人",
 				"dueDate": "截止日期",
-				"labels": "标签"
+				"labels": "标签",
+				"release": "版本"
 			},
 			"operators": {
 				"isAnyOf": "为以下任一",
@@ -3326,6 +3343,140 @@
 			"convertBlocked": "请先将此功能下的任务移出，再将其转换为任务。",
 			"openFeature": "打开功能 {{title}}",
 			"inProject": "项目内功能"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – 版本",
+			"count_other": "{{count}} 个版本",
+			"new": "新建版本",
+			"edit": "编辑版本",
+			"delete": "删除版本",
+			"property": "版本",
+			"none": "未设置版本",
+			"unknown": "未知版本",
+			"searchPlaceholder": "搜索版本…",
+			"pickerEmpty": "此项目暂无版本",
+			"updateError": "更新版本失败",
+			"featureReleaseHint": "功能所属版本",
+			"followNote": "跟随此功能的任务会一同移动。",
+			"movedWithFeature_other": "已同时移动此功能的 {{count}} 个任务",
+			"loadError": "版本加载失败。",
+			"retry": "重试",
+			"sections": {
+				"active": "进行中",
+				"upcoming": "即将开始",
+				"past": "已结束"
+			},
+			"phase": {
+				"upcoming": "未开始",
+				"inProgress": "进行中",
+				"codeFreeze": "代码冻结",
+				"pastSubmission": "已提交"
+			},
+			"dates": {
+				"start": "开始日期",
+				"codeFreeze": "代码冻结",
+				"submission": "提交日期"
+			},
+			"countdown": {
+				"startsIn_other": "{{count}} 天后开始",
+				"startsToday": "今天开始",
+				"freezeIn_other": "{{count}} 天后代码冻结",
+				"freezeToday": "今天代码冻结",
+				"submissionIn_other": "{{count}} 天后提交",
+				"submissionToday": "今天提交",
+				"submittedAgo_other": "已于 {{count}} 天前提交"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_other": "已完成 {{completed}}/{{count}} 个任务",
+			"counts": {
+				"features_other": "{{count}} 个功能",
+				"tasks_other": "{{count}} 个任务",
+				"unfinished_other": "{{count}} 个未完成"
+			},
+			"empty": {
+				"title": "暂无版本",
+				"description": "规划一个版本，设置开始日期、代码冻结日期和提交日期，然后将功能和任务放入其中。",
+				"readOnly": "此项目规划的版本将显示在这里。"
+			},
+			"dialog": {
+				"createTitle": "新建版本",
+				"editTitle": "编辑版本",
+				"createDescription": "版本包含开始日期、代码冻结日期和提交日期，三者须按此顺序排列。",
+				"nameLabel": "名称",
+				"namePlaceholder": "例如：2.4",
+				"nameRequired": "请输入名称",
+				"dateRequired": "请选择日期",
+				"startLabel": "开始日期",
+				"codeFreezeLabel": "代码冻结",
+				"submissionLabel": "提交日期",
+				"pickDate": "选择日期",
+				"descriptionLabel": "描述",
+				"descriptionPlaceholder": "此版本将交付的内容（可选）",
+				"create": "创建版本",
+				"save": "保存",
+				"createSuccess": "版本已创建",
+				"updateSuccess": "版本已更新",
+				"createError": "版本创建失败",
+				"updateError": "更新版本失败",
+				"beforeStart": "{{date}} 早于开始日期",
+				"afterCodeFreeze": "{{date}} 晚于代码冻结日期",
+				"beforeCodeFreeze": "{{date}} 早于代码冻结日期",
+				"afterSubmission": "{{date}} 晚于提交日期",
+				"limitHint": "{{start}} 至 {{end}} 之间"
+			},
+			"deleteDialog": {
+				"title": "删除“{{name}}”？",
+				"description_other": "其中的 {{count}} 个任务和功能将保留在项目中，但不再属于任何版本。",
+				"descriptionEmpty": "此版本中没有任务或功能。",
+				"confirm": "删除版本",
+				"success": "版本已删除",
+				"error": "删除版本失败"
+			},
+			"moveUnfinished": {
+				"action": "移动未完成项…",
+				"title": "移动未完成项",
+				"description": "未完成的任务和功能会逐项移动，已完成的仍保留在 {{name}} 中。",
+				"target": "移至",
+				"noRelease": "无版本",
+				"summary_other": "将移动 {{count}} 个未完成项。",
+				"none": "此版本中的所有内容均已完成。",
+				"noTargets": "没有其他版本",
+				"confirm": "确认移动",
+				"success_other": "已将 {{count}} 项移至 {{name}}",
+				"successNoRelease_other": "已将 {{count}} 项移出版本",
+				"error": "移动失败"
+			},
+			"detail": {
+				"back": "全部版本",
+				"notFound": "此版本不存在或已被删除。",
+				"backToReleases": "返回版本列表",
+				"standaloneHeading": "未归属功能的任务",
+				"empty": "此版本暂无内容",
+				"emptyHint": "为任务或功能设置版本，或在此添加任务。",
+				"addTask": "添加任务",
+				"featureElsewhere": "该功能不在此版本中",
+				"tasksElsewhere_other": "另有 {{count}} 个任务不在此版本中",
+				"today": "今天",
+				"loadingTasks": "正在加载任务…",
+				"timelineLabel": "版本时间线"
+			},
+			"gantt": {
+				"strip": "版本",
+				"markerAria": "{{name}}：{{kind}}，{{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "开始于 {{date}}",
+					"codeFreeze": "代码冻结于 {{date}}",
+					"submission": "提交于 {{date}}"
+				},
+				"actionsFor": "{{name}} 的操作",
+				"loading": "正在加载版本…",
+				"tasksLoadError": "任务加载失败。"
+			},
+			"ux": {
+				"nameTaken": "已存在同名版本"
+			}
 		}
 	},
 	"invitations": {

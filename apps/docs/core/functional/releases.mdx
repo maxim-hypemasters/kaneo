@@ -1,0 +1,137 @@
+---
+title: "Releases"
+description: "Plan what ships together, with a start date, a code freeze, and a submission date."
+---
+
+A release is a named plan for a project, such as “2.4,” with three dates: when work starts, when changes stop, and when it ships. It holds features and tasks of that project, much like a sprint or a cycle in other tools. Use one when a group of work has to be ready by the same day.
+
+Each task or feature is in one release at most, and only in a release of its own project.
+
+## Open Releases
+
+Open a project and choose **Releases** at the top, next to **Tasks** and **Backlog**. You can also press **G** then **R** in a project, or choose **Go to releases** in the command menu.
+
+The list has three sections:
+
+- **Active:** releases in progress or in code freeze, the soonest submission first.
+- **Upcoming:** releases that haven't started, the soonest start first.
+- **Past:** releases whose submission date has passed, the most recent first. The section is collapsed while there are active or upcoming releases.
+
+Each row shows the release's name and phase, a countdown such as “Code freeze in 3 days,” its three dates, how many of its tasks are done (for example **12/30**), and how many features, tasks, and unfinished items it holds. Select a row to [open the release](#follow-a-release).
+
+## The three dates
+
+| Date | What it means |
+| --- | --- |
+| **Start** | The first day of work. Marked with a flag. |
+| **Code freeze** | The day changes stop, before the release ships. Marked with a snowflake. |
+| **Submission** | The day the release ships. Marked with a paper plane. |
+
+The dates must run in order: start, then code freeze, then submission. Two or all three can be the same day, which suits a quick fix.
+
+The dates are calendar days without a time, so everyone sees the same days wherever they are. A release's phase comes from those dates and today's date on your device:
+
+| Phase | When |
+| --- | --- |
+| **Upcoming** | Before the start date |
+| **In progress** | From the start date until the day before code freeze |
+| **Code freeze** | From the code freeze date through the submission date |
+| **Past submission** | After the submission date |
+
+The phase and countdown change at midnight on your device. Nothing else happens on these dates: tasks don't move or change status on their own. When a release is over, you decide what to do with any [unfinished work](#move-unfinished-work).
+
+## Create a release
+
+1. Choose **New release** on the Releases page, or **Create release** in the command menu while you're in the project.
+2. Enter a **Name**. It must be different from the project's other releases.
+3. Pick the **Start**, **Code freeze**, and **Submission** dates.
+4. Add a **Description** of what the release delivers, if that helps.
+5. Choose **Create release**.
+
+When the project already has releases, the dialog suggests dates that start the day after the latest submission, or today if that day has passed, and keep that release's lengths. Change them as needed. Each date picker only offers days that keep the dates in order.
+
+## Edit or delete a release
+
+To change a release's name, dates, or description, open the actions menu on its row in the list, or open the release, and choose **Edit release**. Choose **Save** to apply the change. Its phase updates at once.
+
+To delete a release, choose **Delete release** in the same menus and confirm. Its features and tasks stay in the project without a release, and each one's activity records that it left the release. A deleted release can't be restored: to get it back, create it again and put the work back in it.
+
+## Put work in a release
+
+- **In a task or feature:** open it, select **Release** in its properties, and pick a release, or **No release** to take it out. In an open task, **Shift+C** opens the same list. The list shows each release's dates, and marks the release of the task's feature with **Feature's release**.
+- **When you create a task:** select the **Release** chip in the new task window. If you chose a feature, the chip follows it and shows, for example, “2.4 (from feature).” Pick a release, or **No release**, to choose for yourself. **Create more** keeps your choice for the next task.
+- **From a release:** while a release is open, a task you create with **C** or the command menu starts in that release, and so does one you create with **Add task** at the top of the release's page.
+
+## How tasks follow their feature
+
+A feature and its tasks usually ship together, so the tasks follow the feature's release:
+
+- **Putting a feature in a release** also moves the feature's tasks that were in its previous release, or in no release if it had none. Its tasks in a different release stay where they are. A message says how many tasks moved with the feature.
+- **Creating a task in a feature** puts it in the feature's release, unless you pick another release or **No release** for it.
+- **Adding an existing task to a feature**, or moving it to another feature, puts it in the feature's release only when it has no release yet. A task already in a release keeps it.
+
+A task follows its feature while both are in the same release, or both are in none. There is no separate setting. Moving a task to another release on its own stops it following, and putting it back in the feature's release makes it follow again.
+
+For example, the feature “New onboarding flow” is in 2.4, and so are its tasks “Welcome screen” and “Invite teammates step.” Its third task, “Onboarding emails,” was moved to 2.5 on its own because it can wait.
+
+- Put the feature in 2.6, and “Welcome screen” and “Invite teammates step” move to 2.6 with it. “Onboarding emails” stays in 2.5.
+- Create a task in the feature, and it starts in 2.6. The **Release** chip shows “2.6 (from feature)” until you pick something else.
+- Add a task with no release to the feature, and it joins 2.6. A task already in 2.4 stays in 2.4.
+- Put “Onboarding emails” in 2.6, and it follows the feature again from then on.
+
+Some changes keep a task's release as it is:
+
+- taking the task out of its feature;
+- converting a task to a feature, or a feature to a task;
+- deleting its feature, or any other task.
+
+Duplicating a task or a feature puts the copy in the same release. Moving a task to another project takes it out of its release, because releases belong to one project.
+
+Each change of a task's release appears in its activity, in an entry such as **added the task to release “2.4”**. That includes tasks that moved with their feature, items moved by [Move unfinished](#move-unfinished-work), and tasks that left a deleted release. Creating a task in a release records only its creation.
+
+## Follow a release
+
+Select a release in the list to open its page. **All releases** takes you back.
+
+The page shows the release's phase, countdown, and description, then a timeline from start to submission with marks for the code freeze and today. Below that are its progress and its work:
+
+- One group for each feature in the release, with the feature's tasks that are in it.
+- A group for a feature that isn't in the release but has tasks in it, marked **Feature not in this release**.
+- **Tasks without a feature** last.
+
+In each group, unfinished items come first and finished ones are dimmed below them. Archived tasks aren't listed. When some of a feature's tasks are in another release, or in none, its group says how many, such as “2 more tasks outside this release.” Select an item to open it in the task panel.
+
+Releases, their progress, and their tasks update for everyone who has the project open, without reloading.
+
+## Move unfinished work
+
+When a release reaches its code freeze or its submission date with work left, move that work to the next release or out of releases altogether:
+
+1. Open the release and choose **Move unfinished…**. From code freeze on, while work is left, the release's page highlights it.
+2. Under **Move to**, pick another release or **No release**. Kaneo suggests the release that starts next, or **No release** when there's none.
+3. Check how many items will move, then choose **Move items**.
+
+Unfinished means not archived and not in a column with **Done** turned on in the project's [workflow](/core/functional/configure-workflows). Planned tasks in the backlog count as unfinished.
+
+Each item moves on its own. When an unfinished feature moves, its finished tasks don't go with it: they stay in the release they shipped in. Each moved item records the change in its activity.
+
+## Find a release's work
+
+- **Filter:** in **Tasks** or **Backlog**, choose **Filter**, then **Release**, and pick one or more releases, or **No release** for work that isn't in one. Switch **is** to **is not** to hide them instead. The filter applies to every layout. A saved filter whose release was deleted shows **Unknown release**. See [Find and filter work](/core/functional/plan-and-execute-tasks#find-and-filter-work).
+- **Gantt:** the Gantt chart marks each release's three dates with lines, and its labels open the release. See [Calendar and Gantt](/core/functional/calendar-and-gantt#releases).
+
+## Who can do what
+
+| Action | Permission | Default roles |
+| --- | --- | --- |
+| See releases and their progress | Access to the project | Everyone, including viewers |
+| Create or edit a release | Manage projects | Admin, Owner |
+| Delete a release | Manage projects and edit tasks | Admin, Owner |
+| Put tasks and features in a release | Edit tasks | Member, Admin, Owner |
+| Move unfinished work | Edit tasks | Member, Admin, Owner |
+
+These are the starting roles; an admin can [change them](/core/functional/collaborate-with-team#choose-a-role). Controls you can't use are hidden, and the same rules apply to API keys, the CLI, and MCP clients.
+
+## Use releases from other tools
+
+The [Kaneo CLI](/cli/reference) and the [MCP server](/core/integrations/mcp) can list, create, edit, and delete releases and set a task's release. The API's [endpoint reference](/api-reference/introduction) lists the routes under **Releases**.

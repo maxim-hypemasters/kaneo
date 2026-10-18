@@ -12,6 +12,7 @@ const noFilters: BoardFilters = {
   assignee: null,
   dueDate: null,
   labels: null,
+  release: null,
   customFields: null,
 };
 
@@ -34,6 +35,7 @@ function task(overrides: Partial<Task>): Task {
     dueDate: "2026-10-16",
     userId: "u1",
     labels: [{ id: "l1", name: "Engineering", color: "blue" }],
+    releaseId: "r1",
     ...overrides,
   } as Task;
 }
@@ -125,6 +127,31 @@ describe("taskMatchesFilters", () => {
     (filters, expected) => {
       expect(
         taskMatchesFilters(task({}), { ...noFilters, ...filters }, context),
+      ).toBe(expected);
+    },
+  );
+
+  it.each([
+    ["r1", ["r1"], [], true],
+    ["r1", ["r2", "r1"], [], true],
+    ["r1", ["r2"], [], false],
+    ["r1", ["none"], [], false],
+    [null, ["none"], [], true],
+    [undefined, ["none"], [], true],
+    [null, ["r1"], [], false],
+    ["r1", ["r1"], ["release"], false],
+    ["r1", ["r2"], ["release"], true],
+    [null, ["none"], ["release"], false],
+    [null, ["r1"], ["release"], true],
+  ] as Array<[string | null | undefined, string[], string[], boolean]>)(
+    "matches release %s against %o (negated %o): %s",
+    (releaseId, release, negated, expected) => {
+      expect(
+        taskMatchesFilters(
+          task({ releaseId }),
+          { ...noFilters, release, negated },
+          context,
+        ),
       ).toBe(expected);
     },
   );

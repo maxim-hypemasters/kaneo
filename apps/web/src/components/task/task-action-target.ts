@@ -11,6 +11,7 @@ export type TaskActionName =
   | "addLink"
   | "addSubtask"
   | "feature"
+  | "release"
   | "resources";
 
 const FIELDS = [

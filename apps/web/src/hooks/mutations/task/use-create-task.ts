@@ -3,6 +3,7 @@ import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import createTask, {
   type CreateTaskRequest,
 } from "@/fetchers/task/create-task";
+import { releasesKey } from "@/hooks/queries/release/use-get-releases";
 import { trackFirstTask } from "@/lib/analytics/activation";
 
 function useCreateTask() {
@@ -22,6 +23,7 @@ function useCreateTask() {
       draftAssetIds,
       type,
       featureId,
+      releaseId,
     }: CreateTaskRequest) =>
       createTask(
         title,
@@ -34,9 +36,9 @@ function useCreateTask() {
         priority,
         customFields,
         draftAssetIds,
-        { type, featureId },
+        { type, featureId, releaseId },
       ),
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       invalidateMyWork(queryClient);
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
       trackFirstTask();
@@ -54,6 +56,12 @@ function useCreateTask() {
       if (variables.featureId) {
         void queryClient.invalidateQueries({
           queryKey: ["task", variables.featureId],
+        });
+      }
+      // Picked or taken from its feature, the release's progress changed.
+      if (data.releaseId) {
+        void queryClient.invalidateQueries({
+          queryKey: releasesKey(variables.projectId),
         });
       }
     },

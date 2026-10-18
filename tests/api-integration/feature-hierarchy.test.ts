@@ -509,12 +509,14 @@ describe("listing a project's features", () => {
         title: "Billing",
         number: second.number,
         status: "planned",
+        releaseId: null,
       },
       {
         id: ctx.feature.id,
         title: "Checkout",
         number: ctx.feature.number,
         status: ctx.feature.status,
+        releaseId: null,
       },
     ]);
   });

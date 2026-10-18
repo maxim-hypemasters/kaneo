@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (nowa)",
 				"chooseProjectForFeature": "Wybierz projekt, aby móc wskazać funkcję.",
 				"loadingFeatures": "Ładowanie funkcji...",
-				"loadFeaturesError": "Nie udało się wczytać funkcji."
+				"loadFeaturesError": "Nie udało się wczytać funkcji.",
+				"release": "Wydanie",
+				"noRelease": "Brak wydania",
+				"searchReleases": "Szukaj wydań...",
+				"releaseFromFeature": "{{name}} (z funkcji)",
+				"chooseProjectForRelease": "Wybierz projekt, aby móc wskazać wydanie.",
+				"loadingReleases": "Ładowanie wydań...",
+				"loadReleasesError": "Nie udało się wczytać wydań.",
+				"noReleasesFound": "Nie znaleziono wydań"
 			}
 		},
 		"editor": {
@@ -614,7 +622,9 @@
 				"open": "Otwórz",
 				"close": "Zamknij"
 			},
-			"createFeature": "Utwórz funkcję"
+			"createFeature": "Utwórz funkcję",
+			"goToReleases": "Przejdź do wydań",
+			"createRelease": "Utwórz wydanie"
 		},
 		"sidebar": {
 			"projects": "Projekty",
@@ -784,7 +794,9 @@
 				"editorNumberedList": "Lista numerowana",
 				"editorCodeBlock": "Blok kodu",
 				"editorUndo": "Cofnij",
-				"editorRedo": "Ponów"
+				"editorRedo": "Ponów",
+				"goToReleases": "Przejdź do wydań",
+				"setRelease": "Ustaw wydanie"
 			},
 			"title": "Skróty klawiszowe",
 			"searchPlaceholder": "Szukaj po akcji lub klawiszu",
@@ -1284,7 +1296,10 @@
 		"removedFromFeature": "usunął(ęła) zadanie z funkcji \"{{feature}}\"",
 		"changedFeature": "przeniósł(ęła) zadanie z funkcji \"{{from}}\" do \"{{to}}\"",
 		"madeFeature": "przekształcił(a) to zadanie w funkcję",
-		"madeTask": "przekształcił(a) tę funkcję w zadanie"
+		"madeTask": "przekształcił(a) tę funkcję w zadanie",
+		"addedToRelease": "dodał(a) zadanie do wydania \"{{release}}\"",
+		"removedFromRelease": "usunął(ęła) zadanie z wydania \"{{release}}\"",
+		"changedRelease": "przeniósł(ęła) zadanie z wydania \"{{from}}\" do \"{{to}}\""
 	},
 	"settings": {
 		"advancedSettings": "Ustawienia zaawansowane",
@@ -3214,7 +3229,8 @@
 				"dueDate": "Termin",
 				"labels": "Etykiety",
 				"priority": "Priorytet",
-				"status": "Status"
+				"status": "Status",
+				"release": "Wydanie"
 			},
 			"allCustomFieldValues": "All values",
 			"noCustomFieldValues": "No custom field values",
@@ -3669,7 +3685,8 @@
 			"list": "Lista",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Widok"
+			"heading": "Widok",
+			"releases": "Wydania"
 		},
 		"descriptionSearchLoading": "Searching full descriptions…",
 		"descriptionSearchError": "Description search failed. Results may be incomplete.",
@@ -3798,6 +3815,185 @@
 			"convertBlocked": "Przenieś zadania z tej funkcji, zanim przekształcisz ją w zadanie.",
 			"openFeature": "Otwórz funkcję {{title}}",
 			"inProject": "Funkcje w projekcie"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – wydania",
+			"count_one": "{{count}} wydanie",
+			"count_few": "{{count}} wydania",
+			"count_many": "{{count}} wydań",
+			"count_other": "{{count}} wydania",
+			"new": "Nowe wydanie",
+			"edit": "Edytuj wydanie",
+			"delete": "Usuń wydanie",
+			"property": "Wydanie",
+			"none": "Brak wydania",
+			"unknown": "Nieznane wydanie",
+			"searchPlaceholder": "Szukaj wydań…",
+			"pickerEmpty": "Brak wydań w tym projekcie",
+			"updateError": "Nie udało się zaktualizować wydania",
+			"featureReleaseHint": "Wydanie funkcji",
+			"followNote": "Zadania, które podążają za tą funkcją, przenoszą się razem z nią.",
+			"movedWithFeature_one": "Przeniesiono też {{count}} zadanie tej funkcji",
+			"movedWithFeature_few": "Przeniesiono też {{count}} zadania tej funkcji",
+			"movedWithFeature_many": "Przeniesiono też {{count}} zadań tej funkcji",
+			"movedWithFeature_other": "Przeniesiono też {{count}} zadania tej funkcji",
+			"loadError": "Nie udało się wczytać wydań.",
+			"retry": "Spróbuj ponownie",
+			"sections": {
+				"active": "Aktywne",
+				"upcoming": "Nadchodzące",
+				"past": "Minione"
+			},
+			"phase": {
+				"upcoming": "Nadchodzące",
+				"inProgress": "W trakcie",
+				"codeFreeze": "Zamrożenie kodu",
+				"pastSubmission": "Po wysłaniu"
+			},
+			"dates": {
+				"start": "Początek",
+				"codeFreeze": "Zamrożenie kodu",
+				"submission": "Wysłanie"
+			},
+			"countdown": {
+				"startsIn_one": "Rozpoczyna się za {{count}} dzień",
+				"startsIn_few": "Rozpoczyna się za {{count}} dni",
+				"startsIn_many": "Rozpoczyna się za {{count}} dni",
+				"startsIn_other": "Rozpoczyna się za {{count}} dnia",
+				"startsToday": "Rozpoczyna się dzisiaj",
+				"freezeIn_one": "Zamrożenie kodu za {{count}} dzień",
+				"freezeIn_few": "Zamrożenie kodu za {{count}} dni",
+				"freezeIn_many": "Zamrożenie kodu za {{count}} dni",
+				"freezeIn_other": "Zamrożenie kodu za {{count}} dnia",
+				"freezeToday": "Zamrożenie kodu dzisiaj",
+				"submissionIn_one": "Wysłanie za {{count}} dzień",
+				"submissionIn_few": "Wysłanie za {{count}} dni",
+				"submissionIn_many": "Wysłanie za {{count}} dni",
+				"submissionIn_other": "Wysłanie za {{count}} dnia",
+				"submissionToday": "Wysłanie dzisiaj",
+				"submittedAgo_one": "Wysłano {{count}} dzień temu",
+				"submittedAgo_few": "Wysłano {{count}} dni temu",
+				"submittedAgo_many": "Wysłano {{count}} dni temu",
+				"submittedAgo_other": "Wysłano {{count}} dnia temu"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "Ukończono {{completed}} z {{count}} zadania",
+			"progressAria_few": "Ukończono {{completed}} z {{count}} zadań",
+			"progressAria_many": "Ukończono {{completed}} z {{count}} zadań",
+			"progressAria_other": "Ukończono {{completed}} z {{count}} zadania",
+			"counts": {
+				"features_one": "{{count}} funkcja",
+				"features_few": "{{count}} funkcje",
+				"features_many": "{{count}} funkcji",
+				"features_other": "{{count}} funkcji",
+				"tasks_one": "{{count}} zadanie",
+				"tasks_few": "{{count}} zadania",
+				"tasks_many": "{{count}} zadań",
+				"tasks_other": "{{count}} zadania",
+				"unfinished_one": "{{count}} nieukończone",
+				"unfinished_few": "{{count}} nieukończone",
+				"unfinished_many": "{{count}} nieukończonych",
+				"unfinished_other": "{{count}} nieukończonego"
+			},
+			"empty": {
+				"title": "Brak wydań",
+				"description": "Zaplanuj wydanie z datą rozpoczęcia, zamrożeniem kodu i datą wysłania, a potem dodaj do niego funkcje i zadania.",
+				"readOnly": "Tutaj pojawią się wydania zaplanowane dla tego projektu."
+			},
+			"dialog": {
+				"createTitle": "Nowe wydanie",
+				"editTitle": "Edytuj wydanie",
+				"createDescription": "Wydanie ma datę rozpoczęcia, zamrożenie kodu i datę wysłania – w tej kolejności.",
+				"nameLabel": "Nazwa",
+				"namePlaceholder": "np. 2.4",
+				"nameRequired": "Wpisz nazwę",
+				"dateRequired": "Wybierz datę",
+				"startLabel": "Początek",
+				"codeFreezeLabel": "Zamrożenie kodu",
+				"submissionLabel": "Wysłanie",
+				"pickDate": "Wybierz datę",
+				"descriptionLabel": "Opis",
+				"descriptionPlaceholder": "Co dostarcza to wydanie (opcjonalnie)",
+				"create": "Utwórz wydanie",
+				"save": "Zapisz",
+				"createSuccess": "Wydanie zostało utworzone",
+				"updateSuccess": "Wydanie zostało zaktualizowane",
+				"createError": "Nie udało się utworzyć wydania",
+				"updateError": "Nie udało się zaktualizować wydania",
+				"beforeStart": "{{date}} wypada przed datą rozpoczęcia",
+				"afterCodeFreeze": "{{date}} wypada po zamrożeniu kodu",
+				"beforeCodeFreeze": "{{date}} wypada przed zamrożeniem kodu",
+				"afterSubmission": "{{date}} wypada po dacie wysłania",
+				"limitHint": "Między {{start}} a {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Usunąć wydanie {{name}}?",
+				"description_one": "{{count}} zadanie lub funkcja pozostanie w projekcie, ale bez wydania.",
+				"description_few": "{{count}} zadania i funkcje pozostaną w projekcie, ale bez wydania.",
+				"description_many": "{{count}} zadań i funkcji pozostanie w projekcie, ale bez wydania.",
+				"description_other": "{{count}} zadania i funkcji pozostanie w projekcie, ale bez wydania.",
+				"descriptionEmpty": "W tym wydaniu nie ma zadań ani funkcji.",
+				"confirm": "Usuń wydanie",
+				"success": "Usunięto wydanie",
+				"error": "Nie udało się usunąć wydania"
+			},
+			"moveUnfinished": {
+				"action": "Przenieś nieukończone…",
+				"title": "Przenieś nieukończone elementy",
+				"description": "Nieukończone zadania i funkcje są przenoszone pojedynczo. Ukończone zostają w wydaniu {{name}}.",
+				"target": "Przenieś do",
+				"noRelease": "Brak wydania",
+				"summary_one": "{{count}} nieukończony element zostanie przeniesiony.",
+				"summary_few": "{{count}} nieukończone elementy zostaną przeniesione.",
+				"summary_many": "{{count}} nieukończonych elementów zostanie przeniesionych.",
+				"summary_other": "{{count}} nieukończonego elementu zostanie przeniesione.",
+				"none": "Wszystko w tym wydaniu jest ukończone.",
+				"noTargets": "Brak innych wydań",
+				"confirm": "Przenieś elementy",
+				"success_one": "Przeniesiono {{count}} element do wydania {{name}}",
+				"success_few": "Przeniesiono {{count}} elementy do wydania {{name}}",
+				"success_many": "Przeniesiono {{count}} elementów do wydania {{name}}",
+				"success_other": "Przeniesiono {{count}} elementu do wydania {{name}}",
+				"successNoRelease_one": "Wyjęto {{count}} element z wydania",
+				"successNoRelease_few": "Wyjęto {{count}} elementy z wydania",
+				"successNoRelease_many": "Wyjęto {{count}} elementów z wydania",
+				"successNoRelease_other": "Wyjęto {{count}} elementu z wydania",
+				"error": "Nie udało się przenieść elementów"
+			},
+			"detail": {
+				"back": "Wszystkie wydania",
+				"notFound": "To wydanie nie istnieje lub zostało usunięte.",
+				"backToReleases": "Wróć do wydań",
+				"standaloneHeading": "Zadania bez funkcji",
+				"empty": "W tym wydaniu nic jeszcze nie ma",
+				"emptyHint": "Ustaw wydanie zadania lub funkcji albo dodaj tutaj zadanie.",
+				"addTask": "Dodaj zadanie",
+				"featureElsewhere": "Funkcja poza tym wydaniem",
+				"tasksElsewhere_one": "Jeszcze {{count}} zadanie poza tym wydaniem",
+				"tasksElsewhere_few": "Jeszcze {{count}} zadania poza tym wydaniem",
+				"tasksElsewhere_many": "Jeszcze {{count}} zadań poza tym wydaniem",
+				"tasksElsewhere_other": "Jeszcze {{count}} zadania poza tym wydaniem",
+				"today": "Dzisiaj",
+				"loadingTasks": "Ładowanie zadań…",
+				"timelineLabel": "Oś czasu wydania"
+			},
+			"gantt": {
+				"strip": "Wydania",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Początek: {{date}}",
+					"codeFreeze": "Zamrożenie kodu: {{date}}",
+					"submission": "Wysłanie: {{date}}"
+				},
+				"actionsFor": "Akcje dla wydania {{name}}",
+				"loading": "Ładowanie wydań…",
+				"tasksLoadError": "Nie udało się wczytać zadań."
+			},
+			"ux": {
+				"nameTaken": "Wydanie o tej nazwie już istnieje"
+			}
 		}
 	},
 	"press": {

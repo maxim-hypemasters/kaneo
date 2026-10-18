@@ -56,6 +56,7 @@ export const SHORTCUTS = {
   goToSettings: { keys: ["g s"], category: "navigation" },
   goToTasks: { keys: ["g a"], category: "navigation", scope: "view" },
   goToBacklog: { keys: ["g b"], category: "navigation", scope: "view" },
+  goToReleases: { keys: ["g r"], category: "navigation", scope: "view" },
   goToProject: {
     keys: projectDigits,
     category: "navigation",
@@ -75,6 +76,7 @@ export const SHORTCUTS = {
   assignToMe: { keys: ["i"], category: "tasks", scope: "task" },
   changeLabels: { keys: ["l"], category: "tasks", scope: "task" },
   setDueDate: { keys: ["shift+d"], category: "tasks", scope: "task" },
+  setRelease: { keys: ["shift+c"], category: "tasks", scope: "task" },
   removeDueDate: { keys: ["mod+shift+d"], category: "tasks", scope: "task" },
   renameTask: { keys: ["shift+r"], category: "tasks", scope: "task" },
   editDescription: { keys: ["ctrl+shift+i"], category: "tasks", scope: "task" },

@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (нова)",
 				"chooseProjectForFeature": "Избери проект за да избереш функционалност.",
 				"loadingFeatures": "Се вчитуваат функционалности...",
-				"loadFeaturesError": "Функционалностите не може да се вчитаат."
+				"loadFeaturesError": "Функционалностите не може да се вчитаат.",
+				"release": "Издание",
+				"noRelease": "Без издание",
+				"searchReleases": "Пребарај изданија...",
+				"releaseFromFeature": "{{name}} (од функционалноста)",
+				"chooseProjectForRelease": "Избери проект за да избереш издание.",
+				"loadingReleases": "Се вчитуваат изданија...",
+				"loadReleasesError": "Изданијата не може да се вчитаат.",
+				"noReleasesFound": "Не се пронајдени изданија"
 			}
 		},
 		"editor": {
@@ -2402,7 +2410,9 @@
 				"open": "Отвори",
 				"close": "Затвори"
 			},
-			"createFeature": "Креирај функционалност"
+			"createFeature": "Креирај функционалност",
+			"goToReleases": "Оди на изданија",
+			"createRelease": "Креирај издание"
 		},
 		"sidebar": {
 			"projects": "Проекти",
@@ -2572,7 +2582,9 @@
 				"editorNumberedList": "Нумерирана листа",
 				"editorCodeBlock": "Блок со код",
 				"editorUndo": "Врати",
-				"editorRedo": "Повтори"
+				"editorRedo": "Повтори",
+				"goToReleases": "Оди на изданија",
+				"setRelease": "Постави издание"
 			},
 			"title": "Кратенки на тастатура",
 			"searchPlaceholder": "Пребарај по дејство или копче",
@@ -2779,7 +2791,10 @@
 		"removedFromFeature": "ја отстрани задачата од функционалноста \"{{feature}}\"",
 		"changedFeature": "ја премести задачата од функционалноста \"{{from}}\" во \"{{to}}\"",
 		"madeFeature": "ја претвори оваа задача во функционалност",
-		"madeTask": "ја претвори оваа функционалност во задача"
+		"madeTask": "ја претвори оваа функционалност во задача",
+		"addedToRelease": "ја додаде задачата во изданието \"{{release}}\"",
+		"removedFromRelease": "ја отстрани задачата од изданието \"{{release}}\"",
+		"changedRelease": "ја премести задачата од изданието \"{{from}}\" во \"{{to}}\""
 	},
 	"tasks": {
 		"title": "Задачи",
@@ -2805,7 +2820,8 @@
 			"list": "Листа",
 			"backlog": "Заостанати",
 			"gantt": "Gantt",
-			"heading": "Приказ"
+			"heading": "Приказ",
+			"releases": "Изданија"
 		},
 		"common": {
 			"selectTask": "Избери задача",
@@ -3077,7 +3093,8 @@
 				"priority": "Приоритет",
 				"assignee": "Доделен",
 				"dueDate": "Краен рок",
-				"labels": "Етикети"
+				"labels": "Етикети",
+				"release": "Издание"
 			},
 			"operators": {
 				"isAnyOf": "е било кој од",
@@ -3389,6 +3406,155 @@
 			"convertBlocked": "Извади ги задачите од оваа функционалност пред да ја претвориш во задача.",
 			"openFeature": "Отвори ја функционалноста {{title}}",
 			"inProject": "Функционалности во проект"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Изданија",
+			"count_one": "{{count}} издание",
+			"count_other": "{{count}} изданија",
+			"new": "Ново издание",
+			"edit": "Уреди издание",
+			"delete": "Избриши издание",
+			"property": "Издание",
+			"none": "Без издание",
+			"unknown": "Непознато издание",
+			"searchPlaceholder": "Пребарај изданија…",
+			"pickerEmpty": "Нема изданија во овој проект засега",
+			"updateError": "Неуспешно ажурирање на изданието",
+			"featureReleaseHint": "Издание на функционалноста",
+			"followNote": "Задачите што ја следат оваа функционалност се преместуваат заедно со неа.",
+			"movedWithFeature_one": "Преместена е и {{count}} задача од оваа функционалност",
+			"movedWithFeature_other": "Преместени се и {{count}} задачи од оваа функционалност",
+			"loadError": "Изданијата не може да се вчитаат.",
+			"retry": "Обиди се повторно",
+			"sections": {
+				"active": "Активни",
+				"upcoming": "Претстојни",
+				"past": "Минати"
+			},
+			"phase": {
+				"upcoming": "Претстојно",
+				"inProgress": "Во тек",
+				"codeFreeze": "Замрзнување на кодот",
+				"pastSubmission": "По поднесувањето"
+			},
+			"dates": {
+				"start": "Почеток",
+				"codeFreeze": "Замрзнување на кодот",
+				"submission": "Поднесување"
+			},
+			"countdown": {
+				"startsIn_one": "Започнува за {{count}} ден",
+				"startsIn_other": "Започнува за {{count}} дена",
+				"startsToday": "Започнува денес",
+				"freezeIn_one": "Замрзнување на кодот за {{count}} ден",
+				"freezeIn_other": "Замрзнување на кодот за {{count}} дена",
+				"freezeToday": "Замрзнување на кодот денес",
+				"submissionIn_one": "Поднесување за {{count}} ден",
+				"submissionIn_other": "Поднесување за {{count}} дена",
+				"submissionToday": "Поднесување денес",
+				"submittedAgo_one": "Поднесено пред {{count}} ден",
+				"submittedAgo_other": "Поднесено пред {{count}} дена"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{completed}} од {{count}} задача е завршена",
+			"progressAria_other": "{{completed}} од {{count}} задачи се завршени",
+			"counts": {
+				"features_one": "{{count}} функционалност",
+				"features_other": "{{count}} функционалности",
+				"tasks_one": "{{count}} задача",
+				"tasks_other": "{{count}} задачи",
+				"unfinished_one": "{{count}} незавршена",
+				"unfinished_other": "{{count}} незавршени"
+			},
+			"empty": {
+				"title": "Сè уште нема изданија",
+				"description": "Планирај издание со почетен датум, замрзнување на кодот и датум на поднесување, а потоа додај функционалности и задачи во него.",
+				"readOnly": "Изданијата планирани за овој проект ќе се прикажат тука."
+			},
+			"dialog": {
+				"createTitle": "Ново издание",
+				"editTitle": "Уреди издание",
+				"createDescription": "Изданието има почетен датум, замрзнување на кодот и датум на поднесување, по тој редослед.",
+				"nameLabel": "Име",
+				"namePlaceholder": "пр. 2.4",
+				"nameRequired": "Внеси име",
+				"dateRequired": "Избери датум",
+				"startLabel": "Почеток",
+				"codeFreezeLabel": "Замрзнување на кодот",
+				"submissionLabel": "Поднесување",
+				"pickDate": "Избери датум",
+				"descriptionLabel": "Опис",
+				"descriptionPlaceholder": "Што донесува ова издание (опционално)",
+				"create": "Креирај издание",
+				"save": "Зачувај",
+				"createSuccess": "Изданието е креирано",
+				"updateSuccess": "Изданието е ажурирано",
+				"createError": "Неуспешно креирање на изданието",
+				"updateError": "Неуспешно ажурирање на изданието",
+				"beforeStart": "{{date}} е пред почетниот датум",
+				"afterCodeFreeze": "{{date}} е по замрзнувањето на кодот",
+				"beforeCodeFreeze": "{{date}} е пред замрзнувањето на кодот",
+				"afterSubmission": "{{date}} е по датумот на поднесување",
+				"limitHint": "Помеѓу {{start}} и {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Да се избрише изданието {{name}}?",
+				"description_one": "{{count}} задача или функционалност останува во проектот, без издание.",
+				"description_other": "{{count}} задачи и функционалности остануваат во проектот, без издание.",
+				"descriptionEmpty": "Во ова издание нема задачи ни функционалности.",
+				"confirm": "Избриши издание",
+				"success": "Изданието е избришано",
+				"error": "Неуспешно бришење на изданието"
+			},
+			"moveUnfinished": {
+				"action": "Премести ги незавршените…",
+				"title": "Премести ги незавршените ставки",
+				"description": "Незавршените задачи и функционалности се преместуваат поединечно. Завршените остануваат во изданието {{name}}.",
+				"target": "Премести во",
+				"noRelease": "Без издание",
+				"summary_one": "{{count}} незавршена ставка ќе биде преместена.",
+				"summary_other": "{{count}} незавршени ставки ќе бидат преместени.",
+				"none": "Сè во ова издание е завршено.",
+				"noTargets": "Нема други изданија",
+				"confirm": "Премести ставки",
+				"success_one": "{{count}} ставка е преместена во изданието {{name}}",
+				"success_other": "{{count}} ставки се преместени во изданието {{name}}",
+				"successNoRelease_one": "{{count}} ставка е извадена од изданието",
+				"successNoRelease_other": "{{count}} ставки се извадени од изданието",
+				"error": "Неуспешно преместување на ставките"
+			},
+			"detail": {
+				"back": "Сите изданија",
+				"notFound": "Ова издание не постои или е избришано.",
+				"backToReleases": "Назад кон изданијата",
+				"standaloneHeading": "Задачи без функционалност",
+				"empty": "Сè уште нема ништо во ова издание",
+				"emptyHint": "Постави издание на задача или функционалност, или додај задача тука.",
+				"addTask": "Додади задача",
+				"featureElsewhere": "Функционалноста не е во ова издание",
+				"tasksElsewhere_one": "Уште {{count}} задача надвор од ова издание",
+				"tasksElsewhere_other": "Уште {{count}} задачи надвор од ова издание",
+				"today": "Денес",
+				"loadingTasks": "Се вчитуваат задачи…",
+				"timelineLabel": "Временска линија на изданието"
+			},
+			"gantt": {
+				"strip": "Изданија",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Почеток: {{date}}",
+					"codeFreeze": "Замрзнување на кодот: {{date}}",
+					"submission": "Поднесување: {{date}}"
+				},
+				"actionsFor": "Акции за изданието {{name}}",
+				"loading": "Се вчитуваат изданија…",
+				"tasksLoadError": "Задачите не може да се вчитаат."
+			},
+			"ux": {
+				"nameTaken": "Издание со ова име веќе постои"
+			}
 		}
 	},
 	"invitations": {

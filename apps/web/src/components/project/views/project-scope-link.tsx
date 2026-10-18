@@ -33,13 +33,13 @@ export function ProjectScopeLink({
         onSelect(view);
       }}
       className={cn(
-        "inline-flex h-6 items-center rounded-md px-2.5 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+        "inline-flex h-6 min-w-0 items-center rounded-md px-2.5 text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
         active
           ? "bg-accent text-foreground shadow-xs/5"
           : "text-muted-foreground hover:text-foreground",
       )}
     >
-      {children}
+      <span className="truncate">{children}</span>
     </a>
   );
 }

@@ -7,6 +7,7 @@ import {
   gte,
   inArray,
   isNotNull,
+  isNull,
   lte,
   type SQL,
   type SQLWrapper,
@@ -49,6 +50,8 @@ export type GetTasksOptions = {
     | "number";
   sortOrder?: "asc" | "desc";
   status?: string;
+  // A release id, or "none" for tasks outside every release.
+  releaseId?: string;
 };
 
 const priorityCaseExpr = sql<number>`CASE
@@ -138,6 +141,15 @@ async function getTasksPage(
     conditions.push(gte(taskTable.dueDate, new Date(options.dueAfter)));
   }
 
+  // Releases are private planning data, so public boards can't filter by them.
+  if (options.releaseId && !options.publicOnly) {
+    conditions.push(
+      options.releaseId === "none"
+        ? isNull(taskTable.releaseId)
+        : eq(taskTable.releaseId, options.releaseId),
+    );
+  }
+
   const whereClause = and(...conditions);
   const page = options.page && options.page > 0 ? options.page : 1;
   const pageSize =
@@ -194,6 +206,9 @@ async function getTasksPage(
     projectId: taskTable.projectId,
     type: taskTable.type,
     featureId: taskTable.featureId,
+    releaseId: options.publicOnly
+      ? sql<string | null>`null`
+      : taskTable.releaseId,
   };
 
   const query = db

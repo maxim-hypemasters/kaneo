@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}}（新規）",
 				"chooseProjectForFeature": "機能を選択するにはプロジェクトを選択してください。",
 				"loadingFeatures": "機能を読み込み中...",
-				"loadFeaturesError": "機能を読み込めませんでした。"
+				"loadFeaturesError": "機能を読み込めませんでした。",
+				"release": "リリース",
+				"noRelease": "リリースなし",
+				"searchReleases": "リリースを検索...",
+				"releaseFromFeature": "{{name}}（機能から継承）",
+				"chooseProjectForRelease": "リリースを選択するにはプロジェクトを選択してください。",
+				"loadingReleases": "リリースを読み込み中...",
+				"loadReleasesError": "リリースを読み込めませんでした。",
+				"noReleasesFound": "リリースが見つかりません"
 			}
 		},
 		"editor": {
@@ -2360,7 +2368,9 @@
 				"open": "開く",
 				"close": "閉じる"
 			},
-			"createFeature": "機能を作成"
+			"createFeature": "機能を作成",
+			"goToReleases": "リリースへ移動",
+			"createRelease": "リリースを作成"
 		},
 		"sidebar": {
 			"projects": "プロジェクト",
@@ -2530,7 +2540,9 @@
 				"editorNumberedList": "番号付きリスト",
 				"editorCodeBlock": "コードブロック",
 				"editorUndo": "元に戻す",
-				"editorRedo": "やり直す"
+				"editorRedo": "やり直す",
+				"goToReleases": "リリースへ移動",
+				"setRelease": "リリースを設定"
 			},
 			"title": "キーボードショートカット",
 			"searchPlaceholder": "操作またはキーで検索",
@@ -2732,7 +2744,10 @@
 		"removedFromFeature": "がタスクを機能「{{feature}}」から外しました",
 		"changedFeature": "がタスクを機能「{{from}}」から「{{to}}」に移動しました",
 		"madeFeature": "がこのタスクを機能にしました",
-		"madeTask": "がこの機能をタスクにしました"
+		"madeTask": "がこの機能をタスクにしました",
+		"addedToRelease": "がタスクをリリース「{{release}}」に追加しました",
+		"removedFromRelease": "がタスクをリリース「{{release}}」から外しました",
+		"changedRelease": "がタスクをリリース「{{from}}」から「{{to}}」に移動しました"
 	},
 	"tasks": {
 		"title": "タスク",
@@ -2758,7 +2773,8 @@
 			"list": "リスト",
 			"backlog": "バックログ",
 			"gantt": "ガント",
-			"heading": "ビュー"
+			"heading": "ビュー",
+			"releases": "リリース"
 		},
 		"common": {
 			"selectTask": "タスクを選択",
@@ -3030,7 +3046,8 @@
 				"priority": "優先度",
 				"assignee": "担当者",
 				"dueDate": "期限",
-				"labels": "ラベル"
+				"labels": "ラベル",
+				"release": "リリース"
 			},
 			"operators": {
 				"isAnyOf": "次のいずれか",
@@ -3326,6 +3343,140 @@
 			"convertBlocked": "タスクにする前に、この機能のタスクを機能から外してください。",
 			"openFeature": "機能 {{title}} を開く",
 			"inProject": "プロジェクト内の機能"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – リリース",
+			"count_other": "{{count}} 件のリリース",
+			"new": "新規リリース",
+			"edit": "リリースを編集",
+			"delete": "リリースを削除",
+			"property": "リリース",
+			"none": "リリースなし",
+			"unknown": "不明なリリース",
+			"searchPlaceholder": "リリースを検索…",
+			"pickerEmpty": "このプロジェクトにはまだリリースがありません",
+			"updateError": "リリースの更新に失敗しました",
+			"featureReleaseHint": "機能のリリース",
+			"followNote": "この機能に連動するタスクも一緒に移動します。",
+			"movedWithFeature_other": "この機能のタスク {{count}} 件も移動しました",
+			"loadError": "リリースを読み込めませんでした。",
+			"retry": "もう一度試す",
+			"sections": {
+				"active": "進行中",
+				"upcoming": "今後",
+				"past": "過去"
+			},
+			"phase": {
+				"upcoming": "開始前",
+				"inProgress": "進行中",
+				"codeFreeze": "コードフリーズ",
+				"pastSubmission": "提出済み"
+			},
+			"dates": {
+				"start": "開始日",
+				"codeFreeze": "コードフリーズ",
+				"submission": "提出日"
+			},
+			"countdown": {
+				"startsIn_other": "{{count}}日後に開始",
+				"startsToday": "今日開始",
+				"freezeIn_other": "{{count}}日後にコードフリーズ",
+				"freezeToday": "今日コードフリーズ",
+				"submissionIn_other": "{{count}}日後に提出",
+				"submissionToday": "今日提出",
+				"submittedAgo_other": "{{count}}日前に提出"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_other": "{{count}} 件中 {{completed}} 件のタスクが完了",
+			"counts": {
+				"features_other": "{{count}} 件の機能",
+				"tasks_other": "{{count}} 件のタスク",
+				"unfinished_other": "未完了 {{count}} 件"
+			},
+			"empty": {
+				"title": "リリースはまだありません",
+				"description": "開始日、コードフリーズ、提出日を設定してリリースを計画し、機能やタスクを追加しましょう。",
+				"readOnly": "このプロジェクトで計画されたリリースがここに表示されます。"
+			},
+			"dialog": {
+				"createTitle": "新規リリース",
+				"editTitle": "リリースを編集",
+				"createDescription": "リリースには開始日、コードフリーズ、提出日をこの順に設定します。",
+				"nameLabel": "名前",
+				"namePlaceholder": "例: 2.4",
+				"nameRequired": "名前を入力してください",
+				"dateRequired": "日付を選択してください",
+				"startLabel": "開始日",
+				"codeFreezeLabel": "コードフリーズ",
+				"submissionLabel": "提出日",
+				"pickDate": "日付を選択",
+				"descriptionLabel": "説明",
+				"descriptionPlaceholder": "このリリースで提供する内容（任意）",
+				"create": "リリースを作成",
+				"save": "保存",
+				"createSuccess": "リリースを作成しました",
+				"updateSuccess": "リリースを更新しました",
+				"createError": "リリースの作成に失敗しました",
+				"updateError": "リリースの更新に失敗しました",
+				"beforeStart": "{{date}} は開始日より前です",
+				"afterCodeFreeze": "{{date}} はコードフリーズより後です",
+				"beforeCodeFreeze": "{{date}} はコードフリーズより前です",
+				"afterSubmission": "{{date}} は提出日より後です",
+				"limitHint": "{{start}} から {{end}} まで"
+			},
+			"deleteDialog": {
+				"title": "「{{name}}」を削除しますか？",
+				"description_other": "このリリースの {{count}} 件のタスク・機能は、リリース未設定のままプロジェクトに残ります。",
+				"descriptionEmpty": "このリリースにはタスクも機能もありません。",
+				"confirm": "リリースを削除",
+				"success": "リリースを削除しました",
+				"error": "リリースの削除に失敗しました"
+			},
+			"moveUnfinished": {
+				"action": "未完了の項目を移動…",
+				"title": "未完了の項目を移動",
+				"description": "未完了のタスクと機能はそれぞれ個別に移動します。完了済みのものは {{name}} に残ります。",
+				"target": "移動先",
+				"noRelease": "リリースなし",
+				"summary_other": "未完了の項目 {{count}} 件が移動します。",
+				"none": "このリリースの項目はすべて完了しています。",
+				"noTargets": "ほかのリリースはありません",
+				"confirm": "項目を移動",
+				"success_other": "{{count}} 件の項目を {{name}} に移動しました",
+				"successNoRelease_other": "{{count}} 件の項目をリリースから外しました",
+				"error": "項目の移動に失敗しました"
+			},
+			"detail": {
+				"back": "すべてのリリース",
+				"notFound": "このリリースは存在しないか、削除されました。",
+				"backToReleases": "リリースに戻る",
+				"standaloneHeading": "機能に属さないタスク",
+				"empty": "このリリースにはまだ何もありません",
+				"emptyHint": "タスクや機能にリリースを設定するか、ここでタスクを追加してください。",
+				"addTask": "タスクを追加",
+				"featureElsewhere": "このリリースに含まれていない機能",
+				"tasksElsewhere_other": "このリリース外のタスクがほかに {{count}} 件",
+				"today": "今日",
+				"loadingTasks": "タスクを読み込み中…",
+				"timelineLabel": "リリースのタイムライン"
+			},
+			"gantt": {
+				"strip": "リリース",
+				"markerAria": "{{name}}: {{kind}}、{{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "開始: {{date}}",
+					"codeFreeze": "コードフリーズ: {{date}}",
+					"submission": "提出: {{date}}"
+				},
+				"actionsFor": "{{name}} の操作",
+				"loading": "リリースを読み込み中…",
+				"tasksLoadError": "タスクを読み込めませんでした。"
+			},
+			"ux": {
+				"nameTaken": "この名前のリリースは既に存在します"
+			}
 		}
 	},
 	"invitations": {

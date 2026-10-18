@@ -35,6 +35,13 @@ const nullableOptionalIsoDateTimeSchema = isoDateTimeSchema
 // A feature is a task that groups the tasks of one piece of work; it stays on
 // the board with its own status, assignee and dates.
 const taskTypeSchema = z.enum(["task", "feature"]);
+// Release dates are calendar days with no time zone.
+const releaseDaySchema = z.iso.date();
+const optionalReleaseDaySchema = releaseDaySchema.optional();
+const releaseDescriptionSchema = z.string().max(10_000);
+const releaseNameSchema = nonEmptyString.max(100);
+const RELEASE_PHASES =
+  "The phase isn't stored: compare today with the dates. Upcoming before startDate; in progress from startDate until the day before codeFreezeDate; code freeze from codeFreezeDate through submissionDate; past submission after submissionDate.";
 const hexColorSchema = z
   .string()
   .regex(
@@ -222,13 +229,16 @@ export function registerTools(
     sortOrder: z.enum(["asc", "desc"]).optional(),
     dueBefore: optionalIsoDateTimeSchema,
     dueAfter: optionalIsoDateTimeSchema,
+    releaseId: optionalNonEmptyString.describe(
+      "Only tasks and features in this release, or 'none' for those in no release",
+    ),
   });
 
   registerTool(
     "list_tasks",
     {
       description:
-        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each task has a type ('task' or 'feature') and a featureId (the feature it belongs to, or null); a feature's subtaskCounts is the progress of its tasks.",
+        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each task has a type ('task' or 'feature'), a featureId (the feature it belongs to, or null) and a releaseId (its release, or null); a feature's subtaskCounts is the progress of its tasks.",
       inputSchema: listTasksSchema,
     },
     async (args) => {
@@ -250,7 +260,7 @@ export function registerTools(
     "get_task",
     {
       description:
-        "Get a task by ID, including its type ('task' or 'feature') and featureId (the feature it belongs to, or null).",
+        "Get a task by ID, including its type ('task' or 'feature'), featureId (the feature it belongs to, or null) and releaseId (its release, or null).",
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>
@@ -290,7 +300,7 @@ export function registerTools(
     "create_task",
     {
       description:
-        "Create a task in a project. Pass type 'feature' to create a feature, or featureId to create the task inside a feature of the same project in one call. A feature can't belong to another feature.",
+        "Create a task in a project. Pass type 'feature' to create a feature, or featureId to create the task inside a feature of the same project in one call. A feature can't belong to another feature. Without releaseId, a task created in a feature starts in the feature's release, and any other task in none.",
       inputSchema: z.object({
         projectId: nonEmptyString,
         title: nonEmptyString,
@@ -308,10 +318,13 @@ export function registerTools(
         featureId: optionalNonEmptyString.describe(
           "Create the task inside this feature (a task of type 'feature' in the same project).",
         ),
+        releaseId: nullableOptionalNonEmptyString.describe(
+          "A release of the same project (see list_releases), or null for none. Omit it to follow the feature's release.",
+        ),
       }),
     },
     async (args) => {
-      const body: Record<string, string | undefined> = {
+      const body: Record<string, string | null | undefined> = {
         title: args.title,
         description: args.description,
         priority: args.priority,
@@ -332,6 +345,9 @@ export function registerTools(
       if (args.featureId !== undefined) {
         body.featureId = args.featureId;
       }
+      if (args.releaseId !== undefined) {
+        body.releaseId = args.releaseId;
+      }
       return run(() =>
         client.json(`/api/task/${encodeURIComponent(args.projectId)}`, {
           method: "POST",
@@ -345,7 +361,7 @@ export function registerTools(
     "duplicate_task",
     {
       description:
-        "Duplicate a task in the same project, copying its fields, labels, type and feature. A feature's tasks are not copied. Pass title to rename the copy.",
+        "Duplicate a task in the same project, copying its fields, labels, type, feature and release. A feature's tasks are not copied. Pass title to rename the copy.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         title: optionalNonEmptyString,
@@ -382,7 +398,7 @@ export function registerTools(
     "update_task",
     {
       description:
-        "Update a task (fetches current task, merges fields, then full update). Leaves the task's type and feature as they are: use set_task_type and set_task_feature for those.",
+        "Update a task (fetches current task, merges fields, then full update). Leaves the task's type, feature and release as they are: use set_task_type, set_task_feature and set_task_release for those.",
       inputSchema: updateTaskSchema,
     },
     async (args) => {
@@ -405,7 +421,7 @@ export function registerTools(
     "move_task",
     {
       description:
-        "Move a task to another project (and optional column status). The task leaves its feature; a feature that still has tasks can't be moved.",
+        "Move a task to another project (and optional column status). The task leaves its feature and its release; a feature that still has tasks can't be moved.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         destinationProjectId: nonEmptyString,
@@ -448,7 +464,7 @@ export function registerTools(
     "set_task_feature",
     {
       description:
-        "Put a task into a feature of its project, or pass a null featureId to take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one.",
+        "Put a task into a feature of its project, or pass a null featureId to take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one. A task in no release takes the feature's release when it joins; leaving a feature keeps the release.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         featureId: nonEmptyString
@@ -483,6 +499,164 @@ export function registerTools(
           method: "PUT",
           body: JSON.stringify({ type: args.type }),
         }),
+      ),
+  );
+
+  registerTool(
+    "list_releases",
+    {
+      description: `List a project's releases, ordered by start date, with their progress: tasks and features (total and completed, meaning in a final column) and unfinished (neither archived nor completed). Dates are YYYY-MM-DD calendar days ordered startDate ≤ codeFreezeDate ≤ submissionDate. ${RELEASE_PHASES}`,
+      inputSchema: z.object({ projectId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/release/project/${encodeURIComponent(args.projectId)}`,
+          { method: "GET" },
+        ),
+      ),
+  );
+
+  registerTool(
+    "get_release",
+    {
+      description: `Get a release by ID, with its progress. ${RELEASE_PHASES}`,
+      inputSchema: z.object({ releaseId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/release/${encodeURIComponent(args.releaseId)}`, {
+          method: "GET",
+        }),
+      ),
+  );
+
+  registerTool(
+    "create_release",
+    {
+      description:
+        "Create a release in a project: a planned delivery that holds features and tasks. The name must be unique in the project, and the dates must run startDate ≤ codeFreezeDate ≤ submissionDate (equal days are allowed). Needs permission to update the project (owners and admins by default).",
+      inputSchema: z.object({
+        projectId: nonEmptyString,
+        name: releaseNameSchema,
+        startDate: releaseDaySchema.describe("The first day of work"),
+        codeFreezeDate: releaseDaySchema.describe("The day changes stop"),
+        submissionDate: releaseDaySchema.describe("The day the release ships"),
+        description: releaseDescriptionSchema.optional(),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/release/project/${encodeURIComponent(args.projectId)}`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              name: args.name,
+              startDate: args.startDate,
+              codeFreezeDate: args.codeFreezeDate,
+              submissionDate: args.submissionDate,
+              ...(args.description !== undefined
+                ? { description: args.description }
+                : {}),
+            }),
+          },
+        ),
+      ),
+  );
+
+  registerTool(
+    "update_release",
+    {
+      description:
+        "Update a release (PATCH-style: only provided fields are changed). The date order is checked against the stored dates. Pass a null description to clear it. Its features and tasks stay in it. Needs permission to update the project.",
+      inputSchema: z.object({
+        releaseId: nonEmptyString,
+        name: releaseNameSchema.optional(),
+        startDate: optionalReleaseDaySchema,
+        codeFreezeDate: optionalReleaseDaySchema,
+        submissionDate: optionalReleaseDaySchema,
+        description: releaseDescriptionSchema.nullable().optional(),
+      }),
+    },
+    async (args) => {
+      const { releaseId, ...patch } = args;
+      const body = Object.fromEntries(
+        Object.entries(patch).filter(([, value]) => value !== undefined),
+      );
+      if (Object.keys(body).length === 0) {
+        return errorResult(
+          "Nothing to update: pass name, startDate, codeFreezeDate, submissionDate or description.",
+        );
+      }
+      return run(() =>
+        client.json(`/api/release/${encodeURIComponent(releaseId)}`, {
+          method: "PUT",
+          body: JSON.stringify(body),
+        }),
+      );
+    },
+  );
+
+  registerTool(
+    "delete_release",
+    {
+      description:
+        "Delete a release. Its features and tasks stay in the project with no release, and each records the change in its activity. Needs permission to update the project and its tasks.",
+      inputSchema: z.object({ releaseId: nonEmptyString }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/release/${encodeURIComponent(args.releaseId)}`, {
+          method: "DELETE",
+        }),
+      ),
+  );
+
+  registerTool(
+    "set_task_release",
+    {
+      description:
+        "Put a task or feature into a release of its project, or pass a null releaseId to take it out. A task follows its feature while both are in the same release (or both in none): setting a feature's release also moves those tasks, and the result lists them in movedTaskIds. Tasks given another release keep theirs, and a task can always be moved on its own.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        releaseId: nonEmptyString
+          .nullable()
+          .describe(
+            "A release in the task's project, or null to take the task out of its release",
+          ),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(`/api/task/release/${encodeURIComponent(args.taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ releaseId: args.releaseId }),
+        }),
+      ),
+  );
+
+  registerTool(
+    "move_unfinished_release_items",
+    {
+      description:
+        "Move a release's unfinished tasks and features (neither archived nor in a final column) to another release of the same project, or out of every release with a null targetReleaseId. Each item moves on its own: a feature's tasks don't follow it, and finished items stay. Returns movedTaskIds.",
+      inputSchema: z.object({
+        releaseId: nonEmptyString.describe("The release to move items out of"),
+        targetReleaseId: nonEmptyString
+          .nullable()
+          .describe("Another release of the project, or null for none"),
+      }),
+    },
+    async (args) =>
+      run(() =>
+        client.json(
+          `/api/release/${encodeURIComponent(args.releaseId)}/move-unfinished`,
+          {
+            method: "POST",
+            body: JSON.stringify({ targetReleaseId: args.targetReleaseId }),
+          },
+        ),
       ),
   );
 

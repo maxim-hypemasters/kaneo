@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (нова)",
 				"chooseProjectForFeature": "Оберіть проєкт, щоб вибрати функцію.",
 				"loadingFeatures": "Завантаження функцій...",
-				"loadFeaturesError": "Не вдалося завантажити функції."
+				"loadFeaturesError": "Не вдалося завантажити функції.",
+				"release": "Реліз",
+				"noRelease": "Без релізу",
+				"searchReleases": "Пошук релізів...",
+				"releaseFromFeature": "{{name}} (з функції)",
+				"chooseProjectForRelease": "Оберіть проєкт, щоб вибрати реліз.",
+				"loadingReleases": "Завантаження релізів...",
+				"loadReleasesError": "Не вдалося завантажити релізи.",
+				"noReleasesFound": "Релізи не знайдено"
 			}
 		},
 		"editor": {
@@ -2486,7 +2494,9 @@
 				"open": "Відкрити",
 				"close": "Закрити"
 			},
-			"createFeature": "Створити функцію"
+			"createFeature": "Створити функцію",
+			"goToReleases": "Перейти до релізів",
+			"createRelease": "Створити реліз"
 		},
 		"sidebar": {
 			"projects": "Проєкти",
@@ -2656,7 +2666,9 @@
 				"editorNumberedList": "Нумерований список",
 				"editorCodeBlock": "Блок коду",
 				"editorUndo": "Скасувати",
-				"editorRedo": "Повторити"
+				"editorRedo": "Повторити",
+				"goToReleases": "Перейти до релізів",
+				"setRelease": "Задати реліз"
 			},
 			"title": "Гарячі клавіші",
 			"searchPlaceholder": "Пошук за дією або клавішею",
@@ -2873,7 +2885,10 @@
 		"removedFromFeature": "вилучив завдання з функції «{{feature}}»",
 		"changedFeature": "перемістив завдання з функції «{{from}}» до «{{to}}»",
 		"madeFeature": "зробив це завдання функцією",
-		"madeTask": "зробив цю функцію завданням"
+		"madeTask": "зробив цю функцію завданням",
+		"addedToRelease": "додав завдання до релізу «{{release}}»",
+		"removedFromRelease": "вилучив завдання з релізу «{{release}}»",
+		"changedRelease": "перемістив завдання з релізу «{{from}}» до «{{to}}»"
 	},
 	"tasks": {
 		"title": "Завдання",
@@ -2899,7 +2914,8 @@
 			"list": "Список",
 			"backlog": "Беклог",
 			"gantt": "Ґант",
-			"heading": "Вигляд"
+			"heading": "Вигляд",
+			"releases": "Релізи"
 		},
 		"common": {
 			"selectTask": "Обрати завдання",
@@ -3171,7 +3187,8 @@
 				"priority": "Пріоритет",
 				"assignee": "Виконавець",
 				"dueDate": "Дата завершення",
-				"labels": "Мітки"
+				"labels": "Мітки",
+				"release": "Реліз"
 			},
 			"operators": {
 				"isAnyOf": "є будь-яким з",
@@ -3515,6 +3532,185 @@
 			"convertBlocked": "Перемістіть завдання з цієї функції, перш ніж перетворити її на завдання.",
 			"openFeature": "Відкрити функцію {{title}}",
 			"inProject": "Функції в проєкті"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Релізи",
+			"count_one": "{{count}} реліз",
+			"count_few": "{{count}} релізи",
+			"count_many": "{{count}} релізів",
+			"count_other": "{{count}} релізу",
+			"new": "Новий реліз",
+			"edit": "Редагувати реліз",
+			"delete": "Видалити реліз",
+			"property": "Реліз",
+			"none": "Без релізу",
+			"unknown": "Невідомий реліз",
+			"searchPlaceholder": "Пошук релізів…",
+			"pickerEmpty": "У цьому проєкті ще немає релізів",
+			"updateError": "Не вдалося оновити реліз",
+			"featureReleaseHint": "Реліз функції",
+			"followNote": "Завдання, які слідують за цією функцією, переміщуються разом з нею.",
+			"movedWithFeature_one": "Також переміщено {{count}} завдання цієї функції",
+			"movedWithFeature_few": "Також переміщено {{count}} завдання цієї функції",
+			"movedWithFeature_many": "Також переміщено {{count}} завдань цієї функції",
+			"movedWithFeature_other": "Також переміщено {{count}} завдання цієї функції",
+			"loadError": "Не вдалося завантажити релізи.",
+			"retry": "Спробувати ще раз",
+			"sections": {
+				"active": "Активні",
+				"upcoming": "Майбутні",
+				"past": "Минулі"
+			},
+			"phase": {
+				"upcoming": "Майбутній",
+				"inProgress": "В роботі",
+				"codeFreeze": "Заморожування коду",
+				"pastSubmission": "Після подання"
+			},
+			"dates": {
+				"start": "Початок",
+				"codeFreeze": "Заморожування коду",
+				"submission": "Подання"
+			},
+			"countdown": {
+				"startsIn_one": "Почнеться через {{count}} день",
+				"startsIn_few": "Почнеться через {{count}} дні",
+				"startsIn_many": "Почнеться через {{count}} днів",
+				"startsIn_other": "Почнеться через {{count}} дня",
+				"startsToday": "Починається сьогодні",
+				"freezeIn_one": "Заморожування коду через {{count}} день",
+				"freezeIn_few": "Заморожування коду через {{count}} дні",
+				"freezeIn_many": "Заморожування коду через {{count}} днів",
+				"freezeIn_other": "Заморожування коду через {{count}} дня",
+				"freezeToday": "Заморожування коду сьогодні",
+				"submissionIn_one": "Подання через {{count}} день",
+				"submissionIn_few": "Подання через {{count}} дні",
+				"submissionIn_many": "Подання через {{count}} днів",
+				"submissionIn_other": "Подання через {{count}} дня",
+				"submissionToday": "Подання сьогодні",
+				"submittedAgo_one": "Подано {{count}} день тому",
+				"submittedAgo_few": "Подано {{count}} дні тому",
+				"submittedAgo_many": "Подано {{count}} днів тому",
+				"submittedAgo_other": "Подано {{count}} дня тому"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "Виконано {{completed}} з {{count}} завдання",
+			"progressAria_few": "Виконано {{completed}} з {{count}} завдань",
+			"progressAria_many": "Виконано {{completed}} з {{count}} завдань",
+			"progressAria_other": "Виконано {{completed}} з {{count}} завдання",
+			"counts": {
+				"features_one": "{{count}} функція",
+				"features_few": "{{count}} функції",
+				"features_many": "{{count}} функцій",
+				"features_other": "{{count}} функції",
+				"tasks_one": "{{count}} завдання",
+				"tasks_few": "{{count}} завдання",
+				"tasks_many": "{{count}} завдань",
+				"tasks_other": "{{count}} завдання",
+				"unfinished_one": "{{count}} незавершене",
+				"unfinished_few": "{{count}} незавершені",
+				"unfinished_many": "{{count}} незавершених",
+				"unfinished_other": "{{count}} незавершеного"
+			},
+			"empty": {
+				"title": "Релізів ще немає",
+				"description": "Заплануйте реліз із датою початку, заморожуванням коду та датою подання, а потім додайте до нього функції та завдання.",
+				"readOnly": "Тут з'являться релізи, заплановані для цього проєкту."
+			},
+			"dialog": {
+				"createTitle": "Новий реліз",
+				"editTitle": "Редагувати реліз",
+				"createDescription": "Реліз має дату початку, заморожування коду та дату подання — саме в такому порядку.",
+				"nameLabel": "Назва",
+				"namePlaceholder": "напр. 2.4",
+				"nameRequired": "Введіть назву",
+				"dateRequired": "Виберіть дату",
+				"startLabel": "Початок",
+				"codeFreezeLabel": "Заморожування коду",
+				"submissionLabel": "Подання",
+				"pickDate": "Вибрати дату",
+				"descriptionLabel": "Опис",
+				"descriptionPlaceholder": "Що увійде в цей реліз (необов'язково)",
+				"create": "Створити реліз",
+				"save": "Зберегти",
+				"createSuccess": "Реліз створено",
+				"updateSuccess": "Реліз оновлено",
+				"createError": "Не вдалося створити реліз",
+				"updateError": "Не вдалося оновити реліз",
+				"beforeStart": "{{date}} — раніше за дату початку",
+				"afterCodeFreeze": "{{date}} — пізніше за заморожування коду",
+				"beforeCodeFreeze": "{{date}} — раніше за заморожування коду",
+				"afterSubmission": "{{date}} — пізніше за дату подання",
+				"limitHint": "Між {{start}} і {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Видалити реліз {{name}}?",
+				"description_one": "{{count}} завдання або функція залишиться в проєкті, але без релізу.",
+				"description_few": "{{count}} завдання та функції залишаться в проєкті, але без релізу.",
+				"description_many": "{{count}} завдань і функцій залишаться в проєкті, але без релізу.",
+				"description_other": "{{count}} завдання та функції залишаться в проєкті, але без релізу.",
+				"descriptionEmpty": "У цьому релізі немає ні завдань, ні функцій.",
+				"confirm": "Видалити реліз",
+				"success": "Реліз видалено",
+				"error": "Не вдалося видалити реліз"
+			},
+			"moveUnfinished": {
+				"action": "Перенести незавершене…",
+				"title": "Перенести незавершені елементи",
+				"description": "Незавершені завдання та функції переносяться окремо. Завершені залишаються в релізі {{name}}.",
+				"target": "Перенести до",
+				"noRelease": "Без релізу",
+				"summary_one": "Буде перенесено {{count}} незавершений елемент.",
+				"summary_few": "Буде перенесено {{count}} незавершені елементи.",
+				"summary_many": "Буде перенесено {{count}} незавершених елементів.",
+				"summary_other": "Буде перенесено {{count}} незавершеного елемента.",
+				"none": "У цьому релізі все завершено.",
+				"noTargets": "Інших релізів немає",
+				"confirm": "Перенести елементи",
+				"success_one": "Перенесено {{count}} елемент до релізу {{name}}",
+				"success_few": "Перенесено {{count}} елементи до релізу {{name}}",
+				"success_many": "Перенесено {{count}} елементів до релізу {{name}}",
+				"success_other": "Перенесено {{count}} елемента до релізу {{name}}",
+				"successNoRelease_one": "Вилучено {{count}} елемент із релізу",
+				"successNoRelease_few": "Вилучено {{count}} елементи з релізу",
+				"successNoRelease_many": "Вилучено {{count}} елементів із релізу",
+				"successNoRelease_other": "Вилучено {{count}} елемента з релізу",
+				"error": "Не вдалося перенести елементи"
+			},
+			"detail": {
+				"back": "Усі релізи",
+				"notFound": "Цей реліз не існує або його видалено.",
+				"backToReleases": "Назад до релізів",
+				"standaloneHeading": "Завдання без функції",
+				"empty": "У цьому релізі ще нічого немає",
+				"emptyHint": "Вкажіть реліз для завдання чи функції або додайте завдання тут.",
+				"addTask": "Додати завдання",
+				"featureElsewhere": "Функція поза цим релізом",
+				"tasksElsewhere_one": "Ще {{count}} завдання поза цим релізом",
+				"tasksElsewhere_few": "Ще {{count}} завдання поза цим релізом",
+				"tasksElsewhere_many": "Ще {{count}} завдань поза цим релізом",
+				"tasksElsewhere_other": "Ще {{count}} завдання поза цим релізом",
+				"today": "Сьогодні",
+				"loadingTasks": "Завантаження завдань…",
+				"timelineLabel": "Часова шкала релізу"
+			},
+			"gantt": {
+				"strip": "Релізи",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Початок: {{date}}",
+					"codeFreeze": "Заморожування коду: {{date}}",
+					"submission": "Подання: {{date}}"
+				},
+				"actionsFor": "Дії для релізу {{name}}",
+				"loading": "Завантаження релізів…",
+				"tasksLoadError": "Не вдалося завантажити завдання."
+			},
+			"ux": {
+				"nameTaken": "Реліз із такою назвою вже існує"
+			}
 		}
 	},
 	"invitations": {

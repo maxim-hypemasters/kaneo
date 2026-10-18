@@ -15,6 +15,7 @@ import {
   it,
   vi,
 } from "vite-plus/test";
+import { releaseSummaries } from "@/lib/releases/release-summaries";
 import type Task from "@/types/task";
 import { Route } from "./gantt";
 
@@ -47,11 +48,41 @@ vi.mock("@tanstack/react-router", () => ({
     useSearch: () => ({ taskId: undefined }),
   }),
   useNavigate: () => navigate,
+  Link: ({
+    to,
+    params = {},
+    children,
+    ...props
+  }: {
+    to: string;
+    params?: Record<string, string>;
+    children?: ReactNode;
+  }) => (
+    <a
+      href={Object.entries(params).reduce(
+        (path, [name, value]) => path.replace(`$${name}`, value),
+        to,
+      )}
+      {...props}
+    >
+      {children}
+    </a>
+  ),
 }));
 
 const useGetTasks = vi.fn();
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
   useGetTasks: (projectId: string) => useGetTasks(projectId),
+}));
+
+// Mutable like routeParams; reset after each test.
+const releasesQuery: { data: unknown[] | undefined; isPending: boolean } = {
+  data: [],
+  isPending: false,
+};
+const useGetReleases = vi.fn((..._args: unknown[]) => releasesQuery);
+vi.mock("@/hooks/queries/release/use-get-releases", () => ({
+  useGetReleases: (...args: unknown[]) => useGetReleases(...args),
 }));
 
 vi.mock("@/hooks/use-mobile", () => ({
@@ -139,6 +170,8 @@ vi.mock("@/components/project/task-filters/use-task-filter-options", () => ({
     labels: [],
     customFields: [],
     usedCustomFieldValues: {},
+    releases: [],
+    releasesLoading: false,
   }),
 }));
 
@@ -274,6 +307,9 @@ afterEach(() => {
   useGetTasks.mockReset();
   membersQuery.mockClear();
   routeParams.projectId = "project-1";
+  releasesQuery.data = [];
+  releasesQuery.isPending = false;
+  window.localStorage.clear();
   preferences.ganttGroupBy = "none";
   projectMembers.length = 0;
   projectRelations.length = 0;
@@ -1154,6 +1190,112 @@ describe("Gantt navigation", () => {
       expect.objectContaining({
         to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
       }),
+    );
+  });
+});
+
+describe("Gantt releases", () => {
+  const release = (overrides: Record<string, string> = {}) => ({
+    id: "release-24",
+    projectId: "project-1",
+    name: "2.4",
+    description: null,
+    startDate: "2026-08-24",
+    codeFreezeDate: "2026-09-04",
+    submissionDate: "2026-09-04",
+    ...overrides,
+  });
+  const lines = (container: HTMLElement) =>
+    [
+      ...container.querySelectorAll<HTMLElement>(
+        "[data-gantt-release-markers] [data-release-line]",
+      ),
+    ].map((line) => line.dataset.releaseLine);
+
+  it("reads the releases without the progress it never shows", () => {
+    mockProjectWithTask(
+      makeTask({ startDate: "2026-08-28", dueDate: "2026-09-02" }),
+    );
+
+    render(<GanttRoute />);
+
+    // So a completion elsewhere, which only changes progress, doesn't redraw
+    // every row.
+    expect(useGetReleases).toHaveBeenLastCalledWith("project-1", {
+      select: releaseSummaries,
+    });
+  });
+
+  it("draws a line at each release date and links its label to the release", () => {
+    releasesQuery.data = [release()];
+    mockProjectWithTask(
+      makeTask({ startDate: "2026-08-28", dueDate: "2026-09-02" }),
+    );
+
+    const { container } = render(<GanttRoute />);
+
+    expect(lines(container)).toEqual(["start", "codeFreeze", "submission"]);
+    const strip = screen.getByRole("list", { name: "Releases" });
+    expect(
+      within(strip).getByRole("link", { name: "2.4: Start, Aug 24" }),
+    ).toHaveAttribute(
+      "href",
+      "/dashboard/workspace/workspace-1/project/project-1/releases/release-24",
+    );
+    expect(
+      within(strip).getByRole("link", {
+        name: "2.4: Code freeze and Submission, Sep 4",
+      }),
+    ).toBeVisible();
+  });
+
+  it("follows the Release filter", () => {
+    window.localStorage.setItem(
+      "kaneo:board-filters:project-1",
+      JSON.stringify({ release: ["none"] }),
+    );
+    releasesQuery.data = [release()];
+    mockProjectWithTask(
+      makeTask({ startDate: "2026-08-28", dueDate: "2026-09-02" }),
+    );
+
+    const { container } = render(<GanttRoute />);
+
+    // The task, in no release, still shows; the release's lines don't.
+    expect(container.querySelector('[data-bar="task-1"]')).not.toBeNull();
+    expect(lines(container)).toEqual([]);
+    expect(screen.queryByRole("list", { name: "Releases" })).toBeNull();
+  });
+
+  it("waits for the releases, then opens on a current one around today", () => {
+    releasesQuery.isPending = true;
+    releasesQuery.data = undefined;
+    mockProjectWithTask(
+      makeTask({
+        id: "past-task",
+        title: "Old milestone",
+        startDate: "2025-01-01",
+        dueDate: "2025-01-03",
+      }),
+    );
+    const { container, rerender } = render(<GanttRoute />);
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    releasesQuery.isPending = false;
+    releasesQuery.data = [
+      release({
+        startDate: "2026-08-01",
+        codeFreezeDate: "2026-09-10",
+        submissionDate: "2026-09-20",
+      }),
+    ];
+    rerender(<GanttRoute />);
+
+    // Today (Aug 31) is in the release, so the chart opens on it although
+    // the task is far off.
+    expect(container.querySelector('[aria-current="date"]')).not.toBeNull();
+    expect(scrollIntoView).toHaveBeenCalledWith(
+      expect.objectContaining({ behavior: "auto", inline: "center" }),
     );
   });
 });

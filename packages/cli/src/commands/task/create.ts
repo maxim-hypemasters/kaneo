@@ -28,6 +28,7 @@ import { Session } from "../../services/session.js";
 import { createStatus, FALLBACK_STATUS } from "../../tasks/create-status.js";
 import { checkDateRange } from "../../tasks/date-range.js";
 import { parseDateInput } from "../../tasks/parse-date.js";
+import { resolveTaskRelease } from "../../releases/resolve-task-release.js";
 import { renderTaskChange } from "../../tasks/render-task-change.js";
 import { resolveAssignee } from "../../tasks/resolve-assignee.js";
 import {
@@ -102,6 +103,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     readonly label: ReadonlyArray<string>;
     readonly type: TaskType;
     readonly feature: Option.Option<string>;
+    readonly release: Option.Option<string>;
   }) {
     const session = yield* Session;
     const now = new Date();
@@ -123,6 +125,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     );
     if (feature)
       yield* Effect.fromResult(checkFeatureProject(feature, project));
+    const release = yield* resolveTaskRelease(options.release, project);
     const title = yield* resolveTitle(options.title);
 
     const [columns, assignee, labels] = yield* withSpinner(
@@ -158,6 +161,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
       ...(startDate ? { startDate } : {}),
       ...(options.type === "feature" ? { type: options.type } : {}),
       ...(feature ? { featureId: feature.task.id } : {}),
+      ...(release === undefined ? {} : { releaseId: release?.id ?? null }),
     };
     const created = yield* withSpinner("Creating task")(
       createTask(project.id, body),
@@ -197,6 +201,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
         title: created.title,
         type: created.type,
         featureId: created.featureId,
+        releaseId: created.releaseId,
         description: created.description,
         status: created.status,
         priority: created.priority,
@@ -243,6 +248,11 @@ export const runTaskCreate = Effect.fn("command.task.create")(
                   ),
                 ]
               : []),
+            ...(release
+              ? [ui.theme.muted(`in release ${release.name}`)]
+              : release === undefined && task.releaseId
+                ? [ui.theme.muted("in the feature's release")]
+                : []),
           ].join("  "),
         }),
     );
@@ -310,6 +320,12 @@ export const taskCreate = Command.make(
       Flag.withAlias("parent"),
       Flag.withDescription(
         "Create it in this feature, for example KAN-12 (default project: the feature's)",
+      ),
+      Flag.optional,
+    ),
+    release: Flag.String("release").pipe(
+      Flag.withDescription(
+        "Put it in this release of the project, by name or id, or none (default: the feature's release)",
       ),
       Flag.optional,
     ),

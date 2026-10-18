@@ -1,5 +1,6 @@
 import { addWeeks, endOfWeek, isWithinInterval, startOfWeek } from "date-fns";
 import { useEffect, useState } from "react";
+import { NO_RELEASE } from "@/lib/task-filters/release-filter-values";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
@@ -10,6 +11,8 @@ export type BoardFilters = {
   assignee: string[] | null;
   dueDate: string[] | null;
   labels: string[] | null;
+  // Release ids, or NO_RELEASE for items in no release.
+  release: string[] | null;
   customFields: Record<string, string[]> | null;
   negated?: string[] | null;
 };
@@ -26,6 +29,7 @@ const DEFAULT_FILTERS: BoardFilters = {
   assignee: null,
   dueDate: null,
   labels: null,
+  release: null,
   customFields: null,
 };
 
@@ -35,6 +39,7 @@ const FILTER_KEYS: Array<keyof BoardFilters> = [
   "assignee",
   "dueDate",
   "labels",
+  "release",
   "customFields",
 ];
 
@@ -166,6 +171,14 @@ export function useTaskFilters(
         if (!matchesAnyDueDate) {
           return false;
         }
+      }
+
+      if (
+        filters.release &&
+        filters.release.length > 0 &&
+        !filters.release.includes(task.releaseId ?? NO_RELEASE)
+      ) {
+        return false;
       }
 
       if (

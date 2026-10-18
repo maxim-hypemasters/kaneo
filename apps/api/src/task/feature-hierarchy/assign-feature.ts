@@ -2,6 +2,8 @@ import { and, count, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type db from "../../database";
 import { activityTable, taskTable } from "../../database/schema";
+import { releaseForJoiningTask } from "../../release/membership/follow-feature-release";
+import { recordReleaseChange } from "../../release/membership/record-release-change";
 import { recordFeatureChange } from "./record-feature-change";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -13,13 +15,18 @@ export type TaskType = Task["type"];
 // the target is a feature (locked FOR SHARE, so it can't turn back into a
 // task meanwhile) in the same project, and the task joining it is a task.
 // A task outside the project reads as missing, so its type stays private.
+// The lock also holds the feature's release, which tasks joining it take.
 export async function lockFeature(
   tx: Tx,
   featureId: string,
   projectId: string,
 ) {
   const [feature] = await tx
-    .select({ id: taskTable.id, type: taskTable.type })
+    .select({
+      id: taskTable.id,
+      type: taskTable.type,
+      releaseId: taskTable.releaseId,
+    })
     .from(taskTable)
     .where(and(eq(taskTable.id, featureId), eq(taskTable.projectId, projectId)))
     .for("share");
@@ -33,7 +40,9 @@ export async function lockFeature(
 }
 
 // Puts a task (locked FOR UPDATE by the caller) into a feature, or takes it
-// out with null. Returns the updated row; a no-op returns the task as is.
+// out with null. A task without a release joins its new feature's; leaving
+// or switching keeps the release it has. Returns the updated row; a no-op
+// returns the task as is.
 export async function setTaskFeature(
   tx: Tx,
   task: Task,
@@ -41,17 +50,19 @@ export async function setTaskFeature(
   userId?: string,
 ) {
   if (featureId === task.featureId) return task;
+  let releaseId = task.releaseId;
   if (featureId) {
     if (task.type === "feature") {
       throw new HTTPException(409, {
         message: "A feature can't belong to another feature",
       });
     }
-    await lockFeature(tx, featureId, task.projectId);
+    const feature = await lockFeature(tx, featureId, task.projectId);
+    releaseId = releaseForJoiningTask(task.releaseId, feature.releaseId);
   }
   const [updated] = await tx
     .update(taskTable)
-    .set({ featureId })
+    .set({ featureId, releaseId })
     .where(eq(taskTable.id, task.id))
     .returning();
   if (!updated) {
@@ -64,12 +75,19 @@ export async function setTaskFeature(
     to: featureId,
     userId,
   });
+  await recordReleaseChange(tx, {
+    taskIds: [task.id],
+    projectId: task.projectId,
+    from: task.releaseId,
+    to: releaseId,
+    userId,
+  });
   return updated;
 }
 
 // Turns a task (locked FOR UPDATE by the caller) into a feature or back. A
 // task becoming a feature leaves its own feature first; a feature can only
-// become a task once it has no tasks left.
+// become a task once it has no tasks left. Either way it keeps its release.
 export async function setTaskType(
   tx: Tx,
   task: Task,

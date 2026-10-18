@@ -54,6 +54,10 @@ export const listTasksQuery = z.object({
   sortOrder: z.enum(["asc", "desc"]).optional(),
   dueBefore: z.string().optional(),
   dueAfter: z.string().optional(),
+  releaseId: z.string().min(1).optional().openapi({
+    description:
+      "Only tasks and features in this release, or none for those in no release.",
+  }),
 });
 
 export const bulkUpdateBody = z.object({
@@ -91,6 +95,10 @@ export const createTaskBody = z.object({
     .openapi({ description: "Defaults to task." }),
   featureId: z.string().min(1).optional().openapi({
     description: "Create the task inside this feature of the project.",
+  }),
+  releaseId: z.string().min(1).nullable().optional().openapi({
+    description:
+      "A release of the project, or null for none. Omitted, the task starts in its feature's release, or in none.",
   }),
 });
 
@@ -142,6 +150,12 @@ export const updateFeatureBody = z.object({
   featureId: z.string().min(1).nullable().openapi({
     description:
       "A feature in the task's project, or null to take the task out of its feature.",
+  }),
+});
+export const updateTaskReleaseBody = z.object({
+  releaseId: z.string().min(1).nullable().openapi({
+    description:
+      "A release in the task's project, or null to take the task out of its release.",
   }),
 });
 export const updateTypeBody = z.object({

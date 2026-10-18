@@ -30,11 +30,19 @@ const SMOOTH_SCROLL_FALLBACK_MS = 1000;
 
 export type GanttScrollAlign = "start" | "center";
 
+type GanttSpanOfDays = { scheduleStart: Date; scheduleEnd: Date };
+
+const NO_EXTRA_SPANS: readonly GanttSpanOfDays[] = [];
+
 type UseGanttRangeOptions = {
   projectId: string;
   tasks: readonly ScheduledTask[];
-  // False while the board is still streaming in page by page: the opening
-  // span must be decided on all of the project's tasks.
+  // Other spans the opening span should cover along with the tasks (current
+  // releases). They widen it, never open a chart without tasks.
+  extraSpans?: readonly GanttSpanOfDays[];
+  // False while the board is still streaming in page by page, or the extra
+  // spans are still loading: the opening span must be decided on all of the
+  // project's tasks and spans.
   ready: boolean;
   weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   dayColumnWidthRem: number;
@@ -65,6 +73,7 @@ function clampDay(date: Date) {
 export function useGanttRange({
   projectId,
   tasks,
+  extraSpans = NO_EXTRA_SPANS,
   ready,
   weekStartsOn,
   dayColumnWidthRem,
@@ -72,8 +81,11 @@ export function useGanttRange({
   scrollElement,
 }: UseGanttRangeOptions) {
   const initialRange = useMemo(
-    () => initialGanttRange([...tasks], weekStartsOn),
-    [tasks, weekStartsOn],
+    () =>
+      tasks.length === 0
+        ? null
+        : initialGanttRange([...tasks, ...extraSpans], weekStartsOn),
+    [tasks, extraSpans, weekStartsOn],
   );
   const [state, setState] = useState<{
     projectId: string;

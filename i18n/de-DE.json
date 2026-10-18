@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (neu)",
 				"chooseProjectForFeature": "Wähle ein Projekt aus, um ein Feature auszuwählen.",
 				"loadingFeatures": "Features werden geladen...",
-				"loadFeaturesError": "Features konnten nicht geladen werden."
+				"loadFeaturesError": "Features konnten nicht geladen werden.",
+				"release": "Release",
+				"noRelease": "Kein Release",
+				"searchReleases": "Releases suchen...",
+				"releaseFromFeature": "{{name}} (vom Feature)",
+				"chooseProjectForRelease": "Wähle ein Projekt aus, um ein Release auszuwählen.",
+				"loadingReleases": "Releases werden geladen...",
+				"loadReleasesError": "Releases konnten nicht geladen werden.",
+				"noReleasesFound": "Keine Releases gefunden"
 			}
 		},
 		"editor": {
@@ -2402,7 +2410,9 @@
 				"open": "Öffnen",
 				"close": "Schließen"
 			},
-			"createFeature": "Feature erstellen"
+			"createFeature": "Feature erstellen",
+			"goToReleases": "Zu den Releases",
+			"createRelease": "Release erstellen"
 		},
 		"sidebar": {
 			"projects": "Projekte",
@@ -2572,7 +2582,9 @@
 				"editorNumberedList": "Nummerierte Liste",
 				"editorCodeBlock": "Codeblock",
 				"editorUndo": "Rückgängig",
-				"editorRedo": "Wiederholen"
+				"editorRedo": "Wiederholen",
+				"goToReleases": "Zu den Releases",
+				"setRelease": "Release festlegen"
 			},
 			"title": "Tastenkürzel",
 			"searchPlaceholder": "Nach Aktion oder Taste suchen",
@@ -2779,7 +2791,10 @@
 		"removedFromFeature": "hat die Aufgabe aus dem Feature \"{{feature}}\" entfernt",
 		"changedFeature": "hat die Aufgabe von Feature \"{{from}}\" nach \"{{to}}\" verschoben",
 		"madeFeature": "hat diese Aufgabe zu einem Feature gemacht",
-		"madeTask": "hat dieses Feature zu einer Aufgabe gemacht"
+		"madeTask": "hat dieses Feature zu einer Aufgabe gemacht",
+		"addedToRelease": "hat die Aufgabe zum Release \"{{release}}\" hinzugefügt",
+		"removedFromRelease": "hat die Aufgabe aus dem Release \"{{release}}\" entfernt",
+		"changedRelease": "hat die Aufgabe von Release \"{{from}}\" nach \"{{to}}\" verschoben"
 	},
 	"tasks": {
 		"title": "Aufgaben",
@@ -2805,7 +2820,8 @@
 			"list": "Liste",
 			"backlog": "Backlog",
 			"gantt": "Gantt",
-			"heading": "Ansicht"
+			"heading": "Ansicht",
+			"releases": "Releases"
 		},
 		"common": {
 			"selectTask": "Aufgabe auswählen",
@@ -3077,7 +3093,8 @@
 				"priority": "Priorität",
 				"assignee": "Zugewiesen",
 				"dueDate": "Fälligkeitsdatum",
-				"labels": "Labels"
+				"labels": "Labels",
+				"release": "Release"
 			},
 			"operators": {
 				"isAnyOf": "ist einer von",
@@ -3389,6 +3406,155 @@
 			"convertBlocked": "Entferne die Aufgaben aus diesem Feature, bevor du es in eine Aufgabe umwandelst.",
 			"openFeature": "Feature {{title}} öffnen",
 			"inProject": "Features im Projekt"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Releases",
+			"count_one": "{{count}} Release",
+			"count_other": "{{count}} Releases",
+			"new": "Neues Release",
+			"edit": "Release bearbeiten",
+			"delete": "Release löschen",
+			"property": "Release",
+			"none": "Kein Release",
+			"unknown": "Unbekanntes Release",
+			"searchPlaceholder": "Releases suchen…",
+			"pickerEmpty": "Noch keine Releases in diesem Projekt",
+			"updateError": "Release konnte nicht aktualisiert werden",
+			"featureReleaseHint": "Release des Features",
+			"followNote": "Aufgaben, die diesem Feature folgen, werden mitverschoben.",
+			"movedWithFeature_one": "{{count}} Aufgabe dieses Features wurde ebenfalls verschoben",
+			"movedWithFeature_other": "{{count}} Aufgaben dieses Features wurden ebenfalls verschoben",
+			"loadError": "Releases konnten nicht geladen werden.",
+			"retry": "Erneut versuchen",
+			"sections": {
+				"active": "Aktiv",
+				"upcoming": "Bevorstehend",
+				"past": "Vergangen"
+			},
+			"phase": {
+				"upcoming": "Bevorstehend",
+				"inProgress": "Läuft",
+				"codeFreeze": "Code-Freeze",
+				"pastSubmission": "Nach Einreichung"
+			},
+			"dates": {
+				"start": "Start",
+				"codeFreeze": "Code-Freeze",
+				"submission": "Einreichung"
+			},
+			"countdown": {
+				"startsIn_one": "Beginnt in {{count}} Tag",
+				"startsIn_other": "Beginnt in {{count}} Tagen",
+				"startsToday": "Beginnt heute",
+				"freezeIn_one": "Code-Freeze in {{count}} Tag",
+				"freezeIn_other": "Code-Freeze in {{count}} Tagen",
+				"freezeToday": "Code-Freeze heute",
+				"submissionIn_one": "Einreichung in {{count}} Tag",
+				"submissionIn_other": "Einreichung in {{count}} Tagen",
+				"submissionToday": "Einreichung heute",
+				"submittedAgo_one": "Vor {{count}} Tag eingereicht",
+				"submittedAgo_other": "Vor {{count}} Tagen eingereicht"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{completed}} von {{count}} Aufgabe erledigt",
+			"progressAria_other": "{{completed}} von {{count}} Aufgaben erledigt",
+			"counts": {
+				"features_one": "{{count}} Feature",
+				"features_other": "{{count}} Features",
+				"tasks_one": "{{count}} Aufgabe",
+				"tasks_other": "{{count}} Aufgaben",
+				"unfinished_one": "{{count}} offen",
+				"unfinished_other": "{{count}} offen"
+			},
+			"empty": {
+				"title": "Noch keine Releases",
+				"description": "Plane ein Release mit Startdatum, Code-Freeze und Einreichungsdatum und ordne ihm dann Features und Aufgaben zu.",
+				"readOnly": "Releases, die für dieses Projekt geplant sind, werden hier angezeigt."
+			},
+			"dialog": {
+				"createTitle": "Neues Release",
+				"editTitle": "Release bearbeiten",
+				"createDescription": "Ein Release hat ein Startdatum, einen Code-Freeze und ein Einreichungsdatum, in dieser Reihenfolge.",
+				"nameLabel": "Name",
+				"namePlaceholder": "z. B. 2.4",
+				"nameRequired": "Gib einen Namen ein",
+				"dateRequired": "Wähle ein Datum aus",
+				"startLabel": "Start",
+				"codeFreezeLabel": "Code-Freeze",
+				"submissionLabel": "Einreichung",
+				"pickDate": "Datum auswählen",
+				"descriptionLabel": "Beschreibung",
+				"descriptionPlaceholder": "Was dieses Release liefert (optional)",
+				"create": "Release erstellen",
+				"save": "Speichern",
+				"createSuccess": "Release erstellt",
+				"updateSuccess": "Release aktualisiert",
+				"createError": "Release konnte nicht erstellt werden",
+				"updateError": "Release konnte nicht aktualisiert werden",
+				"beforeStart": "{{date}} liegt vor dem Startdatum",
+				"afterCodeFreeze": "{{date}} liegt nach dem Code-Freeze",
+				"beforeCodeFreeze": "{{date}} liegt vor dem Code-Freeze",
+				"afterSubmission": "{{date}} liegt nach dem Einreichungsdatum",
+				"limitHint": "Zwischen {{start}} und {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Release {{name}} löschen?",
+				"description_one": "{{count}} Aufgabe oder Feature darin bleibt im Projekt, aber ohne Release.",
+				"description_other": "Die {{count}} Aufgaben und Features darin bleiben im Projekt, aber ohne Release.",
+				"descriptionEmpty": "Dieses Release enthält keine Aufgaben oder Features.",
+				"confirm": "Release löschen",
+				"success": "Release gelöscht",
+				"error": "Release konnte nicht gelöscht werden"
+			},
+			"moveUnfinished": {
+				"action": "Offene Elemente verschieben…",
+				"title": "Offene Elemente verschieben",
+				"description": "Aufgaben und Features, die nicht erledigt sind, werden einzeln verschoben. Erledigte bleiben in {{name}}.",
+				"target": "Verschieben nach",
+				"noRelease": "Kein Release",
+				"summary_one": "{{count}} offenes Element wird verschoben.",
+				"summary_other": "{{count}} offene Elemente werden verschoben.",
+				"none": "Alles in diesem Release ist erledigt.",
+				"noTargets": "Keine anderen Releases",
+				"confirm": "Elemente verschieben",
+				"success_one": "{{count}} Element nach {{name}} verschoben",
+				"success_other": "{{count}} Elemente nach {{name}} verschoben",
+				"successNoRelease_one": "{{count}} Element aus dem Release entfernt",
+				"successNoRelease_other": "{{count}} Elemente aus dem Release entfernt",
+				"error": "Elemente konnten nicht verschoben werden"
+			},
+			"detail": {
+				"back": "Alle Releases",
+				"notFound": "Dieses Release existiert nicht oder wurde gelöscht.",
+				"backToReleases": "Zurück zu den Releases",
+				"standaloneHeading": "Aufgaben ohne Feature",
+				"empty": "Noch nichts in diesem Release",
+				"emptyHint": "Lege das Release einer Aufgabe oder eines Features fest oder füge hier eine Aufgabe hinzu.",
+				"addTask": "Aufgabe hinzufügen",
+				"featureElsewhere": "Feature nicht in diesem Release",
+				"tasksElsewhere_one": "{{count}} weitere Aufgabe außerhalb dieses Releases",
+				"tasksElsewhere_other": "{{count}} weitere Aufgaben außerhalb dieses Releases",
+				"today": "Heute",
+				"loadingTasks": "Aufgaben werden geladen…",
+				"timelineLabel": "Release-Zeitachse"
+			},
+			"gantt": {
+				"strip": "Releases",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Beginnt am {{date}}",
+					"codeFreeze": "Code-Freeze am {{date}}",
+					"submission": "Einreichung am {{date}}"
+				},
+				"actionsFor": "Aktionen für {{name}}",
+				"loading": "Releases werden geladen…",
+				"tasksLoadError": "Aufgaben konnten nicht geladen werden."
+			},
+			"ux": {
+				"nameTaken": "Ein Release mit diesem Namen existiert bereits"
+			}
 		}
 	},
 	"invitations": {

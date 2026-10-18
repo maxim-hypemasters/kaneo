@@ -23,8 +23,11 @@ import {
   applyTaskLabelEdits,
   prepareTaskLabelEdits,
 } from "../../labels/task-label-edits.js";
+import { updateTaskRelease } from "../../api/releases.js";
 import { emit } from "../../output/emit.js";
 import { withSpinner } from "../../output/spinner.js";
+import { describeTaskRelease } from "../../releases/describe-task-release.js";
+import { resolveTaskRelease } from "../../releases/resolve-task-release.js";
 import { checkDateRange } from "../../tasks/date-range.js";
 import { parseDateChange } from "../../tasks/parse-date.js";
 import { renderTaskChange } from "../../tasks/render-task-change.js";
@@ -59,6 +62,7 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   readonly removeLabel: ReadonlyArray<string>;
   readonly type: Option.Option<TaskType>;
   readonly feature: Option.Option<string>;
+  readonly release: Option.Option<string>;
 }) {
   const { title, description, priority, type } = options;
   if (
@@ -70,13 +74,14 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
       options.start,
       type,
       options.feature,
+      options.release,
     ].every((flag) => Option.isNone(flag)) &&
     options.addLabel.length === 0 &&
     options.removeLabel.length === 0
   ) {
     return yield* new InvalidArgument({
       message: "Nothing to change.",
-      hint: "Pass at least one of --title, --description, --priority, --due, --start, --add-label, --remove-label, --type or --feature.",
+      hint: "Pass at least one of --title, --description, --priority, --due, --start, --add-label, --remove-label, --type, --feature or --release.",
     });
   }
   // "none" takes the task out of its feature.
@@ -130,6 +135,7 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   if (feature) {
     yield* Effect.fromResult(checkFeatureProject(feature, resolved.project));
   }
+  const release = yield* resolveTaskRelease(options.release, resolved.project);
 
   const id = resolved.task.id;
   const label = resolved.ticketId ?? id.slice(0, 8);
@@ -156,6 +162,16 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
       if (Option.isSome(options.feature)) {
         yield* updateTaskFeature(id, feature?.task.id ?? null);
         changed.push("feature");
+      }
+      // After the feature, which may give the task the feature's release.
+      if (release !== undefined) {
+        const { movedTaskIds } = yield* updateTaskRelease(
+          id,
+          release?.id ?? null,
+        );
+        changed.push(
+          describeTaskRelease(release?.name ?? null, movedTaskIds.length),
+        );
       }
       if (Option.isSome(newTitle)) {
         yield* updateTaskTitle(id, newTitle.value);
@@ -261,6 +277,12 @@ export const taskEdit = Command.make(
       ),
       Flag.optional,
     ),
+    release: Flag.String("release").pipe(
+      Flag.withDescription(
+        "Put it in this release of its project, by name or id, or none to take it out; a feature's tasks in its release move with it",
+      ),
+      Flag.optional,
+    ),
   },
   (options) =>
     Effect.flatMap(
@@ -273,7 +295,7 @@ export const taskEdit = Command.make(
     ),
 ).pipe(
   Command.withDescription(
-    "Change a task's title, description, priority, dates, labels, type or feature",
+    "Change a task's title, description, priority, dates, labels, type, feature or release",
   ),
   Command.provide(ApiLayer),
 );

@@ -8,6 +8,7 @@ import WorkspaceCrumbSelect from "@/components/common/header/workspace-crumb-sel
 import Layout from "@/components/common/layout";
 import { ProjectScopeToggle } from "@/components/project/views/project-scope-toggle";
 import {
+  isTaskLayoutView,
   PROJECT_ROUTE_PATHS,
   type ProjectRoute,
   resolveProjectView,
@@ -70,18 +71,21 @@ export default function ProjectLayout({
     activeView ??
     (location.pathname.includes("/backlog")
       ? "backlog"
-      : location.pathname.includes("/calendar")
-        ? "calendar"
-        : location.pathname.includes("/gantt")
-          ? "gantt"
-          : "board");
+      : location.pathname.includes("/releases")
+        ? "releases"
+        : location.pathname.includes("/calendar")
+          ? "calendar"
+          : location.pathname.includes("/gantt")
+            ? "gantt"
+            : "board");
   const currentView = resolveProjectView(resolvedRoute, viewMode);
   const showViews = showViewSwitcher && !unavailableReason;
 
-  // "Tasks" on the backlog returns to the task view shown last, however it was
-  // reached: a deep link, the default project view, or the layout switch.
+  // "Tasks" on the backlog or releases returns to the task view shown last,
+  // however it was reached: a deep link, the default project view, or the
+  // layout switch.
   useEffect(() => {
-    if (currentView === "backlog") return;
+    if (!isTaskLayoutView(currentView)) return;
     const { taskLayout, setTaskLayout } = useUserPreferencesStore.getState();
     if (taskLayout !== currentView) setTaskLayout(currentView);
   }, [currentView]);
@@ -155,7 +159,9 @@ export default function ProjectLayout({
         <TooltipProvider>
           <div
             className={cn(
-              "flex h-11 shrink-0 items-center gap-2.5 border-border/80 border-b px-2 sm:px-3",
+              // On phones the toolbar takes a second row when it doesn't fit
+              // beside the view links, rather than covering or clipping them.
+              "flex min-h-11 shrink-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 border-border/80 border-b px-2 py-1 sm:h-11 sm:flex-nowrap sm:px-3 sm:py-0",
               { "bg-card/80 backdrop-blur": !!background },
             )}
           >

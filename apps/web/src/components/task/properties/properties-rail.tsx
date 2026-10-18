@@ -11,6 +11,8 @@ import { FeatureValue } from "../features/feature-value";
 import { TaskFeaturePopover } from "../features/task-feature-popover";
 import { TaskTypeMenu } from "../features/task-type-menu";
 import { TaskTypeValue } from "../features/task-type-value";
+import { ReleaseValue } from "../releases/release-value";
+import { TaskReleasePopover } from "../releases/task-release-popover";
 import TaskAssigneePopover from "../task-assignee-popover";
 import TaskDueDatePopover from "../task-due-date-popover";
 import TaskLabelsPopover from "../task-labels-popover";
@@ -51,6 +53,7 @@ export function PropertiesRail({
     feature,
     featureDisplayId,
     hasFeatureTasks,
+    release,
   } = useTaskProperties(taskId, projectId, workspaceId);
 
   if (!task) return null;
@@ -195,6 +198,14 @@ export function PropertiesRail({
             </TaskFeaturePopover>
           </PropertyRow>
         )}
+
+        <PropertyRow label={t("tasks:releases.property")}>
+          <TaskReleasePopover task={task}>
+            <PropertyValue data-task-action="release" shortcutId="setRelease">
+              <ReleaseValue release={release} />
+            </PropertyValue>
+          </TaskReleasePopover>
+        </PropertyRow>
       </div>
 
       <TaskCustomFieldRows taskId={taskId} projectId={projectId} />

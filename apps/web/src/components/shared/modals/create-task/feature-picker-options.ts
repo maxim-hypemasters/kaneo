@@ -4,12 +4,14 @@ export type ProjectFeature = {
   title: string;
   number: number | null;
   status: string;
+  releaseId?: string | null;
 };
 
 // The feature a new task joins: one of the project's, or one to create on
-// submit, before the task. null is no feature.
+// submit, before the task. null is no feature. An existing feature's release
+// is kept as the feature list gave it, for the Release chip.
 export type FeatureChoice =
-  | { kind: "existing"; id: string; title: string }
+  | { kind: "existing"; id: string; title: string; releaseId?: string | null }
   | { kind: "new"; title: string };
 
 // "new" is the chosen feature still to create when selected, else the offer
@@ -112,6 +114,7 @@ export function choiceOf(option: FeaturePickerOption): FeatureChoice | null {
       kind: "existing",
       id: option.feature.id,
       title: option.feature.title,
+      releaseId: option.feature.releaseId,
     };
   }
   return { kind: "new", title: option.title };

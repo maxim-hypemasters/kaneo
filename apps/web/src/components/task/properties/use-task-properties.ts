@@ -8,6 +8,7 @@ import { getDueDateStatus, isTaskCompleted } from "@/lib/due-date-status";
 import { getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { useFeatureTasks } from "../features/use-feature-tasks";
 import { useTaskFeature } from "../features/use-task-feature";
+import { useTaskRelease } from "../releases/use-task-release";
 import { useProjectSlugs } from "../sections/use-project-slugs";
 
 export function useTaskProperties(
@@ -22,6 +23,7 @@ export function useTaskProperties(
   const { data: labels = [] } = useGetLabelsByTask(taskId);
   const { data: workspaceProjects = [] } = useGetProjects({ workspaceId });
   const feature = useTaskFeature(task);
+  const release = useTaskRelease(task);
   const isFeature = task?.type === "feature";
   const { tasks: featureTasks } = useFeatureTasks(
     isFeature ? taskId : "",
@@ -59,5 +61,7 @@ export function useTaskProperties(
       ? displayIdOf(feature.projectId, feature.number)
       : null,
     hasFeatureTasks: featureTasks.length > 0,
+    // The task's release (null for none, undefined while it loads).
+    release,
   };
 }

@@ -286,6 +286,13 @@
             ],
             "description": "The feature this task belongs to, in the same project. Always null for a feature."
           },
+          "releaseId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The release this task or feature is planned in, from its own project. Always null on public boards."
+          },
           "subtaskCounts": {
             "type": "object",
             "properties": {
@@ -335,6 +342,7 @@
           "projectId",
           "type",
           "featureId",
+          "releaseId",
           "subtaskCounts",
           "labels",
           "externalLinks"
@@ -1130,13 +1138,21 @@
             "status": {
               "type": "string",
               "description": "The feature's column slug, or planned or archived."
+            },
+            "releaseId": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The release this task or feature is planned in, from its own project. Always null on public boards."
             }
           },
           "required": [
             "id",
             "title",
             "number",
-            "status"
+            "status",
+            "releaseId"
           ]
         }
       },
@@ -1295,6 +1311,13 @@
             ],
             "description": "The feature this task belongs to, in the same project. Always null for a feature."
           },
+          "releaseId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The release this task or feature is planned in, from its own project. Always null on public boards."
+          },
           "customFields": {
             "type": "array",
             "items": {
@@ -1328,7 +1351,8 @@
           "dueDate",
           "createdAt",
           "type",
-          "featureId"
+          "featureId",
+          "releaseId"
         ]
       },
       "TaskByTicketId": {
@@ -1605,6 +1629,28 @@
           "tasks"
         ]
       },
+      "TaskReleaseResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Task"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "movedTaskIds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "For a feature, its tasks that moved with it, ordered by id. Empty for a task."
+              }
+            },
+            "required": [
+              "movedTaskIds"
+            ]
+          }
+        ]
+      },
       "Column": {
         "type": "object",
         "properties": {
@@ -1663,6 +1709,155 @@
           "updatedAt"
         ]
       },
+      "ReleaseWithProgress": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Release"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "progress": {
+                "type": "object",
+                "properties": {
+                  "tasks": {
+                    "type": "object",
+                    "properties": {
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "completed": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Items in a final column."
+                      }
+                    },
+                    "required": [
+                      "total",
+                      "completed"
+                    ]
+                  },
+                  "features": {
+                    "type": "object",
+                    "properties": {
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "completed": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Items in a final column."
+                      }
+                    },
+                    "required": [
+                      "total",
+                      "completed"
+                    ]
+                  },
+                  "unfinished": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Tasks and features neither archived nor in a final column, which Move unfinished would move."
+                  }
+                },
+                "required": [
+                  "tasks",
+                  "features",
+                  "unfinished"
+                ],
+                "description": "The release's tasks and features. Archived items count in the totals."
+              }
+            },
+            "required": [
+              "progress"
+            ]
+          }
+        ],
+        "description": "A planned delivery in one project, holding its features and tasks. Dates are calendar days (YYYY-MM-DD) with no time zone, ordered start ≤ code freeze ≤ submission. The phase isn't stored: compare the viewer's local today with the dates. Upcoming before the start date; in progress from the start date until the day before code freeze; code freeze from the code freeze date through the submission date; past submission after the submission date."
+      },
+      "Release": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-20"
+          },
+          "codeFreezeDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-20"
+          },
+          "submissionDate": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-10-20"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "name",
+          "description",
+          "startDate",
+          "codeFreezeDate",
+          "submissionDate",
+          "createdAt",
+          "updatedAt"
+        ],
+        "description": "A planned delivery in one project, holding its features and tasks. Dates are calendar days (YYYY-MM-DD) with no time zone, ordered start ≤ code freeze ≤ submission. The phase isn't stored: compare the viewer's local today with the dates. Upcoming before the start date; in progress from the start date until the day before code freeze; code freeze from the code freeze date through the submission date; past submission after the submission date."
+      },
+      "DeletedRelease": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "MovedReleaseItems": {
+        "type": "object",
+        "properties": {
+          "movedTaskIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The tasks and features that moved, ordered by id."
+          }
+        },
+        "required": [
+          "movedTaskIds"
+        ]
+      },
       "WorkspaceActivity": {
         "type": "object",
         "properties": {
@@ -1671,7 +1866,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }). Project and feature names from a project the viewer can't access, such as one a task was moved out of, are null."
+            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
           },
           "createdAt": {
             "type": "string",
@@ -1764,7 +1959,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }). Project and feature names from a project the viewer can't access, such as one a task was moved out of, are null."
+            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
           },
           "createdAt": {
             "type": "string",
@@ -10628,7 +10823,7 @@
           "Tasks"
         ],
         "summary": "List project features",
-        "description": "Get the project's features (tasks of type feature), by title, with their status. Lighter than the board for picking a feature.",
+        "description": "Get the project's features (tasks of type feature), by title, with their status and release. Lighter than the board for picking a feature.",
         "parameters": [
           {
             "schema": {
@@ -10693,7 +10888,7 @@
           "Tasks"
         ],
         "summary": "List tasks",
-        "description": "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
+        "description": "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Set releaseId to a release's id, or to none, to keep only the tasks and features in that release, or in none. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
         "parameters": [
           {
             "schema": {
@@ -10799,6 +10994,17 @@
             },
             "required": false,
             "name": "dueAfter",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Only tasks and features in this release, or none for those in no release."
+            },
+            "required": false,
+            "description": "Only tasks and features in this release, or none for those in no release.",
+            "name": "releaseId",
             "in": "query"
           }
         ],
@@ -11398,7 +11604,7 @@
           "Tasks"
         ],
         "summary": "Create task",
-        "description": "Add a task to a project. It is placed in the column named by `status`.",
+        "description": "Add a task to a project. It is placed in the column named by `status`. Without releaseId, a task created in a feature starts in that feature's release, and any other task in none; an explicit releaseId, or null for none, wins.",
         "parameters": [
           {
             "schema": {
@@ -11483,6 +11689,14 @@
                     "type": "string",
                     "minLength": 1,
                     "description": "Create the task inside this feature of the project."
+                  },
+                  "releaseId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "A release of the project, or null for none. Omitted, the task starts in its feature's release, or in none."
                   }
                 },
                 "required": [
@@ -11537,7 +11751,7 @@
             }
           },
           "404": {
-            "description": "Project or feature not found",
+            "description": "Project, feature or release not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -11569,7 +11783,7 @@
           "Tasks"
         ],
         "summary": "Duplicate a task",
-        "description": "Copy a task into the same project and column, including custom fields, labels, description assets, its type and its feature. Comments, time entries and a feature's tasks are not copied.",
+        "description": "Copy a task into the same project and column, including custom fields, labels, description assets, its type, its feature and its release (none if that release was deleted meanwhile). Comments, time entries and a feature's tasks are not copied.",
         "parameters": [
           {
             "schema": {
@@ -11866,7 +12080,7 @@
           "Tasks"
         ],
         "summary": "Update task",
-        "description": "Replace every field of a task. Use the single-field routes for narrower edits.",
+        "description": "Replace every field of a task. Its type, feature and release aren't part of this body and stay as they are: change them with PUT /task/type/{id}, /task/feature/{id} and /task/release/{id}. Use the single-field routes for narrower edits.",
         "parameters": [
           {
             "schema": {
@@ -12070,7 +12284,7 @@
           "Tasks"
         ],
         "summary": "Move task",
-        "description": "Move a task to another project, optionally into a named column. Both projects must be in the same workspace.",
+        "description": "Move a task to another project, optionally into a named column. Both projects must be in the same workspace. Features and releases belong to one project, so the task leaves its feature and its release, recording each change in its activity.",
         "parameters": [
           {
             "schema": {
@@ -12847,7 +13061,7 @@
           "Tasks"
         ],
         "summary": "Update task feature",
-        "description": "Put a task into a feature of its project, or take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one.",
+        "description": "Put a task into a feature of its project, or take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one. A task in no release takes the feature's release when it joins, and records that in its activity; leaving or switching features keeps its release.",
         "parameters": [
           {
             "schema": {
@@ -12933,7 +13147,125 @@
             }
           },
           "409": {
-            "description": "The target isn't a feature, or the task is itself a feature",
+            "description": "The target isn't a feature, the task is itself a feature, or another edit changed it at the same time; try again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/task/release/{id}": {
+      "put": {
+        "operationId": "updateTaskRelease",
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Update task release",
+        "description": "Put a task or feature into a release of its project, or take it out with null. A feature's tasks that were in its previous release (or, like it, in none) move with it; tasks given another release keep theirs.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "releaseId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "A release in the task's project, or null to take the task out of its release."
+                  }
+                },
+                "required": [
+                  "releaseId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated task, with the tasks that moved along",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskReleaseResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, or missing task:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task or release not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another edit changed these tasks at the same time; try again",
             "content": {
               "application/json": {
                 "schema": {
@@ -13838,6 +14170,635 @@
           },
           "409": {
             "description": "The column still contains tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/release/project/{projectId}": {
+      "get": {
+        "operationId": "listProjectReleases",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "List releases",
+        "description": "Get a project's releases with their progress, ordered by start date, then name.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The project's releases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReleaseWithProgress"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Release request timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createRelease",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Create release",
+        "description": "Add a release to a project. Its name must be unique in the project, and its dates must run start ≤ code freeze ≤ submission.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "Unique within the project. Surrounding spaces are trimmed."
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "The first day of work."
+                  },
+                  "codeFreezeDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "The day changes stop. On or after the start date."
+                  },
+                  "submissionDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "The day the release ships. On or after the code freeze date."
+                  }
+                },
+                "required": [
+                  "name",
+                  "startDate",
+                  "codeFreezeDate",
+                  "submissionDate"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The created release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Release"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or dates out of order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, or missing project:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A release with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/release/{id}": {
+      "get": {
+        "operationId": "getRelease",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Get release",
+        "description": "Get a release with its progress.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReleaseWithProgress"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the release's project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Release request timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateRelease",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Update release",
+        "description": "Update a release. Omitted fields are left unchanged; the date order is checked against the stored dates.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "Unique within the project. Surrounding spaces are trimmed."
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000,
+                    "description": "Null clears the description."
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "The first day of work."
+                  },
+                  "codeFreezeDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "The day changes stop. On or after the start date."
+                  },
+                  "submissionDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "The day the release ships. On or after the code freeze date."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Release"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or dates out of order",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the release's project, or missing project:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A release with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteRelease",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Delete release",
+        "description": "Delete a release. Its features and tasks stay in the project, out of every release, and each records the change in its activity.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The deleted release's id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedRelease"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the release's project, or missing project:update or task:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Tasks kept joining or changing the release while it was deleted; try again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/release/{id}/move-unfinished": {
+      "post": {
+        "operationId": "moveUnfinishedReleaseItems",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Move unfinished items",
+        "description": "Move the release's unfinished tasks and features (neither archived nor in a final column; planned ones count) to another release of the project, or out of every release with null. Each item moves on its own: a feature's tasks don't follow it, and finished items stay.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "targetReleaseId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "Another release of the same project, or null to take the items out of every release."
+                  }
+                },
+                "required": [
+                  "targetReleaseId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The items that moved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovedReleaseItems"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or the target is this release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the release's project, or missing task:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found, or the target isn't a release of its project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another edit changed these items at the same time; try again",
             "content": {
               "application/json": {
                 "schema": {

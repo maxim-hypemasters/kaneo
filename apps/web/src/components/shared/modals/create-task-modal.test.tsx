@@ -28,9 +28,7 @@ function createTestQueryClient() {
   });
 }
 
-function createWrapper() {
-  const queryClient = createTestQueryClient();
-
+function createWrapper(queryClient = createTestQueryClient()) {
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -55,7 +53,22 @@ let uploadAsset: ((file: File) => Promise<unknown>) | undefined;
 const stageUpload = vi.fn();
 let customFieldDefs: unknown[] | undefined;
 let projectFeatures:
-  | { id: string; title: string; number: number | null; status: string }[]
+  | {
+      id: string;
+      title: string;
+      number: number | null;
+      status: string;
+      releaseId?: string | null;
+    }[]
+  | undefined;
+let releases:
+  | {
+      id: string;
+      name: string;
+      startDate: string;
+      codeFreezeDate: string;
+      submissionDate: string;
+    }[]
   | undefined;
 vi.mock("@/lib/upload-draft-asset", () => ({
   uploadDraftAsset: (...args: unknown[]) => stageUpload(...args),
@@ -72,6 +85,22 @@ beforeEach(() => {
   customFieldDefs = undefined;
   projectFeatures = [
     { id: "checkout", title: "Checkout", number: 3, status: "to-do" },
+  ];
+  releases = [
+    {
+      id: "r24",
+      name: "2.4",
+      startDate: "2026-10-01",
+      codeFreezeDate: "2026-10-15",
+      submissionDate: "2026-10-20",
+    },
+    {
+      id: "r25",
+      name: "2.5",
+      startDate: "2026-11-01",
+      codeFreezeDate: "2026-11-15",
+      submissionDate: "2026-11-20",
+    },
   ];
   columnsError = false;
   columnsFetching = false;
@@ -189,6 +218,14 @@ vi.mock("@/hooks/queries/task/use-get-project-features", () => ({
   useGetProjectFeatures: () => ({
     data: projectFeatures,
     isPending: projectFeatures === undefined,
+  }),
+}));
+
+vi.mock("@/hooks/queries/release/use-get-releases", () => ({
+  useGetReleases: () => ({
+    data: releases,
+    isPending: releases === undefined,
+    isError: false,
   }),
 }));
 
@@ -1303,6 +1340,342 @@ describe("CreateTaskModal new features", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText("common:modals.createTask.discardButtonFeature"),
+    ).toBeInTheDocument();
+  });
+});
+
+const releaseChip = (label?: string) =>
+  screen.getByRole("button", {
+    name: label
+      ? `common:modals.createTask.release ${label}`
+      : "common:modals.createTask.release",
+  });
+
+async function pickRelease(option: RegExp, chipLabel?: string) {
+  fireEvent.click(releaseChip(chipLabel));
+  await screen.findByPlaceholderText("common:modals.createTask.searchReleases");
+  await act(async () => {
+    fireEvent.click(await screen.findByRole("option", { name: option }));
+  });
+}
+
+const sentReleases = () =>
+  createTask.mock.calls.map(([input]) =>
+    "releaseId" in input ? input.releaseId : "follow",
+  );
+
+const FROM_FEATURE = "common:modals.createTask.releaseFromFeature";
+
+describe("CreateTaskModal releases", () => {
+  it("explains that a project comes first", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+
+    fireEvent.click(releaseChip());
+
+    expect(
+      await screen.findByText(
+        "common:modals.createTask.chooseProjectForRelease",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("follows the picked feature's release, leaving it to the API", async () => {
+    projectFeatures = [
+      {
+        id: "checkout",
+        title: "Checkout",
+        number: 3,
+        status: "to-do",
+        releaseId: "r24",
+      },
+    ];
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    expect(releaseChip()).toBeInTheDocument();
+
+    await pickFeature(/Checkout/);
+
+    expect(releaseChip(FROM_FEATURE)).toBeInTheDocument();
+    enterTitle("Card form");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentReleases()).toEqual(["follow"]);
+  });
+
+  it("reads the feature's release from the board when the list lacks it", async () => {
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(["tasks", "project-2"], {
+      columns: [
+        {
+          tasks: [
+            {
+              id: "checkout",
+              type: "feature",
+              status: "to-do",
+              releaseId: "r25",
+            },
+          ],
+        },
+      ],
+    });
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(queryClient),
+    });
+    await chooseBeta();
+    await pickFeature(/Checkout/);
+
+    fireEvent.click(releaseChip(FROM_FEATURE));
+
+    const option = await screen.findByRole("option", {
+      name: /^2\.5tasks:releases.featureReleaseHint/,
+    });
+    expect(option).toHaveAttribute("aria-current", "true");
+  });
+
+  it("names the feature's current release after it moves elsewhere", async () => {
+    projectFeatures = [
+      {
+        id: "checkout",
+        title: "Checkout",
+        number: 3,
+        status: "to-do",
+        releaseId: "r24",
+      },
+    ];
+    const queryClient = createTestQueryClient();
+    const board = (releaseId: string) => ({
+      columns: [
+        {
+          tasks: [
+            { id: "checkout", type: "feature", status: "to-do", releaseId },
+          ],
+        },
+      ],
+    });
+    queryClient.setQueryData(["tasks", "project-2"], board("r24"));
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(queryClient),
+    });
+    await chooseBeta();
+    await pickFeature(/Checkout/);
+
+    // A teammate moves the feature to 2.5; its socket message patches the
+    // board, not the feature list picked from.
+    act(() => {
+      queryClient.setQueryData(["tasks", "project-2"], board("r25"));
+    });
+    fireEvent.click(releaseChip(FROM_FEATURE));
+
+    const option = await screen.findByRole("option", {
+      name: /^2\.5tasks:releases.featureReleaseHint/,
+    });
+    expect(option).toHaveAttribute("aria-current", "true");
+  });
+
+  it("overrides the feature's release with a pick", async () => {
+    projectFeatures = [
+      {
+        id: "checkout",
+        title: "Checkout",
+        number: 3,
+        status: "to-do",
+        releaseId: "r24",
+      },
+    ];
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickFeature(/Checkout/);
+
+    await pickRelease(/^2\.5/, FROM_FEATURE);
+
+    expect(releaseChip("2.5")).toBeInTheDocument();
+    enterTitle("Card form");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentReleases()).toEqual(["r25"]);
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      featureId: "checkout",
+    });
+  });
+
+  it("sends no release when No release is picked", async () => {
+    projectFeatures = [
+      {
+        id: "checkout",
+        title: "Checkout",
+        number: 3,
+        status: "to-do",
+        releaseId: "r24",
+      },
+    ];
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickFeature(/Checkout/);
+
+    await pickRelease(/common:modals.createTask.noRelease/, FROM_FEATURE);
+
+    expect(
+      releaseChip("common:modals.createTask.noRelease"),
+    ).toBeInTheDocument();
+    enterTitle("Card form");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentReleases()).toEqual([null]);
+  });
+
+  it("clears the release when the project changes", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickRelease(/^2\.5/);
+
+    fireEvent.click(screen.getByText("Beta"));
+    fireEvent.click(await screen.findByText("Alpha"));
+
+    expect(releaseChip()).toBeInTheDocument();
+    enterTitle("Card form");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentReleases()).toEqual(["follow"]);
+  });
+
+  it("keeps the release for the next task with Create more", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickRelease(/^2\.5/);
+    fireEvent.click(
+      screen.getByLabelText("common:modals.createTask.createMore"),
+    );
+    enterTitle("Card form");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    await vi.waitFor(() =>
+      expect(
+        screen.getByPlaceholderText(
+          "common:modals.createTask.taskTitlePlaceholder",
+        ),
+      ).toHaveValue(""),
+    );
+
+    expect(releaseChip("2.5")).toBeInTheDocument();
+    enterTitle("Card errors");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(2));
+    expect(sentReleases()).toEqual(["r25", "r25"]);
+  });
+
+  it("gives a new feature the picked release, and its task too", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickRelease(/^2\.5/);
+    await chooseNewFeature("Payments");
+    enterTitle("Card form");
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(2));
+    expect(sentRequests()).toEqual([
+      { title: "Payments", type: "feature", featureId: undefined },
+      { title: "Card form", type: "task", featureId: "feature-1" },
+    ]);
+    expect(sentReleases()).toEqual(["r25", "r25"]);
+  });
+
+  it("leaves a new feature and its task out of releases unless one is picked", async () => {
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await chooseNewFeature("Payments");
+    enterTitle("Card form");
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledTimes(2));
+    expect(sentReleases()).toEqual(["follow", "follow"]);
+  });
+
+  it("puts a feature it creates in the picked release", async () => {
+    render(<CreateTaskModal open type="feature" onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    await pickRelease(/^2\.4/);
+    fireEvent.change(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+      { target: { value: "Checkout v2" } },
+    );
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      type: "feature",
+      releaseId: "r24",
+    });
+  });
+
+  it("starts in a preset release, which counts as no unsaved input", async () => {
+    const onClose = vi.fn();
+    render(
+      <CreateTaskModal
+        open
+        projectId="project-2"
+        releaseId="r24"
+        onClose={onClose}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(releaseChip("2.4")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("common:actions.cancel"));
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByText("common:modals.createTask.discardTitle"),
+    ).toBeNull();
+  });
+
+  it("creates the task in a preset release", async () => {
+    render(
+      <CreateTaskModal
+        open
+        projectId="project-2"
+        releaseId="r24"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    enterTitle("Card form");
+    submit();
+
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(sentReleases()).toEqual(["r24"]);
+  });
+
+  it("treats a picked release as unsaved input", async () => {
+    render(<CreateTaskModal open projectId="project-2" onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await pickRelease(/^2\.5/);
+
+    fireEvent.click(screen.getByText("common:actions.cancel"));
+
+    expect(
+      await screen.findByText("common:modals.createTask.discardTitle"),
     ).toBeInTheDocument();
   });
 });

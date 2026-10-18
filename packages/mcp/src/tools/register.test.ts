@@ -47,7 +47,17 @@ describe("registerTools", () => {
       expect.any(Object),
       expect.any(Function),
     );
-    for (const name of ["set_task_feature", "set_task_type"]) {
+    for (const name of [
+      "set_task_feature",
+      "set_task_type",
+      "list_releases",
+      "get_release",
+      "create_release",
+      "update_release",
+      "delete_release",
+      "set_task_release",
+      "move_unfinished_release_items",
+    ]) {
       expect(server.registerTool).toHaveBeenCalledWith(
         name,
         expect.any(Object),
@@ -267,7 +277,7 @@ describe("registerTools", () => {
     expect(result?.isError).toBe(false);
   });
 
-  it("leaves the type and feature out of the update_task body", async () => {
+  it("leaves the type, feature and release out of the update_task body", async () => {
     const { server, tools } = createServerMock();
     const client = {
       json: vi
@@ -280,6 +290,7 @@ describe("registerTools", () => {
           position: 4,
           type: "task",
           featureId: "feature-1",
+          releaseId: "release-1",
         })
         .mockResolvedValueOnce({ id: "task-1" }),
     };
@@ -296,6 +307,7 @@ describe("registerTools", () => {
     );
     expect(putBody).not.toHaveProperty("type");
     expect(putBody).not.toHaveProperty("featureId");
+    expect(putBody).not.toHaveProperty("releaseId");
   });
 
   it("creates a task inside a feature in one call", async () => {
@@ -438,6 +450,226 @@ describe("registerTools", () => {
     expect(result?.isError).toBe(true);
     expect(result?.content[0]?.text).toContain("still has tasks");
   });
+
+  it("creates a task in a release, or explicitly in none", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "task-3" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    const base = {
+      projectId: "project-1",
+      title: "Write docs",
+      description: "",
+      priority: "low",
+      status: "to-do",
+    };
+    await tools.get("create_task")?.handler({ ...base, releaseId: "rel-1" });
+    await tools.get("create_task")?.handler({ ...base, releaseId: null });
+    await tools.get("create_task")?.handler(base);
+
+    const bodies = client.json.mock.calls.map((call) =>
+      JSON.parse(String((call[1] as { body?: string }).body)),
+    );
+    expect(bodies[0]).toEqual(expect.objectContaining({ releaseId: "rel-1" }));
+    expect(bodies[1]).toEqual(expect.objectContaining({ releaseId: null }));
+    expect(bodies[2]).not.toHaveProperty("releaseId");
+  });
+
+  it("filters list_tasks by release, including none", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue([]) };
+
+    registerTools(server as never, { client: client as never });
+
+    await tools
+      .get("list_tasks")
+      ?.handler({ projectId: "project-1", releaseId: "none" });
+
+    expect(client.json).toHaveBeenCalledWith(
+      "/api/task/tasks/project-1?releaseId=none",
+      { method: "GET" },
+    );
+  });
+
+  it("lists and gets releases", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue([]) };
+
+    registerTools(server as never, { client: client as never });
+
+    await tools.get("list_releases")?.handler({ projectId: "project 1" });
+    await tools.get("get_release")?.handler({ releaseId: "rel 1" });
+
+    expect(client.json).toHaveBeenNthCalledWith(
+      1,
+      "/api/release/project/project%201",
+      { method: "GET" },
+    );
+    expect(client.json).toHaveBeenNthCalledWith(2, "/api/release/rel%201", {
+      method: "GET",
+    });
+  });
+
+  it("creates a release with its three dates", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "rel-1" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools.get("create_release")?.handler({
+      projectId: "project-1",
+      name: " 2.4 ",
+      startDate: "2026-10-01",
+      codeFreezeDate: "2026-10-20",
+      submissionDate: "2026-10-24",
+    });
+
+    expect(result?.isError).toBe(false);
+    expect(client.json).toHaveBeenCalledWith("/api/release/project/project-1", {
+      method: "POST",
+      body: JSON.stringify({
+        name: "2.4",
+        startDate: "2026-10-01",
+        codeFreezeDate: "2026-10-20",
+        submissionDate: "2026-10-24",
+      }),
+    });
+  });
+
+  it.each([["2026-02-30"], ["2026-10-20T00:00:00Z"], ["20/10/2026"]])(
+    "rejects %s as a release date",
+    async (day) => {
+      const { server, tools } = createServerMock();
+      const client = { json: vi.fn() };
+
+      registerTools(server as never, { client: client as never });
+
+      const result = await tools.get("create_release")?.handler({
+        projectId: "project-1",
+        name: "2.4",
+        startDate: "2026-10-01",
+        codeFreezeDate: day,
+        submissionDate: "2026-10-24",
+      });
+
+      expect(result?.isError).toBe(true);
+      expect(client.json).not.toHaveBeenCalled();
+    },
+  );
+
+  it("sends only the given fields for update_release", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "rel-1" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    await tools.get("update_release")?.handler({
+      releaseId: "rel-1",
+      submissionDate: "2026-10-31",
+      description: null,
+    });
+
+    expect(client.json).toHaveBeenCalledWith("/api/release/rel-1", {
+      method: "PUT",
+      body: JSON.stringify({ submissionDate: "2026-10-31", description: null }),
+    });
+  });
+
+  it("refuses an update_release without changes", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn() };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools
+      .get("update_release")
+      ?.handler({ releaseId: "rel-1" });
+
+    expect(result?.isError).toBe(true);
+    expect(client.json).not.toHaveBeenCalled();
+  });
+
+  it("deletes a release", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "rel-1" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    await tools.get("delete_release")?.handler({ releaseId: "rel-1" });
+
+    expect(client.json).toHaveBeenCalledWith("/api/release/rel-1", {
+      method: "DELETE",
+    });
+  });
+
+  it.each([
+    ["rel-1", "rel-1"],
+    [null, null],
+  ])(
+    "sets a task's release to %s with set_task_release",
+    async (releaseId, expected) => {
+      const { server, tools } = createServerMock();
+      const client = {
+        json: vi.fn().mockResolvedValue({ id: "task 1", movedTaskIds: [] }),
+      };
+
+      registerTools(server as never, { client: client as never });
+
+      const result = await tools.get("set_task_release")?.handler({
+        taskId: "task 1",
+        releaseId,
+      });
+
+      expect(client.json).toHaveBeenCalledWith("/api/task/release/task%201", {
+        method: "PUT",
+        body: JSON.stringify({ releaseId: expected }),
+      });
+      expect(result?.isError).toBe(false);
+    },
+  );
+
+  it("requires an explicit releaseId for set_task_release", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn() };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools
+      .get("set_task_release")
+      ?.handler({ taskId: "task-1" });
+
+    expect(result?.isError).toBe(true);
+    expect(client.json).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["rel-2", "rel-2"],
+    [null, null],
+  ])(
+    "moves a release's unfinished items to %s",
+    async (targetReleaseId, expected) => {
+      const { server, tools } = createServerMock();
+      const client = {
+        json: vi.fn().mockResolvedValue({ movedTaskIds: ["t1"] }),
+      };
+
+      registerTools(server as never, { client: client as never });
+
+      await tools.get("move_unfinished_release_items")?.handler({
+        releaseId: "rel-1",
+        targetReleaseId,
+      });
+
+      expect(client.json).toHaveBeenCalledWith(
+        "/api/release/rel-1/move-unfinished",
+        {
+          method: "POST",
+          body: JSON.stringify({ targetReleaseId: expected }),
+        },
+      );
+    },
+  );
 
   it("fetches the current project and sends a full body for update_project", async () => {
     const { server, tools } = createServerMock();

@@ -10,6 +10,7 @@ async function listProjectFeatures(projectId: string) {
       title: taskTable.title,
       number: taskTable.number,
       status: taskTable.status,
+      releaseId: taskTable.releaseId,
     })
     .from(taskTable)
     .where(

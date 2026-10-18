@@ -6,6 +6,10 @@ import {
   redactFeatureChange,
 } from "./redact-feature-change";
 import { moveProjectIds, redactMove } from "./redact-move";
+import {
+  redactReleaseChange,
+  releaseChangeProjectIds,
+} from "./redact-release-change";
 
 type ActivityRow = { type: string; taskId: string; eventData: unknown };
 type CurrentProjects = ReadonlyMap<string, string>;
@@ -14,6 +18,7 @@ function projectIdsOf(row: ActivityRow, currentProjects: CurrentProjects) {
   const data = eventDataOf(row.eventData);
   if (!data) return [];
   if (row.type === "moved") return moveProjectIds(data);
+  if (row.type === "release_changed") return releaseChangeProjectIds(data);
   if (row.type === "feature_changed") {
     const projects = featureChangeProjects(data, row.taskId, currentProjects);
     return [projects.old, projects.new].filter(
@@ -32,6 +37,9 @@ function redactRow<T extends ActivityRow>(
   if (!data) return row;
   let redacted = data;
   if (row.type === "moved") redacted = redactMove(data, isVisible);
+  if (row.type === "release_changed") {
+    redacted = redactReleaseChange(data, isVisible);
+  }
   if (row.type === "feature_changed") {
     const projects = featureChangeProjects(data, row.taskId, currentProjects);
     redacted = redactFeatureChange(data, projects, isVisible);
@@ -40,7 +48,7 @@ function redactRow<T extends ActivityRow>(
 }
 
 // Activity stays with a task when it moves, so its events can name projects,
-// and features of projects, the viewer can't see. Those names are hidden;
+// and features and releases of projects, the viewer can't see. Those names are hidden;
 // a row with nothing to hide comes back as the same object.
 export async function redactInaccessibleActivity<T extends ActivityRow>(
   viewerId: string,

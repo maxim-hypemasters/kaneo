@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (новая)",
 				"chooseProjectForFeature": "Выберите проект, чтобы указать фичу.",
 				"loadingFeatures": "Загрузка фич...",
-				"loadFeaturesError": "Не удалось загрузить фичи."
+				"loadFeaturesError": "Не удалось загрузить фичи.",
+				"release": "Релиз",
+				"noRelease": "Без релиза",
+				"searchReleases": "Поиск релизов...",
+				"releaseFromFeature": "{{name}} (из фичи)",
+				"chooseProjectForRelease": "Выберите проект, чтобы указать релиз.",
+				"loadingReleases": "Загрузка релизов...",
+				"loadReleasesError": "Не удалось загрузить релизы.",
+				"noReleasesFound": "Релизы не найдены"
 			}
 		},
 		"editor": {
@@ -2494,7 +2502,9 @@
 				"open": "Открыть",
 				"close": "Закрыть"
 			},
-			"createFeature": "Создать фичу"
+			"createFeature": "Создать фичу",
+			"goToReleases": "Перейти к релизам",
+			"createRelease": "Создать релиз"
 		},
 		"sidebar": {
 			"projects": "Проекты",
@@ -2664,7 +2674,9 @@
 				"editorNumberedList": "Нумерованный список",
 				"editorCodeBlock": "Блок кода",
 				"editorUndo": "Отменить",
-				"editorRedo": "Повторить"
+				"editorRedo": "Повторить",
+				"goToReleases": "Перейти к релизам",
+				"setRelease": "Задать релиз"
 			},
 			"title": "Сочетания клавиш",
 			"searchPlaceholder": "Поиск по действию или клавише",
@@ -2881,7 +2893,10 @@
 		"removedFromFeature": "убрал задачу из фичи «{{feature}}»",
 		"changedFeature": "переместил задачу из фичи «{{from}}» в «{{to}}»",
 		"madeFeature": "сделал эту задачу фичей",
-		"madeTask": "сделал эту фичу задачей"
+		"madeTask": "сделал эту фичу задачей",
+		"addedToRelease": "добавил задачу в релиз «{{release}}»",
+		"removedFromRelease": "убрал задачу из релиза «{{release}}»",
+		"changedRelease": "переместил задачу из релиза «{{from}}» в «{{to}}»"
 	},
 	"tasks": {
 		"title": "Задачи",
@@ -2907,7 +2922,8 @@
 			"list": "Список",
 			"backlog": "Бэклог",
 			"gantt": "Гант",
-			"heading": "Вид"
+			"heading": "Вид",
+			"releases": "Релизы"
 		},
 		"common": {
 			"selectTask": "Выбрать задачу",
@@ -3186,7 +3202,8 @@
 				"priority": "Приоритет",
 				"assignee": "Исполнитель",
 				"dueDate": "Срок выполнения",
-				"labels": "Метки"
+				"labels": "Метки",
+				"release": "Релиз"
 			},
 			"operators": {
 				"isAnyOf": "любой из",
@@ -3567,6 +3584,185 @@
 			"convertBlocked": "Уберите задачи из этой фичи, прежде чем преобразовать её в задачу.",
 			"openFeature": "Открыть фичу {{title}}",
 			"inProject": "Фичи в проекте"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Релизы",
+			"count_one": "{{count}} релиз",
+			"count_few": "{{count}} релиза",
+			"count_many": "{{count}} релизов",
+			"count_other": "{{count}} релиза",
+			"new": "Новый релиз",
+			"edit": "Редактировать релиз",
+			"delete": "Удалить релиз",
+			"property": "Релиз",
+			"none": "Без релиза",
+			"unknown": "Неизвестный релиз",
+			"searchPlaceholder": "Поиск релизов…",
+			"pickerEmpty": "В этом проекте пока нет релизов",
+			"updateError": "Не удалось обновить релиз",
+			"featureReleaseHint": "Релиз фичи",
+			"followNote": "Задачи, которые следуют за этой фичей, перемещаются вместе с ней.",
+			"movedWithFeature_one": "Также перемещена {{count}} задача этой фичи",
+			"movedWithFeature_few": "Также перемещены {{count}} задачи этой фичи",
+			"movedWithFeature_many": "Также перемещено {{count}} задач этой фичи",
+			"movedWithFeature_other": "Также перемещено {{count}} задачи этой фичи",
+			"loadError": "Не удалось загрузить релизы.",
+			"retry": "Попробовать снова",
+			"sections": {
+				"active": "Активные",
+				"upcoming": "Предстоящие",
+				"past": "Прошедшие"
+			},
+			"phase": {
+				"upcoming": "Предстоящий",
+				"inProgress": "В работе",
+				"codeFreeze": "Заморозка кода",
+				"pastSubmission": "После отправки"
+			},
+			"dates": {
+				"start": "Начало",
+				"codeFreeze": "Заморозка кода",
+				"submission": "Отправка"
+			},
+			"countdown": {
+				"startsIn_one": "Начнётся через {{count}} день",
+				"startsIn_few": "Начнётся через {{count}} дня",
+				"startsIn_many": "Начнётся через {{count}} дней",
+				"startsIn_other": "Начнётся через {{count}} дня",
+				"startsToday": "Начинается сегодня",
+				"freezeIn_one": "Заморозка кода через {{count}} день",
+				"freezeIn_few": "Заморозка кода через {{count}} дня",
+				"freezeIn_many": "Заморозка кода через {{count}} дней",
+				"freezeIn_other": "Заморозка кода через {{count}} дня",
+				"freezeToday": "Заморозка кода сегодня",
+				"submissionIn_one": "Отправка через {{count}} день",
+				"submissionIn_few": "Отправка через {{count}} дня",
+				"submissionIn_many": "Отправка через {{count}} дней",
+				"submissionIn_other": "Отправка через {{count}} дня",
+				"submissionToday": "Отправка сегодня",
+				"submittedAgo_one": "Отправлен {{count}} день назад",
+				"submittedAgo_few": "Отправлен {{count}} дня назад",
+				"submittedAgo_many": "Отправлен {{count}} дней назад",
+				"submittedAgo_other": "Отправлен {{count}} дня назад"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "Выполнено {{completed}} из {{count}} задачи",
+			"progressAria_few": "Выполнено {{completed}} из {{count}} задач",
+			"progressAria_many": "Выполнено {{completed}} из {{count}} задач",
+			"progressAria_other": "Выполнено {{completed}} из {{count}} задачи",
+			"counts": {
+				"features_one": "{{count}} фича",
+				"features_few": "{{count}} фичи",
+				"features_many": "{{count}} фич",
+				"features_other": "{{count}} фичи",
+				"tasks_one": "{{count}} задача",
+				"tasks_few": "{{count}} задачи",
+				"tasks_many": "{{count}} задач",
+				"tasks_other": "{{count}} задачи",
+				"unfinished_one": "{{count}} незавершённая",
+				"unfinished_few": "{{count}} незавершённые",
+				"unfinished_many": "{{count}} незавершённых",
+				"unfinished_other": "{{count}} незавершённой"
+			},
+			"empty": {
+				"title": "Релизов пока нет",
+				"description": "Запланируйте релиз с датой начала, заморозкой кода и датой отправки, а затем добавьте в него фичи и задачи.",
+				"readOnly": "Здесь появятся релизы, запланированные для этого проекта."
+			},
+			"dialog": {
+				"createTitle": "Новый релиз",
+				"editTitle": "Редактировать релиз",
+				"createDescription": "У релиза есть дата начала, заморозка кода и дата отправки — именно в таком порядке.",
+				"nameLabel": "Название",
+				"namePlaceholder": "например, 2.4",
+				"nameRequired": "Введите название",
+				"dateRequired": "Выберите дату",
+				"startLabel": "Начало",
+				"codeFreezeLabel": "Заморозка кода",
+				"submissionLabel": "Отправка",
+				"pickDate": "Выбрать дату",
+				"descriptionLabel": "Описание",
+				"descriptionPlaceholder": "Что войдёт в этот релиз (необязательно)",
+				"create": "Создать релиз",
+				"save": "Сохранить",
+				"createSuccess": "Релиз создан",
+				"updateSuccess": "Релиз обновлён",
+				"createError": "Не удалось создать релиз",
+				"updateError": "Не удалось обновить релиз",
+				"beforeStart": "{{date}} — раньше даты начала",
+				"afterCodeFreeze": "{{date}} — позже заморозки кода",
+				"beforeCodeFreeze": "{{date}} — раньше заморозки кода",
+				"afterSubmission": "{{date}} — позже даты отправки",
+				"limitHint": "Между {{start}} и {{end}}"
+			},
+			"deleteDialog": {
+				"title": "Удалить релиз {{name}}?",
+				"description_one": "{{count}} задача или фича останется в проекте, но без релиза.",
+				"description_few": "{{count}} задачи и фичи останутся в проекте, но без релиза.",
+				"description_many": "{{count}} задач и фич останутся в проекте, но без релиза.",
+				"description_other": "{{count}} задачи и фичи останутся в проекте, но без релиза.",
+				"descriptionEmpty": "В этом релизе нет ни задач, ни фич.",
+				"confirm": "Удалить релиз",
+				"success": "Релиз удалён",
+				"error": "Не удалось удалить релиз"
+			},
+			"moveUnfinished": {
+				"action": "Перенести незавершённое…",
+				"title": "Перенести незавершённые элементы",
+				"description": "Незавершённые задачи и фичи переносятся по отдельности. Завершённые остаются в релизе {{name}}.",
+				"target": "Перенести в",
+				"noRelease": "Без релиза",
+				"summary_one": "Будет перенесён {{count}} незавершённый элемент.",
+				"summary_few": "Будут перенесены {{count}} незавершённых элемента.",
+				"summary_many": "Будет перенесено {{count}} незавершённых элементов.",
+				"summary_other": "Будет перенесено {{count}} незавершённого элемента.",
+				"none": "В этом релизе всё завершено.",
+				"noTargets": "Других релизов нет",
+				"confirm": "Перенести элементы",
+				"success_one": "Перенесён {{count}} элемент в релиз {{name}}",
+				"success_few": "Перенесено {{count}} элемента в релиз {{name}}",
+				"success_many": "Перенесено {{count}} элементов в релиз {{name}}",
+				"success_other": "Перенесено {{count}} элемента в релиз {{name}}",
+				"successNoRelease_one": "{{count}} элемент убран из релиза",
+				"successNoRelease_few": "{{count}} элемента убраны из релиза",
+				"successNoRelease_many": "{{count}} элементов убрано из релиза",
+				"successNoRelease_other": "{{count}} элемента убрано из релиза",
+				"error": "Не удалось перенести элементы"
+			},
+			"detail": {
+				"back": "Все релизы",
+				"notFound": "Этот релиз не существует или был удалён.",
+				"backToReleases": "Назад к релизам",
+				"standaloneHeading": "Задачи без фичи",
+				"empty": "В этом релизе пока ничего нет",
+				"emptyHint": "Укажите релиз у задачи или фичи либо добавьте задачу здесь.",
+				"addTask": "Добавить задачу",
+				"featureElsewhere": "Фича вне этого релиза",
+				"tasksElsewhere_one": "Ещё {{count}} задача вне этого релиза",
+				"tasksElsewhere_few": "Ещё {{count}} задачи вне этого релиза",
+				"tasksElsewhere_many": "Ещё {{count}} задач вне этого релиза",
+				"tasksElsewhere_other": "Ещё {{count}} задачи вне этого релиза",
+				"today": "Сегодня",
+				"loadingTasks": "Загрузка задач…",
+				"timelineLabel": "Временная шкала релиза"
+			},
+			"gantt": {
+				"strip": "Релизы",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Начало: {{date}}",
+					"codeFreeze": "Заморозка кода: {{date}}",
+					"submission": "Отправка: {{date}}"
+				},
+				"actionsFor": "Действия для релиза {{name}}",
+				"loading": "Загрузка релизов…",
+				"tasksLoadError": "Не удалось загрузить задачи."
+			},
+			"ux": {
+				"nameTaken": "Релиз с таким названием уже существует"
+			}
 		}
 	},
 	"invitations": {

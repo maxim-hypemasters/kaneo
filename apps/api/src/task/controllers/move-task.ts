@@ -15,6 +15,7 @@ import { assertProjectAccess } from "../../project-access/assert-project-access"
 import { filterUsersWithProjectAccess } from "../../project-access/filter-users-with-project-access";
 import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
 import { recordFeatureChange } from "../feature-hierarchy/record-feature-change";
+import { recordReleaseChange } from "../../release/membership/record-release-change";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
 
@@ -146,10 +147,14 @@ async function moveTask({
       resolvedColumn.id,
     );
 
-    // Read under the lock, so a feature the task joined since the read
-    // above is the one it leaves (and the one whose progress changes).
+    // Read under the lock, so a feature or release the task joined since
+    // the read above is the one it leaves (and the one whose progress
+    // changes).
     const [current] = await tx
-      .select({ featureId: taskTable.featureId })
+      .select({
+        featureId: taskTable.featureId,
+        releaseId: taskTable.releaseId,
+      })
       .from(taskTable)
       .where(
         and(
@@ -172,8 +177,10 @@ async function moveTask({
         columnId: resolvedColumn.id,
         number: nextTaskNumber,
         position: nextPosition,
-        // Features stay within a project, so the task leaves its feature.
+        // Features and releases stay within a project, so the task leaves
+        // both.
         featureId: null,
+        releaseId: null,
       })
       .where(
         and(
@@ -213,6 +220,14 @@ async function moveTask({
         userId: currentUserId,
       });
     }
+
+    await recordReleaseChange(tx, {
+      taskIds: [taskId],
+      projectId: sourceProject.id,
+      from: current.releaseId,
+      to: null,
+      userId: currentUserId,
+    });
 
     let movedTask = updatedTask;
     const assigneeId = updatedTask.userId;

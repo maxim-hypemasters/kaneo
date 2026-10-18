@@ -169,6 +169,8 @@ async function convertProject(tx: Tx, projectId: string) {
       );
   }
   // One statement per chunk of memberships, however many features they join.
+  // Release ids are left alone: a task linked here doesn't take its feature's
+  // release the way joining one through the API does.
   for (const batch of chunks([...plan.memberships])) {
     const planned = sql.join(
       batch.map(([taskId, featureId]) => sql`(${taskId}, ${featureId})`),

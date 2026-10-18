@@ -8,13 +8,25 @@ import {
 } from "lucide-react";
 import type { TaskLayout } from "@/store/user-preferences";
 
-export type ProjectView = "board" | "list" | "backlog" | "calendar" | "gantt";
+export type ProjectView =
+  | "board"
+  | "list"
+  | "backlog"
+  | "releases"
+  | "calendar"
+  | "gantt";
 
-export type ProjectRoute = "board" | "backlog" | "calendar" | "gantt";
+export type ProjectRoute =
+  | "board"
+  | "backlog"
+  | "releases"
+  | "calendar"
+  | "gantt";
 
 export const PROJECT_ROUTE_PATHS = {
   board: "/dashboard/workspace/$workspaceId/project/$projectId/board",
   backlog: "/dashboard/workspace/$workspaceId/project/$projectId/backlog",
+  releases: "/dashboard/workspace/$workspaceId/project/$projectId/releases",
   calendar: "/dashboard/workspace/$workspaceId/project/$projectId/calendar",
   gantt: "/dashboard/workspace/$workspaceId/project/$projectId/gantt",
 } as const;
@@ -62,8 +74,14 @@ export function resolveProjectView(
   return route === "board" ? viewMode : route;
 }
 
-export const TASK_LAYOUTS = PROJECT_VIEWS.filter(
-  (view) => view.id !== "backlog",
+// The views that show the project's tasks; Backlog and Releases are planning
+// pages next to them.
+export function isTaskLayoutView(view: ProjectView): view is TaskLayout {
+  return view !== "backlog" && view !== "releases";
+}
+
+export const TASK_LAYOUTS = PROJECT_VIEWS.filter((view) =>
+  isTaskLayoutView(view.id),
 );
 
 export function tasksViewFor(

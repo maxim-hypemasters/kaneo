@@ -62,6 +62,7 @@ import updateTaskPriority from "./controllers/update-task-priority";
 import updateTaskStatus from "./controllers/update-task-status";
 import updateTaskTitle from "./controllers/update-task-title";
 import updateTaskFeature from "./controllers/update-task-feature";
+import updateTaskRelease from "./controllers/update-task-release";
 import updateTaskType from "./controllers/update-task-type";
 import {
   getDeferredDescriptionMatches,
@@ -80,6 +81,7 @@ import {
   taskByTicketIdSchema,
   taskExportSchema,
   taskImportResultSchema,
+  taskReleaseResultSchema,
   taskSchema,
   taskWithAssigneeSchema,
 } from "./response";
@@ -110,6 +112,7 @@ import {
   updateTaskBody,
   updateTitleBody,
   updateFeatureBody,
+  updateTaskReleaseBody,
   updateTypeBody,
 } from "./schema";
 
@@ -141,7 +144,7 @@ const listProjectFeaturesRoute = createRoute({
   tags: ["Tasks"],
   summary: "List project features",
   description:
-    "Get the project's features (tasks of type feature), by title, with their status. Lighter than the board for picking a feature.",
+    "Get the project's features (tasks of type feature), by title, with their status and release. Lighter than the board for picking a feature.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["read"] }),
@@ -163,7 +166,7 @@ const listTasksRoute = createRoute({
   tags: ["Tasks"],
   summary: "List tasks",
   description:
-    "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
+    "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Set releaseId to a release's id, or to none, to keep only the tasks and features in that release, or in none. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
   middleware: [workspaceAccess.fromProject("projectId")] as const,
   request: { params: projectIdParam, query: listTasksQuery },
   responses: {
@@ -307,7 +310,7 @@ const createTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Create task",
   description:
-    "Add a task to a project. It is placed in the column named by `status`.",
+    "Add a task to a project. It is placed in the column named by `status`. Without releaseId, a task created in a feature starts in that feature's release, and any other task in none; an explicit releaseId, or null for none, wins.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["create"] }),
@@ -326,7 +329,7 @@ const createTaskRoute = createRoute({
     403: errorResponse(
       "No access to the project, or missing task:create permission",
     ),
-    404: errorResponse("Project or feature not found"),
+    404: errorResponse("Project, feature or release not found"),
     409: errorResponse("featureId isn't a feature, or the task is a feature"),
   },
 });
@@ -338,7 +341,7 @@ const duplicateTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Duplicate a task",
   description:
-    "Copy a task into the same project and column, including custom fields, labels, description assets, its type and its feature. Comments, time entries and a feature's tasks are not copied.",
+    "Copy a task into the same project and column, including custom fields, labels, description assets, its type, its feature and its release (none if that release was deleted meanwhile). Comments, time entries and a feature's tasks are not copied.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["create"] }),
@@ -408,7 +411,7 @@ const moveTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Move task",
   description:
-    "Move a task to another project, optionally into a named column. Both projects must be in the same workspace.",
+    "Move a task to another project, optionally into a named column. Both projects must be in the same workspace. Features and releases belong to one project, so the task leaves its feature and its release, recording each change in its activity.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -442,7 +445,7 @@ const updateTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task",
   description:
-    "Replace every field of a task. Use the single-field routes for narrower edits.",
+    "Replace every field of a task. Its type, feature and release aren't part of this body and stay as they are: change them with PUT /task/type/{id}, /task/feature/{id} and /task/release/{id}. Use the single-field routes for narrower edits.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -691,7 +694,7 @@ const updateTaskFeatureRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task feature",
   description:
-    "Put a task into a feature of its project, or take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one.",
+    "Put a task into a feature of its project, or take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one. A task in no release takes the feature's release when it joins, and records that in its activity; leaving or switching features keeps its release.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -712,7 +715,44 @@ const updateTaskFeatureRoute = createRoute({
     ),
     404: errorResponse("Task or feature not found"),
     409: errorResponse(
-      "The target isn't a feature, or the task is itself a feature",
+      "The target isn't a feature, the task is itself a feature, or another edit changed it at the same time; try again",
+    ),
+  },
+});
+
+const updateTaskReleaseRoute = createRoute({
+  method: "put",
+  operationId: "updateTaskRelease",
+  path: "/release/{id}",
+  tags: ["Tasks"],
+  summary: "Update task release",
+  description:
+    "Put a task or feature into a release of its project, or take it out with null. A feature's tasks that were in its previous release (or, like it, in none) move with it; tasks given another release keep theirs.",
+  middleware: [
+    workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: taskParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateTaskReleaseBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse(
+      "The updated task, with the tasks that moved along",
+      taskReleaseResultSchema,
+    ),
+    400: errorResponse("Invalid body"),
+    402: errorResponse("Workspace plan has expired"),
+    403: errorResponse(
+      "No access to the project, or missing task:update permission",
+    ),
+    404: errorResponse("Task or release not found"),
+    409: errorResponse(
+      "Another edit changed these tasks at the same time; try again",
     ),
   },
 });
@@ -985,6 +1025,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       draftAssetIds,
       type,
       featureId,
+      releaseId,
     } = c.req.valid("json");
 
     const parsedStartDate =
@@ -1012,6 +1053,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       draftAssetIds,
       type,
       featureId,
+      releaseId,
     });
 
     return c.json(task, 200);
@@ -1183,6 +1225,16 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
 
     return c.json(
       await updateTaskFeature({ id, featureId, currentUserId }),
+      200,
+    );
+  })
+  .openapi(updateTaskReleaseRoute, async (c) => {
+    const { id } = c.req.valid("param");
+    const { releaseId } = c.req.valid("json");
+    const currentUserId = c.get("userId");
+
+    return c.json(
+      await updateTaskRelease({ id, releaseId, currentUserId }),
       200,
     );
   })

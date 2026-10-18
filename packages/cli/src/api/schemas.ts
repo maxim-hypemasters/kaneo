@@ -138,6 +138,8 @@ export const TaskDetail = Schema.Struct({
   // Absent on servers before features.
   type: Schema.optionalKey(Schema.String),
   featureId: Schema.optionalKey(NullableString),
+  // Absent on servers before releases.
+  releaseId: Schema.optionalKey(NullableString),
 });
 export type TaskDetail = typeof TaskDetail.Type;
 

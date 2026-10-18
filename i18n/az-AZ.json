@@ -173,7 +173,15 @@
 				"newFeatureSuffix": "{{name}} (yeni)",
 				"chooseProjectForFeature": "İmkan seçmək üçün layihə seçin.",
 				"loadingFeatures": "İmkanlar yüklənir...",
-				"loadFeaturesError": "İmkanları yükləmək alınmadı."
+				"loadFeaturesError": "İmkanları yükləmək alınmadı.",
+				"release": "Buraxılış",
+				"noRelease": "Buraxılış yoxdur",
+				"searchReleases": "Buraxılışları axtar...",
+				"releaseFromFeature": "{{name}} (imkandan)",
+				"chooseProjectForRelease": "Buraxılış seçmək üçün layihə seçin.",
+				"loadingReleases": "Buraxılışlar yüklənir...",
+				"loadReleasesError": "Buraxılışları yükləmək alınmadı.",
+				"noReleasesFound": "Buraxılış tapılmadı"
 			}
 		},
 		"editor": {
@@ -2402,7 +2410,9 @@
 				"open": "Aç",
 				"close": "Bağla"
 			},
-			"createFeature": "İmkan yarat"
+			"createFeature": "İmkan yarat",
+			"goToReleases": "Buraxılışlara keç",
+			"createRelease": "Buraxılış yarat"
 		},
 		"sidebar": {
 			"projects": "Layihələr",
@@ -2572,7 +2582,9 @@
 				"editorNumberedList": "Nömrəli siyahı",
 				"editorCodeBlock": "Kod bloku",
 				"editorUndo": "Geri al",
-				"editorRedo": "Təkrarla"
+				"editorRedo": "Təkrarla",
+				"goToReleases": "Buraxılışlara keç",
+				"setRelease": "Buraxılışı təyin et"
 			},
 			"title": "Klaviatura qısayolları",
 			"searchPlaceholder": "Əməliyyat və ya düymə ilə axtar",
@@ -2779,7 +2791,10 @@
 		"removedFromFeature": "Tapşırığı \"{{feature}}\" imkanından çıxardı",
 		"changedFeature": "Tapşırığı \"{{from}}\" imkanından \"{{to}}\" imkanına köçürdü",
 		"madeFeature": "Bu tapşırığı imkana çevirdi",
-		"madeTask": "Bu imkanı tapşırığa çevirdi"
+		"madeTask": "Bu imkanı tapşırığa çevirdi",
+		"addedToRelease": "Tapşırığı \"{{release}}\" buraxılışına əlavə etdi",
+		"removedFromRelease": "Tapşırığı \"{{release}}\" buraxılışından çıxardı",
+		"changedRelease": "Tapşırığı \"{{from}}\" buraxılışından \"{{to}}\" buraxılışına köçürdü"
 	},
 	"tasks": {
 		"title": "Tapşırıqlar",
@@ -2805,7 +2820,8 @@
 			"list": "Siyahı",
 			"backlog": "Gözləyən tapşırıqlar",
 			"gantt": "Qant",
-			"heading": "Görünüş"
+			"heading": "Görünüş",
+			"releases": "Buraxılışlar"
 		},
 		"common": {
 			"selectTask": "Tapşırıq seç",
@@ -3077,7 +3093,8 @@
 				"priority": "Prioritet",
 				"assignee": "İcraçı",
 				"dueDate": "Son tarix",
-				"labels": "Etiketlər"
+				"labels": "Etiketlər",
+				"release": "Buraxılış"
 			},
 			"operators": {
 				"isAnyOf": "Bunlardan biridir",
@@ -3389,6 +3406,155 @@
 			"convertBlocked": "Bu imkanı tapşırığa çevirməzdən əvvəl onun tapşırıqlarını oradan çıxarın.",
 			"openFeature": "{{title}} imkanını aç",
 			"inProject": "Layihədəki imkanlar"
+		},
+		"releases": {
+			"pageTitle": "{{name}} – Buraxılışlar",
+			"count_one": "{{count}} buraxılış",
+			"count_other": "{{count}} buraxılış",
+			"new": "Yeni buraxılış",
+			"edit": "Buraxılışı redaktə et",
+			"delete": "Buraxılışı sil",
+			"property": "Buraxılış",
+			"none": "Buraxılış yoxdur",
+			"unknown": "Naməlum buraxılış",
+			"searchPlaceholder": "Buraxılışları axtar…",
+			"pickerEmpty": "Bu layihədə hələ buraxılış yoxdur",
+			"updateError": "Buraxılışı yeniləmək alınmadı",
+			"featureReleaseHint": "İmkanın buraxılışı",
+			"followNote": "Buraxılışı bu imkandan götürən tapşırıqlar da onunla birlikdə köçürülür.",
+			"movedWithFeature_one": "Bu imkanın {{count}} tapşırığı da köçürüldü",
+			"movedWithFeature_other": "Bu imkanın {{count}} tapşırığı da köçürüldü",
+			"loadError": "Buraxılışları yükləmək alınmadı.",
+			"retry": "Yenidən cəhd et",
+			"sections": {
+				"active": "Aktiv",
+				"upcoming": "Qarşıdakı",
+				"past": "Keçmiş"
+			},
+			"phase": {
+				"upcoming": "Qarşıdakı",
+				"inProgress": "İcra olunur",
+				"codeFreeze": "Kod dondurulması",
+				"pastSubmission": "Təqdimatdan sonra"
+			},
+			"dates": {
+				"start": "Başlanğıc",
+				"codeFreeze": "Kod dondurulması",
+				"submission": "Təqdimat"
+			},
+			"countdown": {
+				"startsIn_one": "{{count}} gün sonra başlayır",
+				"startsIn_other": "{{count}} gün sonra başlayır",
+				"startsToday": "Bu gün başlayır",
+				"freezeIn_one": "Kod dondurulmasına {{count}} gün qalıb",
+				"freezeIn_other": "Kod dondurulmasına {{count}} gün qalıb",
+				"freezeToday": "Kod dondurulması bu gün",
+				"submissionIn_one": "Təqdimata {{count}} gün qalıb",
+				"submissionIn_other": "Təqdimata {{count}} gün qalıb",
+				"submissionToday": "Təqdimat bu gün",
+				"submittedAgo_one": "{{count}} gün əvvəl təqdim edilib",
+				"submittedAgo_other": "{{count}} gün əvvəl təqdim edilib"
+			},
+			"progress": "{{completed}}/{{total}}",
+			"progressAria_one": "{{count}} tapşırıqdan {{completed}} tamamlanıb",
+			"progressAria_other": "{{count}} tapşırıqdan {{completed}} tamamlanıb",
+			"counts": {
+				"features_one": "{{count}} imkan",
+				"features_other": "{{count}} imkan",
+				"tasks_one": "{{count}} tapşırıq",
+				"tasks_other": "{{count}} tapşırıq",
+				"unfinished_one": "{{count}} tamamlanmamış",
+				"unfinished_other": "{{count}} tamamlanmamış"
+			},
+			"empty": {
+				"title": "Hələ buraxılış yoxdur",
+				"description": "Başlama tarixi, kod dondurulması və təqdimat tarixi olan buraxılış planlaşdırın, sonra ona imkanlar və tapşırıqlar əlavə edin.",
+				"readOnly": "Bu layihə üçün planlaşdırılan buraxılışlar burada görünəcək."
+			},
+			"dialog": {
+				"createTitle": "Yeni buraxılış",
+				"editTitle": "Buraxılışı redaktə et",
+				"createDescription": "Buraxılışın ardıcıllıqla başlama tarixi, kod dondurulması və təqdimat tarixi olur.",
+				"nameLabel": "Ad",
+				"namePlaceholder": "Məs., 2.4",
+				"nameRequired": "Ad daxil edin",
+				"dateRequired": "Tarix seçin",
+				"startLabel": "Başlanğıc",
+				"codeFreezeLabel": "Kod dondurulması",
+				"submissionLabel": "Təqdimat",
+				"pickDate": "Tarix seç",
+				"descriptionLabel": "Təsvir",
+				"descriptionPlaceholder": "Bu buraxılış nə gətirir (istəyə bağlı)",
+				"create": "Buraxılış yarat",
+				"save": "Yadda saxla",
+				"createSuccess": "Buraxılış yaradıldı",
+				"updateSuccess": "Buraxılış yeniləndi",
+				"createError": "Buraxılışı yaratmaq alınmadı",
+				"updateError": "Buraxılışı yeniləmək alınmadı",
+				"beforeStart": "{{date}} başlama tarixindən əvvəldir",
+				"afterCodeFreeze": "{{date}} kod dondurulmasından sonradır",
+				"beforeCodeFreeze": "{{date}} kod dondurulmasından əvvəldir",
+				"afterSubmission": "{{date}} təqdimat tarixindən sonradır",
+				"limitHint": "{{start}} ilə {{end}} arasında"
+			},
+			"deleteDialog": {
+				"title": "{{name}} buraxılışı silinsin?",
+				"description_one": "İçindəki {{count}} tapşırıq və ya imkan buraxılışsız olaraq layihədə qalacaq.",
+				"description_other": "İçindəki {{count}} tapşırıq və imkan buraxılışsız olaraq layihədə qalacaq.",
+				"descriptionEmpty": "Bu buraxılışda tapşırıq və ya imkan yoxdur.",
+				"confirm": "Buraxılışı sil",
+				"success": "Buraxılış silindi",
+				"error": "Buraxılışı silmək alınmadı"
+			},
+			"moveUnfinished": {
+				"action": "Tamamlanmamışları köçür…",
+				"title": "Tamamlanmamış elementləri köçür",
+				"description": "Tamamlanmamış tapşırıqlar və imkanlar bir-bir köçürülür. Tamamlananlar {{name}} buraxılışında qalır.",
+				"target": "Hara köçürülsün",
+				"noRelease": "Buraxılış yoxdur",
+				"summary_one": "{{count}} tamamlanmamış element köçürüləcək.",
+				"summary_other": "{{count}} tamamlanmamış element köçürüləcək.",
+				"none": "Bu buraxılışdakı hər şey tamamlanıb.",
+				"noTargets": "Başqa buraxılış yoxdur",
+				"confirm": "Elementləri köçür",
+				"success_one": "{{count}} element {{name}} buraxılışına köçürüldü",
+				"success_other": "{{count}} element {{name}} buraxılışına köçürüldü",
+				"successNoRelease_one": "{{count}} element buraxılışdan çıxarıldı",
+				"successNoRelease_other": "{{count}} element buraxılışdan çıxarıldı",
+				"error": "Elementləri köçürmək alınmadı"
+			},
+			"detail": {
+				"back": "Bütün buraxılışlar",
+				"notFound": "Bu buraxılış mövcud deyil və ya silinib.",
+				"backToReleases": "Buraxılışlara qayıt",
+				"standaloneHeading": "İmkana aid olmayan tapşırıqlar",
+				"empty": "Bu buraxılışda hələ heç nə yoxdur",
+				"emptyHint": "Tapşırığın və ya imkanın buraxılışını təyin edin, ya da buraya tapşırıq əlavə edin.",
+				"addTask": "Tapşırıq əlavə et",
+				"featureElsewhere": "İmkan bu buraxılışda deyil",
+				"tasksElsewhere_one": "Bu buraxılışdan kənarda daha {{count}} tapşırıq",
+				"tasksElsewhere_other": "Bu buraxılışdan kənarda daha {{count}} tapşırıq",
+				"today": "Bu gün",
+				"loadingTasks": "Tapşırıqlar yüklənir…",
+				"timelineLabel": "Buraxılışın zaman xətti"
+			},
+			"gantt": {
+				"strip": "Buraxılışlar",
+				"markerAria": "{{name}}: {{kind}}, {{date}}"
+			},
+			"pages": {
+				"limit": {
+					"start": "Başlayır: {{date}}",
+					"codeFreeze": "Kod dondurulması: {{date}}",
+					"submission": "Təqdimat: {{date}}"
+				},
+				"actionsFor": "{{name}} üçün əməliyyatlar",
+				"loading": "Buraxılışlar yüklənir…",
+				"tasksLoadError": "Tapşırıqları yükləmək alınmadı."
+			},
+			"ux": {
+				"nameTaken": "Bu adda buraxılış artıq mövcuddur"
+			}
 		}
 	},
 	"invitations": {

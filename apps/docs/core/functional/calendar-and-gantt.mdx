@@ -40,6 +40,22 @@ When one task blocks another (set under **Relations** in the task), Gantt draws 
 
 If dragging or resizing a bar would break a dependency, Kaneo asks first and lists the tasks that would move. **Move N related tasks** keeps everything in order: tasks it blocks are pushed later and tasks blocking it are pulled earlier, along the whole chain, each keeping its length. Overlaps that were already there stay as they are. **Move only this task** keeps just your change, and **Cancel** puts the bar back. When the tasks block each other in a loop and moving them would come back around to the task you moved, only **Move only this task** and **Cancel** are offered.
 
+### Releases
+
+If the project has [releases](/core/functional/releases), Gantt marks each release's dates with lines that run down the whole chart, behind the bars:
+
+| Date | Line | Icon |
+| --- | --- | --- |
+| Start | Dotted | Flag |
+| Code freeze | Dashed | Snowflake |
+| Submission | Solid | Paper plane |
+
+The line styles differ, so you can tell the dates apart without relying on color. When dates of several releases fall on the same day, their lines sit side by side.
+
+A **Releases** strip under the days at the top names the release at each line. Select a label to open that release, or hover it to see the release, the date, and which date it is. Where dates are too close together for names, the labels show just their icons.
+
+The lines follow the **Release** filter. Filter by a release to see only its tasks and its lines; with **is not**, the other releases' lines stay. Filtering for **No release** alone hides every line.
+
 ### Group by assignee
 
 To see who is carrying which work, open **Display** and set **Group by** to **Assignee**. The timeline then shows one lane per project member, plus **Unassigned**, and your choice is remembered for next time. Each lane header shows the member's task count and a thin line spanning their earliest start to their latest due date. Click a header to collapse or expand its lane. If you filter by assignee, only the matching lanes are shown.

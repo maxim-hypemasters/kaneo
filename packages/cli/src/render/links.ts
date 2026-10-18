@@ -9,6 +9,17 @@ export function taskUrl(
   return `${webUrl}/dashboard/workspace/${task.workspaceId}/project/${task.projectId}/task/${task.id}`;
 }
 
+export function releaseUrl(
+  webUrl: string,
+  release: {
+    readonly workspaceId: string;
+    readonly projectId: string;
+    readonly id: string;
+  },
+): string {
+  return `${webUrl}/dashboard/workspace/${release.workspaceId}/project/${release.projectId}/releases/${release.id}`;
+}
+
 export function projectUrl(
   webUrl: string,
   project: { readonly workspaceId: string; readonly id: string },

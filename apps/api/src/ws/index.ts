@@ -831,6 +831,19 @@ subscribeToEvent<{
   );
 });
 
+// Its own message rather than PROJECT_UPDATED, which refetches the board.
+subscribeToEvent<{ projectId: string; initiatorId?: string }>(
+  "release.changed",
+  async ({ projectId, initiatorId }) => {
+    if (!projectId) return;
+    broadcastToProject(
+      projectId,
+      { type: "RELEASES_UPDATED", projectId },
+      initiatorId,
+    );
+  },
+);
+
 for (const eventName of taskUpdateEvents) {
   subscribeToEvent<TaskEvent>(eventName, async (data) => {
     const { projectId, initiatorId } = data;

@@ -134,6 +134,63 @@ describe("ProjectLayout access states", () => {
   });
 });
 
+describe("ProjectLayout releases", () => {
+  it("links Releases next to Tasks and Backlog", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    renderLayout();
+
+    const links = screen
+      .getByRole("navigation", { name: "tasks:view.heading" })
+      .querySelectorAll("a");
+    expect([...links].map((link) => link.textContent)).toEqual([
+      "tasks:title",
+      "tasks:view.backlog",
+      "tasks:view.releases",
+    ]);
+    const releases = screen.getByRole("link", { name: "tasks:view.releases" });
+    expect(releases.getAttribute("aria-current")).toBeNull();
+    expect(releases.getAttribute("href")).toBe(
+      "/dashboard/workspace/$workspaceId/project/$projectId/releases",
+    );
+  });
+
+  it("wraps the toolbar below the view links on phones instead of scrolling them", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    renderLayout("backlog");
+
+    const nav = screen.getByRole("navigation", { name: "tasks:view.heading" });
+    // A scrolling nav with a hidden scrollbar cut Releases off at 375px.
+    expect(nav.className).not.toMatch(/overflow-(x-)?(auto|scroll)/);
+    expect(nav).not.toHaveClass("shrink-0");
+    expect(nav.parentElement).toHaveClass("flex-wrap", "sm:flex-nowrap");
+    for (const link of nav.querySelectorAll("a")) {
+      expect(link.firstElementChild).toHaveClass("truncate");
+    }
+  });
+
+  it("marks Releases as current and keeps the last task view", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    useUserPreferencesStore.setState({ taskLayout: "gantt" });
+
+    renderLayout("releases");
+
+    expect(
+      screen
+        .getByRole("link", { name: "tasks:view.releases" })
+        .getAttribute("aria-current"),
+    ).toBe("page");
+    expect(
+      screen
+        .getByRole("link", { name: "tasks:title" })
+        .getAttribute("aria-current"),
+    ).toBeNull();
+    expect(useUserPreferencesStore.getState().taskLayout).toBe("gantt");
+    expect(
+      screen.getByRole("link", { name: "tasks:title" }).getAttribute("href"),
+    ).toBe("/dashboard/workspace/$workspaceId/project/$projectId/gantt");
+  });
+});
+
 describe("ProjectLayout tasks view", () => {
   it("returns from the backlog to a task view reached by a link", () => {
     project.current = { data: { name: "Alpha" }, error: null };
