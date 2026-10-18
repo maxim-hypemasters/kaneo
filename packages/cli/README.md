@@ -92,6 +92,7 @@ Credentials are resolved in this order: `--token`, then `KANEO_API_KEY`, then th
 | `kaneo time start`, `stop`, `status`, `log`, `list`, `edit` | Track time with a timer or log it afterwards |
 | `kaneo project list`, `view`, `create`, `edit`, `archive`, `unarchive`, `move`, `delete` | Manage projects |
 | `kaneo column list`, `create`, `edit`, `move`, `delete` | Manage a project's columns |
+| `kaneo release list`, `create`, `edit`, `delete` | Plan a project's releases with a start, a code freeze and a submission date |
 | `kaneo field list`, `create`, `delete` | Manage a project's custom fields |
 | `kaneo workflow list`, `set`, `delete` | Move tasks when GitHub, GitLab or Gitea events arrive |
 | `kaneo workspace list`, `use`, `create`, `edit`, `leave`, `delete` | Choose and manage workspaces |
@@ -117,7 +118,19 @@ kaneo task edit KAN-14 --feature KAN-12                # or --feature none to ta
 kaneo task edit KAN-9 --type feature                   # --type task turns a feature without tasks back
 ```
 
-`kaneo task view` and `kaneo task relation list` show a task's feature, or a feature's tasks. `--parent` on `task create` and the `subtask-of` and `parent-of` relation words still work but are deprecated: they put the task into a feature. In JSON, `parent` and `subtasks` repeat `feature` and `tasks` for one release.
+`kaneo task view` and `kaneo task relation list` show a task's feature, or a feature's tasks. `--parent` on `task create` and the `subtask-of` and `parent-of` relation words still work but are deprecated: they put the task into a feature. In JSON, `parent` and `subtasks` repeat `feature` and `tasks` for one more Kaneo version.
+
+A release holds a project's features and tasks, with a start date, a code freeze and a submission date. A task follows its feature's release until you give it another one:
+
+```bash
+kaneo release create 2.4 -p KAN --start 2026-11-02 --code-freeze 2026-11-20 --submission 2026-11-27
+kaneo task edit KAN-12 --release 2.4                   # a feature: its tasks in its old release move too
+kaneo task create "Refund emails" --feature KAN-12     # starts in the feature's release
+kaneo task edit KAN-15 --release none                  # takes one task out
+kaneo release list -p KAN
+```
+
+`--release` takes a release name or id in the task's project. Creating and editing releases needs permission to update the project, and deleting one also needs permission to edit tasks. Owners and admins have both by default. Deleting a release keeps its tasks and features in the project, without a release.
 
 Commands that delete or remove data ask for confirmation in a terminal and need `--yes` in scripts. Comments and descriptions can be read from a file with `-F <file>`, or from stdin with `-`.
 

@@ -62,6 +62,34 @@ export function parseDateInput(
     : Result.fail(invalid(input, flag, false));
 }
 
+// A local calendar day as YYYY-MM-DD, the form release dates take.
+export function localDay(date: Date): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+// A release date as YYYY-MM-DD. A release always has its three dates, so
+// `none`, which clears a task's date, is refused with that reason.
+export function parseDayInput(
+  input: string,
+  now: Date,
+  flag: string,
+): Result.Result<string, InvalidArgument> {
+  const value = input.trim().toLowerCase();
+  if (value === "none") {
+    return Result.fail(
+      new InvalidArgument({
+        message: `${flag} needs a date: release dates can't be cleared.`,
+        hint: "Use YYYY-MM-DD, today, tomorrow, or +3d.",
+      }),
+    );
+  }
+  const date = parseDay(value, now);
+  return date
+    ? Result.succeed(localDay(date))
+    : Result.fail(invalid(input, flag, false));
+}
+
 export function parseDateChange(
   input: string,
   now: Date,

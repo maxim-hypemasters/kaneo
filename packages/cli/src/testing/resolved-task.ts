@@ -37,6 +37,7 @@ export function resolvedTaskFixture(
       assigneeName: null,
       type: "task",
       featureId: null,
+      releaseId: null,
       ...task,
     },
     workspaceId: taskProject.workspaceId,

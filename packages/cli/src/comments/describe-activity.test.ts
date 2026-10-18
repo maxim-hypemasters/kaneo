@@ -133,6 +133,50 @@ describe("describeActivity", () => {
     expect(summary({ type: "created" })).toBe("created the task");
   });
 
+  it("describes release changes", () => {
+    const release = (eventData: Record<string, unknown>) =>
+      summary({ type: "release_changed", eventData });
+    expect(
+      release({
+        oldReleaseId: null,
+        oldReleaseName: null,
+        newReleaseId: "r1",
+        newReleaseName: "2.4",
+      }),
+    ).toBe('added the task to release "2.4"');
+    expect(
+      release({
+        oldReleaseId: "r1",
+        oldReleaseName: "2.4",
+        newReleaseId: null,
+        newReleaseName: null,
+      }),
+    ).toBe('removed the task from release "2.4"');
+    expect(
+      release({
+        oldReleaseId: "r1",
+        oldReleaseName: "2.4",
+        newReleaseId: "r2",
+        newReleaseName: "2.5",
+      }),
+    ).toBe('moved the task from release "2.4" to release "2.5"');
+  });
+
+  it("says an unknown release when its name is hidden", () => {
+    expect(
+      summary({
+        type: "release_changed",
+        eventData: {
+          projectId: null,
+          oldReleaseId: "r1",
+          oldReleaseName: null,
+          newReleaseId: null,
+          newReleaseName: null,
+        },
+      }),
+    ).toBe("removed the task from an unknown release");
+  });
+
   it("falls back to the stored text, then the type", () => {
     expect(summary({ type: "status_changed", content: "moved it" })).toBe(
       "moved it",

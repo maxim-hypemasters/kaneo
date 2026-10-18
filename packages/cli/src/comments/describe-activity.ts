@@ -78,6 +78,21 @@ function priorityName(value: string | null): string {
   return PRIORITY_LABELS[value] ?? value;
 }
 
+// Names are hidden from viewers who can't see the task's former project.
+function describeReleaseChange(data: Record<string, unknown>): string {
+  const release = (idKey: string, nameKey: string) => {
+    if (!stringField(data, idKey)) return null;
+    const name = stringField(data, nameKey);
+    return name ? `release "${name}"` : "an unknown release";
+  };
+  const from = release("oldReleaseId", "oldReleaseName");
+  const to = release("newReleaseId", "newReleaseName");
+  if (from && to) return `moved the task from ${from} to ${to}`;
+  if (to) return `added the task to ${to}`;
+  if (from) return `removed the task from ${from}`;
+  return "changed the release";
+}
+
 function fallback(activity: TaskActivity): Description {
   return {
     summary: excerpt(activity.content) ?? activity.type.replace(/[_-]+/gu, " "),
@@ -133,6 +148,8 @@ function describeEvent(
       if (to) return plain(`moved the task from another project to ${to}`);
       return plain("moved the task");
     }
+    case "release_changed":
+      return plain(describeReleaseChange(data));
     default:
       return null;
   }

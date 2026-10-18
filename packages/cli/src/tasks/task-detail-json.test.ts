@@ -57,6 +57,7 @@ describe("toTaskDetailJson", () => {
       title: "Fix login redirect",
       type: "task",
       featureId: null,
+      releaseId: null,
       description: "Steps",
       status: "in-progress",
       statusName: "In Progress",
@@ -112,5 +113,20 @@ describe("toTaskDetailJson", () => {
     expect([feature.type, feature.featureId]).toEqual(["feature", null]);
     const legacy = toTaskDetailJson({ ...resolved, task });
     expect([legacy.type, legacy.featureId]).toEqual(["task", null]);
+  });
+
+  it("reads the release, and null from a server without releases", () => {
+    const resolved = {
+      project,
+      columns: [column],
+      workspaceId: "workspace-1",
+      ticketId: "KAN-12",
+      url: "https://kaneo.test/task-1",
+    };
+    expect(
+      toTaskDetailJson({ ...resolved, task: { ...task, releaseId: "rel-1" } })
+        .releaseId,
+    ).toBe("rel-1");
+    expect(toTaskDetailJson({ ...resolved, task }).releaseId).toBeNull();
   });
 });

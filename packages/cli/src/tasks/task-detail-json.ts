@@ -8,6 +8,7 @@ export type TaskDetailJson = {
   readonly title: string;
   readonly type: TaskType;
   readonly featureId: string | null;
+  readonly releaseId: string | null;
   readonly description: string | null;
   readonly status: string;
   readonly statusName: string;
@@ -38,6 +39,7 @@ export function toTaskDetailJson(resolved: ResolvedTask): TaskDetailJson {
     title: task.title,
     type: taskTypeOf(task),
     featureId: task.featureId ?? null,
+    releaseId: task.releaseId ?? null,
     description: task.description,
     status: task.status,
     statusName: column?.name ?? task.status,

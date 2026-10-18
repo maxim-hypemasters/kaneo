@@ -4,6 +4,9 @@ import { renderDeviceCode, renderWelcome } from "../commands/login.js";
 import { renderWhoami } from "../commands/whoami.js";
 import { renderFailure } from "../output/report-failure.js";
 import type { ColorLevel } from "../render/capabilities.js";
+import { toReleaseJson } from "../releases/release-json.js";
+import { renderReleaseList } from "../releases/render-release-list.js";
+import { releaseFixture } from "../releases/test-releases.js";
 import { makeUi } from "../render/ui.js";
 import {
   renderTaskList,
@@ -100,10 +103,50 @@ const board: TaskListView = {
   now,
 };
 
+const releaseContext = {
+  today: "2026-10-21",
+  webUrl: "https://cloud.kaneo.app",
+  project: { slug: "kan", workspaceId: "ws_1" },
+};
+
+const releases = [
+  releaseFixture("r1", "2.4", {
+    progress: {
+      tasks: { total: 30, completed: 12 },
+      features: { total: 3, completed: 1 },
+      unfinished: 18,
+    },
+  }),
+  releaseFixture("r2", "2.5 Winter launch", {
+    startDate: "2026-10-25",
+    codeFreezeDate: "2026-11-20",
+    submissionDate: "2027-01-05",
+  }),
+  releaseFixture("r0", "2.3", {
+    startDate: "2026-09-01",
+    codeFreezeDate: "2026-09-20",
+    submissionDate: "2026-09-24",
+    progress: {
+      tasks: { total: 8, completed: 8 },
+      features: { total: 1, completed: 1 },
+      unfinished: 0,
+    },
+  }),
+].map((release) => toReleaseJson(release, releaseContext));
+
 const screens = {
   "task list": (ui: ReturnType<typeof makeUi>) => renderTaskList(ui, board),
   "task list empty": (ui: ReturnType<typeof makeUi>) =>
     renderTaskList(ui, { ...board, tasks: [], total: 0 }),
+  "release list": (ui: ReturnType<typeof makeUi>) =>
+    renderReleaseList(ui, {
+      projectName: "Kaneo Web",
+      projectSlug: "kan",
+      projectUrl:
+        "https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/board",
+      today: releaseContext.today,
+      releases,
+    }),
   home: (ui: ReturnType<typeof makeUi>) =>
     renderHome(
       ui,

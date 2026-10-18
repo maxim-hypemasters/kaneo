@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vite-plus/test";
 import {
   documentedOperations,
@@ -56,6 +57,16 @@ describe("missingOperations", () => {
       missingOperations(REQUIRED_OPERATIONS, { openapi: "3.1.0" }),
     ).toBeUndefined();
     expect(missingOperations(REQUIRED_OPERATIONS, "<html>")).toBeUndefined();
+  });
+
+  it("finds every required operation in the server's committed OpenAPI document", () => {
+    const committed = JSON.parse(
+      readFileSync(
+        new URL("../../../../apps/docs/openapi.json", import.meta.url),
+        "utf8",
+      ),
+    );
+    expect(missingOperations(REQUIRED_OPERATIONS, committed)).toEqual([]);
   });
 
   it("lists every required operation once", () => {

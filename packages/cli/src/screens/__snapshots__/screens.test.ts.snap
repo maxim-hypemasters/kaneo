@@ -352,6 +352,58 @@ exports[`screens > login welcome at 120 columns, truecolor 1`] = `
 "
 `;
 
+exports[`screens > release list at 80 columns, no color 1`] = `
+"
+
+  Kaneo Web · KAN
+
+    Release      Phase            Start   Freeze  Submission   Tasks  Unfinished
+    2.4          code freeze      Oct 1   Oct 20  Oct 24       12/30          18
+    2.5 Winter…  upcoming         Oct 25  Nov 20  Jan 5, 2027    0/0           0
+    2.3          past submission  Sep 1   Sep 20  Sep 24         8/8           0
+
+"
+`;
+
+exports[`screens > release list at 80 columns, truecolor 1`] = `
+"
+
+  ]8;;https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/board\\[1mKaneo Web[22m]8;;\\ [38;2;115;115;115m· KAN[39m
+
+    [38;2;115;115;115mRelease[39m      [38;2;115;115;115mPhase[39m            [38;2;115;115;115mStart[39m   [38;2;115;115;115mFreeze[39m  [38;2;115;115;115mSubmission[39m   [38;2;115;115;115mTasks[39m  [38;2;115;115;115mUnfinished[39m
+    ]8;;https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/releases/r1\\[1m2.4[22m]8;;\\          [38;2;217;119;6mcode freeze[39m      Oct 1   Oct 20  Oct 24       12/30          18
+    ]8;;https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/releases/r2\\[1m2.5 Winter…[22m]8;;\\  [38;2;115;115;115mupcoming[39m         Oct 25  Nov 20  Jan 5, 2027    0/0           [38;2;115;115;115m0[39m
+    ]8;;https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/releases/r0\\[1m2.3[22m]8;;\\          [38;2;115;115;115mpast submission[39m  Sep 1   Sep 20  Sep 24         8/8           [38;2;115;115;115m0[39m
+
+"
+`;
+
+exports[`screens > release list at 120 columns, no color 1`] = `
+"
+
+  Kaneo Web · KAN
+
+    Release            Phase            Start   Freeze  Submission   Tasks  Unfinished
+    2.4                code freeze      Oct 1   Oct 20  Oct 24       12/30          18
+    2.5 Winter launch  upcoming         Oct 25  Nov 20  Jan 5, 2027    0/0           0
+    2.3                past submission  Sep 1   Sep 20  Sep 24         8/8           0
+
+"
+`;
+
+exports[`screens > release list at 120 columns, truecolor 1`] = `
+"
+
+  ]8;;https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/board\\[1mKaneo Web[22m]8;;\\ [38;2;115;115;115m· KAN[39m
+
+    [38;2;115;115;115mRelease[39m            [38;2;115;115;115mPhase[39m            [38;2;115;115;115mStart[39m   [38;2;115;115;115mFreeze[39m  [38;2;115;115;115mSubmission[39m   [38;2;115;115;115mTasks[39m  [38;2;115;115;115mUnfinished[39m
+    ]8;;https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/releases/r1\\[1m2.4[22m]8;;\\                [38;2;217;119;6mcode freeze[39m      Oct 1   Oct 20  Oct 24       12/30          18
+    ]8;;https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/releases/r2\\[1m2.5 Winter launch[22m]8;;\\  [38;2;115;115;115mupcoming[39m         Oct 25  Nov 20  Jan 5, 2027    0/0           [38;2;115;115;115m0[39m
+    ]8;;https://cloud.kaneo.app/dashboard/workspace/ws_1/project/p1/releases/r0\\[1m2.3[22m]8;;\\                [38;2;115;115;115mpast submission[39m  Sep 1   Sep 20  Sep 24         8/8           [38;2;115;115;115m0[39m
+
+"
+`;
+
 exports[`screens > task list at 80 columns in ascii 1`] = `
 "
 

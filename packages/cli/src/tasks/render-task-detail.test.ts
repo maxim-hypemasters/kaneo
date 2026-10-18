@@ -20,6 +20,7 @@ const task: TaskViewJson = {
   title: "Fix login redirect after device approval",
   type: "task",
   featureId: null,
+  releaseId: null,
   description:
     "## Steps\n\n1. Sign in with **device** flow\n2. See [the bug](https://kaneo.test/b)",
   status: "in-progress",
