@@ -8,7 +8,7 @@ import { FeatureBreadcrumb } from "./features/feature-breadcrumb";
 import { TaskActivity } from "./task-activity";
 import TaskDescription from "./task-description";
 import TaskRelations from "./task-relations";
-import TaskSubtasks from "./task-subtasks";
+import { FeatureWork } from "./milestones/feature-work";
 import TaskTitle from "./task-title";
 
 type TaskDetailsContentProps = {
@@ -47,7 +47,8 @@ export default function TaskDetailsContent({
 
       <div className="mt-6 flex flex-col gap-6">
         {task?.type === "feature" && (
-          <TaskSubtasks
+          <FeatureWork
+            key={taskId}
             featureId={taskId}
             projectId={task.projectId}
             workspaceId={workspaceId}

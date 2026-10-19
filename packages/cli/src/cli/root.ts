@@ -13,6 +13,7 @@ import { comment } from "../commands/comment/index.js";
 import { time } from "../commands/time/index.js";
 import { notification } from "../commands/notification/index.js";
 import { column } from "../commands/column/index.js";
+import { milestone } from "../commands/milestone/index.js";
 import { release } from "../commands/release/index.js";
 import { member } from "../commands/member/index.js";
 import { invitation } from "../commands/invitation/index.js";
@@ -43,6 +44,7 @@ export const root = Command.make("kaneo", {}, () => runHome()).pipe(
     project,
     column,
     release,
+    milestone,
     task,
     comment,
     label,

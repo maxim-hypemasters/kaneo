@@ -32,6 +32,10 @@ const taskTitleHandler = vi
   .mocked(subscribeToEvent)
   .mock.calls.find(([eventName]) => eventName === "task.title_changed")![1];
 
+const milestoneHandler = vi
+  .mocked(subscribeToEvent)
+  .mock.calls.find(([event]) => event === "milestone.changed")![1];
+
 function makeFakeWs() {
   return {
     send: vi.fn(),
@@ -253,6 +257,56 @@ describe("broadcastToProject", () => {
     ).not.toHaveBeenCalled();
 
     removeConnection("proj-2", conn);
+  });
+
+  it("coalesces milestone bursts per Feature while preserving distinct Feature updates", async () => {
+    const ws = makeFakeWs();
+    const connection = addConnection(
+      "proj-1",
+      ws,
+      "user-1",
+      "init-1",
+      "workspace",
+    );
+    await milestoneHandler({
+      projectId: "proj-1",
+      featureId: "first",
+      milestoneId: "one",
+    });
+    await milestoneHandler({
+      projectId: "proj-1",
+      featureId: "first",
+      milestoneId: "two",
+    });
+    await milestoneHandler({
+      projectId: "proj-1",
+      featureId: "second",
+      milestoneId: null,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const messages = (
+      ws as { send: ReturnType<typeof vi.fn> }
+    ).send.mock.calls.map(([payload]) => JSON.parse(payload));
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          type: "MILESTONES_UPDATED",
+          projectId: "proj-1",
+          featureId: "first",
+          milestoneId: "two",
+        }),
+        expect.objectContaining({
+          type: "MILESTONES_UPDATED",
+          projectId: "proj-1",
+          featureId: "second",
+          milestoneId: null,
+        }),
+      ]),
+    );
+    expect(
+      messages.filter((message) => message.type === "MILESTONES_UPDATED"),
+    ).toHaveLength(2);
+    removeConnection("proj-1", connection);
   });
 
   it("warns when called before adapter initialization", async () => {

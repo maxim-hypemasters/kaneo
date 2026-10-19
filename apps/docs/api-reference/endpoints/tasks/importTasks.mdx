@@ -6,3 +6,7 @@ openapi: "POST /task/import/{projectId}"
 An imported item's optional `type` accepts `task`, `bug`, or `feature`. Omit it
 for older files to create a Task. Importing a Bug uses the same workflow and
 permissions as importing a Task; labels do not determine the type.
+
+Version 2 documents preserve Feature and milestone hierarchy through portable source keys, mapped to newly generated IDs. The document imports atomically; malformed references fail without partial work. Importing hierarchy requires `task:update` as well as `task:create`. Legacy documents retain individual task outcomes and default to no milestone.
+
+Version 2 label definitions and attachments also require `label:create` and `label:update`, following the normal label permission rules.

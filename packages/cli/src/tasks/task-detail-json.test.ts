@@ -58,6 +58,7 @@ describe("toTaskDetailJson", () => {
       type: "task",
       featureId: null,
       releaseId: null,
+      milestoneId: null,
       description: "Steps",
       status: "in-progress",
       statusName: "In Progress",

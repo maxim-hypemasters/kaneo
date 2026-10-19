@@ -52,6 +52,7 @@ import gitlabIntegration, {
   handleGitlabWebhookRoute,
 } from "./gitlab-integration";
 import importRoutes from "./import";
+import milestone from "./milestone";
 import { stopActiveImports } from "./import/runs/stop-active-imports";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
@@ -822,6 +823,7 @@ export function createApp() {
   const taskApi = api.route("/task", task);
   const columnApi = api.route("/column", column);
   const releaseApi = api.route("/release", release);
+  const milestoneApi = api.route("/milestone", milestone);
   const activityApi = api.route("/activity", activity);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
@@ -986,6 +988,7 @@ export function createApp() {
     calendarFeedApi,
     publicProjectApi,
     releaseApi,
+    milestoneApi,
     searchApi,
     mattermostIntegrationApi,
     slackIntegrationApi,
@@ -1122,6 +1125,7 @@ const {
   calendarFeedApi,
   publicProjectApi,
   releaseApi,
+  milestoneApi,
   searchApi,
   slackIntegrationApi,
   taskApi,
@@ -1155,6 +1159,7 @@ export type AppType =
   | typeof taskApi
   | typeof columnApi
   | typeof releaseApi
+  | typeof milestoneApi
   | typeof activityApi
   | typeof commentApi
   | typeof timeEntryApi

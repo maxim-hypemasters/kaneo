@@ -5,6 +5,9 @@ import type { TaskType } from "./task-features.js";
 const NullableString = Schema.NullOr(Schema.String);
 
 export const ExportedTask = Schema.Struct({
+  key: Schema.optionalKey(Schema.String),
+  featureKey: Schema.optionalKey(NullableString),
+  milestoneKey: Schema.optionalKey(NullableString),
   title: Schema.String,
   type: Schema.optionalKey(Schema.String),
   description: Schema.String,
@@ -19,7 +22,20 @@ export const ExportedTask = Schema.Struct({
 });
 export type ExportedTask = typeof ExportedTask.Type;
 
+export const ExportedMilestone = Schema.Struct({
+  key: Schema.String,
+  featureKey: Schema.String,
+  title: Schema.String,
+  description: NullableString,
+  startDate: NullableString,
+  endDate: NullableString,
+  position: Schema.Number,
+});
+export type ExportedMilestone = typeof ExportedMilestone.Type;
+
 export const TaskExport = Schema.Struct({
+  version: Schema.optionalKey(Schema.Literal(2)),
+  milestones: Schema.optionalKey(Schema.Array(ExportedMilestone)),
   project: Schema.Struct({
     name: Schema.String,
     slug: Schema.String,
@@ -31,6 +47,13 @@ export const TaskExport = Schema.Struct({
 export type TaskExport = typeof TaskExport.Type;
 
 export type ImportTaskBody = {
+  readonly key?: string;
+  readonly featureKey?: string | null;
+  readonly milestoneKey?: string | null;
+  readonly labels?: ReadonlyArray<{
+    readonly name: string;
+    readonly color: string;
+  }>;
   readonly title: string;
   readonly type?: TaskType;
   readonly description?: string;
@@ -76,12 +99,16 @@ export const exportTasks = Effect.fnUntraced(function* (projectId: string) {
 export const importTasks = Effect.fnUntraced(function* (
   projectId: string,
   tasks: ReadonlyArray<ImportTaskBody>,
+  hierarchy?: {
+    readonly version: 2;
+    readonly milestones: ReadonlyArray<ExportedMilestone>;
+  },
 ) {
   const api = yield* KaneoApi;
   return yield* api.request(
     "POST",
     `/api/task/import/${encodeURIComponent(projectId)}`,
     ImportResult,
-    { body: { tasks } },
+    { body: { tasks, ...hierarchy } },
   );
 });

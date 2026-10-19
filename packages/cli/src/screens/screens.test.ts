@@ -49,6 +49,8 @@ function task(
     number,
     title,
     type: "task",
+    featureId: null,
+    milestoneId: null,
     status,
     statusName: status,
     priority,

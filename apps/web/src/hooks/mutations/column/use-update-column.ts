@@ -19,10 +19,14 @@ export function useUpdateColumn() {
       };
     }) => updateColumn(id, data),
     onSuccess: async (_, variables) => {
-      if (variables.data.isFinal !== undefined)
+      if (variables.data.isFinal !== undefined) {
         void queryClient.invalidateQueries({
           queryKey: ["release-progress", variables.projectId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["feature-milestones", variables.projectId],
+        });
+      }
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["columns", variables.projectId],

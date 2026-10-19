@@ -43,3 +43,35 @@ it("retains the link-refresh flag when receiving a Redis project broadcast", asy
   );
   await adapter.shutdown();
 });
+
+it("retains milestone scope when receiving a Redis project broadcast", async () => {
+  mocks.on.mockClear();
+  const adapter = new RedisBroadcastAdapter();
+  const receive = vi.fn();
+  await adapter.subscribe(receive);
+  const handle = mocks.on.mock.calls.find(
+    ([event]) => event === "pmessage",
+  )![1];
+  handle(
+    "kaneo:ws:*:broadcast",
+    "kaneo:ws:project:broadcast",
+    JSON.stringify({
+      projectId: "project",
+      message: {
+        type: "MILESTONES_UPDATED",
+        projectId: "project",
+        featureId: "feature",
+        milestoneId: null,
+      },
+    }),
+  );
+  expect(receive).toHaveBeenCalledWith(
+    expect.objectContaining({
+      message: expect.objectContaining({
+        featureId: "feature",
+        milestoneId: null,
+      }),
+    }),
+  );
+  await adapter.shutdown();
+});

@@ -477,6 +477,20 @@
       "when": 1792433444846,
       "tag": "0067_mushy_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1792438921968,
+      "tag": "0068_dashing_slyde",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1792441509871,
+      "tag": "0069_woozy_whiplash",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,7 @@ const task: TaskViewJson = {
   type: "task",
   featureId: null,
   releaseId: null,
+  milestoneId: null,
   description:
     "## Steps\n\n1. Sign in with **device** flow\n2. See [the bug](https://kaneo.test/b)",
   status: "in-progress",

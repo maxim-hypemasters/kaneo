@@ -274,6 +274,87 @@ describe("API integration: import from other tools", () => {
     );
   });
 
+  it.each([false, true])(
+    "checks task update permission before importing connected milestone hierarchy (allowed=%s)",
+    async (canUpdate) => {
+      const member = await createWorkspaceMember({
+        role: "milestone-importer",
+      });
+      await db.insert(schema.workspaceRoleTable).values({
+        workspaceId: member.workspace.id,
+        role: "milestone-importer",
+        permission: JSON.stringify({
+          workspace: ["manage_settings"],
+          project: ["create"],
+          task: canUpdate ? ["create", "update"] : ["create"],
+        }),
+      });
+      const project: ImportedProject = {
+        name: "Milestones",
+        columns: [{ key: "todo", name: "To Do", isFinal: false }],
+        labels: [],
+        relations: [],
+        warnings: [],
+        tasks: [
+          {
+            key: "f",
+            title: "Feature",
+            type: "feature",
+            description: "",
+            columnKey: "todo",
+            priority: "medium",
+            labelKeys: [],
+            comments: [],
+          },
+          {
+            key: "b",
+            title: "Bug",
+            type: "bug",
+            featureKey: "f",
+            milestoneKey: "m",
+            description: "",
+            columnKey: "todo",
+            priority: "medium",
+            labelKeys: [],
+            comments: [],
+          },
+        ],
+        milestones: [
+          { key: "m", featureKey: "f", title: "First", position: 0 },
+        ],
+      };
+      importers.connectSource.mockResolvedValue(
+        fakeSource(async () => project),
+      );
+      mockAuthenticatedSession(member.user);
+      const response = await post("/runs", {
+        workspaceId: member.workspace.id,
+        connection: { ...connection, source: "kaneo" },
+        projectIds: ["p1"],
+        includeComments: false,
+      });
+      expect(response.status).toBe(202);
+      const { run } = (await response.json()) as { run: { id: string } };
+      await waitForActiveImports();
+      const polled = (await (
+        await get(`/runs/${member.workspace.id}/${run.id}`)
+      ).json()) as {
+        run: { projects: Array<{ status: string; error: string | null }> };
+      };
+      expect(polled.run.projects[0]?.status).toBe(
+        canUpdate ? "completed" : "failed",
+      );
+      if (!canUpdate)
+        expect(polled.run.projects[0]?.error).toContain("task:update");
+      expect(
+        await db
+          .select()
+          .from(schema.projectTable)
+          .where(eq(schema.projectTable.workspaceId, member.workspace.id)),
+      ).toHaveLength(canUpdate ? 1 : 0);
+    },
+  );
+
   it("explains rejected credentials", async () => {
     const admin = await createAdmin();
     importers.connectSource.mockRejectedValue(

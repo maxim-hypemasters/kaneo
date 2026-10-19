@@ -8,8 +8,7 @@ import { assignImportTaskNumbers } from "./assign-import-task-numbers";
 import { loadAssignableMembers } from "./load-assignable-members";
 import { createAssigneeMatcher } from "./match-assignees";
 import { planImportColumns } from "./plan-import-columns";
-import { planImportFeatures } from "./plan-import-features";
-import { planImportRelations } from "./plan-import-relations";
+import { planImportHierarchy } from "./plan-import-hierarchy";
 import { planImportTasks } from "./plan-import-tasks";
 import { writeImportColumns } from "./write-import-columns";
 import { writeImportComments } from "./write-import-comments";
@@ -17,6 +16,7 @@ import { writeImportFeatures } from "./write-import-features";
 import { writeImportLabels } from "./write-import-labels";
 import { writeImportRelations } from "./write-import-relations";
 import { writeImportTasks } from "./write-import-tasks";
+import { writeImportMilestones } from "./write-import-milestones";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -91,19 +91,21 @@ export async function writeProjectContent(
       })
     : 0;
 
-  const hierarchy = planImportFeatures(
-    planImportRelations(
-      project.relations,
-      new Map(tasks.map((task) => [task.key, task.id])),
-    ),
-    tasks.map((task) => task.id),
-    new Map(tasks.map((task) => [task.id, task.type])),
+  const hierarchy = planImportHierarchy(
+    project.tasks,
+    new Map(tasks.map((task) => [task.key, task.id])),
+    project.relations,
   );
   await writeImportFeatures(tx, hierarchy);
+  const memberships = await writeImportMilestones(
+    tx,
+    project,
+    tasks,
+    hierarchy.memberships,
+  );
   // Feature links count as relations, as the subtask links they came from.
   const relations =
-    (await writeImportRelations(tx, hierarchy.relations)) +
-    hierarchy.memberships.size;
+    (await writeImportRelations(tx, hierarchy.relations)) + memberships;
 
   const unmatched = assignees.warning();
   return {

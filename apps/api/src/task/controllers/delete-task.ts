@@ -1,3 +1,4 @@
+import { retryTransaction } from "../../utils/retry-transaction";
 import { eq, or } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
@@ -26,38 +27,40 @@ async function deleteTask(taskId: string, currentUserId: string) {
     )
     .execute();
 
-  const deletedTask = await db.transaction(async (tx) => {
-    const [locked] = await tx
-      .select({
-        id: taskTable.id,
-        projectId: taskTable.projectId,
-        type: taskTable.type,
-      })
-      .from(taskTable)
-      .where(eq(taskTable.id, taskId))
-      .for("update");
-    if (!locked) throw new HTTPException(404, { message: "Task not found" });
-    if (locked.projectId !== task.projectId)
-      throw new HTTPException(409, {
-        message: "Task changed projects; retry the operation",
-      });
-    if (locked.type === "feature") {
-      await recordFeatureDeletion(tx, [taskId], currentUserId);
-    }
-    const assets = await tx
-      .select({ objectKey: assetTable.objectKey })
-      .from(assetTable)
-      .where(eq(assetTable.taskId, taskId));
-    await queueStorageCleanup(
-      tx,
-      assets.map((asset) => asset.objectKey),
-    );
-    const [deleted] = await tx
-      .delete(taskTable)
-      .where(eq(taskTable.id, taskId))
-      .returning();
-    return deleted;
-  });
+  const deletedTask = await retryTransaction(() =>
+    db.transaction(async (tx) => {
+      const [locked] = await tx
+        .select({
+          id: taskTable.id,
+          projectId: taskTable.projectId,
+          type: taskTable.type,
+        })
+        .from(taskTable)
+        .where(eq(taskTable.id, taskId))
+        .for("update");
+      if (!locked) throw new HTTPException(404, { message: "Task not found" });
+      if (locked.projectId !== task.projectId)
+        throw new HTTPException(409, {
+          message: "Task changed projects; retry the operation",
+        });
+      if (locked.type === "feature") {
+        await recordFeatureDeletion(tx, [taskId], currentUserId);
+      }
+      const assets = await tx
+        .select({ objectKey: assetTable.objectKey })
+        .from(assetTable)
+        .where(eq(assetTable.taskId, taskId));
+      await queueStorageCleanup(
+        tx,
+        assets.map((asset) => asset.objectKey),
+      );
+      const [deleted] = await tx
+        .delete(taskTable)
+        .where(eq(taskTable.id, taskId))
+        .returning();
+      return deleted;
+    }),
+  );
 
   if (!deletedTask) {
     throw new HTTPException(404, {

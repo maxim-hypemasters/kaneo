@@ -18,7 +18,8 @@ function projectIdsOf(row: ActivityRow, currentProjects: CurrentProjects) {
   const data = eventDataOf(row.eventData);
   if (!data) return [];
   if (row.type === "moved") return moveProjectIds(data);
-  if (row.type === "release_changed") return releaseChangeProjectIds(data);
+  if (row.type === "release_changed" || row.type === "milestone_changed")
+    return releaseChangeProjectIds(data);
   if (row.type === "feature_changed") {
     const projects = featureChangeProjects(data, row.taskId, currentProjects);
     return [projects.old, projects.new].filter(
@@ -39,6 +40,17 @@ function redactRow<T extends ActivityRow>(
   if (row.type === "moved") redacted = redactMove(data, isVisible);
   if (row.type === "release_changed") {
     redacted = redactReleaseChange(data, isVisible);
+  }
+  if (row.type === "milestone_changed") {
+    const projectId =
+      typeof data.projectId === "string" ? data.projectId : null;
+    if (!projectId || !isVisible(projectId))
+      redacted = {
+        ...data,
+        projectId: null,
+        oldMilestoneTitle: null,
+        newMilestoneTitle: null,
+      };
   }
   if (row.type === "feature_changed") {
     const projects = featureChangeProjects(data, row.taskId, currentProjects);

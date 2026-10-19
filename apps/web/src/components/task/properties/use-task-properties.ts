@@ -1,3 +1,4 @@
+import { useGetMilestones } from "@/hooks/queries/milestone/use-get-milestones";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
 import useGetProject from "@/hooks/queries/project/use-get-project";
@@ -28,6 +29,10 @@ export function useTaskProperties(
   const { tasks: featureTasks } = useFeatureTasks(
     isFeature ? taskId : "",
     task?.projectId ?? projectId,
+  );
+  const { data: milestones = [] } = useGetMilestones(
+    task?.projectId ?? projectId,
+    isFeature ? taskId : "",
   );
   const displayIdOf = useProjectSlugs(workspaceId);
 
@@ -60,7 +65,7 @@ export function useTaskProperties(
     featureDisplayId: feature
       ? displayIdOf(feature.projectId, feature.number)
       : null,
-    hasFeatureTasks: featureTasks.length > 0,
+    hasFeatureTasks: featureTasks.length > 0 || milestones.length > 0,
     // The task's release (null for none, undefined while it loads).
     release,
   };

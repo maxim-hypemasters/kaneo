@@ -103,6 +103,10 @@ export function mapTask(
     ...(task.type === "task" || task.type === "bug" || task.type === "feature"
       ? { type: task.type }
       : {}),
+    ...(task.featureId !== undefined ? { featureKey: task.featureId } : {}),
+    ...(task.milestoneId !== undefined
+      ? { milestoneKey: task.milestoneId }
+      : {}),
     ...(typeof task.number === "number" ? { number: task.number } : {}),
     columnKey: !archived && columnKeys.has(task.status) ? task.status : null,
     ...(archived ? { archived: true } : {}),

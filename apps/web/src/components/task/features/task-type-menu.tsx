@@ -38,7 +38,7 @@ export function TaskTypeMenu({ task, hasTasks, children }: TaskTypeMenuProps) {
         error instanceof HttpError &&
         error.status === 409
       ) {
-        toast.error(t("tasks:features.convertLeafBlocked"));
+        toast.error(t("tasks:milestones.convertBlocked"));
         return;
       }
       toast.error(
@@ -69,7 +69,7 @@ export function TaskTypeMenu({ task, hasTasks, children }: TaskTypeMenuProps) {
             id={hintId}
             className="px-2 pt-0.5 pb-1.5 text-muted-foreground text-xs"
           >
-            {t("tasks:features.convertLeafBlocked")}
+            {t("tasks:milestones.convertBlocked")}
           </p>
         )}
       </MenuPopup>

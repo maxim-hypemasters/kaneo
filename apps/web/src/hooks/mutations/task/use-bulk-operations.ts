@@ -15,6 +15,7 @@ export function useBulkOperations() {
     invalidateCommon();
     // Bulk selections may span projects, and the response carries no project ids.
     void queryClientRef.invalidateQueries({ queryKey: ["release-progress"] });
+    void queryClientRef.invalidateQueries({ queryKey: ["feature-milestones"] });
   };
 
   const bulkDelete = useMutation({

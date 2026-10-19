@@ -5,6 +5,7 @@ import type { KaneoClient, KaneoMember } from "./client.js";
 import { collectLabels, mapColumns, mapRelations, mapTask } from "./mapping.js";
 import { readOptional } from "./optional.js";
 import { readBoard } from "./read-board.js";
+import { readMilestones } from "./read-milestones.js";
 import { readTaskDetails } from "./read-task-details.js";
 import {
   buildWarnings,
@@ -56,6 +57,7 @@ export async function readKaneoProject(
       comments: details.comments.get(task.id),
     }),
   );
+  const milestones = await readMilestones(client, ordered);
   const { relations, outsideProject } = mapRelations(
     details.relations,
     new Set(ordered.map((task) => task.id)),
@@ -80,6 +82,7 @@ export async function readKaneoProject(
     labels: collectLabels(ordered),
     tasks: importedTasks,
     relations,
+    ...(milestones.length ? { milestones } : {}),
     warnings,
   };
 }

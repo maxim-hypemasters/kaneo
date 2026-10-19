@@ -15,6 +15,8 @@ export type TaskSortField =
 export type TaskFilters = {
   readonly type?: TaskType | undefined;
   readonly status?: string | undefined;
+  readonly featureId?: string | undefined;
+  readonly milestoneId?: string | undefined;
   readonly priority?: string | undefined;
   readonly assigneeId?: string | undefined;
   readonly sortBy?: TaskSortField | undefined;
@@ -77,6 +79,8 @@ export const loadBoard = Effect.fn("tasks.loadBoard")(function* (
       limit: Math.min(PAGE_SIZE, limit),
       status: filters.status,
       type: filters.type,
+      featureId: filters.featureId,
+      milestoneId: filters.milestoneId,
       priority: filters.priority,
       assigneeId: filters.assigneeId,
       sortBy: filters.sortBy,

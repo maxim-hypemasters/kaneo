@@ -110,3 +110,39 @@ describe("runTaskEdit --release", () => {
     expect(writes(run.requests)).toEqual([]);
   });
 });
+
+it.each(["m1", "none"])(
+  "sets milestone %s through its narrow endpoint",
+  async (input) => {
+    const milestone = {
+      id: "m1",
+      featureId: "t1",
+      title: "Ship",
+      description: null,
+      startDate: null,
+      endDate: null,
+      position: 0,
+      createdAt: "2026-10-19T00:00:00Z",
+      updatedAt: "2026-10-19T00:00:00Z",
+      progress: { total: 0, started: 0, completed: 0 },
+    };
+    const run = await runCommand(
+      runTaskEdit({ ...none, task: "KAN-3", milestone: Option.some(input) }),
+      {
+        ...routes,
+        "GET /api/task/by-ticket-id/KAN-3": () =>
+          json({ ...task.task, featureId: "t1" }),
+        "GET /api/milestone/m1": () => json(milestone),
+        "PATCH /api/task/t3/milestone": () => json({ id: "t3" }),
+      },
+    );
+    expect(Result.isSuccess(run.result)).toBe(true);
+    expect(run.requests.filter(([method]) => method === "PATCH")).toEqual([
+      [
+        "PATCH",
+        "/api/task/t3/milestone",
+        { milestoneId: input === "none" ? null : input },
+      ],
+    ]);
+  },
+);

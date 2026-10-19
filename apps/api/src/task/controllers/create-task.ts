@@ -1,3 +1,6 @@
+import { lockAuthorizedProject } from "../../milestone/access-scope";
+import { retryTransaction } from "../../utils/retry-transaction";
+import { lockMilestone } from "../../milestone/membership";
 import { extractAssetIds } from "../../storage/cleanup-assets";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -66,6 +69,8 @@ async function createTask({
   draftAssetIds,
   type = "task",
   featureId,
+  milestoneId,
+  expectedWorkspaceId,
   releaseId,
 }: {
   projectId: string;
@@ -81,6 +86,8 @@ async function createTask({
   draftAssetIds?: string[];
   type?: TaskType;
   featureId?: string;
+  milestoneId?: string | null;
+  expectedWorkspaceId?: string;
   // Omitted follows the feature; null is no release.
   releaseId?: string | null;
 }) {
@@ -89,6 +96,10 @@ async function createTask({
       message: "A feature can't belong to another feature",
     });
   }
+  if (type === "feature" && milestoneId)
+    throw new HTTPException(400, {
+      message: "Features cannot belong to milestones",
+    });
   const resolvedStatus = status || "to-do";
   const resolvedPriority = priority || "no-priority";
   const normalizedCustomFields = deduplicateCustomFields(customFields);
@@ -151,89 +162,101 @@ async function createTask({
     ),
   });
 
-  const createdTask = await db.transaction(async (tx) => {
-    const feature = featureId
-      ? await lockFeature(tx, featureId, projectId)
-      : null;
-    const taskNumber = await claimTaskNumber(projectId, tx);
-    if (releaseId) await lockRelease(tx, releaseId, projectId);
-    const nextPosition = await nextTaskPosition(
-      tx,
-      projectId,
-      resolvedStatus,
-      column?.id ?? null,
-    );
-
-    const [task] = await tx
-      .insert(taskTable)
-      .values({
+  const createdTask = await retryTransaction(() =>
+    db.transaction(async (tx) => {
+      if (milestoneId)
+        await lockAuthorizedProject(
+          tx,
+          projectId,
+          expectedWorkspaceId,
+          "update",
+        );
+      const feature = featureId
+        ? await lockFeature(tx, featureId, projectId)
+        : null;
+      if (milestoneId)
+        await lockMilestone(tx, milestoneId, featureId, projectId);
+      const taskNumber = await claimTaskNumber(projectId, tx);
+      if (releaseId) await lockRelease(tx, releaseId, projectId);
+      const nextPosition = await nextTaskPosition(
+        tx,
         projectId,
-        userId: normalizedUserId ?? null,
-        title: title || "",
-        status: resolvedStatus,
-        columnId: column?.id ?? null,
-        startDate: startDate || null,
-        dueDate: dueDate || null,
-        description: description || "",
-        priority: resolvedPriority,
-        number: taskNumber,
-        position: nextPosition,
-        type,
-        featureId: featureId ?? null,
-        releaseId: releaseForNewTask(releaseId, feature?.releaseId ?? null),
-      })
-      .returning();
-
-    if (task && draftAssetIds?.length) {
-      const referenced = extractAssetIds(description);
-      const ids = [...new Set(draftAssetIds)].filter((id) =>
-        referenced.has(id),
+        resolvedStatus,
+        column?.id ?? null,
       );
-      if (ids.length) {
-        // claimTaskNumber already holds the project row lock in this transaction.
-        const project = await tx.query.projectTable.findFirst({
-          columns: { workspaceId: true },
-          where: eq(projectTable.id, projectId),
-        });
-        if (!project)
-          throw new HTTPException(404, { message: "Project not found" });
-        const claimed = await tx
-          .update(assetTable)
-          .set({
-            taskId: task.id,
-            surface: "description",
-            workspaceId: project.workspaceId,
-          })
-          .where(
-            and(
-              inArray(assetTable.id, ids),
-              eq(assetTable.projectId, projectId),
-              eq(assetTable.createdBy, currentUserId),
-              eq(assetTable.surface, "draft"),
-              isNull(assetTable.taskId),
-            ),
-          )
-          .returning({ id: assetTable.id });
-        if (claimed.length !== ids.length)
-          throw new HTTPException(400, {
-            message:
-              "Some staged uploads are unavailable or belong to another owner/project",
+
+      const [task] = await tx
+        .insert(taskTable)
+        .values({
+          projectId,
+          userId: normalizedUserId ?? null,
+          title: title || "",
+          status: resolvedStatus,
+          columnId: column?.id ?? null,
+          startDate: startDate || null,
+          dueDate: dueDate || null,
+          description: description || "",
+          priority: resolvedPriority,
+          number: taskNumber,
+          position: nextPosition,
+          type,
+          featureId: featureId ?? null,
+          milestoneId: milestoneId ?? null,
+          releaseId: releaseForNewTask(releaseId, feature?.releaseId ?? null),
+        })
+        .returning();
+
+      if (task && draftAssetIds?.length) {
+        const referenced = extractAssetIds(description);
+        const ids = [...new Set(draftAssetIds)].filter((id) =>
+          referenced.has(id),
+        );
+        if (ids.length) {
+          // claimTaskNumber already holds the project row lock in this transaction.
+          const project = await tx.query.projectTable.findFirst({
+            columns: { workspaceId: true },
+            where: eq(projectTable.id, projectId),
           });
+          if (!project)
+            throw new HTTPException(404, { message: "Project not found" });
+          const claimed = await tx
+            .update(assetTable)
+            .set({
+              taskId: task.id,
+              surface: "description",
+              workspaceId: project.workspaceId,
+            })
+            .where(
+              and(
+                inArray(assetTable.id, ids),
+                eq(assetTable.projectId, projectId),
+                eq(assetTable.createdBy, currentUserId),
+                eq(assetTable.surface, "draft"),
+                isNull(assetTable.taskId),
+              ),
+            )
+            .returning({ id: assetTable.id });
+          if (claimed.length !== ids.length)
+            throw new HTTPException(400, {
+              message:
+                "Some staged uploads are unavailable or belong to another owner/project",
+            });
+        }
       }
-    }
 
-    if (task && mergedCustomFields.length) {
-      await tx.insert(customFieldValueTable).values(
-        mergedCustomFields.map(({ fieldId, value }) => ({
-          taskId: task.id,
-          fieldId,
-          value: value.trim(),
-        })),
-      );
-    }
+      if (task && mergedCustomFields.length) {
+        await tx.insert(customFieldValueTable).values(
+          mergedCustomFields.map(({ fieldId, value }) => ({
+            taskId: task.id,
+            fieldId,
+            value: value.trim(),
+          })),
+        );
+      }
 
-    return task;
-  });
+      return task;
+    }),
+  );
 
   if (!createdTask) {
     throw new HTTPException(500, {

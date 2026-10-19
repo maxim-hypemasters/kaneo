@@ -96,6 +96,65 @@ afterEach(() => {
 });
 
 describe("release list realtime", () => {
+  const milestoneCalls = () =>
+    mocks.client.invalidateQueries.mock.calls.filter(
+      ([filters]) => filters?.queryKey?.[0] === "feature-milestones",
+    );
+  it("coalesces milestone, task and workflow messages", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("MILESTONES_UPDATED", { featureId: "f" });
+    Socket.current.message("TASK_CREATED", { taskId: "a" });
+    Socket.current.message("PROJECT_UPDATED");
+    expect(milestoneCalls()).toHaveLength(0);
+    vi.advanceTimersByTime(300);
+    expect(milestoneCalls()).toEqual([
+      [{ queryKey: ["feature-milestones", "p"] }],
+    ]);
+  });
+  it("refreshes only details belonging to the changed Feature", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("MILESTONES_UPDATED", { featureId: "f" });
+    vi.advanceTimersByTime(300);
+    const filters = mocks.client.invalidateQueries.mock.calls.find(
+      ([filter]) => filter.queryKey?.[0] === "task" && filter.predicate,
+    )?.[0];
+    expect(
+      filters.predicate({
+        state: { data: { id: "a", projectId: "p", featureId: "f" } },
+      }),
+    ).toBe(true);
+    expect(
+      filters.predicate({
+        state: { data: { id: "b", projectId: "p", featureId: "elsewhere" } },
+      }),
+    ).toBe(false);
+    expect(
+      filters.predicate({
+        state: { data: { id: "a", projectId: "other", featureId: "f" } },
+      }),
+    ).toBe(false);
+  });
+  it("reconciles milestones on reconnect and drops pending refresh on unmount", () => {
+    const { unmount } = renderHook(() => useProjectWebSocket("p"));
+    Socket.current.onopen?.();
+    expect(milestoneCalls()).toHaveLength(1);
+    Socket.current.message("MILESTONES_UPDATED");
+    unmount();
+    vi.advanceTimersByTime(300);
+    expect(milestoneCalls()).toHaveLength(1);
+  });
+  it("polls milestones in disconnected fallback", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    for (let retry = 0; retry < 5; retry++) {
+      Socket.current.onclose?.();
+      vi.advanceTimersByTime(1000 * 2 ** retry);
+    }
+    Socket.current.onclose?.();
+    vi.advanceTimersByTime(30000);
+    expect(milestoneCalls()).toEqual([
+      [{ queryKey: ["feature-milestones", "p"] }],
+    ]);
+  });
   it("refreshes release metadata and chart without loading the board", () => {
     renderHook(() => useProjectWebSocket("p"));
     Socket.current.message("RELEASES_UPDATED");

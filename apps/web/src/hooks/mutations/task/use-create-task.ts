@@ -24,6 +24,7 @@ function useCreateTask() {
       type,
       featureId,
       releaseId,
+      milestoneId,
     }: CreateTaskRequest) =>
       createTask(
         title,
@@ -36,7 +37,7 @@ function useCreateTask() {
         priority,
         customFields,
         draftAssetIds,
-        { type, featureId, releaseId },
+        { type, featureId, releaseId, milestoneId },
       ),
     onSuccess: (data, variables) => {
       invalidateMyWork(queryClient);
@@ -53,6 +54,9 @@ function useCreateTask() {
           queryKey: ["project-features", variables.projectId],
         });
       }
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-milestones", variables.projectId],
+      });
       if (variables.featureId) {
         void queryClient.invalidateQueries({
           queryKey: ["task", variables.featureId],

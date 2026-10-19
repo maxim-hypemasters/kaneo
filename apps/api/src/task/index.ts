@@ -42,6 +42,7 @@ import getTaskByTicketId from "./controllers/get-task-by-ticket-id";
 import getTask from "./controllers/get-task";
 import getTasks from "./controllers/get-tasks";
 import importTasks from "./controllers/import-tasks";
+import { importHierarchy } from "./transfers/import-hierarchy";
 import listProjectFeatures from "./controllers/list-project-features";
 import moveTask from "./controllers/move-task";
 import reorderTasks from "./controllers/reorder-tasks";
@@ -61,6 +62,7 @@ import updateTaskDueDate from "./controllers/update-task-due-date";
 import updateTaskPriority from "./controllers/update-task-priority";
 import updateTaskStatus from "./controllers/update-task-status";
 import updateTaskTitle from "./controllers/update-task-title";
+import updateTaskMilestone from "./controllers/update-task-milestone";
 import updateTaskFeature from "./controllers/update-task-feature";
 import updateTaskRelease from "./controllers/update-task-release";
 import updateTaskType from "./controllers/update-task-type";
@@ -112,6 +114,7 @@ import {
   updateTaskBody,
   updateTitleBody,
   updateFeatureBody,
+  updateMilestoneBody,
   updateTaskReleaseBody,
   updateTypeBody,
 } from "./schema";
@@ -476,8 +479,11 @@ const exportTasksRoute = createRoute({
   tags: ["Tasks"],
   summary: "Export tasks",
   description:
-    "Export a project's tasks, with their labels, as a JSON document.",
-  middleware: [workspaceAccess.fromProject("projectId")] as const,
+    "Export a project's work and labels as version 2 JSON with portable Feature and milestone hierarchy.",
+  middleware: [
+    workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
   request: { params: projectIdParam },
   responses: {
     200: jsonResponse("The exported project and tasks", taskExportSchema),
@@ -493,7 +499,7 @@ const importTasksRoute = createRoute({
   tags: ["Tasks"],
   summary: "Import tasks",
   description:
-    "Import tasks into a project. Each task is reported individually, so a partial import still returns 200.",
+    "Import version 2 Feature/milestone hierarchy atomically, or legacy tasks with individual outcomes. Milestone hierarchy also requires task:update permission.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["create"] }),
@@ -684,6 +690,36 @@ const updateTaskTitleRoute = createRoute({
       "No access to the project, or missing task:update permission",
     ),
     404: errorResponse("Task not found"),
+  },
+});
+
+const updateTaskMilestoneRoute = createRoute({
+  method: "patch",
+  operationId: "updateTaskMilestone",
+  path: "/{id}/milestone",
+  tags: ["Tasks"],
+  summary: "Assign or clear a task milestone",
+  description:
+    "Only tasks and bugs already in the milestone’s Feature can join it. Null clears membership without changing Feature or Release.",
+  middleware: [
+    workspaceAccess.fromTask("id"),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: taskParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateMilestoneBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("The updated task", taskSchema),
+    400: errorResponse("Invalid body"),
+    402: errorResponse("Workspace plan has expired"),
+    403: errorResponse("Missing task:update permission"),
+    404: errorResponse("Task or milestone not found"),
+    409: errorResponse("The task is a Feature or has no Feature"),
   },
 });
 
@@ -933,6 +969,18 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     );
   })
   // Registered ahead of the `/{id}` routes, which would otherwise claim it.
+  .openapi(updateTaskMilestoneRoute, async (c) =>
+    c.json(
+      await updateTaskMilestone({
+        id: c.req.valid("param").id,
+        milestoneId: c.req.valid("json").milestoneId,
+        currentUserId: c.get("userId"),
+        expectedProjectId: c.get("authorizedProjectId"),
+        expectedWorkspaceId: c.get("workspaceId"),
+      }),
+      200,
+    ),
+  )
   .openapi(listAssignedTasksRoute, async (c) => {
     const { workspaceId, countOnly } = c.req.valid("query");
     return c.json(
@@ -1025,6 +1073,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       draftAssetIds,
       type,
       featureId,
+      milestoneId,
       releaseId,
     } = c.req.valid("json");
 
@@ -1053,6 +1102,8 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       draftAssetIds,
       type,
       featureId,
+      milestoneId,
+      expectedWorkspaceId: c.get("workspaceId"),
       releaseId,
     });
 
@@ -1066,6 +1117,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
         taskId: id,
         title,
         currentUserId: c.get("userId"),
+        expectedWorkspaceId: c.get("workspaceId"),
       }),
       200,
     );
@@ -1154,10 +1206,37 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(importTasksRoute, async (c) => {
     const { projectId } = c.req.valid("param");
-    const { tasks } = c.req.valid("json");
+    const document = c.req.valid("json");
     const currentUserId = c.get("userId");
-
-    const result = await importTasks(projectId, tasks, currentUserId);
+    const hierarchy =
+      Boolean(document.milestones?.length) ||
+      document.tasks.some((task) => task.featureKey || task.milestoneKey);
+    if (hierarchy && document.version !== 2) {
+      throw new HTTPException(400, {
+        message: "Hierarchy imports require version 2",
+      });
+    }
+    if (hierarchy) {
+      await requireWorkspacePermission({ task: ["update"] })(c, async () => {});
+    }
+    if (
+      document.version === 2 &&
+      document.tasks.some((task) => task.labels?.length)
+    ) {
+      await requireWorkspacePermission({ label: ["create", "update"] })(
+        c,
+        async () => {},
+      );
+    }
+    const result =
+      document.version === 2
+        ? await importHierarchy(
+            projectId,
+            document,
+            currentUserId,
+            c.get("workspaceId"),
+          )
+        : await importTasks(projectId, document.tasks, currentUserId);
 
     return c.json(result, 200);
   })

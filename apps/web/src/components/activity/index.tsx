@@ -21,6 +21,7 @@ import {
 import { TimelineContent, TimelineItem } from "../ui/timeline";
 import CommentCard from "./comment-card";
 import { describeHierarchyActivity } from "./describe-hierarchy-activity";
+import { describeMilestoneActivity } from "./describe-milestone-activity";
 import { describeReleaseActivity } from "./describe-release-activity";
 import { isCommentActivity } from "./utils";
 
@@ -69,6 +70,7 @@ function getActivityTypeIcon(type: string) {
     case "assignee_changed":
     case "unassigned":
       return <UserRound className={iconClass} />;
+    case "milestone_changed":
     case "feature_changed":
     case "type_changed":
       return <Layers className={iconClass} />;
@@ -419,6 +421,14 @@ function renderActivityContent({
   if (hierarchyChange) {
     return <span className="text-muted-foreground">{hierarchyChange}</span>;
   }
+
+  const milestoneChange = describeMilestoneActivity(
+    activity.type,
+    eventData,
+    t,
+  );
+  if (milestoneChange)
+    return <span className="text-muted-foreground">{milestoneChange}</span>;
 
   const releaseChange = describeReleaseActivity(activity.type, eventData, t);
   if (releaseChange) {

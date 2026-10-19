@@ -3,6 +3,7 @@ import { MAX_TASK_POSITION } from "./controllers/next-task-position";
 import { TICKET_ID_PATTERN } from "./ticket-id";
 import { VALID_PRIORITIES } from "./validate-task-fields";
 import { TASK_TYPES } from "./task-type";
+import { transferMilestoneSchema } from "./transfers/schema";
 
 export const taskTypeBody = z.enum(TASK_TYPES);
 
@@ -46,6 +47,14 @@ const priority = z.enum(VALID_PRIORITIES);
 export const listTasksQuery = z.object({
   type: taskTypeBody.optional().openapi({
     description: "Only items of this type, filtered before pagination.",
+  }),
+  featureId: z.string().min(1).optional().openapi({
+    description:
+      "A Feature id, or none for items without a Feature. Applied before pagination.",
+  }),
+  milestoneId: z.string().min(1).optional().openapi({
+    description:
+      "A Milestone id, or none for items without a milestone. Applied before pagination.",
   }),
   status: z.string().optional(),
   priority: z.string().optional(),
@@ -99,6 +108,10 @@ export const createTaskBody = z.object({
   featureId: z.string().min(1).optional().openapi({
     description: "Create the task inside this feature of the project.",
   }),
+  milestoneId: z.string().min(1).nullable().optional().openapi({
+    description:
+      "A milestone belonging to the selected Feature. Does not change Feature membership.",
+  }),
   releaseId: z.string().min(1).nullable().optional().openapi({
     description:
       "A release of the project, or null for none. Omitted, the task starts in its feature's release, or in none.",
@@ -128,8 +141,24 @@ export const moveTaskBody = z.object({
 });
 
 export const importTasksBody = z.object({
+  version: z.literal(2).optional().openapi({
+    description:
+      "Version 2 imports portable Feature/milestone hierarchy atomically. Omit for legacy per-task imports.",
+  }),
+  milestones: z.array(transferMilestoneSchema).optional(),
   tasks: z.array(
     z.object({
+      key: z.string().min(1).optional(),
+      featureKey: z.string().min(1).nullable().optional(),
+      milestoneKey: z.string().min(1).nullable().optional(),
+      labels: z
+        .array(
+          z.object({
+            name: z.string().trim().min(1).max(255),
+            color: z.string().max(64),
+          }),
+        )
+        .optional(),
       title: z.string(),
       type: taskTypeBody
         .optional()
@@ -156,6 +185,9 @@ export const updateFeatureBody = z.object({
     description:
       "A feature in the task's project, or null to take the task out of its feature.",
   }),
+});
+export const updateMilestoneBody = z.object({
+  milestoneId: z.string().min(1).nullable(),
 });
 export const updateTaskReleaseBody = z.object({
   releaseId: z.string().min(1).nullable().openapi({

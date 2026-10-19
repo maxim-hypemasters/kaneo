@@ -609,7 +609,7 @@ export function broadcastToProject(
     projectBroadcastQueues.set(projectId, new Map());
   }
 
-  const messageKey = `${message.type === "TASKS_REORDERED" ? `${message.type}:${crypto.randomUUID()}` : message.type}:${message.taskId ?? ""}:${message.sourceTaskId ?? ""}:${message.targetTaskId ?? ""}`;
+  const messageKey = `${message.type === "TASKS_REORDERED" ? `${message.type}:${crypto.randomUUID()}` : message.type}:${message.taskId ?? ""}:${message.sourceTaskId ?? ""}:${message.targetTaskId ?? ""}:${message.featureId ?? ""}`;
   const previous = projectBroadcastQueues.get(projectId)?.get(messageKey);
   projectBroadcastQueues.get(projectId)?.set(messageKey, {
     message: {
@@ -839,6 +839,23 @@ subscribeToEvent<{ projectId: string; initiatorId?: string }>(
     broadcastToProject(
       projectId,
       { type: "RELEASES_UPDATED", projectId },
+      initiatorId,
+    );
+  },
+);
+
+subscribeToEvent<{
+  projectId: string;
+  featureId: string;
+  milestoneId: string | null;
+  initiatorId?: string;
+}>(
+  "milestone.changed",
+  async ({ projectId, featureId, milestoneId, initiatorId }) => {
+    if (!projectId) return;
+    broadcastToProject(
+      projectId,
+      { type: "MILESTONES_UPDATED", projectId, featureId, milestoneId },
       initiatorId,
     );
   },

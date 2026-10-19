@@ -1,3 +1,6 @@
+import { lockAuthorizedProject } from "../../milestone/access-scope";
+import { retryTransaction } from "../../utils/retry-transaction";
+import { lockMilestone } from "../../milestone/membership";
 import { createId } from "@paralleldrive/cuid2";
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -125,10 +128,12 @@ async function duplicateDescriptionAssets({
 async function duplicateTask({
   taskId,
   currentUserId,
+  expectedWorkspaceId,
   title,
 }: {
   taskId: string;
   currentUserId: string;
+  expectedWorkspaceId?: string;
   title?: string;
 }) {
   const sourceTask = await db.query.taskTable.findFirst({
@@ -152,6 +157,15 @@ async function duplicateTask({
       message: "Project not found",
     });
   }
+
+  if (
+    sourceTask.milestoneId &&
+    expectedWorkspaceId &&
+    project.workspaceId !== expectedWorkspaceId
+  )
+    throw new HTTPException(409, {
+      message: "Project changed workspaces; retry the request",
+    });
 
   await assertValidTaskStatus(sourceTask.status, sourceTask.projectId);
   let assigneeId = sourceTask.userId;
@@ -244,79 +258,100 @@ async function duplicateTask({
   let duplicated: { task: typeof taskTable.$inferSelect };
 
   try {
-    duplicated = await db.transaction(async (tx) => {
-      // A copy of a task stays in its feature; a copy of a feature is an
-      // empty feature (a copy is one task, not a tree).
-      if (sourceTask.featureId) {
-        await lockFeature(tx, sourceTask.featureId, sourceTask.projectId);
-      }
-      const taskNumber = await claimTaskNumber(sourceTask.projectId, tx);
-      // The copy keeps the source's own release, or none if it was deleted
-      // since the source was read.
-      const release = sourceTask.releaseId
-        ? await findLockedRelease(
+    duplicated = await retryTransaction(() =>
+      db.transaction(async (tx) => {
+        if (sourceTask.milestoneId)
+          await lockAuthorizedProject(
             tx,
-            sourceTask.releaseId,
             sourceTask.projectId,
-          )
-        : null;
-      const nextPosition = await nextTaskPosition(
-        tx,
-        sourceTask.projectId,
-        sourceTask.status,
-        column?.id ?? null,
-      );
-
-      const [task] = await tx
-        .insert(taskTable)
-        .values({
-          id: duplicatedTaskId,
-          projectId: sourceTask.projectId,
-          userId: assigneeId,
-          title: title?.trim() || sourceTask.title,
-          status: sourceTask.status,
-          columnId: column?.id ?? null,
-          startDate: sourceTask.startDate,
-          dueDate: sourceTask.dueDate,
-          description,
-          priority: sourceTask.priority,
-          number: taskNumber,
-          position: nextPosition,
-          type: sourceTask.type,
-          featureId: sourceTask.featureId,
-          releaseId: release?.id ?? null,
-        })
-        .returning();
-
-      if (!task) {
-        throw new HTTPException(500, {
-          message: "Failed to duplicate task",
-        });
-      }
-
-      if (customFields.length > 0) {
-        await tx
-          .insert(customFieldValueTable)
-          .values(customFields.map((field) => ({ ...field, taskId: task.id })));
-      }
-
-      if (sourceLabels.length > 0) {
-        await tx.insert(labelTable).values(
-          sourceLabels.map((label) => ({
-            name: label.name,
-            color: label.color,
-            taskId: task.id,
-            workspaceId: label.workspaceId,
-          })),
+            expectedWorkspaceId,
+            "update",
+          );
+        // A copy of a task stays in its feature; a copy of a feature is an
+        // empty feature (a copy is one task, not a tree).
+        if (sourceTask.milestoneId) {
+          await lockMilestone(
+            tx,
+            sourceTask.milestoneId,
+            sourceTask.featureId,
+            sourceTask.projectId,
+          );
+        }
+        if (sourceTask.featureId) {
+          await lockFeature(tx, sourceTask.featureId, sourceTask.projectId);
+        }
+        const taskNumber = await claimTaskNumber(sourceTask.projectId, tx);
+        // The copy keeps the source's own release, or none if it was deleted
+        // since the source was read.
+        const release = sourceTask.releaseId
+          ? await findLockedRelease(
+              tx,
+              sourceTask.releaseId,
+              sourceTask.projectId,
+            )
+          : null;
+        const nextPosition = await nextTaskPosition(
+          tx,
+          sourceTask.projectId,
+          sourceTask.status,
+          column?.id ?? null,
         );
-      }
 
-      if (assets.length > 0) {
-        await tx.insert(assetTable).values(assets);
-      }
+        const [task] = await tx
+          .insert(taskTable)
+          .values({
+            id: duplicatedTaskId,
+            projectId: sourceTask.projectId,
+            userId: assigneeId,
+            title: title?.trim() || sourceTask.title,
+            status: sourceTask.status,
+            columnId: column?.id ?? null,
+            startDate: sourceTask.startDate,
+            dueDate: sourceTask.dueDate,
+            description,
+            priority: sourceTask.priority,
+            number: taskNumber,
+            position: nextPosition,
+            type: sourceTask.type,
+            featureId: sourceTask.featureId,
+            milestoneId:
+              sourceTask.type === "feature" ? null : sourceTask.milestoneId,
+            releaseId: release?.id ?? null,
+          })
+          .returning();
 
-      return { task };
-    });
+        if (!task) {
+          throw new HTTPException(500, {
+            message: "Failed to duplicate task",
+          });
+        }
+
+        if (customFields.length > 0) {
+          await tx
+            .insert(customFieldValueTable)
+            .values(
+              customFields.map((field) => ({ ...field, taskId: task.id })),
+            );
+        }
+
+        if (sourceLabels.length > 0) {
+          await tx.insert(labelTable).values(
+            sourceLabels.map((label) => ({
+              name: label.name,
+              color: label.color,
+              taskId: task.id,
+              workspaceId: label.workspaceId,
+            })),
+          );
+        }
+
+        if (assets.length > 0) {
+          await tx.insert(assetTable).values(assets);
+        }
+
+        return { task };
+      }),
+    );
   } catch (error) {
     await discardCopiedObjects(assets.map((asset) => asset.objectKey));
     throw error;

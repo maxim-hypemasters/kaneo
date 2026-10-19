@@ -13,6 +13,7 @@ type LookupResource =
   | "activity"
   | "comment"
   | "column"
+  | "milestone"
   | "release"
   | "workflowRule"
   | "customField";
@@ -44,6 +45,7 @@ const RESOURCE_NOT_FOUND: Record<LookupResource, string> = {
   comment: "Comment not found",
   column: "Column not found",
   release: "Release not found",
+  milestone: "Milestone not found",
   workflowRule: "Workflow rule not found",
   customField: "Custom field not found",
 };
@@ -162,6 +164,7 @@ export function workspaceAccessMiddleware(
     await assertProjectAccess(userId, projectIds);
 
     c.set("workspaceId", workspaceId);
+    if (projectIds.length === 1) c.set("authorizedProjectId", projectIds[0]);
 
     return next();
   };
@@ -198,6 +201,26 @@ async function lookupScope(
         .where(eq(schema.taskTable.id, id))
         .limit(1);
       return task ?? null;
+    }
+
+    case "milestone": {
+      const [milestone] = await db
+        .select({
+          workspaceId: schema.projectTable.workspaceId,
+          projectId: schema.projectTable.id,
+        })
+        .from(schema.milestoneTable)
+        .innerJoin(
+          schema.taskTable,
+          eq(schema.milestoneTable.featureId, schema.taskTable.id),
+        )
+        .innerJoin(
+          schema.projectTable,
+          eq(schema.taskTable.projectId, schema.projectTable.id),
+        )
+        .where(eq(schema.milestoneTable.id, id))
+        .limit(1);
+      return milestone ?? null;
     }
 
     case "label": {
@@ -439,6 +462,11 @@ export const workspaceAccess = {
         { type: "lookup", resource: "column", idKey },
         { type: "query", key: "workspaceId" },
       ],
+    }),
+
+  fromMilestone: (idKey = "id") =>
+    workspaceAccessMiddleware({
+      sources: [{ type: "lookup", resource: "milestone", idKey }],
     }),
 
   fromRelease: (idKey = "id") =>

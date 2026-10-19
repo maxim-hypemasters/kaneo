@@ -222,6 +222,77 @@ afterEach(() => {
 });
 
 describe("TaskSubtasks", () => {
+  it("filters related tasks by milestone and presets inline creation", async () => {
+    mocks.getRelations.mockReturnValue({
+      data: [
+        {
+          relationType: "subtask",
+          sourceTaskId: "feature-1",
+          targetTaskId: "a",
+          targetTask: { ...relatedTask("a", false), milestoneId: "m1" },
+        },
+        {
+          relationType: "subtask",
+          sourceTaskId: "feature-1",
+          targetTaskId: "b",
+          targetTask: { ...relatedTask("b", false), milestoneId: null },
+        },
+      ],
+      isSuccess: true,
+    });
+    render(
+      <TaskSubtasks
+        featureId="feature-1"
+        projectId="project-1"
+        workspaceId="workspace-1"
+        featureStatus="planned"
+        milestoneFilter={{ id: "m1" }}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Open a" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Open b" }),
+    ).not.toBeInTheDocument();
+    mocks.createTask.mockResolvedValue({ id: "c" });
+    await addTask("Milestone task");
+    await waitFor(() =>
+      expect(mocks.createTask).toHaveBeenCalledWith(
+        expect.objectContaining({ featureId: "feature-1", milestoneId: "m1" }),
+      ),
+    );
+  });
+  it("filters unassigned work without changing feature membership", () => {
+    mocks.getRelations.mockReturnValue({
+      data: [
+        {
+          relationType: "subtask",
+          sourceTaskId: "feature-1",
+          targetTaskId: "a",
+          targetTask: { ...relatedTask("a", false), milestoneId: "m1" },
+        },
+        {
+          relationType: "subtask",
+          sourceTaskId: "feature-1",
+          targetTaskId: "b",
+          targetTask: { ...relatedTask("b", false), milestoneId: null },
+        },
+      ],
+      isSuccess: true,
+    });
+    render(
+      <TaskSubtasks
+        featureId="feature-1"
+        projectId="project-1"
+        workspaceId="workspace-1"
+        featureStatus="planned"
+        milestoneFilter="none"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Open b" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Open a" }),
+    ).not.toBeInTheDocument();
+  });
   it("creates the task inside the feature in one request", async () => {
     mocks.createTask.mockResolvedValue({ id: "task-1" });
     renderSection("planned");

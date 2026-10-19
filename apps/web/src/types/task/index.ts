@@ -47,6 +47,7 @@ type Task = {
   type?: TaskType;
   featureId?: string | null;
   releaseId?: string | null;
+  milestoneId?: string | null;
   // For a feature: its tasks, and how many are done.
   subtaskCounts?: { completed: number; total: number };
   labels?: TaskLabel[];

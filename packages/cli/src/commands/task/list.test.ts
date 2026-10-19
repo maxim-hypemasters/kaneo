@@ -23,6 +23,8 @@ it("filters Bugs on the server and preserves their type in list JSON", async () 
       all: false,
       limit: 50,
       type: Option.some("bug"),
+      feature: Option.some("none"),
+      milestone: Option.some("none"),
     }),
     {
       "GET /api/project": () => json([project]),
@@ -51,5 +53,8 @@ it("filters Bugs on the server and preserves their type in list JSON", async () 
   expect(
     new URL(`https://kaneo.test${request?.[1]}`).searchParams.get("type"),
   ).toBe("bug");
+  const query = new URL(`https://kaneo.test${request?.[1]}`).searchParams;
+  expect(query.get("featureId")).toBe("none");
+  expect(query.get("milestoneId")).toBe("none");
   expect(run.json()).toMatchObject([{ id: "t1", type: "bug" }]);
 });

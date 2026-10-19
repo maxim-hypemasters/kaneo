@@ -20,6 +20,7 @@ import {
   taskRelationTable,
   taskReminderSentTable,
   taskTable,
+  milestoneTable,
   teamMemberTable,
   teamTable,
   timeEntryTable,
@@ -171,6 +172,12 @@ export const taskTableRelations = relations(taskTable, ({ one, many }) => ({
     relationName: "feature",
   }),
   featureTasks: many(taskTable, { relationName: "feature" }),
+  milestones: many(milestoneTable, { relationName: "featureMilestones" }),
+  milestone: one(milestoneTable, {
+    fields: [taskTable.milestoneId],
+    references: [milestoneTable.id],
+    relationName: "milestoneTasks",
+  }),
   timeEntries: many(timeEntryTable),
   activities: many(activityTable),
   comments: many(commentTable),
@@ -440,5 +447,17 @@ export const customFieldValueTableRelations = relations(
       fields: [customFieldValueTable.taskId],
       references: [taskTable.id],
     }),
+  }),
+);
+
+export const milestoneTableRelations = relations(
+  milestoneTable,
+  ({ one, many }) => ({
+    feature: one(taskTable, {
+      fields: [milestoneTable.featureId],
+      references: [taskTable.id],
+      relationName: "featureMilestones",
+    }),
+    tasks: many(taskTable, { relationName: "milestoneTasks" }),
   }),
 );

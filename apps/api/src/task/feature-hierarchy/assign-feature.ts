@@ -1,7 +1,12 @@
+import { recordMilestoneChange } from "../../milestone/membership";
 import { and, count, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type db from "../../database";
-import { activityTable, taskTable } from "../../database/schema";
+import {
+  activityTable,
+  milestoneTable,
+  taskTable,
+} from "../../database/schema";
 import { releaseForJoiningTask } from "../../release/membership/follow-feature-release";
 import { recordReleaseChange } from "../../release/membership/record-release-change";
 import { recordFeatureChange } from "./record-feature-change";
@@ -62,12 +67,19 @@ export async function setTaskFeature(
   }
   const [updated] = await tx
     .update(taskTable)
-    .set({ featureId, releaseId })
+    .set({ featureId, releaseId, milestoneId: null })
     .where(eq(taskTable.id, task.id))
     .returning();
   if (!updated) {
     throw new HTTPException(500, { message: "Failed to update the feature" });
   }
+  await recordMilestoneChange(tx, {
+    taskIds: [task.id],
+    projectId: task.projectId,
+    from: task.milestoneId,
+    to: null,
+    userId,
+  });
   await recordFeatureChange(tx, {
     taskIds: [task.id],
     projectId: task.projectId,
@@ -99,16 +111,24 @@ export async function setTaskType(
       .select({ count: count() })
       .from(taskTable)
       .where(eq(taskTable.featureId, task.id));
-    if ((members?.count ?? 0) > 0) {
+    const [milestones] = await tx
+      .select({ count: count() })
+      .from(milestoneTable)
+      .where(eq(milestoneTable.featureId, task.id));
+    if ((members?.count ?? 0) > 0 || (milestones?.count ?? 0) > 0) {
       throw new HTTPException(409, {
         message:
-          "This feature still has members. Move them out before changing its type.",
+          "This feature still has members or milestones. Remove them before changing its type.",
       });
     }
   }
   const [updated] = await tx
     .update(taskTable)
-    .set({ type, featureId: type === "feature" ? null : task.featureId })
+    .set({
+      type,
+      featureId: type === "feature" ? null : task.featureId,
+      milestoneId: type === "feature" ? null : task.milestoneId,
+    })
     .where(and(eq(taskTable.id, task.id), eq(taskTable.type, task.type)))
     .returning();
   if (!updated) {
@@ -121,6 +141,14 @@ export async function setTaskType(
     content: null,
     eventData: { oldType: task.type, newType: type },
   });
+  if (type === "feature")
+    await recordMilestoneChange(tx, {
+      taskIds: [task.id],
+      projectId: task.projectId,
+      from: task.milestoneId,
+      to: null,
+      userId,
+    });
   if (task.featureId && type === "feature") {
     await recordFeatureChange(tx, {
       taskIds: [task.id],

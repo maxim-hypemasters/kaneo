@@ -1,3 +1,4 @@
+import { recordMilestoneChange } from "../../milestone/membership";
 import { and, asc, count, eq, isNotNull, notInArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import createActivities from "../../activity/controllers/create-activities";
@@ -153,6 +154,7 @@ async function moveTask({
     const [current] = await tx
       .select({
         featureId: taskTable.featureId,
+        milestoneId: taskTable.milestoneId,
         releaseId: taskTable.releaseId,
       })
       .from(taskTable)
@@ -180,6 +182,7 @@ async function moveTask({
         // Features and releases stay within a project, so the task leaves
         // both.
         featureId: null,
+        milestoneId: null,
         releaseId: null,
       })
       .where(
@@ -211,6 +214,13 @@ async function moveTask({
       }
     }
 
+    await recordMilestoneChange(tx, {
+      taskIds: [taskId],
+      projectId: sourceProject.id,
+      from: current.milestoneId,
+      to: null,
+      userId: currentUserId,
+    });
     if (current.featureId) {
       await recordFeatureChange(tx, {
         taskIds: [taskId],

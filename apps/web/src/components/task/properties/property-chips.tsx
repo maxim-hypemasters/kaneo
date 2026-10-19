@@ -7,6 +7,7 @@ import { getColumnIcon } from "@/lib/column";
 import { formatDateShort } from "@/lib/format";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
+import { TaskMilestoneProperty } from "../milestones/task-milestone-property";
 import { TaskCustomFieldChips } from "../custom-fields/task-custom-field-chips";
 import { FeatureValue } from "../features/feature-value";
 import { TaskFeaturePopover } from "../features/task-feature-popover";
@@ -189,6 +190,9 @@ export function PropertyChips({
               />
             </button>
           </TaskFeaturePopover>
+        )}
+        {!isFeature && task.featureId && (
+          <TaskMilestoneProperty task={task} className={chip} />
         )}
         <TaskReleasePopover task={task}>
           <button type="button" data-task-action="release" className={chip}>

@@ -9,6 +9,7 @@ import {
 import { AlertDialogCreateHandle } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { TaskSheetHeader } from "./header/task-sheet-header";
+import { MilestoneSelectionProvider } from "./milestones/milestone-selection-context";
 import { PropertiesRail } from "./properties/properties-rail";
 import { PropertyChips } from "./properties/property-chips";
 import TaskDeleteDialog from "./task-delete-dialog";
@@ -110,33 +111,32 @@ export default function TaskDetailsSheet({
           />
         )}
         {shownTaskId && (
-          <div
-            key={shownTaskId}
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden"
-          >
-            <div className="min-w-0 flex-1 lg:overflow-y-auto">
-              <TaskDetailsContent
+          <MilestoneSelectionProvider key={shownTaskId}>
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+              <div className="min-w-0 flex-1 lg:overflow-y-auto">
+                <TaskDetailsContent
+                  taskId={shownTaskId}
+                  projectId={projectId}
+                  workspaceId={workspaceId}
+                  className="px-5 pt-5 pb-10 lg:px-9 lg:pt-7"
+                  properties={
+                    <PropertyChips
+                      taskId={shownTaskId}
+                      projectId={projectId}
+                      workspaceId={workspaceId}
+                      className="pb-5 lg:hidden"
+                    />
+                  }
+                />
+              </div>
+              <PropertiesRail
                 taskId={shownTaskId}
                 projectId={projectId}
                 workspaceId={workspaceId}
-                className="px-5 pt-5 pb-10 lg:px-9 lg:pt-7"
-                properties={
-                  <PropertyChips
-                    taskId={shownTaskId}
-                    projectId={projectId}
-                    workspaceId={workspaceId}
-                    className="pb-5 lg:hidden"
-                  />
-                }
+                className="hidden w-73 shrink-0 overflow-y-auto border-border border-l lg:flex"
               />
             </div>
-            <PropertiesRail
-              taskId={shownTaskId}
-              projectId={projectId}
-              workspaceId={workspaceId}
-              className="hidden w-73 shrink-0 overflow-y-auto border-border border-l lg:flex"
-            />
-          </div>
+          </MilestoneSelectionProvider>
         )}
       </SheetContent>
     </Sheet>

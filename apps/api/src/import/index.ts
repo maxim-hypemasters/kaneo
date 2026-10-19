@@ -6,7 +6,10 @@ import {
   errorResponse,
   jsonResponse,
 } from "../openapi";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import {
+  hasWorkspacePermission,
+  requireWorkspacePermission,
+} from "../utils/require-workspace-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import getImportRun from "./controllers/get-import-run";
 import listImportRuns from "./controllers/list-import-runs";
@@ -184,6 +187,9 @@ const importRoutes = apiRouter<BaseVariables & { workspaceId: string }>()
       connection,
       projectIds,
       includeComments,
+      canWriteMilestones: await hasWorkspacePermission(c, {
+        task: ["create", "update"],
+      }),
     });
     return c.json({ run }, 202);
   })

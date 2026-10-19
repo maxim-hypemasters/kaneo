@@ -79,6 +79,7 @@ import useProjectStore from "@/store/project";
 import type Task from "@/types/task";
 import type { TaskType } from "@/types/task";
 import { createDialogCopy } from "./create-task/create-dialog-copy";
+import { MilestonePicker } from "@/components/task/milestones/milestone-picker";
 import { FeaturePickerChip } from "./create-task/feature-picker-chip";
 import type { FeatureChoice } from "./create-task/feature-picker-options";
 import {
@@ -161,6 +162,7 @@ function CreateTaskModalContent({
   const { t } = useTranslation();
   const [taskType, setTaskType] = useState<TaskType>(type);
   const copy = createDialogCopy(t, taskType);
+  const [milestoneId, setMilestoneId] = useState<string | null>(null);
   const [featureChoice, setFeatureChoice] = useState<FeatureChoice | null>(
     null,
   );
@@ -613,6 +615,9 @@ function CreateTaskModalContent({
           status: submitStatus,
           type: taskType,
           featureId,
+          ...(milestoneId && chosenFeature?.kind === "existing"
+            ? { milestoneId }
+            : {}),
           ...releaseRequest(releaseChoice),
           draftAssetIds: stagedAssetsRef.current.filter((id) =>
             description.includes(`/asset/${id}`),
@@ -898,7 +903,10 @@ function CreateTaskModalContent({
             <div className="flex flex-wrap items-center gap-2 py-2">
               <TaskTypeChip
                 value={taskType}
-                onChange={setTaskType}
+                onChange={(nextType) => {
+                  setTaskType(nextType);
+                  if (nextType === "feature") setMilestoneId(null);
+                }}
                 disabled={isSubmitting}
               />
               {!explicitProjectId && (
@@ -940,6 +948,7 @@ function CreateTaskModalContent({
                             ) {
                               if (workspaceProject.id !== resolvedProjectId) {
                                 setFeatureChoice(null);
+                                setMilestoneId(null);
                                 setReleaseChoice(FOLLOW_FEATURE_RELEASE);
                               }
                               setSelectedProjectId(workspaceProject.id);
@@ -963,7 +972,19 @@ function CreateTaskModalContent({
                   projectId={resolvedProjectId}
                   projectSlug={resolvedProject?.slug}
                   value={featureChoice}
-                  onChange={setFeatureChoice}
+                  onChange={(choice) => {
+                    setFeatureChoice(choice);
+                    setMilestoneId(null);
+                  }}
+                  disabled={isSubmitting}
+                />
+              )}
+              {chosenFeature?.kind === "existing" && (
+                <MilestonePicker
+                  projectId={resolvedProjectId}
+                  featureId={chosenFeature.id}
+                  value={milestoneId}
+                  onChange={setMilestoneId}
                   disabled={isSubmitting}
                 />
               )}
