@@ -598,3 +598,75 @@ describe("readProject", () => {
     });
   });
 });
+
+it("preserves connected Kaneo Feature and milestone hierarchy", async () => {
+  const feature = boardTask("t1", "to-do", { type: "feature" });
+  const task = boardTask("t2", "to-do", {
+    type: "bug",
+    featureId: "t1",
+    milestoneId: "m1",
+  });
+  const fake = fakeFetch({
+    ...routes(),
+    [boardPath("p1", 1)]: ok(
+      boardResponse(
+        { columns: [{ ...columns[0], tasks: [feature, task] }] },
+        { total: 2, totalPages: 1, relatedTotalPages: 1 },
+      ),
+    ),
+    "/api/milestone/feature/t1": ok([
+      {
+        id: "m1",
+        featureId: "t1",
+        title: "Playtest",
+        description: "First build",
+        startDate: null,
+        endDate: "2026-11-01",
+        position: 0,
+      },
+      {
+        id: "m2",
+        featureId: "t1",
+        title: "Empty",
+        description: null,
+        startDate: null,
+        endDate: null,
+        position: 1,
+      },
+    ]),
+  });
+  const source = await connectKaneo(
+    { url: BASE, apiKey: API_KEY },
+    { fetch: fake.fetch },
+  );
+  const project = await source.readProject("p1", { includeComments: false });
+  expect(project.tasks).toContainEqual(
+    expect.objectContaining({
+      key: "t2",
+      type: "bug",
+      featureKey: "t1",
+      milestoneKey: "m1",
+    }),
+  );
+  expect(project.milestones).toEqual([
+    {
+      key: "m1",
+      featureKey: "t1",
+      title: "Playtest",
+      description: "First build",
+      startDate: null,
+      endDate: "2026-11-01",
+      position: 0,
+    },
+    {
+      key: "m2",
+      featureKey: "t1",
+      title: "Empty",
+      description: null,
+      startDate: null,
+      endDate: null,
+      position: 1,
+    },
+  ]);
+  expect(fake.paths()).toContain("/api/milestone/feature/t1");
+});

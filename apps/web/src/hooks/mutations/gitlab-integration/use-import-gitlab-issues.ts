@@ -10,6 +10,9 @@ export default function useImportGitlabIssues() {
       void queryClient.invalidateQueries({
         queryKey: ["release-progress", projectId],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-milestones", projectId],
+      });
       queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
       queryClient.invalidateQueries({ queryKey: ["project", projectId] });
     },

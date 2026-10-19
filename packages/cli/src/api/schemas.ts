@@ -62,6 +62,8 @@ export type BoardLabel = typeof BoardLabel.Type;
 export const BoardTask = Schema.Struct({
   id: Schema.String,
   type: Schema.optionalKey(Schema.String),
+  featureId: Schema.optionalKey(NullableString),
+  milestoneId: Schema.optionalKey(NullableString),
   title: Schema.String,
   number: Schema.NullOr(Schema.Number),
   status: Schema.String,
@@ -142,6 +144,7 @@ export const TaskDetail = Schema.Struct({
   featureId: Schema.optionalKey(NullableString),
   // Absent on servers before releases.
   releaseId: Schema.optionalKey(NullableString),
+  milestoneId: Schema.optionalKey(NullableString),
 });
 export type TaskDetail = typeof TaskDetail.Type;
 

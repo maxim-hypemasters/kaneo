@@ -51,6 +51,14 @@ Never use `docker compose down -v` as an upgrade or troubleshooting step. It rem
 
 ## Upgrade notes
 
+### Feature milestones
+
+The milestone migration adds a feature-owned table and a nullable milestone link to work items. Existing work starts without a milestone. It does not alter item types, Feature or Release membership, release-progress baselines, or historical totals. Apply the migration before serving milestone-capable code; the API migrates before accepting requests at startup.
+
+The milestone date-range migration preserves each existing target date as its end date and starts with no start date. Use matching API and web builds after applying this migration. Existing milestone links, progress, and release history remain unchanged.
+
+When updating multiple instances, update all API instances before using milestones so older code cannot change Feature membership without clearing a milestone. Verify milestone creation, task assignment, filtering, progress, and cross-window updates after the upgrade. Keep the matching pre-upgrade database backup for recovery.
+
 ### Bug task type
 
 Kaneo adds **Bug** alongside Task and Feature in the existing task model. Apply the database migration before allowing Bug writes. The API runs it before serving requests at startup; when updating several API instances, update all of them before creating or converting Bugs because older servers do not understand the new type.

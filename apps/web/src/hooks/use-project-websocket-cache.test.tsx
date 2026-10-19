@@ -45,14 +45,20 @@ vi.mock("@/fetchers/external-link/get-external-links", () => ({
   default: () => Promise.resolve([]),
 }));
 
-// Invalidations other than releases and chart history, which
+// Board invalidations, excluding release and milestone detail refreshes, which
 // use-project-websocket-releases.test.tsx covers.
 const otherInvalidations = () =>
   mocks.client.invalidateQueries.mock.calls
     .map(([options]) => options)
     .filter(
       (options) =>
-        !["releases", "release-progress"].includes(options?.queryKey?.[0]),
+        !["releases", "release-progress", "feature-milestones"].includes(
+          options?.queryKey?.[0],
+        ) &&
+        !(
+          options?.predicate &&
+          ["task", "activities"].includes(options?.queryKey?.[0])
+        ),
     );
 
 class Socket {

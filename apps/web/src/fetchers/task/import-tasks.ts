@@ -1,7 +1,13 @@
 import { client } from "@kaneo/libs";
 
+import type { TaskType } from "@/types/task";
 import { HttpError } from "@/lib/http-error";
 export type TaskToImport = {
+  labels?: Array<{ name: string; color: string }>;
+  key?: string;
+  type?: TaskType;
+  featureKey?: string | null;
+  milestoneKey?: string | null;
   title: string;
   description?: string;
   status: string;
@@ -11,10 +17,27 @@ export type TaskToImport = {
   userId?: string | null;
 };
 
-async function importTasks(projectId: string, tasks: TaskToImport[]) {
+export type ImportDocument = {
+  version?: 2;
+  tasks: TaskToImport[];
+  milestones?: Array<{
+    key: string;
+    featureKey: string;
+    title: string;
+    description?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    position: number;
+  }>;
+};
+
+async function importTasks(
+  projectId: string,
+  document: ImportDocument | TaskToImport[],
+) {
   const response = await client.task.import[":projectId"].$post({
     param: { projectId },
-    json: { tasks },
+    json: Array.isArray(document) ? { tasks: document } : document,
   });
 
   if (!response.ok) {

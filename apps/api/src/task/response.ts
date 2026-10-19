@@ -1,5 +1,6 @@
 import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
 import { TASK_TYPES } from "./task-type";
+import { exportedMilestoneSchema } from "./transfers/schema";
 
 const priorityDescription = "One of: no-priority, low, medium, high, urgent.";
 
@@ -11,6 +12,11 @@ export const taskTypeSchema = z.enum(TASK_TYPES).openapi({
 const featureIdSchema = z.string().nullable().openapi({
   description:
     "The feature this task or bug belongs to, in the same project. Always null for a feature.",
+});
+
+const milestoneIdSchema = z.string().nullable().openapi({
+  description:
+    "A milestone within this task or bug’s Feature. Null for Features and unassigned items.",
 });
 
 const releaseIdSchema = z.string().nullable().openapi({
@@ -47,6 +53,7 @@ export const taskSchema = z
     createdAt: responseTimestamp,
     type: taskTypeSchema,
     featureId: featureIdSchema,
+    milestoneId: milestoneIdSchema,
     releaseId: releaseIdSchema,
     customFields: z
       .array(z.object({ fieldId: z.string(), value: z.string() }))
@@ -166,6 +173,7 @@ export const boardTaskSchema = z
     projectId: z.string(),
     type: taskTypeSchema,
     featureId: featureIdSchema,
+    milestoneId: milestoneIdSchema,
     releaseId: releaseIdSchema,
     subtaskCounts: z
       .object({
@@ -254,6 +262,8 @@ export const moveTaskResultSchema = z
 
 export const taskExportSchema = z
   .object({
+    version: z.literal(2),
+    milestones: z.array(exportedMilestoneSchema),
     project: z
       .object({
         name: z.string(),
@@ -265,6 +275,9 @@ export const taskExportSchema = z
     tasks: z.array(
       z
         .object({
+          key: z.string(),
+          featureKey: z.string().nullable(),
+          milestoneKey: z.string().nullable(),
           title: z.string(),
           type: taskTypeSchema,
           description: z.string(),
@@ -348,6 +361,7 @@ export const assignedTasksSchema = z
           number: z.number().nullable(),
           title: z.string(),
           type: taskTypeSchema,
+          milestoneId: milestoneIdSchema,
           status: z.string().openapi({
             description: "The slug of the column the task sits in.",
           }),

@@ -1,3 +1,5 @@
+import { updateTaskMilestone } from "../../api/milestones.js";
+import { resolveTaskMilestone } from "../../milestones/resolve-task-milestone.js";
 import { Effect, Option } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 import { listTaskLabels } from "../../api/labels.js";
@@ -63,6 +65,7 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   readonly type: Option.Option<TaskType>;
   readonly feature: Option.Option<string>;
   readonly release: Option.Option<string>;
+  readonly milestone?: Option.Option<string>;
 }) {
   const { title, description, priority, type } = options;
   if (
@@ -75,13 +78,14 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
       type,
       options.feature,
       options.release,
+      options.milestone ?? Option.none(),
     ].every((flag) => Option.isNone(flag)) &&
     options.addLabel.length === 0 &&
     options.removeLabel.length === 0
   ) {
     return yield* new InvalidArgument({
       message: "Nothing to change.",
-      hint: "Pass at least one of --title, --description, --priority, --due, --start, --add-label, --remove-label, --type, --feature or --release.",
+      hint: "Pass at least one of --title, --description, --priority, --due, --start, --add-label, --remove-label, --type, --feature, --release or --milestone.",
     });
   }
   // "none" takes the task out of its feature.
@@ -137,6 +141,17 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   }
   const release = yield* resolveTaskRelease(options.release, resolved.project);
 
+  const effectiveFeatureId =
+    Option.getOrUndefined(type) === "feature"
+      ? null
+      : Option.isSome(options.feature)
+        ? feature?.task.id
+        : resolved.task.featureId;
+  const milestoneId = yield* resolveTaskMilestone(
+    options.milestone,
+    effectiveFeatureId,
+  );
+
   const id = resolved.task.id;
   const label = resolved.ticketId ?? id.slice(0, 8);
   const labelPlan = yield* withSpinner("Loading labels")(
@@ -162,6 +177,10 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
       if (Option.isSome(options.feature)) {
         yield* updateTaskFeature(id, feature?.task.id ?? null);
         changed.push("feature");
+      }
+      if (milestoneId !== undefined) {
+        yield* updateTaskMilestone(id, milestoneId);
+        changed.push("milestone");
       }
       // After the feature, which may give the task the feature's release.
       if (release !== undefined) {
@@ -277,6 +296,10 @@ export const taskEdit = Command.make(
       ),
       Flag.optional,
     ),
+    milestone: Flag.String("milestone").pipe(
+      Flag.withDescription("Milestone ID in its Feature, or none to clear"),
+      Flag.optional,
+    ),
     release: Flag.String("release").pipe(
       Flag.withDescription(
         "Put it in this release of its project, by name or id, or none to take it out; a feature's tasks in its release move with it",
@@ -295,7 +318,7 @@ export const taskEdit = Command.make(
     ),
 ).pipe(
   Command.withDescription(
-    "Change a task's title, description, priority, dates, labels, type, feature or release",
+    "Change a task's title, description, priority, dates, labels, type, feature, release or milestone",
   ),
   Command.provide(ApiLayer),
 );

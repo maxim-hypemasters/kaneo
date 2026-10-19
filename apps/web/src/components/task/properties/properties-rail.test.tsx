@@ -30,6 +30,18 @@ vi.mock("../task-move-popover", () => ({ default: passThrough }));
 vi.mock("../features/task-feature-popover", () => ({
   TaskFeaturePopover: passThrough,
 }));
+vi.mock("../milestones/task-milestone-property", () => ({
+  TaskMilestoneProperty: () => (
+    <button type="button" data-testid="milestone-property">
+      Milestone
+    </button>
+  ),
+}));
+vi.mock("../milestones/feature-milestone-overview", () => ({
+  FeatureMilestoneOverview: ({ placement }: { placement: string }) => (
+    <div data-testid="milestone-overview">{placement}</div>
+  ),
+}));
 vi.mock("../releases/task-release-popover", () => ({
   TaskReleasePopover: passThrough,
 }));
@@ -95,6 +107,16 @@ afterEach(() => {
 });
 
 describe("PropertiesRail", () => {
+  it("places a Feature's milestone overview inside its properties rail", () => {
+    renderRail({
+      task: { ...task, id: "feature-1", type: "feature", featureId: null },
+      isFeature: true,
+    });
+    expect(screen.getByRole("complementary")).toContainElement(
+      screen.getByTestId("milestone-overview"),
+    );
+    expect(screen.getByTestId("milestone-overview")).toHaveTextContent("rail");
+  });
   it("shows a task's type and its feature", () => {
     renderRail({
       feature: {

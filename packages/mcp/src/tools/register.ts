@@ -2,6 +2,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { buildFullTaskUpdateBody } from "../kaneo/task-helpers.js";
 import { errorResult, textResult } from "../utils/mcp-result.js";
+import { registerMilestoneTools } from "./milestones.js";
 import { getCurrentUser } from "./get-current-user.js";
 
 export type ToolClient = {
@@ -62,6 +63,7 @@ export function registerTools(
   ctx: { client: ToolClient },
 ): void {
   const { client } = ctx;
+  registerMilestoneTools(server, client);
   const registerTool = <S extends z.ZodObject>(
     name: string,
     config: { description: string; inputSchema: S },
@@ -232,6 +234,12 @@ export function registerTools(
     sortOrder: z.enum(["asc", "desc"]).optional(),
     dueBefore: optionalIsoDateTimeSchema,
     dueAfter: optionalIsoDateTimeSchema,
+    featureId: optionalNonEmptyString.describe(
+      "Only work in this Feature, or none for no Feature",
+    ),
+    milestoneId: optionalNonEmptyString.describe(
+      "Only work in this milestone, or none for no milestone",
+    ),
     releaseId: optionalNonEmptyString.describe(
       "Only tasks and features in this release, or 'none' for those in no release",
     ),
@@ -241,7 +249,7 @@ export function registerTools(
     "list_tasks",
     {
       description:
-        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each item has a type ('task', 'bug' or 'feature'), a featureId (the feature it belongs to, or null) and a releaseId (its release, or null); a feature's subtaskCounts is the progress of its tasks and bugs.",
+        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each item has a type ('task', 'bug' or 'feature'), a featureId (the feature it belongs to, or null), a releaseId (its release, or null), and milestoneId (its milestone, or null); a feature's subtaskCounts is the progress of its tasks and bugs.",
       inputSchema: listTasksSchema,
     },
     async (args) => {
@@ -263,7 +271,7 @@ export function registerTools(
     "get_task",
     {
       description:
-        "Get a task by ID, including its type ('task', 'bug' or 'feature'), featureId (the feature it belongs to, or null) and releaseId (its release, or null).",
+        "Get a task by ID, including its type ('task', 'bug' or 'feature'), featureId (the feature it belongs to, or null), releaseId (its release, or null), and milestoneId (its milestone, or null).",
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>
@@ -321,6 +329,9 @@ export function registerTools(
         featureId: optionalNonEmptyString.describe(
           "Create the task inside this feature (a task of type 'feature' in the same project).",
         ),
+        milestoneId: nullableOptionalNonEmptyString.describe(
+          "A milestone of the same Feature, or null for none. Requires featureId and does not move Feature membership.",
+        ),
         releaseId: nullableOptionalNonEmptyString.describe(
           "A release of the same project (see list_releases), or null for none. Omit it to follow the feature's release.",
         ),
@@ -347,6 +358,9 @@ export function registerTools(
       }
       if (args.featureId !== undefined) {
         body.featureId = args.featureId;
+      }
+      if (args.milestoneId !== undefined) {
+        body.milestoneId = args.milestoneId;
       }
       if (args.releaseId !== undefined) {
         body.releaseId = args.releaseId;

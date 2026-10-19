@@ -34,6 +34,7 @@ beforeEach(() => {
       mutations: { retry: false },
     },
   });
+  queryClient.setQueryData(["feature-milestones", "p", "f"], []);
   queryClient.setQueryData(progressKey, { scope: 1, started: 0, completed: 0 });
   queryClient.setQueryData(["release-progress", "other", "r2", "UTC"], {});
   vi.mocked(updateTaskStatus).mockResolvedValue({} as never);
@@ -76,6 +77,9 @@ it("refetches a mounted chart after a same-window status change", async () => {
     }),
   );
   expect(readProgress).toHaveBeenCalledTimes(1);
+  expect(
+    queryClient.getQueryState(["feature-milestones", "p", "f"])?.isInvalidated,
+  ).toBe(true);
   expect(
     queryClient.getQueryState(["release-progress", "other", "r2", "UTC"])
       ?.isInvalidated,

@@ -52,16 +52,16 @@ export function ImportTasksDialog({
 
   const importFile = async (file: File) => {
     try {
-      const tasks = parseTasksImport(await file.text());
+      const document = parseTasksImport(await file.text());
 
-      if (!tasks) {
+      if (!document) {
         toast.error(t("settings:tasksImportExport.invalidFormat"));
         return;
       }
 
       toast.loading(t("settings:tasksImportExport.importing"));
 
-      const result = await importTasks({ projectId, tasks });
+      const result = await importTasks({ projectId, document });
 
       queryClient.invalidateQueries({ queryKey: ["project", projectId] });
 

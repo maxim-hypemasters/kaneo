@@ -1,6 +1,7 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   bigserial,
   boolean,
   check,
@@ -654,6 +655,13 @@ export const taskTable = pgTable(
     // A feature groups tasks and bugs of its own project and can't belong to one.
     type: text("type").$type<TaskType>().default("task").notNull(),
     featureId: text("feature_id"),
+    milestoneId: text("milestone_id").references(
+      (): AnyPgColumn => milestoneTable.id,
+      {
+        onDelete: "set null",
+        onUpdate: "cascade",
+      },
+    ),
     releaseId: text("release_id"),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(utcNow)
@@ -679,6 +687,7 @@ export const taskTable = pgTable(
       sql`${table.type} in ('task', 'bug', 'feature') and (${table.type} <> 'feature' or ${table.featureId} is null) and ${table.featureId} <> ${table.id}`,
     ),
     index("task_featureId_idx").on(table.featureId),
+    index("task_milestoneId_idx").on(table.milestoneId),
     // The database keeps a task in its own project's releases. No ON DELETE
     // action (SET NULL of one column needs PostgreSQL 15): deleting a release
     // unlinks its tasks first, recording their activity.
@@ -700,6 +709,44 @@ export const taskTable = pgTable(
     index("task_assigneeId_idx").on(table.userId),
     index("task_columnId_idx").on(table.columnId),
     unique("task_project_number_unique").on(table.projectId, table.number),
+  ],
+);
+
+export const milestoneTable = pgTable(
+  "milestone",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    featureId: text("feature_id")
+      .notNull()
+      .references((): AnyPgColumn => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    title: text("title").notNull(),
+    description: text("description"),
+    startDate: date("start_date", { mode: "string" }),
+    endDate: date("end_date", { mode: "string" }),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "milestone_date_order_check",
+      sql`${table.startDate} is null or ${table.endDate} is null or ${table.startDate} <= ${table.endDate}`,
+    ),
+    index("milestone_featureId_position_idx").on(
+      table.featureId,
+      table.position,
+      table.id,
+    ),
   ],
 );
 

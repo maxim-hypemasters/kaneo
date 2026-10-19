@@ -25,6 +25,8 @@ export type KaneoExternalLink = {
 export type KaneoBoardTask = {
   id: string;
   type?: string;
+  featureId?: string | null;
+  milestoneId?: string | null;
   title: string;
   number: number | null;
   description: string | null;
@@ -100,6 +102,17 @@ export type KaneoRelation = {
   relationType: string;
 };
 
+export type KaneoMilestone = {
+  id: string;
+  featureId: string;
+  title: string;
+  description: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  targetDate?: string | null;
+  position: number;
+};
+
 export type KaneoCustomField = {
   id: string;
   name: string;
@@ -126,6 +139,7 @@ export type KaneoClient = {
   listActivities(taskId: string): Promise<KaneoActivity[]>;
   listComments(taskId: string): Promise<KaneoComment[]>;
   listRelations(taskId: string): Promise<KaneoRelation[]>;
+  listMilestones(featureId: string): Promise<KaneoMilestone[]>;
   listCustomFields(projectId: string): Promise<KaneoCustomField[]>;
 };
 
@@ -209,6 +223,9 @@ export function createKaneoClient(options: KaneoClientOptions): KaneoClient {
     },
     listRelations(taskId) {
       return list<KaneoRelation>(`/api/task-relation/${id(taskId)}`);
+    },
+    listMilestones(featureId) {
+      return list<KaneoMilestone>(`/api/milestone/feature/${id(featureId)}`);
     },
     listCustomFields(projectId) {
       return list<KaneoCustomField>(

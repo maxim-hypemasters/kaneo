@@ -37,6 +37,8 @@ export type ImportedTask = {
   key: string;
   type?: "task" | "bug" | "feature";
   number?: number;
+  featureKey?: string | null;
+  milestoneKey?: string | null;
   columnKey: string | null;
   archived?: boolean;
   title: string;
@@ -58,6 +60,16 @@ export type ImportedRelation = {
   type: ImportedRelationType;
 };
 
+export type ImportedMilestone = {
+  key: string;
+  featureKey: string;
+  title: string;
+  description?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  position: number;
+};
+
 export type ImportedProject = {
   name: string;
   key?: string;
@@ -66,6 +78,7 @@ export type ImportedProject = {
   labels: ImportedLabel[];
   tasks: ImportedTask[];
   relations: ImportedRelation[];
+  milestones?: ImportedMilestone[];
   warnings: string[];
 };
 

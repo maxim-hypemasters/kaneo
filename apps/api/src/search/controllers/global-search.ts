@@ -100,6 +100,11 @@ function getActivitySearchContent(
       return data.newFeatureTitle
         ? `added the task to feature "${String(data.newFeatureTitle)}"`
         : "added the task to a feature";
+    case "milestone_changed":
+      if (!data.newMilestoneId) return "removed the task from its milestone";
+      return data.newMilestoneTitle
+        ? `added the task to milestone "${String(data.newMilestoneTitle)}"`
+        : "added the task to a milestone";
     case "release_changed":
       if (!data.newReleaseId) return "removed the task from its release";
       // A name from a project the viewer can't see was redacted to null.

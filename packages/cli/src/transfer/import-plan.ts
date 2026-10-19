@@ -51,6 +51,16 @@ export function planImport(
     }
     return {
       title: candidate.title,
+      ...(candidate.key === undefined ? {} : { key: candidate.key }),
+      ...(candidate.featureKey === undefined
+        ? {}
+        : { featureKey: candidate.featureKey }),
+      ...(candidate.milestoneKey === undefined
+        ? {}
+        : { milestoneKey: candidate.milestoneKey }),
+      ...(candidate.labelDefinitions === undefined
+        ? {}
+        : { labels: candidate.labelDefinitions }),
       ...(candidate.type === undefined ? {} : { type: candidate.type }),
       status: slug,
       ...(candidate.description === undefined
@@ -72,6 +82,9 @@ export function planImport(
     tasks,
     remapped: [...remapped].map(([from, to]) => ({ from, to })),
     unknown: [...unknown].map(([status, count]) => ({ status, count })),
-    withLabels: candidates.filter((candidate) => candidate.labels > 0).length,
+    withLabels: candidates.filter(
+      (candidate) =>
+        candidate.labels > 0 && candidate.labelDefinitions === undefined,
+    ).length,
   };
 }

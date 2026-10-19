@@ -91,6 +91,41 @@ export function useProjectWebSocket(projectId: string) {
     let pingInterval: ReturnType<typeof setInterval> | null = null;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
     let releasesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    let milestonesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const milestoneOwnersDirty = new Set<string>();
+    function refreshMilestones(featureId?: string) {
+      if (featureId) milestoneOwnersDirty.add(featureId);
+      if (milestonesRefreshTimer !== null) return;
+      milestonesRefreshTimer = setTimeout(() => {
+        milestonesRefreshTimer = null;
+        if (disposed) return;
+        void queryClient.invalidateQueries({
+          queryKey: ["feature-milestones", projectId],
+        });
+        if (milestoneOwnersDirty.size) {
+          const owners = new Set(milestoneOwnersDirty);
+          milestoneOwnersDirty.clear();
+          const belongs = (data: unknown) => {
+            const task = data as
+              | { id?: string; projectId?: string; featureId?: string }
+              | undefined;
+            return (
+              task?.projectId === projectId &&
+              (owners.has(task.id ?? "") || owners.has(task.featureId ?? ""))
+            );
+          };
+          void queryClient.invalidateQueries({
+            queryKey: ["task"],
+            predicate: (query) => belongs(query.state.data),
+          });
+          void queryClient.invalidateQueries({
+            queryKey: ["activities"],
+            predicate: (query) =>
+              belongs(queryClient.getQueryData(["task", query.queryKey[1]])),
+          });
+        }
+      }, RELEASES_REFRESH_DELAY_MS);
+    }
     let progressRefreshTimer: ReturnType<typeof setTimeout> | null = null;
     // When release messages stopped arriving: null while connected.
     let offlineSince: number | null = Date.now();
@@ -113,6 +148,19 @@ export function useProjectWebSocket(projectId: string) {
             queryKey: ["release-progress", projectId],
           });
       }, RELEASES_REFRESH_DELAY_MS);
+    }
+    function reconcileMilestoneDetails() {
+      const belongs = (data: unknown) =>
+        (data as { projectId?: string } | undefined)?.projectId === projectId;
+      void queryClient.invalidateQueries({
+        queryKey: ["task"],
+        predicate: (query) => belongs(query.state.data),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["activities"],
+        predicate: (query) =>
+          belongs(queryClient.getQueryData(["task", query.queryKey[1]])),
+      });
     }
     function reconcileReleases(since: number) {
       const state = queryClient.getQueryState(releasesKey(projectId));
@@ -233,6 +281,11 @@ export function useProjectWebSocket(projectId: string) {
         // Release events missed while disconnected are not replayed.
         if (offlineSince !== null) {
           reconcileReleases(offlineSince);
+          reconcileMilestoneDetails();
+          void queryClient.invalidateQueries(
+            { queryKey: ["feature-milestones", projectId] },
+            { cancelRefetch: false },
+          );
           void queryClient.invalidateQueries(
             { queryKey: ["release-progress", projectId] },
             { cancelRefetch: false },
@@ -273,6 +326,19 @@ export function useProjectWebSocket(projectId: string) {
             });
             return;
           }
+          if (message.type === "MILESTONES_UPDATED") {
+            refreshMilestones(
+              typeof message.featureId === "string"
+                ? message.featureId
+                : undefined,
+            );
+            return;
+          }
+          if (
+            RELEASE_PROGRESS_MESSAGES.includes(message.type) ||
+            message.type === "TASK_RELATION_UPDATED"
+          )
+            refreshMilestones();
           if (message.type === "RELEASES_UPDATED") {
             refreshReleases();
             refreshProgress();
@@ -672,6 +738,10 @@ export function useProjectWebSocket(projectId: string) {
         } else if (fallbackInterval === null) {
           // Refresh only when realtime delivery could not reconnect.
           fallbackInterval = setInterval(() => {
+            reconcileMilestoneDetails();
+            void queryClient.invalidateQueries({
+              queryKey: ["feature-milestones", projectId],
+            });
             void queryClient.invalidateQueries({
               queryKey: ["tasks", projectId],
             });
@@ -755,6 +825,7 @@ export function useProjectWebSocket(projectId: string) {
       disposed = true;
       clearPing();
       if (fallbackInterval !== null) clearInterval(fallbackInterval);
+      if (milestonesRefreshTimer !== null) clearTimeout(milestonesRefreshTimer);
       if (retryTimeout !== null) {
         clearTimeout(retryTimeout);
       }

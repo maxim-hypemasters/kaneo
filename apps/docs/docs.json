@@ -63,6 +63,7 @@
 						"group": "Work with tasks",
 						"pages": [
 							"core/functional/plan-and-execute-tasks",
+							"core/functional/milestones",
 							"core/functional/backlog-planning",
 							"core/functional/releases",
 							"core/functional/calendar-and-gantt",

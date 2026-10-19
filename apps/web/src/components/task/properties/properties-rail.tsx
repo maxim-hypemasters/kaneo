@@ -6,6 +6,8 @@ import { cn } from "@/lib/cn";
 import { formatDateShort } from "@/lib/format";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
+import { FeatureMilestoneOverview } from "../milestones/feature-milestone-overview";
+import { TaskMilestoneProperty } from "../milestones/task-milestone-property";
 import { TaskCustomFieldRows } from "../custom-fields/task-custom-field-rows";
 import { FeatureValue } from "../features/feature-value";
 import { TaskFeaturePopover } from "../features/task-feature-popover";
@@ -199,6 +201,14 @@ export function PropertiesRail({
           </PropertyRow>
         )}
 
+        {!isFeature && task.featureId && (
+          <PropertyRow label={t("tasks:milestones.property")}>
+            <TaskMilestoneProperty
+              task={task}
+              className="h-7.5 border-0 px-2 text-[13px]"
+            />
+          </PropertyRow>
+        )}
         <PropertyRow label={t("tasks:releases.property")}>
           <TaskReleasePopover task={task}>
             <PropertyValue data-task-action="release" shortcutId="setRelease">
@@ -209,6 +219,13 @@ export function PropertiesRail({
       </div>
 
       <TaskCustomFieldRows taskId={taskId} projectId={projectId} />
+      {isFeature && (
+        <FeatureMilestoneOverview
+          projectId={task.projectId}
+          featureId={task.id}
+          placement="rail"
+        />
+      )}
     </aside>
   );
 }

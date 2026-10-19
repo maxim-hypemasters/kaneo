@@ -20,6 +20,7 @@ export type ImportJob = {
   workspaceId: string;
   userId: string;
   includeComments: boolean;
+  canWriteMilestones?: boolean;
   opened: OpenedImportSource;
   state: ImportJobState;
   signal: AbortSignal;
@@ -95,6 +96,16 @@ async function importProject(
   await store.save({ message: `Saving ${entry.name}` });
 
   try {
+    if (
+      !job.canWriteMilestones &&
+      (project.milestones?.length ||
+        project.tasks.some((task) => task.milestoneKey))
+    ) {
+      throw new HTTPException(403, {
+        message:
+          "Milestone hierarchy requires task:create and task:update permission",
+      });
+    }
     const written = await writeImportedProject({
       workspaceId: job.workspaceId,
       userId: job.userId,

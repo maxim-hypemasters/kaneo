@@ -104,3 +104,39 @@ describe("runTaskCreate --release", () => {
     expect(createBody(run.requests)).toBeUndefined();
   });
 });
+
+it("creates a Bug in the selected Feature milestone in one write", async () => {
+  const feature = resolvedTaskFixture(1, { type: "feature" });
+  const milestone = {
+    id: "m1",
+    featureId: "t1",
+    title: "Ship",
+    description: null,
+    startDate: null,
+    endDate: null,
+    position: 0,
+    createdAt: "2026-10-19T00:00:00Z",
+    updatedAt: "2026-10-19T00:00:00Z",
+    progress: { total: 0, started: 0, completed: 0 },
+  };
+  const run = await runCommand(
+    runTaskCreate({
+      ...options,
+      type: "bug",
+      feature: Option.some("KAN-1"),
+      milestone: Option.some("m1"),
+    }),
+    {
+      ...routes,
+      "GET /api/task/by-ticket-id/KAN-1": () => json(feature.task),
+      "GET /api/project/p1": () => json(project),
+      "GET /api/milestone/m1": () => json(milestone),
+    },
+  );
+  expect(Result.isSuccess(run.result)).toBe(true);
+  expect(createBody(run.requests)).toMatchObject({
+    type: "bug",
+    featureId: "t1",
+    milestoneId: "m1",
+  });
+});

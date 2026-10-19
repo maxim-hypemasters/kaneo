@@ -1,3 +1,4 @@
+import { resolveTaskMilestone } from "../../milestones/resolve-task-milestone.js";
 import { Effect, Option } from "effect";
 import { Argument, Command, Flag, Prompt } from "effect/cli";
 import { listColumns } from "../../api/endpoints.js";
@@ -104,6 +105,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     readonly type: TaskType;
     readonly feature: Option.Option<string>;
     readonly release: Option.Option<string>;
+    readonly milestone?: Option.Option<string>;
   }) {
     const session = yield* Session;
     const now = new Date();
@@ -126,6 +128,10 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     if (feature)
       yield* Effect.fromResult(checkFeatureProject(feature, project));
     const release = yield* resolveTaskRelease(options.release, project);
+    const milestoneId = yield* resolveTaskMilestone(
+      options.milestone,
+      feature?.task.id,
+    );
     const title = yield* resolveTitle(options.title);
 
     const [columns, assignee, labels] = yield* withSpinner(
@@ -162,6 +168,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
       ...(options.type !== "task" ? { type: options.type } : {}),
       ...(feature ? { featureId: feature.task.id } : {}),
       ...(release === undefined ? {} : { releaseId: release?.id ?? null }),
+      ...(milestoneId === undefined ? {} : { milestoneId }),
     };
     const created = yield* withSpinner("Creating task")(
       createTask(project.id, body),
@@ -207,6 +214,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
         type: created.type,
         featureId: created.featureId,
         releaseId: created.releaseId,
+        milestoneId: created.milestoneId,
         description: created.description,
         status: created.status,
         priority: created.priority,
@@ -330,6 +338,10 @@ export const taskCreate = Command.make(
       Flag.withDescription(
         "Create it in this feature, for example KAN-12 (default project: the feature's)",
       ),
+      Flag.optional,
+    ),
+    milestone: Flag.String("milestone").pipe(
+      Flag.withDescription("Milestone ID in the selected Feature, or none"),
       Flag.optional,
     ),
     release: Flag.String("release").pipe(

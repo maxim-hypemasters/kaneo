@@ -287,6 +287,13 @@
             ],
             "description": "The feature this task or bug belongs to, in the same project. Always null for a feature."
           },
+          "milestoneId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A milestone within this task or bug’s Feature. Null for Features and unassigned items."
+          },
           "releaseId": {
             "type": [
               "string",
@@ -343,6 +350,7 @@
           "projectId",
           "type",
           "featureId",
+          "milestoneId",
           "releaseId",
           "subtaskCounts",
           "labels",
@@ -1019,6 +1027,143 @@
           "nextCursor"
         ]
       },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "position": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Order within its column, ascending."
+          },
+          "number": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Per-project counter shown as {projectSlug}-{number}."
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The assignee, if any."
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "descriptionDeferred": {
+            "type": "boolean",
+            "description": "True when the list omits a large description; load the task detail or description pages to read it. Do not replace stored text with this null summary."
+          },
+          "status": {
+            "type": "string",
+            "description": "The slug of the column the task sits in."
+          },
+          "priority": {
+            "type": "string",
+            "description": "One of: no-priority, low, medium, high, urgent."
+          },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "bug",
+              "feature"
+            ],
+            "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
+          },
+          "featureId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The feature this task or bug belongs to, in the same project. Always null for a feature."
+          },
+          "milestoneId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A milestone within this task or bug’s Feature. Null for Features and unassigned items."
+          },
+          "releaseId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The release this task, bug or feature is planned in, from its own project. Always null on public boards."
+          },
+          "customFields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "fieldId": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "fieldId",
+                "value"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "position",
+          "number",
+          "userId",
+          "title",
+          "description",
+          "status",
+          "priority",
+          "startDate",
+          "dueDate",
+          "createdAt",
+          "type",
+          "featureId",
+          "milestoneId",
+          "releaseId"
+        ]
+      },
       "AssignedTasks": {
         "type": "object",
         "properties": {
@@ -1064,6 +1209,13 @@
               "feature"
             ],
             "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
+          },
+          "milestoneId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A milestone within this task or bug’s Feature. Null for Features and unassigned items."
           },
           "status": {
             "type": "string",
@@ -1118,6 +1270,7 @@
           "number",
           "title",
           "type",
+          "milestoneId",
           "status",
           "statusName",
           "statusIcon",
@@ -1236,135 +1389,6 @@
         "required": [
           "id",
           "url"
-        ]
-      },
-      "Task": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "projectId": {
-            "type": "string"
-          },
-          "position": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "description": "Order within its column, ascending."
-          },
-          "number": {
-            "type": [
-              "number",
-              "null"
-            ],
-            "description": "Per-project counter shown as {projectSlug}-{number}."
-          },
-          "userId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The assignee, if any."
-          },
-          "title": {
-            "type": "string"
-          },
-          "description": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "descriptionDeferred": {
-            "type": "boolean",
-            "description": "True when the list omits a large description; load the task detail or description pages to read it. Do not replace stored text with this null summary."
-          },
-          "status": {
-            "type": "string",
-            "description": "The slug of the column the task sits in."
-          },
-          "priority": {
-            "type": "string",
-            "description": "One of: no-priority, low, medium, high, urgent."
-          },
-          "startDate": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "dueDate": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "task",
-              "bug",
-              "feature"
-            ],
-            "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
-          },
-          "featureId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The feature this task or bug belongs to, in the same project. Always null for a feature."
-          },
-          "releaseId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The release this task, bug or feature is planned in, from its own project. Always null on public boards."
-          },
-          "customFields": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "fieldId": {
-                  "type": "string"
-                },
-                "value": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "fieldId",
-                "value"
-              ]
-            }
-          }
-        },
-        "required": [
-          "id",
-          "projectId",
-          "position",
-          "number",
-          "userId",
-          "title",
-          "description",
-          "status",
-          "priority",
-          "startDate",
-          "dueDate",
-          "createdAt",
-          "type",
-          "featureId",
-          "releaseId"
         ]
       },
       "TaskByTicketId": {
@@ -1494,6 +1518,71 @@
       "TaskExport": {
         "type": "object",
         "properties": {
+          "version": {
+            "type": "number",
+            "enum": [
+              2
+            ]
+          },
+          "milestones": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "featureKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "description": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 10000
+                },
+                "startDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-20"
+                },
+                "endDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-20"
+                },
+                "position": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2147483646
+                }
+              },
+              "required": [
+                "key",
+                "featureKey",
+                "title",
+                "startDate",
+                "endDate",
+                "position"
+              ]
+            }
+          },
           "project": {
             "$ref": "#/components/schemas/TaskExportProject"
           },
@@ -1505,6 +1594,8 @@
           }
         },
         "required": [
+          "version",
+          "milestones",
           "project",
           "tasks"
         ]
@@ -1539,6 +1630,21 @@
       "ExportedTask": {
         "type": "object",
         "properties": {
+          "key": {
+            "type": "string"
+          },
+          "featureKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "milestoneKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "title": {
             "type": "string"
           },
@@ -1589,6 +1695,9 @@
           }
         },
         "required": [
+          "key",
+          "featureKey",
+          "milestoneKey",
           "title",
           "type",
           "description",
@@ -1957,6 +2066,87 @@
           "movedTaskIds"
         ]
       },
+      "Milestone": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "featureId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-20"
+          },
+          "endDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-20"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "progress": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer"
+              },
+              "started": {
+                "type": "integer"
+              },
+              "completed": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "total",
+              "started",
+              "completed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "featureId",
+          "title",
+          "description",
+          "startDate",
+          "endDate",
+          "position",
+          "createdAt",
+          "updatedAt",
+          "progress"
+        ]
+      },
       "WorkspaceActivity": {
         "type": "object",
         "properties": {
@@ -1965,7 +2155,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
+            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
           },
           "createdAt": {
             "type": "string",
@@ -2058,7 +2248,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
+            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
           },
           "createdAt": {
             "type": "string",
@@ -4368,6 +4558,12 @@
             ],
             "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
           },
+          "milestoneId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "status": {
             "type": "string"
           },
@@ -4407,6 +4603,7 @@
           "id",
           "title",
           "type",
+          "milestoneId",
           "status",
           "isCompleted",
           "priority",
@@ -5882,6 +6079,28 @@
             "required": false,
             "description": "Only items of this type, filtered before pagination.",
             "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "A Feature id, or none for items without a Feature. Applied before pagination."
+            },
+            "required": false,
+            "description": "A Feature id, or none for items without a Feature. Applied before pagination.",
+            "name": "featureId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "A Milestone id, or none for items without a milestone. Applied before pagination."
+            },
+            "required": false,
+            "description": "A Milestone id, or none for items without a milestone. Applied before pagination.",
+            "name": "milestoneId",
             "in": "query"
           },
           {
@@ -10859,6 +11078,123 @@
         }
       }
     },
+    "/task/{id}/milestone": {
+      "patch": {
+        "operationId": "updateTaskMilestone",
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Assign or clear a task milestone",
+        "description": "Only tasks and bugs already in the milestone’s Feature can join it. Null clears membership without changing Feature or Release.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "milestoneId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "milestoneId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing task:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task or milestone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The task is a Feature or has no Feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
     "/task/assigned": {
       "get": {
         "operationId": "listAssignedTasks",
@@ -11044,6 +11380,28 @@
             "required": false,
             "description": "Only items of this type, filtered before pagination.",
             "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "A Feature id, or none for items without a Feature. Applied before pagination."
+            },
+            "required": false,
+            "description": "A Feature id, or none for items without a Feature. Applied before pagination.",
+            "name": "featureId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "A Milestone id, or none for items without a milestone. Applied before pagination."
+            },
+            "required": false,
+            "description": "A Milestone id, or none for items without a milestone. Applied before pagination.",
+            "name": "milestoneId",
             "in": "query"
           },
           {
@@ -11839,6 +12197,14 @@
                     "minLength": 1,
                     "description": "Create the task inside this feature of the project."
                   },
+                  "milestoneId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "A milestone belonging to the selected Feature. Does not change Feature membership."
+                  },
                   "releaseId": {
                     "type": [
                       "string",
@@ -12540,7 +12906,7 @@
           "Tasks"
         ],
         "summary": "Export tasks",
-        "description": "Export a project's tasks, with their labels, as a JSON document.",
+        "description": "Export a project's work and labels as version 2 JSON with portable Feature and milestone hierarchy.",
         "parameters": [
           {
             "schema": {
@@ -12605,7 +12971,7 @@
           "Tasks"
         ],
         "summary": "Import tasks",
-        "description": "Import tasks into a project. Each task is reported individually, so a partial import still returns 200.",
+        "description": "Import version 2 Feature/milestone hierarchy atomically, or legacy tasks with individual outcomes. Milestone hierarchy also requires task:update permission.",
         "parameters": [
           {
             "schema": {
@@ -12623,11 +12989,125 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "version": {
+                    "type": "number",
+                    "enum": [
+                      2
+                    ],
+                    "description": "Version 2 imports portable Feature/milestone hierarchy atomically. Omit for legacy per-task imports."
+                  },
+                  "milestones": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "featureKey": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "description": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 10000
+                        },
+                        "startDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20"
+                        },
+                        "endDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20"
+                        },
+                        "targetDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20",
+                          "deprecated": true,
+                          "description": "Legacy end date. Used only when endDate is omitted."
+                        },
+                        "position": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 2147483646
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "featureKey",
+                        "title",
+                        "position"
+                      ]
+                    }
+                  },
                   "tasks": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "featureKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1
+                        },
+                        "milestoneKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1
+                        },
+                        "labels": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 255
+                              },
+                              "color": {
+                                "type": "string",
+                                "maxLength": 64
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "color"
+                            ]
+                          }
+                        },
                         "title": {
                           "type": "string"
                         },
@@ -15057,6 +15537,684 @@
           },
           "409": {
             "description": "Another edit changed these items at the same time; try again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/milestone/feature/{featureId}": {
+      "get": {
+        "operationId": "listFeatureMilestones",
+        "tags": [
+          "Milestones"
+        ],
+        "summary": "List feature milestones",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "featureId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ordered milestones and unfiltered task/bug progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Milestone"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid milestone data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing task permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or milestone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The owner is not a feature, or the milestone list changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createMilestone",
+        "tags": [
+          "Milestones"
+        ],
+        "summary": "Create a feature milestone",
+        "description": "Optionally assign existing Tasks/Bugs from the same Feature atomically. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409 without creating a milestone.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "featureId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000
+                  },
+                  "startDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20"
+                  },
+                  "endDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20"
+                  },
+                  "taskIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "description": "Existing Task/Bug ids in this Feature to assign atomically. Existing milestone membership is replaced."
+                  }
+                },
+                "required": [
+                  "title"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The created milestone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Milestone"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid milestone data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing task permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or milestone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The owner is not a feature, or the milestone list changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/milestone/feature/{featureId}/order": {
+      "put": {
+        "operationId": "reorderMilestones",
+        "tags": [
+          "Milestones"
+        ],
+        "summary": "Reorder all milestones in a feature",
+        "description": "Accepts the complete ordered id list. Duplicate ids return 400; a list that is no longer the exact current set returns 409.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "featureId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "milestoneIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "required": [
+                  "milestoneIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The reordered milestones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Milestone"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid milestone data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing task permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or milestone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The owner is not a feature, or the milestone list changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/milestone/{id}": {
+      "get": {
+        "operationId": "getMilestone",
+        "tags": [
+          "Milestones"
+        ],
+        "summary": "Get milestone",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The milestone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Milestone"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid milestone data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing task permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or milestone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The owner is not a feature, or the milestone list changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateMilestone",
+        "tags": [
+          "Milestones"
+        ],
+        "summary": "Update milestone metadata",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000
+                  },
+                  "startDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20"
+                  },
+                  "endDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated milestone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Milestone"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid milestone data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing task permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or milestone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The owner is not a feature, or the milestone list changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteMilestone",
+        "tags": [
+          "Milestones"
+        ],
+        "summary": "Delete milestone",
+        "description": "Unlinks its tasks and bugs while keeping their feature, release and other fields.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted milestone id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid milestone data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing task permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or milestone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The owner is not a feature, or the milestone list changed",
             "content": {
               "application/json": {
                 "schema": {

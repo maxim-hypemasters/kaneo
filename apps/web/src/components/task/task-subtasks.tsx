@@ -28,6 +28,7 @@ import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
 import type Task from "@/types/task";
 import type { TaskType } from "@/types/task";
+import type { MilestoneFilter } from "./milestones/feature-milestones";
 import { useFeatureTasks } from "./features/use-feature-tasks";
 import { SectionAddButton } from "./sections/section-add-button";
 import { SectionHeader } from "./sections/section-header";
@@ -42,6 +43,7 @@ type TaskSubtasksProps = {
   workspaceId: string;
   featureStatus: string;
   featureReleaseId?: string | null;
+  milestoneFilter?: MilestoneFilter;
 };
 
 // A feature's tasks: add, open, complete, remove from the feature, delete.
@@ -51,6 +53,7 @@ export default function TaskSubtasks({
   workspaceId,
   featureStatus,
   featureReleaseId,
+  milestoneFilter = "all",
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -63,7 +66,14 @@ export default function TaskSubtasks({
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { tasks: subtasks, ready } = useFeatureTasks(featureId, projectId);
+  const { tasks: allTasks, ready } = useFeatureTasks(featureId, projectId);
+  const subtasks = allTasks.filter(
+    ({ task }) =>
+      milestoneFilter === "all" ||
+      (milestoneFilter === "none"
+        ? !task.milestoneId
+        : task.milestoneId === milestoneFilter.id),
+  );
   const { data: workspace } = useActiveWorkspace();
   const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
     workspace?.id ?? "",
@@ -82,7 +92,7 @@ export default function TaskSubtasks({
   const canCreateSubtask =
     featureStatus === "planned" || (!isLoadingColumns && Boolean(todoSlug));
 
-  const completedCount = subtasks.filter((s) => s.isCompleted).length;
+  const completedCount = allTasks.filter((s) => s.isCompleted).length;
   const totalCount = subtasks.length;
   const hasSelection = selectedIds.size > 0;
 
@@ -258,6 +268,9 @@ export default function TaskSubtasks({
         priority: "no-priority",
         type: newType,
         featureId,
+        ...(typeof milestoneFilter === "object"
+          ? { milestoneId: milestoneFilter.id }
+          : {}),
       });
       void queryClient.invalidateQueries({
         queryKey: ["task-relations", featureId],
@@ -321,14 +334,14 @@ export default function TaskSubtasks({
         <SectionHeader
           title={t("tasks:subtasks.title")}
           meta={
-            totalCount > 0 && (
+            allTasks.length > 0 && (
               <span className="flex items-center gap-1.5 text-muted-foreground text-xs tabular-nums">
                 <CircularProgress
                   completed={completedCount}
-                  total={totalCount}
+                  total={allTasks.length}
                   size={14}
                 />
-                {completedCount}/{totalCount}
+                {completedCount}/{allTasks.length}
               </span>
             )
           }
@@ -449,7 +462,11 @@ export default function TaskSubtasks({
 
         {!isAdding && ready && totalCount === 0 && (
           <p className="px-2 py-1 text-muted-foreground text-xs">
-            {t("tasks:subtasks.empty")}
+            {t(
+              milestoneFilter === "all"
+                ? "tasks:subtasks.empty"
+                : "tasks:milestones.noMatchingTasks",
+            )}
           </p>
         )}
       </section>

@@ -120,6 +120,7 @@ For headless or sandboxed environments where opening a browser is impractical, s
 - Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `list_project_columns`
 - Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_due_date`, `list_task_activity`
 - Features: `set_task_feature`, `set_task_type`
+- Milestones: `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`, `set_task_milestone`
 - Releases: `list_releases`, `get_release`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
 - Time entries: `list_task_time_entries`, `get_time_entry`, `create_time_entry`, `update_time_entry`
 - Comments: `list_task_comments`, `create_task_comment`, `update_task_comment`, `delete_task_comment`
@@ -142,8 +143,8 @@ to at most one feature. Create a task inside a feature in one call with
 `create_task` and `featureId`, or create a feature with `type: "feature"`.
 `set_task_feature` moves an existing task into a feature or, with a `null`
 `featureId`, out of it; `set_task_type` turns a task into a feature and back (a
-feature can become a task only once it has no tasks). `update_task` leaves the
-type, feature and release as they are.
+feature can become a task only once it has no Tasks/Bugs or milestones). `update_task` leaves the
+type, feature, release and milestone as they are.
 
 `type: "bug"` creates or classifies a Bug, with the same workflow, Feature and
 release behavior as a Task. `create_task` and `set_task_type` accept `task`,
@@ -151,6 +152,10 @@ release behavior as a Task. `create_task` and `set_task_type` accept `task`,
 `list_tasks` accepts an exact `type` filter, so `type: "task"` excludes Bugs.
 Reads retain the item's explicit type. Creating or converting Bugs requires a
 server that supports them; ordinary `update_task` calls preserve the type.
+
+A milestone belongs to one Feature and has a title, optional description, start date and end date, manual order, and automatic `{total, started, completed}` progress. `list_milestones` takes `featureId`. `create_milestone` appends to that Feature and optionally accepts unique `taskIds` to atomically link existing Tasks/Bugs already in it, reassigning previous milestones. Invalid selections create nothing; `update_milestone` changes only provided fields, with null clearing optional fields. Both dates are optional `YYYY-MM-DD` calendar days; either can be set alone or cleared with null. When both are set, `startDate` must be on or before `endDate`. They do not change task deadlines. `reorder_milestones` takes the complete ordered `milestoneIds` array; duplicate and stale lists are rejected.
+
+`create_task` accepts `milestoneId` with `featureId`, and `set_task_milestone` assigns a Task/Bug to a milestone of its existing Feature or clears it with null. Assignment never moves Feature membership. `list_tasks` accepts `featureId` and `milestoneId` filters before pagination, with `none` selecting unassigned items. Deleting a milestone keeps linked work in its Feature and Release. Management and assignment use task update permission; progress reads use task read permission and include archived items independently of filters.
 
 A release is a planned delivery in one project, with a start, a code freeze and
 a submission date (`YYYY-MM-DD`, in that order) and progress counts. Its phase

@@ -1,3 +1,4 @@
+import { recordMilestoneChange } from "../../milestone/membership";
 import { and, inArray, notInArray } from "drizzle-orm";
 import type db from "../../database";
 import { taskTable } from "../../database/schema";
@@ -21,6 +22,7 @@ export async function recordFeatureDeletion(
     .select({
       id: taskTable.id,
       featureId: taskTable.featureId,
+      milestoneId: taskTable.milestoneId,
       projectId: taskTable.projectId,
     })
     .from(taskTable)
@@ -30,6 +32,15 @@ export async function recordFeatureDeletion(
     .orderBy(taskTable.id)
     .for("update");
 
+  for (const member of members) {
+    await recordMilestoneChange(tx, {
+      taskIds: [member.id],
+      projectId: member.projectId,
+      from: member.milestoneId,
+      to: null,
+      userId,
+    });
+  }
   const byFeature = new Map<string, { projectId: string; ids: string[] }>();
   for (const { id, featureId, projectId } of members) {
     if (!featureId) continue;

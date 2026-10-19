@@ -19,6 +19,7 @@ export const CreatedTask = Schema.Struct({
   type: Schema.optionalKey(Schema.String),
   featureId: Schema.optionalKey(NullableString),
   releaseId: Schema.optionalKey(NullableString),
+  milestoneId: Schema.optionalKey(NullableString),
 });
 export type CreatedTask = typeof CreatedTask.Type;
 
@@ -49,6 +50,7 @@ export type CreateTaskBody = {
   readonly featureId?: string;
   // Omitted, the task starts in its feature's release; null means none.
   readonly releaseId?: string | null;
+  readonly milestoneId?: string | null;
 };
 
 function taskPath(route: string, id: string): string {

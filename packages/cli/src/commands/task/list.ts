@@ -1,3 +1,4 @@
+import { resolveFeature } from "../../tasks/resolve-feature.js";
 import { Effect, Option } from "effect";
 import { Command, Flag } from "effect/cli";
 import { getCurrentUser } from "../../api/endpoints.js";
@@ -43,6 +44,8 @@ export const runTaskList = Effect.fn("command.task.list")(function* (options: {
   readonly project: Option.Option<string>;
   readonly status: Option.Option<string>;
   readonly type?: Option.Option<TaskType>;
+  readonly feature?: Option.Option<string>;
+  readonly milestone?: Option.Option<string>;
   readonly priority: Option.Option<string>;
   readonly assignee: Option.Option<string>;
   readonly mine: boolean;
@@ -77,6 +80,12 @@ export const runTaskList = Effect.fn("command.task.list")(function* (options: {
 
   const workspaceId = yield* resolveWorkspaceId();
   const project = yield* resolveProject(workspaceId, options.project);
+  const featureInput = options.feature ?? Option.none<string>();
+  const noFeature =
+    Option.getOrUndefined(featureInput)?.trim().toLowerCase() === "none";
+  const feature = noFeature
+    ? undefined
+    : yield* resolveFeature(featureInput, workspaceId);
   const assignee = options.mine
     ? Option.some("me")
     : Option.map(options.assignee, (value) => value.trim());
@@ -94,6 +103,10 @@ export const runTaskList = Effect.fn("command.task.list")(function* (options: {
       {
         status: Option.getOrUndefined(options.status),
         type: options.type ? Option.getOrUndefined(options.type) : undefined,
+        featureId: noFeature ? "none" : feature?.task.id,
+        milestoneId: options.milestone
+          ? Option.getOrUndefined(options.milestone)
+          : undefined,
         priority: Option.getOrUndefined(options.priority),
         assigneeId,
         sortBy: sort?.sortBy,
@@ -149,6 +162,16 @@ export const taskList = Command.make(
     ),
     type: Flag.Literals("type", TASK_TYPES).pipe(
       Flag.withDescription("Only this item type: task, bug or feature"),
+      Flag.optional,
+    ),
+    feature: Flag.String("feature").pipe(
+      Flag.withDescription(
+        "Only work in this Feature, by ticket id or id, or none",
+      ),
+      Flag.optional,
+    ),
+    milestone: Flag.String("milestone").pipe(
+      Flag.withDescription("Only work in this milestone ID, or none"),
       Flag.optional,
     ),
     priority: Flag.Literals("priority", PRIORITIES).pipe(

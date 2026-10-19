@@ -1,12 +1,20 @@
-import type { TaskToImport } from "@/fetchers/task/import-tasks";
+import type { ImportDocument } from "@/fetchers/task/import-tasks";
 
-export function parseTasksImport(content: string): TaskToImport[] | null {
+export function parseTasksImport(content: string): ImportDocument | null {
   const data: unknown = JSON.parse(content);
   if (typeof data !== "object" || data === null || !("tasks" in data)) {
     return null;
   }
 
-  return Array.isArray(data.tasks) ? (data.tasks as TaskToImport[]) : null;
+  if (!Array.isArray(data.tasks)) return null;
+  if ("version" in data && data.version !== 2) return null;
+  if (
+    "version" in data &&
+    data.version === 2 &&
+    (!("milestones" in data) || !Array.isArray(data.milestones))
+  )
+    return null;
+  return data as ImportDocument;
 }
 
 export function isJsonFile(file: Pick<File, "name" | "type">) {

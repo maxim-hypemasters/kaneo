@@ -6,6 +6,7 @@ export type RelatedTaskSummary = {
   id: string;
   title: string;
   type?: Task["type"];
+  milestoneId?: string | null;
   status: string;
   isCompleted: boolean;
   priority: string | null;
@@ -99,6 +100,7 @@ export function relatedTaskToTask(
     projectId: summary.projectId,
     type: summary.type ?? "task",
     featureId,
+    milestoneId: summary.milestoneId ?? null,
   };
 }
 

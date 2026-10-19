@@ -10,6 +10,8 @@ export type TaskJson = {
   readonly number: number | null;
   readonly title: string;
   readonly type: TaskType;
+  readonly featureId: string | null;
+  readonly milestoneId: string | null;
   readonly status: string;
   readonly statusName: string;
   readonly priority: string;
@@ -39,6 +41,8 @@ export function toTaskJson(
     number: task.number,
     title: task.title,
     type: taskTypeOf(task),
+    featureId: task.featureId ?? null,
+    milestoneId: task.milestoneId ?? null,
     status: task.status,
     statusName: column?.name ?? task.status,
     priority: task.priority,

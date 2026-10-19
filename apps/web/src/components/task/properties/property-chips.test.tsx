@@ -30,6 +30,13 @@ vi.mock("../task-move-popover", () => ({ default: passThrough }));
 vi.mock("../features/task-feature-popover", () => ({
   TaskFeaturePopover: passThrough,
 }));
+vi.mock("../milestones/task-milestone-property", () => ({
+  TaskMilestoneProperty: () => (
+    <button type="button" data-testid="milestone-property">
+      Milestone
+    </button>
+  ),
+}));
 vi.mock("../releases/task-release-popover", () => ({
   TaskReleasePopover: passThrough,
 }));
@@ -131,7 +138,12 @@ describe("PropertyChips", () => {
       name: "tasks:releases.property 2.4",
     });
     expect(release).toHaveAttribute("data-task-action", "release");
-    expect(feature?.nextElementSibling).toBe(release);
+    expect(feature?.nextElementSibling).toBe(
+      screen.getByTestId("milestone-property"),
+    );
+    expect(screen.getByTestId("milestone-property").nextElementSibling).toBe(
+      release,
+    );
 
     cleanup();
     renderChips({

@@ -44,6 +44,9 @@ export function useDeleteTask() {
         void queryClient.invalidateQueries({
           queryKey: ["release-progress", deletedTask.projectId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["feature-milestones", deletedTask.projectId],
+        });
       }
 
       const { project, setProject } = useProjectStore.getState();

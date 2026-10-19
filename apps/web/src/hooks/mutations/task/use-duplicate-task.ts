@@ -26,6 +26,9 @@ export function useDuplicateTask() {
         void queryClient.invalidateQueries({
           queryKey: ["release-progress", task.projectId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["feature-milestones", task.projectId],
+        });
       }
     },
     onError: (error) => {

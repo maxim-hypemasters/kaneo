@@ -34,6 +34,7 @@ async function getTask(taskId: string, board = false, userId?: string) {
       projectId: taskTable.projectId,
       type: taskTable.type,
       featureId: taskTable.featureId,
+      milestoneId: taskTable.milestoneId,
       releaseId: taskTable.releaseId,
       workspaceId: sql<string>`(select ${projectTable.workspaceId} from ${projectTable} where ${projectTable.id} = ${taskTable.projectId})`,
     })

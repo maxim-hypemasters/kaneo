@@ -1,4 +1,6 @@
 export type ProjectBroadcastMessage = {
+  featureId?: string;
+  milestoneId?: string | null;
   type: string;
   projectId: string;
   taskId?: string;

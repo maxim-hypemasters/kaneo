@@ -15,9 +15,11 @@ export async function withLockedTask<T>(
     tx: TaskTransaction,
     before: typeof taskTable.$inferSelect,
   ) => Promise<T>,
+  beforeLock?: (tx: TaskTransaction) => Promise<void>,
 ) {
   return retryTransaction(() =>
     db.transaction(async (tx) => {
+      await beforeLock?.(tx);
       const [before] = await tx
         .select()
         .from(taskTable)

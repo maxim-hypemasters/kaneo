@@ -15,7 +15,7 @@ import { Session } from "../../services/session.js";
 import { batches } from "../../transfer/batches.js";
 import { planImport } from "../../transfer/import-plan.js";
 import { buildImportReport } from "../../transfer/import-report.js";
-import { parseImportDocument } from "../../transfer/parse-import-file.js";
+import { parseTransferDocument } from "../../transfer/parse-import-file.js";
 import { readImportSource } from "../../transfer/read-import-source.js";
 import {
   renderImportReport,
@@ -39,8 +39,8 @@ export const runTaskImport = Effect.fn("command.task.import")(
     const session = yield* Session;
     const output = yield* Output;
     const content = yield* readImportSource(options.file);
-    const candidates = yield* Effect.fromResult(
-      parseImportDocument(
+    const document = yield* Effect.fromResult(
+      parseTransferDocument(
         content,
         options.file === "-" ? "stdin" : options.file,
       ),
@@ -50,7 +50,7 @@ export const runTaskImport = Effect.fn("command.task.import")(
     const columns = yield* withSpinner(`Loading ${project.name}`)(
       listColumns(project.id),
     );
-    const plan = planImport(candidates, columns);
+    const plan = planImport(document.tasks, columns);
     const report = (outcomes: ReadonlyArray<ImportOutcome> | null) =>
       buildImportReport({
         project,
@@ -79,14 +79,17 @@ export const runTaskImport = Effect.fn("command.task.import")(
     });
 
     const outcomes: ImportOutcome[] = [];
-    for (const batch of batches(plan.tasks, BATCH_SIZE)) {
+    const chunks = document.hierarchy
+      ? [plan.tasks]
+      : batches(plan.tasks, BATCH_SIZE);
+    for (const batch of chunks) {
       const done = outcomes.length;
       const label =
         plan.tasks.length > BATCH_SIZE
           ? `Importing ${done + 1} to ${done + batch.length} of ${plan.tasks.length}`
           : `Importing ${count}`;
       const result = yield* withSpinner(label)(
-        importTasks(project.id, batch),
+        importTasks(project.id, batch, document.hierarchy),
       ).pipe(Effect.result);
       if (Result.isFailure(result)) {
         if (done === 0) return yield* Effect.fail(result.failure);
@@ -139,7 +142,7 @@ export const taskImport = Command.make(
   (options) => runTaskImport(options),
 ).pipe(
   Command.withDescription(
-    "Create tasks in a project from a JSON file; labels are not imported",
+    "Import work and Feature milestone hierarchy from a JSON export",
   ),
   Command.provide(ApiLayer),
 );

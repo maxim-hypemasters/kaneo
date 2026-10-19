@@ -127,7 +127,7 @@ kaneo task list -p KAN --type bug                      # exact type filter; --ty
 
 Search JSON keeps `type: "task"` as the resource kind and preserves the server's optional `taskType` classification. Relation listings preserve each linked item's optional `type` separately from the relation's type and direction. Older servers that omit this metadata keep the previous output shape.
 
-`kaneo task export` and `kaneo task import` preserve explicit Task, Bug, and Feature types in native JSON files. Files without a type remain compatible and import as Tasks. These transfers do not restore Feature membership links or release assignments.
+`kaneo task export` and `kaneo task import` preserve explicit Task, Bug, and Feature types in native JSON files. Files without a type remain compatible and import as Tasks. Version 2 exports retain Feature membership, milestone definitions, ordering, and Task/Bug links using portable keys. Import creates new IDs and restores the hierarchy atomically. Legacy flat files remain supported; release assignments are not restored.
 
 A release holds a project's features and tasks, with a start date, a code freeze and a submission date. A task follows its feature's release until you give it another one:
 
@@ -140,6 +140,29 @@ kaneo release list -p KAN
 ```
 
 `--release` takes a release name or id in the task's project. Creating and editing releases needs permission to update the project, and deleting one also needs permission to edit tasks. Owners and admins have both by default. Deleting a release keeps its tasks and features in the project, without a release.
+
+Milestones belong to a Feature, and Tasks/Bugs can link to one milestone of their existing Feature:
+
+```bash
+kaneo milestone create "First playable" --feature KAN-12 --start-date 2026-11-02 --end-date 2026-11-20
+kaneo milestone create "Bug fixes" --feature KAN-12 --task KAN-15 --task KAN-16
+kaneo milestone list --feature KAN-12
+kaneo milestone view <milestone-id>
+kaneo milestone edit <milestone-id> --description "Ready for playtest" --end-date none
+kaneo milestone order --feature KAN-12 --milestone <first-id> --milestone <second-id>
+kaneo task create "Fix movement" --type bug --feature KAN-12 --milestone <milestone-id>
+kaneo task edit KAN-15 --milestone <milestone-id>
+kaneo task edit KAN-15 --milestone none
+kaneo task list -p KAN --feature KAN-12 --milestone <milestone-id>
+kaneo task list -p KAN --milestone none
+kaneo milestone delete <milestone-id> --yes
+```
+
+Repeat `--task` while creating a milestone to link existing Tasks/Bugs atomically. They must already belong to the selected Feature and may be reassigned from another milestone; an invalid selection leaves everything unchanged.
+
+Start and end dates are optional calendar days. Either can be set alone or cleared with `none`; when both are set, the start must be on or before the end. Dates do not change task deadlines.
+
+`order` takes the complete milestone ID list in the desired order; stale lists are rejected. Assignment does not change Feature membership. Deleting a milestone keeps its Tasks/Bugs in the Feature and Release. Metadata and assignment require task update permission; progress reads use task read permission. Progress includes archived Tasks/Bugs and all linked work, independently of list filters. A Feature must have no children or milestones before becoming a Task/Bug.
 
 Commands that delete or remove data ask for confirmation in a terminal and need `--yes` in scripts. Comments and descriptions can be read from a file with `-F <file>`, or from stdin with `-`.
 

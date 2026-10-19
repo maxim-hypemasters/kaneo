@@ -1,0 +1,46 @@
+---
+title: "Feature milestones"
+description: "Organize a Feature into milestones and follow the progress of its Tasks and Bugs."
+---
+
+Open a **Feature** and use **+** in the **Milestones** section of its right sidebar. On smaller screens, the section appears above the Tasks list. Give the milestone a title, and optionally add start and end dates. Milestones belong to that Feature; they do not have task numbers or their own workflow.
+
+Use **Link tasks** in the creation dialog to select Tasks and Bugs in that Feature that have no milestone. Search by title or item identifier. Saving creates the milestone and links all selected work together, so a failed selection cannot leave a partially created milestone. Leave the selection empty to create an empty milestone.
+
+## Follow progress
+
+The milestone overview shows its date range, percentage complete, and completed/total count. A neutral diamond means work has not started, amber means work is active, and completed styling means all linked work is Done. An empty milestone shows 0%.
+
+Tasks and Bugs count together. Completion follows the project's columns marked **Done**. Started work includes completed work and nonfinal columns after the first nonfinal column, ordered by column position and ID. Archived work remains in the total. Progress always counts all linked work, even when the visible Tasks list is filtered.
+
+Start and end dates are optional calendar days. When both are set, the end date must be on or after the start date. These dates do not change task deadlines or automatically complete the milestone.
+
+## Choose the work to show
+
+The Feature initially shows all tasks. Choose a milestone to filter its Tasks list, or **No milestone** for work that has not been assigned to one. Click the selected milestone or **No milestone** again to clear the filter and restore the full list. This selection only affects the open Feature.
+
+Quick-adding a Task or Bug while a milestone is selected puts the new work in that milestone. With no filter or **No milestone** selected, quick-add defaults to no milestone.
+
+## Link a Task or Bug
+
+Select its Feature first, then choose **Milestone** in creation or properties. Only milestones owned by that Feature are offered. Each Task or Bug can have one milestone; choose **No milestone** to clear it.
+
+Changing or removing the Feature clears the milestone. Moving a Task or Bug to another project, or converting it to Feature, also clears it. Converting between Task and Bug and duplicating a leaf item preserve its milestone.
+
+## Edit and remove
+
+Use a milestone's menu to edit its title or dates, move it up or down, or delete it. Duplicate titles are allowed. Deleting a milestone keeps its Tasks and Bugs in their Feature and Release, with no milestone assigned.
+
+A Feature must have no child work and no milestones before it can become a Task or Bug. Deleting a Feature removes its milestones and keeps its child work under the existing Feature deletion rules. Duplicating a Feature creates an empty Feature.
+
+Milestone management uses the existing **Update tasks** permission. Reading milestones requires access to the Feature's project and task read permission.
+
+## Automation and transfers
+
+The authenticated API, CLI milestone commands, and MCP milestone tools support listing, creation, editing, ordering, deletion, and Task/Bug assignment. API task lists can be filtered by Feature and milestone before pagination.
+
+Milestone creation accepts optional `taskIds` to link existing Tasks and Bugs atomically. Every selected item must already belong to the owning Feature. Linking work does not change its Feature, Release, status, or deadlines.
+
+Native JSON exports use version 2 with portable Feature, milestone, and work-item references. Import the complete document to preserve that hierarchy; the importer generates new database IDs and applies the document atomically. Invalid references fail without importing partial work. Legacy flat files continue to use their individual task outcomes and default to no milestone.
+
+Connected Kaneo imports preserve milestone definitions, metadata, order, and linked Tasks/Bugs when the source supports milestones. Older sources remain supported; a former milestone target date becomes its end date. Other providers do not infer milestones from labels or other metadata.

@@ -19,7 +19,10 @@ async function createTask(
   customFields?: { fieldId: string; value: string }[],
   draftAssetIds?: string[],
   // releaseId: omitted, the task starts in its feature's release; null is none.
-  placement: Pick<CreateTaskRequest, "type" | "featureId" | "releaseId"> = {},
+  placement: Pick<
+    CreateTaskRequest,
+    "type" | "featureId" | "releaseId" | "milestoneId"
+  > = {},
 ) {
   if (!projectId) {
     throw new Error("No project selected for task creation");
@@ -38,6 +41,7 @@ async function createTask(
       draftAssetIds,
       ...(placement.type ? { type: placement.type } : {}),
       ...(placement.featureId ? { featureId: placement.featureId } : {}),
+      ...(placement.milestoneId ? { milestoneId: placement.milestoneId } : {}),
       ...(placement.releaseId !== undefined
         ? { releaseId: placement.releaseId }
         : {}),

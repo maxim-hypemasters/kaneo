@@ -125,9 +125,7 @@ describe("TaskTypeMenu", () => {
       name: "tasks:features.convertToTask",
     });
     expect(item).toHaveAttribute("aria-disabled", "true");
-    expect(item).toHaveAccessibleDescription(
-      "tasks:features.convertLeafBlocked",
-    );
+    expect(item).toHaveAccessibleDescription("tasks:milestones.convertBlocked");
     await act(async () => {
       fireEvent.click(item);
     });
@@ -144,7 +142,7 @@ describe("TaskTypeMenu", () => {
 
     await waitFor(() =>
       expect(mocks.toastError).toHaveBeenCalledWith(
-        "tasks:features.convertLeafBlocked",
+        "tasks:milestones.convertBlocked",
       ),
     );
   });

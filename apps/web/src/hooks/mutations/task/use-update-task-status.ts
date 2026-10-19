@@ -13,6 +13,9 @@ export function useUpdateTaskStatus() {
       void queryClient.invalidateQueries({
         queryKey: ["release-progress", variables.projectId],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-milestones", variables.projectId],
+      });
       queryClient.invalidateQueries({
         queryKey: ["task", variables.id],
       });

@@ -70,6 +70,13 @@ let releases:
       submissionDate: string;
     }[]
   | undefined;
+vi.mock("@/hooks/queries/milestone/use-get-milestones", () => ({
+  useGetMilestones: () => ({
+    data: [{ id: "m1", title: "Launch milestone" }],
+    isPending: false,
+    isError: false,
+  }),
+}));
 vi.mock("@/lib/upload-draft-asset", () => ({
   uploadDraftAsset: (...args: unknown[]) => stageUpload(...args),
 }));
@@ -833,6 +840,81 @@ const sentRequests = () =>
   }));
 
 describe("CreateTaskModal features", () => {
+  it("assigns a Bug to a milestone in the selected feature", async () => {
+    render(
+      <CreateTaskModal
+        open
+        type="bug"
+        projectId="project-1"
+        status="planned"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    fireEvent.change(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.bugTitlePlaceholder",
+      ),
+      { target: { value: "Bug in milestone" } },
+    );
+    await pickFeature(/Checkout/);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "tasks:milestones.property: tasks:milestones.none",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Launch milestone" }),
+    );
+    submit();
+    await vi.waitFor(() =>
+      expect(createTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "bug",
+          featureId: "checkout",
+          milestoneId: "m1",
+        }),
+      ),
+    );
+  });
+  it("clears the draft milestone when changing feature", async () => {
+    render(
+      <CreateTaskModal
+        open
+        projectId="project-1"
+        status="planned"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    fireEvent.change(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.taskTitlePlaceholder",
+      ),
+      { target: { value: "Card form" } },
+    );
+    await pickFeature(/Checkout/);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "tasks:milestones.property: tasks:milestones.none",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Launch milestone" }),
+    );
+    await openFeaturePicker("common:modals.createTask.feature Checkout");
+    fireEvent.click(
+      await screen.findByRole("option", {
+        name: "common:modals.createTask.noFeature",
+      }),
+    );
+    expect(
+      screen.queryByRole("button", { name: /tasks:milestones.property/ }),
+    ).not.toBeInTheDocument();
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(createTask.mock.calls[0][0]).not.toHaveProperty("milestoneId");
+  });
   it("creates a feature, in the feature's words, without a feature of its own", async () => {
     const { toast } = await import("@/lib/toast");
     render(<CreateTaskModal open type="feature" onClose={vi.fn()} />, {

@@ -53,6 +53,8 @@ export type GetTasksOptions = {
   status?: string;
   // A release id, or "none" for tasks outside every release.
   releaseId?: string;
+  featureId?: string;
+  milestoneId?: string;
 };
 
 const priorityCaseExpr = sql<number>`CASE
@@ -123,6 +125,14 @@ async function getTasksPage(
   const conditions = [eq(taskTable.projectId, projectId)];
 
   if (options.type) conditions.push(eq(taskTable.type, options.type));
+
+  for (const key of ["featureId", "milestoneId"] as const) {
+    const value = options[key];
+    if (value)
+      conditions.push(
+        value === "none" ? isNull(taskTable[key]) : eq(taskTable[key], value),
+      );
+  }
 
   if (options.status) {
     conditions.push(eq(taskTable.status, options.status));
@@ -209,6 +219,7 @@ async function getTasksPage(
     projectId: taskTable.projectId,
     type: taskTable.type,
     featureId: taskTable.featureId,
+    milestoneId: taskTable.milestoneId,
     releaseId: options.publicOnly
       ? sql<string | null>`null`
       : taskTable.releaseId,
