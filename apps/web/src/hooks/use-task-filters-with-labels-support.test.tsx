@@ -223,7 +223,28 @@ describe("useTaskFiltersWithLabelsSupport", () => {
     );
 
     expect(result.current.filters.release).toBeNull();
+    expect(result.current.filters.type).toBeNull();
     expect(result.current.activeFilterCount).toBe(1);
+  });
+
+  it("stores Type multiselect and negation, normalizes invalid values, and clears them", () => {
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ type: ["bug", "invalid", "bug"], negated: ["type"] }),
+    );
+    const { result } = renderHook(
+      () => useTaskFiltersWithLabelsSupport(null, "project-1"),
+      { wrapper: createWrapper() },
+    );
+    expect(result.current.filters.type).toEqual(["bug"]);
+    expect(result.current.activeFilterCount).toBe(1);
+    act(() => result.current.toggleFilter("type", "task"));
+    expect(
+      JSON.parse(window.localStorage.getItem(storageKey) ?? "{}"),
+    ).toMatchObject({ type: ["bug", "task"], negated: ["type"] });
+    act(() => result.current.clearFilters());
+    expect(result.current.filters.type).toBeNull();
+    expect(result.current.filters.negated).toBeNull();
   });
 
   it("filters by release, including No release, and stores the choice", () => {

@@ -914,6 +914,49 @@ describe("CreateTaskModal features", () => {
     ]);
   });
 
+  it("creates a Bug in a feature with its release inheritance intact", async () => {
+    projectFeatures = [
+      {
+        id: "checkout",
+        title: "Checkout",
+        number: 3,
+        status: "to-do",
+        releaseId: "r24",
+      },
+    ];
+    render(
+      <CreateTaskModal
+        open
+        type="bug"
+        projectId="project-2"
+        status="planned"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    fireEvent.change(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.bugTitlePlaceholder",
+      ),
+      { target: { value: "Fix checkout crash" } },
+    );
+    await pickFeature(/Checkout/);
+    expect(
+      screen.getByRole("button", {
+        name: /common:modals.createTask.releaseFromFeature/,
+      }),
+    ).toBeInTheDocument();
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      title: "Fix checkout crash",
+      type: "bug",
+      featureId: "checkout",
+      status: "planned",
+    });
+    expect(createTask.mock.calls[0][0]).not.toHaveProperty("releaseId");
+  });
+
   it("explains that a project comes first", async () => {
     render(<CreateTaskModal open onClose={vi.fn()} />, {
       wrapper: createWrapper(),

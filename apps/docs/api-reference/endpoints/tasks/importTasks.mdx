@@ -2,3 +2,7 @@
 title: "Import tasks"
 openapi: "POST /task/import/{projectId}"
 ---
+
+An imported item's optional `type` accepts `task`, `bug`, or `feature`. Omit it
+for older files to create a Task. Importing a Bug uses the same workflow and
+permissions as importing a Task; labels do not determine the type.

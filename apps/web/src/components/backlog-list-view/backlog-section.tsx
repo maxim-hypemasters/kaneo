@@ -7,9 +7,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight, type Clock, Plus } from "lucide-react";
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import { cn } from "@/lib/cn";
 import { EASE_OUT } from "@/lib/motion";
 import type Task from "@/types/task";
+import type { TaskType } from "@/types/task";
 import BacklogTaskRow from "./backlog-task-row";
 
 const BacklogSection = memo(function BacklogSection({
@@ -29,7 +31,7 @@ const BacklogSection = memo(function BacklogSection({
   isExpanded: boolean;
   showDropIndicator: boolean;
   onToggle: (sectionId: string) => void;
-  onAddTask?: () => void;
+  onAddTask?: (type: TaskType) => void;
 }) {
   const { t } = useTranslation();
   const [animateExpand, setAnimateExpand] = useState(false);
@@ -81,15 +83,15 @@ const BacklogSection = memo(function BacklogSection({
 
         <div className="flex items-center gap-1">
           {onAddTask && (
-            <button
-              type="button"
-              onClick={onAddTask}
-              className="touch-hitbox relative p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
-              title={t("tasks:backlog.addTask")}
-              aria-label={t("tasks:backlog.addTask")}
-            >
-              <Plus className="w-3 h-3" />
-            </button>
+            <NewWorkMenu onSelect={onAddTask}>
+              <button
+                type="button"
+                className="touch-hitbox relative p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+                title={t("tasks:createMenu.label")}
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </NewWorkMenu>
           )}
         </div>
       </div>

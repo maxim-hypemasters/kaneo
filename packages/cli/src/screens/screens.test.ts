@@ -48,6 +48,7 @@ function task(
     ticketId: `KAN-${number}`,
     number,
     title,
+    type: "task",
     status,
     statusName: status,
     priority,

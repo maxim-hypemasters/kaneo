@@ -87,9 +87,22 @@ vi.mock("@/components/task/task-details-sheet", () => ({
     ) : null,
 }));
 vi.mock("@/components/shared/modals/create-task-modal", () => ({
-  default: (props: { open: boolean; releaseId?: string }) => {
-    if (props.open) m.createTask(props.releaseId);
-    return props.open ? <div role="dialog" aria-label="create-task" /> : null;
+  default: (props: {
+    open: boolean;
+    type?: string;
+    projectId?: string;
+    releaseId?: string;
+  }) => {
+    if (props.open) {
+      m.createTask({
+        type: props.type,
+        projectId: props.projectId,
+        releaseId: props.releaseId,
+      });
+    }
+    return props.open ? (
+      <div role="dialog" aria-label={`create-${props.type}`} />
+    ) : null;
   },
 }));
 vi.mock("../dialog/release-dialog", () => ({ ReleaseDialog: () => null }));
@@ -333,7 +346,36 @@ describe("ReleaseDetailPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("adds a task to the release from an empty release", () => {
+  it.each([
+    ["task", "newTask"],
+    ["feature", "newFeature"],
+    ["bug", "newBug"],
+  ])("creates a %s in the release from the toolbar", async (type, item) => {
+    renderPage();
+
+    fireEvent.click(
+      within(screen.getByTestId("toolbar")).getByRole("button", {
+        name: "tasks:createMenu.label",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: `tasks:createMenu.${item}` }),
+    );
+    expect(m.createTask).toHaveBeenCalledWith({
+      type,
+      projectId: "project-1",
+      releaseId: "r1",
+    });
+    expect(
+      screen.getByRole("dialog", { name: `create-${type}` }),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["task", "newTask"],
+    ["feature", "newFeature"],
+    ["bug", "newBug"],
+  ])("creates a %s from the empty release action", async (type, item) => {
     m.board = {
       ...m.board,
       data: {
@@ -345,11 +387,18 @@ describe("ReleaseDetailPage", () => {
 
     expect(screen.getByText("tasks:releases.detail.empty")).toBeInTheDocument();
     const [toolbarButton, emptyButton] = screen.getAllByRole("button", {
-      name: "tasks:releases.detail.addTask",
+      name: "tasks:createMenu.label",
     });
     expect(toolbarButton).toBeInTheDocument();
     fireEvent.click(emptyButton);
-    expect(m.createTask).toHaveBeenCalledWith("r1");
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: `tasks:createMenu.${item}` }),
+    );
+    expect(m.createTask).toHaveBeenCalledWith({
+      type,
+      projectId: "project-1",
+      releaseId: "r1",
+    });
   });
 
   it("doesn't offer to add tasks without permission", () => {
@@ -364,7 +413,7 @@ describe("ReleaseDetailPage", () => {
     renderPage();
 
     expect(
-      screen.queryByRole("button", { name: "tasks:releases.detail.addTask" }),
+      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
     ).toBeNull();
   });
 

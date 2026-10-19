@@ -37,6 +37,15 @@ function plan(tasks: ImportedTask[], numbers = tasks.map((_, i) => 41 + i)) {
 }
 
 describe("planImportTasks", () => {
+  it("preserves explicit item types and defaults legacy items to Task", () => {
+    expect(
+      plan([
+        task("bug", { type: "bug" }),
+        task("feature", { type: "feature" }),
+        task("legacy"),
+      ]).map((task) => task.type),
+    ).toEqual(["bug", "feature", "task"]);
+  });
   it("numbers tasks as given and positions them per column or status", () => {
     const planned = plan([
       task("a"),

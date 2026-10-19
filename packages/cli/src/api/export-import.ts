@@ -1,10 +1,12 @@
 import { Effect, Schema } from "effect";
 import { KaneoApi } from "./kaneo-api.js";
+import type { TaskType } from "./task-features.js";
 
 const NullableString = Schema.NullOr(Schema.String);
 
 export const ExportedTask = Schema.Struct({
   title: Schema.String,
+  type: Schema.optionalKey(Schema.String),
   description: Schema.String,
   status: Schema.String,
   priority: Schema.String,
@@ -30,6 +32,7 @@ export type TaskExport = typeof TaskExport.Type;
 
 export type ImportTaskBody = {
   readonly title: string;
+  readonly type?: TaskType;
   readonly description?: string;
   readonly status: string;
   readonly priority?: string;

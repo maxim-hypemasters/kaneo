@@ -16,6 +16,8 @@ import {
 import { useGoToProjectView } from "@/components/project/views/use-go-to-project-view";
 import { useProjectViewShortcuts } from "@/components/project/views/use-project-view-shortcuts";
 import CreateProjectModal from "@/components/shared/modals/create-project-modal";
+import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Tooltip,
@@ -25,10 +27,12 @@ import {
 } from "@/components/ui/tooltip";
 import useGetProject from "@/hooks/queries/project/use-get-project";
 import { useProjectWebSocket } from "@/hooks/use-project-websocket";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 import { getProjectUnavailableReason } from "@/lib/project-unavailable-reason";
 import { useBackgroundStore } from "@/store/background";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import type { TaskType } from "@/types/task";
 import ProjectUnavailable from "./project-unavailable";
 
 type ProjectLayoutProps = {
@@ -62,6 +66,8 @@ export default function ProjectLayout({
   const unavailableReason = getProjectUnavailableReason(projectError);
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] =
     useState(false);
+  const [createType, setCreateType] = useState<TaskType | null>(null);
+  const { canCreateTasks } = useWorkspacePermission();
   const { background } = useBackgroundStore();
   const viewMode = useUserPreferencesStore((state) => state.viewMode);
 
@@ -175,6 +181,9 @@ export default function ProjectLayout({
             )}
             {summary}
             <div className="ml-auto flex shrink-0 items-center gap-1">
+              {resolvedRoute !== "releases" && project && canCreateTasks() && (
+                <NewWorkMenu onSelect={setCreateType} />
+              )}
               {toolbar}
             </div>
           </div>
@@ -199,6 +208,15 @@ export default function ProjectLayout({
         open={isCreateProjectModalOpen}
         onClose={() => setIsCreateProjectModalOpen(false)}
       />
+      {createType !== null && !unavailableReason && (
+        <CreateTaskModal
+          open
+          type={createType}
+          projectId={projectId}
+          status={resolvedRoute === "backlog" ? "planned" : undefined}
+          onClose={() => setCreateType(null)}
+        />
+      )}
     </Layout>
   );
 }

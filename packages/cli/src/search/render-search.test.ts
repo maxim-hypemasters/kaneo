@@ -67,6 +67,23 @@ describe("statusLabel", () => {
 });
 
 describe("renderSearch", () => {
+  it.each([
+    ["bug", "Bug"],
+    ["feature", "Feature"],
+  ])("labels %s results without changing their group", (taskType, label) => {
+    const lines = renderSearch(ui(80), {
+      query: "login",
+      results: [result({ taskType })],
+      more: false,
+      limit: 20,
+    });
+    expect(lines).toContain("  Tasks 1");
+    expect(lines.some((line) => line.includes(`[${label}] Fix login`))).toBe(
+      true,
+    );
+    for (const line of lines) expect(stringWidth(line)).toBeLessThanOrEqual(80);
+  });
+
   it("groups results by kind at 80 columns", () => {
     const lines = renderSearch(ui(80), {
       query: "login",

@@ -6,6 +6,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import type { ComponentProps } from "react";
+import type CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import {
   afterEach,
   beforeEach,
@@ -20,6 +21,7 @@ import {
 } from "@/lib/features/feature-index";
 import type Task from "@/types/task";
 import type SubtaskRow from "./subtask-row";
+import { clickTaskAction } from "./task-action-target";
 import TaskSubtasks from "./task-subtasks";
 
 const mocks = vi.hoisted(() => ({
@@ -27,6 +29,7 @@ const mocks = vi.hoisted(() => ({
   canUpdateTasks: vi.fn(),
   createTask: vi.fn(),
   createPending: false,
+  createModal: vi.fn(),
   updateFeature: vi.fn(),
   getColumns: vi.fn(),
   getRelations: vi.fn(),
@@ -45,6 +48,18 @@ vi.mock("framer-motion", () => ({
 }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
+}));
+vi.mock("@/components/shared/modals/create-task-modal", () => ({
+  default: (props: ComponentProps<typeof CreateTaskModal>) => {
+    mocks.createModal(props);
+    return props.open ? (
+      <div role="dialog" aria-label="Create feature">
+        <button type="button" onClick={props.onClose}>
+          Close feature
+        </button>
+      </div>
+    ) : null;
+  },
 }));
 vi.mock("@/hooks/mutations/task/use-create-task", () => ({
   default: () => ({
@@ -149,23 +164,35 @@ const relatedTask = (id: string, isCompleted: boolean) => ({
   assigneeName: null,
 });
 
-function renderSection(featureStatus = "to-do") {
+function renderSection(featureStatus = "to-do", featureReleaseId?: string) {
   return render(
-    <TaskSubtasks
-      featureId="feature-1"
-      projectId="project-1"
-      workspaceId="workspace-1"
-      featureStatus={featureStatus}
-    />,
+    <div data-task-view>
+      <TaskSubtasks
+        featureId="feature-1"
+        projectId="project-1"
+        workspaceId="workspace-1"
+        featureStatus={featureStatus}
+        featureReleaseId={featureReleaseId}
+      />
+    </div>,
   );
 }
 
-function addTask(title: string) {
+async function selectCreationType(type: "Task" | "Feature" | "Bug") {
   fireEvent.click(
     screen.getByRole("button", {
-      name: "tasks:subtasks.addAction tasks:subtasks.title",
+      name: "tasks:createMenu.label",
     }),
   );
+  fireEvent.click(
+    await screen.findByRole("menuitem", {
+      name: `tasks:createMenu.new${type}`,
+    }),
+  );
+}
+
+async function addTask(title: string) {
+  await selectCreationType("Task");
   fireEvent.change(
     screen.getByPlaceholderText("tasks:subtasks.inputPlaceholder"),
     { target: { value: title } },
@@ -199,7 +226,7 @@ describe("TaskSubtasks", () => {
     mocks.createTask.mockResolvedValue({ id: "task-1" });
     renderSection("planned");
 
-    addTask("Design login form");
+    await addTask("Design login form");
 
     await waitFor(() => expect(mocks.createTask).toHaveBeenCalledTimes(1));
     expect(mocks.createTask).toHaveBeenCalledWith(
@@ -207,6 +234,7 @@ describe("TaskSubtasks", () => {
         title: "Design login form",
         projectId: "project-1",
         status: "planned",
+        type: "task",
         featureId: "feature-1",
       }),
     );
@@ -221,7 +249,7 @@ describe("TaskSubtasks", () => {
     mocks.createTask.mockResolvedValue({ id: "task-2" });
     renderSection("in-progress");
 
-    addTask("Implement login form");
+    await addTask("Implement login form");
 
     await waitFor(() => expect(mocks.createTask).toHaveBeenCalledTimes(1));
     expect(mocks.createTask).toHaveBeenCalledWith(
@@ -229,11 +257,84 @@ describe("TaskSubtasks", () => {
     );
   });
 
+  it.each([
+    ["planned", "planned"],
+    ["in-progress", "to-do"],
+  ])(
+    "creates a Bug inside a %s feature with inherited release",
+    async (status, initialStatus) => {
+      mocks.createTask.mockResolvedValue({ id: "bug-1" });
+      renderSection(status, "release-1");
+
+      await selectCreationType("Bug");
+      const input = screen.getByPlaceholderText(
+        "common:modals.createTask.bugTitlePlaceholder",
+      );
+      await waitFor(() => expect(input).toHaveFocus());
+      fireEvent.change(input, { target: { value: "Fix login redirect" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+
+      await waitFor(() => expect(mocks.createTask).toHaveBeenCalledTimes(1));
+      expect(mocks.createTask).toHaveBeenCalledWith({
+        title: "Fix login redirect",
+        description: "",
+        projectId: "project-1",
+        status: initialStatus,
+        priority: "no-priority",
+        type: "bug",
+        featureId: "feature-1",
+      });
+    },
+  );
+
+  it.each([
+    ["planned", "planned"],
+    ["in-progress", "to-do"],
+  ])(
+    "creates a peer Feature in the same release from a %s feature",
+    async (status, initialStatus) => {
+      renderSection(status, "release-1");
+
+      await selectCreationType("Feature");
+
+      expect(
+        screen.getByRole("dialog", { name: "Create feature" }),
+      ).toBeInTheDocument();
+      const props = mocks.createModal.mock.lastCall?.[0];
+      expect(props).toMatchObject({
+        open: true,
+        type: "feature",
+        projectId: "project-1",
+        status: initialStatus,
+        releaseId: "release-1",
+      });
+      expect(props).not.toHaveProperty("featureId");
+      expect(mocks.createTask).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Close feature" }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    },
+  );
+
+  it("opens the creation choices through the existing subtask keyboard target", async () => {
+    renderSection();
+    const trigger = screen.getByRole("button", {
+      name: "tasks:createMenu.label",
+    });
+    vi.spyOn(trigger, "getClientRects").mockReturnValue({
+      length: 1,
+    } as DOMRectList);
+
+    clickTaskAction("addSubtask");
+
+    expect(await screen.findAllByRole("menuitem")).toHaveLength(3);
+    expect(mocks.createTask).not.toHaveBeenCalled();
+  });
+
   it("keeps the title and reports a failed create", async () => {
     mocks.createTask.mockRejectedValue(new Error("Nope"));
     renderSection();
 
-    addTask("Write tests");
+    await addTask("Write tests");
 
     await waitFor(() =>
       expect(mocks.toastError).toHaveBeenCalledWith(
@@ -251,7 +352,7 @@ describe("TaskSubtasks", () => {
 
     expect(
       screen.getByRole("button", {
-        name: "tasks:subtasks.addAction tasks:subtasks.title",
+        name: "tasks:createMenu.label",
       }),
     ).toBeDisabled();
   });
@@ -262,8 +363,17 @@ describe("TaskSubtasks", () => {
 
     expect(
       screen.queryByRole("button", {
-        name: "tasks:subtasks.addAction tasks:subtasks.title",
+        name: "tasks:createMenu.label",
       }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides creation without task-update permission", () => {
+    mocks.canUpdateTasks.mockReturnValue(false);
+    renderSection("planned");
+
+    expect(
+      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
     ).not.toBeInTheDocument();
   });
 
@@ -350,6 +460,28 @@ describe("feature tasks from the board", () => {
       taskId: "Cart",
     });
   });
+
+  it("leaves menu arrow keys to the creation menu after navigating a row", async () => {
+    renderSection();
+    const remove = screen.getByRole("button", { name: "Remove Pay" });
+    remove.focus();
+    fireEvent.keyDown(remove, { key: "ArrowDown" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:createMenu.label" }),
+    );
+    const first = await screen.findByRole("menuitem", {
+      name: "tasks:createMenu.newTask",
+    });
+    const next = screen.getByRole("menuitem", {
+      name: "tasks:createMenu.newFeature",
+    });
+
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+
+    await waitFor(() => expect(next).toHaveFocus());
+    expect(mocks.navigate).not.toHaveBeenCalled();
+  });
 });
 
 describe("while a task is being created", () => {
@@ -357,15 +489,11 @@ describe("while a task is being created", () => {
     mocks.createPending = false;
   });
 
-  it("doesn't send the title again on Enter", () => {
+  it("doesn't send the title again on Enter", async () => {
     mocks.createPending = true;
     renderSection();
 
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "tasks:subtasks.addAction tasks:subtasks.title",
-      }),
-    );
+    await selectCreationType("Task");
     const input = screen.getByPlaceholderText(
       "tasks:subtasks.inputPlaceholder",
     );

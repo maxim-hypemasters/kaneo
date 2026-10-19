@@ -108,7 +108,7 @@ describe("describeActivity", () => {
         }),
         t,
       ),
-    ).toBe("activity:madeFeature");
+    ).toBe("activity:changedTypeToFeature");
     expect(describeActivity(activity({ type: "type_changed" }), t)).toBe(
       "workspace:home.activity.updated",
     );

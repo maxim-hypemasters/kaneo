@@ -34,6 +34,27 @@ const view = {
 };
 
 describe("renderRelationList", () => {
+  it("labels a linked Bug inside its relation group", () => {
+    const lines = renderRelationList(ui(80), {
+      ...view,
+      relations: {
+        feature: null,
+        tasks: [],
+        relations: [
+          {
+            type: "blocks",
+            direction: "outgoing",
+            task: { ...task("KAN-7", "Session timeout"), type: "bug" },
+          },
+        ],
+      },
+    });
+    expect(lines).toContain("  Blocks");
+    expect(lines.some((line) => line.includes("[Bug] Session timeout"))).toBe(
+      true,
+    );
+  });
+
   it("groups the feature, its tasks and other relations", () => {
     expect(
       renderRelationList(ui(80), {

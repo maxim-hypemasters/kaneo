@@ -102,6 +102,31 @@ afterEach(() => {
 });
 
 describe("board realtime races", () => {
+  it("refreshes a Bug conversion without dropping its feature or release", async () => {
+    const board = mocks.board as {
+      columns: { tasks: Record<string, unknown>[] }[];
+    };
+    Object.assign(board.columns[0].tasks[0], {
+      type: "task",
+      featureId: "feature-1",
+      releaseId: "release-1",
+    });
+    mocks.getTask.mockResolvedValueOnce({
+      ...board.columns[0].tasks[0],
+      type: "bug",
+    });
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("TASK_UPDATED", { taskId: "a" });
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect((mocks.board as typeof board).columns[0].tasks[0]).toMatchObject({
+      id: "a",
+      type: "bug",
+      featureId: "feature-1",
+      releaseId: "release-1",
+    });
+  });
   it.each(["TASKS_REORDERED", "PROJECT_UPDATED", "TASK_RELATION_UPDATED"])(
     "discards a task refresh started before %s",
     async (type) => {

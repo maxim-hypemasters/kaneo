@@ -61,6 +61,7 @@ export type BoardLabel = typeof BoardLabel.Type;
 
 export const BoardTask = Schema.Struct({
   id: Schema.String,
+  type: Schema.optionalKey(Schema.String),
   title: Schema.String,
   number: Schema.NullOr(Schema.Number),
   status: Schema.String,
@@ -104,6 +105,7 @@ export type BoardPage = typeof BoardPage.Type;
 
 export const AssignedTask = Schema.Struct({
   id: Schema.String,
+  type: Schema.optionalKey(Schema.String),
   projectId: Schema.String,
   number: Schema.NullOr(Schema.Number),
   title: Schema.String,

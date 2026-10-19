@@ -1,9 +1,13 @@
 import { responseTimestamp, z } from "../openapi";
+import { taskTypeSchema } from "../task/response";
 
 export const searchResultSchema = z
   .object({
     id: z.string(),
     type: z.enum(["task", "project", "workspace", "comment", "activity"]),
+    taskType: taskTypeSchema
+      .optional()
+      .openapi({ description: "The item type for task search results." }),
     title: z.string(),
     description: z.string().optional(),
     content: z.string().optional().openapi({

@@ -1,7 +1,9 @@
+import { Effect, Schema } from "effect";
 import { describe, expect, it } from "vite-plus/test";
-import type {
-  RelatedTask,
-  TaskRelationWithTasks,
+import {
+  type RelatedTask,
+  TaskRelationList,
+  type TaskRelationWithTasks,
 } from "../api/task-relations.js";
 import { groupRelations, relationsBetween } from "./group-relations.js";
 
@@ -54,6 +56,20 @@ const all = [
 ];
 
 describe("groupRelations", () => {
+  it("preserves related Bug metadata through API decoding and leaves the link type intact", async () => {
+    const relations = await Effect.runPromise(
+      Schema.decodeUnknownEffect(TaskRelationList)([
+        relation(tasks.me, { ...tasks.blocked, type: "bug" }, "blocks"),
+      ]),
+    );
+    const grouped = groupRelations(relations, "me", context);
+    expect(grouped.relations[0]).toMatchObject({
+      type: "blocks",
+      direction: "outgoing",
+      task: { id: "blocked", type: "bug" },
+    });
+  });
+
   it("splits the feature, its tasks and other relations", () => {
     const grouped = groupRelations(all, "me", context);
     expect(grouped.feature).toEqual({

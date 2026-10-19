@@ -7,10 +7,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Archive, ChevronRight, Plus } from "lucide-react";
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
 import { EASE_OUT } from "@/lib/motion";
 import type { ProjectWithTasks } from "@/types/project";
+import type { TaskType } from "@/types/task";
 import TaskRow from "./task-row";
 
 type Column = ProjectWithTasks["columns"][number];
@@ -22,7 +24,7 @@ type ListColumnSectionProps = {
   showDropIndicator: boolean;
   disableCollectionActions: boolean;
   onToggle: (columnId: string) => void;
-  onAddTask: (columnId: string) => void;
+  onAddTask?: (columnId: string, type: TaskType) => void;
   onArchive: (column: Column) => void;
 };
 
@@ -78,15 +80,17 @@ const ListColumnSection = memo(function ListColumnSection({
         </button>
 
         <div className="flex items-center gap-1 pointer-coarse:gap-6">
-          <button
-            type="button"
-            onClick={() => onAddTask(column.id)}
-            className="touch-hitbox relative p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
-            title={t("tasks:listView.addTask")}
-            aria-label={t("tasks:listView.addTask")}
-          >
-            <Plus className="w-3 h-3" />
-          </button>
+          {onAddTask && (
+            <NewWorkMenu onSelect={(type) => onAddTask(column.id, type)}>
+              <button
+                type="button"
+                className="touch-hitbox relative p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
+                title={t("tasks:createMenu.label")}
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </NewWorkMenu>
+          )}
 
           {column.isFinal && column.tasks.length > 0 && (
             <button

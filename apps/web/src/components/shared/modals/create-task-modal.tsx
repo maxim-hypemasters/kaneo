@@ -165,7 +165,7 @@ function CreateTaskModalContent({
     null,
   );
   // A feature can't belong to a feature.
-  const chosenFeature = taskType === "task" ? featureChoice : null;
+  const chosenFeature = taskType !== "feature" ? featureChoice : null;
   const [releaseChoice, setReleaseChoice] = useState<ReleaseChoice>(() =>
     initialReleaseChoice(releaseId),
   );
@@ -958,7 +958,7 @@ function CreateTaskModalContent({
                   </PopoverContent>
                 </Popover>
               )}
-              {taskType === "task" && (
+              {taskType !== "feature" && (
                 <FeaturePickerChip
                   projectId={resolvedProjectId}
                   projectSlug={resolvedProject?.slug}

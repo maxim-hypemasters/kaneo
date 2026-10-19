@@ -29,14 +29,14 @@ Invite your team to the workspace you are importing into first. Assignees are ma
 | Project | Project |
 | Project key, for example `WEB` | Project key. If another project in the workspace uses it, Kaneo adds a suffix, for example `WEB-2`. Characters other than letters and digits are dropped, so `MY-APP` becomes `MYAPP` |
 | Columns | Columns |
-| Tasks, including planned and archived ones | Tasks, still planned or archived |
+| Tasks and Bugs, including planned and archived ones | Their explicit type, still planned or archived. Older instances without a type field import as Tasks |
 | Task numbers | Task numbers, so `WEB-12` stays `WEB-12` |
 | Priority | Priority |
 | Dates | Dates |
 | Labels | Labels |
 | Assignee | Assignee, matched by email |
 | Comments | Comments, with the original author's name and date |
-| Features and their tasks | Features and their tasks. A feature without tasks is imported as a plain task |
+| Features and their tasks | Features and their tasks, including empty Features and Bug children |
 | Subtasks, from an instance on an earlier version | [Features](/core/migrations#parent-items-become-features), converted the same way an upgrade converts them |
 | Other task relations within the project | Task relations |
 

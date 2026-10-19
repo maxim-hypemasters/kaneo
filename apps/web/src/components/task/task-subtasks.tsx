@@ -3,6 +3,8 @@ import { AnimatePresence } from "framer-motion";
 import { Trash2Icon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -25,6 +27,7 @@ import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { toast } from "@/lib/toast";
 import queryClient from "@/query-client";
 import type Task from "@/types/task";
+import type { TaskType } from "@/types/task";
 import { useFeatureTasks } from "./features/use-feature-tasks";
 import { SectionAddButton } from "./sections/section-add-button";
 import { SectionHeader } from "./sections/section-header";
@@ -38,6 +41,7 @@ type TaskSubtasksProps = {
   projectId: string;
   workspaceId: string;
   featureStatus: string;
+  featureReleaseId?: string | null;
 };
 
 // A feature's tasks: add, open, complete, remove from the feature, delete.
@@ -46,10 +50,13 @@ export default function TaskSubtasks({
   projectId,
   workspaceId,
   featureStatus,
+  featureReleaseId,
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isAdding, setIsAdding] = useState(false);
+  const [newType, setNewType] = useState<"task" | "bug">("task");
+  const [isCreatingFeature, setIsCreatingFeature] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -138,7 +145,7 @@ export default function TaskSubtasks({
       const target = e.target as HTMLElement | null;
       if (
         target?.closest(
-          "input, textarea, [contenteditable='true'], .ProseMirror",
+          "input, textarea, [contenteditable='true'], .ProseMirror, [role='menu']",
         )
       )
         return;
@@ -223,6 +230,16 @@ export default function TaskSubtasks({
     toggleSelection,
   ]);
 
+  const handleSelectType = (type: TaskType) => {
+    if (type === "feature") {
+      setIsAdding(false);
+      setIsCreatingFeature(true);
+      return;
+    }
+    setNewType(type);
+    setIsAdding(true);
+  };
+
   const handleAddSubtask = async () => {
     if (!canCreate || !canEdit || !newTitle.trim() || createTask.isPending) {
       return;
@@ -239,6 +256,7 @@ export default function TaskSubtasks({
         projectId,
         status: initialStatus,
         priority: "no-priority",
+        type: newType,
         featureId,
       });
       void queryClient.invalidateQueries({
@@ -317,12 +335,15 @@ export default function TaskSubtasks({
           action={
             canEdit &&
             canCreate && (
-              <SectionAddButton
-                data-task-action="addSubtask"
-                aria-label={`${t("tasks:subtasks.addAction")} ${t("tasks:subtasks.title")}`}
-                onClick={() => setIsAdding(true)}
+              <NewWorkMenu
+                onSelect={handleSelectType}
                 disabled={!canCreateSubtask}
-              />
+              >
+                <SectionAddButton
+                  data-task-action="addSubtask"
+                  aria-label={t("tasks:createMenu.label")}
+                />
+              </NewWorkMenu>
             )
           }
         />
@@ -385,7 +406,11 @@ export default function TaskSubtasks({
           <div className="flex items-center gap-2 px-1 pt-1">
             <Input
               size="sm"
-              placeholder={t("tasks:subtasks.inputPlaceholder")}
+              placeholder={t(
+                newType === "bug"
+                  ? "common:modals.createTask.bugTitlePlaceholder"
+                  : "tasks:subtasks.inputPlaceholder",
+              )}
               value={newTitle}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setNewTitle(e.target.value)
@@ -428,6 +453,17 @@ export default function TaskSubtasks({
           </p>
         )}
       </section>
+
+      {isCreatingFeature && (
+        <CreateTaskModal
+          open
+          onClose={() => setIsCreatingFeature(false)}
+          projectId={projectId}
+          status={featureStatus === "planned" ? "planned" : todoSlug}
+          type="feature"
+          releaseId={featureReleaseId ?? undefined}
+        />
+      )}
 
       <AlertDialog
         open={!!deleteTaskId}

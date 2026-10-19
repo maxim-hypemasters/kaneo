@@ -310,7 +310,7 @@ const createTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Create task",
   description:
-    "Add a task to a project. It is placed in the column named by `status`. Without releaseId, a task created in a feature starts in that feature's release, and any other task in none; an explicit releaseId, or null for none, wins.",
+    "Add a task, bug or feature to a project, defaulting to task. It is placed in the column named by status. Tasks and bugs may belong to a feature. Without releaseId they inherit that feature's release; an explicit releaseId, or null for none, wins.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["create"] }),
@@ -694,7 +694,7 @@ const updateTaskFeatureRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task feature",
   description:
-    "Put a task into a feature of its project, or take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one. A task in no release takes the feature's release when it joins, and records that in its activity; leaving or switching features keeps its release.",
+    "Put a task or bug into a feature of its project, or remove its membership. Either belongs to at most one feature; a feature can't belong to one. An item in no release takes the feature's release when it joins and records the change in activity. Leaving or switching features keeps its release.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -764,7 +764,7 @@ const updateTaskTypeRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task type",
   description:
-    "Turn a task into a feature, or a feature back into a task. A task that becomes a feature leaves its own feature.",
+    "Switch between task, bug and feature. Task-to-bug and bug-to-task changes preserve the item's feature. Making either a feature removes its parent. A feature can become a task or bug only after all members are removed. Every conversion preserves its release and other fields.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -784,7 +784,7 @@ const updateTaskTypeRoute = createRoute({
       "No access to the project, or missing task:update permission",
     ),
     404: errorResponse("Task not found"),
-    409: errorResponse("The feature still has tasks"),
+    409: errorResponse("The feature still has tasks or bugs"),
   },
 });
 

@@ -28,7 +28,7 @@ const routes = {
   "GET /api/release/project/p1": () => json([releaseFixture("r1", "2.4")]),
   "GET /api/column/p1": () => json([]),
   "POST /api/task/p1": (request: RecordedRequest) => {
-    const body = request.body as { releaseId?: string | null };
+    const body = request.body as { releaseId?: string | null; type?: string };
     return json({
       id: "t7",
       projectId: "p1",
@@ -41,7 +41,7 @@ const routes = {
       dueDate: null,
       createdAt: "2026-10-08T10:00:00.000Z",
       userId: null,
-      type: "task",
+      type: body.type ?? "task",
       featureId: null,
       releaseId: body.releaseId ?? null,
     });
@@ -53,6 +53,15 @@ const createBody = (
 ) => requests.find(([method]) => method === "POST")?.[2];
 
 describe("runTaskCreate --release", () => {
+  it("sends and returns an explicit Bug type", async () => {
+    const run = await runCommand(
+      runTaskCreate({ ...options, type: "bug" }),
+      routes,
+    );
+    expect(Result.isSuccess(run.result)).toBe(true);
+    expect(createBody(run.requests)).toMatchObject({ type: "bug" });
+    expect(run.json()).toMatchObject({ type: "bug" });
+  });
   it("creates the task in the release named by --release", async () => {
     const run = await runCommand(
       runTaskCreate({ ...options, release: Option.some("2.4") }),

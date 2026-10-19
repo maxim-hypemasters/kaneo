@@ -9,6 +9,22 @@ vi.mock("react-i18next", () => ({
 afterEach(cleanup);
 
 describe("TaskTypeChip", () => {
+  it("offers Task, Bug and Feature, and selects Bug", async () => {
+    const onChange = vi.fn();
+    render(<TaskTypeChip value="task" onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button"));
+    const items = await screen.findAllByRole("menuitemradio");
+    const labels = [
+      "common:modals.createTask.typeTask",
+      "common:modals.createTask.typeBug",
+      "common:modals.createTask.typeFeature",
+    ];
+    labels.forEach((label, index) =>
+      expect(items[index]).toHaveTextContent(label),
+    );
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /typeBug/ }));
+    expect(onChange).toHaveBeenCalledWith("bug");
+  });
   it("names the type for screen readers and shows the current one", () => {
     render(<TaskTypeChip value="feature" onChange={vi.fn()} />);
 

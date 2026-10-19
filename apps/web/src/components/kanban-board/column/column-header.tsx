@@ -3,12 +3,14 @@ import { Archive, Plus, ArchiveIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { getColumnIcon } from "@/lib/column";
 import { toast } from "@/lib/toast";
 import useProjectStore from "@/store/project";
 import type { ProjectWithTasks } from "@/types/project";
+import type { TaskType } from "@/types/task";
 import { ArchiveTasksModal } from "../../shared/modals/archive-tasks-modal";
 
 type ColumnHeaderProps = {
@@ -28,7 +30,7 @@ export function ColumnHeader({
   const canCreate = canCreateTasks();
 
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [createType, setCreateType] = useState<TaskType | null>(null);
 
   const handleConfirmArchive = () => {
     if (disableCollectionActions || !column.isFinal || !project) return;
@@ -84,20 +86,22 @@ export function ColumnHeader({
           </button>
         )}
         {canCreate && (
-          <button
-            type="button"
-            onClick={() => setIsTaskModalOpen(true)}
-            className="flex size-6 cursor-pointer items-center justify-center rounded-md text-chip-icon transition-colors hover:bg-chip-hover hover:text-board-title"
-            title={t("tasks:kanban.addTask")}
-          >
-            <Plus className="size-3.5" />
-          </button>
+          <NewWorkMenu onSelect={setCreateType}>
+            <button
+              type="button"
+              className="flex size-6 cursor-pointer items-center justify-center rounded-md text-chip-icon transition-colors hover:bg-chip-hover hover:text-board-title"
+              title={t("tasks:createMenu.label")}
+            >
+              <Plus className="size-3.5" />
+            </button>
+          </NewWorkMenu>
         )}
       </div>
 
       <CreateTaskModal
-        open={isTaskModalOpen}
-        onClose={() => setIsTaskModalOpen(false)}
+        open={createType !== null}
+        type={createType ?? "task"}
+        onClose={() => setCreateType(null)}
         projectId={project?.id}
         status={column.id}
       />

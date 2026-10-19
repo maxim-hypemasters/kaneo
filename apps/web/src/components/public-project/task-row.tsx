@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { Calendar, CalendarClock, CalendarX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { TaskProgressBadges } from "@/components/task/task-progress-badges";
@@ -59,6 +60,12 @@ export function PublicTaskRow({
         </div>
         <div className="flex flex-col gap-1 flex-1 min-w-0">
           <h3 className="text-sm font-medium text-foreground truncate">
+            {task.type === "bug" && (
+              <TaskTypeGlyph
+                type="bug"
+                className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+              />
+            )}
             {task.title}
           </h3>
           {labels.length > 0 && <PublicTaskLabels labels={labels} />}

@@ -30,6 +30,35 @@ function createServerMock() {
 }
 
 describe("registerTools", () => {
+  it("creates, reads, converts and filters Bugs without coercing their type", async () => {
+    const { server, tools } = createServerMock();
+    const client = {
+      json: vi.fn().mockResolvedValue({ id: "bug-1", type: "bug" }),
+    };
+    registerTools(server as never, { client: client as never });
+    await tools.get("create_task")?.handler({
+      projectId: "p",
+      title: "Fix it",
+      description: "",
+      priority: "high",
+      status: "todo",
+      type: "bug",
+    });
+    expect(JSON.parse(client.json.mock.calls[0][1].body)).toMatchObject({
+      type: "bug",
+    });
+    const read = await tools.get("get_task")?.handler({ taskId: "bug-1" });
+    expect(read?.content[0].text).toContain('"type": "bug"');
+    await tools.get("set_task_type")?.handler({ taskId: "bug-1", type: "bug" });
+    expect(client.json).toHaveBeenCalledWith("/api/task/type/bug-1", {
+      method: "PUT",
+      body: JSON.stringify({ type: "bug" }),
+    });
+    await tools.get("list_tasks")?.handler({ projectId: "p", type: "bug" });
+    expect(client.json).toHaveBeenCalledWith("/api/task/tasks/p?type=bug", {
+      method: "GET",
+    });
+  });
   it("registers the MCP tools", () => {
     const { server } = createServerMock();
     const client = { json: vi.fn() };

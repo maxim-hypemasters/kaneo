@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { addDays, differenceInCalendarDays } from "date-fns";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -575,7 +576,11 @@ export function GanttTaskBar({
         )}
         <button
           type="button"
-          aria-label={ariaLabel}
+          aria-label={
+            task.type === "bug"
+              ? `${t("tasks:features.typeBug")}: ${ariaLabel}`
+              : ariaLabel
+          }
           aria-describedby={describedBy}
           className={cn(
             "relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5",
@@ -616,6 +621,12 @@ export function GanttTaskBar({
                     labelOutside && "sr-only",
                   )}
                 >
+                  {task.type === "bug" && (
+                    <TaskTypeGlyph
+                      type="bug"
+                      className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+                    />
+                  )}
                   {task.title}
                 </span>
               </span>
@@ -658,6 +669,12 @@ export function GanttTaskBar({
             isFeature ? "font-semibold" : "font-medium",
           )}
         >
+          {task.type === "bug" && (
+            <TaskTypeGlyph
+              type="bug"
+              className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+            />
+          )}
           {task.title}
           {progress && (
             <span className="ml-1 font-medium tabular-nums text-muted-foreground">

@@ -66,6 +66,38 @@ afterEach(() => {
 });
 
 describe("TaskTypeMenu", () => {
+  it.each(["task", "feature"] as const)(
+    "converts %s to a bug",
+    async (type) => {
+      const task = renderMenu(type);
+      await clickItem("tasks:features.convertToBug");
+      expect(mocks.updateType).toHaveBeenCalledWith({ task, type: "bug" });
+    },
+  );
+
+  it("keeps feature membership when choosing Task from Bug", async () => {
+    const task = renderMenu("bug");
+    await clickItem("tasks:features.convertToTask");
+    expect(mocks.updateType).toHaveBeenCalledWith({ task, type: "task" });
+    expect(
+      screen.queryByRole("menuitem", { name: "tasks:features.convertToBug" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("blocks both non-feature targets while a feature has children", async () => {
+    renderMenu("feature", true);
+    for (const name of [
+      "tasks:features.convertToTask",
+      "tasks:features.convertToBug",
+    ]) {
+      expect(await screen.findByRole("menuitem", { name })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
+    }
+    expect(mocks.updateType).not.toHaveBeenCalled();
+  });
+
   it("converts a task into a feature", async () => {
     const task = renderMenu("task");
 
@@ -93,7 +125,9 @@ describe("TaskTypeMenu", () => {
       name: "tasks:features.convertToTask",
     });
     expect(item).toHaveAttribute("aria-disabled", "true");
-    expect(item).toHaveAccessibleDescription("tasks:features.convertBlocked");
+    expect(item).toHaveAccessibleDescription(
+      "tasks:features.convertLeafBlocked",
+    );
     await act(async () => {
       fireEvent.click(item);
     });
@@ -110,7 +144,7 @@ describe("TaskTypeMenu", () => {
 
     await waitFor(() =>
       expect(mocks.toastError).toHaveBeenCalledWith(
-        "tasks:features.convertBlocked",
+        "tasks:features.convertLeafBlocked",
       ),
     );
   });

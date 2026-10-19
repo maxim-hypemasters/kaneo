@@ -8,6 +8,7 @@ import {
 } from "../../database/schema";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
 import { taskIsCompleted } from "../../task/task-is-completed";
+import type { TaskType } from "../../task/task-type";
 import { featureLinksOf } from "../feature-links";
 
 async function getTaskRelations(
@@ -45,6 +46,7 @@ async function getTaskRelations(
     {
       id: string;
       title: string;
+      type: TaskType;
       status: string;
       isCompleted: boolean;
       priority: string | null;
@@ -60,6 +62,7 @@ async function getTaskRelations(
       .select({
         id: taskTable.id,
         title: taskTable.title,
+        type: taskTable.type,
         status: taskTable.status,
         isCompleted: taskIsCompleted,
         priority: taskTable.priority,

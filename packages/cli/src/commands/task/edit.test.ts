@@ -43,6 +43,30 @@ const writes = (requests: ReadonlyArray<readonly [string, string, unknown]>) =>
   requests.filter(([method]) => method === "PUT");
 
 describe("runTaskEdit --release", () => {
+  it("converts an empty Feature to Bug before adding it to another Feature", async () => {
+    const source = resolvedTaskFixture(3, { type: "feature" });
+    const run = await runCommand(
+      runTaskEdit({
+        ...none,
+        task: "KAN-3",
+        type: Option.some("bug"),
+        feature: Option.some("KAN-1"),
+      }),
+      {
+        ...routes,
+        "GET /api/task/by-ticket-id/KAN-3": () => json(source.task),
+        "GET /api/task/t3": () =>
+          json({ ...source.task, type: "bug", featureId: "t1" }),
+        "PUT /api/task/type/t3": () => json({ id: "t3", type: "bug" }),
+      },
+    );
+    expect(Result.isSuccess(run.result)).toBe(true);
+    expect(writes(run.requests)).toEqual([
+      ["PUT", "/api/task/type/t3", { type: "bug" }],
+      ["PUT", "/api/task/feature/t3", { featureId: "t1" }],
+    ]);
+    expect(run.json()).toMatchObject({ type: "bug", featureId: "t1" });
+  });
   it("puts a feature into a release by name", async () => {
     const run = await runCommand(
       runTaskEdit({ ...none, task: "KAN-1", release: Option.some("2.4") }),

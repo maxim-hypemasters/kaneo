@@ -124,11 +124,11 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   if (
     Option.isSome(featureReference) &&
     taskTypeOf(resolved.task) === "feature" &&
-    Option.getOrUndefined(type) !== "task"
+    !["task", "bug"].includes(Option.getOrUndefined(type) ?? "")
   ) {
     return yield* new InvalidArgument({
       message: `${resolved.ticketId ?? resolved.task.id.slice(0, 8)} is a feature, and a feature can't belong to one.`,
-      hint: "Add --type task to make it a task first. A feature with tasks can't become one.",
+      hint: "Add --type task or --type bug first. A feature with tasks can't become one.",
     });
   }
   const feature = yield* resolveFeature(featureReference, resolved.workspaceId);
@@ -267,7 +267,7 @@ export const taskEdit = Command.make(
     ),
     type: Flag.Literals("type", TASK_TYPES).pipe(
       Flag.withDescription(
-        "feature makes it a feature, which groups tasks; task turns a feature without tasks back",
+        "Change the item type to task, bug or feature; a feature must be empty before becoming a task or bug",
       ),
       Flag.optional,
     ),

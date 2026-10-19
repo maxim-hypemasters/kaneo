@@ -16,6 +16,9 @@ import {
 import { NO_RELEASE } from "@/lib/task-filters/release-filter-values";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
+import { TASK_TYPES } from "@/types/task";
+import { TASK_TYPE_LABELS } from "@/lib/task-type";
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { customFieldIcon } from "@/components/custom-fields/custom-field-icon";
 import { formatCustomFieldValue } from "@/components/custom-fields/format-custom-field-value";
 import { PriorityGlyph } from "@/components/task-chips/priority-glyph";
@@ -66,7 +69,7 @@ export function useFilterSubjects({
   });
 
   const listSubject = (
-    key: "status" | "priority" | "assignee" | "dueDate" | "release",
+    key: "type" | "status" | "priority" | "assignee" | "dueDate" | "release",
     fields: Pick<FilterSubject, "label" | "icon" | "options">,
   ) =>
     subject(key, {
@@ -81,6 +84,7 @@ export function useFilterSubjects({
     labelGroups.map((group) => [`${group.name}|${group.color}`, group.id]),
   );
   const counts = {
+    type: countValues(tasks, (task) => [task.type ?? "task"]),
     status: countValues(tasks, (task) => [task.status]),
     assignee: countValues(tasks, (task) => [task.userId]),
     priority: countValues(tasks, (task) => [task.priority]),
@@ -102,6 +106,16 @@ export function useFilterSubjects({
   );
 
   const core = [
+    listSubject("type", {
+      label: t("tasks:boardFilters.subjects.type"),
+      icon: <TaskTypeGlyph type="task" decorative />,
+      options: TASK_TYPES.map((type) => ({
+        value: type,
+        label: t(TASK_TYPE_LABELS[type]),
+        icon: <TaskTypeGlyph type={type} decorative />,
+        count: counts.type[type] ?? 0,
+      })),
+    }),
     ...(showStatus
       ? [
           listSubject("status", {

@@ -6,6 +6,7 @@ import {
   listWorkspaces,
 } from "../../api/endpoints.js";
 import type { AssignedTask } from "../../api/schemas.js";
+import { taskTypeOf, type TaskType } from "../../api/task-features.js";
 import { emit } from "../../output/emit.js";
 import { withSpinner } from "../../output/spinner.js";
 import { type Cell, text } from "../../render/cell.js";
@@ -24,6 +25,7 @@ import { ApiLayer } from "../api-layer.js";
 
 export type MineTaskJson = {
   readonly id: string;
+  readonly type: TaskType;
   readonly ticketId: string | null;
   readonly number: number | null;
   readonly title: string;
@@ -52,6 +54,7 @@ export function toMineTaskJson(
 ): MineTaskJson {
   return {
     id: task.id,
+    type: taskTypeOf(task),
     ticketId: ticketId(task.projectSlug, task.number),
     number: task.number,
     title: task.title,

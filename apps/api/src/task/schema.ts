@@ -2,6 +2,9 @@ import { pagingNumber, z } from "../openapi";
 import { MAX_TASK_POSITION } from "./controllers/next-task-position";
 import { TICKET_ID_PATTERN } from "./ticket-id";
 import { VALID_PRIORITIES } from "./validate-task-fields";
+import { TASK_TYPES } from "./task-type";
+
+export const taskTypeBody = z.enum(TASK_TYPES);
 
 export const taskParam = z.object({ id: z.string() });
 
@@ -41,6 +44,9 @@ const priority = z.enum(VALID_PRIORITIES);
 
 // Required object of optional filters: a RouteParameter cannot itself be optional.
 export const listTasksQuery = z.object({
+  type: taskTypeBody.optional().openapi({
+    description: "Only items of this type, filtered before pagination.",
+  }),
   status: z.string().optional(),
   priority: z.string().optional(),
   assigneeId: z.string().optional(),
@@ -89,10 +95,7 @@ export const createTaskBody = z.object({
   customFields: z
     .array(z.object({ fieldId: z.string(), value: z.string() }))
     .optional(),
-  type: z
-    .enum(["task", "feature"])
-    .optional()
-    .openapi({ description: "Defaults to task." }),
+  type: taskTypeBody.optional().openapi({ description: "Defaults to task." }),
   featureId: z.string().min(1).optional().openapi({
     description: "Create the task inside this feature of the project.",
   }),
@@ -128,6 +131,9 @@ export const importTasksBody = z.object({
   tasks: z.array(
     z.object({
       title: z.string(),
+      type: taskTypeBody
+        .optional()
+        .openapi({ description: "Defaults to task for older exports." }),
       description: z.string().optional(),
       status: z.string(),
       priority: z.string().optional(),
@@ -145,7 +151,6 @@ export const updateAssigneeBody = z.object({
 });
 export const updateDueDateBody = z.object({ dueDate: z.string().optional() });
 export const updateTitleBody = z.object({ title: z.string() });
-export const taskTypeBody = z.enum(["task", "feature"]);
 export const updateFeatureBody = z.object({
   featureId: z.string().min(1).nullable().openapi({
     description:
@@ -161,7 +166,7 @@ export const updateTaskReleaseBody = z.object({
 export const updateTypeBody = z.object({
   type: taskTypeBody.openapi({
     description:
-      "Making a task a feature takes it out of its own feature; a feature can become a task once it has no tasks.",
+      "Tasks and bugs keep their feature when switching between those types. Making either a feature removes its parent. A feature can become a task or bug only when it has no members.",
   }),
 });
 export const updateDescriptionBody = z.object({ description: z.string() });

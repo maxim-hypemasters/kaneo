@@ -51,6 +51,16 @@ Never use `docker compose down -v` as an upgrade or troubleshooting step. It rem
 
 ## Upgrade notes
 
+### Bug task type
+
+Kaneo adds **Bug** alongside Task and Feature in the existing task model. Apply the database migration before allowing Bug writes. The API runs it before serving requests at startup; when updating several API instances, update all of them before creating or converting Bugs because older servers do not understand the new type.
+
+The migration expands the task hierarchy constraint and updates release progress tracking to include Tasks and Bugs. It does not change any existing item's type, rewrite recorded progress, seed another baseline, or backfill history. Task-to-Bug conversions keep feature and release membership and leave progress totals unchanged. Other import providers continue creating Tasks; a label named “bug” does not change an item's type.
+
+After upgrading, create a Bug, filter a project by **Type**, and convert the Bug to a Task and back. Check that its feature and release stay selected and that the release totals remain the same. Native task exports and connected Kaneo imports preserve explicit Task, Bug, and Feature types; files without a type field default to Task.
+
+To roll back to a version without Bug support, restore the matching application image and database backup. An older API can reject responses containing Bugs and cannot safely operate on them. Keep the backup until the new creation, filtering, and conversion flows have been checked.
+
 ### Project releases
 
 Kaneo added [releases](/core/functional/releases) to projects. The database migration only adds things: a `release` table and an empty `release_id` column on tasks. Existing tasks start with no release, and no other data changes.

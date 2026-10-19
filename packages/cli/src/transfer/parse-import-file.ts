@@ -1,8 +1,10 @@
 import { Result } from "effect";
 import { InvalidArgument } from "../errors/errors.js";
+import { TASK_TYPES, type TaskType } from "../api/task-features.js";
 
 export type ImportCandidate = {
   readonly title: string;
+  readonly type?: TaskType;
   readonly description?: string | undefined;
   readonly status?: string | undefined;
   readonly priority?: string | undefined;
@@ -54,6 +56,20 @@ function nullableText(
   return text(fields, key, where);
 }
 
+function itemType(
+  fields: Fields,
+  where: string,
+): Result.Result<TaskType | undefined, InvalidArgument> {
+  const value = fields.type;
+  if (value === undefined) return Result.succeed(undefined);
+  return typeof value === "string" &&
+    (TASK_TYPES as readonly string[]).includes(value)
+    ? Result.succeed(value as TaskType)
+    : Result.fail(
+        invalid(`${where} has an invalid type; expected task, bug or feature.`),
+      );
+}
+
 function date(
   fields: Fields,
   key: string,
@@ -82,6 +98,7 @@ function parseTask(
   }
   const named = `${where} (${title})`;
   return Result.all({
+    type: itemType(item, named),
     description: text(item, "description", named),
     status: text(item, "status", named),
     priority: text(item, "priority", named),
@@ -89,8 +106,9 @@ function parseTask(
     dueDate: date(item, "dueDate", named),
     userId: nullableText(item, "userId", named),
   }).pipe(
-    Result.map((fields) => ({
+    Result.map(({ type, ...fields }) => ({
       title,
+      ...(type === undefined ? {} : { type }),
       ...fields,
       status: fields.status?.trim() || undefined,
       priority: fields.priority?.trim() || undefined,

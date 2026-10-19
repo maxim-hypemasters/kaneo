@@ -41,6 +41,32 @@ function task(overrides: Partial<Task>): Task {
 }
 
 describe("taskMatchesFilters", () => {
+  it("matches multiple types, their negation, and old tasks without a type", () => {
+    const filters = { ...noFilters, type: ["task", "bug"] };
+    expect(taskMatchesFilters(task({ type: "bug" }), filters, context)).toBe(
+      true,
+    );
+    expect(
+      taskMatchesFilters(task({ type: undefined }), filters, context),
+    ).toBe(true);
+    expect(
+      taskMatchesFilters(task({ type: "feature" }), filters, context),
+    ).toBe(false);
+    expect(
+      taskMatchesFilters(
+        task({ type: "bug" }),
+        { ...filters, negated: ["type"] },
+        context,
+      ),
+    ).toBe(false);
+    expect(
+      taskMatchesFilters(
+        task({ type: "feature" }),
+        { ...filters, negated: ["type"] },
+        context,
+      ),
+    ).toBe(true);
+  });
   it.each([
     ["pricing", true],
     ["faq", true],

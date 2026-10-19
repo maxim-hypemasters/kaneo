@@ -6,6 +6,7 @@ const OptionalString = Schema.optionalKey(Schema.String);
 export const SearchHit = Schema.Struct({
   id: Schema.String,
   type: Schema.String,
+  taskType: Schema.optionalKey(Schema.NullOr(Schema.String)),
   title: Schema.String,
   description: OptionalString,
   content: OptionalString,

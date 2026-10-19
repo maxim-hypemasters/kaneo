@@ -91,40 +91,55 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("workspace home", () => {
-  it("opens the create dialog for a feature or a task", () => {
+  it.each([
+    ["task", "newTask"],
+    ["feature", "newFeature"],
+    ["bug", "newBug"],
+  ])("opens the %s create dialog from one New menu", async (type, item) => {
     render(<Home />);
 
-    fireEvent.click(screen.getByRole("button", { name: /home.newFeature/ }));
-    expect(
-      screen.getByRole("dialog", { name: "create-feature" }),
-    ).toBeInTheDocument();
+    const triggers = screen.getAllByRole("button", {
+      name: "tasks:createMenu.label",
+    });
+    expect(triggers).toHaveLength(1);
+    fireEvent.click(triggers[0]);
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: `tasks:createMenu.${item}` }),
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: "close" }));
-    fireEvent.click(screen.getByRole("button", { name: /home.newTask/ }));
     expect(
-      screen.getByRole("dialog", { name: "create-task" }),
+      screen.getByRole("dialog", { name: `create-${type}` }),
     ).toBeInTheDocument();
   });
 
-  it("asks for a project first when the workspace has none", () => {
-    m.projects = [];
-    render(<Home />);
+  it.each(["newTask", "newFeature", "newBug"])(
+    "asks for a project first when selecting %s in an empty workspace",
+    async (item) => {
+      m.projects = [];
+      render(<Home />);
 
-    fireEvent.click(screen.getByRole("button", { name: /home.newFeature/ }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "tasks:createMenu.label" }),
+      );
+      fireEvent.click(
+        await screen.findByRole("menuitem", {
+          name: `tasks:createMenu.${item}`,
+        }),
+      );
 
-    expect(
-      screen.getByRole("dialog", { name: "create-project" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("dialog", { name: "create-feature" })).toBeNull();
-  });
+      expect(
+        screen.getByRole("dialog", { name: "create-project" }),
+      ).toBeInTheDocument();
+      expect(screen.getAllByRole("dialog")).toHaveLength(1);
+    },
+  );
 
-  it("offers neither without permission to create tasks", () => {
+  it("offers no creation menu without permission to create tasks", () => {
     m.canCreateTasks = false;
     render(<Home />);
 
     expect(
-      screen.queryByRole("button", { name: /home.newFeature/ }),
+      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
     ).toBeNull();
-    expect(screen.queryByRole("button", { name: /home.newTask/ })).toBeNull();
   });
 });

@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { Link } from "@tanstack/react-router";
 import type { AssignedTask } from "@/fetchers/task/get-assigned-tasks";
 import { getColumnIcon } from "@/lib/column";
@@ -38,6 +39,12 @@ export function AssignedTaskRow({
           : `${task.projectSlug}-${task.number}`}
       </span>
       <span className="min-w-0 flex-1 truncate text-foreground text-sm">
+        {task.type === "bug" && (
+          <TaskTypeGlyph
+            type="bug"
+            className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+          />
+        )}
         {task.title}
       </span>
       {showLabels && task.labels.length > 0 && (

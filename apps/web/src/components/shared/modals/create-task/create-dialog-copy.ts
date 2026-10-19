@@ -3,6 +3,23 @@ import type { TaskType } from "@/types/task";
 
 // The create dialog's words for what it creates.
 export function createDialogCopy(t: TFunction, type: TaskType) {
+  if (type === "bug") {
+    return {
+      breadcrumb: t("common:modals.createTask.breadcrumbBug"),
+      title: t("common:modals.createTask.titleBug"),
+      description: t("common:modals.createTask.descriptionBug"),
+      titlePlaceholder: t("common:modals.createTask.bugTitlePlaceholder"),
+      descriptionPlaceholder: t(
+        "common:modals.createTask.descriptionPlaceholder",
+      ),
+      createButton: t("common:modals.createTask.createButtonBug"),
+      created: t("common:modals.createTask.successCreatedBug"),
+      createError: t("common:modals.createTask.createBugError"),
+      discardTitle: t("common:modals.createTask.discardTitleBug"),
+      discardDescription: t("common:modals.createTask.discardDescriptionBug"),
+      discardButton: t("common:modals.createTask.discardButtonBug"),
+    };
+  }
   if (type === "feature") {
     return {
       breadcrumb: t("common:modals.createTask.breadcrumbFeature"),

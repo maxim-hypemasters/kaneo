@@ -71,3 +71,21 @@ it("names each task's feature from the public board, wherever it sits", () => {
   fireEvent.click(chips[0]);
   expect(onTaskClick).toHaveBeenCalledExactlyOnceWith(feature);
 });
+
+it("marks a completed Bug without changing its public task action", () => {
+  const bug = task("crash", { type: "bug", status: "done" });
+  const project = {
+    id: "p",
+    slug: "SHOP",
+    columns: [{ id: "done", name: "Done", isFinal: true, tasks: [bug] }],
+    plannedTasks: [],
+    archivedTasks: [],
+  } as unknown as ProjectWithTasks;
+  const onTaskClick = vi.fn();
+  render(<PublicKanbanView project={project} onTaskClick={onTaskClick} />);
+  expect(
+    screen.getByRole("img", { name: "tasks:features.typeBug" }),
+  ).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: /crash/ }));
+  expect(onTaskClick).toHaveBeenCalledWith(bug);
+});

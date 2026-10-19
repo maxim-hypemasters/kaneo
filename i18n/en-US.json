@@ -181,7 +181,18 @@
 				"chooseProjectForRelease": "Choose a project to pick a release.",
 				"loadingReleases": "Loading releases...",
 				"loadReleasesError": "Releases couldn’t be loaded.",
-				"noReleasesFound": "No releases found"
+				"noReleasesFound": "No releases found",
+				"breadcrumbBug": "BUG",
+				"titleBug": "New Bug",
+				"descriptionBug": "Create a new bug with a title, description, and other details.",
+				"bugTitlePlaceholder": "Bug title",
+				"successCreatedBug": "Bug created successfully",
+				"createBugError": "Failed to create bug",
+				"createButtonBug": "Create Bug",
+				"discardTitleBug": "Discard bug?",
+				"discardDescriptionBug": "Your unsaved bug details will be lost.",
+				"discardButtonBug": "Discard bug",
+				"typeBug": "Bug"
 			}
 		},
 		"editor": {
@@ -2412,7 +2423,8 @@
 			},
 			"createFeature": "Create feature",
 			"goToReleases": "Go to releases",
-			"createRelease": "Create release"
+			"createRelease": "Create release",
+			"createBug": "Create bug"
 		},
 		"sidebar": {
 			"projects": "Projects",
@@ -2794,7 +2806,10 @@
 		"madeTask": "made this feature a task",
 		"addedToRelease": "added the task to release \"{{release}}\"",
 		"removedFromRelease": "removed the task from release \"{{release}}\"",
-		"changedRelease": "moved the task from release \"{{from}}\" to \"{{to}}\""
+		"changedRelease": "moved the task from release \"{{from}}\" to \"{{to}}\"",
+		"changedTypeToTask": "changed the type to task",
+		"changedTypeToFeature": "changed the type to feature",
+		"changedTypeToBug": "changed the type to bug"
 	},
 	"tasks": {
 		"checklistProgress": "{{completed}} of {{total}} checklist items completed",
@@ -3098,7 +3113,8 @@
 				"assignee": "Assignee",
 				"dueDate": "Due date",
 				"labels": "Labels",
-				"release": "Release"
+				"release": "Release",
+				"type": "Type"
 			},
 			"operators": {
 				"isAnyOf": "is any of",
@@ -3405,7 +3421,10 @@
 			"typeError": "Failed to change the task type",
 			"convertBlocked": "Move this feature's tasks out of it before making it a task.",
 			"openFeature": "Open feature {{title}}",
-			"inProject": "Features in project"
+			"inProject": "Features in project",
+			"typeBug": "Bug",
+			"convertToBug": "Convert to bug",
+			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
 		},
 		"releases": {
 			"pageTitle": "{{name}} – Releases",
@@ -3570,6 +3589,13 @@
 			"ux": {
 				"nameTaken": "A release with this name already exists"
 			}
+		},
+		"createMenu": {
+			"label": "Create work item",
+			"new": "New",
+			"newTask": "New task",
+			"newFeature": "New feature",
+			"newBug": "New bug"
 		}
 	},
 	"invitations": {

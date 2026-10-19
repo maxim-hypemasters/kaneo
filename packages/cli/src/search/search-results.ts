@@ -14,6 +14,7 @@ export type SearchResultType = (typeof RESULT_TYPES)[number];
 
 export type SearchResultJson = {
   readonly type: SearchResultType;
+  readonly taskType?: string | null;
   readonly id: string;
   readonly title: string;
   readonly ticketId: string | null;
@@ -128,6 +129,9 @@ export function normalizeSearchResults(
         : ticketId(hit.projectSlug, hit.taskNumber ?? null);
     results.push({
       type,
+      ...(type === "task" && hit.taskType !== undefined
+        ? { taskType: hit.taskType }
+        : {}),
       id: hit.id,
       title: hit.title,
       ticketId: ticket,

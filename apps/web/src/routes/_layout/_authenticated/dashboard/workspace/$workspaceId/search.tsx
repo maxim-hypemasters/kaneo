@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import { getPriorityIcon } from "@/lib/priority";
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/workspace/$workspaceId/search",
@@ -150,7 +151,13 @@ function SearchComponent() {
                         </span>
                       )}
 
-                      <div className="flex-1 min-w-0">
+                      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                        {result.taskType === "bug" && (
+                          <TaskTypeGlyph
+                            type="bug"
+                            className="mr-1 inline-block size-3.5 text-muted-foreground"
+                          />
+                        )}
                         <span className="text-sm text-foreground truncate block">
                           {result.title}
                         </span>

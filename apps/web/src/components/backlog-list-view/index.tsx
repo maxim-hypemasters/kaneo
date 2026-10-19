@@ -19,11 +19,13 @@ import { useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useTaskViewShortcuts } from "@/components/project/task-view-keys/use-task-view-shortcuts";
 import { cn } from "@/lib/cn";
 import useBacklogBulkSelectionStore from "@/store/backlog-bulk-selection";
 import useProjectStore from "@/store/project";
 import type { ProjectWithTasks } from "@/types/project";
+import type { TaskType } from "@/types/task";
 import BacklogBulkToolbar from "../bulk-selection/backlog-bulk-toolbar";
 import CreateTaskModal from "../shared/modals/create-task-modal";
 import BacklogSection from "./backlog-section";
@@ -40,6 +42,7 @@ function BacklogListView({
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
   const { mutate: updateTask } = useUpdateTask();
+  const { canCreateTasks } = useWorkspacePermission();
   const setProject = useProjectStore((state) => state.setProject);
   const setAvailableTasks = useBacklogBulkSelectionStore(
     (state) => state.setAvailableTasks,
@@ -53,8 +56,7 @@ function BacklogListView({
     planned: true,
     archived: true,
   });
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [activeColumn, setActiveColumn] = useState<string | null>(null);
+  const [createType, setCreateType] = useState<TaskType | null>(null);
 
   useEffect(() => {
     if (project) {
@@ -274,11 +276,6 @@ function BacklogListView({
     onToggleAllGroups: toggleAllSections,
   });
 
-  const openPlannedTaskModal = useCallback(() => {
-    setIsTaskModalOpen(true);
-    setActiveColumn("planned");
-  }, []);
-
   if (!project) {
     return null;
   }
@@ -314,7 +311,7 @@ function BacklogListView({
             isExpanded={expandedSections.planned}
             showDropIndicator={activeId !== null && overColumnId === "planned"}
             onToggle={toggleSection}
-            onAddTask={openPlannedTaskModal}
+            onAddTask={canCreateTasks() ? setCreateType : undefined}
           />
 
           <BacklogSection
@@ -360,10 +357,11 @@ function BacklogListView({
       </DragOverlay>
 
       <CreateTaskModal
-        open={isTaskModalOpen}
+        open={createType !== null}
+        type={createType ?? "task"}
         projectId={project?.id}
-        onClose={() => setIsTaskModalOpen(false)}
-        status={activeColumn ?? "planned"}
+        onClose={() => setCreateType(null)}
+        status="planned"
       />
 
       <BacklogBulkToolbar />

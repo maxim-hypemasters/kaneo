@@ -181,7 +181,18 @@
 				"chooseProjectForRelease": "Scegli un progetto per selezionare una release.",
 				"loadingReleases": "Caricamento release...",
 				"loadReleasesError": "Impossibile caricare le release.",
-				"noReleasesFound": "Nessuna release trovata"
+				"noReleasesFound": "Nessuna release trovata",
+				"breadcrumbBug": "BUG",
+				"bugTitlePlaceholder": "Bug title",
+				"createBugError": "Failed to create bug",
+				"createButtonBug": "Create Bug",
+				"descriptionBug": "Create a new bug with a title, description, and other details.",
+				"discardButtonBug": "Discard bug",
+				"discardDescriptionBug": "Your unsaved bug details will be lost.",
+				"discardTitleBug": "Discard bug?",
+				"successCreatedBug": "Bug created successfully",
+				"titleBug": "New Bug",
+				"typeBug": "Bug"
 			}
 		},
 		"editor": {
@@ -2454,7 +2465,8 @@
 			},
 			"createFeature": "Crea funzionalità",
 			"goToReleases": "Vai alle release",
-			"createRelease": "Crea release"
+			"createRelease": "Crea release",
+			"createBug": "Create bug"
 		},
 		"sidebar": {
 			"projects": "Progetti",
@@ -2841,7 +2853,10 @@
 		"madeTask": "ha trasformato questa funzionalità in un'attività",
 		"addedToRelease": "ha aggiunto l'attività alla release \"{{release}}\"",
 		"removedFromRelease": "ha rimosso l'attività dalla release \"{{release}}\"",
-		"changedRelease": "ha spostato l'attività dalla release \"{{from}}\" a \"{{to}}\""
+		"changedRelease": "ha spostato l'attività dalla release \"{{from}}\" a \"{{to}}\"",
+		"changedTypeToBug": "changed the type to bug",
+		"changedTypeToFeature": "changed the type to feature",
+		"changedTypeToTask": "changed the type to task"
 	},
 	"tasks": {
 		"title": "Attività",
@@ -3141,7 +3156,8 @@
 				"assignee": "Assegnatario",
 				"dueDate": "Data scadenza",
 				"labels": "Etichette",
-				"release": "Release"
+				"release": "Release",
+				"type": "Type"
 			},
 			"operators": {
 				"isAnyOf": "è uno di",
@@ -3468,7 +3484,10 @@
 			"typeError": "Modifica del tipo di attività fallita",
 			"convertBlocked": "Sposta fuori le attività di questa funzionalità prima di trasformarla in un'attività.",
 			"openFeature": "Apri funzionalità {{title}}",
-			"inProject": "Funzionalità nel progetto"
+			"inProject": "Funzionalità nel progetto",
+			"convertToBug": "Convert to bug",
+			"typeBug": "Bug",
+			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
 		},
 		"releases": {
 			"pageTitle": "{{name}} – Release",
@@ -3648,6 +3667,13 @@
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
 			}
+		},
+		"createMenu": {
+			"label": "Create work item",
+			"new": "New",
+			"newBug": "New bug",
+			"newFeature": "New feature",
+			"newTask": "New task"
 		}
 	},
 	"invitations": {

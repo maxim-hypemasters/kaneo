@@ -125,14 +125,19 @@ function CommandPalette() {
           },
           {
             value: "create-task",
-            label: t("navigation:commandPalette.createTask"),
+            label: t("tasks:createMenu.newTask"),
             shortcutId: "createTask",
             onRun: () => setCreateType("task"),
           },
           {
             value: "create-feature",
-            label: t("navigation:commandPalette.createFeature"),
+            label: t("tasks:createMenu.newFeature"),
             onRun: () => setCreateType("feature"),
+          },
+          {
+            value: "create-bug",
+            label: t("tasks:createMenu.newBug"),
+            onRun: () => setCreateType("bug"),
           },
           {
             value: "create-project",

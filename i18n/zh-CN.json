@@ -181,7 +181,18 @@
 				"chooseProjectForRelease": "选择版本前请先选择项目。",
 				"loadingReleases": "正在加载版本…",
 				"loadReleasesError": "版本加载失败。",
-				"noReleasesFound": "未找到版本"
+				"noReleasesFound": "未找到版本",
+				"breadcrumbBug": "BUG",
+				"bugTitlePlaceholder": "Bug title",
+				"createBugError": "Failed to create bug",
+				"createButtonBug": "Create Bug",
+				"descriptionBug": "Create a new bug with a title, description, and other details.",
+				"discardButtonBug": "Discard bug",
+				"discardDescriptionBug": "Your unsaved bug details will be lost.",
+				"discardTitleBug": "Discard bug?",
+				"successCreatedBug": "Bug created successfully",
+				"titleBug": "New Bug",
+				"typeBug": "Bug"
 			}
 		},
 		"editor": {
@@ -2370,7 +2381,8 @@
 			},
 			"createFeature": "创建功能",
 			"goToReleases": "前往版本",
-			"createRelease": "创建版本"
+			"createRelease": "创建版本",
+			"createBug": "Create bug"
 		},
 		"sidebar": {
 			"projects": "项目",
@@ -2747,7 +2759,10 @@
 		"madeTask": "将此功能转换为任务",
 		"addedToRelease": "将任务添加到版本 \"{{release}}\"",
 		"removedFromRelease": "将任务从版本 \"{{release}}\" 中移除",
-		"changedRelease": "将任务从版本 \"{{from}}\" 移动到 \"{{to}}\""
+		"changedRelease": "将任务从版本 \"{{from}}\" 移动到 \"{{to}}\"",
+		"changedTypeToBug": "changed the type to bug",
+		"changedTypeToFeature": "changed the type to feature",
+		"changedTypeToTask": "changed the type to task"
 	},
 	"tasks": {
 		"title": "任务",
@@ -3047,7 +3062,8 @@
 				"assignee": "负责人",
 				"dueDate": "截止日期",
 				"labels": "标签",
-				"release": "版本"
+				"release": "版本",
+				"type": "Type"
 			},
 			"operators": {
 				"isAnyOf": "为以下任一",
@@ -3342,7 +3358,10 @@
 			"typeError": "更改任务类型失败",
 			"convertBlocked": "请先将此功能下的任务移出，再将其转换为任务。",
 			"openFeature": "打开功能 {{title}}",
-			"inProject": "项目内功能"
+			"inProject": "项目内功能",
+			"convertToBug": "Convert to bug",
+			"typeBug": "Bug",
+			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
 		},
 		"releases": {
 			"pageTitle": "{{name}} – 版本",
@@ -3492,6 +3511,13 @@
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
 			}
+		},
+		"createMenu": {
+			"label": "Create work item",
+			"new": "New",
+			"newBug": "New bug",
+			"newFeature": "New feature",
+			"newTask": "New task"
 		}
 	},
 	"invitations": {

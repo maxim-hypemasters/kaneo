@@ -135,7 +135,7 @@ pass `workspaceId` or `projectId` to select one.
 Time entries have no delete endpoint on the API, so there is no
 `delete_time_entry` tool.
 
-A feature is a task with `type: "feature"` that groups other tasks of the same
+A feature is a task with `type: "feature"` that groups other tasks and bugs of the same
 project; it stays on the board with its own status, assignee and dates. Every
 task carries `type` and `featureId` (its feature, or `null`), and a task belongs
 to at most one feature. Create a task inside a feature in one call with
@@ -144,6 +144,13 @@ to at most one feature. Create a task inside a feature in one call with
 `featureId`, out of it; `set_task_type` turns a task into a feature and back (a
 feature can become a task only once it has no tasks). `update_task` leaves the
 type, feature and release as they are.
+
+`type: "bug"` creates or classifies a Bug, with the same workflow, Feature and
+release behavior as a Task. `create_task` and `set_task_type` accept `task`,
+`bug`, and `feature`; a Feature must be empty before becoming a Task or Bug.
+`list_tasks` accepts an exact `type` filter, so `type: "task"` excludes Bugs.
+Reads retain the item's explicit type. Creating or converting Bugs requires a
+server that supports them; ordinary `update_task` calls preserve the type.
 
 A release is a planned delivery in one project, with a start, a code freeze and
 a submission date (`YYYY-MM-DD`, in that order) and progress counts. Its phase

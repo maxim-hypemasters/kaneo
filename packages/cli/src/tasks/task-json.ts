@@ -1,4 +1,5 @@
 import type { BoardTask } from "../api/schemas.js";
+import { taskTypeOf, type TaskType } from "../api/task-features.js";
 import { taskUrl } from "../render/links.js";
 import { ticketId } from "../render/task-format.js";
 import type { LoadedBoard } from "./load-board.js";
@@ -8,6 +9,7 @@ export type TaskJson = {
   readonly ticketId: string | null;
   readonly number: number | null;
   readonly title: string;
+  readonly type: TaskType;
   readonly status: string;
   readonly statusName: string;
   readonly priority: string;
@@ -36,6 +38,7 @@ export function toTaskJson(
     ticketId: ticketId(board.projectSlug, task.number),
     number: task.number,
     title: task.title,
+    type: taskTypeOf(task),
     status: task.status,
     statusName: column?.name ?? task.status,
     priority: task.priority,

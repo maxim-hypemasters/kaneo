@@ -5,6 +5,7 @@ import type Task from "@/types/task";
 export type RelatedTaskSummary = {
   id: string;
   title: string;
+  type?: Task["type"];
   status: string;
   isCompleted: boolean;
   priority: string | null;
@@ -96,7 +97,7 @@ export function relatedTaskToTask(
     assigneeId: summary.userId,
     assigneeName: summary.assigneeName,
     projectId: summary.projectId,
-    type: "task",
+    type: summary.type ?? "task",
     featureId,
   };
 }

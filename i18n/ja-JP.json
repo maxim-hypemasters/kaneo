@@ -181,7 +181,18 @@
 				"chooseProjectForRelease": "リリースを選択するにはプロジェクトを選択してください。",
 				"loadingReleases": "リリースを読み込み中...",
 				"loadReleasesError": "リリースを読み込めませんでした。",
-				"noReleasesFound": "リリースが見つかりません"
+				"noReleasesFound": "リリースが見つかりません",
+				"breadcrumbBug": "BUG",
+				"bugTitlePlaceholder": "Bug title",
+				"createBugError": "Failed to create bug",
+				"createButtonBug": "Create Bug",
+				"descriptionBug": "Create a new bug with a title, description, and other details.",
+				"discardButtonBug": "Discard bug",
+				"discardDescriptionBug": "Your unsaved bug details will be lost.",
+				"discardTitleBug": "Discard bug?",
+				"successCreatedBug": "Bug created successfully",
+				"titleBug": "New Bug",
+				"typeBug": "Bug"
 			}
 		},
 		"editor": {
@@ -2370,7 +2381,8 @@
 			},
 			"createFeature": "機能を作成",
 			"goToReleases": "リリースへ移動",
-			"createRelease": "リリースを作成"
+			"createRelease": "リリースを作成",
+			"createBug": "Create bug"
 		},
 		"sidebar": {
 			"projects": "プロジェクト",
@@ -2747,7 +2759,10 @@
 		"madeTask": "がこの機能をタスクにしました",
 		"addedToRelease": "がタスクをリリース「{{release}}」に追加しました",
 		"removedFromRelease": "がタスクをリリース「{{release}}」から外しました",
-		"changedRelease": "がタスクをリリース「{{from}}」から「{{to}}」に移動しました"
+		"changedRelease": "がタスクをリリース「{{from}}」から「{{to}}」に移動しました",
+		"changedTypeToBug": "changed the type to bug",
+		"changedTypeToFeature": "changed the type to feature",
+		"changedTypeToTask": "changed the type to task"
 	},
 	"tasks": {
 		"title": "タスク",
@@ -3047,7 +3062,8 @@
 				"assignee": "担当者",
 				"dueDate": "期限",
 				"labels": "ラベル",
-				"release": "リリース"
+				"release": "リリース",
+				"type": "Type"
 			},
 			"operators": {
 				"isAnyOf": "次のいずれか",
@@ -3342,7 +3358,10 @@
 			"typeError": "タスクの種類の変更に失敗しました",
 			"convertBlocked": "タスクにする前に、この機能のタスクを機能から外してください。",
 			"openFeature": "機能 {{title}} を開く",
-			"inProject": "プロジェクト内の機能"
+			"inProject": "プロジェクト内の機能",
+			"convertToBug": "Convert to bug",
+			"typeBug": "Bug",
+			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
 		},
 		"releases": {
 			"pageTitle": "{{name}} – リリース",
@@ -3492,6 +3511,13 @@
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
 			}
+		},
+		"createMenu": {
+			"label": "Create work item",
+			"new": "New",
+			"newBug": "New bug",
+			"newFeature": "New feature",
+			"newTask": "New task"
 		}
 	},
 	"invitations": {

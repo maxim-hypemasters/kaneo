@@ -79,7 +79,12 @@ export function renderRelationList(ui: Ui, view: RelationListView): string[] {
         header: "Title",
         flex: true,
         minWidth: 16,
-        cell: (task): Cell => [text(task.title, undefined, task.url)],
+        cell: (task): Cell => [
+          ...(task.type === "bug" || task.type === "feature"
+            ? [text(`[${statusLabel(task.type)}] `, theme.muted)]
+            : []),
+          text(task.title, undefined, task.url),
+        ],
       },
       {
         header: "Status",

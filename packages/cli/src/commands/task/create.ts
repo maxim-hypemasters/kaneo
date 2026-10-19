@@ -159,7 +159,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
       ...(assignee ? { userId: assignee.id } : {}),
       ...(dueDate ? { dueDate } : {}),
       ...(startDate ? { startDate } : {}),
-      ...(options.type === "feature" ? { type: options.type } : {}),
+      ...(options.type !== "task" ? { type: options.type } : {}),
       ...(feature ? { featureId: feature.task.id } : {}),
       ...(release === undefined ? {} : { releaseId: release?.id ?? null }),
     };
@@ -173,6 +173,11 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     if (options.type === "feature" && created.type === undefined) {
       yield* note((ui) => [
         `  ${ui.theme.warning(ui.glyphs.warning)} This Kaneo server has no features yet, so ${createdLabel} was created as a plain task. Update the server, then run kaneo task edit ${createdArgument} --type feature.`,
+      ]);
+    }
+    if (options.type === "bug" && created.type !== "bug") {
+      yield* note((ui) => [
+        `  ${ui.theme.warning(ui.glyphs.warning)} This Kaneo server did not preserve the Bug type for ${createdLabel}. Update the server, then run kaneo task edit ${createdArgument} --type bug.`,
       ]);
     }
     const attached: ReadonlyArray<Label> =
@@ -240,7 +245,9 @@ export const runTaskCreate = Effect.fn("command.task.create")(
             ...task.labels.map(
               (label) => `${labelChip(ui, label.color)} ${label.name}`,
             ),
-            ...(task.type === "feature" ? [ui.theme.muted("feature")] : []),
+            ...(task.type === "feature" || task.type === "bug"
+              ? [ui.theme.muted(task.type)]
+              : []),
             ...(task.feature
               ? [
                   ui.theme.muted(
@@ -312,7 +319,9 @@ export const taskCreate = Command.make(
       Flag.atLeast(0),
     ),
     type: Flag.Literals("type", TASK_TYPES).pipe(
-      Flag.withDescription("feature makes it a feature, which groups tasks"),
+      Flag.withDescription(
+        "Item type: task, bug or feature (features group tasks and bugs)",
+      ),
       Flag.withDefault("task"),
     ),
     feature: Flag.String("feature").pipe(

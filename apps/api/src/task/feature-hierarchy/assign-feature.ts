@@ -85,9 +85,8 @@ export async function setTaskFeature(
   return updated;
 }
 
-// Turns a task (locked FOR UPDATE by the caller) into a feature or back. A
-// task becoming a feature leaves its own feature first; a feature can only
-// become a task once it has no tasks left. Either way it keeps its release.
+// Leaf type changes preserve membership. Promotion to a feature clears its
+// parent; demotion requires an empty feature. Every change keeps its release.
 export async function setTaskType(
   tx: Tx,
   task: Task,
@@ -95,7 +94,7 @@ export async function setTaskType(
   userId?: string,
 ) {
   if (type === task.type) return task;
-  if (type === "task") {
+  if (task.type === "feature" && type !== "feature") {
     const [members] = await tx
       .select({ count: count() })
       .from(taskTable)
@@ -103,13 +102,13 @@ export async function setTaskType(
     if ((members?.count ?? 0) > 0) {
       throw new HTTPException(409, {
         message:
-          "This feature still has tasks. Move them out of it before making it a task.",
+          "This feature still has members. Move them out before changing its type.",
       });
     }
   }
   const [updated] = await tx
     .update(taskTable)
-    .set({ type, featureId: null })
+    .set({ type, featureId: type === "feature" ? null : task.featureId })
     .where(and(eq(taskTable.id, task.id), eq(taskTable.type, task.type)))
     .returning();
   if (!updated) {
@@ -122,7 +121,7 @@ export async function setTaskType(
     content: null,
     eventData: { oldType: task.type, newType: type },
   });
-  if (task.featureId) {
+  if (task.featureId && type === "feature") {
     await recordFeatureChange(tx, {
       taskIds: [task.id],
       projectId: task.projectId,

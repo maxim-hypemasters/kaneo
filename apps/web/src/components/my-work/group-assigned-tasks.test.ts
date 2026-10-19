@@ -18,6 +18,7 @@ function task(
     projectId,
     number: 1,
     title: id,
+    type: "task",
     status: "to-do",
     statusName: "To Do",
     statusIcon: null,

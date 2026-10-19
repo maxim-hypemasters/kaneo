@@ -103,10 +103,35 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+it("offers all three item types with counts, including zero and legacy tasks", () => {
+  const control = controls({ type: ["bug"], negated: ["type"] });
+  const { result } = renderHook(() =>
+    useFilterSubjects({
+      controls: control,
+      options: options(),
+      tasks: [{ id: "old" }, { id: "bug", type: "bug" }] as Task[],
+      showStatus: true,
+    }),
+  );
+  const subject = result.current.find((item) => item.id === "type")!;
+  expect(subject.options.map(({ value, count }) => [value, count])).toEqual([
+    ["task", 1],
+    ["bug", 1],
+    ["feature", 0],
+  ]);
+  expect(subject.selected).toEqual(["bug"]);
+  expect(subject.negated).toBe(true);
+  subject.onToggle("task");
+  expect(control.toggleFilter).toHaveBeenCalledWith("type", "task");
+  subject.onClear();
+  expect(control.updateFilter).toHaveBeenCalledWith("type", null);
+});
+
 it("lists No release, then active, upcoming and past releases, after Labels", () => {
   const { subjects, subject } = releaseSubject();
 
   expect(subjects.map((item) => item.id)).toEqual([
+    "type",
     "status",
     "assignee",
     "priority",

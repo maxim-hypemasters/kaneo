@@ -100,6 +100,9 @@ export function mapTask(
 
   return {
     key: task.id,
+    ...(task.type === "task" || task.type === "bug" || task.type === "feature"
+      ? { type: task.type }
+      : {}),
     ...(typeof task.number === "number" ? { number: task.number } : {}),
     columnKey: !archived && columnKeys.has(task.status) ? task.status : null,
     ...(archived ? { archived: true } : {}),

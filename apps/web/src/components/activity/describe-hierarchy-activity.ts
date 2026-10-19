@@ -27,8 +27,10 @@ export function describeHierarchyActivity(
   }
 
   if (type === "type_changed") {
-    if (eventData.newType === "feature") return t("activity:madeFeature");
-    if (eventData.newType === "task") return t("activity:madeTask");
+    if (eventData.newType === "feature")
+      return t("activity:changedTypeToFeature");
+    if (eventData.newType === "task") return t("activity:changedTypeToTask");
+    if (eventData.newType === "bug") return t("activity:changedTypeToBug");
   }
 
   return null;

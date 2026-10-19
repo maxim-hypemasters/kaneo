@@ -1,4 +1,5 @@
 import { responseTimestamp, z } from "../openapi";
+import { taskTypeSchema } from "../task/response";
 
 const relationTypeDescription =
   "How the two tasks relate: `blocks` or `related`. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead.";
@@ -7,6 +8,7 @@ const relatedTaskSchema = z
   .object({
     id: z.string(),
     title: z.string(),
+    type: taskTypeSchema,
     status: z.string(),
     isCompleted: z.boolean().openapi({
       description: "Whether the task is in a final column of its own project.",

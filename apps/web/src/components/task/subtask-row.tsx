@@ -82,6 +82,7 @@ export default function SubtaskRow({
             }
             displayId={displayId}
             title={task.title}
+            itemType={task.type}
             done={isCompleted}
             onOpen={onNavigate}
             tag={

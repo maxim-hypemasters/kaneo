@@ -23,6 +23,7 @@ async function exportTasks(projectId: string) {
     .select({
       id: taskTable.id,
       title: taskTable.title,
+      type: taskTable.type,
       number: taskTable.number,
       description: taskTable.description,
       status: taskTable.status,
@@ -80,6 +81,7 @@ async function exportTasks(projectId: string) {
     },
     tasks: tasks.map((task) => ({
       title: task.title,
+      type: task.type,
       description: task.description || "",
       status: task.status,
       priority: task.priority || "low",

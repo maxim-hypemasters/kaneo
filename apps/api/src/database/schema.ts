@@ -18,6 +18,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { GitHubImportState } from "../github-integration/import-state";
 import type { ImportRunProject } from "../import/import-run-project";
+import type { TaskType } from "../task/task-type";
 
 // Timestamp columns without a time zone hold UTC (Drizzle reads and writes
 // them as UTC). A bare now() default would be cast through the session time
@@ -650,9 +651,8 @@ export const taskTable = pgTable(
     priority: text("priority").default("low").notNull(),
     startDate: timestamp("start_date", { mode: "date" }),
     dueDate: timestamp("due_date", { mode: "date" }),
-    // "task" or "feature". A feature groups tasks of its own project and
-    // can't itself belong to one.
-    type: text("type").$type<"task" | "feature">().default("task").notNull(),
+    // A feature groups tasks and bugs of its own project and can't belong to one.
+    type: text("type").$type<TaskType>().default("task").notNull(),
     featureId: text("feature_id"),
     releaseId: text("release_id"),
     createdAt: timestamp("created_at", { mode: "date" })
@@ -676,7 +676,7 @@ export const taskTable = pgTable(
     // same project; assign-feature does that under row locks.
     check(
       "task_feature_shape_check",
-      sql`${table.type} in ('task', 'feature') and (${table.type} = 'task' or ${table.featureId} is null) and ${table.featureId} <> ${table.id}`,
+      sql`${table.type} in ('task', 'bug', 'feature') and (${table.type} <> 'feature' or ${table.featureId} is null) and ${table.featureId} <> ${table.id}`,
     ),
     index("task_featureId_idx").on(table.featureId),
     // The database keeps a task in its own project's releases. No ON DELETE

@@ -1,4 +1,3 @@
-import { Layers, Square } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Menu,
@@ -9,7 +8,8 @@ import {
   MenuRadioItem,
   MenuTrigger,
 } from "@/components/ui/menu";
-import type { TaskType } from "@/types/task";
+import { TASK_TYPES, type TaskType } from "@/types/task";
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { chipClass } from "./chip-class";
 
 type TaskTypeChipProps = {
@@ -20,26 +20,25 @@ type TaskTypeChipProps = {
 
 export function TaskTypeChip({ value, onChange, disabled }: TaskTypeChipProps) {
   const { t } = useTranslation();
-  const isFeature = value === "feature";
-  const Icon = isFeature ? Layers : Square;
+  const labels = {
+    task: "common:modals.createTask.typeTask",
+    feature: "common:modals.createTask.typeFeature",
+    bug: "common:modals.createTask.typeBug",
+  } as const;
 
   return (
     <Menu>
       <MenuTrigger asChild>
         <button
           type="button"
-          className={chipClass(isFeature)}
+          className={chipClass(value !== "task")}
           disabled={disabled}
         >
-          <Icon aria-hidden="true" className="size-3.5" />
+          <TaskTypeGlyph type={value} decorative className="size-3.5" />
           <span className="sr-only">
             {t("common:modals.createTask.type")}
           </span>{" "}
-          <span>
-            {isFeature
-              ? t("common:modals.createTask.typeFeature")
-              : t("common:modals.createTask.typeTask")}
-          </span>
+          <span>{t(labels[value])}</span>
         </button>
       </MenuTrigger>
       <MenuPopup align="start" className="w-40">
@@ -49,12 +48,14 @@ export function TaskTypeChip({ value, onChange, disabled }: TaskTypeChipProps) {
             value={value}
             onValueChange={(next) => onChange(next as TaskType)}
           >
-            <MenuRadioItem value="task" closeOnClick>
-              {t("common:modals.createTask.typeTask")}
-            </MenuRadioItem>
-            <MenuRadioItem value="feature" closeOnClick>
-              {t("common:modals.createTask.typeFeature")}
-            </MenuRadioItem>
+            {TASK_TYPES.map((type) => (
+              <MenuRadioItem key={type} value={type} closeOnClick>
+                <span className="flex items-center gap-2">
+                  <TaskTypeGlyph type={type} decorative />
+                  <span>{t(labels[type])}</span>
+                </span>
+              </MenuRadioItem>
+            ))}
           </MenuRadioGroup>
         </MenuGroup>
       </MenuPopup>

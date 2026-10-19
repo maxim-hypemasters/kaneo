@@ -20,7 +20,8 @@ type TaskCustomFieldValue = {
   value: string | null;
 };
 
-export type TaskType = "task" | "feature";
+export const TASK_TYPES = ["task", "bug", "feature"] as const;
+export type TaskType = (typeof TASK_TYPES)[number];
 
 type Task = {
   id: string;

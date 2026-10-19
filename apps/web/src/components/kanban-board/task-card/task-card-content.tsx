@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { Trash2Icon } from "lucide-react";
 import { memo, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -181,6 +182,12 @@ function TaskCardContent({
                   : "font-medium text-board-title",
               )}
             >
+              {task.type === "bug" && (
+                <TaskTypeGlyph
+                  type="bug"
+                  className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+                />
+              )}
               {task.title}
             </div>
 
