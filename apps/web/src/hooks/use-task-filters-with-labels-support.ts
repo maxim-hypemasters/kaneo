@@ -8,11 +8,13 @@ import { toggleFilterValue } from "@/lib/task-filters/toggle-filter-value";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
+import { normalizeTaskTypes } from "@/lib/task-type";
 import useGetCachedCustomFieldValues from "./queries/custom-field/use-get-all-custom-field-values-by-project";
 import type { BoardFilters } from "./use-task-filters";
 import { useStoredState } from "./use-stored-state";
 
 const DEFAULT_FILTERS: BoardFilters = {
+  type: null,
   status: null,
   priority: null,
   assignee: null,
@@ -26,6 +28,7 @@ const DEFAULT_FILTERS: BoardFilters = {
 const NO_IGNORED_FILTERS: ReadonlyArray<keyof BoardFilters> = [];
 
 const FILTER_KEYS: Array<keyof BoardFilters> = [
+  "type",
   "status",
   "priority",
   "assignee",
@@ -45,6 +48,10 @@ function normalizeFilters(raw: unknown): BoardFilters {
   const normalized = { ...DEFAULT_FILTERS };
 
   for (const key of FILTER_KEYS) {
+    if (key === "type") {
+      normalized.type = normalizeTaskTypes(candidate.type);
+      continue;
+    }
     if (key === "customFields") {
       const value = candidate.customFields;
       if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -168,7 +175,14 @@ export function useTaskFiltersWithLabelsSupport(
   };
 
   const toggleFilter = (
-    key: "status" | "priority" | "assignee" | "dueDate" | "labels" | "release",
+    key:
+      | "type"
+      | "status"
+      | "priority"
+      | "assignee"
+      | "dueDate"
+      | "labels"
+      | "release",
     value: string,
   ) => {
     setFilters((prev) => {

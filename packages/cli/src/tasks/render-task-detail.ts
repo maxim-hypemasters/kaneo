@@ -88,7 +88,10 @@ export function renderTaskDetail(ui: Ui, view: TaskDetailView): string[] {
       `${task.projectName} ${theme.muted(`${glyphs.separator} ${task.projectKey}`)}`,
     ],
     // A feature is in no feature, so at most one of these shows.
-    ["Type", task.type === "feature" ? "Feature" : null],
+    [
+      "Type",
+      task.type === "feature" ? "Feature" : task.type === "bug" ? "Bug" : null,
+    ],
     ["Feature", feature],
   ];
 

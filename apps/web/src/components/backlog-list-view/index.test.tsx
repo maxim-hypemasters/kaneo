@@ -59,9 +59,26 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/hooks/mutations/task/use-update-task", () => ({
   useUpdateTask: () => ({ mutate: vi.fn() }),
 }));
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({ canCreateTasks: () => true }),
+}));
 vi.mock("../shared/modals/create-task-modal", () => ({
-  default: ({ open, status }: { open: boolean; status: string }) =>
-    open ? <div role="dialog">{status}</div> : null,
+  default: ({
+    open,
+    status,
+    type,
+    projectId,
+  }: {
+    open: boolean;
+    status: string;
+    type: string;
+    projectId: string;
+  }) =>
+    open ? (
+      <div role="dialog">
+        {projectId} {status} {type}
+      </div>
+    ) : null,
 }));
 vi.mock("../bulk-selection/backlog-bulk-toolbar", () => ({
   default: () => null,
@@ -202,7 +219,10 @@ describe("backlog row lifecycle", () => {
     const archivedRow = screen.getByLabelText("archived-0");
     mountRow.mockClear();
     fireEvent.click(
-      screen.getByRole("button", { name: "tasks:backlog.addTask" }),
+      screen.getByRole("button", { name: "tasks:createMenu.label" }),
+    );
+    fireEvent.click(
+      screen.getByRole("menuitem", { name: "tasks:createMenu.newTask" }),
     );
     expect(screen.getByRole("dialog")).toHaveTextContent("planned");
     rerender(
@@ -214,4 +234,22 @@ describe("backlog row lifecycle", () => {
     expect(mountRow).not.toHaveBeenCalled();
     expect(unmountRow).not.toHaveBeenCalled();
   });
+
+  it.each(["feature", "bug"])(
+    "creates a new %s in the planned section",
+    (type) => {
+      render(<BacklogListView project={project} />, { wrapper: Providers });
+      fireEvent.click(
+        screen.getByRole("button", { name: "tasks:createMenu.label" }),
+      );
+      fireEvent.click(
+        screen.getByRole("menuitem", {
+          name: `tasks:createMenu.new${type[0].toUpperCase()}${type.slice(1)}`,
+        }),
+      );
+      expect(screen.getByRole("dialog")).toHaveTextContent(
+        `project-1 planned ${type}`,
+      );
+    },
+  );
 });

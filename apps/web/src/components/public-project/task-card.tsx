@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { Calendar, CalendarClock, CalendarX } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -119,6 +120,12 @@ export function PublicTaskCard({
               hyphens: "auto",
             }}
           >
+            {task.type === "bug" && (
+              <TaskTypeGlyph
+                type="bug"
+                className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+              />
+            )}
             {task.title}
           </h3>
         </div>

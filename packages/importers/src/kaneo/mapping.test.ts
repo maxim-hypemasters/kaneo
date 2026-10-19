@@ -98,6 +98,11 @@ describe("collectLabels", () => {
 
 describe("mapTask", () => {
   const columnKeys = new Set(["to-do", "done"]);
+  it.each(["task", "bug", "feature"])("preserves a native %s type", (type) => {
+    expect(mapTask(task({ type }), columnKeys, members)).toMatchObject({
+      type,
+    });
+  });
 
   it("maps a board task", () => {
     expect(

@@ -16,9 +16,11 @@ import {
 } from "../validate-task-fields";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
+import type { TaskType } from "../task-type";
 
 export type ImportTask = {
   title: string;
+  type?: TaskType;
   description?: string;
   status: string;
   priority?: string;
@@ -107,6 +109,7 @@ async function importTasks(
             projectId,
             userId: assigneeId,
             title: taskData.title,
+            type: taskData.type ?? "task",
             status,
             columnId: column?.id ?? null,
             startDate: taskData.startDate ? new Date(taskData.startDate) : null,

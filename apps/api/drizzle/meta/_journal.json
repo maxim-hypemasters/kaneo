@@ -470,6 +470,13 @@
       "when": 1792340863616,
       "tag": "0066_loose_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1792433444846,
+      "tag": "0067_mushy_hulk",
+      "breakpoints": true
     }
   ]
 }

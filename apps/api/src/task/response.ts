@@ -1,20 +1,21 @@
 import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
+import { TASK_TYPES } from "./task-type";
 
 const priorityDescription = "One of: no-priority, low, medium, high, urgent.";
 
-export const taskTypeSchema = z.enum(["task", "feature"]).openapi({
+export const taskTypeSchema = z.enum(TASK_TYPES).openapi({
   description:
-    "A feature groups tasks of its own project, like an epic; a task can belong to one feature.",
+    "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature.",
 });
 
 const featureIdSchema = z.string().nullable().openapi({
   description:
-    "The feature this task belongs to, in the same project. Always null for a feature.",
+    "The feature this task or bug belongs to, in the same project. Always null for a feature.",
 });
 
 const releaseIdSchema = z.string().nullable().openapi({
   description:
-    "The release this task or feature is planned in, from its own project. Always null on public boards.",
+    "The release this task, bug or feature is planned in, from its own project. Always null on public boards.",
 });
 
 export const taskSchema = z
@@ -57,7 +58,7 @@ export const taskReleaseResultSchema = taskSchema
   .extend({
     movedTaskIds: z.array(z.string()).openapi({
       description:
-        "For a feature, its tasks that moved with it, ordered by id. Empty for a task.",
+        "For a feature, its tasks and bugs that moved with it, ordered by id. Empty for a task or bug.",
     }),
   })
   .openapi("TaskReleaseResult");
@@ -77,7 +78,7 @@ export const taskWithAssigneeSchema = taskSchema
       .optional()
       .openapi({
         description:
-          "For a feature, its tasks and how many are in a final column. Zero for a task.",
+          "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug.",
       }),
     parentSubtaskCounts: z
       .array(
@@ -173,7 +174,7 @@ export const boardTaskSchema = z
       })
       .openapi({
         description:
-          "For a feature, its tasks and how many are in a final column; zero for a task. Counts every task in the feature, whatever the board's filters.",
+          "For a feature, its tasks and bugs and how many are in a final column; zero for a task or bug. Counts all members, whatever the board's filters.",
       }),
     labels: z.array(taskLabelSchema),
     externalLinks: z.array(taskExternalLinkSchema),
@@ -265,6 +266,7 @@ export const taskExportSchema = z
       z
         .object({
           title: z.string(),
+          type: taskTypeSchema,
           description: z.string(),
           status: z.string(),
           priority: z.string(),
@@ -345,6 +347,7 @@ export const assignedTasksSchema = z
           projectId: z.string(),
           number: z.number().nullable(),
           title: z.string(),
+          type: taskTypeSchema,
           status: z.string().openapi({
             description: "The slug of the column the task sits in.",
           }),

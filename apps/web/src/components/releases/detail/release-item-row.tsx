@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
@@ -52,6 +53,12 @@ export function ReleaseItemRow({
             done ? "text-muted-foreground line-through" : "text-foreground",
           )}
         >
+          {task.type === "bug" && (
+            <TaskTypeGlyph
+              type="bug"
+              className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+            />
+          )}
           {task.title}
         </span>
         <span className="max-w-32 shrink-0 truncate text-muted-foreground text-xs">

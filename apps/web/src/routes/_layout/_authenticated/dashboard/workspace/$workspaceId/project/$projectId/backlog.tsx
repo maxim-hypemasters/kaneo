@@ -13,7 +13,6 @@ import { ProjectToolbar } from "@/components/project/toolbar/project-toolbar";
 import { TaskCount } from "@/components/project/toolbar/task-count";
 import { useProjectTaskView } from "@/components/project/toolbar/use-project-task-view";
 import { ConfirmDialog } from "@/components/settings/confirm-dialog";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
@@ -43,7 +42,6 @@ function RouteComponent() {
   const navigate = useNavigate();
   const { data } = useGetTasks(projectId);
   const { project, setProject } = useProjectStore();
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isMoveAllOpen, setIsMoveAllOpen] = useState(false);
   const [moveAllCount, setMoveAllCount] = useState(0);
   const { mutate: updateTask } = useUpdateTask();
@@ -138,10 +136,7 @@ function RouteComponent() {
         <ProjectToolbar
           view={view}
           actions={
-            <BacklogToolbarActions
-              onPlan={() => setIsTaskModalOpen(true)}
-              onMoveAll={handleMoveAllPlannedToTodo}
-            />
+            <BacklogToolbarActions onMoveAll={handleMoveAllPlannedToTodo} />
           }
           display={
             <TaskDisplayOptions
@@ -188,13 +183,6 @@ function RouteComponent() {
             </div>
           )}
         </div>
-
-        <CreateTaskModal
-          open={isTaskModalOpen}
-          projectId={projectId}
-          onClose={() => setIsTaskModalOpen(false)}
-          status="planned"
-        />
 
         <ConfirmDialog
           open={isMoveAllOpen}

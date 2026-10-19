@@ -1,6 +1,6 @@
-import { Plus, Rocket } from "lucide-react";
+import { Rocket } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import {
   Empty,
   EmptyContent,
@@ -9,9 +9,14 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
+import type { TaskType } from "@/types/task";
 
-// Absent onAddTask for viewers who can't create tasks.
-export function ReleaseDetailEmpty({ onAddTask }: { onAddTask?: () => void }) {
+// Absent onCreate for viewers who can't create tasks.
+export function ReleaseDetailEmpty({
+  onCreate,
+}: {
+  onCreate?: (type: TaskType) => void;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -27,12 +32,9 @@ export function ReleaseDetailEmpty({ onAddTask }: { onAddTask?: () => void }) {
           {t("tasks:releases.detail.emptyHint")}
         </EmptyDescription>
       </EmptyHeader>
-      {onAddTask ? (
+      {onCreate ? (
         <EmptyContent>
-          <Button variant="outline" onClick={onAddTask}>
-            <Plus aria-hidden="true" />
-            {t("tasks:releases.detail.addTask")}
-          </Button>
+          <NewWorkMenu variant="outline" onSelect={onCreate} />
         </EmptyContent>
       ) : null}
     </Empty>

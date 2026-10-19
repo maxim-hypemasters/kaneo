@@ -51,6 +51,7 @@ export function planImport(
     }
     return {
       title: candidate.title,
+      ...(candidate.type === undefined ? {} : { type: candidate.type }),
       status: slug,
       ...(candidate.description === undefined
         ? {}

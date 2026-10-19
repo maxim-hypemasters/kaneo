@@ -11,7 +11,7 @@ const countWhere = (condition: SQL) =>
   sql<number>`count(${taskTable.id}) filter (where ${condition})`.mapWith(
     Number,
   );
-const isTask = sql`${taskTable.type} = 'task'`;
+const isTask = sql`${taskTable.type} in ('task', 'bug')`;
 const isFeature = sql`${taskTable.type} = 'feature'`;
 
 // Completion follows feature progress: the item sits in a final column.

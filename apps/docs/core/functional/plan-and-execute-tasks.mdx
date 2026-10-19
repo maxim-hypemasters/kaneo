@@ -9,9 +9,17 @@ Most actions have a keyboard shortcut: for example **C** creates a task, **G** t
 
 ## Add a task
 
-On the board, choose **+** in the column where the task belongs. Give it a title that describes the work, then open the task to add details.
+Choose **New** and then **New task**. On the board, the **+** control in each column opens the same menu and keeps that column selected. Home, project views, the backlog, releases, and Feature task sections offer **New task**, **New feature**, and **New bug** through the same creation menu. Give the item a title that describes the work, then open it to add details.
 
 A title such as “Fix the mobile navigation” is easier to act on than “Mobile issues.” Use the description for context, links, and a checklist of smaller steps.
+
+### Track a bug
+
+Choose **New → New bug**, or choose **New bug** in the command menu. You can also select **Bug** in the creation window's **Type** selector. The **C** shortcut still starts a Task. In a Feature's task section, **New task** and **New bug** keep the quick inline title entry.
+
+Bugs have the same properties, workflow, numbering, permissions, and actions as Tasks. A bug icon identifies them on cards, rows, calendars, Gantt, My Work, public boards, and search. A Bug can belong to a Feature and a Release. Bugs count as tasks in feature progress, release totals, and release progress charts.
+
+To change an existing item's classification, open **Type** in its properties or use its card or row's conversion menu. Converting between Task and Bug keeps the same item, including its feature, release, comments, attachments, labels, dates, and history. Converting either to Feature takes it out of its parent feature and keeps its release. A Feature can become a Task or Bug only after all its children have been removed.
 
 ## Move work on the board
 
@@ -37,13 +45,15 @@ Switch the layout to **List** when you want to compare task properties without o
 
 Use the search icon, or press ⌘F (Ctrl+F on Windows and Linux), to find tasks by title, description, or task number.
 
-Use **Filter** to narrow the view by status, assignee, priority, labels, release, due date, or custom fields. Hover a property to pick its values, or type in **Add filter…** to search every value at once. Each filter appears as a chip above the tasks:
+Use **Filter** to narrow the view by type, status, assignee, priority, labels, release, due date, or custom fields. Hover a property to pick its values, or type in **Add filter…** to search every value at once. Each filter appears as a chip above the tasks:
 
 - Click the operator, such as **is**, to switch it to **is not** and hide matching tasks instead.
 - Click the values to change them.
 - Choose **×** to remove the filter, or **Clear all** to remove every filter.
 
 Filters are saved for each project and apply to every layout. The count next to **Tasks** shows how many tasks match. If a task seems to have disappeared, clear your filters and check the backlog before creating another one.
+
+The **Type** filter offers Task, Bug, and Feature, with counts for each. Selecting more than one includes any selected type; other filters still apply. Use **is not** to exclude the selected types. Projects with older saved filters initially include all types. Filtering changes the visible items, while feature and release progress continue to count all their work.
 
 Open **Display** to sort tasks and choose which details appear on cards and rows. Filled custom fields show as small chips on cards and rows; hover one to see the field name. Under **Fields**, turn off any field you don't want there. These choices are saved in your browser and only affect your view.
 
@@ -73,16 +83,16 @@ Use checkboxes in the description for a simple checklist. Use a feature when eac
 
 ### Make a feature
 
-To create a new feature, choose **New feature** on the home page, or **Create feature** in the command menu. In the new task window you can also switch **Type** from **Task** to **Feature** before you create it.
+To create a new feature, choose **New → New feature**, or **New feature** in the command menu. In the creation window you can also switch **Type** to **Feature** before you create it.
 
 To turn an existing task into a feature, open it, select **Type** in its properties (it shows **Task**), and choose **Convert to feature**. You can also right-click its card on the board, or its row in List, and choose **Convert to feature**. The card then shows a **Feature** badge.
 
-To turn a feature back into a task, choose **Convert to task** in the same places. A feature that still has tasks can't become a task. Take its tasks out of it first.
+To turn a feature back into a task or bug, choose **Convert to task** or **Convert to bug** in the same places. A feature that still has Tasks or Bugs can't become a leaf item. Take its tasks out of it first.
 
 ### Add tasks to a feature
 
 - When you create a task, select **Feature** and pick one of the project's features. Type a name that isn't there yet and choose **Create feature** to make a new one. When you create the task, Kaneo creates the feature first and then the task in it. If the task can't be created, the feature stays and is still chosen when you try again. The list shows the features of the task's project, so choose the project first.
-- Open the feature. In its **Tasks** section, choose **+**, enter a title, and choose **Add**. The new task is created inside the feature.
+- Open the feature. In its **Tasks** section, open **+**, choose **New task** or **New bug**, enter a title, and choose **Add**. The new item is created inside the feature. **New feature** creates a separate Feature in the same project and release.
 - Open a task, select its **Feature** property, and pick one of the project's features.
 
 A task belongs to one feature at most, and only to a feature in its own project. A feature can't belong to another feature, so it has no **Feature** property, and turning a task into a feature takes it out of its feature.
@@ -98,7 +108,7 @@ The task itself stays. To move it to another feature, pick that feature in its *
 
 ### Follow a feature's progress
 
-A feature's card shows how many of its tasks are done, such as **2/5**. Hover or select the count to list the tasks, and select one to open it. Each task in a feature shows the feature's name on its card and in List. Select the name to open the feature. In an open task, the **Feature** link at the top takes you to its feature. On the Gantt chart, features have [their own bar style](/core/functional/calendar-and-gantt#features), and you can [group tasks by feature](/core/functional/calendar-and-gantt#group-by-feature).
+A feature's card shows how many of its Tasks and Bugs are done, such as **2/5**. Hover or select the count to list the tasks, and select one to open it. Each task in a feature shows the feature's name on its card and in List. Select the name to open the feature. In an open task, the **Feature** link at the top takes you to its feature. On the Gantt chart, features have [their own bar style](/core/functional/calendar-and-gantt#features), and you can [group tasks by feature](/core/functional/calendar-and-gantt#group-by-feature).
 
 The task's activity records when you add it to a feature, take it out, or change its feature, and when its type changes. It also records when the task leaves its feature because it moved to another project or its feature was deleted. Creating a task inside a feature records only its creation.
 

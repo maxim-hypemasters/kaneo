@@ -11,6 +11,7 @@ function task(id: string, dueDate: Date | null): AssignedTask {
     projectId: "project-1",
     number: 1,
     title: id,
+    type: "task",
     status: "to-do",
     statusName: "To Do",
     statusIcon: null,

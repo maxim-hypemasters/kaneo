@@ -86,6 +86,7 @@ async function getAssignedTasks(
         projectId: taskTable.projectId,
         number: taskTable.number,
         title: taskTable.title,
+        type: taskTable.type,
         status: taskTable.status,
         statusName: statusColumn.name,
         statusIcon: statusColumn.icon,

@@ -34,7 +34,7 @@ const nullableOptionalIsoDateTimeSchema = isoDateTimeSchema
   .optional();
 // A feature is a task that groups the tasks of one piece of work; it stays on
 // the board with its own status, assignee and dates.
-const taskTypeSchema = z.enum(["task", "feature"]);
+const taskTypeSchema = z.enum(["task", "bug", "feature"]);
 // Release dates are calendar days with no time zone.
 const releaseDaySchema = z.iso.date();
 const optionalReleaseDaySchema = releaseDaySchema.optional();
@@ -217,6 +217,9 @@ export function registerTools(
 
   const listTasksSchema = z.object({
     projectId: nonEmptyString,
+    type: taskTypeSchema
+      .optional()
+      .describe("Only this item type; task excludes bugs"),
     status: optionalNonEmptyString,
     priority: prioritySchema.optional(),
     assigneeId: optionalNonEmptyString,
@@ -238,7 +241,7 @@ export function registerTools(
     "list_tasks",
     {
       description:
-        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each task has a type ('task' or 'feature'), a featureId (the feature it belongs to, or null) and a releaseId (its release, or null); a feature's subtaskCounts is the progress of its tasks.",
+        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each item has a type ('task', 'bug' or 'feature'), a featureId (the feature it belongs to, or null) and a releaseId (its release, or null); a feature's subtaskCounts is the progress of its tasks and bugs.",
       inputSchema: listTasksSchema,
     },
     async (args) => {
@@ -260,7 +263,7 @@ export function registerTools(
     "get_task",
     {
       description:
-        "Get a task by ID, including its type ('task' or 'feature'), featureId (the feature it belongs to, or null) and releaseId (its release, or null).",
+        "Get a task by ID, including its type ('task', 'bug' or 'feature'), featureId (the feature it belongs to, or null) and releaseId (its release, or null).",
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>
@@ -300,7 +303,7 @@ export function registerTools(
     "create_task",
     {
       description:
-        "Create a task in a project. Pass type 'feature' to create a feature, or featureId to create the task inside a feature of the same project in one call. A feature can't belong to another feature. Without releaseId, a task created in a feature starts in the feature's release, and any other task in none.",
+        "Create a task, bug or feature in a project. Pass type 'bug' for a bug, 'feature' for a feature, or featureId to create a task or bug inside a feature of the same project. A feature can't belong to another feature. Without releaseId, an item created in a feature starts in the feature's release, and any other item in none.",
       inputSchema: z.object({
         projectId: nonEmptyString,
         title: nonEmptyString,
@@ -313,7 +316,7 @@ export function registerTools(
         type: taskTypeSchema
           .optional()
           .describe(
-            "'feature' creates a feature, which groups tasks and stays on the board as a card. Defaults to 'task'.",
+            "'bug' behaves like a task; 'feature' groups tasks and bugs. Defaults to 'task'.",
           ),
         featureId: optionalNonEmptyString.describe(
           "Create the task inside this feature (a task of type 'feature' in the same project).",
@@ -487,10 +490,10 @@ export function registerTools(
     "set_task_type",
     {
       description:
-        "Turn a task into a feature, or a feature back into a task. A task that becomes a feature leaves its own feature; a feature can become a task only once it has no tasks.",
+        "Change an item to task, bug or feature. Tasks and bugs can belong to a feature; becoming a feature leaves that membership. A feature can become a task or bug only once it is empty.",
       inputSchema: z.object({
         taskId: nonEmptyString,
-        type: taskTypeSchema.describe("'feature' or 'task'"),
+        type: taskTypeSchema.describe("'task', 'bug' or 'feature'"),
       }),
     },
     async (args) =>

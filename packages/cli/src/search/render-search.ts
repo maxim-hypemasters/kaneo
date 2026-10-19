@@ -55,6 +55,9 @@ function columnsFor(
           flex: true,
           minWidth: 16,
           cell: (result) => [
+            ...(result.taskType === "bug" || result.taskType === "feature"
+              ? [text(`[${statusLabel(result.taskType)}] `, theme.muted)]
+              : []),
             text(result.title, undefined, result.url ?? undefined),
           ],
         },

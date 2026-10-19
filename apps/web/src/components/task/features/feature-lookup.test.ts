@@ -173,6 +173,23 @@ describe("listFeatureTasks", () => {
       task: { id: "cart", featureId: "checkout", type: "task" },
     });
   });
+
+  it("keeps a bug's type when feature tasks come from relations", () => {
+    const tasks = listFeatureTasks({
+      featureId: "checkout",
+      index: emptyIndex,
+      relations: [
+        featureLink(summary("checkout"), summary("crash", { type: "bug" })),
+      ],
+      finalStatuses: new Set(),
+    });
+
+    expect(tasks[0].task).toMatchObject({
+      id: "crash",
+      type: "bug",
+      featureId: "checkout",
+    });
+  });
 });
 
 describe("pickableFeatures", () => {

@@ -109,16 +109,25 @@ The [command reference](https://kaneo.app/docs/cli/reference) lists every argume
 
 Tasks are addressed by their ticket ID, such as `KAN-123`, or by id. When a required workspace, project or column is missing and you are in a terminal, the CLI offers a searchable picker. In scripts it fails with an error that says which flag to pass.
 
-A feature is a task that groups the tasks of one piece of work, and each task belongs to at most one feature of its project:
+A Bug behaves like a Task and can belong to a Feature or release. A Feature groups the tasks and bugs of one piece of work; each belongs to at most one Feature of its project:
 
 ```bash
 kaneo task create "Onboarding" -p KAN --type feature   # a feature, KAN-12
 kaneo task create "Write the welcome email" --feature KAN-12
 kaneo task edit KAN-14 --feature KAN-12                # or --feature none to take it out
 kaneo task edit KAN-9 --type feature                   # --type task turns a feature without tasks back
+kaneo task create "Fix login redirect" -p KAN --type bug
+kaneo task edit KAN-14 --type bug                      # change classification without losing its feature
+kaneo task list -p KAN --type bug                      # exact type filter; --type task excludes bugs
 ```
 
 `kaneo task view` and `kaneo task relation list` show a task's feature, or a feature's tasks. `--parent` on `task create` and the `subtask-of` and `parent-of` relation words still work but are deprecated: they put the task into a feature. In JSON, `parent` and `subtasks` repeat `feature` and `tasks` for one more Kaneo version.
+
+`--type` accepts `task`, `bug`, or `feature` on create, edit, and list. A Feature must be empty before becoming a Task or Bug. Task list and detail JSON include the item type. Creating or converting Bugs requires a server that supports them.
+
+Search JSON keeps `type: "task"` as the resource kind and preserves the server's optional `taskType` classification. Relation listings preserve each linked item's optional `type` separately from the relation's type and direction. Older servers that omit this metadata keep the previous output shape.
+
+`kaneo task export` and `kaneo task import` preserve explicit Task, Bug, and Feature types in native JSON files. Files without a type remain compatible and import as Tasks. These transfers do not restore Feature membership links or release assignments.
 
 A release holds a project's features and tasks, with a start date, a code freeze and a submission date. A task follows its feature's release until you give it another one:
 

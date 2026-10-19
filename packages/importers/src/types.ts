@@ -35,6 +35,7 @@ export type ImportedComment = {
 
 export type ImportedTask = {
   key: string;
+  type?: "task" | "bug" | "feature";
   number?: number;
   columnKey: string | null;
   archived?: boolean;

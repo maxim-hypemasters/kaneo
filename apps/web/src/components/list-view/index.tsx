@@ -19,12 +19,14 @@ import { useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useTaskViewShortcuts } from "@/components/project/task-view-keys/use-task-view-shortcuts";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import useBulkSelectionStore from "@/store/bulk-selection";
 import useProjectStore from "@/store/project";
 import type { ProjectWithTasks } from "@/types/project";
+import type { TaskType } from "@/types/task";
 import BulkToolbar from "../bulk-selection/bulk-toolbar";
 import { ArchiveTasksModal } from "../shared/modals/archive-tasks-modal";
 import CreateTaskModal from "../shared/modals/create-task-modal";
@@ -49,6 +51,7 @@ function ListView({
   );
   const clearFocus = useBulkSelectionStore((state) => state.clearFocus);
   const { mutate: updateTask } = useUpdateTask();
+  const { canCreateTasks } = useWorkspacePermission();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<
@@ -62,8 +65,10 @@ function ListView({
     }
     return sections;
   });
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [activeColumn, setActiveColumn] = useState<string | null>(null);
+  const [creation, setCreation] = useState<{
+    status: string;
+    type: TaskType;
+  } | null>(null);
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [columnToArchive, setColumnToArchive] = useState<string | null>(null);
   const archiveColumn = project.columns.find(
@@ -234,9 +239,8 @@ function ListView({
     onToggleAllGroups: toggleAllSections,
   });
 
-  const handleAddTask = useCallback((columnId: string) => {
-    setIsTaskModalOpen(true);
-    setActiveColumn(columnId);
+  const handleAddTask = useCallback((columnId: string, type: TaskType) => {
+    setCreation({ status: columnId, type });
   }, []);
 
   const handleArchiveClick = useCallback(
@@ -319,7 +323,7 @@ function ListView({
               }
               disableCollectionActions={disableCollectionActions}
               onToggle={toggleSection}
-              onAddTask={handleAddTask}
+              onAddTask={canCreateTasks() ? handleAddTask : undefined}
               onArchive={handleArchiveClick}
             />
           ))}
@@ -357,10 +361,11 @@ function ListView({
       </DragOverlay>
 
       <CreateTaskModal
-        open={isTaskModalOpen}
+        open={creation !== null}
+        type={creation?.type ?? "task"}
         projectId={project.id}
-        onClose={() => setIsTaskModalOpen(false)}
-        status={activeColumn ?? "done"}
+        onClose={() => setCreation(null)}
+        status={creation?.status}
       />
       <ArchiveTasksModal
         open={isArchiveModalOpen}

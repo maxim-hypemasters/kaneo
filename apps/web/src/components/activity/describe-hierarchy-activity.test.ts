@@ -46,11 +46,18 @@ describe("describeHierarchyActivity", () => {
 
   it("describes type changes", () => {
     expect(
+      describeHierarchyActivity(
+        "type_changed",
+        { oldType: "task", newType: "bug" },
+        t,
+      ),
+    ).toBe("activity:changedTypeToBug");
+    expect(
       describeHierarchyActivity("type_changed", { newType: "feature" }, t),
-    ).toBe("activity:madeFeature");
+    ).toBe("activity:changedTypeToFeature");
     expect(
       describeHierarchyActivity("type_changed", { newType: "task" }, t),
-    ).toBe("activity:madeTask");
+    ).toBe("activity:changedTypeToTask");
   });
 
   it("leaves other events and missing data to the caller", () => {

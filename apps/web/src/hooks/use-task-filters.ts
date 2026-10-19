@@ -4,8 +4,10 @@ import { NO_RELEASE } from "@/lib/task-filters/release-filter-values";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
+import { normalizeTaskTypes } from "@/lib/task-type";
 
 export type BoardFilters = {
+  type?: string[] | null;
   status: string[] | null;
   priority: string[] | null;
   assignee: string[] | null;
@@ -24,6 +26,7 @@ export const DUE_DATE_FILTER_VALUES = {
 } as const;
 
 const DEFAULT_FILTERS: BoardFilters = {
+  type: null,
   status: null,
   priority: null,
   assignee: null,
@@ -34,6 +37,7 @@ const DEFAULT_FILTERS: BoardFilters = {
 };
 
 const FILTER_KEYS: Array<keyof BoardFilters> = [
+  "type",
   "status",
   "priority",
   "assignee",
@@ -41,6 +45,7 @@ const FILTER_KEYS: Array<keyof BoardFilters> = [
   "labels",
   "release",
   "customFields",
+  "negated",
 ];
 
 function normalizeFilters(raw: unknown): BoardFilters {
@@ -52,6 +57,10 @@ function normalizeFilters(raw: unknown): BoardFilters {
   const normalized = { ...DEFAULT_FILTERS };
 
   for (const key of FILTER_KEYS) {
+    if (key === "type") {
+      normalized.type = normalizeTaskTypes(candidate.type);
+      continue;
+    }
     if (key === "customFields") {
       const value = candidate.customFields;
       if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -105,6 +114,11 @@ export function useTaskFilters(
 
   const filterTasks = (tasks: Task[]): Task[] => {
     return tasks.filter((task) => {
+      if (filters.type?.length) {
+        const matches = filters.type.includes(task.type ?? "task");
+        if (filters.negated?.includes("type") ? matches : !matches)
+          return false;
+      }
       if (
         filters.status &&
         filters.status.length > 0 &&

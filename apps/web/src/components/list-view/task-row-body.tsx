@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { useTranslation } from "react-i18next";
 import { CardFieldList } from "@/components/custom-fields/card-field-list";
 import { useTaskCardFields } from "@/components/custom-fields/use-task-card-fields";
@@ -79,8 +80,14 @@ export function TaskRowBody({
       )}
 
       <div className="flex min-w-0 flex-1 items-center gap-2">
+        {task.type === "bug" && (
+          <TaskTypeGlyph
+            type="bug"
+            className="size-3.5 shrink-0 text-muted-foreground"
+          />
+        )}
         <span className="truncate text-foreground text-sm">{task.title}</span>
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
           {task.type === "feature" && (
             <FeatureBadge
               className={cn(inlineMetaClass, "hover:text-muted-foreground")}
@@ -106,7 +113,7 @@ export function TaskRowBody({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-end gap-1">
+      <div className="hidden shrink-0 items-center justify-end gap-1 md:flex">
         <CardFieldList fields={cardFields} max={3} />
         {showLabels && (
           <LabelChips task={task} workspaceId={workspaceId} max={2} />
@@ -114,7 +121,7 @@ export function TaskRowBody({
       </div>
 
       {showDueDates && (
-        <div className="flex w-24 shrink-0 justify-end">
+        <div className="hidden w-24 shrink-0 justify-end sm:flex">
           <DueDateChip task={task} isCompleted={isCompleted} />
         </div>
       )}

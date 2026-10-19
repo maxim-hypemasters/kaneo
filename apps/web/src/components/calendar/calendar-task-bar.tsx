@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import type { JSX } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
@@ -8,6 +9,7 @@ export type CalendarTask = PackableTask & {
   title: string;
   number: number | null;
   status: string;
+  type?: import("@/types/task").TaskType;
 };
 
 const STATUS_CLASSES: Record<string, string> = {
@@ -70,10 +72,13 @@ export default function CalendarTaskBar({
           ? `${taskKey} · ${task.title} · ${range}`
           : `${task.title} · ${range}`
       }
-      aria-label={t("tasks:calendar.taskAriaLabel", {
-        title: task.title,
-        range,
-      })}
+      aria-label={`${task.type === "bug" ? `${t("tasks:features.typeBug")}: ` : ""}${t(
+        "tasks:calendar.taskAriaLabel",
+        {
+          title: task.title,
+          range,
+        },
+      )}`}
       data-task-status={task.status}
       onClick={() => onOpenTask(task.id)}
       className={cn(
@@ -85,7 +90,15 @@ export default function CalendarTaskBar({
         continuesAfter ? "rounded-r-none border-r-0" : "mr-1 rounded-r-md",
       )}
     >
-      <span className="truncate">{task.title}</span>
+      <span className="truncate">
+        {task.type === "bug" && (
+          <TaskTypeGlyph
+            type="bug"
+            className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+          />
+        )}
+        {task.title}
+      </span>
     </button>
   );
 }

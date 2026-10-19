@@ -12,6 +12,7 @@ import {
 
 export type RelatedTaskJson = {
   readonly id: string;
+  readonly type?: string;
   readonly ticketId: string | null;
   readonly title: string;
   readonly status: string;
@@ -46,6 +47,7 @@ export function relatedTaskJson(
   const slug = context.projectSlugs.get(task.projectId);
   return {
     id: task.id,
+    ...(task.type === undefined ? {} : { type: task.type }),
     ticketId: slug ? ticketId(slug, task.number) : null,
     title: task.title,
     status: task.status,

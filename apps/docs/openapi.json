@@ -275,23 +275,24 @@
             "type": "string",
             "enum": [
               "task",
+              "bug",
               "feature"
             ],
-            "description": "A feature groups tasks of its own project, like an epic; a task can belong to one feature."
+            "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
           },
           "featureId": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The feature this task belongs to, in the same project. Always null for a feature."
+            "description": "The feature this task or bug belongs to, in the same project. Always null for a feature."
           },
           "releaseId": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The release this task or feature is planned in, from its own project. Always null on public boards."
+            "description": "The release this task, bug or feature is planned in, from its own project. Always null on public boards."
           },
           "subtaskCounts": {
             "type": "object",
@@ -309,7 +310,7 @@
               "completed",
               "total"
             ],
-            "description": "For a feature, its tasks and how many are in a final column; zero for a task. Counts every task in the feature, whatever the board's filters."
+            "description": "For a feature, its tasks and bugs and how many are in a final column; zero for a task or bug. Counts all members, whatever the board's filters."
           },
           "labels": {
             "type": "array",
@@ -1055,6 +1056,15 @@
           "title": {
             "type": "string"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "bug",
+              "feature"
+            ],
+            "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
+          },
           "status": {
             "type": "string",
             "description": "The slug of the column the task sits in."
@@ -1107,6 +1117,7 @@
           "projectId",
           "number",
           "title",
+          "type",
           "status",
           "statusName",
           "statusIcon",
@@ -1144,7 +1155,7 @@
                 "string",
                 "null"
               ],
-              "description": "The release this task or feature is planned in, from its own project. Always null on public boards."
+              "description": "The release this task, bug or feature is planned in, from its own project. Always null on public boards."
             }
           },
           "required": [
@@ -1300,23 +1311,24 @@
             "type": "string",
             "enum": [
               "task",
+              "bug",
               "feature"
             ],
-            "description": "A feature groups tasks of its own project, like an epic; a task can belong to one feature."
+            "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
           },
           "featureId": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The feature this task belongs to, in the same project. Always null for a feature."
+            "description": "The feature this task or bug belongs to, in the same project. Always null for a feature."
           },
           "releaseId": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The release this task or feature is planned in, from its own project. Always null on public boards."
+            "description": "The release this task, bug or feature is planned in, from its own project. Always null on public boards."
           },
           "customFields": {
             "type": "array",
@@ -1407,7 +1419,7 @@
                   "completed",
                   "total"
                 ],
-                "description": "For a feature, its tasks and how many are in a final column. Zero for a task."
+                "description": "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug."
               },
               "parentSubtaskCounts": {
                 "type": "array",
@@ -1530,6 +1542,15 @@
           "title": {
             "type": "string"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "bug",
+              "feature"
+            ],
+            "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
+          },
           "description": {
             "type": "string"
           },
@@ -1569,6 +1590,7 @@
         },
         "required": [
           "title",
+          "type",
           "description",
           "status",
           "priority",
@@ -1642,7 +1664,7 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "For a feature, its tasks that moved with it, ordered by id. Empty for a task."
+                "description": "For a feature, its tasks and bugs that moved with it, ordered by id. Empty for a task or bug."
               }
             },
             "required": [
@@ -1736,7 +1758,8 @@
                     "required": [
                       "total",
                       "completed"
-                    ]
+                    ],
+                    "description": "Tasks and bugs counted together."
                   },
                   "features": {
                     "type": "object",
@@ -1759,7 +1782,7 @@
                   "unfinished": {
                     "type": "integer",
                     "minimum": 0,
-                    "description": "Tasks and features neither archived nor in a final column, which Move unfinished would move."
+                    "description": "Tasks, bugs and features neither archived nor in a final column, which Move unfinished would move."
                   }
                 },
                 "required": [
@@ -1767,7 +1790,7 @@
                   "features",
                   "unfinished"
                 ],
-                "description": "The release's tasks and features. Archived items count in the totals."
+                "description": "The release's tasks, bugs and features. Tasks and bugs share the tasks counts. Archived items count in the totals."
               }
             },
             "required": [
@@ -2642,6 +2665,15 @@
               "comment",
               "activity"
             ]
+          },
+          "taskType": {
+            "type": "string",
+            "enum": [
+              "task",
+              "bug",
+              "feature"
+            ],
+            "description": "The item type for task search results."
           },
           "title": {
             "type": "string"
@@ -4327,6 +4359,15 @@
           "title": {
             "type": "string"
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "bug",
+              "feature"
+            ],
+            "description": "A feature groups tasks and bugs of its own project. A task or bug can belong to one feature."
+          },
           "status": {
             "type": "string"
           },
@@ -4365,6 +4406,7 @@
         "required": [
           "id",
           "title",
+          "type",
           "status",
           "isCompleted",
           "priority",
@@ -5826,6 +5868,21 @@
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "task",
+                "bug",
+                "feature"
+              ],
+              "description": "Only items of this type, filtered before pagination."
+            },
+            "required": false,
+            "description": "Only items of this type, filtered before pagination.",
+            "name": "type",
+            "in": "query"
           },
           {
             "schema": {
@@ -10976,6 +11033,21 @@
           },
           {
             "schema": {
+              "type": "string",
+              "enum": [
+                "task",
+                "bug",
+                "feature"
+              ],
+              "description": "Only items of this type, filtered before pagination."
+            },
+            "required": false,
+            "description": "Only items of this type, filtered before pagination.",
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string"
             },
             "required": false,
@@ -11680,7 +11752,7 @@
           "Tasks"
         ],
         "summary": "Create task",
-        "description": "Add a task to a project. It is placed in the column named by `status`. Without releaseId, a task created in a feature starts in that feature's release, and any other task in none; an explicit releaseId, or null for none, wins.",
+        "description": "Add a task, bug or feature to a project, defaulting to task. It is placed in the column named by status. Tasks and bugs may belong to a feature. Without releaseId they inherit that feature's release; an explicit releaseId, or null for none, wins.",
         "parameters": [
           {
             "schema": {
@@ -11757,6 +11829,7 @@
                     "type": "string",
                     "enum": [
                       "task",
+                      "bug",
                       "feature"
                     ],
                     "description": "Defaults to task."
@@ -12558,6 +12631,15 @@
                         "title": {
                           "type": "string"
                         },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "task",
+                            "bug",
+                            "feature"
+                          ],
+                          "description": "Defaults to task for older exports."
+                        },
                         "description": {
                           "type": "string"
                         },
@@ -13137,7 +13219,7 @@
           "Tasks"
         ],
         "summary": "Update task feature",
-        "description": "Put a task into a feature of its project, or take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one. A task in no release takes the feature's release when it joins, and records that in its activity; leaving or switching features keeps its release.",
+        "description": "Put a task or bug into a feature of its project, or remove its membership. Either belongs to at most one feature; a feature can't belong to one. An item in no release takes the feature's release when it joins and records the change in activity. Leaving or switching features keeps its release.",
         "parameters": [
           {
             "schema": {
@@ -13363,7 +13445,7 @@
           "Tasks"
         ],
         "summary": "Update task type",
-        "description": "Turn a task into a feature, or a feature back into a task. A task that becomes a feature leaves its own feature.",
+        "description": "Switch between task, bug and feature. Task-to-bug and bug-to-task changes preserve the item's feature. Making either a feature removes its parent. A feature can become a task or bug only after all members are removed. Every conversion preserves its release and other fields.",
         "parameters": [
           {
             "schema": {
@@ -13385,9 +13467,10 @@
                     "type": "string",
                     "enum": [
                       "task",
+                      "bug",
                       "feature"
                     ],
-                    "description": "Making a task a feature takes it out of its own feature; a feature can become a task once it has no tasks."
+                    "description": "Tasks and bugs keep their feature when switching between those types. Making either a feature removes its parent. A feature can become a task or bug only when it has no members."
                   }
                 },
                 "required": [
@@ -13449,7 +13532,7 @@
             }
           },
           "409": {
-            "description": "The feature still has tasks",
+            "description": "The feature still has tasks or bugs",
             "content": {
               "application/json": {
                 "schema": {

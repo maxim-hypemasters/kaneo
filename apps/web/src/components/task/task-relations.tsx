@@ -268,6 +268,7 @@ export default function TaskRelations({
   }): Task => ({
     id: item.task.id,
     title: item.task.title,
+    type: item.task.type,
     number: item.task.number,
     description: null,
     status: item.task.status,
@@ -342,6 +343,7 @@ export default function TaskRelations({
                       item.task.number,
                     )}
                     title={item.task.title}
+                    itemType={item.task.type}
                     done={isFinal}
                     onOpen={() => handleNavigateToTask(item.task)}
                     tag={<RelationTag kind={item.kind} />}

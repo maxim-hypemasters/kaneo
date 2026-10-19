@@ -33,6 +33,7 @@ import { taskIsCompleted } from "../task-is-completed";
 import { getSubtaskCounts } from "../get-subtask-counts";
 
 export type GetTasksOptions = {
+  type?: typeof taskTable.$inferSelect.type;
   publicOnly?: boolean;
   assigneeId?: string;
   dueAfter?: string;
@@ -120,6 +121,8 @@ async function getTasksPage(
   }
 
   const conditions = [eq(taskTable.projectId, projectId)];
+
+  if (options.type) conditions.push(eq(taskTable.type, options.type));
 
   if (options.status) {
     conditions.push(eq(taskTable.status, options.status));

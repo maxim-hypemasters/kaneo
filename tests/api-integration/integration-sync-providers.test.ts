@@ -17,6 +17,8 @@ import { syncLatestTaskValue } from "../../apps/api/src/plugins/github/services/
 import { giteaPlugin } from "../../apps/api/src/plugins/gitea";
 import { handleGiteaIssueLabeled } from "../../apps/api/src/plugins/gitea/webhooks/issue-labeled";
 import { handleIssueLabeled } from "../../apps/api/src/plugins/github/webhooks/issue-labeled";
+import { handleIssueEdited } from "../../apps/api/src/plugins/github/webhooks/issue-edited";
+import { handleGiteaIssueEdited } from "../../apps/api/src/plugins/gitea/webhooks/issue-edited";
 import { handleGitlabIssueUpdated } from "../../apps/api/src/plugins/gitlab/webhooks/issue-updated";
 import { handleGiteaIssueOpened } from "../../apps/api/src/plugins/gitea/webhooks/issue-opened";
 import { githubPlugin } from "../../apps/api/src/plugins/github";
@@ -237,6 +239,79 @@ describe.each(["github", "gitea", "gitlab"] as const)(
       gitea: mocks.giteaCreate,
       gitlab: mocks.gitlabCreate,
     }[type];
+    it("preserves an explicit Bug classification through outbound and inbound issue sync", async () => {
+      const f = await setup(type);
+      await db
+        .update(schema.taskTable)
+        .set({ type: "bug" })
+        .where(eq(schema.taskTable.id, f.task.id));
+      await f.assign();
+      await reconcileTaskSync(f.project.id, f.task.id);
+      expect(create).toHaveBeenCalledOnce();
+
+      const title = "Provider edited bug";
+      if (type === "github") {
+        await handleIssueEdited({
+          action: "edited",
+          installation: { id: 2 },
+          repository: {
+            id: 1,
+            owner: { login: "team" },
+            name: "repo",
+            full_name: "team/repo",
+          },
+          issue: {
+            number: 12,
+            title,
+            body: "Repository body",
+            html_url: "https://github.com/team/repo/issues/12",
+          },
+          changes: { title: { from: f.task.title } },
+        });
+      } else if (type === "gitea") {
+        await handleGiteaIssueEdited(
+          {
+            action: "edited",
+            repository: {
+              owner: { login: "team" },
+              name: "repo",
+              html_url: "https://git.example/team/repo",
+            },
+            issue: {
+              number: 12,
+              title,
+              body: "Repository body",
+              html_url: "https://git.example/team/repo/issues/12",
+            },
+            changes: { title: { from: f.task.title } },
+          },
+          f.integration.id,
+        );
+      } else {
+        await handleGitlabIssueUpdated(
+          {
+            object_attributes: {
+              iid: 12,
+              title,
+              description: "Repository body",
+              url: "https://gitlab.example/team/repo/-/issues/12",
+            },
+            project: {
+              name: "repo",
+              path_with_namespace: "team/repo",
+              web_url: "https://gitlab.example/team/repo",
+            },
+            changes: { title: { previous: f.task.title, current: title } },
+          },
+          f.integration.id,
+        );
+      }
+      expect(
+        await db.query.taskTable.findFirst({
+          where: eq(schema.taskTable.id, f.task.id),
+        }),
+      ).toMatchObject({ id: f.task.id, title, type: "bug" });
+    });
     it("commits an inbound scope-label removal with a paused link before publishing", async () => {
       const f = await setup(type);
       await f.assign();

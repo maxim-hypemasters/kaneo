@@ -5,7 +5,7 @@ description: "Plan what ships together, with a start date, a code freeze, and a 
 
 A release is a named plan for a project, such as “2.4,” with three dates: when work starts, when changes stop, and when it ships. It holds features and tasks of that project, much like a sprint or a cycle in other tools. Use one when a group of work has to be ready by the same day.
 
-Each task or feature is in one release at most, and only in a release of its own project.
+Each Task, Bug, or Feature is in one release at most, and only in a release of its own project. Bugs follow the same membership and feature-following rules as Tasks. Counts labeled **Tasks** include both Tasks and Bugs.
 
 ## Open Releases
 
@@ -60,7 +60,7 @@ To delete a release, choose **Delete release** in the same menus and confirm. It
 
 - **In a task or feature:** open it, select **Release** in its properties, and pick a release, or **No release** to take it out. In an open task, **Shift+C** opens the same list. The list shows each release's dates, and marks the release of the task's feature with **Feature's release**.
 - **When you create a task:** select the **Release** chip in the new task window. If you chose a feature, the chip follows it and shows, for example, “2.4 (from feature).” Pick a release, or **No release**, to choose for yourself. **Create more** keeps your choice for the next task.
-- **From a release:** while a release is open, a task you create with **C** or the command menu starts in that release, and so does one you create with **Add task** at the top of the release's page.
+- **From a release:** choose **New**, then **New task**, **New feature**, or **New bug**. The creation window starts with that release selected. A task you create with **C** or the command menu while a release is open also starts in that release.
 
 ## How tasks follow their feature
 
@@ -99,7 +99,7 @@ The page shows the release's phase, countdown, and description, then one **Progr
 - **Started** includes tasks in workflow columns after the first unfinished column, including In Review and Done. Completed tasks stay included. Planned and archived tasks don't count as started.
 - **Completed** counts tasks in columns with **Done** turned on.
 
-The task count includes archived tasks; features don't add to it. The chart uses your device's time zone. Smooth curves connect the recorded daily totals for Started and Completed; tooltips show the exact counts for each day. Hover or tap a day to see its expected, started, and completed counts, or focus the chart and use the arrow keys. **Home** and **End** jump to the first and last recorded day. Started and Completed have no future values, while the Predicted guide runs to code freeze. Its expected count stays at the full scope after code freeze. When start and code freeze are the same day, the guide is vertical and that day expects the full scope.
+The task count includes Tasks and Bugs, including archived ones; features don't add to it. Changing a Task to a Bug or back leaves the totals unchanged. The chart uses your device's time zone. Smooth curves connect the recorded daily totals for Started and Completed; tooltips show the exact counts for each day. Hover or tap a day to see its expected, started, and completed counts, or focus the chart and use the arrow keys. **Home** and **End** jump to the first and last recorded day. Started and Completed have no future values, while the Predicted guide runs to code freeze. Its expected count stays at the full scope after code freeze. When start and code freeze are the same day, the guide is vertical and that day expects the full scope.
 
 History begins when progress tracking becomes available on your instance; a shaded gap marks earlier dates whose progress is unknown. The Predicted guide still covers that period because it describes the plan, independently of recorded activity. Editing dates doesn't invent earlier history. Changes after submission still appear, while days with no further change don't keep stretching a past release's chart.
 

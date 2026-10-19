@@ -58,6 +58,25 @@ describe("releaseProgress", () => {
       unfinished: 0,
     });
   });
+
+  it("counts Bugs with Tasks, including completed and archived Bugs", () => {
+    expect(
+      releaseProgress(
+        [
+          { type: "task", status: "todo" },
+          { type: "bug", status: "done" },
+          { type: "bug", status: "archived" },
+        ],
+        done,
+      ),
+    ).toEqual({
+      tasks: 3,
+      completedTasks: 1,
+      features: 0,
+      completedFeatures: 0,
+      unfinished: 1,
+    });
+  });
 });
 
 describe("finalStatuses", () => {

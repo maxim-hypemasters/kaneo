@@ -97,6 +97,7 @@ export async function writeProjectContent(
       new Map(tasks.map((task) => [task.key, task.id])),
     ),
     tasks.map((task) => task.id),
+    new Map(tasks.map((task) => [task.id, task.type])),
   );
   await writeImportFeatures(tx, hierarchy);
   // Feature links count as relations, as the subtask links they came from.

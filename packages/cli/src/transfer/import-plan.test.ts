@@ -21,6 +21,19 @@ const columns = [
 ];
 
 describe("planImport", () => {
+  it("passes explicit item types without inventing them for legacy files", () => {
+    const tasks = planImport(
+      [
+        { title: "Bug", type: "bug", labels: 0 },
+        { title: "Feature", type: "feature", labels: 0 },
+        { title: "Legacy", labels: 0 },
+      ],
+      columns,
+    ).tasks;
+    expect(tasks[0]).toMatchObject({ type: "bug" });
+    expect(tasks[1]).toMatchObject({ type: "feature" });
+    expect(tasks[2]).not.toHaveProperty("type");
+  });
   it("keeps known statuses and matches names to column slugs", () => {
     const plan = planImport(
       [

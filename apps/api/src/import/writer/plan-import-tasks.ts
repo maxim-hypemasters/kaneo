@@ -4,11 +4,13 @@ import type {
   ImportedTask,
 } from "@kaneo/importers";
 import { VALID_PRIORITIES } from "../../task/validate-task-fields";
+import type { TaskType } from "../../task/task-type";
 
 export type BoardColumn = { id: string; slug: string };
 
 export type PlannedImportTask = {
   id: string;
+  type: TaskType;
   key: string;
   number: number;
   title: string;
@@ -90,6 +92,7 @@ export function planImportTasks({
 
     return {
       id: newId(),
+      type: task.type ?? "task",
       key: task.key,
       number,
       title: task.title.trim() || UNTITLED_TASK,

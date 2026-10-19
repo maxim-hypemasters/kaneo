@@ -132,7 +132,7 @@ async function runCommand(label: string) {
 
 describe("CommandPalette", () => {
   it("creates a feature from its command", async () => {
-    await runCommand("navigation:commandPalette.createFeature");
+    await runCommand("tasks:createMenu.newFeature");
 
     expect(
       await screen.findByRole("dialog", { name: "create-feature" }),
@@ -141,7 +141,7 @@ describe("CommandPalette", () => {
 
   it("creates the feature in the project and backlog the route is on", async () => {
     m.pathname = "/dashboard/workspace/workspace-1/project/project-1/backlog";
-    await runCommand("navigation:commandPalette.createFeature");
+    await runCommand("tasks:createMenu.newFeature");
 
     const dialog = await screen.findByRole("dialog", {
       name: "create-feature",
@@ -151,11 +151,19 @@ describe("CommandPalette", () => {
   });
 
   it("still creates a task from its command", async () => {
-    await runCommand("navigation:commandPalette.createTask");
+    await runCommand("tasks:createMenu.newTask");
 
     expect(
       await screen.findByRole("dialog", { name: "create-task" }),
     ).toBeInTheDocument();
+  });
+
+  it("creates a Bug in the current project's backlog", async () => {
+    m.pathname = "/dashboard/workspace/workspace-1/project/project-1/backlog";
+    await runCommand("tasks:createMenu.newBug");
+    const dialog = await screen.findByRole("dialog", { name: "create-bug" });
+    expect(dialog).toHaveAttribute("data-project", "project-1");
+    expect(dialog).toHaveAttribute("data-status", "planned");
   });
 
   it("still creates a task from its shortcut", () => {
@@ -170,7 +178,7 @@ describe("CommandPalette", () => {
   it("starts a task created on a release's page in that release", async () => {
     m.pathname =
       "/dashboard/workspace/workspace-1/project/project-1/releases/release-1";
-    await runCommand("navigation:commandPalette.createTask");
+    await runCommand("tasks:createMenu.newTask");
 
     const dialog = await screen.findByRole("dialog", { name: "create-task" });
     expect(dialog).toHaveAttribute("data-project", "project-1");
@@ -179,7 +187,7 @@ describe("CommandPalette", () => {
 
   it("creates a task without a release elsewhere", async () => {
     m.pathname = "/dashboard/workspace/workspace-1/project/project-1/releases";
-    await runCommand("navigation:commandPalette.createTask");
+    await runCommand("tasks:createMenu.newTask");
 
     const dialog = await screen.findByRole("dialog", { name: "create-task" });
     expect(dialog).not.toHaveAttribute("data-release");
@@ -219,7 +227,7 @@ describe("CommandPalette releases", () => {
   it("offers releases only inside a project, and creating only to managers", async () => {
     render(<CommandPalette />);
     act(() => m.shortcuts.get("openCommandMenu")?.());
-    await screen.findByText("navigation:commandPalette.createTask");
+    await screen.findByText("tasks:createMenu.newTask");
     expect(
       screen.queryByText("navigation:commandPalette.goToReleases"),
     ).toBeNull();

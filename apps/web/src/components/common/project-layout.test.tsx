@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type { ProjectRoute } from "@/components/project/views/project-views";
@@ -10,6 +10,13 @@ const project = vi.hoisted(() => ({
   current: { data: undefined, error: null } as {
     data: { name: string } | undefined;
     error: unknown;
+  },
+  canCreate: true,
+  creation: {} as {
+    open: boolean;
+    type: string;
+    projectId: string;
+    status?: string;
   },
 }));
 
@@ -35,6 +42,9 @@ vi.mock("@/hooks/queries/project/use-get-project", () => ({
 vi.mock("@/hooks/use-project-websocket", () => ({
   useProjectWebSocket: () => undefined,
 }));
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({ canCreateTasks: () => project.canCreate }),
+}));
 vi.mock("@/components/common/layout", () => {
   const Layout = ({ children }: { children: ReactNode }) => <>{children}</>;
   Layout.Header = ({ children }: { children: ReactNode }) => <>{children}</>;
@@ -56,12 +66,19 @@ vi.mock("@/components/common/header/workspace-crumb-select", () => ({
 vi.mock("@/components/shared/modals/create-project-modal", () => ({
   default: () => null,
 }));
+vi.mock("@/components/shared/modals/create-task-modal", () => ({
+  default: (props: typeof project.creation) => {
+    project.creation = props;
+    return props.open ? <div role="dialog">{props.type}</div> : null;
+  },
+}));
 vi.mock("@/components/page-title", () => ({ default: () => null }));
 
 afterEach(() => {
   cleanup();
   localStorage.removeItem("user-preferences");
   useUserPreferencesStore.setState({ viewMode: "board", taskLayout: "board" });
+  project.canCreate = true;
 });
 
 function renderLayout(activeView: ProjectRoute = "board") {
@@ -192,6 +209,43 @@ describe("ProjectLayout releases", () => {
 });
 
 describe("ProjectLayout tasks view", () => {
+  it.each(["board", "calendar", "gantt", "backlog"] as const)(
+    "creates the selected type from the %s header",
+    (view) => {
+      project.current = { data: { name: "Alpha" }, error: null };
+      renderLayout(view);
+      fireEvent.click(
+        screen.getByRole("button", { name: "tasks:createMenu.label" }),
+      );
+      fireEvent.click(
+        screen.getByRole("menuitem", { name: "tasks:createMenu.newBug" }),
+      );
+      expect(project.creation).toMatchObject({
+        open: true,
+        type: "bug",
+        projectId: "project-1",
+        status: view === "backlog" ? "planned" : undefined,
+      });
+    },
+  );
+
+  it("leaves release creation to its contextual header", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    renderLayout("releases");
+    expect(
+      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
+    ).toBeNull();
+  });
+
+  it("hides header creation without permission", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    project.canCreate = false;
+    renderLayout();
+    expect(
+      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
+    ).toBeNull();
+  });
+
   it("returns from the backlog to a task view reached by a link", () => {
     project.current = { data: { name: "Alpha" }, error: null };
     useUserPreferencesStore.setState({ viewMode: "list", taskLayout: "gantt" });

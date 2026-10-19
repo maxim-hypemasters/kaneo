@@ -40,6 +40,7 @@ const webUrl = "https://kaneo.test";
 describe("toMineTaskJson", () => {
   it("adds the ticket id, workspace and link", () => {
     expect(toMineTaskJson(assigned(1, "Fix login"), "ws_1", webUrl)).toEqual({
+      type: "task",
       id: "t1",
       ticketId: "KAN-1",
       number: 1,

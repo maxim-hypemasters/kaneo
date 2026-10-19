@@ -1,3 +1,4 @@
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { format } from "date-fns";
 import { Layers } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -87,6 +88,12 @@ export function GanttTaskRow({
               </p>
             ) : (
               <p className="w-full line-clamp-1 text-xs font-medium leading-tight text-foreground">
+                {task.type === "bug" && (
+                  <TaskTypeGlyph
+                    type="bug"
+                    className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+                  />
+                )}
                 {task.title}
               </p>
             )}

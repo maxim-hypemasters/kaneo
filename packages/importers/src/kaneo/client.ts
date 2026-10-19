@@ -24,6 +24,7 @@ export type KaneoExternalLink = {
 
 export type KaneoBoardTask = {
   id: string;
+  type?: string;
   title: string;
   number: number | null;
   description: string | null;

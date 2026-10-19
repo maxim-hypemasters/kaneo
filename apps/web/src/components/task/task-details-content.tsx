@@ -52,6 +52,7 @@ export default function TaskDetailsContent({
             projectId={task.projectId}
             workspaceId={workspaceId}
             featureStatus={task.status}
+            featureReleaseId={task.releaseId}
           />
         )}
         <TaskRelations

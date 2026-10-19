@@ -3,6 +3,7 @@ import {
   resolveFeatureHierarchy,
 } from "../../task/feature-hierarchy/resolve-feature-hierarchy";
 import type { PlannedImportRelation } from "./plan-import-relations";
+import type { TaskType } from "../../task/task-type";
 
 // Imported "subtask" links (Jira parents, Linear and Plane sub-issues, Kaneo
 // exports) become features the same way existing ones were converted: each
@@ -11,6 +12,7 @@ import type { PlannedImportRelation } from "./plan-import-relations";
 export function planImportFeatures(
   relations: readonly PlannedImportRelation[],
   taskIds: readonly string[],
+  taskTypes: ReadonlyMap<string, TaskType> = new Map(),
 ) {
   const subtasks = relations.filter(
     (relation) => relation.relationType === "subtask",
@@ -19,7 +21,11 @@ export function planImportFeatures(
     (relation) => relation.relationType !== "subtask",
   );
   const plan = resolveFeatureHierarchy({
-    tasks: taskIds.map((id) => ({ id, type: "task", featureId: null })),
+    tasks: taskIds.map((id) => ({
+      id,
+      type: taskTypes.get(id) ?? "task",
+      featureId: null,
+    })),
     // Import order stands in for age, so the source's first parent wins.
     edges: subtasks.map((relation, index) => ({
       id: String(index),

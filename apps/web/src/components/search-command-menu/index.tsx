@@ -27,6 +27,8 @@ import {
 import { useOpenProject } from "@/components/project/views/use-open-project";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import type { TaskType } from "@/types/task";
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 
 type SearchResultItem = {
   id: string;
@@ -34,6 +36,7 @@ type SearchResultItem = {
   description?: string;
   content?: string;
   type: "task" | "project" | "workspace" | "comment" | "activity";
+  taskType?: TaskType;
   projectId?: string;
   workspaceId?: string;
   taskNumber?: number;
@@ -210,12 +213,19 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
                             value={`${item.title} ${item.description || ""} ${item.type} ${item.id}`}
                             onClick={() => handleSelect(item)}
                             className="flex items-start gap-3 py-3"
-                            aria-label={`${item.type}: ${item.title}`}
+                            aria-label={`${item.taskType === "bug" ? t("tasks:features.typeBug") : item.type}: ${item.title}`}
                           >
-                            <Icon
-                              className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0"
-                              aria-hidden="true"
-                            />
+                            {item.taskType === "bug" ? (
+                              <TaskTypeGlyph
+                                type="bug"
+                                className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0"
+                              />
+                            ) : (
+                              <Icon
+                                className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0"
+                                aria-hidden="true"
+                              />
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm truncate">
                                 {item.title}

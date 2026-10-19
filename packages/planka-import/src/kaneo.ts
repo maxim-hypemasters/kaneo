@@ -1,7 +1,7 @@
 export type KaneoWorkspace = { id: string; name: string; slug?: string };
 export type KaneoProject = { id: string; name: string; slug: string };
 export type KaneoColumn = { id: string; name: string; slug: string };
-export type KaneoTaskType = "task" | "feature";
+export type KaneoTaskType = "task" | "bug" | "feature";
 // type and featureId are missing on servers from before features.
 export type KaneoTask = {
   id: string;

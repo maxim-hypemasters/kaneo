@@ -4,8 +4,6 @@ import {
   CircleDot,
   Clock,
   Copy,
-  LayersMinus,
-  LayersPlus,
   LinkIcon,
   Trash2,
   Unlink2,
@@ -45,6 +43,10 @@ import { getTaskPath } from "@/lib/task-link";
 import { toast } from "@/lib/toast";
 import useProjectStore from "@/store/project";
 import type Task from "@/types/task";
+import { TASK_TYPES, type TaskType } from "@/types/task";
+import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
+import { TASK_TYPE_CONVERSIONS } from "@/lib/task-type";
+import { HttpError } from "@/lib/http-error";
 import { PriorityGlyph } from "@/components/task-chips/priority-glyph";
 import { DueDateSubmenu } from "./due-date-submenu";
 
@@ -144,11 +146,19 @@ export default function TaskCardContextMenuContent({
     });
   };
 
-  const handleConvert = async () => {
+  const handleConvert = async (type: TaskType) => {
     try {
-      await updateTaskType({ task, type: isFeature ? "task" : "feature" });
-    } catch {
-      toast.error(t("tasks:features.typeError"));
+      await updateTaskType({ task, type });
+    } catch (error) {
+      toast.error(
+        t(
+          type !== "feature" &&
+            error instanceof HttpError &&
+            error.status === 409
+            ? "tasks:features.convertLeafBlocked"
+            : "tasks:features.typeError",
+        ),
+      );
     }
   };
 
@@ -307,31 +317,30 @@ export default function TaskCardContextMenuContent({
       {canEdit && (
         <>
           <ContextMenuSeparator />
-          <ContextMenuItem
-            className="[&>svg]:mx-0"
-            disabled={convertBlocked}
-            onClick={handleConvert}
-          >
-            {isFeature ? (
-              <LayersMinus className="size-3.5 text-muted-foreground" />
-            ) : (
-              <LayersPlus className="size-3.5 text-muted-foreground" />
-            )}
-            <span className="flex min-w-0 flex-col">
-              <span>
-                {t(
-                  isFeature
-                    ? "tasks:features.convertToTask"
-                    : "tasks:features.convertToFeature",
-                )}
-              </span>
-              {convertBlocked && (
-                <span className="text-muted-foreground text-xs">
-                  {t("tasks:features.convertBlocked")}
+          {TASK_TYPES.filter((type) => type !== (task.type ?? "task")).map(
+            (type) => (
+              <ContextMenuItem
+                key={type}
+                className="[&>svg]:mx-0"
+                disabled={convertBlocked}
+                onClick={() => void handleConvert(type)}
+              >
+                <TaskTypeGlyph
+                  type={type}
+                  decorative
+                  className="size-3.5 text-muted-foreground"
+                />
+                <span className="flex min-w-0 flex-col">
+                  <span>{t(TASK_TYPE_CONVERSIONS[type])}</span>
+                  {convertBlocked && (
+                    <span className="text-muted-foreground text-xs">
+                      {t("tasks:features.convertLeafBlocked")}
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-          </ContextMenuItem>
+              </ContextMenuItem>
+            ),
+          )}
           {task.featureId && (
             <ContextMenuItem
               className="[&>svg]:mx-0"

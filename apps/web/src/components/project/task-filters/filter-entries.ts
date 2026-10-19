@@ -90,7 +90,7 @@ export function subjectFilterEntries(
   formatCount: (count: number) => string,
 ): FilterEntryGroup[] {
   const items = optionEntries(subject, query, (option) =>
-    option.count ? formatCount(option.count) : undefined,
+    option.count !== undefined ? formatCount(option.count) : undefined,
   );
   return items.length > 0 ? [{ value: subject.id, items }] : [];
 }

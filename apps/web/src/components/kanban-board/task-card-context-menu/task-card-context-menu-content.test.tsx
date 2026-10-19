@@ -254,7 +254,7 @@ describe("feature actions", () => {
       name: /tasks:features.convertToTask/,
     });
     expect(convert).toBeDisabled();
-    expect(convert).toHaveTextContent("tasks:features.convertBlocked");
+    expect(convert).toHaveTextContent("tasks:features.convertLeafBlocked");
   });
 
   it("takes a task out of its feature", () => {

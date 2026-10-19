@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { getBoardPage } from "../api/endpoints.js";
 import type { Query } from "../api/kaneo-api.js";
 import type { BoardLabel, BoardTask } from "../api/schemas.js";
+import type { TaskType } from "../api/task-features.js";
 
 export type TaskSortField =
   | "createdAt"
@@ -12,6 +13,7 @@ export type TaskSortField =
   | "number";
 
 export type TaskFilters = {
+  readonly type?: TaskType | undefined;
   readonly status?: string | undefined;
   readonly priority?: string | undefined;
   readonly assigneeId?: string | undefined;
@@ -74,6 +76,7 @@ export const loadBoard = Effect.fn("tasks.loadBoard")(function* (
       page,
       limit: Math.min(PAGE_SIZE, limit),
       status: filters.status,
+      type: filters.type,
       priority: filters.priority,
       assigneeId: filters.assigneeId,
       sortBy: filters.sortBy,

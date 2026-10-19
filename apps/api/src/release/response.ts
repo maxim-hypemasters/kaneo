@@ -31,16 +31,18 @@ export const releaseWithProgressSchema = releaseSchema
   .extend({
     progress: z
       .object({
-        tasks: itemCounts,
+        tasks: itemCounts.openapi({
+          description: "Tasks and bugs counted together.",
+        }),
         features: itemCounts,
         unfinished: z.number().int().nonnegative().openapi({
           description:
-            "Tasks and features neither archived nor in a final column, which Move unfinished would move.",
+            "Tasks, bugs and features neither archived nor in a final column, which Move unfinished would move.",
         }),
       })
       .openapi({
         description:
-          "The release's tasks and features. Archived items count in the totals.",
+          "The release's tasks, bugs and features. Tasks and bugs share the tasks counts. Archived items count in the totals.",
       }),
   })
   .openapi("ReleaseWithProgress");

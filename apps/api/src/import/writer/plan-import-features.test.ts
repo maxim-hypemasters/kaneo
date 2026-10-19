@@ -8,6 +8,18 @@ const link = (
 ) => ({ sourceTaskId, targetTaskId, relationType });
 
 describe("planImportFeatures", () => {
+  it("preserves explicit feature roots and Bug children", () => {
+    const plan = planImportFeatures(
+      [link("feature", "bug")],
+      ["feature", "bug"],
+      new Map([
+        ["feature", "feature"],
+        ["bug", "bug"],
+      ]),
+    );
+    expect(plan.features).toEqual([]);
+    expect(Object.fromEntries(plan.memberships)).toEqual({ bug: "feature" });
+  });
   it("turns an imported tree into one feature and its tasks", () => {
     const plan = planImportFeatures(
       [

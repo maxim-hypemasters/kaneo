@@ -1,5 +1,6 @@
+import { Effect, Schema } from "effect";
 import { describe, expect, it } from "vite-plus/test";
-import type { SearchHit } from "../api/search.js";
+import { type SearchHit, SearchResponse } from "../api/search.js";
 import {
   normalizeSearchResults,
   type SearchContext,
@@ -84,6 +85,33 @@ const otherWorkspace: SearchHit = {
 };
 
 describe("normalizeSearchResults", () => {
+  it.each(["task", "bug", "feature", null])(
+    "preserves task classification %s through API decoding without changing the resource kind",
+    async (taskType) => {
+      const response = await Effect.runPromise(
+        Schema.decodeUnknownEffect(SearchResponse)({
+          results: [{ ...task, taskType }],
+          totalCount: 1,
+        }),
+      );
+      expect(
+        normalizeSearchResults(response.results, context)[0],
+      ).toMatchObject({
+        type: "task",
+        taskType,
+        ticketId: "KAN-1",
+      });
+    },
+  );
+
+  it("keeps absent task metadata absent and ignores it on other resource kinds", () => {
+    const results = normalizeSearchResults(
+      [task, { ...project, taskType: "bug" }],
+      context,
+    );
+    for (const result of results) expect(result).not.toHaveProperty("taskType");
+  });
+
   it("maps a task to the stable result shape", () => {
     expect(normalizeSearchResults([task], context)).toEqual([
       {

@@ -80,6 +80,11 @@ export function taskMatchesFilters(
   const labelIds = (task.labels ?? []).map((label) => label.id);
   const checks: Array<[string, string[] | null | undefined, () => boolean]> = [
     [
+      "type",
+      filters.type,
+      () => filters.type?.includes(task.type ?? "task") ?? false,
+    ],
+    [
       "status",
       filters.status,
       () => filters.status?.includes(task.status) ?? false,

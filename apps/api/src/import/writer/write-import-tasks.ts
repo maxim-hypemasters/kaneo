@@ -15,6 +15,7 @@ export async function writeImportTasks(
     await tx.insert(taskTable).values(
       batch.map((task) => ({
         id: task.id,
+        type: task.type,
         projectId,
         number: task.number,
         title: task.title,

@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Layers, Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { TrialExpiredCallout } from "@/components/billing/trial-expired-callout";
@@ -12,7 +11,7 @@ import { WeekStrip } from "@/components/home/week-strip";
 import PageTitle from "@/components/page-title";
 import CreateProjectModal from "@/components/shared/modals/create-project-modal";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
-import { Button } from "@/components/ui/button";
+import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import useGetProjects from "@/hooks/queries/project/use-get-projects";
 import useGetAssignedTasks from "@/hooks/queries/task/use-get-assigned-tasks";
 import { useLocalDay } from "@/hooks/use-local-day";
@@ -74,20 +73,11 @@ function RouteComponent() {
                 </h1>
               </div>
               {canCreateTasks() && (
-                <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openCreate("feature")}
-                  >
-                    <Layers />
-                    {t("workspace:home.newFeature")}
-                  </Button>
-                  <Button size="sm" onClick={() => openCreate("task")}>
-                    <Plus />
-                    {t("workspace:home.newTask")}
-                  </Button>
-                </div>
+                <NewWorkMenu
+                  size="sm"
+                  className="shrink-0"
+                  onSelect={openCreate}
+                />
               )}
             </header>
 

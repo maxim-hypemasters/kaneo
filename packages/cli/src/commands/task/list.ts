@@ -1,6 +1,7 @@
 import { Effect, Option } from "effect";
 import { Command, Flag } from "effect/cli";
 import { getCurrentUser } from "../../api/endpoints.js";
+import { TASK_TYPES, type TaskType } from "../../api/task-features.js";
 import { InvalidArgument } from "../../errors/errors.js";
 import { emit } from "../../output/emit.js";
 import { withSpinner } from "../../output/spinner.js";
@@ -41,6 +42,7 @@ const dueFlag = (
 export const runTaskList = Effect.fn("command.task.list")(function* (options: {
   readonly project: Option.Option<string>;
   readonly status: Option.Option<string>;
+  readonly type?: Option.Option<TaskType>;
   readonly priority: Option.Option<string>;
   readonly assignee: Option.Option<string>;
   readonly mine: boolean;
@@ -91,6 +93,7 @@ export const runTaskList = Effect.fn("command.task.list")(function* (options: {
       project.id,
       {
         status: Option.getOrUndefined(options.status),
+        type: options.type ? Option.getOrUndefined(options.type) : undefined,
         priority: Option.getOrUndefined(options.priority),
         assigneeId,
         sortBy: sort?.sortBy,
@@ -142,6 +145,10 @@ export const taskList = Command.make(
       Flag.withDescription(
         "Only tasks in this column, by slug (for example in-progress)",
       ),
+      Flag.optional,
+    ),
+    type: Flag.Literals("type", TASK_TYPES).pipe(
+      Flag.withDescription("Only this item type: task, bug or feature"),
       Flag.optional,
     ),
     priority: Flag.Literals("priority", PRIORITIES).pipe(

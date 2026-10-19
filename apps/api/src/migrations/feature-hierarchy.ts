@@ -182,7 +182,7 @@ async function convertProject(tx: Tx, projectId: string) {
       FROM (VALUES ${planned}) AS planned (id, feature_id)
       WHERE member.id = planned.id
         AND member.project_id = ${projectId}
-        AND member.type = 'task'
+        AND member.type IN ('task', 'bug')
         AND member.feature_id IS NULL
     `);
   }

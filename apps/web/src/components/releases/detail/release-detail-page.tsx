@@ -1,18 +1,18 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ProjectLayout from "@/components/common/project-layout";
 import PageTitle from "@/components/page-title";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
+import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
-import { Button } from "@/components/ui/button";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { getFeatureIndex } from "@/lib/features/feature-index";
 import { finalStatuses } from "@/lib/releases/release-progress";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import type { Release } from "@/types/release";
+import type { TaskType } from "@/types/task";
 import { DeleteReleaseDialog } from "../delete-release-dialog";
 import { ReleaseDialog } from "../dialog/release-dialog";
 import { ReleasesLoadError } from "../list/releases-load-error";
@@ -65,7 +65,7 @@ export function ReleaseDetailPage({
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
-  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [createType, setCreateType] = useState<TaskType | null>(null);
 
   const done = useMemo(
     () => finalStatuses(board?.columns ?? []),
@@ -83,8 +83,8 @@ export function ReleaseDetailPage({
         : null,
     [board, releaseId, done],
   );
-  const openAddTask = permissions.canCreateTasks
-    ? () => setAddTaskOpen(true)
+  const openCreate = permissions.canCreateTasks
+    ? (type: TaskType) => setCreateType(type)
     : undefined;
 
   let content = <ReleaseDetailSkeleton />;
@@ -102,7 +102,7 @@ export function ReleaseDetailPage({
         />
       );
     } else if (groups && !boardQuery.isPending) {
-      items = <ReleaseDetailEmpty onAddTask={openAddTask} />;
+      items = <ReleaseDetailEmpty onCreate={openCreate} />;
     } else if (boardQuery.isError) {
       items = (
         <ReleasesLoadError
@@ -153,11 +153,8 @@ export function ReleaseDetailPage({
       workspaceId={workspaceId}
       activeView="releases"
       toolbar={
-        release && openAddTask ? (
-          <Button variant="outline" size="xs" onClick={openAddTask}>
-            <Plus aria-hidden="true" />
-            {t("tasks:releases.detail.addTask")}
-          </Button>
+        release && openCreate ? (
+          <NewWorkMenu variant="outline" size="xs" onSelect={openCreate} />
         ) : null
       }
     >
@@ -199,10 +196,11 @@ export function ReleaseDetailPage({
             today={today}
           />
           <CreateTaskModal
-            open={addTaskOpen}
+            open={createType !== null}
+            type={createType ?? "task"}
             projectId={projectId}
             releaseId={release.id}
-            onClose={() => setAddTaskOpen(false)}
+            onClose={() => setCreateType(null)}
           />
         </>
       ) : null}

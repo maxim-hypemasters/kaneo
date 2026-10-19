@@ -3,6 +3,22 @@ import { describe, expect, it } from "vite-plus/test";
 import { parseImportDocument } from "./parse-import-file.js";
 
 describe("parseImportDocument", () => {
+  it.each(["task", "bug", "feature"])("preserves explicit %s types", (type) => {
+    const result = Result.getOrThrow(
+      parseImportDocument(
+        JSON.stringify([{ title: "Card", type }]),
+        "tasks.json",
+      ),
+    );
+    expect(result[0]).toMatchObject({ type });
+  });
+  it("rejects unknown explicit types instead of losing them", () => {
+    const result = parseImportDocument(
+      '[{"title":"Card","type":"epic"}]',
+      "tasks.json",
+    );
+    expect(Result.isFailure(result)).toBe(true);
+  });
   it("reads the document written by kaneo task export", () => {
     const content = JSON.stringify({
       project: { name: "Kaneo Web", slug: "kan" },
