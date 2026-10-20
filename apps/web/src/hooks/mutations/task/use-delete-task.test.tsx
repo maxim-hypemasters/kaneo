@@ -95,11 +95,14 @@ describe("useDeleteTask", () => {
     const project = makeProject();
     const deletedTask = {
       ...makeTask("delete-me"),
+      status: "to-do",
       priority: "no-priority",
+      columnId: "todo",
       type: "task" as const,
       featureId: null,
       releaseId: null,
       milestoneId: null,
+      archivedAt: null,
     };
     queryClient.setQueryData(["tasks", project.id], project);
     queryClient.setQueryData(["task", deletedTask.id], deletedTask);
@@ -158,11 +161,14 @@ describe("useDeleteTask", () => {
     const project = makeProject();
     const deletedTask = {
       ...makeTask("delete-me"),
+      status: "to-do",
       priority: "no-priority",
+      columnId: "todo",
       type: "task" as const,
       featureId: "feature-1",
       releaseId: null,
       milestoneId: null,
+      archivedAt: null,
     };
     queryClient.setQueryData(["tasks", project.id], project);
     queryClient.setQueryData(["task", "feature-1"], makeTask("feature-1"));
@@ -184,19 +190,22 @@ describe("useDeleteTask", () => {
   it("refreshes the tasks of a deleted feature", async () => {
     const project = makeProject();
     const member = { ...makeTask("keep-me"), featureId: "delete-me" };
-    project.columns[0].tasks = [
-      { ...makeTask("delete-me"), type: "feature" },
-      member,
-    ];
+    project.columns[0].tasks = [member];
     queryClient.setQueryData(["tasks", project.id], project);
     queryClient.setQueryData(["task", member.id], member);
     vi.mocked(deleteTask).mockResolvedValue({
       ...makeTask("delete-me"),
-      priority: "no-priority",
+      status: null,
+      priority: null,
+      columnId: null,
+      userId: null,
+      startDate: null,
+      dueDate: null,
       type: "feature",
       featureId: null,
       releaseId: null,
       milestoneId: null,
+      archivedAt: null,
     });
     const { result } = renderHook(() => useDeleteTask(), { wrapper: Wrapper });
 

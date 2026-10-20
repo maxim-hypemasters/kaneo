@@ -34,11 +34,7 @@ const board = () =>
       {
         id: "todo",
         slug: "todo",
-        tasks: [
-          task("a"),
-          task("f", { type: "feature" }),
-          task("b", { featureId: "f" }),
-        ],
+        tasks: [task("a"), task("b", { featureId: "f" })],
       },
     ],
     plannedTasks: [],
@@ -99,39 +95,26 @@ it("patches a plain task on the board without refetching it", async () => {
   ).toBe(false);
 });
 
-it("patches a feature and the tasks that followed it, without reloading the board", async () => {
+it("preserves other linked leaves when a task overrides its release", async () => {
   vi.mocked(updateTaskRelease).mockResolvedValue({
-    ...task("f", { type: "feature", releaseId: "r1" }),
-    movedTaskIds: ["b"],
+    ...task("a", { releaseId: "r1", featureId: "f" }),
+    movedTaskIds: [],
   } as unknown as Result);
-  queryClient.setQueryData(["task", "b"], task("b"));
-  queryClient.setQueryData(["project-features", "p"], []);
   const { result } = renderHook(() => useUpdateTaskRelease(), { wrapper });
-
   await act(async () => {
     await result.current.mutateAsync({
-      task: { id: "f", projectId: "p" },
+      task: { id: "a", projectId: "p" },
       releaseId: "r1",
     });
   });
-
-  expect(boardTask("f")?.releaseId).toBe("r1");
-  expect(boardTask("b")?.releaseId).toBe("r1");
-  expect(boardTask("a")?.releaseId).toBeNull();
+  expect(boardTask("a")?.releaseId).toBe("r1");
+  expect(boardTask("b")?.releaseId).toBeNull();
   expect(queryClient.getQueryState(["tasks", "p"])?.isInvalidated).toBe(false);
-  expect(queryClient.getQueryState(["task", "b"])?.isInvalidated).toBe(true);
-  expect(queryClient.getQueryState(["releases", "p"])?.isInvalidated).toBe(
-    true,
-  );
-  expect(
-    queryClient.getQueryState(["project-features", "p"])?.isInvalidated,
-  ).toBe(true);
 });
-
-it("patches a moved task once the board read in flight lands", async () => {
+it("patches an explicit leaf release once the in-flight board lands", async () => {
   vi.mocked(updateTaskRelease).mockResolvedValue({
-    ...task("f", { type: "feature", releaseId: "r1" }),
-    movedTaskIds: ["b"],
+    ...task("a", { releaseId: "r1" }),
+    movedTaskIds: [],
   } as unknown as Result);
   let finishRead = (_board: ProjectWithTasks) => {};
   const read = queryClient.fetchQuery({
@@ -142,18 +125,16 @@ it("patches a moved task once the board read in flight lands", async () => {
       }),
   });
   const { result } = renderHook(() => useUpdateTaskRelease(), { wrapper });
-
   await act(async () => {
     await result.current.mutateAsync({
-      task: { id: "f", projectId: "p" },
+      task: { id: "a", projectId: "p" },
       releaseId: "r1",
     });
   });
-  // The read started before the change; it lands without the new release.
   await act(async () => {
     finishRead(board());
     await read;
   });
-
-  expect(boardTask("b")?.releaseId).toBe("r1");
+  expect(boardTask("a")?.releaseId).toBe("r1");
+  expect(boardTask("b")?.releaseId).toBeNull();
 });

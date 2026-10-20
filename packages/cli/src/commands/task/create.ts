@@ -119,6 +119,26 @@ export const runTaskCreate = Effect.fn("command.task.create")(
         hint: "Leave out --type feature or --feature.",
       });
     }
+    if (options.type === "feature" && options.priority !== "no-priority")
+      return yield* new InvalidArgument({
+        message:
+          "Features do not have a priority. Set priority on a milestone instead.",
+      });
+    if (
+      options.type === "feature" &&
+      [
+        options.status,
+        options.assignee,
+        options.due,
+        options.start,
+        options.release,
+        options.milestone ?? Option.none(),
+      ].some(Option.isSome)
+    )
+      return yield* new InvalidArgument({
+        message:
+          "Features are knowledge records without planning fields. Plan work with milestones.",
+      });
     const workspaceId = yield* resolveWorkspaceId();
     const feature = yield* resolveFeature(options.feature, workspaceId);
     const project = yield* resolveProject(
@@ -139,7 +159,9 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     )(
       Effect.all(
         [
-          listColumns(project.id),
+          options.type === "feature"
+            ? Effect.succeed([])
+            : listColumns(project.id),
           Option.match(options.assignee, {
             onNone: () => Effect.succeed(null),
             onSome: (reference) => resolveAssignee(workspaceId, reference),
@@ -160,8 +182,12 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     const body: CreateTaskBody = {
       title,
       description: Option.getOrElse(options.description, () => ""),
-      priority: options.priority,
-      status: column?.slug ?? FALLBACK_STATUS,
+      ...(options.type === "feature"
+        ? {}
+        : {
+            priority: options.priority,
+            status: column?.slug ?? FALLBACK_STATUS,
+          }),
       ...(assignee ? { userId: assignee.id } : {}),
       ...(dueDate ? { dueDate } : {}),
       ...(startDate ? { startDate } : {}),
@@ -179,7 +205,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     // A server from before features ignores the type and sends none back.
     if (options.type === "feature" && created.type === undefined) {
       yield* note((ui) => [
-        `  ${ui.theme.warning(ui.glyphs.warning)} This Kaneo server has no features yet, so ${createdLabel} was created as a plain task. Update the server, then run kaneo task edit ${createdArgument} --type feature.`,
+        `  ${ui.theme.warning(ui.glyphs.warning)} This Kaneo server has no features yet, so ${createdLabel} was created as a plain task. Update the server before creating knowledge Features.`,
       ]);
     }
     if (options.type === "bug" && created.type !== "bug") {
@@ -266,7 +292,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
             ...(release
               ? [ui.theme.muted(`in release ${release.name}`)]
               : release === undefined && task.releaseId
-                ? [ui.theme.muted("in the feature's release")]
+                ? [ui.theme.muted("in the milestone's release")]
                 : []),
           ].join("  "),
         }),
@@ -346,7 +372,7 @@ export const taskCreate = Command.make(
     ),
     release: Flag.String("release").pipe(
       Flag.withDescription(
-        "Put it in this release of the project, by name or id, or none (default: the feature's release)",
+        "Put it in this release of the project, by name or id, or none (default: the milestone's release)",
       ),
       Flag.optional,
     ),

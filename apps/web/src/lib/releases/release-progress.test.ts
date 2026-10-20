@@ -30,8 +30,8 @@ describe("releaseProgress", () => {
       tasks: 5,
       completedTasks: 2,
       features: 2,
-      completedFeatures: 1,
-      unfinished: 4,
+      completedFeatures: 0,
+      unfinished: 3,
     });
   });
 

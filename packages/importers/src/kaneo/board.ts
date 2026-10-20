@@ -64,9 +64,9 @@ export function orderTasks(
 ): KaneoBoardTask[] {
   const byStatus = new Map<string, KaneoBoardTask[]>();
   for (const task of tasks) {
-    const bucket = byStatus.get(task.status) ?? [];
+    const bucket = byStatus.get(task.status ?? "") ?? [];
     bucket.push(task);
-    byStatus.set(task.status, bucket);
+    byStatus.set(task.status ?? "", bucket);
   }
 
   const statuses = [

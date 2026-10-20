@@ -13,7 +13,7 @@ export function FeatureWork({
   featureId: string;
   projectId: string;
   workspaceId: string;
-  featureStatus: string;
+  featureStatus: string | null;
   featureReleaseId?: string | null;
 }) {
   const { filter, setFilter } = useMilestoneSelection();

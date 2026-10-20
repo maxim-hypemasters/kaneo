@@ -32,11 +32,6 @@ export function buildFullTaskUpdateBody(
       : typeof positionRaw === "string"
         ? Number(positionRaw)
         : Number.NaN;
-  if (!Number.isFinite(position)) {
-    throw new Error(
-      "Cannot update task: missing numeric `position` on existing task.",
-    );
-  }
 
   const title =
     patch.title ??
@@ -54,6 +49,36 @@ export function buildFullTaskUpdateBody(
         ? ""
         : String(existing.description);
 
+  const projectId =
+    patch.projectId ??
+    (typeof existing.projectId === "string" ? existing.projectId : undefined);
+  if (!projectId) throw new Error("Cannot update task: missing projectId.");
+  if (existing.type === "feature") {
+    if (
+      [
+        patch.status,
+        patch.priority,
+        patch.startDate,
+        patch.dueDate,
+        patch.userId,
+      ].some((value) => value !== undefined)
+    )
+      throw new Error(
+        "Features are knowledge records without planning fields.",
+      );
+    return {
+      title,
+      description,
+      projectId,
+      ...(Number.isFinite(position) ? { position } : {}),
+    };
+  }
+  if (!Number.isFinite(position)) {
+    throw new Error(
+      "Cannot update task: missing numeric `position` on existing task.",
+    );
+  }
+
   const status =
     patch.status ??
     (typeof existing.status === "string" ? existing.status : undefined);
@@ -66,13 +91,6 @@ export function buildFullTaskUpdateBody(
     (typeof existing.priority === "string" ? existing.priority : undefined);
   if (!priorityRaw || !isTaskPriority(priorityRaw)) {
     throw new Error("Cannot update task: invalid or missing priority.");
-  }
-
-  const projectId =
-    patch.projectId ??
-    (typeof existing.projectId === "string" ? existing.projectId : undefined);
-  if (!projectId) {
-    throw new Error("Cannot update task: missing projectId.");
   }
 
   // When patch.userId is explicitly null, we set userId to "" so the API clears assignee; the API

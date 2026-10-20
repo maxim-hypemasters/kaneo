@@ -377,8 +377,6 @@ describe("registerTools", () => {
       projectId: "project-1",
       title: "Onboarding",
       description: "",
-      priority: "medium",
-      status: "to-do",
       type: "feature",
     });
 
@@ -454,11 +452,11 @@ describe("registerTools", () => {
 
     await tools
       .get("set_task_type")
-      ?.handler({ taskId: "task-1", type: "feature" });
+      ?.handler({ taskId: "task-1", type: "bug" });
 
     expect(client.json).toHaveBeenCalledWith("/api/task/type/task-1", {
       method: "PUT",
-      body: JSON.stringify({ type: "feature" }),
+      body: JSON.stringify({ type: "bug" }),
     });
   });
 

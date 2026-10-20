@@ -9,6 +9,7 @@ const ItemCounts = Schema.Struct({
 export const ReleaseProgress = Schema.Struct({
   tasks: ItemCounts,
   features: ItemCounts,
+  milestones: Schema.optionalKey(ItemCounts),
   unfinished: Schema.Number,
 });
 export type ReleaseProgress = typeof ReleaseProgress.Type;
@@ -102,8 +103,7 @@ export const deleteRelease = Effect.fnUntraced(function* (id: string) {
   );
 });
 
-// Puts a task or feature into a release of its project, or takes it out with
-// null. A feature's tasks that were in its previous release move with it.
+// Sets an explicit Task/Bug release override, or clears it with null.
 export const updateTaskRelease = Effect.fnUntraced(function* (
   taskId: string,
   releaseId: string | null,

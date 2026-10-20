@@ -299,7 +299,7 @@
               "string",
               "null"
             ],
-            "description": "The release this task, bug or feature is planned in, from its own project. Always null on public boards."
+            "description": "The Task/Bug release, from its own project. Always null for Features and on public boards."
           },
           "subtaskCounts": {
             "type": "object",
@@ -1027,6 +1027,72 @@
           "nextCursor"
         ]
       },
+      "TaskResource": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/FeatureKnowledge"
+          },
+          {
+            "$ref": "#/components/schemas/LeafTask"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "feature": "#/components/schemas/FeatureKnowledge",
+            "task": "#/components/schemas/LeafTask",
+            "bug": "#/components/schemas/LeafTask"
+          }
+        }
+      },
+      "FeatureKnowledge": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Task"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "null"
+              },
+              "status": {
+                "type": "null"
+              },
+              "priority": {
+                "type": "null"
+              },
+              "startDate": {
+                "type": "null"
+              },
+              "dueDate": {
+                "type": "null"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "feature"
+                ]
+              },
+              "featureId": {
+                "type": "null"
+              },
+              "milestoneId": {
+                "type": "null"
+              },
+              "releaseId": {
+                "type": "null"
+              },
+              "columnId": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "columnId"
+            ]
+          }
+        ]
+      },
       "Task": {
         "type": "object",
         "properties": {
@@ -1071,11 +1137,17 @@
             "description": "True when the list omits a large description; load the task detail or description pages to read it. Do not replace stored text with this null summary."
           },
           "status": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "The slug of the column the task sits in."
           },
           "priority": {
-            "type": "string",
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "One of: no-priority, low, medium, high, urgent."
           },
           "startDate": {
@@ -1086,6 +1158,13 @@
             "format": "date-time"
           },
           "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "archivedAt": {
             "type": [
               "string",
               "null"
@@ -1124,7 +1203,7 @@
               "string",
               "null"
             ],
-            "description": "The release this task, bug or feature is planned in, from its own project. Always null on public boards."
+            "description": "The Task/Bug release, from its own project. Always null for Features and on public boards."
           },
           "customFields": {
             "type": "array",
@@ -1157,11 +1236,49 @@
           "priority",
           "startDate",
           "dueDate",
+          "archivedAt",
           "createdAt",
           "type",
           "featureId",
           "milestoneId",
           "releaseId"
+        ]
+      },
+      "LeafTask": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Task"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string"
+              },
+              "priority": {
+                "type": "string"
+              },
+              "archivedAt": {
+                "type": "null"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "task",
+                  "bug"
+                ]
+              },
+              "columnId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "columnId"
+            ]
+          }
         ]
       },
       "AssignedTasks": {
@@ -1300,15 +1417,25 @@
               ]
             },
             "status": {
-              "type": "string",
-              "description": "The feature's column slug, or planned or archived."
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Always null: Features are knowledge records without workflow status."
             },
             "releaseId": {
               "type": [
                 "string",
                 "null"
               ],
-              "description": "The release this task, bug or feature is planned in, from its own project. Always null on public boards."
+              "description": "The Task/Bug release, from its own project. Always null for Features and on public boards."
+            },
+            "archivedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
             }
           },
           "required": [
@@ -1316,7 +1443,8 @@
             "title",
             "number",
             "status",
-            "releaseId"
+            "releaseId",
+            "archivedAt"
           ]
         }
       },
@@ -1392,106 +1520,323 @@
         ]
       },
       "TaskByTicketId": {
-        "allOf": [
+        "oneOf": [
           {
-            "$ref": "#/components/schemas/TaskWithAssignee"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeatureKnowledge"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "workspaceId": {
+                    "type": "string",
+                    "description": "The workspace that owns the task's project."
+                  },
+                  "subtaskCounts": {
+                    "type": "object",
+                    "properties": {
+                      "completed": {
+                        "type": "number"
+                      },
+                      "total": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "completed",
+                      "total"
+                    ],
+                    "description": "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug."
+                  },
+                  "parentSubtaskCounts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "taskId": {
+                          "type": "string"
+                        },
+                        "completed": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "taskId",
+                        "completed",
+                        "total"
+                      ]
+                    },
+                    "description": "The progress of the task's feature (at most one entry), so a board can update the feature's card."
+                  },
+                  "assigneeName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assigneeId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assigneeImage": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "workspaceId",
+                  "assigneeName",
+                  "assigneeId",
+                  "assigneeImage"
+                ]
+              }
+            ]
           },
           {
-            "type": "object",
-            "properties": {
-              "workspaceId": {
-                "type": "string",
-                "description": "The workspace that owns the task's project."
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LeafTask"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "workspaceId": {
+                    "type": "string",
+                    "description": "The workspace that owns the task's project."
+                  },
+                  "subtaskCounts": {
+                    "type": "object",
+                    "properties": {
+                      "completed": {
+                        "type": "number"
+                      },
+                      "total": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "completed",
+                      "total"
+                    ],
+                    "description": "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug."
+                  },
+                  "parentSubtaskCounts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "taskId": {
+                          "type": "string"
+                        },
+                        "completed": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "taskId",
+                        "completed",
+                        "total"
+                      ]
+                    },
+                    "description": "The progress of the task's feature (at most one entry), so a board can update the feature's card."
+                  },
+                  "assigneeName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assigneeId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assigneeImage": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "workspaceId",
+                  "assigneeName",
+                  "assigneeId",
+                  "assigneeImage"
+                ]
               }
-            },
-            "required": [
-              "workspaceId"
             ]
           }
         ]
       },
       "TaskWithAssignee": {
-        "allOf": [
+        "oneOf": [
           {
-            "$ref": "#/components/schemas/Task"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "workspaceId": {
-                "type": "string",
-                "description": "The workspace currently owning the task's project. Included in the detail view; omitted from the compact board view."
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeatureKnowledge"
               },
-              "columnId": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "description": "The referenced workflow column; null for virtual statuses and legacy tasks without a column reference."
-              },
-              "subtaskCounts": {
+              {
                 "type": "object",
                 "properties": {
-                  "completed": {
-                    "type": "number"
+                  "workspaceId": {
+                    "type": "string",
+                    "description": "The workspace currently owning the task's project. Included in the detail view; omitted from the compact board view."
                   },
-                  "total": {
-                    "type": "number"
+                  "subtaskCounts": {
+                    "type": "object",
+                    "properties": {
+                      "completed": {
+                        "type": "number"
+                      },
+                      "total": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "completed",
+                      "total"
+                    ],
+                    "description": "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug."
+                  },
+                  "parentSubtaskCounts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "taskId": {
+                          "type": "string"
+                        },
+                        "completed": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "taskId",
+                        "completed",
+                        "total"
+                      ]
+                    },
+                    "description": "The progress of the task's feature (at most one entry), so a board can update the feature's card."
+                  },
+                  "assigneeName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assigneeId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assigneeImage": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
-                  "completed",
-                  "total"
-                ],
-                "description": "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug."
-              },
-              "parentSubtaskCounts": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "taskId": {
-                      "type": "string"
-                    },
-                    "completed": {
-                      "type": "number"
-                    },
-                    "total": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "taskId",
-                    "completed",
-                    "total"
-                  ]
-                },
-                "description": "The progress of the task's feature (at most one entry), so a board can update the feature's card."
-              },
-              "assigneeName": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "assigneeId": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "assigneeImage": {
-                "type": [
-                  "string",
-                  "null"
+                  "assigneeName",
+                  "assigneeId",
+                  "assigneeImage"
                 ]
               }
-            },
-            "required": [
-              "columnId",
-              "assigneeName",
-              "assigneeId",
-              "assigneeImage"
+            ]
+          },
+          {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LeafTask"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "workspaceId": {
+                    "type": "string",
+                    "description": "The workspace currently owning the task's project. Included in the detail view; omitted from the compact board view."
+                  },
+                  "subtaskCounts": {
+                    "type": "object",
+                    "properties": {
+                      "completed": {
+                        "type": "number"
+                      },
+                      "total": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "completed",
+                      "total"
+                    ],
+                    "description": "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug."
+                  },
+                  "parentSubtaskCounts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "taskId": {
+                          "type": "string"
+                        },
+                        "completed": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "taskId",
+                        "completed",
+                        "total"
+                      ]
+                    },
+                    "description": "The progress of the task's feature (at most one entry), so a board can update the feature's card."
+                  },
+                  "assigneeName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assigneeId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "assigneeImage": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "assigneeName",
+                  "assigneeId",
+                  "assigneeImage"
+                ]
+              }
             ]
           }
         ]
@@ -1500,7 +1845,7 @@
         "type": "object",
         "properties": {
           "task": {
-            "$ref": "#/components/schemas/Task"
+            "$ref": "#/components/schemas/TaskResource"
           },
           "sourceProjectId": {
             "type": "string"
@@ -1521,8 +1866,50 @@
           "version": {
             "type": "number",
             "enum": [
-              2
+              3
             ]
+          },
+          "releases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-20"
+                },
+                "codeFreezeDate": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-20"
+                },
+                "submissionDate": {
+                  "type": "string",
+                  "format": "date",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-20"
+                }
+              },
+              "required": [
+                "key",
+                "name",
+                "startDate",
+                "codeFreezeDate",
+                "submissionDate"
+              ]
+            }
           },
           "milestones": {
             "type": "array",
@@ -1571,6 +1958,24 @@
                   "type": "integer",
                   "minimum": 0,
                   "maximum": 2147483646
+                },
+                "leadId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string"
+                },
+                "priority": {
+                  "type": "string"
+                },
+                "releaseKey": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
                 }
               },
               "required": [
@@ -1595,6 +2000,7 @@
         },
         "required": [
           "version",
+          "releases",
           "milestones",
           "project",
           "tasks"
@@ -1645,6 +2051,90 @@
               "null"
             ]
           },
+          "releaseKey": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "planningSnapshots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "projectId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "status": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "columnId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "priority": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "userId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "startDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "dueDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "releaseId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "releaseName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "archivedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
           "title": {
             "type": "string"
           },
@@ -1661,10 +2151,16 @@
             "type": "string"
           },
           "status": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "priority": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "dueDate": {
             "type": [
@@ -1698,6 +2194,9 @@
           "key",
           "featureKey",
           "milestoneKey",
+          "releaseKey",
+          "archivedAt",
+          "planningSnapshots",
           "title",
           "type",
           "description",
@@ -1761,23 +2260,49 @@
         ]
       },
       "TaskReleaseResult": {
-        "allOf": [
+        "oneOf": [
           {
-            "$ref": "#/components/schemas/Task"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FeatureKnowledge"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "movedTaskIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Always empty; milestone release writes handle followers."
+                  }
+                },
+                "required": [
+                  "movedTaskIds"
+                ]
+              }
+            ]
           },
           {
-            "type": "object",
-            "properties": {
-              "movedTaskIds": {
-                "type": "array",
-                "items": {
-                  "type": "string"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LeafTask"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "movedTaskIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Always empty; milestone release writes handle followers."
+                  }
                 },
-                "description": "For a feature, its tasks and bugs that moved with it, ordered by id. Empty for a task or bug."
+                "required": [
+                  "movedTaskIds"
+                ]
               }
-            },
-            "required": [
-              "movedTaskIds"
             ]
           }
         ]
@@ -1886,12 +2411,31 @@
                     "required": [
                       "total",
                       "completed"
+                    ],
+                    "description": "Distinct Feature knowledge groups referenced by work or milestones. Completed is always zero."
+                  },
+                  "milestones": {
+                    "type": "object",
+                    "properties": {
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "completed": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Items in a final column."
+                      }
+                    },
+                    "required": [
+                      "total",
+                      "completed"
                     ]
                   },
                   "unfinished": {
                     "type": "integer",
                     "minimum": 0,
-                    "description": "Tasks, bugs and features neither archived nor in a final column, which Move unfinished would move."
+                    "description": "Tasks, Bugs and milestones neither archived nor in a final column, which Move unfinished would move."
                   }
                 },
                 "required": [
@@ -1899,7 +2443,7 @@
                   "features",
                   "unfinished"
                 ],
-                "description": "The release's tasks, bugs and features. Tasks and bugs share the tasks counts. Archived items count in the totals."
+                "description": "The release's execution work and distinct Feature knowledge groups. Tasks and Bugs share the task counts. Milestone completion follows its manual workflow status. Archived execution items count in totals."
               }
             },
             "required": [
@@ -1907,7 +2451,7 @@
             ]
           }
         ],
-        "description": "A planned delivery in one project, holding its features and tasks. Dates are calendar days (YYYY-MM-DD) with no time zone, ordered start ≤ code freeze ≤ submission. The phase isn't stored: compare the viewer's local today with the dates. Upcoming before the start date; in progress from the start date until the day before code freeze; code freeze from the code freeze date through the submission date; past submission after the submission date."
+        "description": "A planned delivery in one project, holding milestones, Tasks and Bugs. Dates are calendar days (YYYY-MM-DD) with no time zone, ordered start ≤ code freeze ≤ submission. The phase isn't stored: compare the viewer's local today with the dates. Upcoming before the start date; in progress from the start date until the day before code freeze; code freeze from the code freeze date through the submission date; past submission after the submission date."
       },
       "Release": {
         "type": "object",
@@ -1962,7 +2506,7 @@
           "createdAt",
           "updatedAt"
         ],
-        "description": "A planned delivery in one project, holding its features and tasks. Dates are calendar days (YYYY-MM-DD) with no time zone, ordered start ≤ code freeze ≤ submission. The phase isn't stored: compare the viewer's local today with the dates. Upcoming before the start date; in progress from the start date until the day before code freeze; code freeze from the code freeze date through the submission date; past submission after the submission date."
+        "description": "A planned delivery in one project, holding milestones, Tasks and Bugs. Dates are calendar days (YYYY-MM-DD) with no time zone, ordered start ≤ code freeze ≤ submission. The phase isn't stored: compare the viewer's local today with the dates. Upcoming before the start date; in progress from the start date until the day before code freeze; code freeze from the code freeze date through the submission date; past submission after the submission date."
       },
       "ReleaseProgressHistory": {
         "type": "object",
@@ -2054,13 +2598,64 @@
           },
           "position": {
             "type": "integer"
+          },
+          "featureTitle": {
+            "type": "string"
+          },
+          "leadId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "columnId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priority": {
+            "type": "string"
+          },
+          "releaseId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "example": "2026-10-20"
+          },
+          "endDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "example": "2026-10-20"
           }
         },
         "required": [
           "id",
           "featureId",
           "title",
-          "position"
+          "position",
+          "featureTitle",
+          "leadId",
+          "status",
+          "columnId",
+          "priority",
+          "releaseId",
+          "startDate",
+          "endDate"
         ]
       },
       "DeletedRelease": {
@@ -2077,15 +2672,22 @@
       "MovedReleaseItems": {
         "type": "object",
         "properties": {
+          "movedMilestoneIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "movedTaskIds": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "The tasks and features that moved, ordered by id."
+            "description": "The Tasks and Bugs that moved, ordered by id; completed work stays."
           }
         },
         "required": [
+          "movedMilestoneIds",
           "movedTaskIds"
         ]
       },
@@ -2126,6 +2728,30 @@
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "example": "2026-10-20"
           },
+          "leadId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "columnId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "priority": {
+            "type": "string"
+          },
+          "releaseId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "position": {
             "type": "integer"
           },
@@ -2164,6 +2790,11 @@
           "description",
           "startDate",
           "endDate",
+          "leadId",
+          "status",
+          "columnId",
+          "priority",
+          "releaseId",
           "position",
           "createdAt",
           "updatedAt",
@@ -4588,7 +5219,10 @@
             ]
           },
           "status": {
-            "type": "string"
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "isCompleted": {
             "type": "boolean",
@@ -11147,7 +11781,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -11308,6 +11942,308 @@
         }
       }
     },
+    "/task/feature-library/{projectId}": {
+      "get": {
+        "operationId": "listFeatureLibrary",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Search active or archived knowledge Features",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "archived",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Feature library",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/FeatureKnowledge"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "assigneeName": {
+                                "type": "null"
+                              },
+                              "assigneeId": {
+                                "type": "null"
+                              },
+                              "assigneeImage": {
+                                "type": "null"
+                              },
+                              "labels": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "color": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "name",
+                                    "color"
+                                  ]
+                                }
+                              },
+                              "milestoneCount": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "assigneeName",
+                              "assigneeId",
+                              "assigneeImage",
+                              "labels",
+                              "milestoneCount"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No project access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed workspaces; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/task/{id}/feature-archive": {
+      "put": {
+        "operationId": "archiveFeature",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Archive or unarchive a knowledge Feature independently of its work",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "archived": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "archived"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Only Features support this operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Feature moved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
     "/task/features/{projectId}": {
       "get": {
         "operationId": "listProjectFeatures",
@@ -11315,7 +12251,7 @@
           "Tasks"
         ],
         "summary": "List project features",
-        "description": "Get the project's features (tasks of type feature), by title, with their status and release. Lighter than the board for picking a feature.",
+        "description": "Get the project's Feature knowledge summaries, including archived records for existing references, by title. Planning fields are null. Lighter than the board for picking a feature.",
         "parameters": [
           {
             "schema": {
@@ -11380,7 +12316,7 @@
           "Tasks"
         ],
         "summary": "List tasks",
-        "description": "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Set releaseId to a release's id, or to none, to keep only the tasks and features in that release, or in none. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
+        "description": "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Set releaseId to a release's id, or to none, to keep only the Tasks and Bugs in that release, or in none. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
         "parameters": [
           {
             "schema": {
@@ -11529,10 +12465,10 @@
             "schema": {
               "type": "string",
               "minLength": 1,
-              "description": "Only tasks and features in this release, or none for those in no release."
+              "description": "Only Tasks and Bugs in this release, or none for those in no release."
             },
             "required": false,
-            "description": "Only tasks and features in this release, or none for those in no release.",
+            "description": "Only Tasks and Bugs in this release, or none for those in no release.",
             "name": "releaseId",
             "in": "query"
           }
@@ -12133,7 +13069,7 @@
           "Tasks"
         ],
         "summary": "Create task",
-        "description": "Add a task, bug or feature to a project, defaulting to task. It is placed in the column named by status. Tasks and bugs may belong to a feature. Without releaseId they inherit that feature's release; an explicit releaseId, or null for none, wins.",
+        "description": "Add a task, bug or feature to a project, defaulting to task. Tasks and Bugs use the column named by status; Features omit planning fields. Tasks and bugs may belong to a feature. Without releaseId they inherit their milestone's release; an explicit releaseId, or null for none, wins.",
         "parameters": [
           {
             "schema": {
@@ -12234,14 +13170,12 @@
                       "null"
                     ],
                     "minLength": 1,
-                    "description": "A release of the project, or null for none. Omitted, the task starts in its feature's release, or in none."
+                    "description": "A release of the project, or null for none. Omitted, the task starts in its milestone's release, or in none."
                   }
                 },
                 "required": [
                   "title",
-                  "description",
-                  "priority",
-                  "status"
+                  "description"
                 ]
               }
             }
@@ -12253,7 +13187,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -12353,7 +13287,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -12650,17 +13584,24 @@
                     "type": "string"
                   },
                   "priority": {
-                    "type": "string",
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "enum": [
                       "no-priority",
                       "low",
                       "medium",
                       "high",
-                      "urgent"
+                      "urgent",
+                      null
                     ]
                   },
                   "status": {
-                    "type": "string"
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "projectId": {
                     "type": "string"
@@ -12676,8 +13617,6 @@
                 },
                 "required": [
                   "title",
-                  "priority",
-                  "status",
                   "projectId",
                   "position"
                 ]
@@ -12691,7 +13630,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -12764,7 +13703,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -13013,9 +13952,19 @@
                 "type": "object",
                 "properties": {
                   "version": {
-                    "type": "number",
-                    "enum": [
-                      2
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "enum": [
+                          2
+                        ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          3
+                        ]
+                      }
                     ],
                     "description": "Version 2 imports portable Feature/milestone hierarchy atomically. Omit for legacy per-task imports."
                   },
@@ -13077,6 +14026,24 @@
                           "type": "integer",
                           "minimum": 0,
                           "maximum": 2147483646
+                        },
+                        "leadId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "priority": {
+                          "type": "string"
+                        },
+                        "releaseKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "required": [
@@ -13084,6 +14051,48 @@
                         "featureKey",
                         "title",
                         "position"
+                      ]
+                    }
+                  },
+                  "releases": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "startDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20"
+                        },
+                        "codeFreezeDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20"
+                        },
+                        "submissionDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "name",
+                        "startDate",
+                        "codeFreezeDate",
+                        "submissionDate"
                       ]
                     }
                   },
@@ -13109,6 +14118,92 @@
                             "null"
                           ],
                           "minLength": 1
+                        },
+                        "releaseKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "minLength": 1
+                        },
+                        "archivedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "planningSnapshots": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "projectId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "status": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "columnId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "priority": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "userId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "startDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "dueDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "releaseId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "releaseName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "archivedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            }
+                          }
                         },
                         "labels": {
                           "type": "array",
@@ -13147,10 +14242,16 @@
                           "type": "string"
                         },
                         "status": {
-                          "type": "string"
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
                         "priority": {
-                          "type": "string"
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
                         "startDate": {
                           "type": [
@@ -13172,8 +14273,7 @@
                         }
                       },
                       "required": [
-                        "title",
-                        "status"
+                        "title"
                       ]
                     }
                   }
@@ -13284,7 +14384,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -13384,7 +14484,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -13481,7 +14581,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -13571,7 +14671,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -13664,7 +14764,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -13722,7 +14822,7 @@
           "Tasks"
         ],
         "summary": "Update task feature",
-        "description": "Put a task or bug into a feature of its project, or remove its membership. Either belongs to at most one feature; a feature can't belong to one. An item in no release takes the feature's release when it joins and records the change in activity. Leaving or switching features keeps its release.",
+        "description": "Put a task or bug into a feature of its project, or remove its membership. Either belongs to at most one feature; a feature can't belong to one. Feature membership does not change a Task/Bug release. Changing the Feature clears milestone membership.",
         "parameters": [
           {
             "schema": {
@@ -13762,7 +14862,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -13830,7 +14930,7 @@
           "Tasks"
         ],
         "summary": "Update task release",
-        "description": "Put a task or feature into a release of its project, or take it out with null. A feature's tasks that were in its previous release (or, like it, in none) move with it; tasks given another release keep theirs.",
+        "description": "Put a Task or Bug into a release of its project, or take it out with null. Features have no release. Milestone release updates move matching followers.",
         "parameters": [
           {
             "schema": {
@@ -13948,7 +15048,7 @@
           "Tasks"
         ],
         "summary": "Update task type",
-        "description": "Switch between task, bug and feature. Task-to-bug and bug-to-task changes preserve the item's feature. Making either a feature removes its parent. A feature can become a task or bug only after all members are removed. Every conversion preserves its release and other fields.",
+        "description": "Switch between Task and Bug while preserving identity, fields, Feature, milestone and Release. Features cannot be converted.",
         "parameters": [
           {
             "schema": {
@@ -13970,10 +15070,9 @@
                     "type": "string",
                     "enum": [
                       "task",
-                      "bug",
-                      "feature"
+                      "bug"
                     ],
-                    "description": "Tasks and bugs keep their feature when switching between those types. Making either a feature removes its parent. A feature can become a task or bug only when it has no members."
+                    "description": "Tasks and bugs keep identity and membership. Features cannot be converted."
                   }
                 },
                 "required": [
@@ -13989,7 +15088,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -14035,7 +15134,7 @@
             }
           },
           "409": {
-            "description": "The feature still has tasks or bugs",
+            "description": "Features cannot be converted to execution work",
             "content": {
               "application/json": {
                 "schema": {
@@ -14327,7 +15426,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Task"
+                  "$ref": "#/components/schemas/TaskResource"
                 }
               }
             }
@@ -15662,6 +16761,165 @@
         }
       }
     },
+    "/milestone/project/{projectId}": {
+      "get": {
+        "operationId": "listProjectMilestones",
+        "tags": [
+          "Milestones"
+        ],
+        "summary": "List project milestone planning summaries",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated milestones with full linked-work progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Milestone"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "projectId": {
+                                "type": "string"
+                              },
+                              "featureTitle": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "projectId",
+                              "featureTitle"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid milestone data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing task permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or milestone not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The owner is not a feature, or the milestone list changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
     "/milestone/feature/{featureId}": {
       "get": {
         "operationId": "listFeatureMilestones",
@@ -15778,6 +17036,34 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255
+                  },
+                  "leadId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": [
+                      "no-priority",
+                      "low",
+                      "medium",
+                      "high",
+                      "urgent"
+                    ]
+                  },
+                  "releaseId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
                   },
                   "description": {
                     "type": [
@@ -16130,6 +17416,34 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 255
+                  },
+                  "leadId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": [
+                      "no-priority",
+                      "low",
+                      "medium",
+                      "high",
+                      "urgent"
+                    ]
+                  },
+                  "releaseId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
                   },
                   "description": {
                     "type": [
@@ -24011,7 +25325,7 @@
                       "blocks",
                       "related"
                     ],
-                    "description": "`subtask` is deprecated: creating one puts the target into the source's feature (making the source a feature if it's a plain task). Use PUT /task/feature/{id} instead."
+                    "description": "`subtask` is deprecated: creating one puts the target into the source's feature (the source must already be a Feature or belong to one). Use PUT /task/feature/{id} instead."
                   }
                 },
                 "required": [

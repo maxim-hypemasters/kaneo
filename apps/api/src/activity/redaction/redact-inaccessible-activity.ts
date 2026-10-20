@@ -17,6 +17,11 @@ type CurrentProjects = ReadonlyMap<string, string>;
 function projectIdsOf(row: ActivityRow, currentProjects: CurrentProjects) {
   const data = eventDataOf(row.eventData);
   if (!data) return [];
+  if (
+    row.type === "feature_planning_snapshot" ||
+    row.type.startsWith("milestone_")
+  )
+    return typeof data.projectId === "string" ? [data.projectId] : [];
   if (row.type === "moved") return moveProjectIds(data);
   if (row.type === "release_changed" || row.type === "milestone_changed")
     return releaseChangeProjectIds(data);
@@ -37,6 +42,21 @@ function redactRow<T extends ActivityRow>(
   const data = eventDataOf(row.eventData);
   if (!data) return row;
   let redacted = data;
+  if (
+    row.type === "feature_planning_snapshot" ||
+    (row.type.startsWith("milestone_") && row.type !== "milestone_changed")
+  ) {
+    const projectId =
+      typeof data.projectId === "string" ? data.projectId : null;
+    if (!projectId || !isVisible(projectId))
+      redacted = {
+        projectId: null,
+        milestoneId: null,
+        milestoneTitle: null,
+        changes: {},
+        redacted: true,
+      };
+  }
   if (row.type === "moved") redacted = redactMove(data, isVisible);
   if (row.type === "release_changed") {
     redacted = redactReleaseChange(data, isVisible);

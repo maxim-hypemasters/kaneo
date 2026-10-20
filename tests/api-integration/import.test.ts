@@ -540,11 +540,11 @@ describe("API integration: import from other tools", () => {
       {
         number: 1,
         title: "Write the copy",
-        status: "backlog",
-        columnId: columnId("backlog"),
+        status: null,
+        columnId: null,
         position: 1,
-        priority: "high",
-        userId: member.id,
+        priority: null,
+        userId: null,
       },
       {
         number: 2,
@@ -586,7 +586,21 @@ describe("API integration: import from other tools", () => {
     const [first, , someday, , shipIt] = tasks;
     expect(first?.description).toBe("Draft **all** pages");
     expect(first?.createdAt.toISOString()).toBe("2023-05-06T07:08:09.000Z");
-    expect(first?.dueDate?.toISOString()).toBe("2024-02-01T00:00:00.000Z");
+    expect(first?.dueDate).toBeNull();
+    expect(
+      await db.query.activityTable.findFirst({
+        where: and(
+          eq(schema.activityTable.taskId, first!.id),
+          eq(schema.activityTable.type, "feature_planning_snapshot"),
+        ),
+      }),
+    ).toMatchObject({
+      eventData: expect.objectContaining({
+        dueDate: "2024-02-01T00:00:00.000Z",
+        priority: "high",
+        userId: member.id,
+      }),
+    });
 
     const definitions = await db
       .select({ name: schema.labelTable.name, color: schema.labelTable.color })

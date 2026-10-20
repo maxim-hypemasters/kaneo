@@ -41,6 +41,14 @@ export async function readReleaseMilestones(
         featureId: milestoneTable.featureId,
         title: milestoneTable.title,
         position: milestoneTable.position,
+        featureTitle: taskTable.title,
+        leadId: milestoneTable.leadId,
+        status: milestoneTable.status,
+        columnId: milestoneTable.columnId,
+        priority: milestoneTable.priority,
+        releaseId: milestoneTable.releaseId,
+        startDate: milestoneTable.startDate,
+        endDate: milestoneTable.endDate,
       })
       .from(milestoneTable)
       .innerJoin(taskTable, eq(taskTable.id, milestoneTable.featureId))
@@ -49,7 +57,7 @@ export async function readReleaseMilestones(
           eq(taskTable.projectId, release.projectId),
           eq(taskTable.type, "feature"),
           or(
-            eq(taskTable.releaseId, id),
+            eq(milestoneTable.releaseId, id),
             exists(
               tx
                 .select({ id: leaf.id })

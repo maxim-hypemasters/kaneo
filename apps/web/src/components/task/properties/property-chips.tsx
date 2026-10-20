@@ -77,78 +77,86 @@ export function PropertyChips({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       <div className="flex flex-wrap items-center gap-1.5">
-        <TaskStatusPopover task={task}>
-          <button type="button" data-task-action="status" className={chip}>
-            {getColumnIcon(task.status ?? "", status.isFinal, status.icon)}
-            <span className="truncate">{status.label}</span>
-          </button>
-        </TaskStatusPopover>
-        <TaskPriorityPopover task={task}>
-          <button type="button" data-task-action="priority" className={chip}>
-            {getPriorityIcon(task.priority ?? "")}
-            <span className="truncate">
-              {getPriorityLabel(task.priority ?? "")}
-            </span>
-          </button>
-        </TaskPriorityPopover>
-        <TaskAssigneePopover task={task} workspaceId={workspaceId}>
-          <button
-            type="button"
-            data-task-action="assignee"
-            className={cn(chip, "pl-1.5")}
-          >
-            <AssigneeAvatar
-              name={assignee?.user?.name || task.assigneeName}
-              image={assignee?.user?.image}
-              assigned={Boolean(task.userId)}
-            />
-            <span
-              className={cn(
-                "max-w-32 truncate",
-                !task.userId && "text-muted-foreground",
-              )}
-            >
-              {assignee?.user?.name ||
-                task.assigneeName ||
-                t("tasks:popover.assignee.unassigned")}
-            </span>
-          </button>
-        </TaskAssigneePopover>
-        <div className={cn(chip, "gap-0.5 px-1 hover:bg-accent/30")}>
-          <TaskStartDatePopover task={task}>
-            <button type="button" className={dateButton}>
-              <Calendar
-                className={cn(
-                  task.dueDate
-                    ? dueDateTextClass[dueStatus]
-                    : "text-muted-foreground",
-                )}
-              />
-              <span className="text-muted-foreground">
-                {task.startDate
-                  ? formatDateShort(task.startDate)
-                  : t("tasks:properties.start")}
-              </span>
-            </button>
-          </TaskStartDatePopover>
-          <ArrowRight className="text-muted-foreground/60" />
-          <TaskDueDatePopover task={task}>
-            <button
-              type="button"
-              data-task-action="dueDate"
-              className={cn(
-                dateButton,
-                task.dueDate
-                  ? dueDateTextClass[dueStatus]
-                  : "text-muted-foreground",
-              )}
-            >
-              {task.dueDate
-                ? formatDateShort(task.dueDate)
-                : t("tasks:dueDate.label")}
-            </button>
-          </TaskDueDatePopover>
-        </div>
+        {!isFeature && (
+          <>
+            <TaskStatusPopover task={task}>
+              <button type="button" data-task-action="status" className={chip}>
+                {getColumnIcon(task.status ?? "", status.isFinal, status.icon)}
+                <span className="truncate">{status.label}</span>
+              </button>
+            </TaskStatusPopover>
+            <TaskPriorityPopover task={task}>
+              <button
+                type="button"
+                data-task-action="priority"
+                className={chip}
+              >
+                {getPriorityIcon(task.priority ?? "")}
+                <span className="truncate">
+                  {getPriorityLabel(task.priority ?? "")}
+                </span>
+              </button>
+            </TaskPriorityPopover>
+            <TaskAssigneePopover task={task} workspaceId={workspaceId}>
+              <button
+                type="button"
+                data-task-action="assignee"
+                className={cn(chip, "pl-1.5")}
+              >
+                <AssigneeAvatar
+                  name={assignee?.user?.name || task.assigneeName}
+                  image={assignee?.user?.image}
+                  assigned={Boolean(task.userId)}
+                />
+                <span
+                  className={cn(
+                    "max-w-32 truncate",
+                    !task.userId && "text-muted-foreground",
+                  )}
+                >
+                  {assignee?.user?.name ||
+                    task.assigneeName ||
+                    t("tasks:popover.assignee.unassigned")}
+                </span>
+              </button>
+            </TaskAssigneePopover>
+            <div className={cn(chip, "gap-0.5 px-1 hover:bg-accent/30")}>
+              <TaskStartDatePopover task={task}>
+                <button type="button" className={dateButton}>
+                  <Calendar
+                    className={cn(
+                      task.dueDate
+                        ? dueDateTextClass[dueStatus]
+                        : "text-muted-foreground",
+                    )}
+                  />
+                  <span className="text-muted-foreground">
+                    {task.startDate
+                      ? formatDateShort(task.startDate)
+                      : t("tasks:properties.start")}
+                  </span>
+                </button>
+              </TaskStartDatePopover>
+              <ArrowRight className="text-muted-foreground/60" />
+              <TaskDueDatePopover task={task}>
+                <button
+                  type="button"
+                  data-task-action="dueDate"
+                  className={cn(
+                    dateButton,
+                    task.dueDate
+                      ? dueDateTextClass[dueStatus]
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {task.dueDate
+                    ? formatDateShort(task.dueDate)
+                    : t("tasks:dueDate.label")}
+                </button>
+              </TaskDueDatePopover>
+            </div>
+          </>
+        )}
         <TaskLabelsPopover task={task} workspaceId={workspaceId}>
           <button
             type="button"
@@ -172,7 +180,7 @@ export function PropertyChips({
           </span>
         )}
         <TaskTypeMenu task={task} hasTasks={hasFeatureTasks}>
-          <button type="button" className={chip}>
+          <button type="button" className={chip} disabled={isFeature}>
             <TaskTypeValue type={task.type} />
           </button>
         </TaskTypeMenu>
@@ -194,12 +202,14 @@ export function PropertyChips({
         {!isFeature && task.featureId && (
           <TaskMilestoneProperty task={task} className={chip} />
         )}
-        <TaskReleasePopover task={task}>
-          <button type="button" data-task-action="release" className={chip}>
-            <span className="sr-only">{t("tasks:releases.property")}</span>{" "}
-            <ReleaseValue release={release} className="max-w-40" />
-          </button>
-        </TaskReleasePopover>
+        {!isFeature && (
+          <TaskReleasePopover task={task}>
+            <button type="button" data-task-action="release" className={chip}>
+              <span className="sr-only">{t("tasks:releases.property")}</span>{" "}
+              <ReleaseValue release={release} className="max-w-40" />
+            </button>
+          </TaskReleasePopover>
+        )}
         <TaskCustomFieldChips
           taskId={taskId}
           projectId={projectId}

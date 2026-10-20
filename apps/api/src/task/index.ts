@@ -1,3 +1,10 @@
+import { taskResource } from "./task-resource";
+import {
+  featureLibraryQuery,
+  featureLibrarySchema,
+} from "./feature-library-schema";
+import { listFeatureLibrary } from "./controllers/list-feature-library";
+import { archiveFeature } from "./controllers/archive-feature";
 import { withVerifiedStorageObject } from "../storage/cleanup-queue";
 import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -147,7 +154,7 @@ const listProjectFeaturesRoute = createRoute({
   tags: ["Tasks"],
   summary: "List project features",
   description:
-    "Get the project's features (tasks of type feature), by title, with their status and release. Lighter than the board for picking a feature.",
+    "Get the project's Feature knowledge summaries, including archived records for existing references, by title. Planning fields are null. Lighter than the board for picking a feature.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["read"] }),
@@ -162,6 +169,53 @@ const listProjectFeaturesRoute = createRoute({
   },
 });
 
+const featureLibraryRoute = createRoute({
+  method: "get",
+  operationId: "listFeatureLibrary",
+  path: "/feature-library/{projectId}",
+  tags: ["Features"],
+  summary: "Search active or archived knowledge Features",
+  middleware: [
+    workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
+  request: { params: projectIdParam, query: featureLibraryQuery },
+  responses: {
+    200: jsonResponse("Feature library", featureLibrarySchema),
+    409: errorResponse("Project changed workspaces; retry"),
+    403: errorResponse("No project access"),
+    404: errorResponse("Project not found"),
+  },
+});
+const archiveFeatureRoute = createRoute({
+  method: "put",
+  operationId: "archiveFeature",
+  path: "/{id}/feature-archive",
+  tags: ["Features"],
+  summary: "Archive or unarchive a knowledge Feature independently of its work",
+  middleware: [
+    workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: taskParam,
+    body: {
+      required: true,
+      content: {
+        "application/json": { schema: z.object({ archived: z.boolean() }) },
+      },
+    },
+  },
+  responses: {
+    200: jsonResponse("Feature", taskSchema),
+    400: errorResponse("Only Features support this operation"),
+    403: errorResponse("No access"),
+    404: errorResponse("Feature not found"),
+    409: errorResponse("Feature moved"),
+  },
+});
+
 const listTasksRoute = createRoute({
   method: "get",
   operationId: "listTasks",
@@ -169,7 +223,7 @@ const listTasksRoute = createRoute({
   tags: ["Tasks"],
   summary: "List tasks",
   description:
-    "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Set releaseId to a release's id, or to none, to keep only the tasks and features in that release, or in none. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
+    "Get a project's board: its columns, each with the tasks in it, plus the archived and planned buckets. Set releaseId to a release's id, or to none, to keep only the Tasks and Bugs in that release, or in none. Responses always contain at most 100 tasks (50 by default). Continue through pagination.totalPages for the whole board, and for each task page follow relatedPage through pagination.relatedTotalPages for all labels, links and column metadata. Filters and sorting apply before pagination. Descriptions larger than 64 KiB are omitted with descriptionDeferred=true; read the task detail or description pages for full text.",
   middleware: [workspaceAccess.fromProject("projectId")] as const,
   request: { params: projectIdParam, query: listTasksQuery },
   responses: {
@@ -313,7 +367,7 @@ const createTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Create task",
   description:
-    "Add a task, bug or feature to a project, defaulting to task. It is placed in the column named by status. Tasks and bugs may belong to a feature. Without releaseId they inherit that feature's release; an explicit releaseId, or null for none, wins.",
+    "Add a task, bug or feature to a project, defaulting to task. Tasks and Bugs use the column named by status; Features omit planning fields. Tasks and bugs may belong to a feature. Without releaseId they inherit their milestone's release; an explicit releaseId, or null for none, wins.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["create"] }),
@@ -730,7 +784,7 @@ const updateTaskFeatureRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task feature",
   description:
-    "Put a task or bug into a feature of its project, or remove its membership. Either belongs to at most one feature; a feature can't belong to one. An item in no release takes the feature's release when it joins and records the change in activity. Leaving or switching features keeps its release.",
+    "Put a task or bug into a feature of its project, or remove its membership. Either belongs to at most one feature; a feature can't belong to one. Feature membership does not change a Task/Bug release. Changing the Feature clears milestone membership.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -763,7 +817,7 @@ const updateTaskReleaseRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task release",
   description:
-    "Put a task or feature into a release of its project, or take it out with null. A feature's tasks that were in its previous release (or, like it, in none) move with it; tasks given another release keep theirs.",
+    "Put a Task or Bug into a release of its project, or take it out with null. Features have no release. Milestone release updates move matching followers.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -800,7 +854,7 @@ const updateTaskTypeRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task type",
   description:
-    "Switch between task, bug and feature. Task-to-bug and bug-to-task changes preserve the item's feature. Making either a feature removes its parent. A feature can become a task or bug only after all members are removed. Every conversion preserves its release and other fields.",
+    "Switch between Task and Bug while preserving identity, fields, Feature, milestone and Release. Features cannot be converted.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -820,7 +874,7 @@ const updateTaskTypeRoute = createRoute({
       "No access to the project, or missing task:update permission",
     ),
     404: errorResponse("Task not found"),
-    409: errorResponse("The feature still has tasks or bugs"),
+    409: errorResponse("Features cannot be converted to execution work"),
   },
 });
 
@@ -971,13 +1025,15 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
   // Registered ahead of the `/{id}` routes, which would otherwise claim it.
   .openapi(updateTaskMilestoneRoute, async (c) =>
     c.json(
-      await updateTaskMilestone({
-        id: c.req.valid("param").id,
-        milestoneId: c.req.valid("json").milestoneId,
-        currentUserId: c.get("userId"),
-        expectedProjectId: c.get("authorizedProjectId"),
-        expectedWorkspaceId: c.get("workspaceId"),
-      }),
+      taskResource(
+        await updateTaskMilestone({
+          id: c.req.valid("param").id,
+          milestoneId: c.req.valid("json").milestoneId,
+          currentUserId: c.get("userId"),
+          expectedProjectId: c.get("authorizedProjectId"),
+          expectedWorkspaceId: c.get("workspaceId"),
+        }),
+      ),
       200,
     ),
   )
@@ -992,6 +1048,30 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       200,
     );
   })
+  .openapi(featureLibraryRoute, async (c) =>
+    c.json(
+      await listFeatureLibrary(
+        c.req.valid("param").projectId,
+        c.req.valid("query"),
+        c.get("workspaceId"),
+      ),
+      200,
+    ),
+  )
+  .openapi(archiveFeatureRoute, async (c) =>
+    c.json(
+      taskResource(
+        await archiveFeature(
+          c.req.valid("param").id,
+          c.req.valid("json").archived,
+          c.get("userId"),
+          c.get("authorizedProjectId"),
+          c.get("workspaceId"),
+        ),
+      ),
+      200,
+    ),
+  )
   .openapi(listProjectFeaturesRoute, async (c) => {
     const { projectId } = c.req.valid("param");
     return c.json(await listProjectFeatures(projectId), 200);
@@ -1107,25 +1187,33 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       releaseId,
     });
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(duplicateTaskRoute, async (c) => {
     const { id } = c.req.valid("param");
     const { title } = c.req.valid("json");
     return c.json(
-      await duplicateTask({
-        taskId: id,
-        title,
-        currentUserId: c.get("userId"),
-        expectedWorkspaceId: c.get("workspaceId"),
-      }),
+      taskResource(
+        await duplicateTask({
+          taskId: id,
+          title,
+          currentUserId: c.get("userId"),
+          expectedWorkspaceId: c.get("workspaceId"),
+        }),
+      ),
       200,
     );
   })
   .openapi(getTaskByTicketIdRoute, async (c) => {
     const { ticketId } = c.req.valid("param");
     return c.json(
-      await getTaskByTicketId(ticketId, c.get("userId"), c.req.valid("query")),
+      taskResource(
+        await getTaskByTicketId(
+          ticketId,
+          c.get("userId"),
+          c.req.valid("query"),
+        ),
+      ),
       200,
     );
   })
@@ -1138,7 +1226,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       c.get("userId"),
     );
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(moveTaskRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1152,7 +1240,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       currentUserId,
     });
 
-    return c.json(result, 200);
+    return c.json({ ...result, task: taskResource(result.task) }, 200);
   })
   .openapi(updateTaskRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1195,12 +1283,12 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       currentUserId,
     );
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(exportTasksRoute, async (c) => {
     const { projectId } = c.req.valid("param");
 
-    const exportData = await exportTasks(projectId);
+    const exportData = await exportTasks(projectId, c.get("userId"));
 
     return c.json(exportData, 200);
   })
@@ -1211,16 +1299,23 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const hierarchy =
       Boolean(document.milestones?.length) ||
       document.tasks.some((task) => task.featureKey || task.milestoneKey);
-    if (hierarchy && document.version !== 2) {
+    if (hierarchy && document.version !== 2 && document.version !== 3) {
       throw new HTTPException(400, {
-        message: "Hierarchy imports require version 2",
+        message: "Hierarchy imports require version 2 or 3",
       });
     }
+    if (document.releases?.length)
+      await requireWorkspacePermission({ project: ["update"] })(
+        c,
+        async () => {},
+      );
+    if (document.milestones?.some((milestone) => milestone.leadId))
+      await requireWorkspacePermission({ task: ["assign"] })(c, async () => {});
     if (hierarchy) {
       await requireWorkspacePermission({ task: ["update"] })(c, async () => {});
     }
     if (
-      document.version === 2 &&
+      (document.version === 2 || document.version === 3) &&
       document.tasks.some((task) => task.labels?.length)
     ) {
       await requireWorkspacePermission({ label: ["create", "update"] })(
@@ -1229,7 +1324,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       );
     }
     const result =
-      document.version === 2
+      document.version === 2 || document.version === 3
         ? await importHierarchy(
             projectId,
             document,
@@ -1246,7 +1341,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const currentUserId = c.get("userId");
     const task = await deleteTask(id, currentUserId);
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskStatusRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1255,7 +1350,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
 
     const task = await updateTaskStatus({ id, status, currentUserId });
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskPriorityRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1264,7 +1359,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
 
     const task = await updateTaskPriority({ id, priority, currentUserId });
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskAssigneeRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1273,7 +1368,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
 
     const task = await updateTaskAssignee({ id, userId, currentUserId });
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskDueDateRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1286,7 +1381,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       currentUserId,
     });
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskTitleRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1295,7 +1390,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
 
     const task = await updateTaskTitle({ id, title, currentUserId });
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskFeatureRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1303,7 +1398,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const currentUserId = c.get("userId");
 
     return c.json(
-      await updateTaskFeature({ id, featureId, currentUserId }),
+      taskResource(await updateTaskFeature({ id, featureId, currentUserId })),
       200,
     );
   })
@@ -1313,7 +1408,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const currentUserId = c.get("userId");
 
     return c.json(
-      await updateTaskRelease({ id, releaseId, currentUserId }),
+      taskResource(await updateTaskRelease({ id, releaseId, currentUserId })),
       200,
     );
   })
@@ -1322,7 +1417,10 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const { type } = c.req.valid("json");
     const currentUserId = c.get("userId");
 
-    return c.json(await updateTaskType({ id, type, currentUserId }), 200);
+    return c.json(
+      taskResource(await updateTaskType({ id, type, currentUserId })),
+      200,
+    );
   })
   .openapi(createTaskImageUploadRoute, async (c) => {
     const { id } = c.req.valid("param");
@@ -1527,7 +1625,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       currentUserId,
     });
 
-    return c.json(task, 200);
+    return c.json(taskResource(task), 200);
   });
 
 export default task;

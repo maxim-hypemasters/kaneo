@@ -130,7 +130,7 @@ describe("PropertyChips", () => {
     expect(mocks.typeMenu).toHaveBeenCalledWith(true);
   });
 
-  it("shows the release chip after the feature chip, for tasks and features", () => {
+  it("shows the release chip after the Feature for Tasks/Bugs only", () => {
     renderChips({ release: { id: "r24", name: "2.4" } });
 
     const feature = document.querySelector('[data-task-action="feature"]');
@@ -151,9 +151,11 @@ describe("PropertyChips", () => {
       isFeature: true,
     });
     expect(
-      screen.getByRole("button", {
-        name: "tasks:releases.property tasks:releases.none",
-      }),
-    ).toHaveAttribute("data-task-action", "release");
+      document.querySelector('[data-task-action="release"]'),
+    ).not.toBeInTheDocument();
+    for (const property of ["status", "priority", "assignee", "dueDate"])
+      expect(
+        document.querySelector(`[data-task-action="${property}"]`),
+      ).not.toBeInTheDocument();
   });
 });

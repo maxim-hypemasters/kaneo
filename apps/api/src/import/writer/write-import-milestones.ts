@@ -13,6 +13,14 @@ export async function writeImportMilestones(
   project: ImportedProject,
   tasks: readonly PlannedImportTask[],
   legacyMemberships: ReadonlyMap<string, string>,
+  planning: {
+    releases: ReadonlyMap<string, string>;
+    columns: ReadonlyMap<string, { id: string; slug: string }>;
+    defaultColumn: { id: string; slug: string } | null;
+    assign: (
+      person: import("@kaneo/importers").ImportedPerson | undefined,
+    ) => string | null;
+  },
 ) {
   const keyById = new Map(tasks.map((task) => [task.id, task.key]));
   const ids = new Map(tasks.map((task) => [task.key, task.id]));
@@ -50,6 +58,23 @@ export async function writeImportMilestones(
       startDate: item.startDate ?? null,
       endDate: item.endDate ?? null,
       position: item.position,
+      leadId: planning.assign(
+        project.milestones?.find((m) => m.key === item.key)?.lead,
+      ),
+      status:
+        item.status === "archived" || item.status === "planned"
+          ? item.status
+          : ((planning.columns.get(item.status ?? "") ?? planning.defaultColumn)
+              ?.slug ?? "planned"),
+      columnId:
+        item.status === "archived" || item.status === "planned"
+          ? null
+          : ((planning.columns.get(item.status ?? "") ?? planning.defaultColumn)
+              ?.id ?? null),
+      priority: item.priority ?? "no-priority",
+      releaseId: item.releaseKey
+        ? (planning.releases.get(item.releaseKey) ?? null)
+        : null,
     });
     milestones.set(item.key, id);
   }

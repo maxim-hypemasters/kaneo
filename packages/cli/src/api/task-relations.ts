@@ -10,7 +10,7 @@ export const RelatedTask = Schema.Struct({
   id: Schema.String,
   type: Schema.optionalKey(Schema.String),
   title: Schema.String,
-  status: Schema.String,
+  status: Schema.NullOr(Schema.String),
   isCompleted: Schema.Boolean,
   number: Schema.NullOr(Schema.Number),
   projectId: Schema.String,

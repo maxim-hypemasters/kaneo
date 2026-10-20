@@ -171,9 +171,10 @@ Creates a task. In a terminal, the title is asked for when you leave it out.
 | `--due` | Due date |
 | `--start` | Start date |
 | `--label` | Add a workspace label by name. Repeatable. |
-| `--type` | `task` or `feature`. Default: `task`. A [feature](/core/functional/plan-and-execute-tasks#group-work-into-features) groups other tasks. |
+| `--type` | `task`, `bug` or `feature`. Default: `task`. Feature creation rejects planning flags. |
+| `--milestone` | Milestone ID, or `none`; must belong to the selected Feature. |
 | `--feature` | Create it in this feature, such as `KAN-12`. The project defaults to the feature's. `--parent` still works as another name for it. |
-| `--release` | Put it in this release of the project, by name or ID, or `none`. Default: the feature's release, or none. |
+| `--release` | Put it in this release of the project, by name or ID, or `none`. Default: the milestone's release when selected, or none. |
 
 ```bash
 kaneo task create "Fix login redirect" -p KAN --priority high --due tomorrow --label Bug
@@ -197,9 +198,10 @@ Changes a task's title, description, priority, dates, labels, type, feature or r
 | `--start` | Start date, or `none` to clear it |
 | `--add-label` | Add a workspace label by name. Repeatable. |
 | `--remove-label` | Remove a label by name. Repeatable. |
-| `--type` | `feature` makes it a feature and takes it out of its own feature. `task` turns a feature back into a task, once it has no tasks. |
+| `--type` | Convert only between `task` and `bug`, preserving identity and membership. Feature conversion is unsupported. |
+| `--milestone` | Assign a milestone ID within the existing Feature, or `none` to clear. |
 | `--feature` | Put it in this feature of its project, such as `KAN-12`, or `none` to take it out of its feature. |
-| `--release` | Put it in this release of its project, by name or ID, or `none` to take it out. For a feature, its tasks that were in the feature's old release move with it. Applied after `--feature`. |
+| `--release` | Put it in this release of its project, by name or ID, or `none` to take it out. Features do not have releases. Applied after membership changes. |
 
 ### `kaneo task open`
 
@@ -319,7 +321,7 @@ kaneo task relation add <task> <type> <other-task>
 
 Links two tasks. `<type>` says how the first task relates to the other: `blocks`, `blocked-by` or `relates-to`.
 
-`subtask-of` and `parent-of` still work, but are deprecated. `KAN-3 subtask-of KAN-1` adds `KAN-3` to the feature `KAN-1`, or to the feature `KAN-1` is in. When `KAN-1` is a plain task in no feature, it becomes a feature first. `parent-of` works the other way round. Use `kaneo task create --feature` or `kaneo task edit --feature` instead.
+`subtask-of` and `parent-of` still work, but are deprecated. `KAN-3 subtask-of KAN-1` adds `KAN-3` to the feature `KAN-1`, or to the feature `KAN-1` is in. A plain source without a Feature is rejected; it is never promoted automatically. `parent-of` works the other way round. Use `kaneo task create --feature` or `kaneo task edit --feature` instead.
 
 ```bash
 kaneo task relation add KAN-3 blocked-by KAN-4
@@ -640,7 +642,7 @@ Deletes a column. When it holds tasks, `--move-tasks-to` is required and moves t
 
 ## Releases
 
-A [release](/core/functional/releases) holds a project's features and tasks, with a start date, a code freeze date and a submission date. `<release>` is a release name or ID in the project. Creating and editing releases needs permission to update the project, and deleting one also needs permission to edit tasks. Owners and admins have both by default. To put a task in a release, use `--release` on `kaneo task create` and `kaneo task edit`.
+A [release](/core/functional/releases) holds a project's milestones and Tasks/Bugs, with a start date, a code freeze date and a submission date. `<release>` is a release name or ID in the project. Creating and editing releases needs permission to update the project, and deleting one also needs permission to edit tasks. Owners and admins have both by default. To put a task in a release, use `--release` on `kaneo task create` and `kaneo task edit`.
 
 ### `kaneo release list`
 
@@ -677,7 +679,7 @@ kaneo release create 2.4 -p KAN --start 2026-11-02 --code-freeze 2026-11-20 --su
 kaneo release edit [<release>] [-p <project>] [flags]
 ```
 
-Renames a release, or changes its dates or description. The new dates are checked against the ones you leave as they are. The dates can be moved but not cleared, because every release has all three. Its tasks and features stay in it.
+Renames a release, or changes its dates or description. The new dates are checked against the ones you leave as they are. The dates can be moved but not cleared, because every release has all three. Its tasks and milestones stay in it.
 
 | Flag | Description |
 | --- | --- |
@@ -694,7 +696,7 @@ Renames a release, or changes its dates or description. The new dates are checke
 kaneo release delete [<release>] [-p <project>] [--yes]
 ```
 
-Deletes a release. Its tasks and features stay in the project, without a release, and each one records the change in its activity.
+Deletes a release. Its tasks and milestones stay in the project, without a release, and each one records the change in its activity.
 
 ## Custom fields
 
@@ -920,3 +922,13 @@ Sends an authenticated request to the Kaneo API and prints the response. The met
 | `--query` | Add a `key=value` query parameter. Repeatable. |
 
 `GET` requests cannot have a body. See [Scripts and agents](/cli/scripting#call-the-api-directly) for examples.
+
+## Feature knowledge library
+
+Use `kaneo feature list -p KAN` with `--search` or `--archived` to browse knowledge records independently of task lists. `kaneo feature archive KAN-12` and `kaneo feature unarchive KAN-12` change the Feature's explicit archive state without changing child work. Create Features through `kaneo task create --type feature`; edit their title, description and labels through existing task commands. Planning flags and Feature conversion are rejected.
+
+## Milestone planning
+
+Use `kaneo milestone list --feature KAN-12` or `kaneo milestone list-project -p KAN` to read milestones. The project list accepts `--page` and `--limit` (up to 100). `view`, `create`, `edit`, `order`, and `delete` manage them. Create with `kaneo milestone create <title> --feature KAN-12`; edit with `kaneo milestone edit <id>`. Both accept `--lead <user-id|none>`, `--status <column-slug>`, `--priority <no-priority|low|medium|high|urgent>`, `--release <id|none>`, `--start-date` and `--end-date`. Lead assignment uses task assignment permission. Dates and manual status remain independent of child progress.
+
+Task create/edit support `--milestone <id|none>`. The Feature must already match. Milestone release changes move followers while preserving release overrides; unlinking preserves releases. Native JSON version 3 imports/exports preserve Feature archive/history snapshots, milestone planning metadata, hierarchy and release definitions. Version 2 and legacy flat files remain accepted.

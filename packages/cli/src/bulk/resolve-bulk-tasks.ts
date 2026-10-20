@@ -10,6 +10,7 @@ import { checkFound, checkSameWorkspace } from "./preflight.js";
 export type BulkTask = {
   readonly id: string;
   readonly title: string;
+  readonly type?: string;
   readonly ticketId: string | null;
   readonly label: string;
   readonly url: string;
@@ -48,6 +49,7 @@ export const resolveBulkTasks = Effect.fn("bulk.resolveTasks")(function* (
       {
         id: task.id,
         title: task.title,
+        ...(task.type === undefined ? {} : { type: task.type }),
         ticketId: id,
         label: id ?? task.id.slice(0, 8),
         url: taskUrl(session.webUrl, {

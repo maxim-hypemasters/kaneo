@@ -3,8 +3,9 @@ export type ProjectFeature = {
   id: string;
   title: string;
   number: number | null;
-  status: string;
+  status: string | null;
   releaseId?: string | null;
+  archivedAt?: string | null;
 };
 
 // The feature a new task joins: one of the project's, or one to create on
@@ -50,7 +51,11 @@ export function featurePickerOptions({
   const matches = (text: string | null) =>
     text !== null && text.toLowerCase().includes(needle);
   const listed = features
-    .filter((feature) => feature.status !== "archived")
+    .filter(
+      (feature) =>
+        (!feature.archivedAt && feature.status !== "archived") ||
+        (choice?.kind === "existing" && choice.id === feature.id),
+    )
     .map((feature) => ({
       feature,
       displayId:

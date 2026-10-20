@@ -12,8 +12,19 @@ export function useDeleteTask() {
 
   return useMutation({
     mutationFn: deleteTask,
-    onSuccess: (deletedTask) => {
+    onSuccess: (
+      deletedTask: Omit<
+        Awaited<ReturnType<typeof deleteTask>>,
+        "archivedAt"
+      > & { archivedAt?: string | null },
+    ) => {
       invalidateMyWork(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-library", deletedTask.projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["project-features", deletedTask.projectId],
+      });
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
       const boardKey = ["tasks", deletedTask.projectId];
       // The task's feature lost a task; a deleted feature's tasks left it.

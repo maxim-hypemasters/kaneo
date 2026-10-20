@@ -18,6 +18,10 @@ export const runMilestoneCreate = Effect.fn("command.milestone.create")(
     readonly description: Option.Option<string>;
     readonly startDate: Option.Option<string>;
     readonly endDate: Option.Option<string>;
+    readonly lead?: Option.Option<string>;
+    readonly status?: Option.Option<string>;
+    readonly priority?: Option.Option<string>;
+    readonly release?: Option.Option<string>;
     readonly task?: ReadonlyArray<string>;
   }) {
     const title = options.title.trim();
@@ -37,6 +41,30 @@ export const runMilestoneCreate = Effect.fn("command.milestone.create")(
         : {}),
       ...(startDate === undefined ? {} : { startDate }),
       ...(endDate === undefined ? {} : { endDate }),
+      ...(Option.getOrUndefined(options.lead ?? Option.none()) === undefined
+        ? {}
+        : {
+            leadId:
+              Option.getOrUndefined(options.lead ?? Option.none()) === "none"
+                ? null
+                : Option.getOrUndefined(options.lead ?? Option.none()),
+          }),
+      ...(Option.getOrUndefined(options.status ?? Option.none()) === undefined
+        ? {}
+        : { status: Option.getOrUndefined(options.status ?? Option.none()) }),
+      ...(Option.getOrUndefined(options.priority ?? Option.none()) === undefined
+        ? {}
+        : {
+            priority: Option.getOrUndefined(options.priority ?? Option.none()),
+          }),
+      ...(Option.getOrUndefined(options.release ?? Option.none()) === undefined
+        ? {}
+        : {
+            releaseId:
+              Option.getOrUndefined(options.release ?? Option.none()) === "none"
+                ? null
+                : Option.getOrUndefined(options.release ?? Option.none()),
+          }),
       ...(taskIds.length ? { taskIds } : {}),
     });
     yield* emitMilestone(milestone, "Created");
@@ -61,6 +89,25 @@ export const milestoneCreate = Command.make(
       Flag.withDescription(
         "Optional start date: YYYY-MM-DD, today, tomorrow, +3d or none",
       ),
+      Flag.optional,
+    ),
+    lead: Flag.String("lead").pipe(
+      Flag.withDescription("Milestone lead user ID, or none to clear"),
+      Flag.optional,
+    ),
+    status: Flag.String("status").pipe(
+      Flag.withDescription("Project workflow column slug"),
+      Flag.optional,
+    ),
+    priority: Flag.Literals("priority", [
+      "no-priority",
+      "low",
+      "medium",
+      "high",
+      "urgent",
+    ]).pipe(Flag.optional),
+    release: Flag.String("release").pipe(
+      Flag.withDescription("Release ID, or none to clear"),
       Flag.optional,
     ),
     endDate: Flag.String("end-date").pipe(

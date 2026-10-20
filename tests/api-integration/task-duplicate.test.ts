@@ -58,6 +58,17 @@ async function seedTask({
       position: 1,
       ...(userId ? { userId } : {}),
       ...overrides,
+      ...(overrides?.type === "feature"
+        ? {
+            status: null,
+            priority: null,
+            columnId: null,
+            userId: null,
+            startDate: null,
+            dueDate: null,
+            releaseId: null,
+          }
+        : {}),
     })
     .returning();
 

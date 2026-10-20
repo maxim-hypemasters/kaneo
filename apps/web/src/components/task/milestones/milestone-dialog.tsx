@@ -13,7 +13,9 @@ import { Input } from "@/components/ui/input";
 import { useMilestoneMutations } from "@/hooks/mutations/milestone/use-milestone-mutations";
 import { HttpError } from "@/lib/http-error";
 import { MilestoneTaskPicker } from "./milestone-task-picker";
-import { MilestoneDateField } from "./milestone-date-field";
+import { MilestonePlanningFields } from "./milestone-planning-fields";
+import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import type { MilestoneInput } from "@/fetchers/milestone/milestones";
 import type { Milestone } from "@/fetchers/milestone/milestones";
 export function MilestoneDialog({
   projectId,
@@ -28,8 +30,17 @@ export function MilestoneDialog({
 }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState(milestone?.title ?? "");
-  const [startDate, setStartDate] = useState(milestone?.startDate ?? "");
-  const [endDate, setEndDate] = useState(milestone?.endDate ?? "");
+  const { data: workspace } = useActiveWorkspace();
+  const [planning, setPlanning] = useState<MilestoneInput>({
+    leadId: milestone?.leadId ?? null,
+    status: milestone?.status,
+    priority: milestone?.priority ?? "no-priority",
+    releaseId: milestone?.releaseId ?? null,
+    startDate: milestone?.startDate ?? null,
+    endDate: milestone?.endDate ?? null,
+  });
+  const startDate = planning.startDate ?? "";
+  const endDate = planning.endDate ?? "";
   const invalidRange = Boolean(startDate && endDate && startDate > endDate);
   const [error, setError] = useState<"save" | "selection" | null>(null);
   const [taskIds, setTaskIds] = useState<string[]>([]);
@@ -56,9 +67,8 @@ export function MilestoneDialog({
             if (!valid || pending) return;
             setError(null);
             const input = {
+              ...planning,
               title: title.trim(),
-              startDate: startDate || null,
-              endDate: endDate || null,
             };
             try {
               if (milestone)
@@ -101,30 +111,22 @@ export function MilestoneDialog({
                 onChange={(e) => setTitle(e.target.value)}
               />
             </label>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <MilestoneDateField
-                kind="start"
-                disabled={pending}
-                value={startDate}
-                max={endDate || undefined}
-                invalid={invalidRange}
-                errorId={
-                  invalidRange ? "milestone-date-range-error" : undefined
-                }
-                onChange={setStartDate}
-              />
-              <MilestoneDateField
-                kind="end"
-                disabled={pending}
-                value={endDate}
-                min={startDate || undefined}
-                invalid={invalidRange}
-                errorId={
-                  invalidRange ? "milestone-date-range-error" : undefined
-                }
-                onChange={setEndDate}
-              />
-            </div>
+            <MilestonePlanningFields
+              projectId={projectId}
+              workspaceId={workspace?.id ?? ""}
+              milestone={{
+                leadId: planning.leadId ?? null,
+                status: planning.status ?? "",
+                priority: planning.priority ?? "no-priority",
+                releaseId: planning.releaseId ?? null,
+                startDate,
+                endDate,
+              }}
+              pending={pending}
+              onChange={(value) =>
+                setPlanning((current) => ({ ...current, ...value }))
+              }
+            />
             {invalidRange && (
               <p
                 id="milestone-date-range-error"

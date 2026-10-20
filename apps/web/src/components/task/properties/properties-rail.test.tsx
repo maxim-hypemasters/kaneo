@@ -156,7 +156,7 @@ describe("PropertiesRail", () => {
     expect(mocks.typeMenu).toHaveBeenCalledWith(true);
   });
 
-  it("shows the release after the feature, for tasks and features", () => {
+  it("shows release planning only for Tasks/Bugs", () => {
     renderRail({ release: { id: "r24", name: "2.4" } });
 
     expect(rowLabels()).toEqual([
@@ -175,13 +175,14 @@ describe("PropertiesRail", () => {
       isFeature: true,
       release: null,
     });
-    expect(rowLabels()).toEqual([
-      "tasks:features.type",
-      "tasks:releases.property",
-    ]);
+    expect(rowLabels()).toEqual(["tasks:features.type"]);
     expect(
-      screen.getByRole("button", { name: "tasks:releases.none" }),
-    ).toHaveAttribute("data-task-action", "release");
+      document.querySelector('[data-task-action="release"]'),
+    ).not.toBeInTheDocument();
+    for (const property of ["status", "priority", "assignee", "dueDate"])
+      expect(
+        document.querySelector(`[data-task-action="${property}"]`),
+      ).not.toBeInTheDocument();
   });
 
   it("names a release the project doesn't list as unknown", () => {

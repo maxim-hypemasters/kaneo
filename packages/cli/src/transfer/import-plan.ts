@@ -44,9 +44,18 @@ export function planImport(
   const remapped = new Map<string, string>();
   const unknown = new Map<string, number>();
   const tasks = candidates.map((candidate): ImportTaskBody => {
-    const { slug, known } = resolveStatus(candidate.status, ordered, fallback);
-    if (!known) unknown.set(slug, (unknown.get(slug) ?? 0) + 1);
-    else if (candidate.status !== undefined && slug !== candidate.status) {
+    const resolvedStatus =
+      candidate.type === "feature"
+        ? null
+        : resolveStatus(candidate.status, ordered, fallback);
+    const slug = resolvedStatus?.slug ?? fallback;
+    if (resolvedStatus && !resolvedStatus.known)
+      unknown.set(slug, (unknown.get(slug) ?? 0) + 1);
+    else if (
+      resolvedStatus &&
+      candidate.status !== undefined &&
+      slug !== candidate.status
+    ) {
       remapped.set(candidate.status, slug);
     }
     return {
@@ -62,7 +71,16 @@ export function planImport(
         ? {}
         : { labels: candidate.labelDefinitions }),
       ...(candidate.type === undefined ? {} : { type: candidate.type }),
-      status: slug,
+      status: candidate.type === "feature" ? (candidate.status ?? null) : slug,
+      ...(candidate.releaseKey === undefined
+        ? {}
+        : { releaseKey: candidate.releaseKey }),
+      ...(candidate.archivedAt === undefined
+        ? {}
+        : { archivedAt: candidate.archivedAt }),
+      ...(candidate.planningSnapshots === undefined
+        ? {}
+        : { planningSnapshots: candidate.planningSnapshots }),
       ...(candidate.description === undefined
         ? {}
         : { description: candidate.description }),

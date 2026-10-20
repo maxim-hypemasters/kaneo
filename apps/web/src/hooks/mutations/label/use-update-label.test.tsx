@@ -52,7 +52,10 @@ describe("useUpdateLabel", () => {
       color: "purple",
     });
 
-    expect(mockInvalidateQueries).toHaveBeenCalledTimes(3);
+    expect(mockInvalidateQueries).toHaveBeenCalledTimes(4);
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["feature-library"],
+    });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ["labels"],
     });
@@ -73,7 +76,10 @@ describe("useUpdateLabel", () => {
       color: "red",
     });
 
-    expect(mockInvalidateQueries).toHaveBeenCalledTimes(3);
+    expect(mockInvalidateQueries).toHaveBeenCalledTimes(4);
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["feature-library"],
+    });
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: ["labels"],
     });

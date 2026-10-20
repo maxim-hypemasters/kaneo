@@ -7,8 +7,8 @@ import type { ImportPlan, StatusRemap } from "./import-plan.js";
 export type ImportTaskReport = {
   readonly index: number;
   readonly title: string;
-  readonly status: string;
-  readonly statusName: string;
+  readonly status: string | null;
+  readonly statusName: string | null;
   readonly imported: boolean | null;
   readonly id: string | null;
   readonly ticketId: string | null;
@@ -41,9 +41,13 @@ export type ImportTarget = {
   readonly workspaceId: string;
 };
 
-function statusName(columns: ReadonlyArray<Column>, slug: string): string {
+function statusName(
+  columns: ReadonlyArray<Column>,
+  slug: string | null,
+): string {
   const column = columns.find((candidate) => candidate.slug === slug);
   if (column) return column.name;
+  if (slug === null) return "";
   return slug === "archived" ? "Archived" : "Planned";
 }
 
@@ -59,7 +63,9 @@ export function buildImportReport(input: {
     const outcome = outcomes?.[index];
     const id = outcome?.success ? (outcome.task.id ?? null) : null;
     const status = outcome?.success
-      ? (outcome.task.status ?? task.status)
+      ? outcome.task.status === undefined
+        ? task.status
+        : outcome.task.status
       : task.status;
     return {
       index: index + 1,

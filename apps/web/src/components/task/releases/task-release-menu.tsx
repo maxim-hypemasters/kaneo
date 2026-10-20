@@ -2,14 +2,17 @@ import { useTranslation } from "react-i18next";
 import { OptionMenu } from "@/components/common/option-menu/option-menu";
 import { Button } from "@/components/ui/button";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
-import { useFeatureIndex } from "@/hooks/queries/task/use-feature-index";
+import { useGetMilestones } from "@/hooks/queries/milestone/use-get-milestones";
 import { formatReleaseRange } from "@/lib/releases/release-date";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import type Task from "@/types/task";
 import { releaseMenuOptions } from "../menus/release-menu-options";
 
 type TaskReleaseMenuProps = {
-  task: Pick<Task, "projectId" | "type" | "featureId" | "releaseId">;
+  task: Pick<
+    Task,
+    "projectId" | "type" | "featureId" | "milestoneId" | "releaseId"
+  >;
   // The picked release id, or null for no release.
   onSelect: (releaseId: string | null) => void;
 };
@@ -25,10 +28,12 @@ export function TaskReleaseMenu({ task, onSelect }: TaskReleaseMenuProps) {
     isError,
     refetch,
   } = useGetReleases(task.projectId);
-  const featureIndex = useFeatureIndex(task.projectId);
-  const featureReleaseId = task.featureId
-    ? (featureIndex.features.get(task.featureId)?.releaseId ?? null)
-    : null;
+  const { data: milestones = [] } = useGetMilestones(
+    task.projectId,
+    task.featureId,
+  );
+  const featureReleaseId =
+    milestones.find((m) => m.id === task.milestoneId)?.releaseId ?? null;
   const current = task.releaseId ?? null;
   const options = releaseMenuOptions(releases ?? [], current, {
     today,
@@ -36,7 +41,7 @@ export function TaskReleaseMenu({ task, onSelect }: TaskReleaseMenuProps) {
     labels: {
       none: t("tasks:releases.none"),
       unknown: t("tasks:releases.unknown"),
-      featureRelease: t("tasks:releases.featureReleaseHint"),
+      featureRelease: t("tasks:releases.milestoneReleaseHint"),
     },
     rangeOf: (release) =>
       formatReleaseRange(release.startDate, release.submissionDate, { today }),
@@ -74,11 +79,6 @@ export function TaskReleaseMenu({ task, onSelect }: TaskReleaseMenuProps) {
             {t("tasks:releases.retry")}
           </Button>
         </div>
-      )}
-      {task.type === "feature" && !isPending && (
-        <p className="border-border/80 border-t px-3 py-2 text-muted-foreground text-xs">
-          {t("tasks:releases.followNote")}
-        </p>
       )}
     </>
   );

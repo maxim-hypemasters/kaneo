@@ -10,7 +10,7 @@ import { TASK_TYPES } from "./task-type";
 
 describe("task item types", () => {
   it.each(TASK_TYPES)(
-    "accepts %s across creation, conversion, lists and imports",
+    "accepts %s across creation, lists and imports; only leaves convert",
     (type) => {
       expect(
         createTaskBody.parse({
@@ -21,7 +21,9 @@ describe("task item types", () => {
           type,
         }).type,
       ).toBe(type);
-      expect(updateTypeBody.parse({ type }).type).toBe(type);
+      if (type === "feature")
+        expect(updateTypeBody.safeParse({ type }).success).toBe(false);
+      else expect(updateTypeBody.parse({ type }).type).toBe(type);
       expect(listTasksQuery.parse({ type }).type).toBe(type);
       expect(
         importTasksBody.parse({

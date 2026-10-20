@@ -14,7 +14,6 @@ import {
   it,
   vi,
 } from "vite-plus/test";
-import { HttpError } from "@/lib/http-error";
 import type { TaskType } from "@/types/task";
 import { TaskTypeMenu } from "./task-type-menu";
 
@@ -66,102 +65,40 @@ afterEach(() => {
 });
 
 describe("TaskTypeMenu", () => {
-  it.each(["task", "feature"] as const)(
-    "converts %s to a bug",
-    async (type) => {
-      const task = renderMenu(type);
-      await clickItem("tasks:features.convertToBug");
-      expect(mocks.updateType).toHaveBeenCalledWith({ task, type: "bug" });
-    },
-  );
-
-  it("keeps feature membership when choosing Task from Bug", async () => {
+  it("converts a Task to Bug", async () => {
+    const task = renderMenu("task");
+    await clickItem("tasks:features.convertToBug");
+    expect(mocks.updateType).toHaveBeenCalledWith({ task, type: "bug" });
+    expect(
+      screen.queryByRole("menuitem", {
+        name: "tasks:features.convertToFeature",
+      }),
+    ).not.toBeInTheDocument();
+  });
+  it("converts a Bug to Task", async () => {
     const task = renderMenu("bug");
     await clickItem("tasks:features.convertToTask");
     expect(mocks.updateType).toHaveBeenCalledWith({ task, type: "task" });
-    expect(
-      screen.queryByRole("menuitem", { name: "tasks:features.convertToBug" }),
-    ).not.toBeInTheDocument();
   });
-
-  it("blocks both non-feature targets while a feature has children", async () => {
-    renderMenu("feature", true);
-    for (const name of [
-      "tasks:features.convertToTask",
-      "tasks:features.convertToBug",
-    ]) {
-      expect(await screen.findByRole("menuitem", { name })).toHaveAttribute(
-        "aria-disabled",
-        "true",
-      );
-    }
-    expect(mocks.updateType).not.toHaveBeenCalled();
-  });
-
-  it("converts a task into a feature", async () => {
-    const task = renderMenu("task");
-
-    await clickItem("tasks:features.convertToFeature");
-
-    await waitFor(() =>
-      expect(mocks.updateType).toHaveBeenCalledWith({ task, type: "feature" }),
-    );
-  });
-
-  it("converts a feature without tasks back into a task", async () => {
-    const task = renderMenu("feature");
-
-    await clickItem("tasks:features.convertToTask");
-
-    await waitFor(() =>
-      expect(mocks.updateType).toHaveBeenCalledWith({ task, type: "task" }),
-    );
-  });
-
-  it("explains why a feature with tasks can't become a task", async () => {
-    renderMenu("feature", true);
-
-    const item = await screen.findByRole("menuitem", {
-      name: "tasks:features.convertToTask",
-    });
-    expect(item).toHaveAttribute("aria-disabled", "true");
-    expect(item).toHaveAccessibleDescription("tasks:milestones.convertBlocked");
-    await act(async () => {
-      fireEvent.click(item);
-    });
-    expect(mocks.updateType).not.toHaveBeenCalled();
-  });
-
-  it("explains a conflict the view didn't know about", async () => {
-    mocks.updateType.mockRejectedValue(
-      new HttpError(409, "This feature still has tasks."),
-    );
-    renderMenu("feature");
-
-    await clickItem("tasks:features.convertToTask");
-
-    await waitFor(() =>
-      expect(mocks.toastError).toHaveBeenCalledWith(
-        "tasks:milestones.convertBlocked",
-      ),
-    );
-  });
-
-  it("reports other failures", async () => {
+  it.each([false, true])(
+    "keeps Feature type immutable with children %s",
+    (hasTasks) => {
+      renderMenu("feature", hasTasks);
+      expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
+      expect(mocks.updateType).not.toHaveBeenCalled();
+    },
+  );
+  it("reports a failed leaf conversion", async () => {
     mocks.updateType.mockRejectedValue(new Error("Server error"));
     renderMenu("task");
-
-    await clickItem("tasks:features.convertToFeature");
-
+    await clickItem("tasks:features.convertToBug");
     await waitFor(() =>
       expect(mocks.toastError).toHaveBeenCalledWith("Server error"),
     );
   });
-
   it("stays closed without update permission", () => {
     mocks.canUpdateTasks.mockReturnValue(false);
     renderMenu("task");
-
     expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
   });
 });

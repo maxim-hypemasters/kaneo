@@ -1,4 +1,6 @@
-import { Diamond, Ellipsis } from "lucide-react";
+import { openMilestoneDetails } from "@/store/milestone-details";
+import { getPriorityIcon } from "@/lib/priority";
+import { Diamond, Ellipsis, ArrowUpRight } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -8,6 +10,8 @@ import { cn } from "@/lib/cn";
 import { milestoneDateLabel } from "./milestone-date-label";
 export function MilestoneRow({
   milestone,
+  projectId,
+  planningLabel,
   selected,
   canEdit,
   first,
@@ -19,6 +23,8 @@ export function MilestoneRow({
   onMove,
 }: {
   milestone: Milestone;
+  projectId: string;
+  planningLabel?: string;
   selected: boolean;
   canEdit: boolean;
   first: boolean;
@@ -59,6 +65,14 @@ export function MilestoneRow({
           <span className="block truncate" title={milestone.title}>
             {milestone.title}
           </span>
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            {getPriorityIcon(milestone.priority ?? "no-priority")}
+            <span className="truncate">
+              {planningLabel ??
+                milestone.status ??
+                t("tasks:milestones.planned")}
+            </span>
+          </span>
           {dates && (
             <span
               className="block truncate text-xs text-muted-foreground"
@@ -81,6 +95,14 @@ export function MilestoneRow({
           {percent}% · {completed}/{total}
         </span>
       </button>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        aria-label={t("tasks:milestones.open")}
+        onClick={() => openMilestoneDetails(projectId, milestone.id)}
+      >
+        <ArrowUpRight className="size-3.5" />
+      </Button>
       {canEdit && (
         <Menu
           onOpenChange={(open) => {

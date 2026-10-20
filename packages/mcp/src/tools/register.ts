@@ -2,6 +2,7 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { buildFullTaskUpdateBody } from "../kaneo/task-helpers.js";
 import { errorResult, textResult } from "../utils/mcp-result.js";
+import { registerFeatureTools } from "./features.js";
 import { registerMilestoneTools } from "./milestones.js";
 import { getCurrentUser } from "./get-current-user.js";
 
@@ -33,8 +34,7 @@ const optionalIsoDateTimeSchema = isoDateTimeSchema.optional();
 const nullableOptionalIsoDateTimeSchema = isoDateTimeSchema
   .nullable()
   .optional();
-// A feature is a task that groups the tasks of one piece of work; it stays on
-// the board with its own status, assignee and dates.
+// Feature identity uses the task resource, without execution planning.
 const taskTypeSchema = z.enum(["task", "bug", "feature"]);
 // Release dates are calendar days with no time zone.
 const releaseDaySchema = z.iso.date();
@@ -64,6 +64,7 @@ export function registerTools(
 ): void {
   const { client } = ctx;
   registerMilestoneTools(server, client);
+  registerFeatureTools(server, client);
   const registerTool = <S extends z.ZodObject>(
     name: string,
     config: { description: string; inputSchema: S },
@@ -219,9 +220,10 @@ export function registerTools(
 
   const listTasksSchema = z.object({
     projectId: nonEmptyString,
-    type: taskTypeSchema
+    type: z
+      .enum(["task", "bug"])
       .optional()
-      .describe("Only this item type; task excludes bugs"),
+      .describe("Only this execution item type; task excludes bugs"),
     status: optionalNonEmptyString,
     priority: prioritySchema.optional(),
     assigneeId: optionalNonEmptyString,
@@ -241,7 +243,7 @@ export function registerTools(
       "Only work in this milestone, or none for no milestone",
     ),
     releaseId: optionalNonEmptyString.describe(
-      "Only tasks and features in this release, or 'none' for those in no release",
+      "Only Tasks and Bugs in this release, or 'none' for those in no release",
     ),
   });
 
@@ -249,7 +251,7 @@ export function registerTools(
     "list_tasks",
     {
       description:
-        "List a bounded page of tasks for a project (50 by default, maximum 100). Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each item has a type ('task', 'bug' or 'feature'), a featureId (the feature it belongs to, or null), a releaseId (its release, or null), and milestoneId (its milestone, or null); a feature's subtaskCounts is the progress of its tasks and bugs.",
+        "List a bounded page of Tasks and Bugs for a project (50 by default, maximum 100); Features are available through list_features. Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each item has a type ('task' or 'bug'), a featureId (the feature it belongs to, or null), a releaseId (its release, or null), and milestoneId (its milestone, or null).",
       inputSchema: listTasksSchema,
     },
     async (args) => {
@@ -311,31 +313,50 @@ export function registerTools(
     "create_task",
     {
       description:
-        "Create a task, bug or feature in a project. Pass type 'bug' for a bug, 'feature' for a feature, or featureId to create a task or bug inside a feature of the same project. A feature can't belong to another feature. Without releaseId, an item created in a feature starts in the feature's release, and any other item in none.",
-      inputSchema: z.object({
-        projectId: nonEmptyString,
-        title: nonEmptyString,
-        description: z.string(),
-        priority: prioritySchema,
-        status: nonEmptyString,
-        startDate: optionalIsoDateTimeSchema,
-        dueDate: optionalIsoDateTimeSchema,
-        userId: optionalNonEmptyString,
-        type: taskTypeSchema
-          .optional()
-          .describe(
-            "'bug' behaves like a task; 'feature' groups tasks and bugs. Defaults to 'task'.",
+        "Create a task, bug or feature in a project. Pass type 'bug' for a bug, 'feature' for a feature, or featureId to create a task or bug inside a feature of the same project. A feature can't belong to another feature. Features are knowledge records without planning fields. Tasks/Bugs inherit their milestone's release when releaseId is omitted.",
+      inputSchema: z
+        .object({
+          projectId: nonEmptyString,
+          title: nonEmptyString,
+          description: z.string(),
+          priority: prioritySchema.optional(),
+          status: optionalNonEmptyString,
+          startDate: optionalIsoDateTimeSchema,
+          dueDate: optionalIsoDateTimeSchema,
+          userId: optionalNonEmptyString,
+          type: taskTypeSchema
+            .optional()
+            .describe(
+              "'bug' behaves like a task; 'feature' groups tasks and bugs. Defaults to 'task'.",
+            ),
+          featureId: optionalNonEmptyString.describe(
+            "Create the Task or Bug inside this knowledge Feature of the same project.",
           ),
-        featureId: optionalNonEmptyString.describe(
-          "Create the task inside this feature (a task of type 'feature' in the same project).",
+          milestoneId: nullableOptionalNonEmptyString.describe(
+            "A milestone of the same Feature, or null for none. Requires featureId and does not move Feature membership.",
+          ),
+          releaseId: nullableOptionalNonEmptyString.describe(
+            "A release of the same project (see list_releases), or null for none. Omit it to follow the milestone's release.",
+          ),
+        })
+        .refine(
+          (args) =>
+            args.type !== "feature" ||
+            [
+              args.priority,
+              args.status,
+              args.startDate,
+              args.dueDate,
+              args.userId,
+              args.featureId,
+              args.milestoneId,
+              args.releaseId,
+            ].every((field) => field === undefined),
+          {
+            message:
+              "Features are knowledge records without planning or parent membership fields.",
+          },
         ),
-        milestoneId: nullableOptionalNonEmptyString.describe(
-          "A milestone of the same Feature, or null for none. Requires featureId and does not move Feature membership.",
-        ),
-        releaseId: nullableOptionalNonEmptyString.describe(
-          "A release of the same project (see list_releases), or null for none. Omit it to follow the feature's release.",
-        ),
-      }),
     },
     async (args) => {
       const body: Record<string, string | null | undefined> = {
@@ -481,7 +502,7 @@ export function registerTools(
     "set_task_feature",
     {
       description:
-        "Put a task into a feature of its project, or pass a null featureId to take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one. A task in no release takes the feature's release when it joins; leaving a feature keeps the release.",
+        "Put a task into a feature of its project, or pass a null featureId to take it out of its feature. A task belongs to at most one feature, and a feature can't belong to one. Changing Feature clears milestone membership and preserves the task's release.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         featureId: nonEmptyString
@@ -504,10 +525,14 @@ export function registerTools(
     "set_task_type",
     {
       description:
-        "Change an item to task, bug or feature. Tasks and bugs can belong to a feature; becoming a feature leaves that membership. A feature can become a task or bug only once it is empty.",
+        "Convert between Task and Bug, preserving identity, Feature and milestone. Features cannot be converted.",
       inputSchema: z.object({
         taskId: nonEmptyString,
-        type: taskTypeSchema.describe("'task', 'bug' or 'feature'"),
+        type: z
+          .enum(["task", "bug"])
+          .describe(
+            "Task and Bug may be converted into each other; Features cannot be converted.",
+          ),
       }),
     },
     async (args) =>
@@ -522,7 +547,7 @@ export function registerTools(
   registerTool(
     "list_releases",
     {
-      description: `List a project's releases, ordered by start date, with their progress: tasks and features (total and completed, meaning in a final column) and unfinished (neither archived nor completed). Dates are YYYY-MM-DD calendar days ordered startDate ≤ codeFreezeDate ≤ submissionDate. ${RELEASE_PHASES}`,
+      description: `List a project's releases, ordered by start date, with their progress: Tasks/Bugs and milestones (total and completed, meaning in a final column), knowledge Feature groups, and unfinished work (neither archived nor completed). Dates are YYYY-MM-DD calendar days ordered startDate ≤ codeFreezeDate ≤ submissionDate. ${RELEASE_PHASES}`,
       inputSchema: z.object({ projectId: nonEmptyString }),
     },
     async (args) =>
@@ -552,7 +577,7 @@ export function registerTools(
     "create_release",
     {
       description:
-        "Create a release in a project: a planned delivery that holds features and tasks. The name must be unique in the project, and the dates must run startDate ≤ codeFreezeDate ≤ submissionDate (equal days are allowed). Needs permission to update the project (owners and admins by default).",
+        "Create a release in a project: a planned delivery that holds milestones, Tasks and Bugs. The name must be unique in the project, and the dates must run startDate ≤ codeFreezeDate ≤ submissionDate (equal days are allowed). Needs permission to update the project (owners and admins by default).",
       inputSchema: z.object({
         projectId: nonEmptyString,
         name: releaseNameSchema,
@@ -586,7 +611,7 @@ export function registerTools(
     "update_release",
     {
       description:
-        "Update a release (PATCH-style: only provided fields are changed). The date order is checked against the stored dates. Pass a null description to clear it. Its features and tasks stay in it. Needs permission to update the project.",
+        "Update a release (PATCH-style: only provided fields are changed). The date order is checked against the stored dates. Pass a null description to clear it. Its milestones and tasks stay in it. Needs permission to update the project.",
       inputSchema: z.object({
         releaseId: nonEmptyString,
         name: releaseNameSchema.optional(),
@@ -619,7 +644,7 @@ export function registerTools(
     "delete_release",
     {
       description:
-        "Delete a release. Its features and tasks stay in the project with no release, and each records the change in its activity. Needs permission to update the project and its tasks.",
+        "Delete a release. Its milestones and tasks stay in the project with no release, and each records the change in its activity. Needs permission to update the project and its tasks.",
       inputSchema: z.object({ releaseId: nonEmptyString }),
     },
     async (args) =>
@@ -634,7 +659,7 @@ export function registerTools(
     "set_task_release",
     {
       description:
-        "Put a task or feature into a release of its project, or pass a null releaseId to take it out. A task follows its feature while both are in the same release (or both in none): setting a feature's release also moves those tasks, and the result lists them in movedTaskIds. Tasks given another release keep theirs, and a task can always be moved on its own.",
+        "Put a Task or Bug into a release of its project, or pass null to clear it. Features have no release. Milestone release changes move linked followers; explicit task overrides remain.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         releaseId: nonEmptyString
@@ -657,7 +682,7 @@ export function registerTools(
     "move_unfinished_release_items",
     {
       description:
-        "Move a release's unfinished tasks and features (neither archived nor in a final column) to another release of the same project, or out of every release with a null targetReleaseId. Each item moves on its own: a feature's tasks don't follow it, and finished items stay. Returns movedTaskIds.",
+        "Move a release's unfinished milestones, Tasks and Bugs independently to another release of the same project, or to no release with null targetReleaseId. Completed work stays. Returns movedTaskIds and movedMilestoneIds.",
       inputSchema: z.object({
         releaseId: nonEmptyString.describe("The release to move items out of"),
         targetReleaseId: nonEmptyString
@@ -818,7 +843,7 @@ export function registerTools(
     "create_task_relation",
     {
       description:
-        "Create a relation between two tasks. relationType: 'blocks' (sourceTaskId blocks targetTaskId) or 'related' (bidirectional). 'subtask' is a deprecated alias that puts targetTaskId into sourceTaskId's feature (making a plain source a feature); prefer set_task_feature.",
+        "Create a relation between two tasks. relationType: 'blocks' (sourceTaskId blocks targetTaskId) or 'related' (bidirectional). 'subtask' is a deprecated alias that puts targetTaskId into sourceTaskId's feature (sourceTaskId must already be a Feature); prefer set_task_feature.",
       inputSchema: z.object({
         sourceTaskId: nonEmptyString,
         targetTaskId: nonEmptyString,

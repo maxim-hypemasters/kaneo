@@ -19,7 +19,7 @@ Choose **New → New bug**, or choose **New bug** in the command menu. You can a
 
 Bugs have the same properties, workflow, numbering, permissions, and actions as Tasks. A bug icon identifies them on cards, rows, calendars, Gantt, My Work, public boards, and search. A Bug can belong to a Feature and a Release. Bugs count as tasks in feature progress, release totals, and release progress charts.
 
-To change an existing item's classification, open **Type** in its properties or use its card or row's conversion menu. Converting between Task and Bug keeps the same item, including its feature, release, comments, attachments, labels, dates, and history. Converting either to Feature takes it out of its parent feature and keeps its release. A Feature can become a Task or Bug only after all its children have been removed.
+To change an existing item's classification, open **Type** in its properties or use its card or row's conversion menu. Converting between Task and Bug keeps the same item, including its feature, release, comments, attachments, labels, dates, and history. Features have a separate knowledge role and cannot be converted to or from Tasks/Bugs.
 
 ## Move work on the board
 
@@ -55,7 +55,7 @@ Use **Filter** to narrow the view by type, status, assignee, priority, labels, r
 
 Filters are saved for each project and apply to every layout. The count next to **Tasks** shows how many tasks match. If a task seems to have disappeared, clear your filters and check the backlog before creating another one.
 
-The **Type** filter offers Task, Bug, and Feature, with counts for each. Selecting more than one includes any selected type; other filters still apply. Use **is not** to exclude the selected types. Projects with older saved filters initially include all types. Filtering changes the visible items, while feature and release progress continue to count all their work.
+The execution **Type** filter offers Task and Bug, with counts for each. Features are found through the dedicated library. Selecting more than one includes any selected type; other filters still apply. Use **is not** to exclude the selected types. Projects with older saved filters initially include all types. Filtering changes the visible items, while feature and release progress continue to count all their work.
 
 Open **Display** to sort tasks and choose which details appear on cards and rows. Filled custom fields show as small chips on cards and rows; hover one to see the field name. Under **Fields**, turn off any field you don't want there. These choices are saved in your browser and only affect your view.
 
@@ -79,51 +79,25 @@ Use the attachment button, paste, or drag a file into the editor to add supporti
 
 ## Group work into features
 
-A feature is a task that groups other tasks, like an epic. Use one for a larger piece of work that several tasks deliver together, such as “New onboarding flow.” A feature stays on the board as a card, with its own status, assignee, dates, and comments.
+A Feature is a durable knowledge record for a part of your product. Keep its documentation, labels, custom fields, resources, comments, implementation history, milestones, and linked Tasks/Bugs together. Features retain their identifiers and links but have no workflow status, priority, assignee, start/end dates, or release.
 
-Use checkboxes in the description for a simple checklist. Use a feature when each piece needs its own owner or progress tracking.
+### Find and create Features
 
-### Make a feature
+Open the project's **Features** library to search its active or archived Features. Rows show a description preview, labels and milestone count. Use **New → New feature**, the library's creation action, or **New feature** in the command menu. Feature creation only asks for knowledge metadata. Features stay discoverable in search, relation pickers and task links, while execution boards, backlog, lists, Calendar and My Work show Tasks and Bugs.
 
-To create a new feature, choose **New → New feature**, or **New feature** in the command menu. In the creation window you can also switch **Type** to **Feature** before you create it.
+Archive a Feature from its actions menu to move it to the library's archived view; unarchive restores it. Feature archive state is independent of workflow and does not archive milestones or child work.
 
-To turn an existing task into a feature, open it, select **Type** in its properties (it shows **Task**), and choose **Convert to feature**. You can also right-click its card on the board, or its row in List, and choose **Convert to feature**. The card then shows a **Feature** badge.
+### Link implementation work
 
-To turn a feature back into a task or bug, choose **Convert to task** or **Convert to bug** in the same places. A feature that still has Tasks or Bugs can't become a leaf item. Take its tasks out of it first.
+Choose a Feature when creating or editing a Task/Bug, or quick-add work in its Tasks section. A Task/Bug can belong to one Feature in the same project. Choose **No feature** or use **Remove from feature** to unlink it. Changing the Feature clears milestone membership while preserving the task's release. Features cannot own other Features and cannot be converted to or from leaf work.
 
-### Add tasks to a feature
+Use [milestones](/core/functional/milestones) to plan stages of implementation. They carry execution metadata and appear in [Gantt](/core/functional/calendar-and-gantt#milestones). Selecting a milestone in the Feature sidebar filters its Tasks list; select it again to clear the filter. Child progress follows workflow Done flags and does not depend on manual milestone status.
 
-- When you create a task, select **Feature** and pick one of the project's features. Type a name that isn't there yet and choose **Create feature** to make a new one. When you create the task, Kaneo creates the feature first and then the task in it. If the task can't be created, the feature stays and is still chosen when you try again. The list shows the features of the task's project, so choose the project first.
-- Open the feature. In its **Tasks** section, open **+**, choose **New task** or **New bug**, enter a title, and choose **Add**. The new item is created inside the feature. **New feature** creates a separate Feature in the same project and release.
-- Open a task, select its **Feature** property, and pick one of the project's features.
+### History and preservation
 
-A task belongs to one feature at most, and only to a feature in its own project. A feature can't belong to another feature, so it has no **Feature** property, and turning a task into a feature takes it out of its feature.
+Feature history contains its comments and activity plus milestone lifecycle and planning changes. On upgrade, former Feature planning values are preserved in one immutable history snapshot before the fields are cleared. No milestones are created automatically. Existing task releases, milestone dates/order, and historical release progress remain intact.
 
-To take a task out of its feature, do one of these:
-
-- Pick **No feature** in the task's **Feature** property.
-- Choose **Remove from feature** (**×**) next to the feature's name at the top of the task.
-- Right-click the task's card or row and choose **Remove from feature**.
-- In the feature's **Tasks** section, hover the task and choose **Remove from feature** (**×**).
-
-The task itself stays. To move it to another feature, pick that feature in its **Feature** property.
-
-### Follow a feature's progress
-
-A feature's card shows how many of its Tasks and Bugs are done, such as **2/5**. Hover or select the count to list the tasks, and select one to open it. Each task in a feature shows the feature's name on its card and in List. Select the name to open the feature. In an open task, the **Feature** link at the top takes you to its feature. On the Gantt chart, features have [their own bar style](/core/functional/calendar-and-gantt#features), and you can [group tasks by feature](/core/functional/calendar-and-gantt#group-by-feature).
-
-The task's activity records when you add it to a feature, take it out, or change its feature, and when its type changes. It also records when the task leaves its feature because it moved to another project or its feature was deleted. Creating a task inside a feature records only its creation.
-
-### What happens to the tasks
-
-- **Deleting a feature** keeps its tasks. They just leave the feature.
-- **Moving a task to another project** takes it out of its feature and its release.
-- **Moving a feature to another project** works only when it has no tasks. Take its tasks out first.
-- **Duplicating a task** puts the copy in the same feature and release. A copy of a feature is a new feature in the same release, without tasks.
-
-### Features and releases
-
-When you put a feature in a [release](/core/functional/releases), its tasks that were in the feature's previous release move with it. A task you create in the feature starts in its release, and a task without a release takes the feature's release when it joins. A task you put in another release on its own stays there, and taking a task out of its feature keeps its release. See [How tasks follow their feature](/core/functional/releases#how-tasks-follow-their-feature) for examples.
+Deleting a Feature unlinks its Tasks/Bugs and removes its milestones, while retaining the child work and its planning fields. Duplicating creates an empty Feature without milestones. An empty Feature may move projects with its milestones. Task/Bug duplication preserves its existing Feature, milestone and release.
 
 ### Subtasks from earlier versions
 

@@ -10,7 +10,7 @@ async function getProjectFeatures(projectId: string) {
     throw await HttpError.fromResponse(response);
   }
 
-  return response.json();
+  return (await response.json()).map((feature) => ({ ...feature, projectId }));
 }
 
 export default getProjectFeatures;

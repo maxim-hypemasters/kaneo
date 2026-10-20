@@ -7,6 +7,7 @@ import {
   milestoneTable,
   projectTable,
   taskTable,
+  releaseTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { writeImportLabels } from "../../import/writer/write-import-labels";
@@ -24,18 +25,30 @@ import {
   coerceStatus,
   getValidTaskStatuses,
 } from "../validate-task-fields";
-import { planTransferHierarchy, type TransferMilestone } from "./hierarchy";
+import {
+  planTransferHierarchy,
+  type TransferMilestone,
+  type TransferRelease,
+} from "./hierarchy";
+import {
+  preserveImportedPlanning,
+  type PlanningSnapshot,
+} from "./feature-planning";
 
 export type HierarchyTransferTask = ImportTask & {
   key?: string;
   featureKey?: string | null;
   milestoneKey?: string | null;
+  releaseKey?: string | null;
+  archivedAt?: string | null;
+  planningSnapshots?: PlanningSnapshot[];
   labels?: Array<{ name: string; color: string }>;
 };
 
 export type HierarchyTransfer = {
   tasks: HierarchyTransferTask[];
   milestones?: TransferMilestone[];
+  releases?: TransferRelease[];
 };
 
 export async function importHierarchy(
@@ -53,11 +66,15 @@ export async function importHierarchy(
   });
   if (!project) throw new HTTPException(404, { message: "Project not found" });
   const ids = [
-    ...new Set(
-      document.tasks
+    ...new Set([
+      ...document.tasks
+        .filter((task) => task.type !== "feature")
         .map((task) => task.userId?.trim())
         .filter((id): id is string => !!id),
-    ),
+      ...(document.milestones ?? []).flatMap((m) =>
+        m.leadId ? [m.leadId] : [],
+      ),
+    ]),
   ];
   const members = await filterAssignableUsers(ids, project.workspaceId);
   const permitted = await filterUsersWithProjectAccess(members, projectId);
@@ -74,7 +91,7 @@ export async function importHierarchy(
     .where(eq(columnTable.projectId, projectId));
   const columnIds = new Map(columns.map((column) => [column.slug, column.id]));
   const prepared = document.tasks.map((item) => {
-    const status = coerceStatus(item.status, statuses);
+    const status = coerceStatus(item.status ?? "planned", statuses);
     const priority = coercePriority(item.priority ?? "low");
     for (const value of [item.startDate, item.dueDate]) {
       if (value && Number.isNaN(Date.parse(value)))
@@ -93,6 +110,25 @@ export async function importHierarchy(
     };
   });
   const taskIds = new Map(prepared.map(({ item, id }) => [item.key!, id]));
+  const releaseKeys = new Set(
+    (document.releases ?? []).map((release) => release.key),
+  );
+  if (
+    releaseKeys.size !== (document.releases ?? []).length ||
+    new Set((document.releases ?? []).map((release) => release.name)).size !==
+      (document.releases ?? []).length
+  )
+    throw new HTTPException(400, {
+      message: "Release keys and names must be unique",
+    });
+  for (const reference of [
+    ...document.tasks.map((task) => task.releaseKey),
+    ...(document.milestones ?? []).map((milestone) => milestone.releaseKey),
+  ])
+    if (reference && !releaseKeys.has(reference))
+      throw new HTTPException(400, {
+        message: "Release references must belong to the transfer",
+      });
   const created = await db.transaction(async (tx) => {
     const [lockedProject] = await tx
       .select({ workspaceId: projectTable.workspaceId })
@@ -106,6 +142,15 @@ export async function importHierarchy(
       throw new HTTPException(409, {
         message: "Project moved; reload before importing",
       });
+    }
+    const releaseIds = new Map<string, string>();
+    for (const release of document.releases ?? []) {
+      const { key, ...fields } = release;
+      const [row] = await tx
+        .insert(releaseTable)
+        .values({ projectId, ...fields })
+        .returning({ id: releaseTable.id });
+      releaseIds.set(key, row!.id);
     }
     const rows = [];
     for (const { item, id, status, priority, warnings } of prepared) {
@@ -122,14 +167,47 @@ export async function importHierarchy(
           title: item.title.trim(),
           type: item.type ?? "task",
           description: item.description ?? "",
-          status,
-          columnId,
-          priority,
-          startDate: item.startDate ? new Date(item.startDate) : null,
-          dueDate: item.dueDate ? new Date(item.dueDate) : null,
-          userId: item.userId?.trim() || null,
+          status: item.type === "feature" ? null : status,
+          columnId: item.type === "feature" ? null : columnId,
+          priority: item.type === "feature" ? null : priority,
+          startDate:
+            item.type !== "feature" && item.startDate
+              ? new Date(item.startDate)
+              : null,
+          dueDate:
+            item.type !== "feature" && item.dueDate
+              ? new Date(item.dueDate)
+              : null,
+          userId: item.type === "feature" ? null : item.userId?.trim() || null,
+          releaseId:
+            item.type === "feature"
+              ? null
+              : item.releaseKey
+                ? releaseIds.get(item.releaseKey)!
+                : null,
+          archivedAt:
+            item.type === "feature" &&
+            (item.archivedAt || item.status === "archived")
+              ? new Date(item.archivedAt ?? new Date().toISOString())
+              : null,
         })
         .returning();
+      if (item.type === "feature")
+        await preserveImportedPlanning(
+          tx,
+          id,
+          currentUserId,
+          {
+            status: item.status,
+            priority: item.priority,
+            userId: item.userId,
+            startDate: item.startDate,
+            dueDate: item.dueDate,
+            releaseId: item.releaseKey,
+          },
+          item.planningSnapshots,
+          releaseIds,
+        );
       rows.push({
         success: true as const,
         task: row!,
@@ -153,6 +231,31 @@ export async function importHierarchy(
         startDate: milestone.startDate ?? null,
         endDate: milestone.endDate ?? null,
         position: milestone.position,
+        leadId: milestone.leadId ?? null,
+        status: coerceStatus(
+          milestone.status ??
+            [...columns]
+              .sort(
+                (a, b) => a.position - b.position || a.id.localeCompare(b.id),
+              )
+              .find((column) => !column.isFinal)?.slug ??
+            "planned",
+          statuses,
+        ).status,
+        columnId:
+          columnIds.get(
+            milestone.status ??
+              [...columns]
+                .sort(
+                  (a, b) => a.position - b.position || a.id.localeCompare(b.id),
+                )
+                .find((column) => !column.isFinal)?.slug ??
+              "planned",
+          ) ?? null,
+        priority: coercePriority(milestone.priority ?? "no-priority").priority,
+        releaseId: milestone.releaseKey
+          ? releaseIds.get(milestone.releaseKey)!
+          : null,
       });
       milestoneIds.set(milestone.key, id);
     }

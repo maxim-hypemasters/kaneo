@@ -31,7 +31,9 @@ export type KaneoBoardTask = {
   number: number | null;
   description: string | null;
   descriptionDeferred?: boolean;
-  status: string;
+  status: string | null;
+  archivedAt?: string | null;
+  releaseId?: string | null;
   priority: string | null;
   startDate?: string | null;
   dueDate?: string | null;
@@ -86,6 +88,7 @@ export type KaneoActivity = {
   type: string;
   userId: string | null;
   content: string | null;
+  eventData?: Record<string, unknown> | null;
   createdAt: string;
   externalUserName?: string | null;
 };
@@ -111,6 +114,10 @@ export type KaneoMilestone = {
   endDate?: string | null;
   targetDate?: string | null;
   position: number;
+  leadId?: string | null;
+  status?: string;
+  priority?: string;
+  releaseId?: string | null;
 };
 
 export type KaneoCustomField = {
@@ -140,6 +147,16 @@ export type KaneoClient = {
   listComments(taskId: string): Promise<KaneoComment[]>;
   listRelations(taskId: string): Promise<KaneoRelation[]>;
   listMilestones(featureId: string): Promise<KaneoMilestone[]>;
+  listFeatures?(projectId: string): Promise<KaneoBoardTask[]>;
+  listReleases?(projectId: string): Promise<
+    Array<{
+      id: string;
+      name: string;
+      startDate: string;
+      codeFreezeDate: string;
+      submissionDate: string;
+    }>
+  >;
   listCustomFields(projectId: string): Promise<KaneoCustomField[]>;
 };
 
@@ -226,6 +243,25 @@ export function createKaneoClient(options: KaneoClientOptions): KaneoClient {
     },
     listMilestones(featureId) {
       return list<KaneoMilestone>(`/api/milestone/feature/${id(featureId)}`);
+    },
+    async listFeatures(projectId) {
+      const found: KaneoBoardTask[] = [];
+      for (const archived of [false, true]) {
+        for (let page = 1; ; page++) {
+          const result = await http.request<{
+            data: KaneoBoardTask[];
+            pagination: { totalPages: number };
+          }>(
+            `/api/task/feature-library/${id(projectId)}?archived=${archived}&page=${page}&limit=100`,
+          );
+          found.push(...result.data);
+          if (page >= result.pagination.totalPages) break;
+        }
+      }
+      return found;
+    },
+    listReleases(projectId) {
+      return list(`/api/release/project/${id(projectId)}`);
     },
     listCustomFields(projectId) {
       return list<KaneoCustomField>(

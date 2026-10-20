@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useUpdateTaskFeature } from "@/hooks/mutations/task/use-update-task-feature";
-import { useCachedBoard } from "@/hooks/queries/task/use-cached-board";
+import { useGetProjectFeatures } from "@/hooks/queries/task/use-get-project-features";
 import { useFeatureIndex } from "@/hooks/queries/task/use-feature-index";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { toast } from "@/lib/toast";
@@ -35,10 +35,11 @@ export function TaskFeaturePopover({
   // The project's features come from its cached board; without one, only
   // the current feature is offered next to "No feature".
   const index = useFeatureIndex(task.projectId);
-  const boardCached = useCachedBoard(
-    task.projectId,
-    (board) => board !== undefined,
-  );
+  const {
+    isPending: featuresPending,
+    isError: featuresError,
+    refetch,
+  } = useGetProjectFeatures(task.projectId);
   const displayIdOf = useProjectSlugs(workspaceId);
   const { mutateAsync: updateFeature } = useUpdateTaskFeature();
   const { canUpdateTasks } = useWorkspacePermission();
@@ -54,9 +55,11 @@ export function TaskFeaturePopover({
   const status =
     features.length > 0 || currentFeatureId
       ? undefined
-      : boardCached
-        ? t("tasks:features.empty")
-        : t("common:empty.loading");
+      : featuresPending
+        ? t("common:empty.loading")
+        : featuresError
+          ? t("common:error.title")
+          : t("tasks:features.empty");
 
   const changeFeature = async (value: string) => {
     setOpen(false);
@@ -95,6 +98,15 @@ export function TaskFeaturePopover({
           onSelect={(value) => void changeFeature(value)}
           status={status}
         />
+        {featuresError && (
+          <button
+            type="button"
+            className="px-3 py-2 text-sm"
+            onClick={() => void refetch()}
+          >
+            {t("common:error.tryAgain")}
+          </button>
+        )}
       </PopoverContent>
     </Popover>
   );

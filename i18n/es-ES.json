@@ -192,7 +192,8 @@
 				"discardTitleBug": "Discard bug?",
 				"successCreatedBug": "Bug created successfully",
 				"titleBug": "New Bug",
-				"typeBug": "Bug"
+				"typeBug": "Bug",
+				"releaseFromMilestone": "{{name}} (from milestone)"
 			}
 		},
 		"editor": {
@@ -409,10 +410,7 @@
 					"title": "Arrastra esta tarjeta a la siguiente columna",
 					"description": "Las tarjetas pasan de columna en columna a medida que avanza el trabajo. Arrastra esta a la siguiente columna, o ábrela y cambia su estado."
 				},
-				"details": {
-					"title": "Abre esta tarea y conviértela en una funcionalidad",
-					"description": "Una tarea puede tener descripción, etiquetas, una persona asignada y fecha límite. Convierte esta tarea en una funcionalidad y luego añádele tareas para agrupar el trabajo en ella."
-				},
+				"details": {},
 				"invite": {
 					"title": "Invita a tu equipo",
 					"description": "Kaneo funciona mejor cuando todos están dentro. Abre **Miembros** en la barra lateral para invitar a personas por correo."
@@ -424,6 +422,10 @@
 				"create": {
 					"title": "Crea tu propia tarea",
 					"description": "Usa el **+** junto al nombre de una columna, o pulsa **T** y luego **C**. Elimina estas tareas de ejemplo cuando quieras."
+				},
+				"features": {
+					"description": "Open **Features** in the project navigation to create a Feature for documentation and implementation history. Add milestones inside the Feature to plan work, then link Tasks or Bugs to them.",
+					"title": "Explore the Features library"
 				}
 			},
 			"progress": "Paso {{current}} de {{total}}",
@@ -3226,6 +3228,30 @@
 				"taskAriaLabel": "{{title}}: abrir o arrastrar para reprogramar o mover a otra funcionalidad",
 				"moveError": "No se pudo mover la tarea a otra funcionalidad",
 				"assignee": "Asignada a {{name}}"
+			},
+			"milestones": {
+				"assigneeLead": "Assignee / Milestone Lead",
+				"bar": {
+					"ariaLabel": "Milestone {{title}}: open or drag to reschedule",
+					"ariaLabelGrouped": "Milestone {{title}}: open, or drag to reschedule or change lead",
+					"progress": "{{completed}}/{{total}}",
+					"progressAria": "{{completed}} of {{count}} completed"
+				},
+				"cannotMove": "Only work in this Feature can move to {{name}}",
+				"itemCount_many": "{{count}} items",
+				"itemCount_one": "{{count}} item",
+				"itemCount_other": "{{count}} items",
+				"moveError": "Could not move work to milestone",
+				"moveTo": "Move to milestone {{name}}",
+				"open": "Open milestone {{title}}",
+				"remove": "Remove milestone",
+				"show": "Show",
+				"shownCount_many": "{{shown}} of {{count}} items",
+				"shownCount_one": "{{shown}} of {{count}} item",
+				"shownCount_other": "{{shown}} of {{count}} items",
+				"taskAriaLabel": "{{title}}: open, or drag to reschedule or change milestone",
+				"taskFilters": "Task filters",
+				"unknown": "Unknown milestone"
 			}
 		},
 		"delete": {
@@ -3479,15 +3505,27 @@
 			"type": "Tipo",
 			"typeTask": "Tarea",
 			"typeFeature": "Funcionalidad",
-			"convertToFeature": "Convertir en funcionalidad",
 			"convertToTask": "Convertir en tarea",
 			"typeError": "Error al cambiar el tipo de la tarea",
-			"convertBlocked": "Saca las tareas de esta funcionalidad antes de convertirla en tarea.",
 			"openFeature": "Abrir funcionalidad {{title}}",
 			"inProject": "Funcionalidades en el proyecto",
 			"convertToBug": "Convert to bug",
 			"typeBug": "Bug",
-			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
+			"library": {
+				"active": "Active",
+				"archive": "Archive feature",
+				"archived": "Archived",
+				"empty": "No features found.",
+				"milestoneCount_many": "{{count}} milestones",
+				"milestoneCount_one": "{{count}} milestone",
+				"milestoneCount_other": "{{count}} milestones",
+				"restore": "Restore feature",
+				"saveError": "Could not update feature.",
+				"search": "Search features…",
+				"title": "Features",
+				"activityArchived": "archived this Feature",
+				"activityRestored": "restored this Feature"
+			}
 		},
 		"releases": {
 			"pageTitle": "{{name}} – Versiones",
@@ -3556,7 +3594,10 @@
 				"tasks_other": "{{count}} tareas",
 				"unfinished_one": "{{count}} sin terminar",
 				"unfinished_many": "{{count}} sin terminar",
-				"unfinished_other": "{{count}} sin terminar"
+				"unfinished_other": "{{count}} sin terminar",
+				"milestones_many": "{{count}} milestones",
+				"milestones_one": "{{count}} milestone",
+				"milestones_other": "{{count}} milestones"
 			},
 			"empty": {
 				"title": "Aún no hay versiones",
@@ -3669,7 +3710,8 @@
 				"title": "Progress over time",
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
-			}
+			},
+			"milestoneReleaseHint": "Milestone release"
 		},
 		"createMenu": {
 			"label": "Create work item",
@@ -3685,7 +3727,6 @@
 			"add": "New milestone",
 			"assignmentError": "Could not update milestone.",
 			"choose": "Choose milestone",
-			"convertBlocked": "Remove all tasks and milestones before converting this feature.",
 			"delete": "Delete milestone",
 			"deleteDescription": "Linked tasks and bugs remain in this feature and release. Only their milestone assignment is removed.",
 			"deleteTitle": "Delete milestone?",
@@ -3725,7 +3766,20 @@
 			"unavailableTasks": "Some selected work is no longer available. Remove it from the selection before saving.",
 			"noUnassignedTasks": "No Tasks or Bugs available to link.",
 			"clearEndDate": "Clear end date",
-			"endDatePlaceholder": "Set end date…"
+			"endDatePlaceholder": "Set end date…",
+			"activityCompleted": "completed milestone “{{title}}”",
+			"activityCreated": "created milestone “{{title}}”",
+			"activityDeleted": "deleted milestone “{{title}}”",
+			"activityReopened": "reopened milestone “{{title}}”",
+			"activityUpdated": "updated milestone “{{title}}”",
+			"activityUpdatedFields": "updated milestone “{{title}}”: {{fields}}",
+			"addLinkedWork": "Add work",
+			"lead": "Milestone Lead",
+			"noLinkedWork": "No linked Tasks or Bugs.",
+			"open": "Open milestone",
+			"planned": "Planned",
+			"planningSnapshot": "Previous planning: {{values}}",
+			"workProgress": "Linked work progress"
 		}
 	},
 	"invitations": {

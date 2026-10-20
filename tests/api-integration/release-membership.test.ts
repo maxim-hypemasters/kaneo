@@ -138,36 +138,44 @@ async function setup() {
   };
 }
 
-describe("setting a feature's release (R2)", () => {
-  it("moves the feature and the tasks following it, and records each", async () => {
+async function milestoneFor(
+  featureId: string,
+  releaseId: string | null = null,
+) {
+  return json("POST", `/milestone/feature/${featureId}`, {
+    title: "Delivery",
+    releaseId,
+  });
+}
+
+describe("setting a milestone's release", () => {
+  it("moves milestone followers while preserving explicit overrides", async () => {
     const ctx = await setup();
-    const feature = await insertTask(ctx.project.id, {
-      type: "feature",
-      releaseId: ctx.r24.id,
-    });
+    const feature = await insertTask(ctx.project.id, { type: "feature" });
+    const milestone = await milestoneFor(feature.id, ctx.r24.id);
     const follower = await insertTask(ctx.project.id, {
       featureId: feature.id,
+      milestoneId: milestone.id,
       releaseId: ctx.r24.id,
     });
     const overridden = await insertTask(ctx.project.id, {
       featureId: feature.id,
+      milestoneId: milestone.id,
       releaseId: ctx.r25.id,
     });
     const unplanned = await insertTask(ctx.project.id, {
       featureId: feature.id,
+      milestoneId: milestone.id,
     });
-    const outside = await insertTask(ctx.project.id, { releaseId: ctx.r24.id });
-
-    const body = await json("PUT", `/task/release/${feature.id}`, {
-      releaseId: ctx.r26.id,
+    const outside = await insertTask(ctx.project.id, {
+      featureId: feature.id,
+      releaseId: ctx.r24.id,
     });
-
-    expect(body).toMatchObject({
-      id: feature.id,
-      type: "feature",
-      releaseId: ctx.r26.id,
-      movedTaskIds: [follower.id],
-    });
+    expect(
+      await json("PATCH", `/milestone/${milestone.id}`, {
+        releaseId: ctx.r26.id,
+      }),
+    ).toMatchObject({ id: milestone.id, releaseId: ctx.r26.id });
     expect(
       await releasesOf([
         feature.id,
@@ -177,51 +185,47 @@ describe("setting a feature's release (R2)", () => {
         outside.id,
       ]),
     ).toEqual({
-      [feature.id]: ctx.r26.id,
+      [feature.id]: null,
       [follower.id]: ctx.r26.id,
       [overridden.id]: ctx.r25.id,
       [unplanned.id]: null,
       [outside.id]: ctx.r24.id,
     });
-    for (const id of [feature.id, follower.id]) {
-      expect(await releaseChanges(id)).toEqual([
-        change(ctx.project.id, ctx.r24, ctx.r26),
-      ]);
-    }
-    for (const id of [overridden.id, unplanned.id, outside.id]) {
+    expect(await releaseChanges(follower.id)).toEqual([
+      change(ctx.project.id, ctx.r24, ctx.r26),
+    ]);
+    for (const id of [feature.id, overridden.id, unplanned.id, outside.id])
       expect(await releaseChanges(id)).toEqual([]);
-    }
   });
 
-  it("treats no release as a release its tasks can follow", async () => {
+  it("treats no release as a release milestone tasks can follow", async () => {
     const ctx = await setup();
     const feature = await insertTask(ctx.project.id, { type: "feature" });
+    const milestone = await milestoneFor(feature.id);
     const followers = [
-      await insertTask(ctx.project.id, { featureId: feature.id }),
-      await insertTask(ctx.project.id, { featureId: feature.id }),
+      await insertTask(ctx.project.id, {
+        featureId: feature.id,
+        milestoneId: milestone.id,
+      }),
+      await insertTask(ctx.project.id, {
+        type: "bug",
+        featureId: feature.id,
+        milestoneId: milestone.id,
+      }),
     ];
-    const planned = await insertTask(ctx.project.id, {
+    const override = await insertTask(ctx.project.id, {
       featureId: feature.id,
+      milestoneId: milestone.id,
       releaseId: ctx.r25.id,
     });
-
-    const into = await json("PUT", `/task/release/${feature.id}`, {
+    await json("PATCH", `/milestone/${milestone.id}`, {
       releaseId: ctx.r24.id,
     });
-    expect(into.movedTaskIds).toEqual(followers.map(({ id }) => id).sort());
-    expect(await releaseOf(planned.id)).toBe(ctx.r25.id);
-
-    const out = await json("PUT", `/task/release/${feature.id}`, {
-      releaseId: null,
-    });
-    expect(out.movedTaskIds).toEqual(into.movedTaskIds);
-    expect(
-      await releasesOf([feature.id, ...followers.map(({ id }) => id)]),
-    ).toEqual({
-      [feature.id]: null,
-      [followers[0].id]: null,
-      [followers[1].id]: null,
-    });
+    for (const task of followers)
+      expect(await releaseOf(task.id)).toBe(ctx.r24.id);
+    await json("PATCH", `/milestone/${milestone.id}`, { releaseId: null });
+    for (const task of followers) expect(await releaseOf(task.id)).toBeNull();
+    expect(await releaseOf(override.id)).toBe(ctx.r25.id);
     expect(await releaseChanges(followers[0].id)).toEqual([
       change(ctx.project.id, null, ctx.r24),
       change(ctx.project.id, ctx.r24, null),
@@ -272,39 +276,33 @@ describe("setting a feature's release (R2)", () => {
 });
 
 describe("creating a task (R3)", () => {
-  it("lets an explicit release or null win, and otherwise follows the feature", async () => {
+  it("lets an explicit release or null win, and otherwise follows the milestone", async () => {
     const ctx = await setup();
-    const feature = await insertTask(ctx.project.id, {
-      type: "feature",
-      releaseId: ctx.r24.id,
-    });
+    const feature = await insertTask(ctx.project.id, { type: "feature" });
+    const milestone = await milestoneFor(feature.id, ctx.r24.id);
     const create = (values: Record<string, unknown>) =>
       json("POST", `/task/${ctx.project.id}`, newTask(values));
-
-    const following = await create({ featureId: feature.id });
+    const following = await create({
+      featureId: feature.id,
+      milestoneId: milestone.id,
+    });
     const chosen = await create({
       featureId: feature.id,
+      milestoneId: milestone.id,
       releaseId: ctx.r25.id,
     });
-    const none = await create({ featureId: feature.id, releaseId: null });
-    const loose = await create({});
-    const looseChosen = await create({ releaseId: ctx.r26.id });
-    const newFeature = await create({ type: "feature", releaseId: ctx.r25.id });
-
+    const none = await create({
+      featureId: feature.id,
+      milestoneId: milestone.id,
+      releaseId: null,
+    });
+    const featureOnly = await create({ featureId: feature.id });
     expect(following.releaseId).toBe(ctx.r24.id);
     expect(chosen.releaseId).toBe(ctx.r25.id);
     expect(none.releaseId).toBeNull();
-    expect(loose.releaseId).toBeNull();
-    expect(looseChosen.releaseId).toBe(ctx.r26.id);
-    expect(newFeature).toMatchObject({
-      type: "feature",
-      releaseId: ctx.r25.id,
-    });
-    for (const task of [following, chosen, looseChosen, newFeature]) {
-      expect(await releaseOf(task.id)).toBe(task.releaseId);
-      // Creation isn't a change of release.
+    expect(featureOnly.releaseId).toBeNull();
+    for (const task of [following, chosen, none, featureOnly])
       expect(await releaseChanges(task.id)).toEqual([]);
-    }
   });
 
   it("refuses a release outside the project without creating the task", async () => {
@@ -337,32 +335,20 @@ describe("creating a task (R3)", () => {
 });
 
 describe("joining a feature (R4)", () => {
-  it("gives a task without a release its feature's, and records it", async () => {
+  it("joining a Feature leaves release planning unchanged", async () => {
     const ctx = await setup();
-    const feature = await insertTask(ctx.project.id, {
-      type: "feature",
-      releaseId: ctx.r24.id,
-    });
+    const feature = await insertTask(ctx.project.id, { type: "feature" });
     const task = await insertTask(ctx.project.id);
-
-    const joined = await json("PUT", `/task/feature/${task.id}`, {
-      featureId: feature.id,
-    });
-
-    expect(joined).toMatchObject({
-      featureId: feature.id,
-      releaseId: ctx.r24.id,
-    });
-    expect(await releaseChanges(task.id)).toEqual([
-      change(ctx.project.id, null, ctx.r24),
-    ]);
+    expect(
+      await json("PUT", `/task/feature/${task.id}`, { featureId: feature.id }),
+    ).toMatchObject({ featureId: feature.id, releaseId: null });
+    expect(await releaseChanges(task.id)).toEqual([]);
   });
 
   it("keeps a task's release when it joins, leaves or switches features", async () => {
     const ctx = await setup();
     const feature = await insertTask(ctx.project.id, {
       type: "feature",
-      releaseId: ctx.r24.id,
     });
     const other = await insertTask(ctx.project.id, {
       type: "feature",
@@ -377,63 +363,63 @@ describe("joining a feature (R4)", () => {
       expect(response).toMatchObject({ featureId, releaseId: ctx.r25.id });
     }
 
-    // A task that took its feature's release keeps it after leaving.
+    // Unassigned work remains unassigned when changing its knowledge record.
     const follower = await insertTask(ctx.project.id);
     await json("PUT", `/task/feature/${follower.id}`, {
       featureId: feature.id,
     });
     await json("PUT", `/task/feature/${follower.id}`, { featureId: other.id });
     await json("PUT", `/task/feature/${follower.id}`, { featureId: null });
-    expect(await releaseOf(follower.id)).toBe(ctx.r24.id);
+    expect(await releaseOf(follower.id)).toBeNull();
 
     expect(await releaseChanges(task.id)).toEqual([]);
-    expect(await releaseChanges(follower.id)).toHaveLength(1);
+    expect(await releaseChanges(follower.id)).toHaveLength(0);
   });
 
-  it("applies to subtask links from older clients", async () => {
+  it("links older subtask requests only to existing Features without release inheritance", async () => {
     const ctx = await setup();
-    const feature = await insertTask(ctx.project.id, {
-      type: "feature",
-      releaseId: ctx.r24.id,
-    });
+    const feature = await insertTask(ctx.project.id, { type: "feature" });
     const child = await insertTask(ctx.project.id);
-    // A plain parent becomes a feature, keeping its release.
     const parent = await insertTask(ctx.project.id, { releaseId: ctx.r25.id });
     const grandchild = await insertTask(ctx.project.id);
-
-    for (const [sourceTaskId, targetTaskId] of [
-      [feature.id, child.id],
-      [parent.id, grandchild.id],
-    ]) {
-      const response = await call("POST", "/task-relation", {
-        sourceTaskId,
-        targetTaskId,
-        relationType: "subtask",
-      });
-      expect(response.status).toBe(200);
-    }
-
+    expect(
+      (
+        await call("POST", "/task-relation", {
+          sourceTaskId: feature.id,
+          targetTaskId: child.id,
+          relationType: "subtask",
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await call("POST", "/task-relation", {
+          sourceTaskId: parent.id,
+          targetTaskId: grandchild.id,
+          relationType: "subtask",
+        })
+      ).status,
+    ).toBe(409);
     expect(await releasesOf([child.id, parent.id, grandchild.id])).toEqual({
-      [child.id]: ctx.r24.id,
+      [child.id]: null,
       [parent.id]: ctx.r25.id,
-      [grandchild.id]: ctx.r25.id,
+      [grandchild.id]: null,
     });
-    expect(await releaseChanges(child.id)).toEqual([
-      change(ctx.project.id, null, ctx.r24),
-    ]);
+    expect(await releaseChanges(child.id)).toEqual([]);
   });
 });
 
 describe("other task changes", () => {
-  it("keeps the release when a task becomes a feature and back (R5)", async () => {
+  it("keeps release membership on Task/Bug conversion and rejects Feature conversion", async () => {
     const ctx = await setup();
     const task = await insertTask(ctx.project.id, { releaseId: ctx.r24.id });
-
-    for (const type of ["feature", "task"]) {
+    for (const type of ["bug", "task"])
       expect(
         await json("PUT", `/task/type/${task.id}`, { type }),
       ).toMatchObject({ type, releaseId: ctx.r24.id });
-    }
+    expect(
+      (await call("PUT", `/task/type/${task.id}`, { type: "feature" })).status,
+    ).toBe(400);
     expect(await releaseChanges(task.id)).toEqual([]);
   });
 
@@ -441,7 +427,6 @@ describe("other task changes", () => {
     const ctx = await setup();
     const feature = await insertTask(ctx.project.id, {
       type: "feature",
-      releaseId: ctx.r24.id,
     });
     const task = await insertTask(ctx.project.id, {
       featureId: feature.id,
@@ -457,7 +442,6 @@ describe("other task changes", () => {
     });
     expect(featureCopy).toMatchObject({
       type: "feature",
-      releaseId: ctx.r24.id,
     });
     expect(await releaseChanges(copy.id)).toEqual([]);
   });
@@ -514,7 +498,6 @@ describe("other task changes", () => {
     const ctx = await setup();
     const feature = await insertTask(ctx.project.id, {
       type: "feature",
-      releaseId: ctx.r24.id,
     });
     const tasks = [
       await insertTask(ctx.project.id, {
@@ -529,7 +512,7 @@ describe("other task changes", () => {
     });
 
     await json("DELETE", `/task/${sibling.id}`);
-    expect(await releaseOf(feature.id)).toBe(ctx.r24.id);
+    expect(await releaseOf(feature.id)).toBeNull();
     await json("DELETE", `/task/${feature.id}`);
 
     const rows = await db
@@ -594,14 +577,15 @@ describe("other task changes", () => {
 });
 
 describe("deleting a release (R8)", () => {
-  it("takes its features and tasks out first, recording each", async () => {
+  it("takes its milestones and tasks out first, recording each", async () => {
     const ctx = await setup();
     const feature = await insertTask(ctx.project.id, {
       type: "feature",
-      releaseId: ctx.r24.id,
     });
+    const milestone = await milestoneFor(feature.id, ctx.r24.id);
     const task = await insertTask(ctx.project.id, {
       featureId: feature.id,
+      milestoneId: milestone.id,
       releaseId: ctx.r24.id,
     });
     const kept = await insertTask(ctx.project.id, { releaseId: ctx.r25.id });
@@ -615,7 +599,11 @@ describe("deleting a release (R8)", () => {
       [task.id]: null,
       [kept.id]: ctx.r25.id,
     });
-    for (const id of [feature.id, task.id]) {
+    expect(
+      (await json("GET", `/milestone/${milestone.id}`)).releaseId,
+    ).toBeNull();
+    expect(await releaseChanges(feature.id)).toEqual([]);
+    for (const id of [task.id]) {
       expect(await releaseChanges(id)).toEqual([
         change(ctx.project.id, ctx.r24, null),
       ]);
@@ -713,14 +701,14 @@ describe("moving unfinished items (R9)", () => {
 
   it("moves each unfinished item to the target, leaving finished and archived ones", async () => {
     const ctx = await release24Items();
-    const { feature, todo, done, planned, archived, review } = ctx.items;
-    const unfinished = [feature.id, todo.id, planned.id, review.id].sort();
+    const { todo, done, planned, archived, review } = ctx.items;
+    const unfinished = [todo.id, planned.id, review.id].sort();
 
     const body = await json("POST", `/release/${ctx.r24.id}/move-unfinished`, {
       targetReleaseId: ctx.r26.id,
     });
 
-    expect(body).toEqual({ movedTaskIds: unfinished });
+    expect(body).toEqual({ movedTaskIds: unfinished, movedMilestoneIds: [] });
     expect(
       await releasesOf([...unfinished, done.id, archived.id, ctx.elsewhere.id]),
     ).toEqual({
@@ -745,7 +733,7 @@ describe("moving unfinished items (R9)", () => {
       targetReleaseId: null,
     });
 
-    expect(body.movedTaskIds).toHaveLength(4);
+    expect(body.movedTaskIds).toHaveLength(3);
     for (const id of body.movedTaskIds) {
       expect(await releaseOf(id)).toBeNull();
     }
@@ -783,6 +771,6 @@ describe("moving unfinished items (R9)", () => {
       await json("POST", `/release/${ctx.r24.id}/move-unfinished`, {
         targetReleaseId: ctx.r25.id,
       }),
-    ).toEqual({ movedTaskIds: [] });
+    ).toEqual({ movedTaskIds: [], movedMilestoneIds: [] });
   });
 });

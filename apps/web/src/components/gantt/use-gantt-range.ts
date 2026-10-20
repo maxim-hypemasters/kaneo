@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarDays } from "date-fns";
+import { addDays, differenceInCalendarDays, startOfToday } from "date-fns";
 import {
   useCallback,
   useEffect,
@@ -44,6 +44,7 @@ type UseGanttRangeOptions = {
   // spans are still loading: the opening span must be decided on all of the
   // project's tasks and spans.
   ready: boolean;
+  showEmptyTimeline?: boolean;
   weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6;
   dayColumnWidthRem: number;
   // Width of the sticky task rail covering the left of the scroll viewport.
@@ -75,6 +76,7 @@ export function useGanttRange({
   tasks,
   extraSpans = NO_EXTRA_SPANS,
   ready,
+  showEmptyTimeline = false,
   weekStartsOn,
   dayColumnWidthRem,
   railWidthRem,
@@ -83,15 +85,19 @@ export function useGanttRange({
   const initialRange = useMemo(
     () =>
       tasks.length === 0
-        ? null
+        ? showEmptyTimeline
+          ? ganttRangeAround(startOfToday(), weekStartsOn)
+          : null
         : initialGanttRange([...tasks, ...extraSpans], weekStartsOn),
-    [tasks, extraSpans, weekStartsOn],
+    [tasks, extraSpans, weekStartsOn, showEmptyTimeline],
   );
   const [state, setState] = useState<{
     projectId: string;
     range: GanttRange;
   } | null>(null);
-  const tasksBelongToProject = tasks[0]?.projectId === projectId;
+  const tasksBelongToProject =
+    tasks[0]?.projectId === projectId ||
+    (tasks.length === 0 && showEmptyTimeline);
   // Freeze the opening span per project once all of its tasks are in:
   // recomputing it whenever tasks change (a drag, a realtime update) would
   // slide the columns under the reader. Until then it follows the tasks

@@ -7,6 +7,7 @@ function useUpdateLabel() {
   return useMutation({
     mutationFn: updateLabel,
     onSuccess: (_updatedLabel) => {
+      void queryClient.invalidateQueries({ queryKey: ["feature-library"] });
       void queryClient.invalidateQueries({
         queryKey: ["labels"],
       });

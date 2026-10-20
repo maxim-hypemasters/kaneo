@@ -8,7 +8,7 @@ import type { PackableTask, WeekSegment } from "./month-grid-model";
 export type CalendarTask = PackableTask & {
   title: string;
   number: number | null;
-  status: string;
+  status: string | null;
   type?: import("@/types/task").TaskType;
 };
 
@@ -22,9 +22,9 @@ const STATUS_CLASSES: Record<string, string> = {
   done: "border-emerald-500/35 bg-emerald-500/15 hover:border-emerald-500/50 hover:bg-emerald-500/20",
 };
 
-export function getCalendarTaskStatusClass(status: string): string {
+export function getCalendarTaskStatusClass(status: string | null): string {
   return (
-    STATUS_CLASSES[status] ??
+    STATUS_CLASSES[status ?? ""] ??
     "border-primary/25 bg-primary/12 hover:border-primary/40 hover:bg-primary/18"
   );
 }

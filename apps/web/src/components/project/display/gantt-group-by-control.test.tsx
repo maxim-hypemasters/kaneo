@@ -43,11 +43,11 @@ describe("GanttGroupByControl", () => {
       screen.getByRole("combobox", { name: "tasks:display.groupBy" }),
     ).toHaveTextContent("tasks:display.groupByOptions.none");
 
-    await choose("tasks:display.groupByOptions.assignee");
+    await choose("tasks:gantt.milestones.assigneeLead");
     expect(useUserPreferencesStore.getState().ganttGroupBy).toBe("assignee");
     expect(
       screen.getByRole("combobox", { name: "tasks:display.groupBy" }),
-    ).toHaveTextContent("tasks:display.groupByOptions.assignee");
+    ).toHaveTextContent("tasks:gantt.milestones.assigneeLead");
 
     await choose("tasks:display.groupByOptions.none");
     expect(useUserPreferencesStore.getState().ganttGroupBy).toBe("none");
@@ -56,11 +56,11 @@ describe("GanttGroupByControl", () => {
   it("groups by feature", async () => {
     render(<GanttGroupByControl />);
 
-    await choose("tasks:display.groupByOptions.feature");
+    await choose("tasks:milestones.title");
 
-    expect(useUserPreferencesStore.getState().ganttGroupBy).toBe("feature");
+    expect(useUserPreferencesStore.getState().ganttGroupBy).toBe("milestone");
     expect(
       screen.getByRole("combobox", { name: "tasks:display.groupBy" }),
-    ).toHaveTextContent("tasks:display.groupByOptions.feature");
+    ).toHaveTextContent("tasks:milestones.title");
   });
 });

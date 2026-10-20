@@ -43,7 +43,7 @@ const writes = (requests: ReadonlyArray<readonly [string, string, unknown]>) =>
   requests.filter(([method]) => method === "PUT");
 
 describe("runTaskEdit --release", () => {
-  it("converts an empty Feature to Bug before adding it to another Feature", async () => {
+  it("rejects Feature conversion before any writes", async () => {
     const source = resolvedTaskFixture(3, { type: "feature" });
     const run = await runCommand(
       runTaskEdit({
@@ -60,24 +60,22 @@ describe("runTaskEdit --release", () => {
         "PUT /api/task/type/t3": () => json({ id: "t3", type: "bug" }),
       },
     );
-    expect(Result.isSuccess(run.result)).toBe(true);
-    expect(writes(run.requests)).toEqual([
-      ["PUT", "/api/task/type/t3", { type: "bug" }],
-      ["PUT", "/api/task/feature/t3", { featureId: "t1" }],
-    ]);
-    expect(run.json()).toMatchObject({ type: "bug", featureId: "t1" });
+    expect(Result.isFailure(run.result) && run.result.failure).toMatchObject({
+      message:
+        "Features cannot be converted. Only Task and Bug conversion is supported.",
+    });
+    expect(writes(run.requests)).toEqual([]);
   });
-  it("puts a feature into a release by name", async () => {
+  it("rejects planning fields on a knowledge Feature", async () => {
     const run = await runCommand(
       runTaskEdit({ ...none, task: "KAN-1", release: Option.some("2.4") }),
       routes,
     );
 
-    expect(Result.isSuccess(run.result)).toBe(true);
-    expect(writes(run.requests)).toEqual([
-      ["PUT", "/api/task/release/t1", { releaseId: "r1" }],
-    ]);
-    expect(run.json()).toMatchObject({ id: "t1", releaseId: "r1" });
+    expect(Result.isFailure(run.result) && run.result.failure).toMatchObject({
+      message: "Features are knowledge records without planning fields.",
+    });
+    expect(writes(run.requests)).toEqual([]);
   });
 
   it("sets the release after the feature, so it wins over the feature's", async () => {
@@ -100,7 +98,7 @@ describe("runTaskEdit --release", () => {
 
   it("changes nothing when the release is unknown", async () => {
     const run = await runCommand(
-      runTaskEdit({ ...none, task: "KAN-1", release: Option.some("3.0") }),
+      runTaskEdit({ ...none, task: "KAN-3", release: Option.some("3.0") }),
       routes,
     );
 

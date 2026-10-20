@@ -4,7 +4,6 @@ import { Effect, Option } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 import { listTaskLabels } from "../../api/labels.js";
 import {
-  TASK_TYPES,
   type TaskType,
   taskTypeOf,
   updateTaskFeature,
@@ -93,15 +92,6 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
     options.feature,
     (value) => value.trim().toLowerCase() !== "none",
   );
-  if (
-    Option.getOrUndefined(type) === "feature" &&
-    Option.isSome(featureReference)
-  ) {
-    return yield* new InvalidArgument({
-      message: "A feature can't belong to another feature.",
-      hint: "Leave out --type feature, or pass --feature none.",
-    });
-  }
   const newTitle = Option.map(title, (value) => value.trim());
   if (Option.isSome(newTitle) && newTitle.value === "") {
     return yield* new InvalidArgument({
@@ -116,6 +106,29 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   const resolved = yield* withSpinner(`Loading ${options.task.trim()}`)(
     resolveTask(options.task),
   );
+  const nextType = Option.getOrUndefined(type);
+  if (
+    Option.isSome(type) &&
+    (type.value === "feature" || taskTypeOf(resolved.task) === "feature")
+  )
+    return yield* new InvalidArgument({
+      message:
+        "Features cannot be converted. Only Task and Bug conversion is supported.",
+    });
+  if (
+    taskTypeOf(resolved.task) === "feature" &&
+    [
+      options.priority,
+      options.due,
+      options.start,
+      options.feature,
+      options.release,
+      options.milestone ?? Option.none(),
+    ].some(Option.isSome)
+  )
+    return yield* new InvalidArgument({
+      message: "Features are knowledge records without planning fields.",
+    });
   if (Option.isSome(due) || Option.isSome(start)) {
     yield* Effect.fromResult(
       checkDateRange(
@@ -125,28 +138,15 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
     );
   }
 
-  if (
-    Option.isSome(featureReference) &&
-    taskTypeOf(resolved.task) === "feature" &&
-    !["task", "bug"].includes(Option.getOrUndefined(type) ?? "")
-  ) {
-    return yield* new InvalidArgument({
-      message: `${resolved.ticketId ?? resolved.task.id.slice(0, 8)} is a feature, and a feature can't belong to one.`,
-      hint: "Add --type task or --type bug first. A feature with tasks can't become one.",
-    });
-  }
   const feature = yield* resolveFeature(featureReference, resolved.workspaceId);
   if (feature) {
     yield* Effect.fromResult(checkFeatureProject(feature, resolved.project));
   }
   const release = yield* resolveTaskRelease(options.release, resolved.project);
 
-  const effectiveFeatureId =
-    Option.getOrUndefined(type) === "feature"
-      ? null
-      : Option.isSome(options.feature)
-        ? feature?.task.id
-        : resolved.task.featureId;
+  const effectiveFeatureId = Option.isSome(options.feature)
+    ? feature?.task.id
+    : resolved.task.featureId;
   const milestoneId = yield* resolveTaskMilestone(
     options.milestone,
     effectiveFeatureId,
@@ -167,11 +167,9 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   const changed: string[] = [];
   yield* withSpinner(`Updating ${label}`)(
     Effect.gen(function* () {
-      // These go first, as the server may refuse them (a feature that still
-      // has tasks can't become a task). The type comes before the feature,
-      // so a feature turned back into a task can join one.
-      if (Option.isSome(type)) {
-        yield* updateTaskType(id, type.value);
+      // Membership is resolved before applying an explicit release override.
+      if (nextType && nextType !== "feature") {
+        yield* updateTaskType(id, nextType);
         changed.push("type");
       }
       if (Option.isSome(options.feature)) {
@@ -182,7 +180,7 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
         yield* updateTaskMilestone(id, milestoneId);
         changed.push("milestone");
       }
-      // After the feature, which may give the task the feature's release.
+      // An explicit release override follows any milestone inheritance.
       if (release !== undefined) {
         const { movedTaskIds } = yield* updateTaskRelease(
           id,
@@ -284,9 +282,9 @@ export const taskEdit = Command.make(
       Flag.withDescription("Remove a label by name; repeat for more"),
       Flag.atLeast(0),
     ),
-    type: Flag.Literals("type", TASK_TYPES).pipe(
+    type: Flag.Literals("type", ["task", "bug"]).pipe(
       Flag.withDescription(
-        "Change the item type to task, bug or feature; a feature must be empty before becoming a task or bug",
+        "Convert between Task and Bug; Features cannot be converted",
       ),
       Flag.optional,
     ),
@@ -302,7 +300,7 @@ export const taskEdit = Command.make(
     ),
     release: Flag.String("release").pipe(
       Flag.withDescription(
-        "Put it in this release of its project, by name or id, or none to take it out; a feature's tasks in its release move with it",
+        "Put it in this release of its project, by name or id, or none to take it out",
       ),
       Flag.optional,
     ),

@@ -13,7 +13,10 @@ export function PublicKanbanView({
   project,
   onTaskClick,
 }: PublicKanbanViewProps) {
-  const columns = project.columns ?? [];
+  const columns = (project.columns ?? []).map((column) => ({
+    ...column,
+    tasks: column.tasks.filter((task) => task.type !== "feature"),
+  }));
   const { features } = getFeatureIndex(project);
 
   return (

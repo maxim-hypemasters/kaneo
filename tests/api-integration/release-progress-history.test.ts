@@ -94,11 +94,17 @@ describe("release progress database history", () => {
       .update(taskTable)
       .set({ status: "done" })
       .where(eq(taskTable.id, task.id));
+    await expect(
+      db
+        .update(taskTable)
+        .set({ type: "feature" })
+        .where(eq(taskTable.id, task.id)),
+    ).rejects.toThrow();
     await db
       .update(taskTable)
-      .set({ type: "feature" })
+      .set({ type: "bug" })
       .where(eq(taskTable.id, task.id));
-    expect(await buckets(release.id)).toEqual({ "to-do": 0, done: 0 });
+    expect(await buckets(release.id)).toEqual({ "to-do": 0, done: 1 });
     await db
       .update(taskTable)
       .set({ type: "task" })

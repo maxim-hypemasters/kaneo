@@ -33,7 +33,24 @@ async function addTask(
   numbers += 1;
   const [task] = await db
     .insert(schema.taskTable)
-    .values({ projectId, title: `Task ${numbers}`, number: numbers, ...values })
+    .values({
+      projectId,
+      title: `Task ${numbers}`,
+      number: numbers,
+      ...values,
+      ...(values.type === "feature"
+        ? {
+            status: null,
+            priority: null,
+            columnId: null,
+            userId: null,
+            startDate: null,
+            dueDate: null,
+            releaseId: null,
+            archivedAt: values.status === "archived" ? new Date() : null,
+          }
+        : {}),
+    })
     .returning();
   return task;
 }
@@ -105,12 +122,19 @@ describe("feature membership", () => {
     );
     expect(cards).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({
-          id: ctx.feature.id,
-          type: "feature",
-          subtaskCounts: { completed: 0, total: 1 },
-        }),
         expect.objectContaining({ id: ctx.task.id, featureId: ctx.feature.id }),
+      ]),
+    );
+
+    expect(
+      cards.some((card: { id: string }) => card.id === ctx.feature.id),
+    ).toBe(false);
+    const library = await (
+      await call("GET", `/task/feature-library/${ctx.project.id}`)
+    ).json();
+    expect(library.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: ctx.feature.id, type: "feature" }),
       ]),
     );
 
@@ -128,7 +152,7 @@ describe("feature membership", () => {
 
     for (const [taskId, featureId, message] of [
       [ctx.task.id, plain.id, "That task isn't a feature"],
-      [second.id, ctx.feature.id, "A feature can't belong to another feature"],
+      [second.id, ctx.feature.id, "A feature cannot belong to another feature"],
     ]) {
       const response = await call("PUT", `/task/feature/${taskId}`, {
         featureId,
@@ -235,8 +259,6 @@ describe("feature membership", () => {
     const response = await call("POST", `/task/${ctx.project.id}`, {
       title: "Search",
       description: "",
-      priority: "low",
-      status: "to-do",
       type: "feature",
     });
     const feature = (await response.json()) as { id: string; type: string };
@@ -253,7 +275,7 @@ describe("feature membership", () => {
 });
 
 describe("task type", () => {
-  it("makes a task a feature, leaving its own feature", async () => {
+  it("rejects promoting a Task while preserving its Feature", async () => {
     const ctx = await setup();
     await db
       .update(schema.taskTable)
@@ -264,14 +286,14 @@ describe("task type", () => {
       type: "feature",
     });
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      type: "feature",
-      featureId: null,
+    expect(response.status).toBe(400);
+    expect(await read(ctx.task.id)).toMatchObject({
+      type: "task",
+      featureId: ctx.feature.id,
     });
   });
 
-  it("turns a feature back into a task only once it has no tasks", async () => {
+  it("rejects Feature conversion with members and when empty", async () => {
     const ctx = await setup();
     await db
       .update(schema.taskTable)
@@ -287,8 +309,8 @@ describe("task type", () => {
     const allowed = await call("PUT", `/task/type/${ctx.feature.id}`, {
       type: "task",
     });
-    expect(allowed.status).toBe(200);
-    expect((await read(ctx.feature.id))?.type).toBe("task");
+    expect(allowed.status).toBe(409);
+    expect((await read(ctx.feature.id))?.type).toBe("feature");
   });
 });
 
@@ -395,37 +417,16 @@ describe("feature lifecycle", () => {
 });
 
 describe("subtask relations from older clients", () => {
-  it("puts the subtask into the parent's feature, making a plain parent a feature", async () => {
+  it("rejects implicit promotion by older subtask clients", async () => {
     const ctx = await setup();
     const parent = await addTask(ctx.project.id);
-
     const created = await call("POST", "/task-relation", {
       sourceTaskId: parent.id,
       targetTaskId: ctx.task.id,
       relationType: "subtask",
     });
-
-    expect(created.status).toBe(200);
-    const link = await created.json();
-    expect(link).toMatchObject({
-      id: `feature:${ctx.task.id}:${parent.id}`,
-      sourceTaskId: parent.id,
-      targetTaskId: ctx.task.id,
-      relationType: "subtask",
-    });
-    expect(await read(parent.id)).toMatchObject({ type: "feature" });
-    expect(await read(ctx.task.id)).toMatchObject({ featureId: parent.id });
-
-    const relations = await (
-      await call("GET", `/task-relation/${ctx.task.id}`)
-    ).json();
-    expect(relations).toEqual([
-      expect.objectContaining({ id: link.id, relationType: "subtask" }),
-    ]);
-
-    expect((await call("DELETE", `/task-relation/${link.id}`)).status).toBe(
-      200,
-    );
+    expect(created.status).toBe(409);
+    expect(await read(parent.id)).toMatchObject({ type: "task" });
     expect(await read(ctx.task.id)).toMatchObject({ featureId: null });
   });
 
@@ -508,15 +509,17 @@ describe("listing a project's features", () => {
         id: second.id,
         title: "Billing",
         number: second.number,
-        status: "planned",
+        status: null,
         releaseId: null,
+        archivedAt: null,
       },
       {
         id: ctx.feature.id,
         title: "Checkout",
         number: ctx.feature.number,
-        status: ctx.feature.status,
+        status: null,
         releaseId: null,
+        archivedAt: null,
       },
     ]);
   });

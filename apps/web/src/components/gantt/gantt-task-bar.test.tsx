@@ -16,7 +16,11 @@ import {
   vi,
 } from "vite-plus/test";
 import { GanttTaskBar } from "./gantt-task-bar";
-import type { ScheduledTask } from "./gantt-types";
+import type {
+  ScheduledTask,
+  ScheduledLeaf,
+  ScheduledMilestone,
+} from "./gantt-types";
 import { buildGanttTimeline } from "./timeline";
 
 vi.mock("react-i18next", () => ({
@@ -60,8 +64,8 @@ const timeline = buildGanttTimeline(
 function task(
   start: string,
   end: string,
-  extra: Partial<ScheduledTask> = {},
-): ScheduledTask {
+  extra: Partial<ScheduledLeaf> = {},
+): ScheduledLeaf {
   return {
     id: "checkout",
     title: "Checkout",
@@ -78,22 +82,38 @@ function task(
     assigneeName: "Alice",
     projectId: "project",
     featureId: null,
+    milestoneId: null,
     scheduleStart: parseISO(start),
     scheduleEnd: parseISO(end),
     ...extra,
   };
 }
 
-const feature = (
+const milestone = (
   start: string,
   end: string,
-  extra: Partial<ScheduledTask> = {},
-) =>
-  task(start, end, {
-    type: "feature",
-    subtaskCounts: { completed: 3, total: 5 },
-    ...extra,
-  });
+  extra: Partial<ScheduledMilestone> = {},
+): ScheduledMilestone => ({
+  ...task(start, end),
+  type: "milestone",
+  entityKind: "milestone",
+  milestoneId: "checkout",
+  milestone: {
+    id: "checkout",
+    featureId: "F",
+    featureTitle: "Feature",
+    title: "Checkout",
+    projectId: "project",
+    position: 0,
+    leadId: "u1",
+    status: "to-do",
+    priority: "no-priority",
+    releaseId: null,
+    progress: { total: 5, started: 3, completed: 3 },
+  },
+  subtaskCounts: { completed: 3, total: 5 },
+  ...extra,
+});
 
 function show(
   scheduled: ScheduledTask,
@@ -115,12 +135,13 @@ function show(
   return { ...view, bar, onCommit, onOpenTask };
 }
 
-const featureBar = () =>
+const milestoneBar = () =>
   screen.getByRole("button", {
-    name: "tasks:gantt.featureBar.ariaLabel(title=Checkout)",
+    name: "tasks:gantt.milestones.bar.ariaLabel(title=Checkout)",
   });
-const progress = "tasks:gantt.featureBar.progress(completed=3,total=5)";
-const progressAria = "tasks:gantt.featureBar.progressAria(completed=3,count=5)";
+const progress = "tasks:gantt.milestones.bar.progress(completed=3,total=5)";
+const progressAria =
+  "tasks:gantt.milestones.bar.progressAria(completed=3,count=5)";
 // The bracket tips the summary band draws under its unclipped ends.
 const tips = (bar: HTMLElement | null) =>
   Array.from(
@@ -153,43 +174,43 @@ describe("GanttTaskBar", () => {
     expect(button).not.toHaveAccessibleDescription();
   });
 
-  it("draws a feature as a summary bar with its tasks' progress", () => {
-    const { bar } = show(feature("2026-09-03", "2026-09-05"));
+  it("draws a milestone as a summary bar with its tasks' progress", () => {
+    const { bar } = show(milestone("2026-09-03", "2026-09-05"));
 
-    expect(bar).toHaveAttribute("data-gantt-bar", "feature");
+    expect(bar).toHaveAttribute("data-gantt-bar", "milestone");
     expect(bar?.style.gridColumn).toBe("3 / 6");
     expect(bar?.querySelector("[data-gantt-summary-shape]")).not.toBeNull();
     expect(tips(bar)).toEqual(["start", "end"]);
-    expect(featureBar()).toHaveTextContent("Checkout");
-    expect(featureBar()).toHaveTextContent(progress);
+    expect(milestoneBar()).toHaveTextContent("Checkout");
+    expect(milestoneBar()).toHaveTextContent(progress);
     // The visible count is a bare "3/5"; screen readers get it in words.
-    expect(featureBar()).toHaveAccessibleDescription(progressAria);
+    expect(milestoneBar()).toHaveAccessibleDescription(progressAria);
   });
 
   it("reads out a dependency note before the progress, so the two don't run together", () => {
-    show(feature("2026-09-03", "2026-09-05"), {
+    show(milestone("2026-09-03", "2026-09-05"), {
       dependencyNote: "Starts before Design ends.",
     });
 
-    expect(featureBar()).toHaveAccessibleDescription(
+    expect(milestoneBar()).toHaveAccessibleDescription(
       `Starts before Design ends. ${progressAria}`,
     );
   });
 
   it("reads the progress and note as the description only, not again as loose text", () => {
-    show(feature("2026-09-03", "2026-09-05"), {
+    show(milestone("2026-09-03", "2026-09-05"), {
       dependencyNote: "Starts before Design ends.",
     });
 
-    expect(featureBar()).toHaveAccessibleDescription(
+    expect(milestoneBar()).toHaveAccessibleDescription(
       `Starts before Design ends. ${progressAria}`,
     );
     expect(screen.getByText(progressAria)).not.toBeVisible();
     expect(screen.getByText("Starts before Design ends.")).not.toBeVisible();
   });
 
-  it("keeps a feature's shape and focus indicator in forced colours", () => {
-    const { bar } = show(feature("2026-09-03", "2026-09-05"));
+  it("keeps a milestone's shape and focus indicator in forced colours", () => {
+    const { bar } = show(milestone("2026-09-03", "2026-09-05"));
     if (!bar) throw new Error("no bar");
 
     // Forced colours drop backgrounds and box-shadows: the band is outlined
@@ -213,23 +234,23 @@ describe("GanttTaskBar", () => {
     }
   });
 
-  it("leaves the progress out for a feature without tasks", () => {
+  it("leaves the progress out for a milestone without tasks", () => {
     show(
-      feature("2026-09-03", "2026-09-05", {
+      milestone("2026-09-03", "2026-09-05", {
         subtaskCounts: { completed: 0, total: 0 },
       }),
     );
-    expect(featureBar()).not.toHaveTextContent("featureBar.progress");
-    expect(featureBar()).not.toHaveAccessibleDescription();
+    expect(milestoneBar()).not.toHaveTextContent("milestoneBar.progress");
+    expect(milestoneBar()).not.toHaveAccessibleDescription();
     cleanup();
 
-    show(feature("2026-09-03", "2026-09-05", { subtaskCounts: undefined }));
-    expect(featureBar()).not.toHaveTextContent("featureBar.progress");
-    expect(featureBar()).not.toHaveAccessibleDescription();
+    show(milestone("2026-09-03", "2026-09-05", { subtaskCounts: undefined }));
+    expect(milestoneBar()).not.toHaveTextContent("milestoneBar.progress");
+    expect(milestoneBar()).not.toHaveAccessibleDescription();
   });
 
   it("draws an end clipped by the visible range flat", () => {
-    const early = show(feature("2026-08-20", "2026-09-05"));
+    const early = show(milestone("2026-08-20", "2026-09-05"));
     expect(early.bar?.style.gridColumn).toBe("1 / 6");
     expect(tips(early.bar)).toEqual(["end"]);
     expect(
@@ -237,7 +258,7 @@ describe("GanttTaskBar", () => {
     ).toBeDisabled();
     cleanup();
 
-    const late = show(feature("2026-09-25", "2026-10-10"));
+    const late = show(milestone("2026-09-25", "2026-10-10"));
     expect(late.bar?.style.gridColumn).toBe("25 / 31");
     expect(tips(late.bar)).toEqual(["start"]);
     expect(
@@ -245,8 +266,8 @@ describe("GanttTaskBar", () => {
     ).toBeDisabled();
   });
 
-  it("says a feature kept on an assignee lane can be reassigned", () => {
-    show(feature("2026-09-03", "2026-09-05"), {
+  it("says a milestone kept on an assignee lane can be reassigned", () => {
+    show(milestone("2026-09-03", "2026-09-05"), {
       laneDrag: {
         kind: "assignee",
         laneKey: "member:u1",
@@ -257,37 +278,42 @@ describe("GanttTaskBar", () => {
 
     expect(
       screen.getByRole("button", {
-        name: "tasks:gantt.featureBar.ariaLabelGrouped(title=Checkout)",
+        name: "tasks:gantt.milestones.bar.ariaLabelGrouped(title=Checkout)",
       }),
     ).toBeInTheDocument();
   });
 
-  it("opens a feature on click and from the keyboard", () => {
-    const { onOpenTask, onCommit } = show(feature("2026-09-03", "2026-09-05"));
+  it("opens a milestone on click and from the keyboard", () => {
+    const { onOpenTask, onCommit } = show(
+      milestone("2026-09-03", "2026-09-05"),
+    );
 
-    drag(featureBar(), 0);
+    drag(milestoneBar(), 0);
     expect(onOpenTask).toHaveBeenCalledTimes(1);
-    fireEvent.keyDown(featureBar(), { key: "Enter" });
+    fireEvent.keyDown(milestoneBar(), { key: "Enter" });
     expect(onOpenTask).toHaveBeenCalledTimes(2);
     expect(onCommit).not.toHaveBeenCalled();
   });
 
-  it("moves a feature, keeping its assignee and feature", () => {
-    const { onCommit, onOpenTask } = show(feature("2026-09-03", "2026-09-05"));
+  it("moves a milestone, keeping its assignee and feature", () => {
+    const { onCommit, onOpenTask } = show(
+      milestone("2026-09-03", "2026-09-05"),
+    );
 
-    drag(featureBar(), 2 * DAY_PX);
+    drag(milestoneBar(), 2 * DAY_PX);
 
     expect(onCommit).toHaveBeenCalledWith({
       start: parseISO("2026-09-05"),
       end: parseISO("2026-09-07"),
       userId: "u1",
       featureId: null,
+      milestoneId: "checkout",
     });
     expect(onOpenTask).not.toHaveBeenCalled();
   });
 
-  it("resizes a feature from either end", () => {
-    const { onCommit } = show(feature("2026-09-03", "2026-09-05"));
+  it("resizes a milestone from either end", () => {
+    const { onCommit } = show(milestone("2026-09-03", "2026-09-05"));
 
     drag(screen.getByRole("button", { name: "tasks:gantt.resizeDue" }), DAY_PX);
     expect(onCommit).toHaveBeenLastCalledWith(
@@ -310,18 +336,18 @@ describe("GanttTaskBar", () => {
   });
 
   it("draws a short phone bar's title and progress after it", () => {
-    const { bar } = show(feature("2026-09-03", "2026-09-03"), {
+    const { bar } = show(milestone("2026-09-03", "2026-09-03"), {
       isMobile: true,
     });
 
     // The band keeps the icon; the title inside is for screen readers only.
-    expect(featureBar()).toHaveTextContent("Checkout");
-    expect(featureBar()).not.toHaveTextContent(progress);
+    expect(milestoneBar()).toHaveTextContent("Checkout");
+    expect(milestoneBar()).not.toHaveTextContent(progress);
     const outside = bar?.nextElementSibling;
     expect(outside).toHaveAttribute("aria-hidden", "true");
     expect(outside).toHaveTextContent("Checkout");
     expect(outside).toHaveTextContent(progress);
-    expect(featureBar()).toHaveAccessibleDescription(progressAria);
+    expect(milestoneBar()).toHaveAccessibleDescription(progressAria);
   });
 
   describe("with the assignee shown (grouped by feature)", () => {
@@ -361,13 +387,13 @@ describe("GanttTaskBar", () => {
       );
     });
 
-    it("leaves the avatar off a feature", () => {
-      const { bar } = show(feature("2026-09-03", "2026-09-05"), {
+    it("leaves the avatar off a milestone", () => {
+      const { bar } = show(milestone("2026-09-03", "2026-09-05"), {
         showAssignee: true,
       });
 
       expect(avatar(bar)).toBeNull();
-      expect(featureBar()).toHaveAccessibleDescription(progressAria);
+      expect(milestoneBar()).toHaveAccessibleDescription(progressAria);
     });
 
     it("drops the avatar from a bar too short for it, but still reads out the assignee", () => {

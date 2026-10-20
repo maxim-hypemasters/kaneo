@@ -1,6 +1,6 @@
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { format } from "date-fns";
-import { Layers } from "lucide-react";
+import { Diamond } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
@@ -22,7 +22,7 @@ type GanttTaskRowProps = {
   rowGridTemplateColumns: string;
   // Assignee lanes already name the assignee, so their rows leave it out.
   showAssignee: boolean;
-  // Feature lanes don't say who does the work, so their bars show it.
+  // Milestone lanes don't say who does the work, so their bars show it.
   showBarAssignee?: boolean;
   laneDrag?: GanttLaneDrag;
   onOpenTask: () => void;
@@ -48,8 +48,8 @@ export function GanttTaskRow({
   dependencyNote,
 }: GanttTaskRowProps) {
   const { t } = useTranslation();
-  const isFeature = task.type === "feature";
-  const counts = isFeature ? task.subtaskCounts : undefined;
+  const isMilestone = task.entityKind === "milestone";
+  const counts = isMilestone ? task.subtaskCounts : undefined;
 
   return (
     <div
@@ -72,18 +72,20 @@ export function GanttTaskRow({
                 {getStatusLabel(task.status)}
               </span>
               <span className="truncate text-[10px] text-muted-foreground">
-                {projectSlug}-{task.number}
+                {isMilestone
+                  ? t("tasks:milestones.title")
+                  : `${projectSlug}-${task.number}`}
               </span>
             </div>
-            {isFeature ? (
+            {isMilestone ? (
               // The icon is no taller than the line, so the row keeps its
               // height.
               <p className="flex w-full min-w-0 items-center gap-1 text-xs font-semibold leading-tight text-foreground">
-                <Layers
+                <Diamond
                   aria-hidden="true"
                   className="size-3 shrink-0 text-muted-foreground"
                 />
-                <span className="sr-only">{t("tasks:features.badge")}</span>{" "}
+                <span className="sr-only">{t("tasks:milestones.title")}</span>{" "}
                 <span className="min-w-0 truncate">{task.title}</span>
               </p>
             ) : (
@@ -106,13 +108,13 @@ export function GanttTaskRow({
               {counts && counts.total > 0 ? (
                 <>
                   <span aria-hidden="true" className="tabular-nums">
-                    {` • ${t("tasks:gantt.featureBar.progress", {
+                    {` • ${t("tasks:gantt.milestones.bar.progress", {
                       completed: counts.completed,
                       total: counts.total,
                     })}`}
                   </span>
                   <span className="sr-only">
-                    {`, ${t("tasks:gantt.featureBar.progressAria", {
+                    {`, ${t("tasks:gantt.milestones.bar.progressAria", {
                       completed: counts.completed,
                       count: counts.total,
                     })}`}

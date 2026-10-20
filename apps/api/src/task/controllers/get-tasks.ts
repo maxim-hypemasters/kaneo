@@ -122,7 +122,10 @@ async function getTasksPage(
     });
   }
 
-  const conditions = [eq(taskTable.projectId, projectId)];
+  const conditions = [
+    eq(taskTable.projectId, projectId),
+    inArray(taskTable.type, ["task", "bug"]),
+  ];
 
   if (options.type) conditions.push(eq(taskTable.type, options.type));
 
@@ -206,8 +209,8 @@ async function getTasksPage(
     number: taskTable.number,
     description: boardDescription,
     descriptionDeferred,
-    status: taskTable.status,
-    priority: taskTable.priority,
+    status: sql<string>`${taskTable.status}`,
+    priority: sql<string>`${taskTable.priority}`,
     startDate: taskTable.startDate,
     dueDate: taskTable.dueDate,
     position: taskTable.position,

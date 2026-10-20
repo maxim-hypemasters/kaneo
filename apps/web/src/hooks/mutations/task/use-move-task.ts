@@ -20,6 +20,17 @@ export function useMoveTask() {
     }),
     onSuccess: (result, variables, context) => {
       invalidateMyWork(queryClient);
+      for (const id of [result.sourceProjectId, result.destinationProjectId]) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project-features", id],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["feature-library", id],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["feature-milestones", id],
+        });
+      }
       void queryClient.invalidateQueries({
         queryKey: ["release-progress", result.destinationProjectId],
       });

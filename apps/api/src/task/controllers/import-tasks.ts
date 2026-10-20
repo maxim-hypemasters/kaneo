@@ -15,6 +15,7 @@ import {
   getValidTaskStatuses,
 } from "../validate-task-fields";
 import { claimTaskNumber } from "./claim-task-numbers";
+import { preserveImportedPlanning } from "../transfers/feature-planning";
 import { nextTaskPosition } from "./next-task-position";
 import type { TaskType } from "../task-type";
 
@@ -22,8 +23,8 @@ export type ImportTask = {
   title: string;
   type?: TaskType;
   description?: string;
-  status: string;
-  priority?: string;
+  status?: string | null;
+  priority?: string | null;
   startDate?: string | null;
   dueDate?: string | null;
   userId?: string | null;
@@ -68,7 +69,11 @@ async function importTasks(
   for (const taskData of tasksToImport) {
     const assigneeId = taskData.userId?.trim() || null;
 
-    if (assigneeId && !assignableIds.has(assigneeId)) {
+    if (
+      taskData.type !== "feature" &&
+      assigneeId &&
+      !assignableIds.has(assigneeId)
+    ) {
       results.push({
         success: false,
         error: memberIds.has(assigneeId) ? NO_PROJECT_ACCESS : NOT_ASSIGNABLE,
@@ -79,7 +84,7 @@ async function importTasks(
 
     try {
       const { status, warning: statusWarning } = coerceStatus(
-        taskData.status,
+        taskData.status ?? "planned",
         validStatuses,
       );
       const { priority, warning: priorityWarning } = coercePriority(
@@ -107,20 +112,32 @@ async function importTasks(
           .insert(taskTable)
           .values({
             projectId,
-            userId: assigneeId,
+            userId: taskData.type === "feature" ? null : assigneeId,
             title: taskData.title,
             type: taskData.type ?? "task",
-            status,
-            columnId: column?.id ?? null,
-            startDate: taskData.startDate ? new Date(taskData.startDate) : null,
-            dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+            status: taskData.type === "feature" ? null : status,
+            columnId: taskData.type === "feature" ? null : (column?.id ?? null),
+            startDate:
+              taskData.type !== "feature" && taskData.startDate
+                ? new Date(taskData.startDate)
+                : null,
+            dueDate:
+              taskData.type !== "feature" && taskData.dueDate
+                ? new Date(taskData.dueDate)
+                : null,
             description: taskData.description || "",
-            priority,
+            priority: taskData.type === "feature" ? null : priority,
+            archivedAt:
+              taskData.type === "feature" && taskData.status === "archived"
+                ? new Date()
+                : null,
             number: taskNumber,
             position,
           })
           .returning();
 
+        if (taskData.type === "feature" && task)
+          await preserveImportedPlanning(tx, task.id, currentUserId, taskData);
         return task;
       });
 

@@ -83,7 +83,7 @@ import { MilestonePicker } from "@/components/task/milestones/milestone-picker";
 import { FeaturePickerChip } from "./create-task/feature-picker-chip";
 import type { FeatureChoice } from "./create-task/feature-picker-options";
 import {
-  FOLLOW_FEATURE_RELEASE,
+  FOLLOW_MILESTONE_RELEASE,
   initialReleaseChoice,
   type ReleaseChoice,
   releaseRequest,
@@ -103,6 +103,8 @@ type CreateTaskModalProps = {
   type?: TaskType;
   // The release the dialog starts out with; its Release chip can change it.
   releaseId?: string;
+  initialFeature?: { id: string; title: string };
+  initialMilestoneId?: string;
 };
 
 type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
@@ -158,13 +160,17 @@ function CreateTaskModalContent({
   instant = false,
   type = "task",
   releaseId,
+  initialFeature,
+  initialMilestoneId,
 }: CreateTaskModalProps) {
   const { t } = useTranslation();
   const [taskType, setTaskType] = useState<TaskType>(type);
   const copy = createDialogCopy(t, taskType);
-  const [milestoneId, setMilestoneId] = useState<string | null>(null);
+  const [milestoneId, setMilestoneId] = useState<string | null>(
+    initialMilestoneId ?? null,
+  );
   const [featureChoice, setFeatureChoice] = useState<FeatureChoice | null>(
-    null,
+    initialFeature ? { kind: "existing", ...initialFeature } : null,
   );
   // A feature can't belong to a feature.
   const chosenFeature = taskType !== "feature" ? featureChoice : null;
@@ -446,6 +452,7 @@ function CreateTaskModalContent({
 
   const syncTaskIntoProject = useCallback(
     (task: Task) => {
+      if (task.type === "feature") return;
       // Read now, not from the render that submitted: a new feature and its
       // task are synced one after the other in the same submit.
       const { project } = useProjectStore.getState();
@@ -531,10 +538,10 @@ function CreateTaskModalContent({
       submittingRef.current ||
       pendingUploadsRef.current > 0 ||
       !canCreateTaskCapability ||
-      awaitingColumns ||
+      (taskType !== "feature" && awaitingColumns) ||
       !title.trim() ||
       !resolvedProjectId ||
-      assigneeUnconfirmed ||
+      (taskType !== "feature" && assigneeUnconfirmed) ||
       !workspace?.id
     )
       return;
@@ -553,7 +560,7 @@ function CreateTaskModalContent({
     setIsSubmitting(true);
     try {
       let submitStatus = taskStatus;
-      if (!status) {
+      if (taskType !== "feature" && !status) {
         const workflow = await refetchColumns();
         if (!activeRef.current) return;
         if (workflow.isError || !workflow.data)
@@ -573,12 +580,8 @@ function CreateTaskModalContent({
           await createTask({
             title: chosenFeature.title,
             description: "",
-            userId: "",
-            priority: "no-priority",
             projectId: resolvedProjectId,
-            status: submitStatus,
             type: "feature",
-            ...releaseRequest(releaseChoice),
             customFields: customFields
               .filter(
                 (field) =>
@@ -607,18 +610,22 @@ function CreateTaskModalContent({
         await createTask({
           title: title.trim(),
           description: description.trim() || "",
-          userId: selectedUser?.id ?? "",
-          priority,
           projectId: resolvedProjectId,
-          startDate: startDate ? startDate.toISOString() : undefined,
-          dueDate: dueDate ? dueDate.toISOString() : undefined,
-          status: submitStatus,
+          ...(taskType !== "feature"
+            ? {
+                userId: selectedUser?.id ?? "",
+                priority,
+                startDate: startDate?.toISOString(),
+                dueDate: dueDate?.toISOString(),
+                status: submitStatus,
+              }
+            : {}),
           type: taskType,
           featureId,
           ...(milestoneId && chosenFeature?.kind === "existing"
             ? { milestoneId }
             : {}),
-          ...releaseRequest(releaseChoice),
+          ...(taskType !== "feature" ? releaseRequest(releaseChoice) : {}),
           draftAssetIds: stagedAssetsRef.current.filter((id) =>
             description.includes(`/asset/${id}`),
           ),
@@ -949,7 +956,7 @@ function CreateTaskModalContent({
                               if (workspaceProject.id !== resolvedProjectId) {
                                 setFeatureChoice(null);
                                 setMilestoneId(null);
-                                setReleaseChoice(FOLLOW_FEATURE_RELEASE);
+                                setReleaseChoice(FOLLOW_MILESTONE_RELEASE);
                               }
                               setSelectedProjectId(workspaceProject.id);
                             }
@@ -988,213 +995,225 @@ function CreateTaskModalContent({
                   disabled={isSubmitting}
                 />
               )}
-              <ReleasePickerChip
-                projectId={resolvedProjectId}
-                value={releaseChoice}
-                feature={chosenFeature}
-                onChange={setReleaseChoice}
-                disabled={isSubmitting}
-              />
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-accent/50 text-foreground rounded-md text-xs font-medium border border-border">
-                {getColumnIcon(
-                  taskStatus,
-                  initialColumn?.isFinal,
-                  initialColumn?.icon,
-                )}
-                {statusLabel}
-              </div>
-
-              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                      startDate
-                        ? "bg-accent/30 text-foreground"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="w-3.5 h-3.5" />
-                    <span>
-                      {startDate
-                        ? formatDateMedium(startDate)
-                        : t("common:modals.createTask.startDate")}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-65 p-0" align="start">
-                  <DatePickerMenu
-                    label={t("common:modals.createTask.startDate")}
-                    placeholder={t("tasks:datePicker.startDatePlaceholder")}
-                    clearLabel={t("common:modals.createTask.clearStartDate")}
-                    value={startDate ?? null}
-                    onChange={(date) => {
-                      setStartDate(date ?? undefined);
-                      setStartDateOpen(false);
-                    }}
-                    bounds={dueDate ? { after: dueDate } : undefined}
-                    formatLimit={(date) => t("tasks:due.fullDate", { date })}
+              {taskType !== "feature" && (
+                <>
+                  <ReleasePickerChip
+                    projectId={resolvedProjectId}
+                    value={releaseChoice}
+                    feature={chosenFeature}
+                    milestoneId={milestoneId}
+                    onChange={setReleaseChoice}
+                    disabled={isSubmitting}
                   />
-                </PopoverContent>
-              </Popover>
-
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                      priority !== "no-priority"
-                        ? "bg-accent/30 text-foreground"
-                        : "text-muted-foreground",
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-accent/50 text-foreground rounded-md text-xs font-medium border border-border">
+                    {getColumnIcon(
+                      taskStatus,
+                      initialColumn?.isFinal,
+                      initialColumn?.icon,
                     )}
-                  >
-                    {getPriorityIcon(priority)}
-                    <span>
-                      {selectedPriority
-                        ? selectedPriority.label
-                        : t("common:modals.createTask.priority")}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-48 p-1" align="start">
-                  <div className="space-y-1">
-                    {priorityOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                        onClick={() => setPriority(option.value as Priority)}
-                      >
-                        {getPriorityIcon(option.value)}
-                        <span className="text-sm">{option.label}</span>
-                        {priority === option.value && (
-                          <Check className="ml-auto h-4 w-4" />
-                        )}
-                      </button>
-                    ))}
+                    {statusLabel}
                   </div>
-                </PopoverContent>
-              </Popover>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                      selectedUser
-                        ? "bg-accent/30 text-foreground"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    {selectedUser ? (
-                      <>
-                        <Avatar className="h-4 w-4">
-                          <AvatarImage
-                            src={selectedUser.image ?? ""}
-                            alt={selectedUser.name}
-                          />
-                          <AvatarFallback className="text-[10px] font-medium border border-border/30">
-                            {getInitials(selectedUser.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>{selectedUser.name}</span>
-                      </>
-                    ) : (
-                      <>
-                        <UserIcon className="w-3.5 h-3.5" />
-                        <span>{t("common:modals.createTask.assign")}</span>
-                      </>
-                    )}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-48 p-1" align="start">
-                  <div className="space-y-1">
-                    <button
-                      type="button"
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                      onClick={() => setAssigneeId("")}
-                    >
-                      <div
-                        className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
-                        title={t(
-                          "common:modals.createTask.assignUnassignedTitle",
+                  <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                          startDate
+                            ? "bg-accent/30 text-foreground"
+                            : "text-muted-foreground",
                         )}
                       >
-                        <span className="text-[10px] font-medium text-muted-foreground">
-                          ?
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        <span>
+                          {startDate
+                            ? formatDateMedium(startDate)
+                            : t("common:modals.createTask.startDate")}
                         </span>
-                      </div>
-                      <span className="text-sm">
-                        {t("common:modals.createTask.assignUnassigned")}
-                      </span>
-                      {!selectedUser && <Check className="ml-auto h-4 w-4" />}
-                    </button>
-                    {assigneeOptions.map((member) => (
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-65 p-0" align="start">
+                      <DatePickerMenu
+                        label={t("common:modals.createTask.startDate")}
+                        placeholder={t("tasks:datePicker.startDatePlaceholder")}
+                        clearLabel={t(
+                          "common:modals.createTask.clearStartDate",
+                        )}
+                        value={startDate ?? null}
+                        onChange={(date) => {
+                          setStartDate(date ?? undefined);
+                          setStartDateOpen(false);
+                        }}
+                        bounds={dueDate ? { after: dueDate } : undefined}
+                        formatLimit={(date) =>
+                          t("tasks:due.fullDate", { date })
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <button
-                        key={member.id}
                         type="button"
-                        className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                        onClick={() => setAssigneeId(member.id)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                          priority !== "no-priority"
+                            ? "bg-accent/30 text-foreground"
+                            : "text-muted-foreground",
+                        )}
                       >
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage
-                            src={member.image ?? ""}
-                            alt={member.name}
-                          />
-                          <AvatarFallback className="text-xs font-medium border border-border/30">
-                            {getInitials(member.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{member.name}</span>
-                        {selectedUser?.id === member.id && (
-                          <Check className="ml-auto h-4 w-4" />
+                        {getPriorityIcon(priority)}
+                        <span>
+                          {selectedPriority
+                            ? selectedPriority.label
+                            : t("common:modals.createTask.priority")}
+                        </span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-1" align="start">
+                      <div className="space-y-1">
+                        {priorityOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                            onClick={() =>
+                              setPriority(option.value as Priority)
+                            }
+                          >
+                            {getPriorityIcon(option.value)}
+                            <span className="text-sm">{option.label}</span>
+                            {priority === option.value && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                          selectedUser
+                            ? "bg-accent/30 text-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {selectedUser ? (
+                          <>
+                            <Avatar className="h-4 w-4">
+                              <AvatarImage
+                                src={selectedUser.image ?? ""}
+                                alt={selectedUser.name}
+                              />
+                              <AvatarFallback className="text-[10px] font-medium border border-border/30">
+                                {getInitials(selectedUser.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{selectedUser.name}</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserIcon className="w-3.5 h-3.5" />
+                            <span>{t("common:modals.createTask.assign")}</span>
+                          </>
                         )}
                       </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-1" align="start">
+                      <div className="space-y-1">
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                          onClick={() => setAssigneeId("")}
+                        >
+                          <div
+                            className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
+                            title={t(
+                              "common:modals.createTask.assignUnassignedTitle",
+                            )}
+                          >
+                            <span className="text-[10px] font-medium text-muted-foreground">
+                              ?
+                            </span>
+                          </div>
+                          <span className="text-sm">
+                            {t("common:modals.createTask.assignUnassigned")}
+                          </span>
+                          {!selectedUser && (
+                            <Check className="ml-auto h-4 w-4" />
+                          )}
+                        </button>
+                        {assigneeOptions.map((member) => (
+                          <button
+                            key={member.id}
+                            type="button"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                            onClick={() => setAssigneeId(member.id)}
+                          >
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage
+                                src={member.image ?? ""}
+                                alt={member.name}
+                              />
+                              <AvatarFallback className="text-xs font-medium border border-border/30">
+                                {getInitials(member.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{member.name}</span>
+                            {selectedUser?.id === member.id && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
 
-              <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                      dueDate
-                        ? "bg-accent/30 text-foreground"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="w-3.5 h-3.5" />
-                    <span>
-                      {dueDate
-                        ? formatDateMedium(dueDate)
-                        : t("common:modals.createTask.dueDate")}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-65 p-0" align="start">
-                  <DatePickerMenu
-                    label={t("common:modals.createTask.dueDate")}
-                    placeholder={t("tasks:datePicker.dueDatePlaceholder")}
-                    clearLabel={t("common:modals.createTask.clearDueDate")}
-                    value={dueDate ?? null}
-                    onChange={(date) => {
-                      setDueDate(date ?? undefined);
-                      setDueDateOpen(false);
-                    }}
-                    bounds={startDate ? { before: startDate } : undefined}
-                    formatLimit={(date) =>
-                      t("tasks:datePicker.startsOn", { date })
-                    }
-                  />
-                </PopoverContent>
-              </Popover>
-
+                  <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                          dueDate
+                            ? "bg-accent/30 text-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        <span>
+                          {dueDate
+                            ? formatDateMedium(dueDate)
+                            : t("common:modals.createTask.dueDate")}
+                        </span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-65 p-0" align="start">
+                      <DatePickerMenu
+                        label={t("common:modals.createTask.dueDate")}
+                        placeholder={t("tasks:datePicker.dueDatePlaceholder")}
+                        clearLabel={t("common:modals.createTask.clearDueDate")}
+                        value={dueDate ?? null}
+                        onChange={(date) => {
+                          setDueDate(date ?? undefined);
+                          setDueDateOpen(false);
+                        }}
+                        bounds={startDate ? { before: startDate } : undefined}
+                        formatLimit={(date) =>
+                          t("tasks:datePicker.startsOn", { date })
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </>
+              )}
               <Popover open={labelsOpen} onOpenChange={setLabelsOpen}>
                 <PopoverTrigger asChild>
                   <button
@@ -1354,7 +1373,7 @@ function CreateTaskModalContent({
             </div>
           </div>
 
-          {awaitingColumns && columnsError && (
+          {taskType !== "feature" && awaitingColumns && columnsError && (
             <div
               role="alert"
               className="flex items-center gap-2 px-6 py-2 text-sm text-muted-foreground"
@@ -1408,9 +1427,9 @@ function CreateTaskModalContent({
               disabled={
                 !title.trim() ||
                 !resolvedProjectId ||
-                assigneeUnconfirmed ||
+                (taskType !== "feature" && assigneeUnconfirmed) ||
                 isSubmitting ||
-                awaitingColumns ||
+                (taskType !== "feature" && awaitingColumns) ||
                 isPreparingDraft
               }
               aria-busy={isPreparingDraft || isSubmitting}
@@ -1481,6 +1500,8 @@ function CreateTaskModal(props: CreateTaskModalProps) {
         location.pathname,
         props.projectId,
         props.releaseId,
+        props.initialFeature?.id,
+        props.initialMilestoneId,
       ])}
       {...props}
     />

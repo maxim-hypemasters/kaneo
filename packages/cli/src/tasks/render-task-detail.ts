@@ -63,24 +63,39 @@ export function renderTaskDetail(ui: Ui, view: TaskDetailView): string[] {
         text(` ${task.feature.title}`),
       ])
     : null;
+  const planning = task.type !== "feature";
   const rows: ReadonlyArray<readonly [string, string | null]> = [
     [
       "Status",
-      `${renderCell([statusDot(ui, task.status, view.statusFinal)], ui)} ${task.statusName}`,
+      planning
+        ? `${renderCell([statusDot(ui, task.status, view.statusFinal)], ui)} ${task.statusName}`
+        : null,
     ],
     [
       "Priority",
-      priority.length > 0 ? renderCell(priority, ui) : none("No priority"),
+      planning
+        ? priority.length > 0
+          ? renderCell(priority, ui)
+          : none("No priority")
+        : null,
     ],
     [
       "Assignee",
-      task.assignee
-        ? (task.assignee.name ?? task.assignee.id)
-        : none("Unassigned"),
+      !planning
+        ? null
+        : task.assignee
+          ? (task.assignee.name ?? task.assignee.id)
+          : none("Unassigned"),
     ],
     ["Labels", labels],
-    ["Due", due.length > 0 ? renderCell(due, ui) : none("None")],
-    ["Start", formatDay(task.startDate, now) ?? none("None")],
+    [
+      "Due",
+      !planning ? null : due.length > 0 ? renderCell(due, ui) : none("None"),
+    ],
+    [
+      "Start",
+      planning ? (formatDay(task.startDate, now) ?? none("None")) : null,
+    ],
     ["Created", formatDay(task.createdAt, now) ?? none("Unknown")],
     ["Time", time],
     [

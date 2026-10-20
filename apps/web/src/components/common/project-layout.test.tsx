@@ -72,6 +72,9 @@ vi.mock("@/components/shared/modals/create-task-modal", () => ({
     return props.open ? <div role="dialog">{props.type}</div> : null;
   },
 }));
+vi.mock("@/components/task/milestones/milestone-details-sheet", () => ({
+  MilestoneDetailsSheet: () => null,
+}));
 vi.mock("@/components/page-title", () => ({ default: () => null }));
 
 afterEach(() => {
@@ -152,7 +155,7 @@ describe("ProjectLayout access states", () => {
 });
 
 describe("ProjectLayout releases", () => {
-  it("links Releases next to Tasks and Backlog", () => {
+  it("links the Features library alongside execution and release views", () => {
     project.current = { data: { name: "Alpha" }, error: null };
     renderLayout();
 
@@ -162,6 +165,7 @@ describe("ProjectLayout releases", () => {
     expect([...links].map((link) => link.textContent)).toEqual([
       "tasks:title",
       "tasks:view.backlog",
+      "tasks:features.library.title",
       "tasks:view.releases",
     ]);
     const releases = screen.getByRole("link", { name: "tasks:view.releases" });

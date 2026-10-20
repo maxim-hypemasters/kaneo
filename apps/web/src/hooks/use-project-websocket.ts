@@ -102,8 +102,28 @@ export function useProjectWebSocket(projectId: string) {
         milestonesRefreshTimer = null;
         if (disposed) return;
         void queryClient.invalidateQueries({
+          queryKey: ["project-features", projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["feature-library", projectId],
+        });
+        void queryClient.invalidateQueries({
           queryKey: ["feature-milestones", projectId],
         });
+        const summaries = queryClient.getQueryData<{ id: string }[]>([
+          "project-features",
+          projectId,
+        ]);
+        for (const feature of Array.isArray(summaries) ? summaries : []) {
+          void queryClient.invalidateQueries({
+            queryKey: ["task-relations", feature.id],
+          });
+        }
+        for (const featureId of milestoneOwnersDirty) {
+          void queryClient.invalidateQueries({
+            queryKey: ["task-relations", featureId],
+          });
+        }
         if (workflowDirty) {
           workflowDirty = false;
           void queryClient.invalidateQueries({
@@ -158,6 +178,12 @@ export function useProjectWebSocket(projectId: string) {
       }, RELEASES_REFRESH_DELAY_MS);
     }
     function reconcileMilestoneDetails() {
+      void queryClient.invalidateQueries({
+        queryKey: ["project-features", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-library", projectId],
+      });
       const belongs = (data: unknown) =>
         (data as { projectId?: string } | undefined)?.projectId === projectId;
       void queryClient.invalidateQueries({
@@ -339,6 +365,8 @@ export function useProjectWebSocket(projectId: string) {
             return;
           }
           if (message.type === "MILESTONES_UPDATED") {
+            refreshReleases();
+            refreshProgress();
             refreshMilestones(
               typeof message.featureId === "string"
                 ? message.featureId
@@ -348,7 +376,8 @@ export function useProjectWebSocket(projectId: string) {
           }
           if (
             RELEASE_PROGRESS_MESSAGES.includes(message.type) ||
-            message.type === "TASK_RELATION_UPDATED"
+            message.type === "TASK_RELATION_UPDATED" ||
+            message.type === "TASK_LABEL_UPDATED"
           )
             refreshMilestones(undefined, message.type === "PROJECT_UPDATED");
           if (message.type === "RELEASES_UPDATED") {

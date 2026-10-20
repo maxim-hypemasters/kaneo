@@ -1,9 +1,15 @@
 import { AssigneeAvatar } from "@/components/task/properties/assignee-avatar";
 import { cn } from "@/lib/cn";
-import { GanttLaneFeatures } from "./gantt-lane-features";
 import { GanttLaneSummaryLine } from "./gantt-lane-summary-line";
 import { GanttLaneToggle } from "./gantt-lane-toggle";
-import type { GanttLane } from "./gantt-types";
+import { GanttAssigneeMilestones } from "./gantt-assignee-milestones";
+import { assigneeMilestoneTracks } from "./assignee-milestone-tracks";
+import type {
+  GanttLane,
+  GanttLaneDrag,
+  GanttTaskEdit,
+  ScheduledMilestone,
+} from "./gantt-types";
 import type { GanttTimeline } from "./timeline";
 
 type GanttLaneHeaderProps = {
@@ -13,10 +19,15 @@ type GanttLaneHeaderProps = {
   onToggle: () => void;
   timeline: GanttTimeline;
   showTaskRail: boolean;
-  // Width of the sticky task rail (0 when it's hidden).
-  railWidthRem: number;
   rowGridTemplateColumns: string;
-  onOpenFeature: (featureId: string) => void;
+  pixelsPerDay: number;
+  isMobile: boolean;
+  laneDrag?: GanttLaneDrag;
+  onOpenMilestone: (milestoneId: string) => void;
+  onCommitMilestone: (
+    milestone: ScheduledMilestone,
+    edit: GanttTaskEdit,
+  ) => void;
 };
 
 export function GanttLaneHeader({
@@ -26,14 +37,21 @@ export function GanttLaneHeader({
   onToggle,
   timeline,
   showTaskRail,
-  railWidthRem,
   rowGridTemplateColumns,
-  onOpenFeature,
+  pixelsPerDay,
+  isMobile,
+  laneDrag,
+  onOpenMilestone,
+  onCommitMilestone,
 }: GanttLaneHeaderProps) {
-  const hasTasks = lane.tasks.length > 0;
-  const hasFeatures = lane.featureTrackCount > 0;
+  const taskCount = lane.tasks.filter(
+    (task) => task.entityKind !== "milestone",
+  ).length;
+  const hasTasks = taskCount > 0;
+  const tracks = assigneeMilestoneTracks(lane.tasks, timeline, isMobile);
+  const hasMilestones = tracks.length > 0;
   // Lanes with tasks get a full touch target for the collapse toggle; empty
-  // lanes render compact. Feature tracks grow the header past either.
+  // lanes render compact. Milestone tracks grow the header past either.
   const heightClassName = hasTasks
     ? "min-h-[44px] sm:min-h-9"
     : "min-h-9 sm:min-h-8";
@@ -41,7 +59,7 @@ export function GanttLaneHeader({
     <GanttLaneToggle
       labelId={labelId}
       name={lane.name}
-      count={lane.tasks.length}
+      count={taskCount}
       icon={
         <span aria-hidden="true" className="shrink-0">
           <AssigneeAvatar
@@ -61,6 +79,7 @@ export function GanttLaneHeader({
 
   return (
     <div
+      data-gantt-lane-header=""
       className="grid items-stretch border-b border-border/70"
       style={{ gridTemplateColumns: rowGridTemplateColumns }}
     >
@@ -68,7 +87,8 @@ export function GanttLaneHeader({
         <div
           data-gantt-rail=""
           className={cn(
-            "sticky left-0 z-[11] flex h-full items-center border-r border-border bg-background px-2 sm:px-3",
+            "sticky left-0 z-[11] flex h-full border-r border-border bg-background px-2 sm:px-3",
+            hasMilestones ? "items-start" : "items-center",
             heightClassName,
           )}
         >
@@ -78,13 +98,18 @@ export function GanttLaneHeader({
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-muted"
           />
-          {control}
+          {hasMilestones ? (
+            <div className="flex h-11 w-full items-center">{control}</div>
+          ) : (
+            control
+          )}
         </div>
       ) : null}
 
       <div
         className={cn(
-          "relative flex shrink-0 cursor-grab flex-col justify-center bg-muted/40",
+          "relative flex shrink-0 cursor-grab flex-col bg-muted/40",
+          !hasMilestones && "justify-center",
           heightClassName,
         )}
         style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}
@@ -98,23 +123,22 @@ export function GanttLaneHeader({
           <div
             className={cn(
               "sticky left-0 z-[2] self-start rounded-sm bg-background px-2 py-1",
-              hasFeatures && "mt-1",
             )}
           >
             {control}
           </div>
         )}
-        {/* Without the rail the tracks stack below the sticky name chip;
-            the bottom padding leaves the workload underline its own room. */}
-        <GanttLaneFeatures
-          features={lane.features}
-          overflowFeatures={lane.overflowFeatures}
-          trackCount={lane.featureTrackCount}
-          timeline={timeline}
-          railWidthRem={railWidthRem}
-          onOpenFeature={onOpenFeature}
-          className="pt-1 pb-2.5"
-        />
+        {hasMilestones && (
+          <GanttAssigneeMilestones
+            tracks={tracks}
+            timeline={timeline}
+            pixelsPerDay={pixelsPerDay}
+            isMobile={isMobile}
+            laneDrag={laneDrag}
+            onOpen={onOpenMilestone}
+            onCommit={onCommitMilestone}
+          />
+        )}
       </div>
     </div>
   );

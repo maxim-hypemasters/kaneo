@@ -16,6 +16,7 @@ export function groupAssignedTasksByDueDate(
   const byBucket = new Map<DueBucket, AssignedTask[]>();
 
   for (const task of tasks) {
+    if (task.type === "feature") continue;
     const bucket = getDueBucket(task.dueDate, now);
     const group = byBucket.get(bucket) ?? [];
     group.push(task);
@@ -36,6 +37,7 @@ export function groupAssignedTasksByProject(
   const byProject = new Map<string, AssignedTaskGroup>();
 
   for (const task of tasks) {
+    if (task.type === "feature") continue;
     const group = byProject.get(task.projectId) ?? {
       id: task.projectId,
       title: task.projectName,

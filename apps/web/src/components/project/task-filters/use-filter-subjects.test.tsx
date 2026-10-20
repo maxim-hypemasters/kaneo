@@ -103,7 +103,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-it("offers all three item types with counts, including zero and legacy tasks", () => {
+it("offers execution item types with counts, including legacy Tasks", () => {
   const control = controls({ type: ["bug"], negated: ["type"] });
   const { result } = renderHook(() =>
     useFilterSubjects({
@@ -117,7 +117,6 @@ it("offers all three item types with counts, including zero and legacy tasks", (
   expect(subject.options.map(({ value, count }) => [value, count])).toEqual([
     ["task", 1],
     ["bug", 1],
-    ["feature", 0],
   ]);
   expect(subject.selected).toEqual(["bug"]);
   expect(subject.negated).toBe(true);

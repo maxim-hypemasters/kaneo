@@ -36,6 +36,31 @@ function board() {
 }
 
 describe("bounded board cache updates", () => {
+  it("does not insert a Feature into an execution board after a realtime refresh", () => {
+    const current = board();
+    const updated = patchBoardTask(current, "feature", {
+      id: "feature",
+      projectId: "p",
+      type: "feature",
+      status: null,
+      title: "Knowledge",
+    });
+    expect(updated?.columns.flatMap((column) => column.tasks)).toHaveLength(1);
+    expect(updated?.plannedTasks).toHaveLength(0);
+  });
+  it("removes an old Feature card when its current knowledge record arrives", () => {
+    const current = board();
+    current.columns[0].tasks[0] = {
+      ...current.columns[0].tasks[0],
+      type: "feature",
+    };
+    const updated = patchBoardTask(current, "a", {
+      projectId: "p",
+      type: "feature",
+      status: null,
+    });
+    expect(updated?.columns.flatMap((column) => column.tasks)).toHaveLength(0);
+  });
   it("preserves metadata and the assignee when updating a single field", () => {
     const client = new QueryClient();
     client.setQueryData(["tasks", "p"], board());
@@ -116,7 +141,7 @@ it("defers descriptions exceeding the UTF-8 board limit", () => {
     descriptionDeferred: true,
   });
 });
-it("applies a feature change the server reports as null", () => {
+it("applies a leaf classification change and clears reported Feature membership", () => {
   const member = patchBoardTask(board(), "a", {
     projectId: "p",
     type: "task",
@@ -124,13 +149,13 @@ it("applies a feature change the server reports as null", () => {
   })!;
   expect(member.columns[0].tasks[0]).toMatchObject({ featureId: "feature" });
 
-  const promoted = patchBoardTask(member, "a", {
+  const updated = patchBoardTask(member, "a", {
     projectId: "p",
-    type: "feature",
+    type: "bug",
     featureId: null,
   });
-  expect(promoted?.columns[0].tasks[0]).toMatchObject({
-    type: "feature",
+  expect(updated?.columns[0].tasks[0]).toMatchObject({
+    type: "bug",
     featureId: null,
     labels: [{ id: "label" }],
   });

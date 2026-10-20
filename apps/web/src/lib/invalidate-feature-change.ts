@@ -10,6 +10,9 @@ export function invalidateFeatureChange(
   projectId: string,
   taskIds: ReadonlyArray<string | null | undefined>,
 ) {
+  void queryClient.invalidateQueries({
+    queryKey: ["feature-library", projectId],
+  });
   void queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
   void queryClient.invalidateQueries({
     queryKey: ["project-features", projectId],

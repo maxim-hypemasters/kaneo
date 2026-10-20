@@ -49,6 +49,7 @@ async function bulkUpdateTasks({
     .select({
       id: taskTable.id,
       title: taskTable.title,
+      type: taskTable.type,
       status: taskTable.status,
       priority: taskTable.priority,
       projectId: taskTable.projectId,
@@ -65,6 +66,19 @@ async function bulkUpdateTasks({
       message: "No tasks found",
     });
   }
+
+  if (
+    [
+      "updateStatus",
+      "updatePriority",
+      "updateAssignee",
+      "updateDueDate",
+    ].includes(operation) &&
+    tasks.some((task) => task.type === "feature")
+  )
+    throw new HTTPException(400, {
+      message: "Features do not have planning fields",
+    });
 
   const workspaceIds = [...new Set(tasks.map((t) => t.workspaceId))];
 
@@ -133,7 +147,7 @@ async function bulkUpdateTasks({
           const result: Array<{
             id: string;
             projectId: string;
-            status: string;
+            status: string | null;
             title: string;
             userId: string | null;
           }> = [];

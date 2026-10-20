@@ -1,5 +1,6 @@
 import type db from "../../database";
 import { activityTable, taskTable } from "../../database/schema";
+import { preserveImportedPlanning } from "../../task/transfers/feature-planning";
 import { chunk } from "./chunk";
 import type { PlannedImportTask } from "./plan-import-tasks";
 
@@ -10,6 +11,7 @@ export async function writeImportTasks(
   projectId: string,
   importedBy: string,
   tasks: readonly PlannedImportTask[],
+  releases: ReadonlyMap<string, string> = new Map(),
 ) {
   for (const batch of chunk(tasks)) {
     await tx.insert(taskTable).values(
@@ -20,16 +22,35 @@ export async function writeImportTasks(
         number: task.number,
         title: task.title,
         description: task.description,
-        status: task.status,
-        columnId: task.columnId,
+        status: task.type === "feature" ? null : task.status,
+        columnId: task.type === "feature" ? null : task.columnId,
         position: task.position,
-        priority: task.priority,
-        startDate: task.startDate,
-        dueDate: task.dueDate,
+        priority: task.type === "feature" ? null : task.priority,
+        startDate: task.type === "feature" ? null : task.startDate,
+        dueDate: task.type === "feature" ? null : task.dueDate,
         createdAt: task.createdAt,
-        userId: task.userId,
+        userId: task.type === "feature" ? null : task.userId,
+        archivedAt:
+          task.type === "feature" &&
+          (task.archivedAt || task.status === "archived")
+            ? new Date(task.archivedAt ?? new Date().toISOString())
+            : null,
+        releaseId:
+          task.type !== "feature" && task.releaseKey
+            ? (releases.get(task.releaseKey) ?? null)
+            : null,
       })),
     );
+
+    for (const task of batch.filter((task) => task.type === "feature"))
+      await preserveImportedPlanning(
+        tx,
+        task.id,
+        importedBy,
+        task.legacyPlanning ?? {},
+        task.planningSnapshots,
+        releases,
+      );
 
     await tx.insert(activityTable).values(
       batch.map((task) => ({

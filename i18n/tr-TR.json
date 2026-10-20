@@ -192,7 +192,8 @@
 				"discardTitleBug": "Discard bug?",
 				"successCreatedBug": "Bug created successfully",
 				"titleBug": "New Bug",
-				"typeBug": "Bug"
+				"typeBug": "Bug",
+				"releaseFromMilestone": "{{name}} (from milestone)"
 			}
 		},
 		"editor": {
@@ -408,10 +409,7 @@
 					"title": "Bu kartı bir sonraki sütuna sürükleyin",
 					"description": "İş ilerledikçe kartlar sütundan sütuna geçer. Bu kartı bir sonraki sütuna sürükleyin ya da açıp durumunu değiştirin."
 				},
-				"details": {
-					"title": "Bu görevi açın ve bir epiğe dönüştürün",
-					"description": "Bir görevde açıklama, etiketler, atanan kişi ve bitiş tarihi olabilir. Bu görevi bir epiğe dönüştürün, ardından işleri altında gruplamak için ona görevler ekleyin."
-				},
+				"details": {},
 				"invite": {
 					"title": "Ekibinizi davet edin",
 					"description": "Kaneo herkes dahil olduğunda en iyi şekilde çalışır. İnsanları e-postayla davet etmek için kenar çubuğunda **Üyeler** bölümünü açın."
@@ -423,6 +421,10 @@
 				"create": {
 					"title": "Kendi görevinizi oluşturun",
 					"description": "Bir sütun adının yanındaki **+** düğmesini kullanın ya da önce **T**, sonra **C** tuşuna basın. Hazır olduğunuzda bu başlangıç görevlerini silin."
+				},
+				"features": {
+					"description": "Open **Features** in the project navigation to create a Feature for documentation and implementation history. Add milestones inside the Feature to plan work, then link Tasks or Bugs to them.",
+					"title": "Explore the Features library"
 				}
 			},
 			"progress": "Adım {{current}} / {{total}}",
@@ -3184,6 +3186,28 @@
 				"taskAriaLabel": "{{title}}: açın veya yeniden zamanlamak ya da başka bir epiğe taşımak için sürükleyin",
 				"moveError": "Talep başka bir epiğe taşınamadı",
 				"assignee": "{{name}} kişisine atandı"
+			},
+			"milestones": {
+				"assigneeLead": "Assignee / Milestone Lead",
+				"bar": {
+					"ariaLabel": "Milestone {{title}}: open or drag to reschedule",
+					"ariaLabelGrouped": "Milestone {{title}}: open, or drag to reschedule or change lead",
+					"progress": "{{completed}}/{{total}}",
+					"progressAria": "{{completed}} of {{count}} completed"
+				},
+				"cannotMove": "Only work in this Feature can move to {{name}}",
+				"itemCount_one": "{{count}} item",
+				"itemCount_other": "{{count}} items",
+				"moveError": "Could not move work to milestone",
+				"moveTo": "Move to milestone {{name}}",
+				"open": "Open milestone {{title}}",
+				"remove": "Remove milestone",
+				"show": "Show",
+				"shownCount_one": "{{shown}} of {{count}} item",
+				"shownCount_other": "{{shown}} of {{count}} items",
+				"taskAriaLabel": "{{title}}: open, or drag to reschedule or change milestone",
+				"taskFilters": "Task filters",
+				"unknown": "Unknown milestone"
 			}
 		},
 		"delete": {
@@ -3416,15 +3440,26 @@
 			"type": "Tür",
 			"typeTask": "Talep",
 			"typeFeature": "Epik",
-			"convertToFeature": "Epiğe dönüştür",
 			"convertToTask": "Talebe dönüştür",
 			"typeError": "Talep türü değiştirilemedi",
-			"convertBlocked": "Bu epiği talebe dönüştürmeden önce içindeki talepleri dışarı taşıyın.",
 			"openFeature": "{{title}} epiğini aç",
 			"inProject": "Projedeki epikler",
 			"convertToBug": "Convert to bug",
 			"typeBug": "Bug",
-			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
+			"library": {
+				"active": "Active",
+				"archive": "Archive feature",
+				"archived": "Archived",
+				"empty": "No features found.",
+				"milestoneCount_one": "{{count}} milestone",
+				"milestoneCount_other": "{{count}} milestones",
+				"restore": "Restore feature",
+				"saveError": "Could not update feature.",
+				"search": "Search features…",
+				"title": "Features",
+				"activityArchived": "archived this Feature",
+				"activityRestored": "restored this Feature"
+			}
 		},
 		"releases": {
 			"pageTitle": "{{name}} – Sürümler",
@@ -3483,7 +3518,9 @@
 				"tasks_one": "{{count}} talep",
 				"tasks_other": "{{count}} talep",
 				"unfinished_one": "{{count}} tamamlanmamış",
-				"unfinished_other": "{{count}} tamamlanmamış"
+				"unfinished_other": "{{count}} tamamlanmamış",
+				"milestones_one": "{{count}} milestone",
+				"milestones_other": "{{count}} milestones"
 			},
 			"empty": {
 				"title": "Henüz sürüm yok",
@@ -3591,7 +3628,8 @@
 				"title": "Progress over time",
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
-			}
+			},
+			"milestoneReleaseHint": "Milestone release"
 		},
 		"createMenu": {
 			"label": "Create work item",
@@ -3607,7 +3645,6 @@
 			"add": "New milestone",
 			"assignmentError": "Could not update milestone.",
 			"choose": "Choose milestone",
-			"convertBlocked": "Remove all tasks and milestones before converting this feature.",
 			"delete": "Delete milestone",
 			"deleteDescription": "Linked tasks and bugs remain in this feature and release. Only their milestone assignment is removed.",
 			"deleteTitle": "Delete milestone?",
@@ -3647,7 +3684,20 @@
 			"unavailableTasks": "Some selected work is no longer available. Remove it from the selection before saving.",
 			"noUnassignedTasks": "No Tasks or Bugs available to link.",
 			"clearEndDate": "Clear end date",
-			"endDatePlaceholder": "Set end date…"
+			"endDatePlaceholder": "Set end date…",
+			"activityCompleted": "completed milestone “{{title}}”",
+			"activityCreated": "created milestone “{{title}}”",
+			"activityDeleted": "deleted milestone “{{title}}”",
+			"activityReopened": "reopened milestone “{{title}}”",
+			"activityUpdated": "updated milestone “{{title}}”",
+			"activityUpdatedFields": "updated milestone “{{title}}”: {{fields}}",
+			"addLinkedWork": "Add work",
+			"lead": "Milestone Lead",
+			"noLinkedWork": "No linked Tasks or Bugs.",
+			"open": "Open milestone",
+			"planned": "Planned",
+			"planningSnapshot": "Previous planning: {{values}}",
+			"workProgress": "Linked work progress"
 		}
 	},
 	"invitations": {

@@ -12,7 +12,7 @@ async function createTask(
   description: string,
   projectId: string,
   userId: string | undefined,
-  status: string,
+  status: string | null | undefined,
   startDate: Date | undefined,
   dueDate: Date | undefined,
   priority: CreateTaskRequest["priority"],
@@ -32,17 +32,21 @@ async function createTask(
     json: {
       title,
       description,
-      ...(userId ? { userId } : {}),
-      status,
-      startDate: startDate?.toISOString() || undefined,
-      dueDate: dueDate?.toISOString() || undefined,
-      priority,
+      ...(placement.type !== "feature"
+        ? {
+            ...(userId ? { userId } : {}),
+            ...(status ? { status } : {}),
+            startDate: startDate?.toISOString(),
+            dueDate: dueDate?.toISOString(),
+            priority,
+          }
+        : {}),
       customFields,
       draftAssetIds,
       ...(placement.type ? { type: placement.type } : {}),
       ...(placement.featureId ? { featureId: placement.featureId } : {}),
       ...(placement.milestoneId ? { milestoneId: placement.milestoneId } : {}),
-      ...(placement.releaseId !== undefined
+      ...(placement.type !== "feature" && placement.releaseId !== undefined
         ? { releaseId: placement.releaseId }
         : {}),
     },

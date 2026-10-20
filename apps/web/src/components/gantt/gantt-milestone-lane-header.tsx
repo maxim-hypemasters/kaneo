@@ -1,4 +1,4 @@
-import { ArrowUpRight, Layers } from "lucide-react";
+import { ArrowUpRight, Diamond } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Tooltip,
@@ -9,11 +9,11 @@ import { cn } from "@/lib/cn";
 import { GanttLaneSummaryLine } from "./gantt-lane-summary-line";
 import { GanttLaneToggle } from "./gantt-lane-toggle";
 import { GanttTaskBar } from "./gantt-task-bar";
-import type { GanttFeatureLane, GanttTaskEdit } from "./gantt-types";
+import type { GanttMilestoneLane, GanttTaskEdit } from "./gantt-types";
 import type { GanttTimeline } from "./timeline";
 
-type GanttFeatureLaneHeaderProps = {
-  lane: GanttFeatureLane;
+type GanttMilestoneLaneHeaderProps = {
+  lane: GanttMilestoneLane;
   labelId: string;
   collapsed: boolean;
   onToggle: () => void;
@@ -22,18 +22,16 @@ type GanttFeatureLaneHeaderProps = {
   isMobile: boolean;
   showTaskRail: boolean;
   rowGridTemplateColumns: string;
-  onOpenFeature: (featureId: string) => void;
-  // Saves a move or resize of the feature's own bar.
-  onCommitFeature: (edit: GanttTaskEdit) => void;
-  onFeatureDragChange?: (dragging: boolean) => void;
-  featureDependencyNote?: string;
+  onOpenMilestone: (milestoneId: string) => void;
+  // Saves a move or resize of the milestone's own bar.
+  onCommitMilestone: (edit: GanttTaskEdit) => void;
 };
 
-// The header of a lane grouped by feature: its name and task count in the
-// rail, and on the timeline the feature's own bar (its own dates: moving or
-// resizing it reschedules the feature, never its tasks) over a thin line
+// The header of a lane grouped by milestone: its name and task count in the
+// rail, and on the timeline the milestone's own bar (its own dates: moving or
+// resizing it reschedules the milestone, never its tasks) over a thin line
 // spanning its tasks, so the two can be compared at a glance.
-export function GanttFeatureLaneHeader({
+export function GanttMilestoneLaneHeader({
   lane,
   labelId,
   collapsed,
@@ -43,16 +41,14 @@ export function GanttFeatureLaneHeader({
   isMobile,
   showTaskRail,
   rowGridTemplateColumns,
-  onOpenFeature,
-  onCommitFeature,
-  onFeatureDragChange,
-  featureDependencyNote,
-}: GanttFeatureLaneHeaderProps) {
+  onOpenMilestone,
+  onCommitMilestone,
+}: GanttMilestoneLaneHeaderProps) {
   const { t } = useTranslation();
-  const { featureId, feature } = lane;
-  // A feature that isn't on the board can't be opened either.
-  const openable = featureId !== null && lane.droppable;
-  const openLabel = t("tasks:gantt.featureLanes.open", { title: lane.name });
+  const { milestoneId, milestone } = lane;
+  // An unresolved milestone reference remains visible without an opener.
+  const openable = milestoneId !== null && lane.droppable;
+  const openLabel = t("tasks:gantt.milestones.open", { title: lane.name });
 
   const controls = (
     <>
@@ -61,8 +57,8 @@ export function GanttFeatureLaneHeader({
         name={lane.name}
         count={lane.tasks.length}
         icon={
-          featureId === null ? undefined : (
-            <Layers
+          milestoneId === null ? undefined : (
+            <Diamond
               aria-hidden="true"
               className="size-3.5 shrink-0 text-muted-foreground"
             />
@@ -80,7 +76,7 @@ export function GanttFeatureLaneHeader({
               <button
                 type="button"
                 aria-label={openLabel}
-                onClick={() => onOpenFeature(featureId)}
+                onClick={() => onOpenMilestone(milestoneId)}
                 className="touch-hitbox relative flex size-6 shrink-0 touch-manipulation items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-background hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
               />
             }
@@ -129,22 +125,19 @@ export function GanttFeatureLaneHeader({
             {controls}
           </div>
         )}
-        {feature && (
-          // Arrows meet a row's vertical centre, so the row is the bar's own
-          // box, below the name chip when there's no rail.
+        {milestone && (
+          // Give the milestone bar its own box below the mobile name chip.
           <div
-            data-gantt-row={feature.id}
+            data-gantt-row={milestone.id}
             className={cn("relative", showTaskRail ? "min-h-11" : "min-h-12")}
           >
             <GanttTaskBar
-              task={feature}
+              task={milestone}
               timeline={timeline}
               pixelsPerDay={pixelsPerDay}
               isMobile={isMobile}
-              onCommit={onCommitFeature}
-              onOpenTask={() => onOpenFeature(feature.id)}
-              onDragChange={onFeatureDragChange}
-              dependencyNote={featureDependencyNote}
+              onCommit={onCommitMilestone}
+              onOpenTask={() => onOpenMilestone(milestone.milestone.id)}
             />
           </div>
         )}

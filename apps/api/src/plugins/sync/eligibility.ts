@@ -20,9 +20,9 @@ export async function taskMatchesRule(
 ): Promise<boolean> {
   const task = await database.query.taskTable.findFirst({
     where: and(eq(taskTable.id, taskId), eq(taskTable.projectId, projectId)),
-    columns: { id: true },
+    columns: { id: true, type: true },
   });
-  if (!task) return false;
+  if (!task || task.type === "feature") return false;
   if (rule.mode === "all") return true;
   const project = await database.query.projectTable.findFirst({
     where: eq(projectTable.id, projectId),

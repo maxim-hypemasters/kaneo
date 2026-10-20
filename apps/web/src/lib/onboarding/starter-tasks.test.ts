@@ -8,7 +8,7 @@ describe("starterTasks", () => {
   it("includes the invite task for teams", () => {
     expect(starterTasks(t, "team").map((task) => task.title)).toEqual([
       "auth:onboarding.starterTasks.drag.title",
-      "auth:onboarding.starterTasks.details.title",
+      "auth:onboarding.starterTasks.features.title",
       "auth:onboarding.starterTasks.invite.title",
       "auth:onboarding.starterTasks.integrations.title",
       "auth:onboarding.starterTasks.create.title",

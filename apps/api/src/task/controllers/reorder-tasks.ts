@@ -49,13 +49,14 @@ export default async function reorderTasks(
       const before = await tx
         .select({
           id: taskTable.id,
-          status: taskTable.status,
+          status: sql<string>`${taskTable.status}`,
           position: taskTable.position,
         })
         .from(taskTable)
         .where(
           and(
             eq(taskTable.projectId, projectId),
+            inArray(taskTable.type, ["task", "bug"]),
             expectedTasks
               ? inArray(taskTable.status, [
                   ...new Set([
@@ -124,7 +125,7 @@ export default async function reorderTasks(
         .returning({
           id: taskTable.id,
           position: taskTable.position,
-          status: taskTable.status,
+          status: sql<string>`${taskTable.status}`,
           projectId: taskTable.projectId,
           title: taskTable.title,
           userId: taskTable.userId,

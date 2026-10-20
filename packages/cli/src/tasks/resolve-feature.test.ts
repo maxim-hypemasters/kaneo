@@ -80,7 +80,7 @@ describe("resolveFeature", () => {
     expect(failureOf(await resolve({ type: "task" }))).toMatchObject({
       _tag: "InvalidArgument",
       message: "KAN-1 is not a feature.",
-      hint: "Make it one with kaneo task edit KAN-1 --type feature, or pass a feature.",
+      hint: "Choose an existing Feature, or create one with kaneo task create --type feature.",
     });
   });
 

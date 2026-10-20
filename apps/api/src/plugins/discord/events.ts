@@ -115,7 +115,7 @@ async function getDiscordEventData(
     projectName: taskRow.projectName,
     taskUrl,
     actorName: user?.name ?? null,
-    statusSlug: taskRow.status,
+    statusSlug: taskRow.status ?? "",
     columnName: taskRow.columnName,
     priority: taskRow.priority,
   };

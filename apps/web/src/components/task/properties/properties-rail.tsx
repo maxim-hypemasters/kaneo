@@ -75,51 +75,64 @@ export function PropertiesRail({
       className={cn("flex flex-col gap-4 px-3 pt-4 pb-6", className)}
     >
       <div className="flex flex-col gap-0.5">
-        <PropertyRow label={t("tasks:status.label")}>
-          <TaskStatusPopover task={task}>
-            <PropertyValue data-task-action="status" shortcutId="changeStatus">
-              {getColumnIcon(task.status ?? "", status.isFinal, status.icon)}
-              <span className="truncate">{status.label}</span>
-            </PropertyValue>
-          </TaskStatusPopover>
-        </PropertyRow>
+        {!isFeature && (
+          <>
+            <PropertyRow label={t("tasks:status.label")}>
+              <TaskStatusPopover task={task}>
+                <PropertyValue
+                  data-task-action="status"
+                  shortcutId="changeStatus"
+                >
+                  {getColumnIcon(
+                    task.status ?? "",
+                    status.isFinal,
+                    status.icon,
+                  )}
+                  <span className="truncate">{status.label}</span>
+                </PropertyValue>
+              </TaskStatusPopover>
+            </PropertyRow>
 
-        <PropertyRow label={t("tasks:priority.label")}>
-          <TaskPriorityPopover task={task}>
-            <PropertyValue
-              data-task-action="priority"
-              shortcutId="changePriority"
-            >
-              {getPriorityIcon(task.priority ?? "")}
-              <span className="truncate">
-                {getPriorityLabel(task.priority ?? "")}
-              </span>
-            </PropertyValue>
-          </TaskPriorityPopover>
-        </PropertyRow>
+            <PropertyRow label={t("tasks:priority.label")}>
+              <TaskPriorityPopover task={task}>
+                <PropertyValue
+                  data-task-action="priority"
+                  shortcutId="changePriority"
+                >
+                  {getPriorityIcon(task.priority ?? "")}
+                  <span className="truncate">
+                    {getPriorityLabel(task.priority ?? "")}
+                  </span>
+                </PropertyValue>
+              </TaskPriorityPopover>
+            </PropertyRow>
 
-        <PropertyRow label={t("tasks:assignee.label")}>
-          <TaskAssigneePopover task={task} workspaceId={workspaceId}>
-            <PropertyValue data-task-action="assignee" shortcutId="assignTask">
-              <AssigneeAvatar
-                name={assignee?.user?.name || task.assigneeName}
-                image={assignee?.user?.image}
-                assigned={Boolean(task.userId)}
-              />
-              <span
-                className={cn(
-                  "truncate",
-                  !task.userId && "text-muted-foreground",
-                )}
-              >
-                {assignee?.user?.name ||
-                  task.assigneeName ||
-                  t("tasks:popover.assignee.unassigned")}
-              </span>
-            </PropertyValue>
-          </TaskAssigneePopover>
-        </PropertyRow>
-
+            <PropertyRow label={t("tasks:assignee.label")}>
+              <TaskAssigneePopover task={task} workspaceId={workspaceId}>
+                <PropertyValue
+                  data-task-action="assignee"
+                  shortcutId="assignTask"
+                >
+                  <AssigneeAvatar
+                    name={assignee?.user?.name || task.assigneeName}
+                    image={assignee?.user?.image}
+                    assigned={Boolean(task.userId)}
+                  />
+                  <span
+                    className={cn(
+                      "truncate",
+                      !task.userId && "text-muted-foreground",
+                    )}
+                  >
+                    {assignee?.user?.name ||
+                      task.assigneeName ||
+                      t("tasks:popover.assignee.unassigned")}
+                  </span>
+                </PropertyValue>
+              </TaskAssigneePopover>
+            </PropertyRow>
+          </>
+        )}
         <PropertyRow label={t("tasks:properties.labels")} align="start">
           <TaskLabelsPopover task={task} workspaceId={workspaceId}>
             <PropertyValue
@@ -132,39 +145,42 @@ export function PropertiesRail({
           </TaskLabelsPopover>
         </PropertyRow>
 
-        <PropertyRow label={t("tasks:properties.dates")}>
-          <div className="flex min-w-0 items-center gap-0.5">
-            <TaskStartDatePopover task={task}>
-              <PropertyValue className="flex-none">
-                <CalendarDays className="text-muted-foreground" />
-                <span
-                  className={cn(!task.startDate && "text-muted-foreground")}
+        {!isFeature && (
+          <PropertyRow label={t("tasks:properties.dates")}>
+            <div className="flex min-w-0 items-center gap-0.5">
+              <TaskStartDatePopover task={task}>
+                <PropertyValue className="flex-none">
+                  <CalendarDays className="text-muted-foreground" />
+                  <span
+                    className={cn(!task.startDate && "text-muted-foreground")}
+                  >
+                    {task.startDate
+                      ? formatDateShort(task.startDate)
+                      : t("tasks:properties.start")}
+                  </span>
+                </PropertyValue>
+              </TaskStartDatePopover>
+              <ArrowRight className="size-3 shrink-0 text-muted-foreground/60" />
+              <TaskDueDatePopover task={task}>
+                <PropertyValue
+                  data-task-action="dueDate"
+                  className={cn("flex-none", dueDateTextClass[dueStatus])}
                 >
-                  {task.startDate
-                    ? formatDateShort(task.startDate)
-                    : t("tasks:properties.start")}
-                </span>
-              </PropertyValue>
-            </TaskStartDatePopover>
-            <ArrowRight className="size-3 shrink-0 text-muted-foreground/60" />
-            <TaskDueDatePopover task={task}>
-              <PropertyValue
-                data-task-action="dueDate"
-                className={cn("flex-none", dueDateTextClass[dueStatus])}
-              >
-                <Calendar
-                  className={cn(!task.dueDate && "text-muted-foreground")}
-                />
-                <span className={cn(!task.dueDate && "text-muted-foreground")}>
-                  {task.dueDate
-                    ? formatDateShort(task.dueDate)
-                    : t("tasks:dueDate.label")}
-                </span>
-              </PropertyValue>
-            </TaskDueDatePopover>
-          </div>
-        </PropertyRow>
-
+                  <Calendar
+                    className={cn(!task.dueDate && "text-muted-foreground")}
+                  />
+                  <span
+                    className={cn(!task.dueDate && "text-muted-foreground")}
+                  >
+                    {task.dueDate
+                      ? formatDateShort(task.dueDate)
+                      : t("tasks:dueDate.label")}
+                  </span>
+                </PropertyValue>
+              </TaskDueDatePopover>
+            </div>
+          </PropertyRow>
+        )}
         <PropertyRow label={t("tasks:properties.project")}>
           {canMoveTask ? (
             <TaskMovePopover task={task} workspaceId={workspaceId}>
@@ -181,7 +197,7 @@ export function PropertiesRail({
 
         <PropertyRow label={t("tasks:features.type")}>
           <TaskTypeMenu task={task} hasTasks={hasFeatureTasks}>
-            <PropertyValue>
+            <PropertyValue disabled={isFeature}>
               <TaskTypeValue type={task.type} />
             </PropertyValue>
           </TaskTypeMenu>
@@ -209,13 +225,15 @@ export function PropertiesRail({
             />
           </PropertyRow>
         )}
-        <PropertyRow label={t("tasks:releases.property")}>
-          <TaskReleasePopover task={task}>
-            <PropertyValue data-task-action="release" shortcutId="setRelease">
-              <ReleaseValue release={release} />
-            </PropertyValue>
-          </TaskReleasePopover>
-        </PropertyRow>
+        {!isFeature && (
+          <PropertyRow label={t("tasks:releases.property")}>
+            <TaskReleasePopover task={task}>
+              <PropertyValue data-task-action="release" shortcutId="setRelease">
+                <ReleaseValue release={release} />
+              </PropertyValue>
+            </TaskReleasePopover>
+          </PropertyRow>
+        )}
       </div>
 
       <TaskCustomFieldRows taskId={taskId} projectId={projectId} />

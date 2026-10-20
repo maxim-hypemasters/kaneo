@@ -8,7 +8,11 @@ export function isWeekStartDay(value: number): value is WeekStartDay {
   return WEEK_START_DAYS.some((day) => day === value);
 }
 
-export const GANTT_GROUP_BY_OPTIONS = ["none", "assignee", "feature"] as const;
+export const GANTT_GROUP_BY_OPTIONS = [
+  "none",
+  "assignee",
+  "milestone",
+] as const;
 export type GanttGroupBy = (typeof GANTT_GROUP_BY_OPTIONS)[number];
 
 export function isGanttGroupBy(value: unknown): value is GanttGroupBy {
@@ -78,6 +82,8 @@ type UserPreferencesStore = {
   weekStartsOn: WeekStartDay;
   setWeekStartsOn: (weekStartsOn: WeekStartDay) => void;
 
+  ganttEntities: ("milestone" | "task" | "bug")[];
+  setGanttEntities: (entities: ("milestone" | "task" | "bug")[]) => void;
   ganttGroupBy: GanttGroupBy;
   setGanttGroupBy: (ganttGroupBy: GanttGroupBy) => void;
 };
@@ -178,6 +184,8 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       weekStartsOn: 0,
       setWeekStartsOn: (weekStartsOn) => set({ weekStartsOn }),
 
+      ganttEntities: ["milestone", "task", "bug"],
+      setGanttEntities: (ganttEntities) => set({ ganttEntities }),
       ganttGroupBy: "none",
       setGanttGroupBy: (ganttGroupBy) => set({ ganttGroupBy }),
     }),
@@ -186,10 +194,15 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
+        if (!Array.isArray(state.ganttEntities)) {
+          state.setGanttEntities(["milestone", "task", "bug"]);
+        }
         if (!isWeekStartDay(state.weekStartsOn)) {
           state.setWeekStartsOn(0);
         }
-        if (!isGanttGroupBy(state.ganttGroupBy)) {
+        if ((state.ganttGroupBy as string) === "feature") {
+          state.setGanttGroupBy("milestone");
+        } else if (!isGanttGroupBy(state.ganttGroupBy)) {
           state.setGanttGroupBy("none");
         }
         if (!isDefaultProjectView(state.defaultProjectView)) {

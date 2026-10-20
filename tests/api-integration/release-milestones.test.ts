@@ -31,25 +31,42 @@ async function milestone(
   featureId: string,
   title = "Checkpoint",
   position = 0,
+  releaseId: string | null = null,
 ) {
   const [row] = await db
     .insert(schema.milestoneTable)
-    .values({ featureId, title, position })
+    .values({ featureId, title, position, releaseId })
     .returning();
   if (!row) throw new Error("Failed to insert milestone");
-  return { id: row.id, featureId, title, position };
+  const feature = await db.query.taskTable.findFirst({
+    where: eq(schema.taskTable.id, featureId),
+  });
+  return {
+    id: row.id,
+    featureId,
+    title,
+    position,
+    featureTitle: feature!.title,
+    leadId: row.leadId,
+    status: row.status,
+    columnId: row.columnId,
+    priority: row.priority,
+    releaseId: row.releaseId,
+    startDate: row.startDate,
+    endDate: row.endDate,
+  };
 }
 
 describe("release milestone metadata", () => {
-  it("includes empty definitions from release Features and visible Task/Bug parents, ordered by Feature, position and id", async () => {
+  it("includes empty definitions from explicitly planned milestones and visible Task/Bug parents, ordered by Feature, position and id", async () => {
     const ctx = await setup();
     const own = await insertTask(ctx.project.id, {
       type: "feature",
       releaseId: ctx.release.id,
     });
-    const second = await milestone(own.id, "Second", 20);
-    const first = await milestone(own.id, "First", 10);
-    const tied = await milestone(own.id, "Same position", 10);
+    const second = await milestone(own.id, "Second", 20, ctx.release.id);
+    const first = await milestone(own.id, "First", 10, ctx.release.id);
+    const tied = await milestone(own.id, "Same position", 10, ctx.release.id);
     const otherRelease = await insertRelease(ctx.project.id);
     const referenced = await insertTask(ctx.project.id, {
       type: "feature",
@@ -169,7 +186,7 @@ describe("release milestone metadata", () => {
           type: "feature",
           releaseId: ctx.release.id,
         });
-        await milestone(feature.id, `Milestone ${index}`);
+        await milestone(feature.id, `Milestone ${index}`, 0, ctx.release.id);
       }
       expect(
         await readReleaseMilestones(

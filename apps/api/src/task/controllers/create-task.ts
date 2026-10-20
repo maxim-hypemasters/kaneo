@@ -77,7 +77,7 @@ async function createTask({
   currentUserId: string;
   userId?: string;
   title: string;
-  status: string;
+  status?: string;
   startDate?: Date;
   dueDate?: Date;
   description?: string;
@@ -88,7 +88,7 @@ async function createTask({
   featureId?: string;
   milestoneId?: string | null;
   expectedWorkspaceId?: string;
-  // Omitted follows the feature; null is no release.
+  // Omitted follows the milestone; null explicitly means no release.
   releaseId?: string | null;
 }) {
   if (type === "feature" && featureId) {
@@ -100,13 +100,23 @@ async function createTask({
     throw new HTTPException(400, {
       message: "Features cannot belong to milestones",
     });
+  if (
+    type === "feature" &&
+    [status, priority, userId, startDate, dueDate, releaseId].some(
+      (value) => value != null,
+    )
+  )
+    throw new HTTPException(400, {
+      message: "Features do not have planning fields",
+    });
   const resolvedStatus = status || "to-do";
   const resolvedPriority = priority || "no-priority";
   const normalizedCustomFields = deduplicateCustomFields(customFields);
 
   const normalizedUserId = userId?.trim() || undefined;
 
-  await assertValidTaskStatus(resolvedStatus, projectId);
+  if (type !== "feature")
+    await assertValidTaskStatus(resolvedStatus, projectId);
 
   const allFields = await db
     .select()
@@ -171,19 +181,21 @@ async function createTask({
           expectedWorkspaceId,
           "update",
         );
-      const feature = featureId
-        ? await lockFeature(tx, featureId, projectId)
+      if (featureId) await lockFeature(tx, featureId, projectId);
+      const milestone = milestoneId
+        ? await lockMilestone(tx, milestoneId, featureId, projectId)
         : null;
-      if (milestoneId)
-        await lockMilestone(tx, milestoneId, featureId, projectId);
       const taskNumber = await claimTaskNumber(projectId, tx);
       if (releaseId) await lockRelease(tx, releaseId, projectId);
-      const nextPosition = await nextTaskPosition(
-        tx,
-        projectId,
-        resolvedStatus,
-        column?.id ?? null,
-      );
+      const nextPosition =
+        type === "feature"
+          ? 0
+          : await nextTaskPosition(
+              tx,
+              projectId,
+              resolvedStatus,
+              column?.id ?? null,
+            );
 
       const [task] = await tx
         .insert(taskTable)
@@ -191,18 +203,18 @@ async function createTask({
           projectId,
           userId: normalizedUserId ?? null,
           title: title || "",
-          status: resolvedStatus,
-          columnId: column?.id ?? null,
+          status: type === "feature" ? null : resolvedStatus,
+          columnId: type === "feature" ? null : (column?.id ?? null),
           startDate: startDate || null,
           dueDate: dueDate || null,
           description: description || "",
-          priority: resolvedPriority,
+          priority: type === "feature" ? null : resolvedPriority,
           number: taskNumber,
           position: nextPosition,
           type,
           featureId: featureId ?? null,
           milestoneId: milestoneId ?? null,
-          releaseId: releaseForNewTask(releaseId, feature?.releaseId ?? null),
+          releaseId: releaseForNewTask(releaseId, milestone?.releaseId ?? null),
         })
         .returning();
 

@@ -20,11 +20,13 @@ export type ProjectViewJson = {
 
 export function countByColumn(
   columns: ReadonlyArray<Column>,
-  tasks: ReadonlyArray<{ readonly status: string }>,
+  tasks: ReadonlyArray<{ readonly status: string | null }>,
 ): ColumnCountJson[] {
   const counts = new Map<string, number>();
-  for (const task of tasks)
-    counts.set(task.status, (counts.get(task.status) ?? 0) + 1);
+  for (const task of tasks) {
+    if (task.status !== null)
+      counts.set(task.status, (counts.get(task.status) ?? 0) + 1);
+  }
   return [...columns]
     .sort((a, b) => a.position - b.position)
     .map((column) => ({
@@ -39,7 +41,7 @@ export function toProjectView(
   project: Project,
   columns: ReadonlyArray<Column>,
   board: {
-    readonly tasks: ReadonlyArray<{ readonly status: string }>;
+    readonly tasks: ReadonlyArray<{ readonly status: string | null }>;
     readonly total: number;
   },
   webUrl: string,

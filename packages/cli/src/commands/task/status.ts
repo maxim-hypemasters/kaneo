@@ -35,6 +35,11 @@ export const runTaskStatus = Effect.fn("command.task.status")(
     const resolved = yield* withSpinner(`Loading ${options.task}`)(
       resolveTask(options.task, { columns: true }),
     );
+    if (resolved.task.type === "feature")
+      return yield* new InvalidArgument({
+        message:
+          "Features are knowledge records without planning fields. Plan work with milestones.",
+      });
     const label = resolved.ticketId ?? resolved.task.id.slice(0, 8);
     const columns = [...resolved.columns].sort(
       (a, b) => a.position - b.position,
@@ -85,6 +90,11 @@ export const runTaskStatus = Effect.fn("command.task.status")(
             ),
     });
 
+    if (resolved.task.status === null || resolved.task.type === "feature")
+      return yield* new InvalidArgument({
+        message:
+          "Features have no workflow status. Update a milestone instead.",
+      });
     const from = statusRef(columns, resolved.task.status);
     if (target.slug !== resolved.task.status) {
       yield* withSpinner(`Moving ${label}`)(

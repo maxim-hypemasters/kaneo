@@ -192,7 +192,8 @@
 				"discardTitleBug": "Discard bug?",
 				"successCreatedBug": "Bug created successfully",
 				"titleBug": "New Bug",
-				"typeBug": "Bug"
+				"typeBug": "Bug",
+				"releaseFromMilestone": "{{name}} (from milestone)"
 			}
 		},
 		"editor": {
@@ -408,10 +409,7 @@
 					"title": "इस कार्ड को अगले कॉलम में खींचें",
 					"description": "काम आगे बढ़ने के साथ कार्ड एक कॉलम से दूसरे कॉलम में जाते हैं। इसे अगले कॉलम में खींचें, या इसे खोलकर इसका स्टेटस बदलें।"
 				},
-				"details": {
-					"title": "इस टास्क को खोलें और इसे फ़ीचर बनाएँ",
-					"description": "एक टास्क में विवरण, लेबल, असाइनी और ड्यू डेट हो सकती है। इसे फ़ीचर बनाएँ, फिर काम को इसके अंतर्गत समूहित करने के लिए इसमें टास्क जोड़ें।"
-				},
+				"details": {},
 				"invite": {
 					"title": "अपनी टीम को आमंत्रित करें",
 					"description": "Kaneo तब सबसे अच्छा काम करता है जब सभी इसमें हों। लोगों को ईमेल से आमंत्रित करने के लिए साइडबार में **सदस्य** खोलें।"
@@ -423,6 +421,10 @@
 				"create": {
 					"title": "अपना खुद का टास्क बनाएँ",
 					"description": "किसी कॉलम के नाम के पास **+** का इस्तेमाल करें, या **T** और फिर **C** दबाएँ। तैयार होने पर इन स्टार्टर टास्क को हटा दें।"
+				},
+				"features": {
+					"description": "Open **Features** in the project navigation to create a Feature for documentation and implementation history. Add milestones inside the Feature to plan work, then link Tasks or Bugs to them.",
+					"title": "Explore the Features library"
 				}
 			},
 			"progress": "चरण {{current}} / {{total}}",
@@ -3184,6 +3186,28 @@
 				"taskAriaLabel": "{{title}}: खोलें, या शेड्यूल बदलने या किसी दूसरे फ़ीचर में ले जाने के लिए खींचें",
 				"moveError": "कार्य को दूसरे फ़ीचर में ले जाने में विफल",
 				"assignee": "{{name}} को सौंपा गया"
+			},
+			"milestones": {
+				"assigneeLead": "Assignee / Milestone Lead",
+				"bar": {
+					"ariaLabel": "Milestone {{title}}: open or drag to reschedule",
+					"ariaLabelGrouped": "Milestone {{title}}: open, or drag to reschedule or change lead",
+					"progress": "{{completed}}/{{total}}",
+					"progressAria": "{{completed}} of {{count}} completed"
+				},
+				"cannotMove": "Only work in this Feature can move to {{name}}",
+				"itemCount_one": "{{count}} item",
+				"itemCount_other": "{{count}} items",
+				"moveError": "Could not move work to milestone",
+				"moveTo": "Move to milestone {{name}}",
+				"open": "Open milestone {{title}}",
+				"remove": "Remove milestone",
+				"show": "Show",
+				"shownCount_one": "{{shown}} of {{count}} item",
+				"shownCount_other": "{{shown}} of {{count}} items",
+				"taskAriaLabel": "{{title}}: open, or drag to reschedule or change milestone",
+				"taskFilters": "Task filters",
+				"unknown": "Unknown milestone"
 			}
 		},
 		"delete": {
@@ -3416,15 +3440,26 @@
 			"type": "प्रकार",
 			"typeTask": "कार्य",
 			"typeFeature": "फ़ीचर",
-			"convertToFeature": "फ़ीचर में बदलें",
 			"convertToTask": "कार्य में बदलें",
 			"typeError": "कार्य का प्रकार बदलने में विफल",
-			"convertBlocked": "इसे कार्य बनाने से पहले इस फ़ीचर के कार्यों को इससे बाहर ले जाएँ।",
 			"openFeature": "फ़ीचर {{title}} खोलें",
 			"inProject": "प्रोजेक्ट में फ़ीचर",
 			"convertToBug": "Convert to bug",
 			"typeBug": "Bug",
-			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
+			"library": {
+				"active": "Active",
+				"archive": "Archive feature",
+				"archived": "Archived",
+				"empty": "No features found.",
+				"milestoneCount_one": "{{count}} milestone",
+				"milestoneCount_other": "{{count}} milestones",
+				"restore": "Restore feature",
+				"saveError": "Could not update feature.",
+				"search": "Search features…",
+				"title": "Features",
+				"activityArchived": "archived this Feature",
+				"activityRestored": "restored this Feature"
+			}
 		},
 		"releases": {
 			"pageTitle": "{{name}} – रिलीज़",
@@ -3483,7 +3518,9 @@
 				"tasks_one": "{{count}} कार्य",
 				"tasks_other": "{{count}} कार्य",
 				"unfinished_one": "{{count}} अधूरा",
-				"unfinished_other": "{{count}} अधूरे"
+				"unfinished_other": "{{count}} अधूरे",
+				"milestones_one": "{{count}} milestone",
+				"milestones_other": "{{count}} milestones"
 			},
 			"empty": {
 				"title": "अभी तक कोई रिलीज़ नहीं",
@@ -3591,7 +3628,8 @@
 				"title": "Progress over time",
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
-			}
+			},
+			"milestoneReleaseHint": "Milestone release"
 		},
 		"createMenu": {
 			"label": "Create work item",
@@ -3607,7 +3645,6 @@
 			"add": "New milestone",
 			"assignmentError": "Could not update milestone.",
 			"choose": "Choose milestone",
-			"convertBlocked": "Remove all tasks and milestones before converting this feature.",
 			"delete": "Delete milestone",
 			"deleteDescription": "Linked tasks and bugs remain in this feature and release. Only their milestone assignment is removed.",
 			"deleteTitle": "Delete milestone?",
@@ -3647,7 +3684,20 @@
 			"unavailableTasks": "Some selected work is no longer available. Remove it from the selection before saving.",
 			"noUnassignedTasks": "No Tasks or Bugs available to link.",
 			"clearEndDate": "Clear end date",
-			"endDatePlaceholder": "Set end date…"
+			"endDatePlaceholder": "Set end date…",
+			"activityCompleted": "completed milestone “{{title}}”",
+			"activityCreated": "created milestone “{{title}}”",
+			"activityDeleted": "deleted milestone “{{title}}”",
+			"activityReopened": "reopened milestone “{{title}}”",
+			"activityUpdated": "updated milestone “{{title}}”",
+			"activityUpdatedFields": "updated milestone “{{title}}”: {{fields}}",
+			"addLinkedWork": "Add work",
+			"lead": "Milestone Lead",
+			"noLinkedWork": "No linked Tasks or Bugs.",
+			"open": "Open milestone",
+			"planned": "Planned",
+			"planningSnapshot": "Previous planning: {{values}}",
+			"workProgress": "Linked work progress"
 		}
 	},
 	"invitations": {

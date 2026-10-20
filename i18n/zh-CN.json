@@ -192,7 +192,8 @@
 				"discardTitleBug": "Discard bug?",
 				"successCreatedBug": "Bug created successfully",
 				"titleBug": "New Bug",
-				"typeBug": "Bug"
+				"typeBug": "Bug",
+				"releaseFromMilestone": "{{name}} (from milestone)"
 			}
 		},
 		"editor": {
@@ -407,10 +408,7 @@
 					"title": "把这张卡片拖到下一列",
 					"description": "随着工作推进，卡片会从一列移到下一列。把这张卡片拖到下一列，或打开它修改状态。"
 				},
-				"details": {
-					"title": "打开这个任务并将其转换为功能",
-					"description": "任务可以包含描述、标签、负责人和截止日期。把这个任务转换为功能，然后向其中添加任务，将相关工作归入其下。"
-				},
+				"details": {},
 				"invite": {
 					"title": "邀请你的团队",
 					"description": "大家都在的时候，Kaneo 最好用。打开侧边栏中的 **成员**，通过邮件邀请成员。"
@@ -422,6 +420,10 @@
 				"create": {
 					"title": "创建你自己的任务",
 					"description": "使用列名旁边的 **+**，或先按 **T** 再按 **C**。准备好后，就可以删除这些入门任务。"
+				},
+				"features": {
+					"description": "Open **Features** in the project navigation to create a Feature for documentation and implementation history. Add milestones inside the Feature to plan work, then link Tasks or Bugs to them.",
+					"title": "Explore the Features library"
 				}
 			},
 			"progress": "第 {{current}} 步，共 {{total}} 步",
@@ -3145,6 +3147,26 @@
 				"taskAriaLabel": "{{title}}：打开，或拖动以重新排期或移至其他功能",
 				"moveError": "无法将任务移至其他功能",
 				"assignee": "负责人：{{name}}"
+			},
+			"milestones": {
+				"assigneeLead": "Assignee / Milestone Lead",
+				"bar": {
+					"ariaLabel": "Milestone {{title}}: open or drag to reschedule",
+					"ariaLabelGrouped": "Milestone {{title}}: open, or drag to reschedule or change lead",
+					"progress": "{{completed}}/{{total}}",
+					"progressAria": "{{completed}} of {{count}} completed"
+				},
+				"cannotMove": "Only work in this Feature can move to {{name}}",
+				"itemCount_other": "{{count}} items",
+				"moveError": "Could not move work to milestone",
+				"moveTo": "Move to milestone {{name}}",
+				"open": "Open milestone {{title}}",
+				"remove": "Remove milestone",
+				"show": "Show",
+				"shownCount_other": "{{shown}} of {{count}} items",
+				"taskAriaLabel": "{{title}}: open, or drag to reschedule or change milestone",
+				"taskFilters": "Task filters",
+				"unknown": "Unknown milestone"
 			}
 		},
 		"delete": {
@@ -3353,15 +3375,25 @@
 			"type": "类型",
 			"typeTask": "任务",
 			"typeFeature": "功能",
-			"convertToFeature": "转换为功能",
 			"convertToTask": "转换为任务",
 			"typeError": "更改任务类型失败",
-			"convertBlocked": "请先将此功能下的任务移出，再将其转换为任务。",
 			"openFeature": "打开功能 {{title}}",
 			"inProject": "项目内功能",
 			"convertToBug": "Convert to bug",
 			"typeBug": "Bug",
-			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
+			"library": {
+				"active": "Active",
+				"archive": "Archive feature",
+				"archived": "Archived",
+				"empty": "No features found.",
+				"milestoneCount_other": "{{count}} milestones",
+				"restore": "Restore feature",
+				"saveError": "Could not update feature.",
+				"search": "Search features…",
+				"title": "Features",
+				"activityArchived": "archived this Feature",
+				"activityRestored": "restored this Feature"
+			}
 		},
 		"releases": {
 			"pageTitle": "{{name}} – 版本",
@@ -3410,7 +3442,8 @@
 			"counts": {
 				"features_other": "{{count}} 个功能",
 				"tasks_other": "{{count}} 个任务",
-				"unfinished_other": "{{count}} 个未完成"
+				"unfinished_other": "{{count}} 个未完成",
+				"milestones_other": "{{count}} milestones"
 			},
 			"empty": {
 				"title": "暂无版本",
@@ -3513,7 +3546,8 @@
 				"title": "Progress over time",
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
-			}
+			},
+			"milestoneReleaseHint": "Milestone release"
 		},
 		"createMenu": {
 			"label": "Create work item",
@@ -3529,7 +3563,6 @@
 			"add": "New milestone",
 			"assignmentError": "Could not update milestone.",
 			"choose": "Choose milestone",
-			"convertBlocked": "Remove all tasks and milestones before converting this feature.",
 			"delete": "Delete milestone",
 			"deleteDescription": "Linked tasks and bugs remain in this feature and release. Only their milestone assignment is removed.",
 			"deleteTitle": "Delete milestone?",
@@ -3569,7 +3602,20 @@
 			"unavailableTasks": "Some selected work is no longer available. Remove it from the selection before saving.",
 			"noUnassignedTasks": "No Tasks or Bugs available to link.",
 			"clearEndDate": "Clear end date",
-			"endDatePlaceholder": "Set end date…"
+			"endDatePlaceholder": "Set end date…",
+			"activityCompleted": "completed milestone “{{title}}”",
+			"activityCreated": "created milestone “{{title}}”",
+			"activityDeleted": "deleted milestone “{{title}}”",
+			"activityReopened": "reopened milestone “{{title}}”",
+			"activityUpdated": "updated milestone “{{title}}”",
+			"activityUpdatedFields": "updated milestone “{{title}}”: {{fields}}",
+			"addLinkedWork": "Add work",
+			"lead": "Milestone Lead",
+			"noLinkedWork": "No linked Tasks or Bugs.",
+			"open": "Open milestone",
+			"planned": "Planned",
+			"planningSnapshot": "Previous planning: {{values}}",
+			"workProgress": "Linked work progress"
 		}
 	},
 	"invitations": {

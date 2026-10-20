@@ -44,7 +44,13 @@ async function createWithLease(
       eq(taskTable.projectId, context.projectId),
     ),
   });
-  if (!task || task.number === null) return;
+  if (
+    !task ||
+    task.type === "feature" ||
+    task.status === null ||
+    task.number === null
+  )
+    return;
   await create({
     taskId: task.id,
     projectId: task.projectId,

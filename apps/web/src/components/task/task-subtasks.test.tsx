@@ -304,7 +304,7 @@ describe("TaskSubtasks", () => {
       expect.objectContaining({
         title: "Design login form",
         projectId: "project-1",
-        status: "planned",
+        status: "to-do",
         type: "task",
         featureId: "feature-1",
       }),
@@ -329,7 +329,7 @@ describe("TaskSubtasks", () => {
   });
 
   it.each([
-    ["planned", "planned"],
+    ["planned", "to-do"],
     ["in-progress", "to-do"],
   ])(
     "creates a Bug inside a %s feature with inherited release",
@@ -359,11 +359,11 @@ describe("TaskSubtasks", () => {
   );
 
   it.each([
-    ["planned", "planned"],
+    ["planned", "to-do"],
     ["in-progress", "to-do"],
   ])(
-    "creates a peer Feature in the same release from a %s feature",
-    async (status, initialStatus) => {
+    "creates a peer Feature without execution planning from a %s feature",
+    async (status, _initialStatus) => {
       renderSection(status, "release-1");
 
       await selectCreationType("Feature");
@@ -376,10 +376,10 @@ describe("TaskSubtasks", () => {
         open: true,
         type: "feature",
         projectId: "project-1",
-        status: initialStatus,
-        releaseId: "release-1",
       });
       expect(props).not.toHaveProperty("featureId");
+      expect(props).not.toHaveProperty("status");
+      expect(props).not.toHaveProperty("releaseId");
       expect(mocks.createTask).not.toHaveBeenCalled();
       fireEvent.click(screen.getByRole("button", { name: "Close feature" }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -455,7 +455,7 @@ describe("TaskSubtasks", () => {
   });
 });
 
-describe("feature tasks from the board", () => {
+describe("canonical Feature tasks with a cached board", () => {
   beforeEach(() => {
     mocks.featureIndex = getFeatureIndex({
       columns: [
@@ -469,8 +469,18 @@ describe("feature tasks from the board", () => {
         },
       ],
     });
-    // The board wins over the relations once it holds the feature.
-    mocks.getRelations.mockReturnValue({ data: [], isSuccess: false });
+    const children = mocks.featureIndex.tasksByFeature.get("feature-1") ?? [];
+    mocks.getRelations.mockReturnValue({
+      data: children.map((task) => ({
+        id: `feature:${task.id}:feature-1`,
+        relationType: "subtask",
+        sourceTaskId: "feature-1",
+        targetTaskId: task.id,
+        sourceTask: null,
+        targetTask: { ...task, isCompleted: task.status === "done" },
+      })),
+      isSuccess: true,
+    });
   });
 
   it("lists the feature's tasks with progress from final columns", () => {

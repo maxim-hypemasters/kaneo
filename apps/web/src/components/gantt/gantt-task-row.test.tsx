@@ -2,7 +2,11 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 import { parseISO } from "date-fns";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { GanttTaskRow } from "./gantt-task-row";
-import type { ScheduledTask } from "./gantt-types";
+import type {
+  ScheduledTask,
+  ScheduledLeaf,
+  ScheduledMilestone,
+} from "./gantt-types";
 import { buildGanttTimeline } from "./timeline";
 
 vi.mock("react-i18next", () => ({
@@ -26,7 +30,7 @@ const timeline = buildGanttTimeline(
   2.75,
 );
 
-function task(extra: Partial<ScheduledTask> = {}): ScheduledTask {
+function task(extra: Partial<ScheduledLeaf> = {}): ScheduledLeaf {
   return {
     id: "checkout",
     title: "Checkout",
@@ -49,12 +53,28 @@ function task(extra: Partial<ScheduledTask> = {}): ScheduledTask {
   };
 }
 
-const feature = (extra: Partial<ScheduledTask> = {}) =>
-  task({
-    type: "feature",
-    subtaskCounts: { completed: 3, total: 5 },
-    ...extra,
-  });
+const milestone = (
+  extra: Partial<ScheduledMilestone> = {},
+): ScheduledMilestone => ({
+  ...task(),
+  type: "milestone",
+  entityKind: "milestone",
+  milestone: {
+    id: "checkout",
+    featureId: "F",
+    featureTitle: "Feature",
+    title: "Checkout",
+    projectId: "project",
+    position: 0,
+    leadId: "u1",
+    status: "to-do",
+    priority: "no-priority",
+    releaseId: null,
+    progress: { total: 5, started: 3, completed: 3 },
+  },
+  subtaskCounts: { completed: 3, total: 5 },
+  ...extra,
+});
 
 function show(scheduled: ScheduledTask, onOpenTask = vi.fn()) {
   const { container } = render(
@@ -77,8 +97,9 @@ function show(scheduled: ScheduledTask, onOpenTask = vi.fn()) {
 }
 
 const dates = "Sep 1, 2026 - Sep 9, 2026";
-const progress = "tasks:gantt.featureBar.progress(completed=3,total=5)";
-const progressAria = "tasks:gantt.featureBar.progressAria(completed=3,count=5)";
+const progress = "tasks:gantt.milestones.bar.progress(completed=3,total=5)";
+const progressAria =
+  "tasks:gantt.milestones.bar.progressAria(completed=3,count=5)";
 
 describe("GanttTaskRow", () => {
   it("leaves a plain task's rail and bar as they were", () => {
@@ -93,15 +114,15 @@ describe("GanttTaskRow", () => {
 
   it("marks a feature with its icon and its tasks' progress", () => {
     const onOpenTask = vi.fn();
-    const { container, rail } = show(feature(), onOpenTask);
+    const { container, rail } = show(milestone(), onOpenTask);
 
     expect(rail.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     expect(rail).toHaveTextContent(`${dates} • Alice • ${progress}`);
     expect(rail).toHaveAccessibleName(
-      `to-doPROJ-7 tasks:features.badge Checkout ${dates} • Alice, ${progressAria}`,
+      `to-dotasks:milestones.title tasks:milestones.title Checkout ${dates} • Alice, ${progressAria}`,
     );
     expect(
-      container.querySelector('[data-gantt-bar="feature"]'),
+      container.querySelector('[data-gantt-bar="milestone"]'),
     ).toBeInTheDocument();
 
     fireEvent.click(rail);
@@ -110,10 +131,10 @@ describe("GanttTaskRow", () => {
 
   it("leaves the progress out for a feature without tasks", () => {
     const { rail } = show(
-      feature({ subtaskCounts: { completed: 0, total: 0 } }),
+      milestone({ subtaskCounts: { completed: 0, total: 0 } }),
     );
 
-    expect(rail).toHaveTextContent("tasks:features.badge");
-    expect(rail).not.toHaveTextContent("featureBar.progress");
+    expect(rail).toHaveTextContent("tasks:milestones.title");
+    expect(rail).not.toHaveTextContent("milestones.bar.progress");
   });
 });

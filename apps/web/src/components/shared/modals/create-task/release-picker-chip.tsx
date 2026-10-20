@@ -8,14 +8,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
-import { useFeatureIndex } from "@/hooks/queries/task/use-feature-index";
+import { useGetMilestones } from "@/hooks/queries/milestone/use-get-milestones";
 import { chipClass } from "./chip-class";
 import type { FeatureChoice } from "./feature-picker-options";
-import {
-  featureReleaseOf,
-  type ReleaseChoice,
-  shownRelease,
-} from "./release-choice";
+import { type ReleaseChoice, shownRelease } from "./release-choice";
 import { ReleasePickerMenu } from "./release-picker-menu";
 
 type ReleasePickerChipProps = {
@@ -24,6 +20,7 @@ type ReleasePickerChipProps = {
   value: ReleaseChoice;
   // The chosen feature, whose release the task follows unless one is picked.
   feature: FeatureChoice | null;
+  milestoneId?: string | null;
   onChange: (choice: ReleaseChoice) => void;
   disabled?: boolean;
 };
@@ -32,13 +29,18 @@ export function ReleasePickerChip({
   projectId,
   value,
   feature,
+  milestoneId,
   onChange,
   disabled,
 }: ReleasePickerChipProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const featureIndex = useFeatureIndex(projectId || undefined);
-  const featureReleaseId = featureReleaseOf(feature, featureIndex);
+  const { data: milestones = [] } = useGetMilestones(
+    projectId,
+    feature?.kind === "existing" ? feature.id : undefined,
+  );
+  const featureReleaseId =
+    milestones.find((m) => m.id === milestoneId)?.releaseId ?? null;
   const shown = shownRelease(value, featureReleaseId);
   // The list is read only to name a release the task will be in.
   const { data: releases, isError } = useGetReleases(projectId, {
@@ -52,8 +54,8 @@ export function ReleasePickerChip({
   const label =
     value.kind === "set" && value.id === null
       ? t("common:modals.createTask.noRelease")
-      : name !== null && shown.fromFeature
-        ? t("common:modals.createTask.releaseFromFeature", { name })
+      : name !== null && shown.fromMilestone
+        ? t("common:modals.createTask.releaseFromMilestone", { name })
         : name;
 
   return (

@@ -15,6 +15,7 @@ export function useGetProjectFeatures(
     queryKey: projectFeaturesKey(projectId ?? ""),
     queryFn: () => getProjectFeatures(projectId ?? ""),
     enabled: enabled && !!projectId,
-    refetchOnMount: "always",
+    staleTime: 30_000,
+    refetchOnMount: true,
   });
 }

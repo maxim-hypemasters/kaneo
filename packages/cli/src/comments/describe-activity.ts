@@ -150,6 +150,42 @@ function describeEvent(
     }
     case "release_changed":
       return plain(describeReleaseChange(data));
+    case "milestone_created":
+    case "milestone_updated":
+    case "milestone_deleted":
+    case "milestone_completed":
+    case "milestone_reopened": {
+      const verb = activity.type.slice("milestone_".length);
+      const title = stringField(data, "milestoneTitle");
+      return plain(
+        title ? `${verb} milestone “${title}”` : `${verb} a milestone`,
+      );
+    }
+    case "feature_planning_snapshot": {
+      const values = [
+        stringField(data, "status") ? `Status: ${status("status")}` : null,
+        stringField(data, "priority")
+          ? `Priority: ${priorityName(stringField(data, "priority"))}`
+          : null,
+        stringField(data, "releaseName")
+          ? `Release: ${stringField(data, "releaseName")}`
+          : null,
+        stringField(data, "startDate")
+          ? `Start: ${formatDay(String(data.startDate), lookups.now)}`
+          : null,
+        stringField(data, "dueDate")
+          ? `End: ${formatDay(String(data.dueDate), lookups.now)}`
+          : null,
+      ].filter(Boolean);
+      return {
+        summary: "preserved previous Feature planning",
+        detail: values.length ? values.join(" · ") : null,
+      };
+    }
+    case "feature_archived":
+      return plain("archived the Feature");
+    case "feature_unarchived":
+      return plain("restored the Feature");
     default:
       return null;
   }

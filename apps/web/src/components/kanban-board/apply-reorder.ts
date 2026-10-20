@@ -72,7 +72,7 @@ export function rollbackBoardReorder(
     current,
     tasks.flatMap((change) => {
       const task = prior.get(change.id);
-      return task
+      return task && task.status !== null
         ? [
             {
               id: task.id,

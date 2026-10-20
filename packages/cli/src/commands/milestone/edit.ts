@@ -15,6 +15,10 @@ export const runMilestoneEdit = Effect.fn("command.milestone.edit")(
     readonly description: Option.Option<string>;
     readonly startDate: Option.Option<string>;
     readonly endDate: Option.Option<string>;
+    readonly lead?: Option.Option<string>;
+    readonly status?: Option.Option<string>;
+    readonly priority?: Option.Option<string>;
+    readonly release?: Option.Option<string>;
   }) {
     if (
       [
@@ -22,11 +26,15 @@ export const runMilestoneEdit = Effect.fn("command.milestone.edit")(
         options.description,
         options.startDate,
         options.endDate,
+        options.lead ?? Option.none(),
+        options.status ?? Option.none(),
+        options.priority ?? Option.none(),
+        options.release ?? Option.none(),
       ].every(Option.isNone)
     )
       return yield* new InvalidArgument({
         message: "Nothing to change.",
-        hint: "Pass --title, --description, --start-date or --end-date (none clears either date).",
+        hint: "Pass --title, --description, --lead, --status, --priority, --release, --start-date or --end-date.",
       });
     const title = Option.getOrUndefined(options.title)?.trim();
     if (title !== undefined && (!title || title.length > 255))
@@ -43,6 +51,30 @@ export const runMilestoneEdit = Effect.fn("command.milestone.edit")(
         : {}),
       ...(startDate === undefined ? {} : { startDate }),
       ...(endDate === undefined ? {} : { endDate }),
+      ...(Option.getOrUndefined(options.lead ?? Option.none()) === undefined
+        ? {}
+        : {
+            leadId:
+              Option.getOrUndefined(options.lead ?? Option.none()) === "none"
+                ? null
+                : Option.getOrUndefined(options.lead ?? Option.none()),
+          }),
+      ...(Option.getOrUndefined(options.status ?? Option.none()) === undefined
+        ? {}
+        : { status: Option.getOrUndefined(options.status ?? Option.none()) }),
+      ...(Option.getOrUndefined(options.priority ?? Option.none()) === undefined
+        ? {}
+        : {
+            priority: Option.getOrUndefined(options.priority ?? Option.none()),
+          }),
+      ...(Option.getOrUndefined(options.release ?? Option.none()) === undefined
+        ? {}
+        : {
+            releaseId:
+              Option.getOrUndefined(options.release ?? Option.none()) === "none"
+                ? null
+                : Option.getOrUndefined(options.release ?? Option.none()),
+          }),
     });
     yield* emitMilestone(milestone, "Updated");
   },
@@ -59,6 +91,25 @@ export const milestoneEdit = Command.make(
     ),
     startDate: Flag.String("start-date").pipe(
       Flag.withDescription("Optional start date, or none to clear"),
+      Flag.optional,
+    ),
+    lead: Flag.String("lead").pipe(
+      Flag.withDescription("Milestone lead user ID, or none to clear"),
+      Flag.optional,
+    ),
+    status: Flag.String("status").pipe(
+      Flag.withDescription("Project workflow column slug"),
+      Flag.optional,
+    ),
+    priority: Flag.Literals("priority", [
+      "no-priority",
+      "low",
+      "medium",
+      "high",
+      "urgent",
+    ]).pipe(Flag.optional),
+    release: Flag.String("release").pipe(
+      Flag.withDescription("Release ID, or none to clear"),
       Flag.optional,
     ),
     endDate: Flag.String("end-date").pipe(

@@ -27,3 +27,26 @@ export async function lockAuthorizedProject(
       message: "Project changed workspaces; retry the request",
     });
 }
+
+// Read-only aggregate endpoints validate authorization against their snapshot;
+// row-locking reads are not permitted inside a read-only transaction.
+export async function assertAuthorizedProjectSnapshot(
+  database: Pick<MilestoneTransaction, "select">,
+  projectId: string,
+  workspaceId: string | undefined,
+) {
+  if (!workspaceId) return;
+  const [project] = await database
+    .select({ id: projectTable.id })
+    .from(projectTable)
+    .where(
+      and(
+        eq(projectTable.id, projectId),
+        eq(projectTable.workspaceId, workspaceId),
+      ),
+    );
+  if (!project)
+    throw new HTTPException(409, {
+      message: "Project changed workspaces; retry the request",
+    });
+}

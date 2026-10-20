@@ -1,7 +1,9 @@
+import { recordMilestoneActivity } from "../../milestone/planning";
+import { publishMilestoneChange } from "../../milestone/write-milestones";
 import { asc, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { releaseTable, taskTable } from "../../database/schema";
+import { milestoneTable, releaseTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { pgErrorCode, pgErrorConstraint } from "../../utils/pg-error-code";
 import { retryTransaction } from "../../utils/retry-transaction";
@@ -44,6 +46,26 @@ function unlinkAndDelete(id: string, userId: string) {
         userId,
       });
     }
+    const milestones = await tx
+      .select()
+      .from(milestoneTable)
+      .where(eq(milestoneTable.releaseId, id))
+      .orderBy(asc(milestoneTable.id))
+      .for("update");
+    for (const milestone of milestones) {
+      await recordMilestoneActivity(
+        tx,
+        milestone.featureId,
+        milestone,
+        "milestone_updated",
+        userId,
+        { releaseId: { from: id, to: null } },
+      );
+      await tx
+        .update(milestoneTable)
+        .set({ releaseId: null })
+        .where(eq(milestoneTable.id, milestone.id));
+    }
     const [deleted] = await tx
       .delete(releaseTable)
       .where(eq(releaseTable.id, id))
@@ -51,7 +73,7 @@ function unlinkAndDelete(id: string, userId: string) {
     if (!deleted) {
       throw new HTTPException(404, { message: "Release not found" });
     }
-    return { ...deleted, memberIds };
+    return { ...deleted, memberIds, milestones };
   });
 }
 
@@ -67,9 +89,19 @@ async function unlinkAndDeleteRetrying(id: string, userId: string) {
 }
 
 async function deleteRelease(id: string, userId: string) {
-  const { projectId, memberIds } = await unlinkAndDeleteRetrying(id, userId);
+  const { projectId, memberIds, milestones } = await unlinkAndDeleteRetrying(
+    id,
+    userId,
+  );
   await publishReleaseChange({ projectId, taskIds: memberIds, userId });
   await publishEvent("release.changed", { projectId });
+  for (const milestone of milestones)
+    await publishMilestoneChange(
+      projectId,
+      milestone.featureId,
+      milestone.id,
+      userId,
+    );
   return { id };
 }
 

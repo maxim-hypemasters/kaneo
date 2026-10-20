@@ -15,6 +15,7 @@ import { writeImportComments } from "./write-import-comments";
 import { writeImportFeatures } from "./write-import-features";
 import { writeImportLabels } from "./write-import-labels";
 import { writeImportRelations } from "./write-import-relations";
+import { writeImportReleases } from "./write-import-releases";
 import { writeImportTasks } from "./write-import-tasks";
 import { writeImportMilestones } from "./write-import-milestones";
 
@@ -40,6 +41,13 @@ export async function writeProjectContent(
     includeComments,
   }: ProjectContentInput,
 ): Promise<{ counts: ImportCounts; warnings: string[] }> {
+  const releaseKeys = new Set(
+    (project.releases ?? []).map((release) => release.key),
+  );
+  for (const item of [...project.tasks, ...(project.milestones ?? [])]) {
+    if (item.releaseKey && !releaseKeys.has(item.releaseKey))
+      throw new Error("Unknown imported release reference");
+  }
   const now = new Date();
   const description = project.description?.trim();
   if (description) {
@@ -64,7 +72,7 @@ export async function writeProjectContent(
       })
       .where(eq(projectTable.id, projectId));
   }
-  const tasks = planImportTasks({
+  let tasks = planImportTasks({
     tasks: project.tasks,
     columns: board.byKey,
     fallbackColumn: board.fallback,
@@ -73,7 +81,29 @@ export async function writeProjectContent(
     newId: createId,
     assign: assignees.match,
   });
-  await writeImportTasks(tx, projectId, userId, tasks);
+  const hierarchy = planImportHierarchy(
+    project.tasks,
+    new Map(tasks.map((task) => [task.key, task.id])),
+    project.relations,
+  );
+  const promoted = new Set(hierarchy.features);
+  tasks = tasks.map((task) =>
+    promoted.has(task.id) && task.type !== "feature"
+      ? {
+          ...task,
+          type: "feature",
+          legacyPlanning: {
+            status: task.status,
+            priority: task.priority,
+            userId: task.userId,
+            startDate: task.startDate?.toISOString(),
+            dueDate: task.dueDate?.toISOString(),
+          },
+        }
+      : task,
+  );
+  const releaseIds = await writeImportReleases(tx, projectId, project.releases);
+  await writeImportTasks(tx, projectId, userId, tasks, releaseIds);
 
   const labels = await writeImportLabels(
     tx,
@@ -91,17 +121,21 @@ export async function writeProjectContent(
       })
     : 0;
 
-  const hierarchy = planImportHierarchy(
-    project.tasks,
-    new Map(tasks.map((task) => [task.key, task.id])),
-    project.relations,
-  );
   await writeImportFeatures(tx, hierarchy);
   const memberships = await writeImportMilestones(
     tx,
     project,
     tasks,
     hierarchy.memberships,
+    {
+      releases: releaseIds,
+      columns: board.byKey,
+      defaultColumn:
+        board.byKey.get(
+          columnPlan.columns.find((column) => !column.isFinal)?.key ?? "",
+        ) ?? null,
+      assign: assignees.match,
+    },
   );
   // Feature links count as relations, as the subtask links they came from.
   const relations =

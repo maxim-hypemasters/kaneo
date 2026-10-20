@@ -63,6 +63,23 @@ describe("getReleaseWorkProgress", () => {
 });
 
 describe("groupReleaseMilestones", () => {
+  it("retains empty milestones explicitly planned in this release and hides other empty definitions", () => {
+    expect(
+      groupReleaseMilestones(
+        [],
+        [
+          { ...milestone("planned", 0), releaseId: "release" },
+          { ...milestone("elsewhere", 1), releaseId: "other" },
+        ],
+        "release",
+      ),
+    ).toEqual([
+      {
+        milestone: { ...milestone("planned", 0), releaseId: "release" },
+        tasks: [],
+      },
+    ]);
+  });
   it("sorts definitions by position then ID, preserves unfinished-first input order in each bucket, and puts No milestone last", () => {
     const tasks = [
       task("b open", { milestoneId: "b" }),

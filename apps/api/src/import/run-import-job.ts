@@ -21,6 +21,8 @@ export type ImportJob = {
   userId: string;
   includeComments: boolean;
   canWriteMilestones?: boolean;
+  canAssignMilestoneLeads?: boolean;
+  canImportReleases?: boolean;
   opened: OpenedImportSource;
   state: ImportJobState;
   signal: AbortSignal;
@@ -106,6 +108,17 @@ async function importProject(
           "Milestone hierarchy requires task:create and task:update permission",
       });
     }
+    if (
+      !job.canAssignMilestoneLeads &&
+      project.milestones?.some((milestone) => milestone.lead)
+    )
+      throw new HTTPException(403, {
+        message: "Importing milestone leads requires task:assign permission",
+      });
+    if (!job.canImportReleases && project.releases?.length)
+      throw new HTTPException(403, {
+        message: "Importing releases requires project:update permission",
+      });
     const written = await writeImportedProject({
       workspaceId: job.workspaceId,
       userId: job.userId,

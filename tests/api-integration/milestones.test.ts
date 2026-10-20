@@ -50,6 +50,7 @@ async function setup() {
   const milestone = async (title = "First milestone") => {
     const response = await call("POST", `/milestone/feature/${feature.id}`, {
       title,
+      releaseId: release.id,
     });
     expect(response.status).toBe(200);
     return response.json();
@@ -262,7 +263,7 @@ describe("feature milestones", () => {
     ).toBe(409);
   });
 
-  it("creates Task and Bug members without changing their inherited Feature release", async () => {
+  it("creates Task and Bug members inheriting their milestone release", async () => {
     const ctx = await setup();
     const milestone = await ctx.milestone();
     for (const type of ["task", "bug"]) {
@@ -460,7 +461,7 @@ describe("feature milestones", () => {
     ).toBe(3);
   });
 
-  it("preserves Task/Bug conversion and leaf duplication, clears on Feature changes and promotion", async () => {
+  it("preserves Task/Bug conversion and leaf duplication, clears on Feature changes and rejects promotion", async () => {
     const ctx = await setup();
     const milestone = await ctx.milestone();
     const leaf = await insertTask(ctx.project.id, {
@@ -506,15 +507,15 @@ describe("feature milestones", () => {
     expect(
       (await ctx.call("PUT", `/task/type/${promoted.id}`, { type: "feature" }))
         .status,
-    ).toBe(200);
+    ).toBe(400);
     expect(await row(promoted.id)).toMatchObject({
-      type: "feature",
-      featureId: null,
-      milestoneId: null,
+      type: "task",
+      featureId: ctx.feature.id,
+      milestoneId: milestone.id,
     });
   });
 
-  it("blocks empty Feature conversion until all milestones are removed and duplicates Features empty", async () => {
+  it("blocks all Feature conversion and duplicates Features without milestones", async () => {
     const ctx = await setup();
     const milestone = await ctx.milestone();
     expect(
@@ -535,7 +536,7 @@ describe("feature milestones", () => {
     expect(
       (await ctx.call("PUT", `/task/type/${ctx.feature.id}`, { type: "bug" }))
         .status,
-    ).toBe(200);
+    ).toBe(409);
   });
 
   it("clears milestone on a leaf move and keeps owned milestones when an empty Feature moves", async () => {
@@ -671,10 +672,7 @@ describe("feature milestones", () => {
       }),
       ctx.call("PUT", `/task/type/${ctx.feature.id}`, { type: "task" }),
     ]);
-    expect([
-      [200, 409],
-      [409, 200],
-    ]).toContainEqual([creation.status, conversion.status]);
+    expect([creation.status, conversion.status]).toEqual([200, 409]);
     const owner = await row(ctx.feature.id);
     const owned = await db
       .select()
@@ -698,12 +696,12 @@ describe("feature milestones", () => {
       }),
       ctx.call("PUT", `/task/type/${task.id}`, { type: "feature" }),
     ]);
-    expect([200, 409]).toContain(assignment.status);
-    expect(promotion.status).toBe(200);
+    expect(assignment.status).toBe(200);
+    expect(promotion.status).toBe(400);
     expect(await row(task.id)).toMatchObject({
-      type: "feature",
-      featureId: null,
-      milestoneId: null,
+      type: "task",
+      featureId: feature.id,
+      milestoneId: milestone!.id,
     });
   });
 

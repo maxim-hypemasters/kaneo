@@ -1,4 +1,3 @@
-import { Rocket } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,7 +12,10 @@ import type Task from "@/types/task";
 import { TaskReleaseMenu } from "./task-release-menu";
 
 type TaskReleasePopoverProps = {
-  task: Pick<Task, "id" | "projectId" | "type" | "featureId" | "releaseId">;
+  task: Pick<
+    Task,
+    "id" | "projectId" | "type" | "featureId" | "milestoneId" | "releaseId"
+  >;
   children: ReactNode;
 };
 
@@ -26,19 +28,13 @@ export function TaskReleasePopover({
   const { mutateAsync: updateRelease } = useUpdateTaskRelease();
   const { canUpdateTasks } = useWorkspacePermission();
 
-  if (!canUpdateTasks()) return <>{children}</>;
+  if (!canUpdateTasks() || task.type === "feature") return <>{children}</>;
 
   const changeRelease = async (releaseId: string | null) => {
     setOpen(false);
     if (releaseId === (task.releaseId ?? null)) return;
     try {
-      const { movedTaskIds } = await updateRelease({ task, releaseId });
-      if (movedTaskIds.length > 0) {
-        toast.success(
-          t("tasks:releases.movedWithFeature", { count: movedTaskIds.length }),
-          { icon: Rocket },
-        );
-      }
+      await updateRelease({ task, releaseId });
     } catch (error) {
       toast.error(
         error instanceof Error

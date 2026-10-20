@@ -17,8 +17,9 @@ export function renderImportWarnings(
 ): string[] {
   const { theme, glyphs } = ui;
   const lines: string[] = [];
-  const unknown = report.tasks.filter((task) =>
-    report.unknownStatuses.includes(task.status),
+  const unknown = report.tasks.filter(
+    (task) =>
+      task.status !== null && report.unknownStatuses.includes(task.status),
   ).length;
   if (report.unknownStatuses.length > 0) {
     lines.push(
@@ -84,7 +85,7 @@ export function renderImportReport(ui: Ui, report: ImportReportJson): string[] {
         header: "Status",
         optional: true,
         minWidth: 6,
-        cell: (task): Cell => [text(task.statusName, theme.muted)],
+        cell: (task): Cell => [text(task.statusName ?? "—", theme.muted)],
       },
       {
         header: "Title",

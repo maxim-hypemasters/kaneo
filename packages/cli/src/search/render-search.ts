@@ -23,7 +23,8 @@ const HEADINGS: Readonly<Record<SearchResultType, string>> = {
   workspace: "Workspaces",
 };
 
-export function statusLabel(slug: string): string {
+export function statusLabel(slug: string | null): string {
+  if (slug === null) return "—";
   return slug
     .split(/[-_\s]+/u)
     .filter(Boolean)

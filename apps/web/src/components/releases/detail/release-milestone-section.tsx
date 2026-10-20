@@ -1,6 +1,7 @@
 import { Diamond } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { openMilestoneDetails } from "@/store/milestone-details";
 import { cn } from "@/lib/cn";
 import { type ReleaseItemColumn, ReleaseItemRow } from "./release-item-row";
 import {
@@ -11,6 +12,7 @@ import { ReleaseWorkProgress } from "./release-work-progress";
 
 export function ReleaseMilestoneSection({
   group,
+  projectId,
   workspaceId,
   releaseId,
   projectSlug,
@@ -20,6 +22,7 @@ export function ReleaseMilestoneSection({
   progressReady,
 }: {
   group: ReleaseMilestoneGroup;
+  projectId: string;
   workspaceId: string;
   releaseId: string;
   projectSlug: string | undefined;
@@ -50,9 +53,25 @@ export function ReleaseMilestoneSection({
                 "fill-primary text-primary",
             )}
           />
-          <span className="min-w-0 break-words">
-            {group.milestone?.title ?? t("tasks:milestones.none")}
-          </span>
+          {group.milestone ? (
+            <button
+              type="button"
+              className="min-w-0 rounded-sm break-words text-left hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() =>
+                openMilestoneDetails(projectId, group.milestone!.id)
+              }
+            >
+              {group.milestone.title}
+            </button>
+          ) : (
+            <span>{t("tasks:milestones.none")}</span>
+          )}
+          {group.milestone?.status && (
+            <span className="truncate font-normal text-muted-foreground">
+              {columns.get(group.milestone.status)?.name ??
+                t("tasks:status.planned")}
+            </span>
+          )}
         </h4>
         <ReleaseWorkProgress progress={progress} ready={progressReady} />
       </div>
@@ -64,8 +83,8 @@ export function ReleaseMilestoneSection({
             workspaceId={workspaceId}
             releaseId={releaseId}
             projectSlug={projectSlug}
-            column={columns.get(task.status)}
-            done={done.has(task.status)}
+            column={columns.get(task.status ?? "")}
+            done={done.has(task.status ?? "")}
             nested
           />
         ))}

@@ -59,7 +59,6 @@ const runFeatureLink = Effect.fnUntraced(function* (
           url: feature.url,
           title: feature.title,
         },
-        madeFeature,
       }),
   );
 });

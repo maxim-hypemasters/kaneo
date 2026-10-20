@@ -19,8 +19,9 @@ import {
 async function findColumn(task: {
   columnId: string | null;
   projectId: string;
-  status: string;
+  status: string | null;
 }) {
+  if (task.status === null) return undefined;
   const [column] = await db
     .select({
       id: columnTable.id,

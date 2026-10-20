@@ -20,8 +20,8 @@ export function GanttGroupByControl() {
   const label = t("tasks:display.groupBy");
   const options: Record<GanttGroupBy, string> = {
     none: t("tasks:display.groupByOptions.none"),
-    assignee: t("tasks:display.groupByOptions.assignee"),
-    feature: t("tasks:display.groupByOptions.feature"),
+    assignee: t("tasks:gantt.milestones.assigneeLead"),
+    milestone: t("tasks:milestones.title"),
   };
   const value = isGanttGroupBy(groupBy) ? groupBy : "none";
 

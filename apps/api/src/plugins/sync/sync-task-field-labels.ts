@@ -43,7 +43,7 @@ export async function syncTaskFieldLabels(
       const task = await db.query.taskTable.findFirst({
         where: linkedTaskScope(taskId, context.projectId),
       });
-      if (!task) return;
+      if (!task || task.type === "feature" || task.status === null) return;
       const labels = (await remote.read()).labels;
       const add =
         field === "initialization"
@@ -98,7 +98,7 @@ export async function syncTaskFieldLabels(
         where: linkedTaskScope(taskId, context.projectId),
         columns: { priority: true, status: true },
       });
-      if (!current) return;
+      if (!current || current.status === null) return;
       // A later event may time out waiting for this lease. The current owner
       // repairs edits made during its provider request before releasing it.
       const currentValue =

@@ -46,7 +46,7 @@ export default function TaskMovePopover({
 
   if (destinations.length === 0) return <>{children}</>;
 
-  const moveTo = async (destinationProjectId: string, status: string) => {
+  const moveTo = async (destinationProjectId: string, status?: string) => {
     setOpen(false);
     const result = await moveTask({
       taskId: task.id,
@@ -67,6 +67,10 @@ export default function TaskMovePopover({
   };
 
   const pickProject = async (id: string) => {
+    if (task.type === "feature") {
+      void moveTo(id);
+      return;
+    }
     const destinationColumns = await queryClient
       .fetchQuery({
         queryKey: ["columns", id],
@@ -75,7 +79,7 @@ export default function TaskMovePopover({
       })
       .catch(() => null);
     if (destinationColumns?.some((column) => column.slug === task.status)) {
-      void moveTo(id, task.status);
+      void moveTo(id, task.status ?? "planned");
       return;
     }
     setProjectId(id);

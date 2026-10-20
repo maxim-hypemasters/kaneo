@@ -10,7 +10,7 @@ type CompletionColumn = { slug: string; isFinal: boolean };
 // flag. The slug check is the fallback for surfaces that render before columns
 // load, or that never have them.
 export function isTaskCompleted(
-  status: string,
+  status: string | null,
   columns?: CompletionColumn[],
 ): boolean {
   if (columns?.length) {

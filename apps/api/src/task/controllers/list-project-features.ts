@@ -11,6 +11,7 @@ async function listProjectFeatures(projectId: string) {
       number: taskTable.number,
       status: taskTable.status,
       releaseId: taskTable.releaseId,
+      archivedAt: taskTable.archivedAt,
     })
     .from(taskTable)
     .where(

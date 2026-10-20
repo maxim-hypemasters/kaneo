@@ -12,6 +12,7 @@ export type ProjectView =
   | "board"
   | "list"
   | "backlog"
+  | "features"
   | "releases"
   | "calendar"
   | "gantt";
@@ -19,6 +20,7 @@ export type ProjectView =
 export type ProjectRoute =
   | "board"
   | "backlog"
+  | "features"
   | "releases"
   | "calendar"
   | "gantt";
@@ -26,6 +28,7 @@ export type ProjectRoute =
 export const PROJECT_ROUTE_PATHS = {
   board: "/dashboard/workspace/$workspaceId/project/$projectId/board",
   backlog: "/dashboard/workspace/$workspaceId/project/$projectId/backlog",
+  features: "/dashboard/workspace/$workspaceId/project/$projectId/features",
   releases: "/dashboard/workspace/$workspaceId/project/$projectId/releases",
   calendar: "/dashboard/workspace/$workspaceId/project/$projectId/calendar",
   gantt: "/dashboard/workspace/$workspaceId/project/$projectId/gantt",
@@ -77,7 +80,7 @@ export function resolveProjectView(
 // The views that show the project's tasks; Backlog and Releases are planning
 // pages next to them.
 export function isTaskLayoutView(view: ProjectView): view is TaskLayout {
-  return view !== "backlog" && view !== "releases";
+  return view !== "backlog" && view !== "releases" && view !== "features";
 }
 
 export const TASK_LAYOUTS = PROJECT_VIEWS.filter((view) =>

@@ -5,6 +5,8 @@ export type ReleaseItemCounts = {
   completedTasks: number;
   features: number;
   completedFeatures: number;
+  milestones?: number;
+  completedMilestones?: number;
   // Neither archived nor in a final column: what Move unfinished moves.
   unfinished: number;
 };
@@ -60,10 +62,10 @@ export function releaseProgress(
     unfinished: 0,
   };
   for (const item of items) {
-    const completed = doneStatuses.has(item.status);
+    const completed = doneStatuses.has(item.status ?? "");
     if (item.type === "feature") {
       counts.features += 1;
-      if (completed) counts.completedFeatures += 1;
+      continue;
     } else {
       counts.tasks += 1;
       if (completed) counts.completedTasks += 1;

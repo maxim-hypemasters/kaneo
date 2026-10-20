@@ -152,29 +152,6 @@ const active = release("a", "2026-10-01", "2026-10-15", "2026-10-20");
 const upcoming = release("u", "2026-11-01", "2026-11-15", "2026-11-20");
 const past = release("p", "2026-09-01", "2026-09-10", "2026-09-12", 0);
 
-// Two tasks in release a, one of them done.
-const board = {
-  id: "project-1",
-  columns: [
-    {
-      id: "to-do",
-      slug: "to-do",
-      name: "To Do",
-      isFinal: false,
-      tasks: [{ id: "t1", type: "task", status: "to-do", releaseId: "a" }],
-    },
-    {
-      id: "done",
-      slug: "done",
-      name: "Done",
-      isFinal: true,
-      tasks: [{ id: "t2", type: "task", status: "done", releaseId: "a" }],
-    },
-  ],
-  plannedTasks: [],
-  archivedTasks: [],
-};
-
 function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -271,41 +248,13 @@ describe("ReleaseListPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("counts from the board once it loads, from the API's progress until then", async () => {
+  it("uses complete API execution counts without downloading the task board", () => {
     m.releases.data = [active];
-    let finishBoard = (_board: typeof board) => {};
-    vi.mocked(getTasks).mockReturnValueOnce(
-      new Promise((resolve) => {
-        finishBoard = resolve;
-      }) as never,
-    );
-    const queryClient = renderPage();
-
+    renderPage();
     expect(
       screen.getByText("tasks:releases.progressAria:5"),
     ).toBeInTheDocument();
-    await act(async () => finishBoard(board));
-    expect(
-      await screen.findByText("tasks:releases.progressAria:2"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "tasks:releases.counts.tasks:2 · tasks:releases.counts.unfinished:1",
-      ),
-    ).toBeInTheDocument();
-
-    // A burst of remote changes has the board read again; its counts stay
-    // until the new read lands, rather than the older list's.
-    await act(async () => {
-      void queryClient.invalidateQueries({ queryKey: ["tasks", "project-1"] });
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    });
-    expect(queryClient.getQueryState(["tasks", "project-1"])?.fetchStatus).toBe(
-      "fetching",
-    );
-    expect(
-      screen.getByText("tasks:releases.progressAria:2"),
-    ).toBeInTheDocument();
+    expect(getTasks).not.toHaveBeenCalled();
   });
 
   it("opens the create, edit, delete and move dialogs", async () => {
@@ -323,7 +272,7 @@ describe("ReleaseListPage", () => {
     for (const [item, dialog, text] of [
       ["tasks:releases.edit", "release-form", "Release a"],
       ["tasks:releases.moveUnfinished.action", "move-unfinished", "2"],
-      ["tasks:releases.delete", "delete-release", "Release a 6"],
+      ["tasks:releases.delete", "delete-release", "Release a 5"],
     ] as const) {
       await act(async () => {
         fireEvent.click(menu);

@@ -24,8 +24,9 @@ export const runReleaseDelete = Effect.fn("command.release.delete")(
     });
     const tasks = target.progress?.tasks.total ?? 0;
     const features = target.progress?.features.total ?? 0;
-    const items = releaseItemsLabel(tasks, features);
-    const holdsItems = tasks + features > 0;
+    const milestones = target.progress?.milestones?.total ?? 0;
+    const items = releaseItemsLabel(tasks, milestones);
+    const holdsItems = tasks + milestones > 0;
 
     yield* confirmDestructive({
       yes: options.yes,
@@ -44,6 +45,7 @@ export const runReleaseDelete = Effect.fn("command.release.delete")(
         deleted: true,
         tasks,
         features,
+        milestones,
       },
       (ui) =>
         renderReleaseChange(ui, {
@@ -74,7 +76,7 @@ export const releaseDelete = Command.make(
   (options) => runReleaseDelete(options),
 ).pipe(
   Command.withDescription(
-    "Delete a release; its tasks and features stay in the project",
+    "Delete a release; its tasks and milestones stay in the project",
   ),
   Command.provide(ApiLayer),
 );

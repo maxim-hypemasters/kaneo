@@ -9,7 +9,11 @@ export function ticketId(
   return number === null ? null : `${projectSlug.toUpperCase()}-${number}`;
 }
 
-export function statusStyle(ui: Ui, slug: string, isFinal: boolean): Style {
+export function statusStyle(
+  ui: Ui,
+  slug: string | null,
+  isFinal: boolean,
+): Style {
   if (isFinal || slug === "done") return ui.theme.done;
   if (slug === "in-progress") return ui.theme.progress;
   if (slug === "in-review") return ui.theme.review;
@@ -18,7 +22,11 @@ export function statusStyle(ui: Ui, slug: string, isFinal: boolean): Style {
   return ui.theme.muted;
 }
 
-export function statusDot(ui: Ui, slug: string, isFinal: boolean): Segment {
+export function statusDot(
+  ui: Ui,
+  slug: string | null,
+  isFinal: boolean,
+): Segment {
   return { text: ui.glyphs.dot, style: statusStyle(ui, slug, isFinal) };
 }
 
@@ -29,7 +37,8 @@ export const PRIORITY_LABELS: Readonly<Record<string, string>> = {
   low: "Low",
 };
 
-export function prioritySegments(ui: Ui, priority: string): Segment[] {
+export function prioritySegments(ui: Ui, priority: string | null): Segment[] {
+  if (priority === null) return [];
   const label = PRIORITY_LABELS[priority];
   if (!label) return [];
   const { glyphs, theme } = ui;

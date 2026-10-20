@@ -14,6 +14,12 @@ export function useDuplicateTask() {
     mutationFn: duplicateTask,
     onSuccess: (task) => {
       invalidateMyWork(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: ["project-features", task.projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-library", task.projectId],
+      });
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
       toast.success(t("tasks:duplicate.success"), { icon: CopyPlusIcon });
       // A copy of a task joins its feature; both refresh the board.

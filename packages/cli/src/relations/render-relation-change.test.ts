@@ -78,18 +78,9 @@ describe("renderFeatureJoined", () => {
   const feature = { ...other, title: "Auth overhaul" };
 
   it("says which feature the task joined", () => {
-    expect(
-      renderFeatureJoined(ui(80), { task, feature, madeFeature: false }),
-    ).toEqual(["", "  ✓ KAN-3 is now in feature KAN-4 · Auth overhaul", ""]);
-  });
-
-  it("mentions a task that became a feature", () => {
-    expect(
-      renderFeatureJoined(ui(80), { task, feature, madeFeature: true }),
-    ).toEqual([
+    expect(renderFeatureJoined(ui(80), { task, feature })).toEqual([
       "",
       "  ✓ KAN-3 is now in feature KAN-4 · Auth overhaul",
-      "    KAN-4 is now a feature.",
       "",
     ]);
   });

@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type db from "../../database";
 import { releaseTable, taskTable } from "../../database/schema";
@@ -77,41 +77,18 @@ export async function setReleaseOf(
   }
 }
 
-// A feature's tasks that follow it: those in the feature's release, or in
-// none when it has none. Locked after the feature, ordered by id.
-async function lockFollowers(tx: Tx, feature: Task) {
-  const rows = await tx
-    .select({ id: taskTable.id })
-    .from(taskTable)
-    .where(
-      and(
-        eq(taskTable.featureId, feature.id),
-        eq(taskTable.projectId, feature.projectId),
-        feature.releaseId === null
-          ? isNull(taskTable.releaseId)
-          : eq(taskTable.releaseId, feature.releaseId),
-      ),
-    )
-    .orderBy(asc(taskTable.id))
-    .for("update");
-  return rows.map((row) => row.id);
-}
-
-// Puts a task (locked FOR UPDATE by the caller) into a release of its
-// project, or takes it out with null. A feature takes along its followers;
-// tasks given another release on purpose stay where they are. Returns the
-// updated row and the followers that moved; a no-op returns the task as is.
 export async function setTaskRelease(
   tx: Tx,
   task: Task,
   releaseId: string | null,
   userId?: string,
 ) {
+  if (task.type === "feature")
+    throw new HTTPException(400, { message: "Features do not have a release" });
   if (releaseId === task.releaseId) {
     return { task, movedTaskIds: [] as string[] };
   }
-  const movedTaskIds =
-    task.type === "feature" ? await lockFollowers(tx, task) : [];
+  const movedTaskIds: string[] = [];
   if (releaseId) await lockRelease(tx, releaseId, task.projectId);
 
   const [updated] = await tx

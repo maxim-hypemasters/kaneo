@@ -2,7 +2,7 @@ import { resolveFeature } from "../../tasks/resolve-feature.js";
 import { Effect, Option } from "effect";
 import { Command, Flag } from "effect/cli";
 import { getCurrentUser } from "../../api/endpoints.js";
-import { TASK_TYPES, type TaskType } from "../../api/task-features.js";
+import { type TaskType } from "../../api/task-features.js";
 import { InvalidArgument } from "../../errors/errors.js";
 import { emit } from "../../output/emit.js";
 import { withSpinner } from "../../output/spinner.js";
@@ -160,7 +160,7 @@ export const taskList = Command.make(
       ),
       Flag.optional,
     ),
-    type: Flag.Literals("type", TASK_TYPES).pipe(
+    type: Flag.Literals("type", ["task", "bug"]).pipe(
       Flag.withDescription("Only this item type: task, bug or feature"),
       Flag.optional,
     ),

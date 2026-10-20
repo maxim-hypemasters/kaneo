@@ -29,9 +29,9 @@ export type MineTaskJson = {
   readonly ticketId: string | null;
   readonly number: number | null;
   readonly title: string;
-  readonly status: string;
-  readonly statusName: string;
-  readonly priority: string;
+  readonly status: string | null;
+  readonly statusName: string | null;
+  readonly priority: string | null;
   readonly dueDate: string | null;
   readonly projectId: string;
   readonly projectName: string;

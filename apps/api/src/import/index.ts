@@ -187,6 +187,12 @@ const importRoutes = apiRouter<BaseVariables & { workspaceId: string }>()
       connection,
       projectIds,
       includeComments,
+      canAssignMilestoneLeads: await hasWorkspacePermission(c, {
+        task: ["assign"],
+      }),
+      canImportReleases: await hasWorkspacePermission(c, {
+        project: ["update"],
+      }),
       canWriteMilestones: await hasWorkspacePermission(c, {
         task: ["create", "update"],
       }),

@@ -6,6 +6,14 @@ const id = z.string().trim().min(1);
 const title = id.max(255);
 const description = z.string().max(10_000).nullable().optional();
 const milestoneDate = z.iso.date().nullable().optional();
+const planning = {
+  leadId: id.nullable().optional(),
+  status: id.optional(),
+  priority: z
+    .enum(["no-priority", "low", "medium", "high", "urgent"])
+    .optional(),
+  releaseId: id.nullable().optional(),
+};
 const validDateOrder = (args: {
   startDate?: string | null;
   endDate?: string | null;
@@ -64,6 +72,7 @@ export function registerMilestoneTools(
         description,
         startDate: milestoneDate,
         endDate: milestoneDate,
+        ...planning,
         taskIds: z
           .array(id)
           .refine(
@@ -92,13 +101,18 @@ export function registerMilestoneTools(
         description,
         startDate: milestoneDate,
         endDate: milestoneDate,
+        ...planning,
       })
       .refine(
         (args) =>
           args.title !== undefined ||
           args.description !== undefined ||
           args.startDate !== undefined ||
-          args.endDate !== undefined,
+          args.endDate !== undefined ||
+          args.leadId !== undefined ||
+          args.status !== undefined ||
+          args.priority !== undefined ||
+          args.releaseId !== undefined,
         "Provide a field to update",
       )
       .refine(validDateOrder, {
@@ -110,6 +124,24 @@ export function registerMilestoneTools(
         method: "PATCH",
         body: JSON.stringify(body),
       }),
+  );
+  register(
+    "list_project_milestones",
+    "List a bounded page of a project's milestones, with planning fields, owning Feature metadata and task/bug progress.",
+    z.object({
+      projectId: id,
+      page: z.number().int().min(1).optional(),
+      limit: z.number().int().min(1).max(100).optional(),
+    }),
+    ({ projectId, page, limit }) => {
+      const query = new URLSearchParams();
+      if (page !== undefined) query.set("page", String(page));
+      if (limit !== undefined) query.set("limit", String(limit));
+      return client.json(
+        `/api/milestone/project/${encodeURIComponent(projectId)}${query.size ? `?${query}` : ""}`,
+        { method: "GET" },
+      );
+    },
   );
   register(
     "delete_milestone",

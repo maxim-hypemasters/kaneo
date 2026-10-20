@@ -72,7 +72,7 @@ let releases:
   | undefined;
 vi.mock("@/hooks/queries/milestone/use-get-milestones", () => ({
   useGetMilestones: () => ({
-    data: [{ id: "m1", title: "Launch milestone" }],
+    data: [{ id: "m1", title: "Launch milestone", releaseId: "r24" }],
     isPending: false,
     isError: false,
   }),
@@ -123,7 +123,8 @@ beforeEach(() => {
 const createTask = vi.fn(async (input: Record<string, unknown>) => ({
   id: input.type === "feature" ? "feature-1" : "task-1",
   title: input.title,
-  status: input.status,
+  status: input.type === "feature" ? null : input.status,
+  type: input.type,
   projectId: input.projectId,
   createdAt: "2026-08-05T00:00:00.000Z",
 }));
@@ -996,7 +997,7 @@ describe("CreateTaskModal features", () => {
     ]);
   });
 
-  it("creates a Bug in a feature with its release inheritance intact", async () => {
+  it("creates a Bug in a Feature and selected milestone with release inheritance", async () => {
     projectFeatures = [
       {
         id: "checkout",
@@ -1023,9 +1024,10 @@ describe("CreateTaskModal features", () => {
       { target: { value: "Fix checkout crash" } },
     );
     await pickFeature(/Checkout/);
+    await pickMilestone();
     expect(
       screen.getByRole("button", {
-        name: /common:modals.createTask.releaseFromFeature/,
+        name: /common:modals.createTask.releaseFromMilestone/,
       }),
     ).toBeInTheDocument();
     submit();
@@ -1095,7 +1097,6 @@ describe("CreateTaskModal features", () => {
     ]);
     expect(createTask.mock.calls[0][0]).toMatchObject({
       projectId: "project-2",
-      status: "to-do",
       description: "",
     });
   });
@@ -1148,7 +1149,8 @@ describe("CreateTaskModal features", () => {
     createTask.mockImplementationOnce(async (input) => ({
       id: "feature-1",
       title: input.title,
-      status: input.status,
+      type: input.type,
+      status: null,
       projectId: input.projectId,
       createdAt: "2026-08-05T00:00:00.000Z",
     }));
@@ -1240,7 +1242,8 @@ async function chooseType(option: RegExp) {
 const featureCreated = (input: Record<string, unknown>) => ({
   id: "feature-1",
   title: input.title,
-  status: input.status,
+  status: input.type === "feature" ? null : input.status,
+  type: input.type,
   projectId: input.projectId,
   createdAt: "2026-08-05T00:00:00.000Z",
 });
@@ -1290,10 +1293,7 @@ describe("CreateTaskModal new features", () => {
       title: "Payments",
       type: "feature",
       projectId: "project-2",
-      status: "in-progress",
       description: "",
-      userId: "",
-      priority: "no-priority",
     });
     expect(createTask.mock.calls[0][0]).not.toHaveProperty("featureId");
     expect(createTask.mock.calls[1][0]).toMatchObject({
@@ -1421,7 +1421,7 @@ describe("CreateTaskModal new features", () => {
     ]);
   });
 
-  it("keeps the new feature on the open board when its task joins it", async () => {
+  it("keeps newly created Features out of the execution board", async () => {
     storedProject = { id: "project-2", columns: [{ id: "to-do", tasks: [] }] };
     setProject.mockImplementation((next) => {
       storedProject = next;
@@ -1434,14 +1434,11 @@ describe("CreateTaskModal new features", () => {
     enterTitle("Card form");
     submit();
 
-    await vi.waitFor(() => expect(setProject).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(setProject).toHaveBeenCalledTimes(1));
     const board = storedProject as unknown as {
       columns: { tasks: { id: string; featureId?: string }[] }[];
     };
-    expect(board.columns[0].tasks.map(({ id }) => id)).toEqual([
-      "feature-1",
-      "task-1",
-    ]);
+    expect(board.columns[0].tasks.map(({ id }) => id)).toEqual(["task-1"]);
   });
 
   it("asks to discard a feature in the feature's words", async () => {
@@ -1489,7 +1486,17 @@ const sentReleases = () =>
     "releaseId" in input ? input.releaseId : "follow",
   );
 
-const FROM_FEATURE = "common:modals.createTask.releaseFromFeature";
+const FROM_FEATURE = "common:modals.createTask.releaseFromMilestone";
+async function pickMilestone() {
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "tasks:milestones.property: tasks:milestones.none",
+    }),
+  );
+  fireEvent.click(
+    await screen.findByRole("menuitem", { name: "Launch milestone" }),
+  );
+}
 
 describe("CreateTaskModal releases", () => {
   it("explains that a project comes first", async () => {
@@ -1506,7 +1513,7 @@ describe("CreateTaskModal releases", () => {
     ).toBeInTheDocument();
   });
 
-  it("follows the picked feature's release, leaving it to the API", async () => {
+  it("follows the selected milestone release, leaving it to the API", async () => {
     projectFeatures = [
       {
         id: "checkout",
@@ -1523,7 +1530,7 @@ describe("CreateTaskModal releases", () => {
     expect(releaseChip()).toBeInTheDocument();
 
     await pickFeature(/Checkout/);
-
+    await pickMilestone();
     expect(releaseChip(FROM_FEATURE)).toBeInTheDocument();
     enterTitle("Card form");
     submit();
@@ -1531,7 +1538,7 @@ describe("CreateTaskModal releases", () => {
     expect(sentReleases()).toEqual(["follow"]);
   });
 
-  it("reads the feature's release from the board when the list lacks it", async () => {
+  it("ignores old Feature release values in an execution board", async () => {
     const queryClient = createTestQueryClient();
     queryClient.setQueryData(["tasks", "project-2"], {
       columns: [
@@ -1539,6 +1546,9 @@ describe("CreateTaskModal releases", () => {
           tasks: [
             {
               id: "checkout",
+              title: "Checkout",
+              number: 3,
+              projectId: "project-2",
               type: "feature",
               status: "to-do",
               releaseId: "r25",
@@ -1552,55 +1562,23 @@ describe("CreateTaskModal releases", () => {
     });
     await chooseBeta();
     await pickFeature(/Checkout/);
-
-    fireEvent.click(releaseChip(FROM_FEATURE));
-
-    const option = await screen.findByRole("option", {
-      name: /^2\.5tasks:releases.featureReleaseHint/,
-    });
-    expect(option).toHaveAttribute("aria-current", "true");
+    expect(releaseChip()).toBeInTheDocument();
+    expect(screen.queryByText(FROM_FEATURE)).not.toBeInTheDocument();
   });
-
-  it("names the feature's current release after it moves elsewhere", async () => {
-    projectFeatures = [
-      {
-        id: "checkout",
-        title: "Checkout",
-        number: 3,
-        status: "to-do",
-        releaseId: "r24",
-      },
-    ];
-    const queryClient = createTestQueryClient();
-    const board = (releaseId: string) => ({
-      columns: [
-        {
-          tasks: [
-            { id: "checkout", type: "feature", status: "to-do", releaseId },
-          ],
-        },
-      ],
-    });
-    queryClient.setQueryData(["tasks", "project-2"], board("r24"));
+  it("marks the selected milestone release in the picker", async () => {
     render(<CreateTaskModal open onClose={vi.fn()} />, {
-      wrapper: createWrapper(queryClient),
+      wrapper: createWrapper(),
     });
     await chooseBeta();
     await pickFeature(/Checkout/);
-
-    // A teammate moves the feature to 2.5; its socket message patches the
-    // board, not the feature list picked from.
-    act(() => {
-      queryClient.setQueryData(["tasks", "project-2"], board("r25"));
-    });
+    await pickMilestone();
     fireEvent.click(releaseChip(FROM_FEATURE));
-
-    const option = await screen.findByRole("option", {
-      name: /^2\.5tasks:releases.featureReleaseHint/,
-    });
-    expect(option).toHaveAttribute("aria-current", "true");
+    expect(
+      await screen.findByRole("option", {
+        name: /^2\.4tasks:releases.milestoneReleaseHint/,
+      }),
+    ).toHaveAttribute("aria-current", "true");
   });
-
   it("overrides the feature's release with a pick", async () => {
     projectFeatures = [
       {
@@ -1616,7 +1594,7 @@ describe("CreateTaskModal releases", () => {
     });
     await chooseBeta();
     await pickFeature(/Checkout/);
-
+    await pickMilestone();
     await pickRelease(/^2\.5/, FROM_FEATURE);
 
     expect(releaseChip("2.5")).toBeInTheDocument();
@@ -1644,7 +1622,7 @@ describe("CreateTaskModal releases", () => {
     });
     await chooseBeta();
     await pickFeature(/Checkout/);
-
+    await pickMilestone();
     await pickRelease(/common:modals.createTask.noRelease/, FROM_FEATURE);
 
     expect(
@@ -1700,7 +1678,7 @@ describe("CreateTaskModal releases", () => {
     expect(sentReleases()).toEqual(["r25", "r25"]);
   });
 
-  it("gives a new feature the picked release, and its task too", async () => {
+  it("gives an explicit release only to the new leaf work", async () => {
     render(<CreateTaskModal open onClose={vi.fn()} />, {
       wrapper: createWrapper(),
     });
@@ -1715,7 +1693,7 @@ describe("CreateTaskModal releases", () => {
       { title: "Payments", type: "feature", featureId: undefined },
       { title: "Card form", type: "task", featureId: "feature-1" },
     ]);
-    expect(sentReleases()).toEqual(["r25", "r25"]);
+    expect(sentReleases()).toEqual(["follow", "r25"]);
   });
 
   it("leaves a new feature and its task out of releases unless one is picked", async () => {
@@ -1731,27 +1709,40 @@ describe("CreateTaskModal releases", () => {
     expect(sentReleases()).toEqual(["follow", "follow"]);
   });
 
-  it("puts a feature it creates in the picked release", async () => {
-    render(<CreateTaskModal open type="feature" onClose={vi.fn()} />, {
-      wrapper: createWrapper(),
-    });
-    await chooseBeta();
-    await pickRelease(/^2\.4/);
+  it("omits all planning controls and fields when creating a Feature", async () => {
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-2"
+        releaseId="r24"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    expect(
+      screen.queryByRole("button", {
+        name: "common:modals.createTask.release",
+      }),
+    ).not.toBeInTheDocument();
     fireEvent.change(
       screen.getByPlaceholderText(
         "common:modals.createTask.featureTitlePlaceholder",
       ),
-      { target: { value: "Checkout v2" } },
+      { target: { value: "Knowledge" } },
     );
     submit();
-
     await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
-    expect(createTask.mock.calls[0][0]).toMatchObject({
-      type: "feature",
-      releaseId: "r24",
-    });
+    for (const key of [
+      "status",
+      "priority",
+      "userId",
+      "releaseId",
+      "startDate",
+      "dueDate",
+    ])
+      expect(createTask.mock.calls[0][0]).not.toHaveProperty(key);
   });
-
   it("starts in a preset release, which counts as no unsaved input", async () => {
     const onClose = vi.fn();
     render(

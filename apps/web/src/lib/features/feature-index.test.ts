@@ -31,6 +31,26 @@ describe("getFeatureIndex", () => {
     expect(getFeatureIndex(board)).toBe(index);
   });
 
+  it("retains knowledge summaries when execution boards no longer contain Features", () => {
+    const index = getFeatureIndex(
+      { columns: [{ tasks: [task("child", { featureId: "feature" })] }] },
+      [
+        {
+          id: "feature",
+          title: "Knowledge",
+          number: 1,
+          projectId: "project",
+          status: null,
+          archivedAt: null,
+        },
+      ],
+    );
+    expect(index.features.get("feature")?.title).toBe("Knowledge");
+    expect(index.features.get("feature")?.status).toBeNull();
+    expect(index.tasksByFeature.get("feature")?.map((item) => item.id)).toEqual(
+      ["child"],
+    );
+  });
   it("is empty without a board", () => {
     expect(getFeatureIndex(undefined).features.size).toBe(0);
   });

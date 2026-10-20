@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   updateFeature: vi.fn(),
   toastError: vi.fn(),
   canUpdateTasks: vi.fn(),
+  featuresPending: false,
 }));
 
 vi.mock("react-i18next", () => ({
@@ -36,6 +37,14 @@ vi.mock("@/hooks/queries/project/use-get-projects", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({ canUpdateTasks: mocks.canUpdateTasks }),
+}));
+vi.mock("@/hooks/queries/task/use-get-project-features", () => ({
+  useGetProjectFeatures: () => ({
+    data: undefined,
+    isPending: mocks.featuresPending,
+    isError: false,
+    refetch: vi.fn(),
+  }),
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: mocks.toastError } }));
 
@@ -94,6 +103,7 @@ async function pick(name: RegExp) {
 
 beforeEach(() => {
   mocks.canUpdateTasks.mockReturnValue(true);
+  mocks.featuresPending = false;
   queryClient = new QueryClient();
   cacheBoard(board);
   mocks.updateFeature.mockResolvedValue({});
@@ -187,8 +197,9 @@ describe("TaskFeaturePopover", () => {
     expect(screen.queryByText("common:empty.loading")).not.toBeInTheDocument();
   });
 
-  it("says it is loading until the board is cached", async () => {
+  it("says it is loading until the Feature summaries are fetched", async () => {
     queryClient.clear();
+    mocks.featuresPending = true;
     renderPopover(null);
 
     expect(await screen.findByText("common:empty.loading")).toBeInTheDocument();

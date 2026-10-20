@@ -18,6 +18,18 @@ export type TransferMilestone = {
   endDate?: string | null;
   targetDate?: string | null;
   position: number;
+  leadId?: string | null;
+  status?: string;
+  priority?: string;
+  releaseKey?: string | null;
+};
+
+export type TransferRelease = {
+  key: string;
+  name: string;
+  startDate: string;
+  codeFreezeDate: string;
+  submissionDate: string;
 };
 
 function invalid(message: string): never {

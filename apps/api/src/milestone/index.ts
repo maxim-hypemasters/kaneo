@@ -1,3 +1,6 @@
+import { eq } from "drizzle-orm";
+import { milestoneTable } from "../database/schema";
+import { readProjectMilestones } from "./read-project-milestones";
 import db from "../database";
 import { requireEntitlement } from "../billing/require-entitlement-middleware";
 import {
@@ -16,6 +19,8 @@ import {
   featureParam,
   milestoneParam,
   milestoneSchema,
+  projectMilestonesQuery,
+  projectMilestonesSchema,
   reorderMilestonesBody,
   updateMilestoneBody,
 } from "./schema";
@@ -52,6 +57,53 @@ const errors = {
     "The owner is not a feature, or the milestone list changed",
   ),
 };
+const projectRoute = createRoute({
+  method: "get",
+  operationId: "listProjectMilestones",
+  path: "/project/{projectId}",
+  tags: ["Milestones"],
+  summary: "List project milestone planning summaries",
+  middleware: [
+    workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
+  request: {
+    params: z.object({ projectId: z.string().min(1) }),
+    query: projectMilestonesQuery,
+  },
+  responses: {
+    200: jsonResponse(
+      "Paginated milestones with full linked-work progress",
+      projectMilestonesSchema,
+    ),
+    ...errors,
+  },
+});
+const requireMilestoneLeadPermission = async (
+  c: import("hono").Context,
+  next: import("hono").Next,
+) => {
+  const body: unknown = await c.req.json().catch(() => ({}));
+  if (
+    body &&
+    typeof body === "object" &&
+    !Array.isArray(body) &&
+    Object.hasOwn(body, "leadId")
+  ) {
+    const leadId = (body as { leadId?: unknown }).leadId;
+    if (typeof leadId !== "string" && leadId !== null) return next();
+    const id = c.req.param("id");
+    const current = id
+      ? await db.query.milestoneTable.findFirst({
+          columns: { leadId: true },
+          where: eq(milestoneTable.id, id),
+        })
+      : null;
+    if ((current?.leadId ?? null) !== leadId)
+      return requireWorkspacePermission({ task: ["assign"] })(c, next);
+  }
+  return next();
+};
 const listRoute = createRoute({
   method: "get",
   operationId: "listFeatureMilestones",
@@ -76,7 +128,7 @@ const createMilestoneRoute = createRoute({
   summary: "Create a feature milestone",
   description:
     "Optionally assign existing Tasks/Bugs from the same Feature atomically. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409 without creating a milestone.",
-  middleware: [...writeFeature],
+  middleware: [...writeFeature, requireMilestoneLeadPermission],
   request: {
     params: featureParam,
     body: {
@@ -128,7 +180,7 @@ const updateRoute = createRoute({
   path: "/{id}",
   tags: ["Milestones"],
   summary: "Update milestone metadata",
-  middleware: [...writeItem],
+  middleware: [...writeItem, requireMilestoneLeadPermission],
   request: {
     params: milestoneParam,
     body: {
@@ -160,6 +212,17 @@ const deleteRoute = createRoute({
 });
 
 export default apiRouter<BaseVariables & { workspaceId: string }>()
+  .openapi(projectRoute, async (c) =>
+    c.json(
+      await readProjectMilestones(
+        c.req.valid("param").projectId,
+        c.req.valid("query").page,
+        c.req.valid("query").limit,
+        c.get("workspaceId"),
+      ),
+      200,
+    ),
+  )
   .openapi(listRoute, async (c) =>
     c.json(
       await db.transaction((tx) =>

@@ -39,6 +39,10 @@ export type ImportedTask = {
   number?: number;
   featureKey?: string | null;
   milestoneKey?: string | null;
+  releaseKey?: string | null;
+  archivedAt?: string | null;
+  planningSnapshots?: ImportedPlanningSnapshot[];
+  legacyPlanning?: ImportedPlanningSnapshot;
   columnKey: string | null;
   archived?: boolean;
   title: string;
@@ -60,6 +64,24 @@ export type ImportedRelation = {
   type: ImportedRelationType;
 };
 
+export type ImportedPlanningSnapshot = {
+  createdAt?: string;
+  status?: string | null;
+  priority?: string | null;
+  userId?: string | null;
+  startDate?: string | null;
+  dueDate?: string | null;
+  releaseId?: string | null;
+  releaseName?: string | null;
+  archivedAt?: string | null;
+};
+export type ImportedRelease = {
+  key: string;
+  name: string;
+  startDate: string;
+  codeFreezeDate: string;
+  submissionDate: string;
+};
 export type ImportedMilestone = {
   key: string;
   featureKey: string;
@@ -68,6 +90,10 @@ export type ImportedMilestone = {
   startDate?: string | null;
   endDate?: string | null;
   position: number;
+  lead?: ImportedPerson;
+  status?: string;
+  priority?: ImportedPriority;
+  releaseKey?: string | null;
 };
 
 export type ImportedProject = {
@@ -79,6 +105,7 @@ export type ImportedProject = {
   tasks: ImportedTask[];
   relations: ImportedRelation[];
   milestones?: ImportedMilestone[];
+  releases?: ImportedRelease[];
   warnings: string[];
 };
 

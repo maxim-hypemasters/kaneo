@@ -5,12 +5,7 @@ exports[`task view screen > fully loaded task at 80 columns, no color 1`] = `
 
   KAN-12 Fix login redirect after device approval
 
-    Status     ● In Progress
-    Priority   ▲ Urgent
-    Assignee   Ada Lovelace
     Labels     ● bug  ● auth
-    Due        ◷ Fri
-    Start      Oct 1
     Created    Sep 29
     Time       3h · ● Timer running (Ada Lovelace)
     Project    Kaneo Web · KAN
@@ -67,12 +62,7 @@ exports[`task view screen > fully loaded task at 80 columns, truecolor 1`] = `
 
   ]8;;https://kaneo.test/dashboard/workspace/ws_1/project/p1/task/t12\\[38;2;115;115;115mKAN-12[39m]8;;\\ [1mFix login redirect after device approval[22m
 
-    [38;2;115;115;115mStatus    [39m [38;2;59;130;246m●[39m In Progress
-    [38;2;115;115;115mPriority  [39m [38;2;239;68;68m▲ [39m[38;2;239;68;68mUrgent[39m
-    [38;2;115;115;115mAssignee  [39m Ada Lovelace
     [38;2;115;115;115mLabels    [39m [38;2;231;0;11m●[39m bug  [38;2;142;81;255m●[39m auth
-    [38;2;115;115;115mDue       [39m ◷ Fri
-    [38;2;115;115;115mStart     [39m Oct 1
     [38;2;115;115;115mCreated   [39m Sep 29
     [38;2;115;115;115mTime      [39m 3h[38;2;115;115;115m · [39m[38;2;5;150;105m● Timer running[39m[38;2;115;115;115m (Ada Lovelace)[39m
     [38;2;115;115;115mProject   [39m Kaneo Web [38;2;115;115;115m· KAN[39m
@@ -129,12 +119,7 @@ exports[`task view screen > fully loaded task at 120 columns, no color 1`] = `
 
   KAN-12 Fix login redirect after device approval
 
-    Status     ● In Progress
-    Priority   ▲ Urgent
-    Assignee   Ada Lovelace
     Labels     ● bug  ● auth
-    Due        ◷ Fri
-    Start      Oct 1
     Created    Sep 29
     Time       3h · ● Timer running (Ada Lovelace)
     Project    Kaneo Web · KAN
@@ -191,12 +176,7 @@ exports[`task view screen > fully loaded task at 120 columns, truecolor 1`] = `
 
   ]8;;https://kaneo.test/dashboard/workspace/ws_1/project/p1/task/t12\\[38;2;115;115;115mKAN-12[39m]8;;\\ [1mFix login redirect after device approval[22m
 
-    [38;2;115;115;115mStatus    [39m [38;2;59;130;246m●[39m In Progress
-    [38;2;115;115;115mPriority  [39m [38;2;239;68;68m▲ [39m[38;2;239;68;68mUrgent[39m
-    [38;2;115;115;115mAssignee  [39m Ada Lovelace
     [38;2;115;115;115mLabels    [39m [38;2;231;0;11m●[39m bug  [38;2;142;81;255m●[39m auth
-    [38;2;115;115;115mDue       [39m ◷ Fri
-    [38;2;115;115;115mStart     [39m Oct 1
     [38;2;115;115;115mCreated   [39m Sep 29
     [38;2;115;115;115mTime      [39m 3h[38;2;115;115;115m · [39m[38;2;5;150;105m● Timer running[39m[38;2;115;115;115m (Ada Lovelace)[39m
     [38;2;115;115;115mProject   [39m Kaneo Web [38;2;115;115;115m· KAN[39m

@@ -7,7 +7,7 @@ export type RelatedTaskSummary = {
   title: string;
   type?: Task["type"];
   milestoneId?: string | null;
-  status: string;
+  status: string | null;
   isCompleted: boolean;
   priority: string | null;
   number: number | null;
@@ -120,7 +120,7 @@ export function listFeatureTasks({
   if (index.features.has(featureId)) {
     return (index.tasksByFeature.get(featureId) ?? []).map((task) => ({
       task,
-      isCompleted: finalStatuses.has(task.status),
+      isCompleted: finalStatuses.has(task.status ?? ""),
     }));
   }
   return relations.flatMap((relation) =>
@@ -144,6 +144,6 @@ export function pickableFeatures(
 ) {
   const excluded = new Set(excludeIds);
   return [...index.features.values()].filter(
-    (feature) => !excluded.has(feature.id),
+    (feature) => !excluded.has(feature.id) && !feature.archivedAt,
   );
 }

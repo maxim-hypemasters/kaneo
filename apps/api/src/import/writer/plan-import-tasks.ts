@@ -2,6 +2,7 @@ import type {
   ImportedComment,
   ImportedPerson,
   ImportedTask,
+  ImportedPlanningSnapshot,
 } from "@kaneo/importers";
 import { VALID_PRIORITIES } from "../../task/validate-task-fields";
 import type { TaskType } from "../../task/task-type";
@@ -25,6 +26,10 @@ export type PlannedImportTask = {
   userId: string | null;
   labelKeys: readonly string[];
   comments: readonly ImportedComment[];
+  archivedAt?: string | null;
+  releaseKey?: string | null;
+  planningSnapshots?: ImportedPlanningSnapshot[];
+  legacyPlanning?: ImportedPlanningSnapshot;
 };
 
 type PlanImportTasksInput = {
@@ -106,6 +111,10 @@ export function planImportTasks({
       userId: assign(task.assignee),
       labelKeys: task.labelKeys,
       comments: task.comments,
+      archivedAt: task.archivedAt,
+      releaseKey: task.releaseKey,
+      planningSnapshots: task.planningSnapshots,
+      legacyPlanning: task.legacyPlanning,
     };
   });
 }

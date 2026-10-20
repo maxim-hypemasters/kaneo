@@ -10,6 +10,7 @@ import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useGetReleaseMilestones } from "@/hooks/queries/release/use-get-release-milestones";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
+import { useGetProjectFeatures } from "@/hooks/queries/task/use-get-project-features";
 import { getFeatureIndex } from "@/lib/features/feature-index";
 import {
   finalStatuses,
@@ -66,6 +67,7 @@ export function ReleaseDetailPage({
     (deleted?.id === releaseId ? deleted : undefined);
   const milestonesQuery = useGetReleaseMilestones(projectId, release?.id);
   const workflowQuery = useGetColumns(projectId);
+  const featuresQuery = useGetProjectFeatures(projectId);
   const today = useReleaseToday();
   const permissions = useReleasePermissions();
   const shown = useMemo(() => (release ? [release] : NO_RELEASES), [release]);
@@ -91,18 +93,37 @@ export function ReleaseDetailPage({
   const groups = useMemo(
     () =>
       board
-        ? groupReleaseItems(board, releaseId, getFeatureIndex(board), done)
+        ? groupReleaseItems(
+            board,
+            releaseId,
+            getFeatureIndex(
+              board,
+              featuresQuery.data?.map((feature) => ({ ...feature, projectId })),
+            ),
+            done,
+            milestonesQuery.data,
+          )
         : null,
-    [board, releaseId, done],
+    [
+      board,
+      releaseId,
+      done,
+      featuresQuery.data,
+      milestonesQuery.data,
+      projectId,
+    ],
   );
   const openCreate = permissions.canCreateTasks
     ? (type: TaskType) => setCreateType(type)
     : undefined;
   const progressReady =
     !boardQuery.isPending && workflowQuery.data !== undefined;
-  const groupingError = milestonesQuery.isError || workflowQuery.isError;
+  const groupingError =
+    milestonesQuery.isError || workflowQuery.isError || featuresQuery.isError;
   const groupingLoading =
-    milestonesQuery.data === undefined || workflowQuery.data === undefined;
+    milestonesQuery.data === undefined ||
+    workflowQuery.data === undefined ||
+    featuresQuery.data === undefined;
 
   let content = <ReleaseDetailSkeleton />;
   if (release && counts) {
@@ -117,6 +138,7 @@ export function ReleaseDetailPage({
             onRetry={() => {
               void milestonesQuery.refetch();
               void workflowQuery.refetch();
+              void featuresQuery.refetch();
             }}
           />
           <ReleaseItemGroups
@@ -133,7 +155,20 @@ export function ReleaseDetailPage({
         </>
       );
     } else if (groups && !boardQuery.isPending) {
-      items = <ReleaseDetailEmpty onCreate={openCreate} />;
+      items =
+        groupingLoading || groupingError ? (
+          <ReleaseGroupingFeedback
+            loading={groupingLoading}
+            error={groupingError}
+            retrying={milestonesQuery.isFetching || featuresQuery.isFetching}
+            onRetry={() => {
+              void milestonesQuery.refetch();
+              void featuresQuery.refetch();
+            }}
+          />
+        ) : (
+          <ReleaseDetailEmpty onCreate={openCreate} />
+        );
     } else if (boardQuery.isError) {
       items = (
         <ReleasesLoadError
@@ -208,7 +243,7 @@ export function ReleaseDetailPage({
             open={deleteOpen}
             onOpenChange={setDeleteOpen}
             release={release}
-            itemCount={counts ? counts.tasks + counts.features : 0}
+            itemCount={counts ? counts.tasks + (counts.milestones ?? 0) : 0}
             onDeleted={() => {
               setDeleted(release);
               navigate({
@@ -230,7 +265,7 @@ export function ReleaseDetailPage({
             open={createType !== null}
             type={createType ?? "task"}
             projectId={projectId}
-            releaseId={release.id}
+            releaseId={createType === "feature" ? undefined : release.id}
             onClose={() => setCreateType(null)}
           />
         </>

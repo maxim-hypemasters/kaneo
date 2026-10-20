@@ -1,3 +1,4 @@
+import { assertLeafPlanning } from "../assert-leaf-planning";
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { withLockedTask } from "./with-locked-task";
@@ -18,6 +19,7 @@ async function updateTaskStatus({
   const { before: existingTask, after: updatedTask } = await withLockedTask(
     id,
     async (tx, existingTask) => {
+      assertLeafPlanning(existingTask);
       await assertValidTaskStatus(status, existingTask.projectId, tx);
 
       const column = await tx.query.columnTable.findFirst({

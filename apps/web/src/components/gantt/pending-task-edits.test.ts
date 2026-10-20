@@ -54,12 +54,12 @@ describe("classifyEdit", () => {
     expect(classifyEdit(task, { ...sameDates, userId: "alice" })).toEqual({
       dates: false,
       assignee: false,
-      feature: false,
+      milestone: false,
     });
     expect(classifyEdit(task, { ...sameDates, userId: "bob" })).toEqual({
       dates: false,
       assignee: true,
-      feature: false,
+      milestone: false,
     });
     expect(
       classifyEdit(task, {
@@ -68,7 +68,11 @@ describe("classifyEdit", () => {
         userId: "alice",
         featureId: "checkout",
       }),
-    ).toEqual({ dates: true, assignee: false, feature: false });
+    ).toEqual({
+      dates: true,
+      assignee: false,
+      milestone: false,
+    });
     expect(
       classifyEdit(task, {
         start: task.scheduleStart,
@@ -76,28 +80,26 @@ describe("classifyEdit", () => {
         userId: null,
         featureId: "checkout",
       }),
-    ).toEqual({ dates: true, assignee: true, feature: false });
+    ).toEqual({
+      dates: true,
+      assignee: true,
+      milestone: false,
+    });
   });
 
-  it("tells a feature change apart", () => {
-    const sameDates = { start: task.scheduleStart, end: task.scheduleEnd };
-    expect(
-      classifyEdit(task, {
-        ...sameDates,
-        userId: "alice",
-        featureId: "billing",
-      }),
-    ).toEqual({ dates: false, assignee: false, feature: true });
-    expect(
-      classifyEdit(task, { ...sameDates, userId: "alice", featureId: null })
-        .feature,
-    ).toBe(true);
-    expect(
-      classifyEdit(
-        { ...task, featureId: undefined },
-        { ...sameDates, userId: "alice", featureId: null },
-      ).feature,
-    ).toBe(false);
+  it("changes milestone membership while preserving Feature context", () => {
+    const sameDates = {
+      start: task.scheduleStart,
+      end: task.scheduleEnd,
+      userId: "alice",
+      featureId: "billing",
+      milestoneId: "m",
+    };
+    expect(classifyEdit(task, sameDates)).toEqual({
+      dates: false,
+      assignee: false,
+      milestone: true,
+    });
   });
 
   it("compares calendar days, not instants", () => {
@@ -142,12 +144,16 @@ describe("applyPendingEdit", () => {
     });
   });
 
-  it("shows the pending feature in place of the server's", () => {
+  it("shows milestone changes while preserving the Feature", () => {
     expect(
-      applyPendingEdit(task, { ...pending, featureId: "billing" }).featureId,
-    ).toBe("billing");
+      applyPendingEdit(task, {
+        ...pending,
+        featureId: "billing",
+        milestoneId: "m",
+      }).milestoneId,
+    ).toBe("m");
     expect(
-      applyPendingEdit(task, { ...pending, featureId: null }).featureId,
+      applyPendingEdit(task, { ...pending, milestoneId: null }).milestoneId,
     ).toBeNull();
   });
 
@@ -183,16 +189,16 @@ describe("pendingEditLanded", () => {
     ).toBe(false);
   });
 
-  it("waits for the feature as well", () => {
+  it("waits for the milestone as well", () => {
     const landed = {
       ...task,
       userId: "bob",
       scheduleStart: pending.start,
       scheduleEnd: pending.end,
     };
-    const moved = { ...pending, featureId: "billing" };
+    const moved = { ...pending, milestoneId: "m" };
     expect(pendingEditLanded(landed, moved)).toBe(false);
-    expect(pendingEditLanded({ ...landed, featureId: "billing" }, moved)).toBe(
+    expect(pendingEditLanded({ ...landed, milestoneId: "m" }, moved)).toBe(
       true,
     );
     expect(
