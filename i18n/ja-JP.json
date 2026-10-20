@@ -3477,7 +3477,10 @@
 				"tasksElsewhere_other": "このリリース外のタスクがほかに {{count}} 件",
 				"today": "今日",
 				"loadingTasks": "タスクを読み込み中…",
-				"timelineLabel": "リリースのタイムライン"
+				"timelineLabel": "リリースのタイムライン",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "リリース",

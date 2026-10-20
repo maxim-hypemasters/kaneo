@@ -49,6 +49,17 @@ export const releaseWithProgressSchema = releaseSchema
 
 export const releaseListSchema = z.array(releaseWithProgressSchema);
 
+export const releaseMilestoneSchema = z
+  .object({
+    id: z.string(),
+    featureId: z.string(),
+    title: z.string(),
+    position: z.number().int(),
+  })
+  .openapi("ReleaseMilestone");
+
+export const releaseMilestoneListSchema = z.array(releaseMilestoneSchema);
+
 export const deletedReleaseSchema = z
   .object({ id: z.string() })
   .openapi("DeletedRelease");

@@ -3477,7 +3477,10 @@
 				"tasksElsewhere_other": "이 릴리스 밖의 작업 {{count}}개 더",
 				"today": "오늘",
 				"loadingTasks": "작업 로딩 중…",
-				"timelineLabel": "릴리스 타임라인"
+				"timelineLabel": "릴리스 타임라인",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "릴리스",

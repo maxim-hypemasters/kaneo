@@ -3570,7 +3570,10 @@
 				"tasksElsewhere_other": "{{count}} more tasks outside this release",
 				"today": "Today",
 				"loadingTasks": "Loading tasks…",
-				"timelineLabel": "Release timeline"
+				"timelineLabel": "Release timeline",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Releases",

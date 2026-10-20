@@ -18,6 +18,7 @@ import {
 import type { Release } from "@/types/release";
 import type Task from "@/types/task";
 import type { ReleaseItemCounts } from "@/lib/releases/release-progress";
+import type { ReleaseMilestone } from "@/fetchers/release/get-release-milestones";
 import { ReleaseDetailPage } from "./release-detail-page";
 
 const m = vi.hoisted(() => ({
@@ -32,12 +33,30 @@ const m = vi.hoisted(() => ({
   canCreateTasks: true,
   createTask: vi.fn(),
   progressSection: vi.fn(),
+  milestones: {
+    data: [] as ReleaseMilestone[] | undefined,
+    isError: false,
+    isFetching: false,
+  },
+  workflow: {
+    data: undefined as
+      | Array<{ id: string; slug: string; position: number; isFinal: boolean }>
+      | undefined,
+    isError: false,
+    isFetching: false,
+  },
+  refetchMilestones: vi.fn(),
+  refetchWorkflow: vi.fn(),
 }));
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) =>
-      options && "count" in options ? `${key}:${options.count}` : key,
+      options && "count" in options
+        ? `${key}:${options.count}`
+        : options && "percentage" in options
+          ? `${key}:${options.percentage}:${options.completed}/${options.total}`
+          : key,
   }),
 }));
 vi.mock("@tanstack/react-router", () => ({
@@ -134,6 +153,15 @@ vi.mock("./release-progress-section", () => ({
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
   useGetTasks: () => ({ ...m.board, refetch: vi.fn() }),
 }));
+vi.mock("@/hooks/queries/release/use-get-release-milestones", () => ({
+  useGetReleaseMilestones: () => ({
+    ...m.milestones,
+    refetch: m.refetchMilestones,
+  }),
+}));
+vi.mock("@/hooks/queries/column/use-get-columns", () => ({
+  useGetColumns: () => ({ ...m.workflow, refetch: m.refetchWorkflow }),
+}));
 vi.mock("@/lib/releases/use-release-today", () => ({
   useReleaseToday: () => m.today,
 }));
@@ -172,6 +200,7 @@ const task = (id: string, values: Partial<Task> = {}) =>
     projectId: "project-1",
     type: "task",
     featureId: null,
+    milestoneId: null,
     releaseId: "r1",
     ...values,
   }) as Task;
@@ -239,11 +268,153 @@ beforeEach(() => {
   m.canCreateTasks = true;
   m.createTask.mockClear();
   m.progressSection.mockClear();
+  m.milestones = { data: [], isError: false, isFetching: false };
+  m.workflow = {
+    data: board.columns.map((column, position) => ({
+      ...column,
+      id: `column-${column.slug}`,
+      position,
+    })),
+    isError: false,
+    isFetching: false,
+  };
+  m.refetchMilestones.mockClear();
+  m.refetchWorkflow.mockClear();
 });
 
 afterEach(cleanup);
 
 describe("ReleaseDetailPage", () => {
+  function milestoneBoard() {
+    const copy = structuredClone(board);
+    copy.columns[0].tasks.find((item) => item.id === "Pay")!.milestoneId = "m1";
+    copy.columns[1].tasks.push(
+      task("Fixed bug", {
+        type: "bug",
+        featureId: "Checkout",
+        status: "done",
+        milestoneId: null,
+      }),
+    );
+    m.board.data = copy;
+    m.milestones.data = [
+      {
+        id: "empty",
+        featureId: "Checkout",
+        title: "Empty milestone",
+        position: 0,
+      },
+      {
+        id: "m1",
+        featureId: "Checkout",
+        title: "First milestone",
+        position: 1,
+      },
+    ];
+  }
+
+  it("shows release-scoped Feature and nested milestone counters", () => {
+    milestoneBoard();
+    renderPage();
+    const feature = screen.getByRole("region", { name: "Checkout" });
+    expect(
+      within(feature).getByRole("img", {
+        name: "tasks:releases.detail.progressInRelease:50:1/2",
+      }),
+    ).toBeVisible();
+    expect(
+      within(feature).getByRole("region", { name: "First milestone" }),
+    ).toHaveTextContent("0% · 0/1");
+    expect(
+      within(feature).getByRole("region", { name: "tasks:milestones.none" }),
+    ).toHaveTextContent("100% · 1/1");
+    expect(
+      within(feature).queryByRole("heading", { name: "Empty milestone" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Search" })).toHaveTextContent(
+      "0% · 0/1",
+    );
+  });
+
+  it("retains task rows while milestone metadata loads", () => {
+    milestoneBoard();
+    m.milestones = { data: undefined, isError: false, isFetching: true };
+    renderPage();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "tasks:milestones.loading",
+    );
+    const feature = screen.getByRole("region", { name: "Checkout" });
+    expect(within(feature).getByRole("link", { name: /Pay/ })).toBeVisible();
+    expect(
+      within(feature).getByRole("link", { name: /Fixed bug/ }),
+    ).toBeVisible();
+    expect(
+      within(feature).queryByRole("heading", { level: 4 }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers retry and keeps cached grouping after a refresh error", () => {
+    milestoneBoard();
+    m.milestones.isError = true;
+    renderPage();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "tasks:releases.detail.groupingLoadError",
+    );
+    expect(
+      screen.getByRole("heading", { name: "First milestone" }),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:error.tryAgain" }),
+    );
+    expect(m.refetchMilestones).toHaveBeenCalledOnce();
+    expect(m.refetchWorkflow).toHaveBeenCalledOnce();
+  });
+
+  it("does not show partial denominators while initial board pages load", () => {
+    milestoneBoard();
+    m.board.isPending = true;
+    m.board.isFetching = true;
+    renderPage();
+    const feature = screen.getByRole("region", { name: "Checkout" });
+    expect(within(feature).getByRole("link", { name: /Pay/ })).toBeVisible();
+    expect(
+      within(feature).queryByRole("img", { name: /progressInRelease/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(feature).getAllByRole("status", {
+        name: "tasks:releases.detail.progressLoading",
+      }),
+    ).toHaveLength(3);
+  });
+
+  it("retains flat work and retry feedback when metadata is unavailable", () => {
+    milestoneBoard();
+    m.milestones = { data: undefined, isError: true, isFetching: false };
+    renderPage();
+    const feature = screen.getByRole("region", { name: "Checkout" });
+    expect(screen.getByRole("alert")).toBeVisible();
+    expect(within(feature).getByRole("link", { name: /Pay/ })).toBeVisible();
+    expect(
+      within(feature).queryByRole("heading", { level: 4 }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(feature).getByRole("img", { name: /progressInRelease:50:1\/2/ }),
+    ).toBeVisible();
+  });
+
+  it("offers retry and progress placeholders if workflow definitions are unavailable", () => {
+    m.workflow = { data: undefined, isError: true, isFetching: false };
+    renderPage();
+    expect(screen.getByRole("alert")).toBeVisible();
+    const feature = screen.getByRole("region", { name: "Checkout" });
+    expect(
+      within(feature).getByRole("status", {
+        name: "tasks:releases.detail.progressLoading",
+      }),
+    ).toBeVisible();
+    expect(within(feature).getByRole("link", { name: /Pay/ })).toBeVisible();
+  });
+
   it("shows the release with its features, then the tasks without one", () => {
     renderPage();
 

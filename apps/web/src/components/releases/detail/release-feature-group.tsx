@@ -6,6 +6,13 @@ import { cn } from "@/lib/cn";
 import type { ReleaseFeatureGroup as Group } from "./group-release-items";
 import { type ReleaseItemColumn, ReleaseItemRow } from "./release-item-row";
 import { ReleaseTaskLink } from "./release-task-link";
+import {
+  getReleaseWorkProgress,
+  groupReleaseMilestones,
+  type ReleaseMilestoneMetadata,
+} from "./release-milestone-groups";
+import { ReleaseMilestoneSection } from "./release-milestone-section";
+import { ReleaseWorkProgress } from "./release-work-progress";
 
 type ReleaseFeatureGroupProps = {
   group: Group;
@@ -14,6 +21,9 @@ type ReleaseFeatureGroupProps = {
   projectSlug: string | undefined;
   columns: ReadonlyMap<string, ReleaseItemColumn>;
   done: ReadonlySet<string>;
+  started: ReadonlySet<string>;
+  milestones: readonly ReleaseMilestoneMetadata[] | undefined;
+  progressReady: boolean;
 };
 
 export function ReleaseFeatureGroup({
@@ -23,12 +33,17 @@ export function ReleaseFeatureGroup({
   projectSlug,
   columns,
   done,
+  started,
+  milestones,
+  progressReady,
 }: ReleaseFeatureGroupProps) {
   const { t } = useTranslation();
   const titleId = useId();
   const statusId = useId();
   const { feature } = group;
   const featureDone = done.has(feature.status);
+  const progress = getReleaseWorkProgress(group.tasks, done, started);
+  const milestoneGroups = groupReleaseMilestones(group.tasks, milestones);
   // As text, like the task rows: strike-through alone says nothing to a
   // screen reader.
   const statusName =
@@ -37,7 +52,7 @@ export function ReleaseFeatureGroup({
   return (
     <section aria-labelledby={titleId}>
       <div className="flex min-h-10 flex-wrap items-center gap-x-2 gap-y-1 border-border/60 border-b bg-muted/40 px-4 py-2">
-        <h3 className="flex min-w-0 items-center gap-2 font-medium text-sm">
+        <h3 className="flex max-w-full min-w-0 items-center gap-2 font-medium text-sm">
           <Layers
             aria-hidden="true"
             className="size-4 shrink-0 text-muted-foreground"
@@ -64,6 +79,7 @@ export function ReleaseFeatureGroup({
             {statusName}
           </span>
         </h3>
+        <ReleaseWorkProgress progress={progress} ready={progressReady} glyph />
         {group.inRelease ? null : (
           <Badge variant="outline" size="sm">
             {t("tasks:releases.detail.featureElsewhere")}
@@ -77,7 +93,21 @@ export function ReleaseFeatureGroup({
           </span>
         ) : null}
       </div>
-      {group.tasks.length > 0 ? (
+      {milestoneGroups ? (
+        milestoneGroups.map((milestoneGroup) => (
+          <ReleaseMilestoneSection
+            key={milestoneGroup.milestone?.id ?? "unassigned"}
+            group={milestoneGroup}
+            workspaceId={workspaceId}
+            releaseId={releaseId}
+            projectSlug={projectSlug}
+            columns={columns}
+            done={done}
+            started={started}
+            progressReady={progressReady}
+          />
+        ))
+      ) : group.tasks.length > 0 ? (
         <ul>
           {group.tasks.map((task) => (
             <ReleaseItemRow

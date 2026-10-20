@@ -3633,7 +3633,10 @@
 				"tasksElsewhere_other": "{{count}} autres tâches hors de cette version",
 				"today": "Aujourd'hui",
 				"loadingTasks": "Chargement des tâches…",
-				"timelineLabel": "Chronologie de la version"
+				"timelineLabel": "Chronologie de la version",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Versions",

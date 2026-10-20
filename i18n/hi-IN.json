@@ -3555,7 +3555,10 @@
 				"tasksElsewhere_other": "इस रिलीज़ के बाहर {{count}} और कार्य",
 				"today": "आज",
 				"loadingTasks": "कार्य लोड हो रहे हैं…",
-				"timelineLabel": "रिलीज़ टाइमलाइन"
+				"timelineLabel": "रिलीज़ टाइमलाइन",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "रिलीज़",

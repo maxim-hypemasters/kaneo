@@ -1,8 +1,9 @@
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReleaseItemGroups as Groups } from "./group-release-items";
 import { ReleaseFeatureGroup } from "./release-feature-group";
 import { type ReleaseItemColumn, ReleaseItemRow } from "./release-item-row";
+import type { ReleaseMilestoneMetadata } from "./release-milestone-groups";
 
 type ReleaseItemGroupsProps = {
   groups: Groups;
@@ -11,15 +12,29 @@ type ReleaseItemGroupsProps = {
   projectSlug: string | undefined;
   columns: ReadonlyMap<string, ReleaseItemColumn>;
   done: ReadonlySet<string>;
+  started: ReadonlySet<string>;
+  milestones: readonly ReleaseMilestoneMetadata[] | undefined;
+  progressReady: boolean;
 };
 
 export function ReleaseItemGroups({
   groups,
+  milestones,
   ...rowProps
 }: ReleaseItemGroupsProps) {
   const { t } = useTranslation();
   const standaloneId = useId();
   const { columns, done } = rowProps;
+  const milestonesByFeature = useMemo(() => {
+    if (milestones === undefined) return undefined;
+    const byFeature = new Map<string, ReleaseMilestoneMetadata[]>();
+    for (const milestone of milestones) {
+      const featureMilestones = byFeature.get(milestone.featureId) ?? [];
+      featureMilestones.push(milestone);
+      byFeature.set(milestone.featureId, featureMilestones);
+    }
+    return byFeature;
+  }, [milestones]);
 
   return (
     <div>
@@ -27,6 +42,10 @@ export function ReleaseItemGroups({
         <ReleaseFeatureGroup
           key={group.feature.id}
           group={group}
+          milestones={
+            milestonesByFeature?.get(group.feature.id) ??
+            (milestonesByFeature ? [] : undefined)
+          }
           {...rowProps}
         />
       ))}

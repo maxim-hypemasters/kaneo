@@ -92,9 +92,11 @@ export function useProjectWebSocket(projectId: string) {
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
     let releasesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
     let milestonesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    let workflowDirty = false;
     const milestoneOwnersDirty = new Set<string>();
-    function refreshMilestones(featureId?: string) {
+    function refreshMilestones(featureId?: string, workflowChanged = false) {
       if (featureId) milestoneOwnersDirty.add(featureId);
+      workflowDirty ||= workflowChanged;
       if (milestonesRefreshTimer !== null) return;
       milestonesRefreshTimer = setTimeout(() => {
         milestonesRefreshTimer = null;
@@ -102,6 +104,12 @@ export function useProjectWebSocket(projectId: string) {
         void queryClient.invalidateQueries({
           queryKey: ["feature-milestones", projectId],
         });
+        if (workflowDirty) {
+          workflowDirty = false;
+          void queryClient.invalidateQueries({
+            queryKey: ["columns", projectId],
+          });
+        }
         if (milestoneOwnersDirty.size) {
           const owners = new Set(milestoneOwnersDirty);
           milestoneOwnersDirty.clear();
@@ -287,6 +295,10 @@ export function useProjectWebSocket(projectId: string) {
             { cancelRefetch: false },
           );
           void queryClient.invalidateQueries(
+            { queryKey: ["columns", projectId] },
+            { cancelRefetch: false },
+          );
+          void queryClient.invalidateQueries(
             { queryKey: ["release-progress", projectId] },
             { cancelRefetch: false },
           );
@@ -338,7 +350,7 @@ export function useProjectWebSocket(projectId: string) {
             RELEASE_PROGRESS_MESSAGES.includes(message.type) ||
             message.type === "TASK_RELATION_UPDATED"
           )
-            refreshMilestones();
+            refreshMilestones(undefined, message.type === "PROJECT_UPDATED");
           if (message.type === "RELEASES_UPDATED") {
             refreshReleases();
             refreshProgress();
@@ -741,6 +753,9 @@ export function useProjectWebSocket(projectId: string) {
             reconcileMilestoneDetails();
             void queryClient.invalidateQueries({
               queryKey: ["feature-milestones", projectId],
+            });
+            void queryClient.invalidateQueries({
+              queryKey: ["columns", projectId],
             });
             void queryClient.invalidateQueries({
               queryKey: ["tasks", projectId],

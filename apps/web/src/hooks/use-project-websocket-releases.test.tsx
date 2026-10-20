@@ -1,4 +1,5 @@
 import { cleanup, renderHook } from "@testing-library/react";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import {
   afterEach,
   beforeEach,
@@ -8,6 +9,10 @@ import {
   vi,
 } from "vite-plus/test";
 import { useProjectWebSocket } from "./use-project-websocket";
+import {
+  finalStatuses,
+  startedStatuses,
+} from "@/lib/releases/release-progress";
 
 const mocks = vi.hoisted(() => ({
   client: {
@@ -20,7 +25,8 @@ const mocks = vi.hoisted(() => ({
     cancelQueries: vi.fn().mockResolvedValue(undefined),
   },
 }));
-vi.mock("@tanstack/react-query", () => ({
+vi.mock("@tanstack/react-query", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-query")>()),
   useQueryClient: () => mocks.client,
 }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
@@ -65,6 +71,10 @@ const progressCalls = () =>
       filters?.queryKey?.[0] === "release-progress" &&
       filters.queryKey[1] === "p",
   );
+const columnCalls = () =>
+  mocks.client.invalidateQueries.mock.calls.filter(
+    ([filters]) => filters?.queryKey?.[0] === "columns",
+  );
 // Invalidations that read the list again, and those that only mark it stale.
 const releasesRefreshes = () =>
   releaseCalls().filter(([filters]) => filters.refetchType !== "none").length;
@@ -72,6 +82,24 @@ const releasesMarkedStale = () =>
   releaseCalls().filter(([filters]) => filters.refetchType === "none").length;
 
 let releasesState: { dataUpdatedAt: number; fetchStatus: string } | undefined;
+let milestoneCache: QueryClient;
+const releaseMilestoneKeys = [
+  ["feature-milestones", "p", "release", "r"],
+  ["feature-milestones", "p", "release", "another-release"],
+];
+const otherProjectMilestones = ["feature-milestones", "other", "release", "r"];
+const initialWorkflow = [
+  { id: "a", slug: "todo", position: 0, isFinal: false },
+  { id: "b", slug: "active", position: 1, isFinal: false },
+  { id: "c", slug: "done", position: 2, isFinal: true },
+];
+function expectReleaseMilestonesInvalidated() {
+  for (const key of releaseMilestoneKeys)
+    expect(milestoneCache.getQueryState(key)?.isInvalidated).toBe(true);
+  expect(
+    milestoneCache.getQueryState(otherProjectMilestones)?.isInvalidated,
+  ).toBe(false);
+}
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -87,10 +115,19 @@ beforeEach(() => {
     queryKey[0] === "releases" ? releasesState : { fetchStatus: "idle" },
   );
   mocks.client.invalidateQueries.mockReset();
+  milestoneCache = new QueryClient();
+  for (const key of [...releaseMilestoneKeys, otherProjectMilestones])
+    milestoneCache.setQueryData(key, []);
+  milestoneCache.setQueryData(["columns", "p"], initialWorkflow);
+  milestoneCache.setQueryData(["columns", "other"], initialWorkflow);
+  mocks.client.invalidateQueries.mockImplementation((filters, options) =>
+    milestoneCache.invalidateQueries(filters, options),
+  );
   mocks.client.setQueryData.mockReset();
 });
 afterEach(() => {
   cleanup();
+  milestoneCache.clear();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -110,6 +147,99 @@ describe("release list realtime", () => {
     expect(milestoneCalls()).toEqual([
       [{ queryKey: ["feature-milestones", "p"] }],
     ]);
+    expectReleaseMilestonesInvalidated();
+    expect(columnCalls()).toEqual([[{ queryKey: ["columns", "p"] }]]);
+  });
+  it("does not reread workflow definitions for task-only event bursts", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    for (const type of ["TASK_CREATED", "TASK_UPDATED", "MILESTONES_UPDATED"])
+      Socket.current.message(type, { taskId: "a", featureId: "f" });
+    vi.advanceTimersByTime(300);
+    expect(columnCalls()).toEqual([]);
+  });
+  it("shares one workflow refresh across project and task message bursts", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    for (const taskId of ["a", "b", "c"]) {
+      Socket.current.message("TASK_UPDATED", { taskId });
+      Socket.current.message("PROJECT_UPDATED");
+    }
+    expect(columnCalls()).toEqual([]);
+    vi.advanceTimersByTime(300);
+    expect(columnCalls()).toEqual([[{ queryKey: ["columns", "p"] }]]);
+    expect(milestoneCache.getQueryState(["columns", "p"])?.isInvalidated).toBe(
+      true,
+    );
+    expect(
+      milestoneCache.getQueryState(["columns", "other"])?.isInvalidated,
+    ).toBe(false);
+  });
+  it.each(["project update", "reconnect", "fallback"])(
+    "refreshes active release Done and Started definitions after %s",
+    async (source) => {
+      const updatedWorkflow = [
+        { id: "b", slug: "active", position: 0, isFinal: false },
+        { id: "a", slug: "todo", position: 1, isFinal: false },
+        { id: "c", slug: "done", position: 2, isFinal: false },
+      ];
+      const read = vi.fn(async () => updatedWorkflow);
+      const workflow = new QueryObserver(milestoneCache, {
+        queryKey: ["columns", "p"],
+        queryFn: read,
+        staleTime: Infinity,
+      });
+      const unsubscribe = workflow.subscribe(() => {});
+      renderHook(() => useProjectWebSocket("p"));
+      expect(read).not.toHaveBeenCalled();
+      expect([...finalStatuses(workflow.getCurrentResult().data!)]).toEqual([
+        "done",
+      ]);
+      expect([...startedStatuses(workflow.getCurrentResult().data!)]).toEqual([
+        "active",
+        "done",
+      ]);
+
+      if (source === "project update")
+        Socket.current.message("PROJECT_UPDATED");
+      else if (source === "reconnect") Socket.current.onopen?.();
+      else {
+        for (let retry = 0; retry < 5; retry++) {
+          Socket.current.onclose?.();
+          vi.advanceTimersByTime(1000 * 2 ** retry);
+        }
+        Socket.current.onclose?.();
+        vi.advanceTimersByTime(30_000);
+      }
+      await vi.advanceTimersByTimeAsync(300);
+      expect(read).toHaveBeenCalledOnce();
+      expect([...finalStatuses(workflow.getCurrentResult().data!)]).toEqual([]);
+      expect([...startedStatuses(workflow.getCurrentResult().data!)]).toEqual([
+        "todo",
+        "done",
+      ]);
+      expect(
+        milestoneCache.getQueryState(["columns", "other"])?.isInvalidated,
+      ).toBe(false);
+      unsubscribe();
+    },
+  );
+  it.each([
+    "MILESTONES_UPDATED",
+    "TASK_CREATED",
+    "TASK_UPDATED",
+    "TASK_DELETED",
+    "TASK_MOVED",
+    "TASK_RELATION_UPDATED",
+    "PROJECT_UPDATED",
+  ])("refreshes release milestone metadata after remote %s", (type) => {
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message(type, {
+      featureId: "f",
+      taskId: "a",
+      windowId: "another-window",
+    });
+    vi.advanceTimersByTime(300);
+    expect(milestoneCalls()).toHaveLength(1);
+    expectReleaseMilestonesInvalidated();
   });
   it("refreshes only details belonging to the changed Feature", () => {
     renderHook(() => useProjectWebSocket("p"));
@@ -138,6 +268,7 @@ describe("release list realtime", () => {
     const { unmount } = renderHook(() => useProjectWebSocket("p"));
     Socket.current.onopen?.();
     expect(milestoneCalls()).toHaveLength(1);
+    expectReleaseMilestonesInvalidated();
     Socket.current.message("MILESTONES_UPDATED");
     unmount();
     vi.advanceTimersByTime(300);
@@ -154,6 +285,7 @@ describe("release list realtime", () => {
     expect(milestoneCalls()).toEqual([
       [{ queryKey: ["feature-milestones", "p"] }],
     ]);
+    expectReleaseMilestonesInvalidated();
   });
   it("refreshes release metadata and chart without loading the board", () => {
     renderHook(() => useProjectWebSocket("p"));

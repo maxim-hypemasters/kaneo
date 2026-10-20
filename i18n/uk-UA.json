@@ -3711,7 +3711,10 @@
 				"tasksElsewhere_other": "Ще {{count}} завдання поза цим релізом",
 				"today": "Сьогодні",
 				"loadingTasks": "Завантаження завдань…",
-				"timelineLabel": "Часова шкала релізу"
+				"timelineLabel": "Часова шкала релізу",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Релізи",

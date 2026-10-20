@@ -3555,7 +3555,10 @@
 				"tasksElsewhere_other": "{{count}} ακόμα εργασίες εκτός αυτής της έκδοσης",
 				"today": "Σήμερα",
 				"loadingTasks": "Φόρτωση εργασιών…",
-				"timelineLabel": "Χρονολόγιο έκδοσης"
+				"timelineLabel": "Χρονολόγιο έκδοσης",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Εκδόσεις",

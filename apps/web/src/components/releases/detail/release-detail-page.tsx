@@ -6,10 +6,15 @@ import PageTitle from "@/components/page-title";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
+import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
+import { useGetReleaseMilestones } from "@/hooks/queries/release/use-get-release-milestones";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { getFeatureIndex } from "@/lib/features/feature-index";
-import { finalStatuses } from "@/lib/releases/release-progress";
+import {
+  finalStatuses,
+  startedStatuses,
+} from "@/lib/releases/release-progress";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import type { Release } from "@/types/release";
 import type { TaskType } from "@/types/task";
@@ -27,6 +32,7 @@ import { ReleaseItemGroups } from "./release-item-groups";
 import { ReleaseItemsSkeleton } from "./release-items-skeleton";
 import { ReleaseNotFound } from "./release-not-found";
 import { ReleaseProgressSection } from "./release-progress-section";
+import { ReleaseGroupingFeedback } from "./release-grouping-feedback";
 
 const NO_RELEASES: Release[] = [];
 
@@ -58,6 +64,8 @@ export function ReleaseDetailPage({
   const release =
     releases.find((item) => item.id === releaseId) ??
     (deleted?.id === releaseId ? deleted : undefined);
+  const milestonesQuery = useGetReleaseMilestones(projectId, release?.id);
+  const workflowQuery = useGetColumns(projectId);
   const today = useReleaseToday();
   const permissions = useReleasePermissions();
   const shown = useMemo(() => (release ? [release] : NO_RELEASES), [release]);
@@ -68,8 +76,12 @@ export function ReleaseDetailPage({
   const [createType, setCreateType] = useState<TaskType | null>(null);
 
   const done = useMemo(
-    () => finalStatuses(board?.columns ?? []),
-    [board?.columns],
+    () => finalStatuses(workflowQuery.data ?? board?.columns ?? []),
+    [workflowQuery.data, board?.columns],
+  );
+  const started = useMemo(
+    () => startedStatuses(workflowQuery.data ?? []),
+    [workflowQuery.data],
   );
   const columns = useMemo(
     () =>
@@ -86,20 +98,39 @@ export function ReleaseDetailPage({
   const openCreate = permissions.canCreateTasks
     ? (type: TaskType) => setCreateType(type)
     : undefined;
+  const progressReady =
+    !boardQuery.isPending && workflowQuery.data !== undefined;
+  const groupingError = milestonesQuery.isError || workflowQuery.isError;
+  const groupingLoading =
+    milestonesQuery.data === undefined || workflowQuery.data === undefined;
 
   let content = <ReleaseDetailSkeleton />;
   if (release && counts) {
     let items = <ReleaseItemsSkeleton />;
     if (groups && groups.features.length + groups.standalone.length > 0) {
       items = (
-        <ReleaseItemGroups
-          groups={groups}
-          workspaceId={workspaceId}
-          releaseId={releaseId}
-          projectSlug={board?.slug}
-          columns={columns}
-          done={done}
-        />
+        <>
+          <ReleaseGroupingFeedback
+            loading={groupingLoading}
+            error={groupingError}
+            retrying={milestonesQuery.isFetching || workflowQuery.isFetching}
+            onRetry={() => {
+              void milestonesQuery.refetch();
+              void workflowQuery.refetch();
+            }}
+          />
+          <ReleaseItemGroups
+            groups={groups}
+            workspaceId={workspaceId}
+            releaseId={releaseId}
+            projectSlug={board?.slug}
+            columns={columns}
+            done={done}
+            started={started}
+            milestones={milestonesQuery.data}
+            progressReady={progressReady}
+          />
+        </>
       );
     } else if (groups && !boardQuery.isPending) {
       items = <ReleaseDetailEmpty onCreate={openCreate} />;

@@ -3477,7 +3477,10 @@
 				"tasksElsewhere_other": "另有 {{count}} 个任务不在此版本中",
 				"today": "今天",
 				"loadingTasks": "正在加载任务…",
-				"timelineLabel": "版本时间线"
+				"timelineLabel": "版本时间线",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "版本",

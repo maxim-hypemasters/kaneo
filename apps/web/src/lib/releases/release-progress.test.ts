@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vite-plus/test";
-import { finalStatuses, releaseProgress } from "./release-progress";
+import {
+  finalStatuses,
+  releaseProgress,
+  startedStatuses,
+} from "./release-progress";
 
 describe("releaseProgress", () => {
   const done = finalStatuses([
@@ -87,5 +91,30 @@ describe("finalStatuses", () => {
         { slug: "done", isFinal: true },
       ]),
     ]).toEqual(["done"]);
+  });
+});
+
+describe("startedStatuses", () => {
+  it("uses position then real column id to choose the first nonfinal column", () => {
+    expect([
+      ...startedStatuses([
+        { id: "b", slug: "z-review", position: 1, isFinal: false },
+        { id: "a", slug: "z-todo", position: 1, isFinal: false },
+        { id: "c", slug: "a-active", position: 2, isFinal: false },
+        { id: "d", slug: "done", position: 0, isFinal: true },
+      ]),
+    ]).toEqual(["done", "z-review", "a-active"]);
+  });
+  it("includes every Done column but excludes backlog and archived statuses", () => {
+    expect([
+      ...startedStatuses([
+        { id: "a", slug: "to-do", position: 0, isFinal: false },
+        { id: "b", slug: "planned", position: 1, isFinal: false },
+        { id: "c", slug: "archived", position: 2, isFinal: false },
+        { id: "d", slug: "done", position: 3, isFinal: true },
+        { id: "e", slug: "shipped", position: 4, isFinal: true },
+      ]),
+    ]).toEqual(["done", "shipped"]);
+    expect([...startedStatuses([])]).toEqual([]);
   });
 });

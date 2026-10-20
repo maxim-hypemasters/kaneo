@@ -3555,7 +3555,10 @@
 				"tasksElsewhere_other": "Bu buraxılışdan kənarda daha {{count}} tapşırıq",
 				"today": "Bu gün",
 				"loadingTasks": "Tapşırıqlar yüklənir…",
-				"timelineLabel": "Buraxılışın zaman xətti"
+				"timelineLabel": "Buraxılışın zaman xətti",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Buraxılışlar",
