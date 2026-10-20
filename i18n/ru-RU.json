@@ -3763,7 +3763,10 @@
 				"tasksElsewhere_other": "Ещё {{count}} задачи вне этого релиза",
 				"today": "Сегодня",
 				"loadingTasks": "Загрузка задач…",
-				"timelineLabel": "Временная шкала релиза"
+				"timelineLabel": "Временная шкала релиза",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Релизы",

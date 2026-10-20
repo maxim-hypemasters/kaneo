@@ -3994,7 +3994,10 @@
 				"tasksElsewhere_other": "Jeszcze {{count}} zadania poza tym wydaniem",
 				"today": "Dzisiaj",
 				"loadingTasks": "Ładowanie zadań…",
-				"timelineLabel": "Oś czasu wydania"
+				"timelineLabel": "Oś czasu wydania",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Wydania",

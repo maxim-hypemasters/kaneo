@@ -3555,7 +3555,10 @@
 				"tasksElsewhere_other": "Bu sürümün dışında {{count}} talep daha",
 				"today": "Bugün",
 				"loadingTasks": "Talepler yükleniyor…",
-				"timelineLabel": "Sürüm zaman çizelgesi"
+				"timelineLabel": "Sürüm zaman çizelgesi",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Sürümler",

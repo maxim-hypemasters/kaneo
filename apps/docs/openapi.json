@@ -2040,6 +2040,29 @@
           "points"
         ]
       },
+      "ReleaseMilestone": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "featureId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "featureId",
+          "title",
+          "position"
+        ]
+      },
       "DeletedRelease": {
         "type": "object",
         "properties": {
@@ -15422,6 +15445,94 @@
           },
           "503": {
             "description": "Progress history unavailable or request timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/release/{id}/milestones": {
+      "get": {
+        "operationId": "getReleaseMilestones",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Get release feature milestone metadata",
+        "description": "Ordered milestone metadata for features assigned to this release or referenced by its nonarchived tasks and bugs. Includes empty milestones. Progress is calculated from the release's visible work by the client.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The release's feature milestones",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReleaseMilestone"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the release's project or missing task:read permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Release project or workspace changed; retry the request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Release milestones request timed out",
             "content": {
               "application/json": {
                 "schema": {

@@ -1,6 +1,7 @@
 import { requireEntitlement } from "../billing/require-entitlement-middleware";
 import {
   apiRouter,
+  type BaseVariables,
   createRoute,
   errorResponse,
   jsonResponse,
@@ -12,6 +13,7 @@ import deleteRelease from "./controllers/delete-release";
 import moveUnfinishedItems from "./controllers/move-unfinished-items";
 import updateRelease from "./controllers/update-release";
 import { getRelease, listReleases } from "./read-releases";
+import { readReleaseMilestones } from "./read-release-milestones";
 import { readReleaseProgress } from "./progress/read-release-progress";
 import {
   releaseProgressHistorySchema,
@@ -21,6 +23,7 @@ import {
   deletedReleaseSchema,
   movedReleaseItemsSchema,
   releaseListSchema,
+  releaseMilestoneListSchema,
   releaseSchema,
   releaseWithProgressSchema,
 } from "./response";
@@ -86,6 +89,35 @@ const getReleaseProgressRoute = createRoute({
     403: errorResponse("No access to the release's project"),
     404: errorResponse("Release not found"),
     503: errorResponse("Progress history unavailable or request timed out"),
+  },
+});
+
+const getReleaseMilestonesRoute = createRoute({
+  method: "get",
+  operationId: "getReleaseMilestones",
+  path: "/{id}/milestones",
+  tags: ["Releases"],
+  summary: "Get release feature milestone metadata",
+  description:
+    "Ordered milestone metadata for features assigned to this release or referenced by its nonarchived tasks and bugs. Includes empty milestones. Progress is calculated from the release's visible work by the client.",
+  middleware: [
+    workspaceAccess.fromRelease("id"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
+  request: { params: releaseParam },
+  responses: {
+    200: jsonResponse(
+      "The release's feature milestones",
+      releaseMilestoneListSchema,
+    ),
+    403: errorResponse(
+      "No access to the release's project or missing task:read permission",
+    ),
+    404: errorResponse("Release not found"),
+    409: errorResponse(
+      "Release project or workspace changed; retry the request",
+    ),
+    503: errorResponse("Release milestones request timed out"),
   },
 });
 
@@ -214,7 +246,7 @@ const moveUnfinishedRoute = createRoute({
   },
 });
 
-const release = apiRouter()
+const release = apiRouter<BaseVariables & { workspaceId: string }>()
   .openapi(listProjectReleasesRoute, async (c) =>
     c.json(await listReleases(c.req.valid("param").projectId), 200),
   )
@@ -226,6 +258,16 @@ const release = apiRouter()
       await readReleaseProgress(
         c.req.valid("param").id,
         c.req.valid("query").timeZone,
+      ),
+      200,
+    ),
+  )
+  .openapi(getReleaseMilestonesRoute, async (c) =>
+    c.json(
+      await readReleaseMilestones(
+        c.req.valid("param").id,
+        c.get("authorizedProjectId"),
+        c.get("workspaceId"),
       ),
       200,
     ),

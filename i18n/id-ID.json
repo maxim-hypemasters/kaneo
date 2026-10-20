@@ -3477,7 +3477,10 @@
 				"tasksElsewhere_other": "{{count}} tugas lainnya di luar rilis ini",
 				"today": "Hari ini",
 				"loadingTasks": "Memuat tugas…",
-				"timelineLabel": "Linimasa rilis"
+				"timelineLabel": "Linimasa rilis",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Rilis",

@@ -3477,7 +3477,10 @@
 				"tasksElsewhere_other": "Còn {{count}} công việc khác ngoài bản phát hành này",
 				"today": "Hôm nay",
 				"loadingTasks": "Đang tải công việc…",
-				"timelineLabel": "Dòng thời gian bản phát hành"
+				"timelineLabel": "Dòng thời gian bản phát hành",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Bản phát hành",

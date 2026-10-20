@@ -14,7 +14,7 @@ export function useMilestoneMutations(projectId: string, featureId: string) {
   const client = useQueryClient();
   const refresh = () => {
     void client.invalidateQueries({
-      queryKey: milestonesKey(projectId, featureId),
+      queryKey: milestonesKey(projectId),
     });
   };
   return {
@@ -97,7 +97,7 @@ export function useSetTaskMilestone(projectId: string, featureId: string) {
     }) => setTaskMilestone(id, milestoneId),
     onSuccess: (_data, { id }) => {
       void client.invalidateQueries({
-        queryKey: milestonesKey(projectId, featureId),
+        queryKey: milestonesKey(projectId),
       });
       void client.invalidateQueries({ queryKey: ["task", id] });
       void client.invalidateQueries({ queryKey: ["activities", id] });

@@ -3555,7 +3555,10 @@
 				"tasksElsewhere_other": "Nog {{count}} taken buiten deze release",
 				"today": "Vandaag",
 				"loadingTasks": "Taken laden…",
-				"timelineLabel": "Tijdlijn van de release"
+				"timelineLabel": "Tijdlijn van de release",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Releases",

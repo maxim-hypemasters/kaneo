@@ -15,6 +15,7 @@ type ReleaseItemRowProps = {
   // The task's column, or undefined for a planned task.
   column: ReleaseItemColumn | undefined;
   done: boolean;
+  nested?: boolean;
 };
 
 // A task in the release; opens its sheet. Done ones are struck through and
@@ -26,6 +27,7 @@ export function ReleaseItemRow({
   projectSlug,
   column,
   done,
+  nested = false,
 }: ReleaseItemRowProps) {
   const { t } = useTranslation();
   const statusName = column?.name ?? t("tasks:status.planned");
@@ -37,7 +39,10 @@ export function ReleaseItemRow({
         projectId={task.projectId}
         releaseId={releaseId}
         taskId={task.id}
-        className="flex h-11 min-w-0 items-center sm:h-10 gap-3 border-border/50 border-b px-4 outline-none transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        className={cn(
+          "flex h-11 min-w-0 items-center sm:h-10 gap-3 border-border/50 border-b px-4 outline-none transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+          nested && "pl-10 sm:pl-12",
+        )}
       >
         <span aria-hidden="true" className="shrink-0">
           {getColumnIcon(task.status, done, column?.icon)}

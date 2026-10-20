@@ -18,6 +18,34 @@ export function finalStatuses(
   );
 }
 
+// The board uses status slugs as column ids. Use the workflow definitions
+// here so equal positions are resolved by the real column ids.
+export function startedStatuses(
+  columns: ReadonlyArray<{
+    id: string;
+    slug: string;
+    position: number;
+    isFinal: boolean;
+  }>,
+): ReadonlySet<string> {
+  const ordered = [...columns].sort(
+    (left, right) =>
+      left.position - right.position || left.id.localeCompare(right.id),
+  );
+  const first = ordered.find((column) => !column.isFinal);
+  return new Set(
+    ordered
+      .filter(
+        (column) =>
+          column.isFinal ||
+          (column.id !== first?.id &&
+            column.slug !== "planned" &&
+            column.slug !== "archived"),
+      )
+      .map((column) => column.slug),
+  );
+}
+
 // The API's progress rule, over the items given: archived items count in the
 // totals but are never unfinished.
 export function releaseProgress(

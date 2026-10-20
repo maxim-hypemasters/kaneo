@@ -3555,7 +3555,10 @@
 				"tasksElsewhere_other": "Уште {{count}} задачи надвор од ова издание",
 				"today": "Денес",
 				"loadingTasks": "Се вчитуваат задачи…",
-				"timelineLabel": "Временска линија на изданието"
+				"timelineLabel": "Временска линија на изданието",
+				"progressInRelease": "{{percentage}}% · {{completed}}/{{total}} completed in this release",
+				"progressLoading": "Loading progress in this release",
+				"groupingLoadError": "Could not load release grouping."
 			},
 			"gantt": {
 				"strip": "Изданија",
