@@ -335,7 +335,7 @@ describe("TaskShortcuts", () => {
     expect(useRelationPickerStore.getState().request).toBeNull();
   });
 
-  it("opens the Release property of a task or a feature", () => {
+  it("opens Release planning only for Tasks/Bugs", () => {
     const { unmount } = renderTaskShortcuts();
     press({ key: "C", code: "KeyC", shiftKey: true });
     expect(onRelease).toHaveBeenCalledTimes(1);
@@ -345,7 +345,7 @@ describe("TaskShortcuts", () => {
     mocks.task = { ...plainTask, type: "feature" };
     renderTaskShortcuts();
     press({ key: "C", code: "KeyC", shiftKey: true });
-    expect(onRelease).toHaveBeenCalledTimes(2);
+    expect(onRelease).toHaveBeenCalledTimes(1);
   });
 
   it("keeps copy shortcuts but blocks edits without update permission", async () => {

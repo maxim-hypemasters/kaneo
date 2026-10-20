@@ -2,6 +2,35 @@ import { z } from "../../openapi";
 import { isoDay } from "../../release/release-dates";
 import { milestoneDatesAreOrdered } from "../../milestone/dates";
 
+export const planningSnapshotSchema = z.object({
+  projectId: z.string().nullable().optional(),
+  createdAt: z.string().datetime().optional(),
+  status: z.string().nullable().optional(),
+  columnId: z.string().nullable().optional(),
+  priority: z.string().nullable().optional(),
+  userId: z.string().nullable().optional(),
+  startDate: z.string().nullable().optional(),
+  dueDate: z.string().nullable().optional(),
+  releaseId: z.string().nullable().optional(),
+  releaseName: z.string().nullable().optional(),
+  archivedAt: z.string().nullable().optional(),
+});
+
+export const transferReleaseSchema = z
+  .object({
+    key: z.string().min(1),
+    name: z.string().trim().min(1).max(255),
+    startDate: isoDay,
+    codeFreezeDate: isoDay,
+    submissionDate: isoDay,
+  })
+  .refine(
+    (value) =>
+      value.startDate <= value.codeFreezeDate &&
+      value.codeFreezeDate <= value.submissionDate,
+    { message: "Invalid release date order" },
+  );
+
 const transferMilestoneFields = z.object({
   key: z.string().min(1),
   featureKey: z.string().min(1),
@@ -14,6 +43,10 @@ const transferMilestoneFields = z.object({
     description: "Legacy end date. Used only when endDate is omitted.",
   }),
   position: z.number().int().min(0).max(2_147_483_646),
+  leadId: z.string().nullable().optional(),
+  status: z.string().optional(),
+  priority: z.string().optional(),
+  releaseKey: z.string().nullable().optional(),
 });
 export const transferMilestoneSchema = transferMilestoneFields.refine(
   (milestone) =>

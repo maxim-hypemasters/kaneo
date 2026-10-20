@@ -1,3 +1,5 @@
+import { recordReleaseChange } from "../release/membership/record-release-change";
+import { lockRelease } from "../release/membership/assign-release";
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type db from "../database";
@@ -90,19 +92,36 @@ export async function setTaskMilestone(
   userId?: string,
 ) {
   if (task.milestoneId === milestoneId) return task;
+  let releaseId = task.releaseId;
   if (milestoneId) {
     if (task.type === "feature")
       throw new HTTPException(409, {
         message: "Features cannot belong to milestones",
       });
-    await lockMilestone(tx, milestoneId, task.featureId, task.projectId);
+    const milestone = await lockMilestone(
+      tx,
+      milestoneId,
+      task.featureId,
+      task.projectId,
+    );
+    if (releaseId === null && milestone.releaseId) {
+      await lockRelease(tx, milestone.releaseId, task.projectId);
+      releaseId = milestone.releaseId;
+    }
   }
   const [updated] = await tx
     .update(taskTable)
-    .set({ milestoneId })
+    .set({ milestoneId, releaseId })
     .where(eq(taskTable.id, task.id))
     .returning();
   if (!updated) throw new HTTPException(404, { message: "Task not found" });
+  await recordReleaseChange(tx, {
+    taskIds: [task.id],
+    projectId: task.projectId,
+    from: task.releaseId,
+    to: releaseId,
+    userId,
+  });
   await recordMilestoneChange(tx, {
     taskIds: [task.id],
     projectId: task.projectId,

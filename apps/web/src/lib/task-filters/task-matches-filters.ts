@@ -87,7 +87,7 @@ export function taskMatchesFilters(
     [
       "status",
       filters.status,
-      () => filters.status?.includes(task.status) ?? false,
+      () => filters.status?.includes(task.status ?? "") ?? false,
     ],
     [
       "priority",

@@ -167,7 +167,8 @@ async function duplicateTask({
       message: "Project changed workspaces; retry the request",
     });
 
-  await assertValidTaskStatus(sourceTask.status, sourceTask.projectId);
+  if (sourceTask.type !== "feature")
+    await assertValidTaskStatus(sourceTask.status!, sourceTask.projectId);
   let assigneeId = sourceTask.userId;
   if (assigneeId) {
     const members = await filterAssignableUsers(
@@ -186,7 +187,7 @@ async function duplicateTask({
   const column = await db.query.columnTable.findFirst({
     where: and(
       eq(columnTable.projectId, sourceTask.projectId),
-      eq(columnTable.slug, sourceTask.status),
+      eq(columnTable.slug, sourceTask.status ?? "planned"),
     ),
   });
 
@@ -290,12 +291,15 @@ async function duplicateTask({
               sourceTask.projectId,
             )
           : null;
-        const nextPosition = await nextTaskPosition(
-          tx,
-          sourceTask.projectId,
-          sourceTask.status,
-          column?.id ?? null,
-        );
+        const nextPosition =
+          sourceTask.type === "feature"
+            ? 0
+            : await nextTaskPosition(
+                tx,
+                sourceTask.projectId,
+                sourceTask.status ?? "planned",
+                column?.id ?? null,
+              );
 
         const [task] = await tx
           .insert(taskTable)
@@ -305,7 +309,8 @@ async function duplicateTask({
             userId: assigneeId,
             title: title?.trim() || sourceTask.title,
             status: sourceTask.status,
-            columnId: column?.id ?? null,
+            columnId:
+              sourceTask.type === "feature" ? null : (column?.id ?? null),
             startDate: sourceTask.startDate,
             dueDate: sourceTask.dueDate,
             description,

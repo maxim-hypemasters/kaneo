@@ -10,16 +10,9 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export async function writeImportFeatures(
   tx: Transaction,
   {
-    features,
     memberships,
   }: { features: readonly string[]; memberships: ReadonlyMap<string, string> },
 ) {
-  for (const ids of chunk(features)) {
-    await tx
-      .update(taskTable)
-      .set({ type: "feature" })
-      .where(inArray(taskTable.id, ids));
-  }
   const byFeature = new Map<string, string[]>();
   for (const [taskId, featureId] of memberships) {
     byFeature.set(featureId, [...(byFeature.get(featureId) ?? []), taskId]);

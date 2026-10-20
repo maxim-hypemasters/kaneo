@@ -9,9 +9,15 @@ export function filterProjectTasks(
     ...project,
     columns: (project.columns ?? []).map((column) => ({
       ...column,
-      tasks: column.tasks.filter(keep),
+      tasks: column.tasks.filter(
+        (task) => task.type !== "feature" && keep(task),
+      ),
     })),
-    plannedTasks: (project.plannedTasks ?? []).filter(keep),
-    archivedTasks: (project.archivedTasks ?? []).filter(keep),
+    plannedTasks: (project.plannedTasks ?? []).filter(
+      (task) => task.type !== "feature" && keep(task),
+    ),
+    archivedTasks: (project.archivedTasks ?? []).filter(
+      (task) => task.type !== "feature" && keep(task),
+    ),
   };
 }

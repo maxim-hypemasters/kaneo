@@ -57,10 +57,14 @@ const otherInvalidations = () =>
           "release-progress",
           "feature-milestones",
           "columns",
+          "project-features",
+          "feature-library",
         ].includes(options?.queryKey?.[0]) &&
         !(
           options?.predicate &&
-          ["task", "activities"].includes(options?.queryKey?.[0])
+          ["task", "activities", "task-relations"].includes(
+            options?.queryKey?.[0],
+          )
         ),
     );
 
@@ -747,7 +751,7 @@ describe("feature changes", () => {
     for (let i = 0; i < 4; i++) await Promise.resolve();
   };
 
-  it("patches a task's type and feature, including a cleared feature", async () => {
+  it("patches a leaf classification and clears its Feature membership", async () => {
     (mocks.board as Board).columns[0].tasks = [
       {
         id: "a",
@@ -763,7 +767,7 @@ describe("feature changes", () => {
       projectId: "p",
       status: "todo",
       position: 0,
-      type: "feature",
+      type: "bug",
       featureId: null,
       subtaskCounts: { completed: 0, total: 0 },
       parentSubtaskCounts: [],
@@ -772,14 +776,14 @@ describe("feature changes", () => {
     Socket.current.message("TASK_UPDATED", { taskId: "a" });
     await flush();
 
-    expect(cardOf("a")).toMatchObject({ type: "feature", featureId: null });
+    expect(cardOf("a")).toMatchObject({ type: "bug", featureId: null });
     expect(cardOf("a")).not.toHaveProperty("parentSubtaskCounts");
     expect(mocks.client.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["task-relations", "a"],
     });
   });
 
-  it("updates the feature card's progress from its task's read", async () => {
+  it("keeps knowledge Features out of the board while applying leaf progress", async () => {
     (mocks.board as Board).columns[0].tasks = [
       {
         id: "f",
@@ -814,9 +818,6 @@ describe("feature changes", () => {
     await flush();
 
     expect(cardOf("a")).toMatchObject({ featureId: "f" });
-    expect(cardOf("f")).toMatchObject({
-      type: "feature",
-      subtaskCounts: { completed: 1, total: 2 },
-    });
+    expect(cardOf("f")).toBeUndefined();
   });
 });

@@ -157,3 +157,11 @@ To go back to an earlier version, undo the conversion first. `apps/api/src/migra
 5. Set `KANEO_IMAGE_TAG` back to the earlier release and start it with `docker compose up -d kaneo`. With the Helm chart, run `helm upgrade` with `kaneo.image.tag` set to the earlier release, and scale the deployment back up if it is still at zero.
 
 The script brings back the subtask links from before the upgrade, including the ones that were kept as related relations. Tasks added to a feature since then become subtasks of it too, and every feature becomes a plain task again. A task taken out of its feature after the upgrade gets its old parent back. Other changes made since the upgrade are kept. Once the links are back, the script empties `legacy_subtask_relation`. If you upgrade again later, Kaneo converts the subtasks again and backs them up afresh, so the script can undo that upgrade too.
+
+### Features become knowledge records
+
+Apply the database migration before enabling the new API and web contracts. Back up the database and update all API instances together: old writers can no longer store Feature planning fields or convert between Features and Tasks/Bugs.
+
+The upgrade keeps Feature IDs, numbers, links, documentation, comments and hierarchy. Each existing Feature gets one immutable activity snapshot containing its former planning values. Archived state moves to an explicit archive timestamp; active planning fields become null. No replacement milestones are created, child releases are unchanged, and historical release events are not rewritten.
+
+Existing milestones keep their dates, ordering and membership. They start without a lead or release, with no priority and the first nonfinal project workflow column (or Planned when no such column exists). Assign milestone planning values after upgrade. Features are now in the Features library and milestones replace them in Gantt. Native version 3 transfers preserve the new planning and history metadata; older formats remain importable.

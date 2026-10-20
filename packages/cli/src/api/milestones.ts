@@ -9,6 +9,11 @@ export const Milestone = Schema.Struct({
   description: nullable,
   startDate: nullable,
   endDate: nullable,
+  leadId: Schema.optionalKey(nullable),
+  status: Schema.optionalKey(Schema.String),
+  columnId: Schema.optionalKey(nullable),
+  priority: Schema.optionalKey(Schema.String),
+  releaseId: Schema.optionalKey(nullable),
   position: Schema.Number,
   createdAt: Schema.String,
   updatedAt: Schema.String,
@@ -24,6 +29,10 @@ export type MilestoneFields = {
   readonly description?: string | null;
   readonly startDate?: string | null;
   readonly endDate?: string | null;
+  readonly leadId?: string | null;
+  readonly status?: string;
+  readonly priority?: string;
+  readonly releaseId?: string | null;
 };
 const featurePath = (id: string) =>
   `/api/milestone/feature/${encodeURIComponent(id)}`;
@@ -34,6 +43,32 @@ export const listMilestones = Effect.fnUntraced(function* (featureId: string) {
     "GET",
     featurePath(featureId),
     Schema.Array(Milestone),
+  );
+});
+const ProjectMilestone = Schema.Struct({
+  ...Milestone.fields,
+  projectId: Schema.String,
+  featureTitle: Schema.String,
+});
+export const listProjectMilestones = Effect.fnUntraced(function* (
+  projectId: string,
+  page = 1,
+  limit = 50,
+) {
+  const api = yield* KaneoApi;
+  return yield* api.request(
+    "GET",
+    `/api/milestone/project/${encodeURIComponent(projectId)}`,
+    Schema.Struct({
+      data: Schema.Array(ProjectMilestone),
+      pagination: Schema.Struct({
+        total: Schema.Number,
+        page: Schema.Number,
+        limit: Schema.Number,
+        totalPages: Schema.Number,
+      }),
+    }),
+    { query: { page, limit } },
   );
 });
 export const getMilestone = Effect.fnUntraced(function* (id: string) {

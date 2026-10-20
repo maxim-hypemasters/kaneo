@@ -2,6 +2,28 @@ import { describe, expect, it } from "vite-plus/test";
 import { buildFullTaskUpdateBody } from "./task-helpers.js";
 
 describe("buildFullTaskUpdateBody", () => {
+  it("updates Feature knowledge fields without synthesizing planning values", () => {
+    expect(
+      buildFullTaskUpdateBody(
+        {
+          type: "feature",
+          title: "Knowledge",
+          description: "Old",
+          projectId: "p",
+          position: null,
+          status: null,
+          priority: null,
+        },
+        { description: "New" },
+      ),
+    ).toEqual({ title: "Knowledge", description: "New", projectId: "p" });
+    expect(() =>
+      buildFullTaskUpdateBody(
+        { type: "feature", title: "Knowledge", projectId: "p", position: 1 },
+        { status: "done" },
+      ),
+    ).toThrow("Features are knowledge records");
+  });
   it("merges patch onto existing task", () => {
     // Arrange
     const original = {

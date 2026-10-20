@@ -19,6 +19,12 @@ export function useUpdateTaskDescription() {
       };
     },
     onSuccess: (updated, variables, context) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["project-features", variables.projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-library", variables.projectId],
+      });
       queryClient.invalidateQueries({
         queryKey: ["task", variables.id],
       });

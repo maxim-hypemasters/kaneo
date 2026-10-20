@@ -27,8 +27,7 @@ export function useUpdateTaskRelease() {
       };
     },
     onSuccess: (updated, { task }, context) => {
-      // A feature's tasks that followed it (movedTaskIds) now have exactly its
-      // release, so the board is patched rather than reloaded page by page.
+      // A leaf release edit preserves other work's explicit releases.
       updateBoardTaskCache(
         queryClient,
         task.projectId,
@@ -36,16 +35,9 @@ export function useUpdateTaskRelease() {
         { releaseId: updated.releaseId },
         context?.version,
       );
-      for (const id of updated.movedTaskIds)
-        updateBoardTaskCache(queryClient, task.projectId, id, {
-          releaseId: updated.releaseId,
-        });
-      invalidateReleaseChange(
-        queryClient,
-        task.projectId,
-        [task.id, ...updated.movedTaskIds],
-        { board: false },
-      );
+      invalidateReleaseChange(queryClient, task.projectId, [task.id], {
+        board: false,
+      });
     },
   });
 }

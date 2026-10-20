@@ -12,8 +12,8 @@ export function starterTasks(
       description: t("auth:onboarding.starterTasks.drag.description"),
     },
     {
-      title: t("auth:onboarding.starterTasks.details.title"),
-      description: t("auth:onboarding.starterTasks.details.description"),
+      title: t("auth:onboarding.starterTasks.features.title"),
+      description: t("auth:onboarding.starterTasks.features.description"),
     },
     ...(usage === "team"
       ? [

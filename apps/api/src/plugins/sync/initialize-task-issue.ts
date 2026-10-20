@@ -37,6 +37,7 @@ export async function initializeTaskIssue(
   },
 ) {
   const current = await initializeTaskText(event, context, link, actions.text);
+  if (current.status === null) return;
   const progress = parseLinkMetadata<Initialization>(link.metadata, {
     externalLinkId: link.id,
     source: "sync_creation",
@@ -45,7 +46,12 @@ export async function initializeTaskIssue(
     { ...link, taskId: event.taskId, integrationId: context.integrationId },
     JSON.stringify(context.config),
   );
-  await initializeTaskState(current, context, link, actions.state);
+  await initializeTaskState(
+    { ...current, status: current.status },
+    context,
+    link,
+    actions.state,
+  );
   if (!progress.syncInitializedLabels) {
     if ((await actions.labels()) === undefined)
       throw new Error("Issue sync scope changed");

@@ -1,5 +1,6 @@
 import type { FeatureIndex } from "@/lib/features/feature-index";
 import { getReleaseIndex } from "@/lib/releases/release-index";
+import type { ReleaseMilestoneMetadata } from "./release-milestone-groups";
 import type Task from "@/types/task";
 
 type Board = Parameters<typeof getReleaseIndex>[0];
@@ -22,8 +23,8 @@ export type ReleaseItemGroups = {
 
 function unfinishedFirst(tasks: Task[], done: ReadonlySet<string>) {
   return [
-    ...tasks.filter((task) => !done.has(task.status)),
-    ...tasks.filter((task) => done.has(task.status)),
+    ...tasks.filter((task) => !done.has(task.status ?? "")),
+    ...tasks.filter((task) => done.has(task.status ?? "")),
   ];
 }
 
@@ -36,6 +37,7 @@ export function groupReleaseItems(
   releaseId: string,
   featureIndex: FeatureIndex,
   done: ReadonlySet<string>,
+  milestones: readonly ReleaseMilestoneMetadata[] = [],
 ): ReleaseItemGroups {
   const groups = new Map<string, ReleaseFeatureGroup>();
   const standalone: Task[] = [];
@@ -44,7 +46,7 @@ export function groupReleaseItems(
     if (!group) {
       group = {
         feature,
-        inRelease: feature.releaseId === releaseId,
+        inRelease: false,
         tasks: [],
         tasksElsewhere: 0,
       };
@@ -54,10 +56,7 @@ export function groupReleaseItems(
   };
 
   for (const item of getReleaseIndex(board).get(releaseId) ?? []) {
-    if (item.type === "feature") {
-      groupFor(item);
-      continue;
-    }
+    if (item.type === "feature") continue;
     const feature = item.featureId
       ? featureIndex.features.get(item.featureId)
       : undefined;
@@ -65,8 +64,11 @@ export function groupReleaseItems(
     else standalone.push(item);
   }
 
-  const rank = (group: ReleaseFeatureGroup) =>
-    (done.has(group.feature.status) ? 2 : 0) + (group.inRelease ? 0 : 1);
+  for (const milestone of milestones) {
+    if (milestone.releaseId !== releaseId) continue;
+    const owner = featureIndex.features.get(milestone.featureId);
+    if (owner) groupFor(owner);
+  }
   const features = [...groups.values()]
     .map((group) => ({
       ...group,
@@ -77,7 +79,11 @@ export function groupReleaseItems(
         (task) => task.releaseId !== releaseId && task.status !== "archived",
       ).length,
     }))
-    .sort((left, right) => rank(left) - rank(right));
+    .sort(
+      (left, right) =>
+        left.feature.title.localeCompare(right.feature.title) ||
+        left.feature.id.localeCompare(right.feature.id),
+    );
 
   return { features, standalone: unfinishedFirst(standalone, done) };
 }

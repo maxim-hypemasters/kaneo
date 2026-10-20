@@ -192,7 +192,8 @@
 				"discardTitleBug": "Discard bug?",
 				"successCreatedBug": "Bug created successfully",
 				"titleBug": "New Bug",
-				"typeBug": "Bug"
+				"typeBug": "Bug",
+				"releaseFromMilestone": "{{name}} (from milestone)"
 			}
 		},
 		"editor": {
@@ -408,10 +409,7 @@
 					"title": "Повлечи ја оваа картичка во следната колона",
 					"description": "Картичките се движат од колона во колона како што напредува работата. Повлечи ја оваа во следната колона, или отвори ја и смени ѝ го статусот."
 				},
-				"details": {
-					"title": "Отвори ја оваа задача и направи ја функционалност",
-					"description": "Задачата може да има опис, ознаки, задолжено лице и рок. Направи ја оваа задача функционалност, а потоа додај задачи во неа за да ја групираш работата."
-				},
+				"details": {},
 				"invite": {
 					"title": "Покани го твојот тим",
 					"description": "Kaneo најдобро функционира кога сите се внатре. Отвори **Членови** во страничната лента за да поканиш луѓе преку е-пошта."
@@ -423,6 +421,10 @@
 				"create": {
 					"title": "Создај своја задача",
 					"description": "Користи го **+** до името на колоната или притисни **T**, па **C**. Избриши ги овие почетни задачи кога ќе бидеш подготвен."
+				},
+				"features": {
+					"description": "Open **Features** in the project navigation to create a Feature for documentation and implementation history. Add milestones inside the Feature to plan work, then link Tasks or Bugs to them.",
+					"title": "Explore the Features library"
 				}
 			},
 			"progress": "Чекор {{current}} од {{total}}",
@@ -3184,6 +3186,28 @@
 				"taskAriaLabel": "{{title}}: отвори или повлечи за презакажување или преместување во друга функционалност",
 				"moveError": "Задачата не можеше да се премести во друга функционалност",
 				"assignee": "Доделен на {{name}}"
+			},
+			"milestones": {
+				"assigneeLead": "Assignee / Milestone Lead",
+				"bar": {
+					"ariaLabel": "Milestone {{title}}: open or drag to reschedule",
+					"ariaLabelGrouped": "Milestone {{title}}: open, or drag to reschedule or change lead",
+					"progress": "{{completed}}/{{total}}",
+					"progressAria": "{{completed}} of {{count}} completed"
+				},
+				"cannotMove": "Only work in this Feature can move to {{name}}",
+				"itemCount_one": "{{count}} item",
+				"itemCount_other": "{{count}} items",
+				"moveError": "Could not move work to milestone",
+				"moveTo": "Move to milestone {{name}}",
+				"open": "Open milestone {{title}}",
+				"remove": "Remove milestone",
+				"show": "Show",
+				"shownCount_one": "{{shown}} of {{count}} item",
+				"shownCount_other": "{{shown}} of {{count}} items",
+				"taskAriaLabel": "{{title}}: open, or drag to reschedule or change milestone",
+				"taskFilters": "Task filters",
+				"unknown": "Unknown milestone"
 			}
 		},
 		"delete": {
@@ -3416,15 +3440,26 @@
 			"type": "Тип",
 			"typeTask": "Задача",
 			"typeFeature": "Функционалност",
-			"convertToFeature": "Претвори во функционалност",
 			"convertToTask": "Претвори во задача",
 			"typeError": "Неуспешна промена на типот на задачата",
-			"convertBlocked": "Извади ги задачите од оваа функционалност пред да ја претвориш во задача.",
 			"openFeature": "Отвори ја функционалноста {{title}}",
 			"inProject": "Функционалности во проект",
 			"convertToBug": "Convert to bug",
 			"typeBug": "Bug",
-			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
+			"library": {
+				"active": "Active",
+				"archive": "Archive feature",
+				"archived": "Archived",
+				"empty": "No features found.",
+				"milestoneCount_one": "{{count}} milestone",
+				"milestoneCount_other": "{{count}} milestones",
+				"restore": "Restore feature",
+				"saveError": "Could not update feature.",
+				"search": "Search features…",
+				"title": "Features",
+				"activityArchived": "archived this Feature",
+				"activityRestored": "restored this Feature"
+			}
 		},
 		"releases": {
 			"pageTitle": "{{name}} – Изданија",
@@ -3483,7 +3518,9 @@
 				"tasks_one": "{{count}} задача",
 				"tasks_other": "{{count}} задачи",
 				"unfinished_one": "{{count}} незавршена",
-				"unfinished_other": "{{count}} незавршени"
+				"unfinished_other": "{{count}} незавршени",
+				"milestones_one": "{{count}} milestone",
+				"milestones_other": "{{count}} milestones"
 			},
 			"empty": {
 				"title": "Сè уште нема изданија",
@@ -3591,7 +3628,8 @@
 				"title": "Progress over time",
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
-			}
+			},
+			"milestoneReleaseHint": "Milestone release"
 		},
 		"createMenu": {
 			"label": "Create work item",
@@ -3607,7 +3645,6 @@
 			"add": "New milestone",
 			"assignmentError": "Could not update milestone.",
 			"choose": "Choose milestone",
-			"convertBlocked": "Remove all tasks and milestones before converting this feature.",
 			"delete": "Delete milestone",
 			"deleteDescription": "Linked tasks and bugs remain in this feature and release. Only their milestone assignment is removed.",
 			"deleteTitle": "Delete milestone?",
@@ -3647,7 +3684,20 @@
 			"unavailableTasks": "Some selected work is no longer available. Remove it from the selection before saving.",
 			"noUnassignedTasks": "No Tasks or Bugs available to link.",
 			"clearEndDate": "Clear end date",
-			"endDatePlaceholder": "Set end date…"
+			"endDatePlaceholder": "Set end date…",
+			"activityCompleted": "completed milestone “{{title}}”",
+			"activityCreated": "created milestone “{{title}}”",
+			"activityDeleted": "deleted milestone “{{title}}”",
+			"activityReopened": "reopened milestone “{{title}}”",
+			"activityUpdated": "updated milestone “{{title}}”",
+			"activityUpdatedFields": "updated milestone “{{title}}”: {{fields}}",
+			"addLinkedWork": "Add work",
+			"lead": "Milestone Lead",
+			"noLinkedWork": "No linked Tasks or Bugs.",
+			"open": "Open milestone",
+			"planned": "Planned",
+			"planningSnapshot": "Previous planning: {{values}}",
+			"workProgress": "Linked work progress"
 		}
 	},
 	"invitations": {

@@ -30,7 +30,24 @@ async function addTask(
   numbers += 1;
   const [task] = await db
     .insert(schema.taskTable)
-    .values({ projectId, title: `Task ${numbers}`, number: numbers, ...values })
+    .values({
+      projectId,
+      title: `Task ${numbers}`,
+      number: numbers,
+      ...values,
+      ...(values.type === "feature"
+        ? {
+            status: null,
+            priority: null,
+            columnId: null,
+            userId: null,
+            startDate: null,
+            dueDate: null,
+            releaseId: null,
+            archivedAt: values.status === "archived" ? new Date() : null,
+          }
+        : {}),
+    })
     .returning();
   return task;
 }

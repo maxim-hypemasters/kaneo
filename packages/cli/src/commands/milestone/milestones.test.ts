@@ -6,6 +6,7 @@ import { json } from "../../testing/test-layers.js";
 import { runMilestoneCreate } from "./create.js";
 import { runMilestoneEdit } from "./edit.js";
 import { runMilestoneList } from "./list.js";
+import { runMilestoneProjectList } from "./list-project.js";
 import { runMilestoneView } from "./view.js";
 import { runMilestoneOrder } from "./order.js";
 import { runMilestoneDelete } from "./delete.js";
@@ -35,6 +36,65 @@ const routes = {
   "PUT /api/milestone/feature/t1/order": () => json([milestone]),
 };
 describe("milestone commands", () => {
+  it("preserves planning fields and null clearing on milestone edits", async () => {
+    const run = await runCommand(
+      runMilestoneEdit({
+        id: "m1",
+        title: Option.none(),
+        description: Option.none(),
+        startDate: Option.none(),
+        endDate: Option.none(),
+        lead: Option.some("none"),
+        status: Option.some("in-progress"),
+        priority: Option.some("urgent"),
+        release: Option.some("release-1"),
+      }),
+      routes,
+    );
+    expect(Result.isSuccess(run.result)).toBe(true);
+    expect(run.requests.at(-1)).toEqual([
+      "PATCH",
+      "/api/milestone/m1",
+      {
+        leadId: null,
+        status: "in-progress",
+        priority: "urgent",
+        releaseId: "release-1",
+      },
+    ]);
+  });
+  it("lists project milestone summaries in one bounded request", async () => {
+    const data = [
+      {
+        ...milestone,
+        projectId: "p1",
+        featureTitle: "Combat",
+        leadId: "lead",
+        status: "in-progress",
+        columnId: "col",
+        priority: "urgent",
+        releaseId: "release-1",
+      },
+    ];
+    const run = await runCommand(
+      runMilestoneProjectList({ project: Option.none(), page: 2, limit: 25 }),
+      {
+        "GET /api/project": () => json([feature.project]),
+        "GET /api/milestone/project/p1": () =>
+          json({
+            data,
+            pagination: { total: 26, page: 2, limit: 25, totalPages: 2 },
+          }),
+      },
+    );
+    expect(Result.isSuccess(run.result)).toBe(true);
+    expect(run.requests.at(-1)).toEqual([
+      "GET",
+      "/api/milestone/project/p1?page=2&limit=25",
+      undefined,
+    ]);
+    expect(run.json()).toMatchObject({ data });
+  });
   it("creates a trimmed title in a Feature", async () => {
     const run = await runCommand(
       runMilestoneCreate({

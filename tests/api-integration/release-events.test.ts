@@ -1,3 +1,4 @@
+import { createMilestone } from "../../apps/api/src/milestone/write-milestones";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { createApp } from "../../apps/api/src/index";
 import {
@@ -111,7 +112,7 @@ describe("release events", () => {
 });
 
 describe("membership events", () => {
-  it("announces a feature and each task that followed it", async () => {
+  it("announces a milestone and each Task/Bug that followed it", async () => {
     const ctx = await setup();
     const from = await insertRelease(ctx.project.id, { name: "2.4" });
     const to = await insertRelease(ctx.project.id, { name: "2.5" });
@@ -119,35 +120,43 @@ describe("membership events", () => {
       type: "feature",
       releaseId: from.id,
     });
+    const milestone = await createMilestone(
+      feature.id,
+      { title: "Release scope", releaseId: from.id },
+      ctx.user.id,
+    );
+    publish.mockClear();
     const followers = [
       await insertTask(ctx.project.id, {
         featureId: feature.id,
+        milestoneId: milestone.id,
         releaseId: from.id,
       }),
       await insertTask(ctx.project.id, {
         featureId: feature.id,
+        milestoneId: milestone.id,
         releaseId: from.id,
       }),
     ];
     await insertTask(ctx.project.id, { featureId: feature.id });
 
     const response = await ctx.app.request(
-      `/api/task/release/${feature.id}`,
-      jsonRequest("PUT", { releaseId: to.id }),
+      `/api/milestone/${milestone.id}`,
+      jsonRequest("PATCH", { releaseId: to.id }),
     );
 
     expect(response.status).toBe(200);
-    expect(updatedTasks()).toEqual([
-      feature.id,
-      ...followers.map(({ id }) => id).sort(),
-    ]);
-    expect(publish).toHaveBeenCalledWith("task.updated", {
-      taskId: feature.id,
+    expect(updatedTasks()).toEqual(followers.map(({ id }) => id).sort());
+    expect(publish).toHaveBeenCalledWith("milestone.changed", {
+      milestoneId: milestone.id,
+      featureId: feature.id,
       projectId: ctx.project.id,
       userId: ctx.user.id,
     });
     // Membership isn't a change to the release itself.
-    expect(releaseEvents()).toEqual([]);
+    expect(releaseEvents()).toEqual([
+      ["release.changed", { projectId: ctx.project.id }],
+    ]);
   });
 
   it("announces nothing when the task is already in that release", async () => {
@@ -180,7 +189,12 @@ describe("membership events", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(updatedTasks()).toEqual(members.map(({ id }) => id).sort());
+    expect(updatedTasks()).toEqual(
+      members
+        .filter((item) => item.type !== "feature")
+        .map(({ id }) => id)
+        .sort(),
+    );
     expect(releaseEvents()).toEqual([
       ["release.changed", { projectId: ctx.project.id }],
     ]);

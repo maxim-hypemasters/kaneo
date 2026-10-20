@@ -13,6 +13,7 @@ function useDeleteLabel() {
       void queryClient.invalidateQueries({ queryKey: ["tasks"] });
     },
     onSuccess: (deletedLabel) => {
+      void queryClient.invalidateQueries({ queryKey: ["feature-library"] });
       queryClient.setQueryData(
         ["labels", deletedLabel.workspaceId],
         (existingLabels: Array<typeof deletedLabel> | undefined) =>

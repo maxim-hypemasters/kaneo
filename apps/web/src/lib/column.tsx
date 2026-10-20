@@ -1,13 +1,25 @@
+import type { ReactElement } from "react";
 import { CheckCircle2, Circle } from "lucide-react";
 import columnIcons, {
   DEFAULT_COLUMN_ICON_NAMES,
 } from "@/constants/column-icons";
 
-export const getColumnIcon = (
+export function getColumnIcon(
   columnId: string,
   isFinal?: boolean,
   iconName?: string | null,
-) => {
+): ReactElement;
+export function getColumnIcon(
+  columnId: string | null,
+  isFinal?: boolean,
+  iconName?: string | null,
+): ReactElement | null;
+export function getColumnIcon(
+  columnId: string | null,
+  isFinal?: boolean,
+  iconName?: string | null,
+) {
+  if (columnId === null) return null;
   const resolvedIconName =
     iconName ||
     (Object.hasOwn(DEFAULT_COLUMN_ICON_NAMES, columnId)
@@ -29,4 +41,4 @@ export const getColumnIcon = (
   ) : (
     <Circle className="w-4 h-4 text-muted-foreground" />
   );
-};
+}

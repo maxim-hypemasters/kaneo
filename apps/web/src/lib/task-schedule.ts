@@ -6,6 +6,7 @@ import { parseISO } from "date-fns";
  * `Task` type satisfy it.
  */
 export type SchedulableTask = {
+  type?: string;
   startDate: string | null;
   dueDate: string | null;
 };
@@ -34,6 +35,7 @@ export function parseTaskDate(value: string | null | undefined) {
 export function toScheduledTask<TTask extends SchedulableTask>(
   task: TTask,
 ): Scheduled<TTask> | null {
+  if (task.type === "feature") return null;
   const parsedStart =
     parseTaskDate(task.startDate) ?? parseTaskDate(task.dueDate);
   const parsedEnd =

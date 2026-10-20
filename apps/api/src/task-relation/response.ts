@@ -10,7 +10,7 @@ const relatedTaskSchema = z
     title: z.string(),
     type: taskTypeSchema,
     milestoneId: z.string().nullable(),
-    status: z.string(),
+    status: z.string().nullable(),
     isCompleted: z.boolean().openapi({
       description: "Whether the task is in a final column of its own project.",
     }),

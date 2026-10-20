@@ -59,7 +59,13 @@ async function reconcileTaskWithIntegrations(
           eq(taskTable.projectId, projectId),
         ),
       });
-      if (!task || task.number === null) continue;
+      if (
+        !task ||
+        task.type === "feature" ||
+        task.status === null ||
+        task.number === null
+      )
+        continue;
       await plugin.onTaskCreated(
         {
           taskId: task.id,

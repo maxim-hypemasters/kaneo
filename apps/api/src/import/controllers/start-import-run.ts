@@ -30,6 +30,8 @@ type StartImportRunInput = {
   projectIds: string[];
   includeComments: boolean;
   canWriteMilestones?: boolean;
+  canAssignMilestoneLeads?: boolean;
+  canImportReleases?: boolean;
 };
 
 async function connectAndList(
@@ -61,6 +63,8 @@ async function startImportRun({
   projectIds,
   includeComments,
   canWriteMilestones = false,
+  canAssignMilestoneLeads = false,
+  canImportReleases = false,
 }: StartImportRunInput) {
   const slot = reserveImportSlot();
   if (!slot) {
@@ -94,6 +98,8 @@ async function startImportRun({
         userId,
         includeComments,
         canWriteMilestones,
+        canAssignMilestoneLeads,
+        canImportReleases,
         opened,
         state,
         signal: slot.controller.signal,

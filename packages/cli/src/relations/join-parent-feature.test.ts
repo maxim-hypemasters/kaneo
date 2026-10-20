@@ -49,15 +49,11 @@ describe("joinParentFeature", () => {
     ]);
   });
 
-  it("makes a plain parent a feature first", async () => {
+  it("rejects a plain parent instead of converting it", async () => {
     const { result, calls } = run(resolvedTaskFixture(1), child);
-    expect(await result).toEqual(
-      Result.succeed({ featureId: "t1", madeFeature: true }),
-    );
-    expect(calls()).toEqual([
-      ["PUT", "/api/task/type/t1", { type: "feature" }],
-      ["PUT", "/api/task/feature/t3", { featureId: "t1" }],
-    ]);
+    const outcome = await result;
+    expect(Result.isFailure(outcome)).toBe(true);
+    expect(calls()).toEqual([]);
   });
 
   it("uses the feature a parent is in", async () => {

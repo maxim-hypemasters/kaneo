@@ -1,3 +1,4 @@
+import { assertLeafPlanning } from "../assert-leaf-planning";
 import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import { withLockedTask } from "./with-locked-task";
@@ -15,7 +16,8 @@ async function updateTaskPriority({
 }) {
   const { before: existingTask, after: updatedTask } = await withLockedTask(
     id,
-    async (tx) => {
+    async (tx, existingTask) => {
+      assertLeafPlanning(existingTask);
       const [updatedTask] = await tx
         .update(taskTable)
         .set({ priority })

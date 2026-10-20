@@ -6,7 +6,6 @@ import PageTitle from "@/components/page-title";
 import { Button } from "@/components/ui/button";
 import useGetProject from "@/hooks/queries/project/use-get-project";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
-import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import type { Release } from "@/types/release";
 import { DeleteReleaseDialog } from "../delete-release-dialog";
@@ -40,7 +39,6 @@ export function ReleaseListPage({
   } = useGetReleases(projectId);
   // Loaded for live counts (useReleaseCounts reads it from the cache); the
   // API's progress shows until it arrives.
-  useGetTasks(projectId);
   const today = useReleaseToday();
   const permissions = useReleasePermissions();
   const counts = useReleaseCounts(projectId, releases ?? NO_RELEASES);
@@ -135,7 +133,9 @@ export function ReleaseListPage({
         onOpenChange={setDeleteOpen}
         release={deleting}
         itemCount={
-          deletingCounts ? deletingCounts.tasks + deletingCounts.features : 0
+          deletingCounts
+            ? deletingCounts.tasks + (deletingCounts.milestones ?? 0)
+            : 0
         }
       />
       {moving ? (

@@ -1,13 +1,8 @@
 import { recordMilestoneChange } from "../../milestone/membership";
-import { and, count, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type db from "../../database";
-import {
-  activityTable,
-  milestoneTable,
-  taskTable,
-} from "../../database/schema";
-import { releaseForJoiningTask } from "../../release/membership/follow-feature-release";
+import { activityTable, taskTable } from "../../database/schema";
 import { recordReleaseChange } from "../../release/membership/record-release-change";
 import { recordFeatureChange } from "./record-feature-change";
 
@@ -20,7 +15,7 @@ export type TaskType = Task["type"];
 // the target is a feature (locked FOR SHARE, so it can't turn back into a
 // task meanwhile) in the same project, and the task joining it is a task.
 // A task outside the project reads as missing, so its type stays private.
-// The lock also holds the feature's release, which tasks joining it take.
+// The lock keeps milestone ownership stable during membership changes.
 export async function lockFeature(
   tx: Tx,
   featureId: string,
@@ -45,8 +40,8 @@ export async function lockFeature(
 }
 
 // Puts a task (locked FOR UPDATE by the caller) into a feature, or takes it
-// out with null. A task without a release joins its new feature's; leaving
-// or switching keeps the release it has. Returns the updated row; a no-op
+// out with null. Changing Feature clears its milestone and preserves its
+// release. Returns the updated row; a no-op
 // returns the task as is.
 export async function setTaskFeature(
   tx: Tx,
@@ -55,15 +50,13 @@ export async function setTaskFeature(
   userId?: string,
 ) {
   if (featureId === task.featureId) return task;
-  let releaseId = task.releaseId;
+  const releaseId = task.releaseId;
   if (featureId) {
-    if (task.type === "feature") {
+    if (task.type === "feature")
       throw new HTTPException(409, {
-        message: "A feature can't belong to another feature",
+        message: "A feature cannot belong to another feature",
       });
-    }
-    const feature = await lockFeature(tx, featureId, task.projectId);
-    releaseId = releaseForJoiningTask(task.releaseId, feature.releaseId);
+    await lockFeature(tx, featureId, task.projectId);
   }
   const [updated] = await tx
     .update(taskTable)
@@ -97,8 +90,7 @@ export async function setTaskFeature(
   return updated;
 }
 
-// Leaf type changes preserve membership. Promotion to a feature clears its
-// parent; demotion requires an empty feature. Every change keeps its release.
+// Task/Bug type changes preserve membership; Features keep their identity.
 export async function setTaskType(
   tx: Tx,
   task: Task,
@@ -106,28 +98,16 @@ export async function setTaskType(
   userId?: string,
 ) {
   if (type === task.type) return task;
-  if (task.type === "feature" && type !== "feature") {
-    const [members] = await tx
-      .select({ count: count() })
-      .from(taskTable)
-      .where(eq(taskTable.featureId, task.id));
-    const [milestones] = await tx
-      .select({ count: count() })
-      .from(milestoneTable)
-      .where(eq(milestoneTable.featureId, task.id));
-    if ((members?.count ?? 0) > 0 || (milestones?.count ?? 0) > 0) {
-      throw new HTTPException(409, {
-        message:
-          "This feature still has members or milestones. Remove them before changing its type.",
-      });
-    }
-  }
+  if (task.type === "feature" || type === "feature")
+    throw new HTTPException(409, {
+      message: "Features cannot be converted to or from Tasks or Bugs",
+    });
   const [updated] = await tx
     .update(taskTable)
     .set({
       type,
-      featureId: type === "feature" ? null : task.featureId,
-      milestoneId: type === "feature" ? null : task.milestoneId,
+      featureId: task.featureId,
+      milestoneId: task.milestoneId,
     })
     .where(and(eq(taskTable.id, task.id), eq(taskTable.type, task.type)))
     .returning();
@@ -141,22 +121,5 @@ export async function setTaskType(
     content: null,
     eventData: { oldType: task.type, newType: type },
   });
-  if (type === "feature")
-    await recordMilestoneChange(tx, {
-      taskIds: [task.id],
-      projectId: task.projectId,
-      from: task.milestoneId,
-      to: null,
-      userId,
-    });
-  if (task.featureId && type === "feature") {
-    await recordFeatureChange(tx, {
-      taskIds: [task.id],
-      projectId: task.projectId,
-      from: task.featureId,
-      to: null,
-      userId,
-    });
-  }
   return updated;
 }

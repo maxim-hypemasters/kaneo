@@ -85,6 +85,8 @@ Credentials are resolved in this order: `--token`, then `KANEO_API_KEY`, then th
 | `kaneo task status`, `move`, `assign`, `field` | Change a task's column, project, assignee or custom fields |
 | `kaneo task bulk` | Apply one change to many tasks at once |
 | `kaneo task attach`, `images` | Upload files to a task, show the images in its description |
+| `kaneo feature list`, `archive`, `unarchive` | Browse the Feature knowledge library and manage its archive state |
+| `kaneo milestone list-project`, `create`, `edit` | Plan delivery with milestone leads, workflow, release, priority and dates |
 | `kaneo task relation`, `link`, `activity` | Features, blockers and related tasks, links, and the task's history |
 | `kaneo task export`, `import` | Export a project's tasks as JSON and create tasks from such a file |
 | `kaneo comment list`, `add`, `edit`, `delete` | Read and manage task comments |
@@ -109,13 +111,16 @@ The [command reference](https://kaneo.app/docs/cli/reference) lists every argume
 
 Tasks are addressed by their ticket ID, such as `KAN-123`, or by id. When a required workspace, project or column is missing and you are in a terminal, the CLI offers a searchable picker. In scripts it fails with an error that says which flag to pass.
 
-A Bug behaves like a Task and can belong to a Feature or release. A Feature groups the tasks and bugs of one piece of work; each belongs to at most one Feature of its project:
+A Bug behaves like a Task and can belong to a Feature or release. Features are durable knowledge records containing documentation, resources and implementation history. They have no status, priority, assignee, dates or release. Tasks and Bugs each belong to at most one Feature of their project:
 
 ```bash
 kaneo task create "Onboarding" -p KAN --type feature   # a feature, KAN-12
 kaneo task create "Write the welcome email" --feature KAN-12
 kaneo task edit KAN-14 --feature KAN-12                # or --feature none to take it out
-kaneo task edit KAN-9 --type feature                   # --type task turns a feature without tasks back
+kaneo feature list -p KAN --search Onboarding
+kaneo feature archive KAN-12
+kaneo feature list -p KAN --archived
+kaneo feature unarchive KAN-12
 kaneo task create "Fix login redirect" -p KAN --type bug
 kaneo task edit KAN-14 --type bug                      # change classification without losing its feature
 kaneo task list -p KAN --type bug                      # exact type filter; --type task excludes bugs
@@ -123,23 +128,23 @@ kaneo task list -p KAN --type bug                      # exact type filter; --ty
 
 `kaneo task view` and `kaneo task relation list` show a task's feature, or a feature's tasks. `--parent` on `task create` and the `subtask-of` and `parent-of` relation words still work but are deprecated: they put the task into a feature. In JSON, `parent` and `subtasks` repeat `feature` and `tasks` for one more Kaneo version.
 
-`--type` accepts `task`, `bug`, or `feature` on create, edit, and list. A Feature must be empty before becoming a Task or Bug. Task list and detail JSON include the item type. Creating or converting Bugs requires a server that supports them.
+`--type` accepts `task`, `bug`, or `feature` on creation. Editing converts only Task ↔ Bug; Features cannot be converted. Task listing accepts Task/Bug filters; use `feature list` for knowledge Features. Task list and detail JSON include the item type. Creating or converting Bugs requires a server that supports them.
 
 Search JSON keeps `type: "task"` as the resource kind and preserves the server's optional `taskType` classification. Relation listings preserve each linked item's optional `type` separately from the relation's type and direction. Older servers that omit this metadata keep the previous output shape.
 
-`kaneo task export` and `kaneo task import` preserve explicit Task, Bug, and Feature types in native JSON files. Files without a type remain compatible and import as Tasks. Version 2 exports retain Feature membership, milestone definitions, ordering, and Task/Bug links using portable keys. Import creates new IDs and restores the hierarchy atomically. Legacy flat files remain supported; release assignments are not restored.
+`kaneo task export` and `kaneo task import` preserve explicit Task, Bug, and Feature types in native JSON files. Files without a type remain compatible and import as Tasks. Version 3 exports retain Feature membership, archive state and previous planning snapshots, milestone planning fields and ordering, release definitions, and Task/Bug links using portable keys. Import creates new IDs and restores the complete hierarchy atomically. Version 2 hierarchy and legacy flat files remain supported.
 
-A release holds a project's features and tasks, with a start date, a code freeze and a submission date. A task follows its feature's release until you give it another one:
+A release holds milestones, Tasks and Bugs, with start, code-freeze and submission dates. New linked work inherits its milestone's release unless an explicit release is given. Updating a milestone release moves linked work whose release still matches the milestone's previous release; overrides remain:
 
 ```bash
 kaneo release create 2.4 -p KAN --start 2026-11-02 --code-freeze 2026-11-20 --submission 2026-11-27
-kaneo task edit KAN-12 --release 2.4                   # a feature: its tasks in its old release move too
-kaneo task create "Refund emails" --feature KAN-12     # starts in the feature's release
+kaneo milestone edit <milestone-id> --release <release-id>
+kaneo task create "Refund emails" --feature KAN-12 --milestone <milestone-id>
 kaneo task edit KAN-15 --release none                  # takes one task out
 kaneo release list -p KAN
 ```
 
-`--release` takes a release name or id in the task's project. Creating and editing releases needs permission to update the project, and deleting one also needs permission to edit tasks. Owners and admins have both by default. Deleting a release keeps its tasks and features in the project, without a release.
+`--release` takes a release name or id in the task's project. Creating and editing releases needs permission to update the project, and deleting one also needs permission to edit tasks. Owners and admins have both by default. Deleting a release keeps its milestones and tasks in the project, without a release.
 
 Milestones belong to a Feature, and Tasks/Bugs can link to one milestone of their existing Feature:
 
@@ -147,8 +152,9 @@ Milestones belong to a Feature, and Tasks/Bugs can link to one milestone of thei
 kaneo milestone create "First playable" --feature KAN-12 --start-date 2026-11-02 --end-date 2026-11-20
 kaneo milestone create "Bug fixes" --feature KAN-12 --task KAN-15 --task KAN-16
 kaneo milestone list --feature KAN-12
+kaneo milestone list-project -p KAN --page 1 --limit 50
 kaneo milestone view <milestone-id>
-kaneo milestone edit <milestone-id> --description "Ready for playtest" --end-date none
+kaneo milestone edit <milestone-id> --lead <user-id> --status in-progress --priority high --release <release-id> --end-date none
 kaneo milestone order --feature KAN-12 --milestone <first-id> --milestone <second-id>
 kaneo task create "Fix movement" --type bug --feature KAN-12 --milestone <milestone-id>
 kaneo task edit KAN-15 --milestone <milestone-id>
@@ -162,7 +168,7 @@ Repeat `--task` while creating a milestone to link existing Tasks/Bugs atomicall
 
 Start and end dates are optional calendar days. Either can be set alone or cleared with `none`; when both are set, the start must be on or before the end. Dates do not change task deadlines.
 
-`order` takes the complete milestone ID list in the desired order; stale lists are rejected. Assignment does not change Feature membership. Deleting a milestone keeps its Tasks/Bugs in the Feature and Release. Metadata and assignment require task update permission; progress reads use task read permission. Progress includes archived Tasks/Bugs and all linked work, independently of list filters. A Feature must have no children or milestones before becoming a Task/Bug.
+`order` takes the complete milestone ID list in the desired order; stale lists are rejected. Assignment does not change Feature membership. Deleting a milestone keeps its Tasks/Bugs in the Feature and Release. Metadata and assignment require task update permission; progress reads use task read permission. Progress includes archived Tasks/Bugs and all linked work, independently of list filters. Milestone workflow status is manual and independent of calculated task progress. Lead changes require task assignment permission. Archiving a Feature leaves its milestones and linked work active.
 
 Commands that delete or remove data ask for confirmation in a terminal and need `--yes` in scripts. Comments and descriptions can be read from a file with `-F <file>`, or from stdin with `-`.
 

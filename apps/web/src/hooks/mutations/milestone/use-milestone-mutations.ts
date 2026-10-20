@@ -14,6 +14,17 @@ export function useMilestoneMutations(projectId: string, featureId: string) {
   const client = useQueryClient();
   const refresh = () => {
     void client.invalidateQueries({
+      queryKey: ["project-features", projectId],
+    });
+    void client.invalidateQueries({ queryKey: ["feature-library", projectId] });
+    void client.invalidateQueries({ queryKey: ["tasks", projectId] });
+    void client.invalidateQueries({ queryKey: ["releases", projectId] });
+    void client.invalidateQueries({
+      queryKey: ["release-progress", projectId],
+    });
+    void client.invalidateQueries({ queryKey: ["task", featureId] });
+    void client.invalidateQueries({ queryKey: ["activities", featureId] });
+    void client.invalidateQueries({
       queryKey: milestonesKey(projectId),
     });
   };

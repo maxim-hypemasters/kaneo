@@ -15,6 +15,8 @@ export function ReleaseCounts({
   const parts = [
     counts.features > 0 &&
       t("tasks:releases.counts.features", { count: counts.features }),
+    (counts.milestones ?? 0) > 0 &&
+      t("tasks:releases.counts.milestones", { count: counts.milestones }),
     t("tasks:releases.counts.tasks", { count: counts.tasks }),
     counts.unfinished > 0 &&
       t("tasks:releases.counts.unfinished", { count: counts.unfinished }),

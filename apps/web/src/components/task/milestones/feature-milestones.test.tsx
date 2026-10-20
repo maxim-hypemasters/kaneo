@@ -56,7 +56,27 @@ vi.mock("@/hooks/mutations/milestone/use-milestone-mutations", () => ({
   }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => mocks.canEdit }),
+  useWorkspacePermission: () => ({
+    canUpdateTasks: () => mocks.canEdit,
+    canAssignTasks: () => mocks.canEdit,
+  }),
+}));
+vi.mock("@/hooks/queries/workspace/use-active-workspace", () => ({
+  default: () => ({ data: { id: "w" } }),
+}));
+vi.mock("@/hooks/queries/column/use-get-columns", () => ({
+  useGetColumns: () => ({
+    data: [
+      { id: "todo", slug: "to-do", name: "To Do", position: 0, isFinal: false },
+    ],
+    refetch: vi.fn(),
+  }),
+}));
+vi.mock("@/hooks/queries/release/use-get-releases", () => ({
+  useGetReleases: () => ({ data: [], refetch: vi.fn() }),
+}));
+vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
+  default: () => ({ data: [], refetch: vi.fn() }),
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: vi.fn() } }));
 const milestone = (id: string, completed = 0, total = 0) => ({
@@ -212,11 +232,13 @@ describe("Feature milestones", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.save" }),
     );
-    expect(mocks.create).toHaveBeenCalledWith({
-      title: "Alpha",
-      startDate: null,
-      endDate: "2026-11-01",
-    });
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Alpha",
+        startDate: null,
+        endDate: "2026-11-01",
+      }),
+    );
   });
   it("edits visible metadata without clearing an existing hidden description", async () => {
     mocks.data = [
@@ -248,12 +270,14 @@ describe("Feature milestones", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.save" }),
     );
-    expect(mocks.update).toHaveBeenCalledWith({
-      id: "legacy",
-      title: "Renamed milestone",
-      startDate: "2026-11-02",
-      endDate: "2026-11-06",
-    });
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "legacy",
+        title: "Renamed milestone",
+        startDate: "2026-11-02",
+        endDate: "2026-11-06",
+      }),
+    );
     expect(mocks.update.mock.calls[0][0]).not.toHaveProperty("description");
   });
   it("uses the shared date picker to reject an end before the start and save a range", async () => {
@@ -281,11 +305,13 @@ describe("Feature milestones", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.save" }),
     );
-    expect(mocks.create).toHaveBeenCalledWith({
-      title: "Alpha",
-      startDate: "2026-11-02",
-      endDate: "2026-11-04",
-    });
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Alpha",
+        startDate: "2026-11-02",
+        endDate: "2026-11-04",
+      }),
+    );
   });
   it("creates the milestone and links selected Tasks and Bugs in one request", async () => {
     mocks.candidates = [
@@ -315,12 +341,14 @@ describe("Feature milestones", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.save" }),
     );
-    expect(mocks.create).toHaveBeenCalledWith({
-      title: "New milestone",
-      startDate: null,
-      endDate: null,
-      taskIds: ["t", "b"],
-    });
+    expect(mocks.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "New milestone",
+        startDate: null,
+        endDate: null,
+        taskIds: ["t", "b"],
+      }),
+    );
   });
   it("allows empty creation while candidates load", () => {
     mocks.candidatesPending = true;

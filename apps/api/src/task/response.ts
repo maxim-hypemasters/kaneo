@@ -1,6 +1,10 @@
 import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
 import { TASK_TYPES } from "./task-type";
-import { exportedMilestoneSchema } from "./transfers/schema";
+import {
+  planningSnapshotSchema,
+  transferReleaseSchema,
+  exportedMilestoneSchema,
+} from "./transfers/schema";
 
 const priorityDescription = "One of: no-priority, low, medium, high, urgent.";
 
@@ -21,10 +25,10 @@ const milestoneIdSchema = z.string().nullable().openapi({
 
 const releaseIdSchema = z.string().nullable().openapi({
   description:
-    "The release this task, bug or feature is planned in, from its own project. Always null on public boards.",
+    "The Task/Bug release, from its own project. Always null for Features and on public boards.",
 });
 
-export const taskSchema = z
+const taskBaseSchema = z
   .object({
     id: z.string(),
     projectId: z.string(),
@@ -44,12 +48,16 @@ export const taskSchema = z
       description:
         "True when the list omits a large description; load the task detail or description pages to read it. Do not replace stored text with this null summary.",
     }),
-    status: z.string().openapi({
+    status: z.string().nullable().openapi({
       description: "The slug of the column the task sits in.",
     }),
-    priority: z.string().openapi({ description: priorityDescription }),
+    priority: z
+      .string()
+      .nullable()
+      .openapi({ description: priorityDescription }),
     startDate: nullableResponseTimestamp,
     dueDate: nullableResponseTimestamp,
+    archivedAt: nullableResponseTimestamp,
     createdAt: responseTimestamp,
     type: taskTypeSchema,
     featureId: featureIdSchema,
@@ -61,57 +69,90 @@ export const taskSchema = z
   })
   .openapi("Task");
 
-export const taskReleaseResultSchema = taskSchema
+export const featureKnowledgeSchema = taskBaseSchema
   .extend({
-    movedTaskIds: z.array(z.string()).openapi({
-      description:
-        "For a feature, its tasks and bugs that moved with it, ordered by id. Empty for a task or bug.",
-    }),
+    type: z.literal("feature"),
+    status: z.null(),
+    priority: z.null(),
+    columnId: z.null(),
+    userId: z.null(),
+    startDate: z.null(),
+    dueDate: z.null(),
+    releaseId: z.null(),
+    featureId: z.null(),
+    milestoneId: z.null(),
   })
+  .openapi("FeatureKnowledge");
+export const leafTaskSchema = taskBaseSchema
+  .extend({
+    type: z.enum(["task", "bug"]),
+    status: z.string(),
+    priority: z.string(),
+    archivedAt: z.null(),
+    columnId: z.string().nullable(),
+  })
+  .openapi("LeafTask");
+
+export const taskSchema = z
+  .discriminatedUnion("type", [featureKnowledgeSchema, leafTaskSchema])
+  .openapi("TaskResource");
+const taskReleaseFields = {
+  movedTaskIds: z.array(z.string()).openapi({
+    description: "Always empty; milestone release writes handle followers.",
+  }),
+};
+export const taskReleaseResultSchema = z
+  .discriminatedUnion("type", [
+    featureKnowledgeSchema.extend(taskReleaseFields),
+    leafTaskSchema.extend(taskReleaseFields),
+  ])
   .openapi("TaskReleaseResult");
-
-export const taskWithAssigneeSchema = taskSchema
-  .extend({
-    workspaceId: z.string().optional().openapi({
+const taskReadFields = {
+  workspaceId: z.string().optional().openapi({
+    description:
+      "The workspace currently owning the task's project. Included in the detail view; omitted from the compact board view.",
+  }),
+  subtaskCounts: z
+    .object({ completed: z.number(), total: z.number() })
+    .optional()
+    .openapi({
       description:
-        "The workspace currently owning the task's project. Included in the detail view; omitted from the compact board view.",
+        "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug.",
     }),
-    columnId: z.string().nullable().openapi({
+  parentSubtaskCounts: z
+    .array(
+      z.object({
+        taskId: z.string(),
+        completed: z.number(),
+        total: z.number(),
+      }),
+    )
+    .optional()
+    .openapi({
       description:
-        "The referenced workflow column; null for virtual statuses and legacy tasks without a column reference.",
+        "The progress of the task's feature (at most one entry), so a board can update the feature's card.",
     }),
-    subtaskCounts: z
-      .object({ completed: z.number(), total: z.number() })
-      .optional()
-      .openapi({
-        description:
-          "For a feature, its tasks and bugs and how many are in a final column. Zero for a task or bug.",
-      }),
-    parentSubtaskCounts: z
-      .array(
-        z.object({
-          taskId: z.string(),
-          completed: z.number(),
-          total: z.number(),
-        }),
-      )
-      .optional()
-      .openapi({
-        description:
-          "The progress of the task's feature (at most one entry), so a board can update the feature's card.",
-      }),
-    assigneeName: z.string().nullable(),
-    assigneeId: z.string().nullable(),
-    assigneeImage: z.string().nullable(),
-  })
+  assigneeName: z.string().nullable(),
+  assigneeId: z.string().nullable(),
+  assigneeImage: z.string().nullable(),
+};
+export const taskWithAssigneeSchema = z
+  .discriminatedUnion("type", [
+    featureKnowledgeSchema.extend(taskReadFields),
+    leafTaskSchema.extend(taskReadFields),
+  ])
   .openapi("TaskWithAssignee");
-
-export const taskByTicketIdSchema = taskWithAssigneeSchema
-  .extend({
-    workspaceId: z.string().openapi({
-      description: "The workspace that owns the task's project.",
-    }),
-  })
+const ticketReadFields = {
+  ...taskReadFields,
+  workspaceId: z
+    .string()
+    .openapi({ description: "The workspace that owns the task's project." }),
+};
+export const taskByTicketIdSchema = z
+  .discriminatedUnion("type", [
+    featureKnowledgeSchema.extend(ticketReadFields),
+    leafTaskSchema.extend(ticketReadFields),
+  ])
   .openapi("TaskByTicketId");
 
 const taskLabelSchema = z
@@ -142,10 +183,12 @@ export const projectFeatureListSchema = z
       id: z.string(),
       title: z.string(),
       number: z.number().nullable(),
-      status: z.string().openapi({
-        description: "The feature's column slug, or planned or archived.",
+      status: z.string().nullable().openapi({
+        description:
+          "Always null: Features are knowledge records without workflow status.",
       }),
       releaseId: releaseIdSchema,
+      archivedAt: nullableResponseTimestamp,
     }),
   )
   .openapi("ProjectFeatureList");
@@ -262,7 +305,8 @@ export const moveTaskResultSchema = z
 
 export const taskExportSchema = z
   .object({
-    version: z.literal(2),
+    version: z.literal(3),
+    releases: z.array(transferReleaseSchema),
     milestones: z.array(exportedMilestoneSchema),
     project: z
       .object({
@@ -278,11 +322,14 @@ export const taskExportSchema = z
           key: z.string(),
           featureKey: z.string().nullable(),
           milestoneKey: z.string().nullable(),
+          releaseKey: z.string().nullable(),
+          archivedAt: z.string().nullable(),
+          planningSnapshots: z.array(planningSnapshotSchema),
           title: z.string(),
           type: taskTypeSchema,
           description: z.string(),
-          status: z.string(),
-          priority: z.string(),
+          status: z.string().nullable(),
+          priority: z.string().nullable(),
           dueDate: z.string().nullable().openapi({ format: "date-time" }),
           startDate: z.string().nullable().openapi({ format: "date-time" }),
           userId: z.string().nullable(),

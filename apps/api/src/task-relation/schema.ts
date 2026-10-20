@@ -2,7 +2,7 @@ import { z } from "../openapi";
 
 const relationType = z.enum(["subtask", "blocks", "related"]).openapi({
   description:
-    "`subtask` is deprecated: creating one puts the target into the source's feature (making the source a feature if it's a plain task). Use PUT /task/feature/{id} instead.",
+    "`subtask` is deprecated: creating one puts the target into the source's feature (the source must already be a Feature or belong to one). Use PUT /task/feature/{id} instead.",
 });
 
 export const taskIdParam = z.object({ taskId: z.string() });

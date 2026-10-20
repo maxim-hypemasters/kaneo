@@ -54,6 +54,15 @@ export function ProjectScopeToggle({
         {t("tasks:view.backlog")}
       </ProjectScopeLink>
       <ProjectScopeLink
+        view="features"
+        workspaceId={workspaceId}
+        projectId={projectId}
+        active={currentView === "features"}
+        onSelect={onSelect}
+      >
+        {t("tasks:features.library.title")}
+      </ProjectScopeLink>
+      <ProjectScopeLink
         view="releases"
         workspaceId={workspaceId}
         projectId={projectId}

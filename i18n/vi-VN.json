@@ -192,7 +192,8 @@
 				"discardTitleBug": "Discard bug?",
 				"successCreatedBug": "Bug created successfully",
 				"titleBug": "New Bug",
-				"typeBug": "Bug"
+				"typeBug": "Bug",
+				"releaseFromMilestone": "{{name}} (from milestone)"
 			}
 		},
 		"editor": {
@@ -407,10 +408,7 @@
 					"title": "Kéo thẻ này sang cột tiếp theo",
 					"description": "Các thẻ chuyển từ cột này sang cột khác khi công việc tiến triển. Kéo thẻ này sang cột tiếp theo, hoặc mở nó và đổi trạng thái."
 				},
-				"details": {
-					"title": "Mở nhiệm vụ này và chuyển nó thành một tính năng",
-					"description": "Một nhiệm vụ có thể có mô tả, nhãn, người phụ trách và hạn chót. Hãy chuyển nhiệm vụ này thành một tính năng, rồi thêm các nhiệm vụ vào để nhóm công việc dưới tính năng đó."
-				},
+				"details": {},
 				"invite": {
 					"title": "Mời nhóm của bạn",
 					"description": "Kaneo hoạt động tốt nhất khi mọi người cùng tham gia. Mở **Thành viên** ở thanh bên để mời mọi người qua email."
@@ -422,6 +420,10 @@
 				"create": {
 					"title": "Tạo nhiệm vụ của riêng bạn",
 					"description": "Dùng nút **+** cạnh tên cột, hoặc nhấn **T** rồi **C**. Xóa các nhiệm vụ khởi đầu này khi bạn đã sẵn sàng."
+				},
+				"features": {
+					"description": "Open **Features** in the project navigation to create a Feature for documentation and implementation history. Add milestones inside the Feature to plan work, then link Tasks or Bugs to them.",
+					"title": "Explore the Features library"
 				}
 			},
 			"progress": "Bước {{current}}/{{total}}",
@@ -3131,6 +3133,26 @@
 				"taskAriaLabel": "{{title}}: mở, hoặc kéo để lên lịch lại hoặc chuyển sang tính năng khác",
 				"moveError": "Không thể chuyển công việc sang tính năng khác",
 				"assignee": "Đã giao cho {{name}}"
+			},
+			"milestones": {
+				"assigneeLead": "Assignee / Milestone Lead",
+				"bar": {
+					"ariaLabel": "Milestone {{title}}: open or drag to reschedule",
+					"ariaLabelGrouped": "Milestone {{title}}: open, or drag to reschedule or change lead",
+					"progress": "{{completed}}/{{total}}",
+					"progressAria": "{{completed}} of {{count}} completed"
+				},
+				"cannotMove": "Only work in this Feature can move to {{name}}",
+				"itemCount_other": "{{count}} items",
+				"moveError": "Could not move work to milestone",
+				"moveTo": "Move to milestone {{name}}",
+				"open": "Open milestone {{title}}",
+				"remove": "Remove milestone",
+				"show": "Show",
+				"shownCount_other": "{{shown}} of {{count}} items",
+				"taskAriaLabel": "{{title}}: open, or drag to reschedule or change milestone",
+				"taskFilters": "Task filters",
+				"unknown": "Unknown milestone"
 			}
 		},
 		"delete": {
@@ -3353,15 +3375,25 @@
 			"type": "Loại",
 			"typeTask": "Công việc",
 			"typeFeature": "Tính năng",
-			"convertToFeature": "Chuyển thành tính năng",
 			"convertToTask": "Chuyển thành công việc",
 			"typeError": "Không thể thay đổi loại công việc",
-			"convertBlocked": "Hãy chuyển các công việc ra khỏi tính năng này trước khi đổi nó thành công việc.",
 			"openFeature": "Mở tính năng {{title}}",
 			"inProject": "Tính năng trong dự án",
 			"convertToBug": "Convert to bug",
 			"typeBug": "Bug",
-			"convertLeafBlocked": "Move this feature's tasks out of it before changing its type."
+			"library": {
+				"active": "Active",
+				"archive": "Archive feature",
+				"archived": "Archived",
+				"empty": "No features found.",
+				"milestoneCount_other": "{{count}} milestones",
+				"restore": "Restore feature",
+				"saveError": "Could not update feature.",
+				"search": "Search features…",
+				"title": "Features",
+				"activityArchived": "archived this Feature",
+				"activityRestored": "restored this Feature"
+			}
 		},
 		"releases": {
 			"pageTitle": "{{name}} – Bản phát hành",
@@ -3410,7 +3442,8 @@
 			"counts": {
 				"features_other": "{{count}} tính năng",
 				"tasks_other": "{{count}} công việc",
-				"unfinished_other": "{{count}} chưa xong"
+				"unfinished_other": "{{count}} chưa xong",
+				"milestones_other": "{{count}} milestones"
 			},
 			"empty": {
 				"title": "Chưa có bản phát hành nào",
@@ -3513,7 +3546,8 @@
 				"title": "Progress over time",
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
-			}
+			},
+			"milestoneReleaseHint": "Milestone release"
 		},
 		"createMenu": {
 			"label": "Create work item",
@@ -3529,7 +3563,6 @@
 			"add": "New milestone",
 			"assignmentError": "Could not update milestone.",
 			"choose": "Choose milestone",
-			"convertBlocked": "Remove all tasks and milestones before converting this feature.",
 			"delete": "Delete milestone",
 			"deleteDescription": "Linked tasks and bugs remain in this feature and release. Only their milestone assignment is removed.",
 			"deleteTitle": "Delete milestone?",
@@ -3569,7 +3602,20 @@
 			"unavailableTasks": "Some selected work is no longer available. Remove it from the selection before saving.",
 			"noUnassignedTasks": "No Tasks or Bugs available to link.",
 			"clearEndDate": "Clear end date",
-			"endDatePlaceholder": "Set end date…"
+			"endDatePlaceholder": "Set end date…",
+			"activityCompleted": "completed milestone “{{title}}”",
+			"activityCreated": "created milestone “{{title}}”",
+			"activityDeleted": "deleted milestone “{{title}}”",
+			"activityReopened": "reopened milestone “{{title}}”",
+			"activityUpdated": "updated milestone “{{title}}”",
+			"activityUpdatedFields": "updated milestone “{{title}}”: {{fields}}",
+			"addLinkedWork": "Add work",
+			"lead": "Milestone Lead",
+			"noLinkedWork": "No linked Tasks or Bugs.",
+			"open": "Open milestone",
+			"planned": "Planned",
+			"planningSnapshot": "Previous planning: {{values}}",
+			"workProgress": "Linked work progress"
 		}
 	},
 	"invitations": {

@@ -1,3 +1,4 @@
+import { assertLeafPlanning } from "../assert-leaf-planning";
 import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
@@ -33,6 +34,7 @@ async function updateTaskDueDate({
       .where(eq(taskTable.id, id))
       .for("update");
     if (!locked) throw new HTTPException(404, { message: "Task not found" });
+    assertLeafPlanning(locked);
     existingTask = locked;
 
     const [task] = await tx

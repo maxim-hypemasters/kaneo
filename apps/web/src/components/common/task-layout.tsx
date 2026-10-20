@@ -1,3 +1,4 @@
+import { MilestoneDetailsSheet } from "@/components/task/milestones/milestone-details-sheet";
 import { ShortcutKeys } from "@/components/shortcuts/shortcut-keys";
 import { useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -127,6 +128,10 @@ export default function TaskLayout({
             {rail}
           </div>
         )}
+        <MilestoneDetailsSheet
+          projectId={projectId}
+          workspaceId={workspaceId}
+        />
       </Layout>
     </div>
   );

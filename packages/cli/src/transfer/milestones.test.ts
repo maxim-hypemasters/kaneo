@@ -39,6 +39,94 @@ const document = {
   ],
 };
 describe("versioned milestone transfers", () => {
+  it("preserves version 3 milestone planning, release references, Feature archive and immutable snapshots", () => {
+    const release = {
+      key: "r",
+      name: "Release",
+      startDate: "2026-10-20",
+      codeFreezeDate: "2026-10-25",
+      submissionDate: "2026-11-01",
+    };
+    const snapshot = {
+      createdAt: "2026-10-19T00:00:00Z",
+      projectId: "old-project",
+      status: "in-progress",
+      priority: "high",
+      releaseName: "Old release",
+    };
+    const value = {
+      ...document,
+      version: 3,
+      releases: [release],
+      tasks: [
+        {
+          ...document.tasks[0],
+          status: null,
+          archivedAt: "2026-10-20T00:00:00Z",
+          planningSnapshots: [snapshot],
+        },
+        { ...document.tasks[1], releaseKey: "r" },
+      ],
+      milestones: [
+        {
+          ...document.milestones[0],
+          leadId: "lead",
+          status: "in-progress",
+          priority: "urgent",
+          releaseKey: "r",
+        },
+      ],
+    };
+    const parsed = Result.getOrThrow(
+      parseTransferDocument(JSON.stringify(value), "knowledge.json"),
+    );
+    const plan = planImport(parsed.tasks, []);
+    expect(parsed.hierarchy).toMatchObject({
+      version: 3,
+      releases: [release],
+      milestones: value.milestones,
+    });
+    expect(plan.tasks[0]).toMatchObject({
+      status: null,
+      archivedAt: "2026-10-20T00:00:00Z",
+      planningSnapshots: [snapshot],
+    });
+    expect(plan.tasks[1]).toMatchObject({
+      releaseKey: "r",
+      featureKey: "f",
+      milestoneKey: "m",
+    });
+  });
+  it.each([
+    {
+      releases: [
+        {
+          key: "r",
+          name: "Invalid",
+          startDate: "2026-10-25",
+          codeFreezeDate: "2026-10-20",
+          submissionDate: "2026-11-01",
+        },
+      ],
+    },
+    { releases: "invalid" },
+    { milestones: [{ ...document.milestones[0], releaseKey: "missing" }] },
+    { tasks: [{ ...document.tasks[0], planningSnapshots: ["invalid"] }] },
+    { tasks: [{ ...document.tasks[0], planningSnapshots: [{ status: 3 }] }] },
+    { tasks: [{ ...document.tasks[0], archivedAt: "tomorrow" }] },
+  ])(
+    "rejects malformed version 3 planning metadata without dropping it",
+    (patch) => {
+      expect(
+        Result.isFailure(
+          parseTransferDocument(
+            JSON.stringify({ ...document, version: 3, ...patch }),
+            "bad.json",
+          ),
+        ),
+      ).toBe(true);
+    },
+  );
   it("retains metadata, portable hierarchy references and labels through status planning", () => {
     const parsed = Result.getOrThrow(
       parseTransferDocument(JSON.stringify(document), "export.json"),
@@ -108,7 +196,7 @@ describe("versioned milestone transfers", () => {
     ).toBe(true);
   });
   it.each([
-    { ...document, version: 3 },
+    { ...document, version: 4 },
     {
       ...document,
       milestones: [{ ...document.milestones[0], startDate: "2026-11-02" }],

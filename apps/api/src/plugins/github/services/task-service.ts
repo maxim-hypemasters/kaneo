@@ -67,7 +67,7 @@ export async function updateTaskStatus(
     where: eq(taskTable.id, taskId),
   });
 
-  if (!task) {
+  if (!task || task.type === "feature") {
     return { applied: false };
   }
 
@@ -107,11 +107,12 @@ export async function updateTaskStatus(
 export async function isTaskInFinalState(
   task: {
     projectId: string;
-    status: string;
+    status: string | null;
     columnId: string | null;
   },
   database: Pick<typeof db, "query"> = db,
 ): Promise<boolean> {
+  if (task.status === null) return false;
   if (task.columnId) {
     const columnById = await database.query.columnTable.findFirst({
       where: and(

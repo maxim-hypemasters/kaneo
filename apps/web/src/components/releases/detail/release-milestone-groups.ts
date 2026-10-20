@@ -1,7 +1,11 @@
 import type { ReleaseMilestone } from "@/fetchers/release/get-release-milestones";
 import type Task from "@/types/task";
 
-export type ReleaseMilestoneMetadata = ReleaseMilestone;
+export type ReleaseMilestoneMetadata = Pick<
+  ReleaseMilestone,
+  "id" | "featureId" | "title" | "position"
+> &
+  Partial<Omit<ReleaseMilestone, "id" | "featureId" | "title" | "position">>;
 
 export type ReleaseWorkProgress = {
   total: number;
@@ -23,10 +27,10 @@ export function getReleaseWorkProgress(
   for (const task of tasks) {
     if (task.status === "archived" || task.type === "feature") continue;
     progress.total += 1;
-    if (done.has(task.status)) {
+    if (done.has(task.status ?? "")) {
       progress.completed += 1;
       progress.started += 1;
-    } else if (started.has(task.status)) progress.started += 1;
+    } else if (started.has(task.status ?? "")) progress.started += 1;
   }
   return progress;
 }
@@ -35,6 +39,7 @@ export function getReleaseWorkProgress(
 export function groupReleaseMilestones(
   tasks: readonly Task[],
   milestones: readonly ReleaseMilestoneMetadata[] | undefined,
+  releaseId?: string,
 ): ReleaseMilestoneGroup[] | null {
   if (!milestones?.length) return null;
   const grouped = new Map<string, Task[]>();
@@ -56,7 +61,8 @@ export function groupReleaseMilestones(
     )
     .flatMap((milestone) => {
       const milestoneTasks = grouped.get(milestone.id)!;
-      return milestoneTasks.length > 0
+      return milestoneTasks.length > 0 ||
+        (releaseId !== undefined && milestone.releaseId === releaseId)
         ? [{ milestone, tasks: milestoneTasks }]
         : [];
     });

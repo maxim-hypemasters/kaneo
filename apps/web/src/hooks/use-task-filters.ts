@@ -114,6 +114,7 @@ export function useTaskFilters(
 
   const filterTasks = (tasks: Task[]): Task[] => {
     return tasks.filter((task) => {
+      if (task.type === "feature") return false;
       if (filters.type?.length) {
         const matches = filters.type.includes(task.type ?? "task");
         if (filters.negated?.includes("type") ? matches : !matches)
@@ -122,7 +123,7 @@ export function useTaskFilters(
       if (
         filters.status &&
         filters.status.length > 0 &&
-        !filters.status.includes(task.status)
+        !filters.status.includes(task.status ?? "")
       ) {
         return false;
       }

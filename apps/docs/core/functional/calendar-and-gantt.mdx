@@ -28,11 +28,9 @@ Dates and status answer different questions. Reaching a due date does not finish
 
 For unscheduled ideas, use the [backlog](/core/functional/backlog-planning). For daily status changes, use [Board or List](/core/functional/plan-and-execute-tasks).
 
-### Features
+### Milestones
 
-[Features](/core/functional/plan-and-execute-tasks#group-work-into-features) look different from tasks. A task is an outlined, lightly tinted bar; a feature is a solid summary bar with small brackets under its ends. It shows the features icon (stacked layers), the feature's name, and, once it has tasks, how many of them are done, such as **3/5**. In the task list, a feature's row has the same icon and shows the count after its dates.
-
-Without grouping, each feature is a row like any other task. Drag or resize its bar to change the feature's own dates, and click it to open the feature. Its tasks keep their dates.
+Milestones replace Feature scheduling. Each milestone uses its own lead and explicit start/end dates and shows its owning Feature beside the title, so duplicate names remain distinguishable. Click its bar or open action to edit it in the milestone panel. Dragging or resizing changes only that milestone; linked task dates stay unchanged. Features remain knowledge links and do not have scheduled bars.
 
 ### Dependencies
 
@@ -56,20 +54,16 @@ A **Releases** strip under the days at the top names the release at each line. S
 
 The lines follow the **Release** filter. Filter by a release to see only its tasks and its lines; with **is not**, the other releases' lines stay. Filtering for **No release** alone hides every line.
 
-### Group by assignee
+### Group by assignee / lead
 
-To see who is carrying which work, open **Display** and set **Group by** to **Assignee**. The timeline then shows one lane per project member, plus **Unassigned**, and your choice is remembered for next time. Each lane header shows the member's task count and a thin line spanning their earliest start to their latest due date. Click a header to collapse or expand its lane. If you filter by assignee, only the matching lanes are shown.
+Choose **Assignee / Lead** under **Display → Group by** for a lane per member, plus **Unassigned**. Tasks/Bugs use their assignees; milestones use their leads. Dragging a milestone to another member's lane changes its lead when you have assignment permission. Task reassignment works the same way. Moving sideways may also edit that item's dates. **Esc** cancels a drag. On touch screens, use the details panel.
 
-If you can assign tasks, drag a task bar into another member's lane to reassign it, or into **Unassigned** to clear its assignee. Scroll until the whole bar is on screen first. Moving the bar sideways at the same time also changes its dates. Press **Esc** to cancel a drag. On touch screens, open the task and change its assignee there instead.
+Milestone bars sit on the lead's header row, with Tasks and Bugs underneath. Milestones with overlapping dates use separate tracks in that header. Collapsing a lead hides the task rows while keeping the milestones visible.
 
-Grouped by assignee, features leave the task rows and appear on the lines of the members doing their tasks as summary bars with the features icon and the feature's name, each spanning that member's own tasks in the feature. Click a feature's bar to open it. Overlapping features stack up to three high. Each group of overlapping features that doesn't fit gets a **+N** chip that lists them, and the chip stays on screen while you scroll across their dates. A feature with none of its tasks on the chart keeps its own row. A feature that blocks or is blocked by another task keeps its row as well as its bars, so its dependency arrows and warnings still show.
+### Group by milestone
 
-### Group by feature
+Choose **Milestone** for one lane per milestone and **No milestone** for unassigned work. Milestones without dates keep a lane without a bar. Each lane identifies its owning Feature. The saved older **Feature** grouping preference becomes **Milestone**.
 
-To follow each feature's work, open **Display** and set **Group by** to **Feature**. The timeline then shows one lane per feature with its tasks under it, and a **No feature** lane last for tasks that aren't in one. Lanes are ordered by when their work starts; features with nothing on the chart follow, by name.
+Task filters apply to Tasks and Bugs; the separate entity controls show or hide milestones, Tasks and Bugs. Milestone planning remains visible independently of task-only filters. Calculated progress and manual status remain separate.
 
-Each lane header shows the feature's own bar and, under it, a thin line spanning its tasks' earliest start to their latest due date, so you can see whether the feature's dates still cover its work. Each task's bar starts with its assignee's avatar, so you can see who is doing what. A bar too short for the avatar leaves it out, and the task list still names the assignee. Drag or resize the feature's bar to change its own dates. Click the bar, or the open button next to the feature's name, to open the feature. Click the name to collapse or expand the lane's tasks; the feature's bar stays in view.
-
-Your search and filters still apply. Every feature that matches them gets a lane, even one with no dated tasks yet, so you can drag tasks into it. A feature without dates has no bar in its header until it gets a start or due date. A feature that's filtered out keeps its lane, without its own bar, while any of its tasks are on the chart.
-
-If you can edit tasks, drag a task bar into another feature's lane to move it into that feature, or into **No feature** to take it out of its feature. Its assignee doesn't change. As with assignee lanes, scroll until the whole bar is on screen first. Moving the bar sideways at the same time also changes its dates, and **Esc** cancels the drag. On touch screens, open the task and change its feature there instead.
+Dragging a Task/Bug into a milestone lane assigns it only when that milestone belongs to the task's existing Feature. Dropping into **No milestone** clears membership. A drag never changes the Feature implicitly. Milestone moves do not shift child dates. Dependencies remain between Tasks/Bugs; Feature relations do not produce milestone dependency arrows.

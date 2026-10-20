@@ -1,7 +1,14 @@
-import { and, asc, eq } from "drizzle-orm";
+import { recordMilestoneActivity } from "../../milestone/planning";
+import { publishMilestoneChange } from "../../milestone/write-milestones";
+import { and, asc, eq, ne, not, exists, or, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { releaseTable, taskTable } from "../../database/schema";
+import {
+  columnTable,
+  milestoneTable,
+  releaseTable,
+  taskTable,
+} from "../../database/schema";
 import { publishEvent } from "../../events";
 import { retryTransaction } from "../../utils/retry-transaction";
 import { lockRelease, setReleaseOf } from "../membership/assign-release";
@@ -30,7 +37,7 @@ async function moveUnfinishedItems(
 
   // Locking the items by id can deadlock with paths that lock a feature
   // before its tasks or a task before its feature; that runs it again.
-  const movedTaskIds = await retryTransaction(() =>
+  const { movedTaskIds, milestones } = await retryTransaction(() =>
     db.transaction(async (tx) => {
       const items = await tx
         .select({ id: taskTable.id })
@@ -54,13 +61,71 @@ async function moveUnfinishedItems(
         to: targetReleaseId,
         userId,
       });
-      return ids;
+      const milestones = await tx
+        .select({ milestone: milestoneTable })
+        .from(milestoneTable)
+        .innerJoin(taskTable, eq(taskTable.id, milestoneTable.featureId))
+        .where(
+          and(
+            eq(taskTable.projectId, projectId),
+            eq(taskTable.type, "feature"),
+            eq(milestoneTable.releaseId, id),
+            ne(milestoneTable.status, "archived"),
+            not(
+              exists(
+                tx
+                  .select({ id: columnTable.id })
+                  .from(columnTable)
+                  .where(
+                    and(
+                      eq(columnTable.projectId, projectId),
+                      eq(columnTable.isFinal, true),
+                      or(
+                        eq(columnTable.id, milestoneTable.columnId),
+                        and(
+                          isNull(milestoneTable.columnId),
+                          eq(columnTable.slug, milestoneTable.status),
+                        ),
+                      ),
+                    ),
+                  ),
+              ),
+            ),
+          ),
+        )
+        .orderBy(asc(milestoneTable.id))
+        .for("update", { of: milestoneTable });
+      for (const { milestone } of milestones) {
+        await tx
+          .update(milestoneTable)
+          .set({ releaseId: targetReleaseId })
+          .where(eq(milestoneTable.id, milestone.id));
+        await recordMilestoneActivity(
+          tx,
+          milestone.featureId,
+          milestone,
+          "milestone_updated",
+          userId,
+          { releaseId: { from: id, to: targetReleaseId } },
+        );
+      }
+      return {
+        movedTaskIds: ids,
+        milestones: milestones.map((row) => row.milestone),
+      };
     }),
   );
 
   await publishReleaseChange({ projectId, taskIds: movedTaskIds, userId });
   await publishEvent("release.changed", { projectId });
-  return { movedTaskIds };
+  for (const milestone of milestones)
+    await publishMilestoneChange(
+      projectId,
+      milestone.featureId,
+      milestone.id,
+      userId,
+    );
+  return { movedTaskIds, movedMilestoneIds: milestones.map((row) => row.id) };
 }
 
 export default moveUnfinishedItems;

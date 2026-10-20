@@ -45,6 +45,7 @@ describe("runReleaseDelete", () => {
       deleted: true,
       tasks: 3,
       features: 1,
+      milestones: 0,
     });
   });
 

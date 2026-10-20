@@ -78,6 +78,25 @@ export function renderReleaseList(ui: Ui, view: ReleaseListView): string[] {
               ]
             : [],
       },
+      ...(view.releases.some(
+        (release) => release.progress?.milestones !== undefined,
+      )
+        ? [
+            {
+              header: "Milestones",
+              align: "right" as const,
+              optional: true,
+              cell: (release: ReleaseJson): Cell =>
+                release.progress?.milestones
+                  ? [
+                      text(
+                        `${release.progress.milestones.completed}/${release.progress.milestones.total}`,
+                      ),
+                    ]
+                  : [],
+            },
+          ]
+        : []),
       {
         header: "Unfinished",
         align: "right",

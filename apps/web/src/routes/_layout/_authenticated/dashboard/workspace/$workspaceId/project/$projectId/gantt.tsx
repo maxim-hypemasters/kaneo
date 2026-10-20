@@ -23,7 +23,12 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import ProjectLayout from "@/components/common/project-layout";
-import { GanttFeatureLaneHeader } from "@/components/gantt/gantt-feature-lane-header";
+import { GanttMilestoneLaneHeader } from "@/components/gantt/gantt-milestone-lane-header";
+import { GanttItemCount } from "@/components/gantt/gantt-item-count";
+import { GanttEntityFilterControl } from "@/components/gantt/gantt-entity-filter-control";
+import { scheduledMilestones } from "@/components/gantt/scheduled-milestones";
+import { useGetProjectMilestones } from "@/hooks/queries/milestone/use-get-project-milestones";
+import { openMilestoneDetails } from "@/store/milestone-details";
 import { GanttLaneGroup } from "@/components/gantt/gantt-lane-group";
 import { GanttLaneHeader } from "@/components/gantt/gantt-lane-header";
 import { GanttPeriodControls } from "@/components/gantt/gantt-period-controls";
@@ -35,6 +40,7 @@ import type {
   GanttLaneDrag,
   GanttLaneDragState,
   GanttLaneTarget,
+  GanttMilestoneRecord,
   GanttTaskEdit,
   ScheduledTask,
 } from "@/components/gantt/gantt-types";
@@ -42,8 +48,7 @@ import {
   groupGanttTasks,
   laneKeyForAssignee,
 } from "@/components/gantt/group-gantt-tasks";
-import { groupGanttTasksByFeature } from "@/components/gantt/group-gantt-tasks-by-feature";
-import { groupedRowTasks } from "@/components/gantt/grouped-row-tasks";
+import { groupGanttTasksByMilestone } from "@/components/gantt/group-gantt-tasks-by-milestone";
 import {
   blockingDependencies,
   type GanttSpan,
@@ -82,7 +87,6 @@ import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-projec
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
-import { getFeatureIndex } from "@/lib/features/feature-index";
 import { releaseSummaries } from "@/lib/releases/release-summaries";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import { useUserPreferencesStore } from "@/store/user-preferences";
@@ -94,6 +98,8 @@ type GanttSearchParams = {
 
 const NO_COLLAPSED_LANES: ReadonlySet<string> = new Set();
 const NO_RELEASES: ReleaseSummary[] = [];
+const NO_MILESTONES: GanttMilestoneRecord[] = [];
+const ALL_ENTITIES = ["milestone", "task", "bug"];
 
 type TaskAssignee = { name: string | null; image: string | null };
 
@@ -127,7 +133,10 @@ function RouteComponent() {
     useGetReleases(projectId, { select: releaseSummaries });
   // The opening span also covers current releases, so it waits for them too
   // (not for a failed load: the chart then opens on the tasks alone).
-  const rangeReady = tasksLoaded && !releasesLoading;
+  const milestoneQuery = useGetProjectMilestones(projectId);
+  const milestones = milestoneQuery.data ?? NO_MILESTONES;
+  const rangeReady =
+    tasksLoaded && !releasesLoading && !milestoneQuery.isPending;
   const releaseToday = useReleaseToday();
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const groupByPreference = useUserPreferencesStore(
@@ -136,12 +145,18 @@ function RouteComponent() {
   // Anything but an explicit grouping (including a stale stored value)
   // renders the flat timeline.
   const groupByAssignee = groupByPreference === "assignee";
-  const groupByFeature = groupByPreference === "feature";
+  const groupByMilestone = groupByPreference === "milestone";
+  const entityPreference = useUserPreferencesStore(
+    (state) => state.ganttEntities,
+  );
+  const shownEntities = Array.isArray(entityPreference)
+    ? entityPreference
+    : ALL_ENTITIES;
   const { data: projectMembers, isSuccess: membersLoaded } =
     useGetProjectMembers({
       workspaceId,
       projectId,
-      enabled: groupByAssignee,
+      enabled: groupByAssignee || milestones.length > 0,
     });
   const { canAssignTasks, canUpdateTasks } = useWorkspacePermission();
   const goToView = useGoToProjectView({
@@ -250,8 +265,14 @@ function RouteComponent() {
     [project],
   );
 
-  const parsedTasks = useMemo(() => {
+  const parsedLeafTasks = useMemo(() => {
     return allTasks
+      .filter(
+        (
+          task,
+        ): task is typeof task & { status: string; type?: "task" | "bug" } =>
+          task.type !== "feature" && task.status !== null,
+      )
       .map((task) => {
         const parsedStart =
           parseTaskDate(task.startDate) ?? parseTaskDate(task.dueDate);
@@ -276,15 +297,26 @@ function RouteComponent() {
       );
   }, [allTasks]);
 
+  const parsedTasks = useMemo<ScheduledTask[]>(
+    () =>
+      [
+        ...parsedLeafTasks,
+        ...scheduledMilestones(milestones, projectMembers ?? []),
+      ].sort((a, b) => a.scheduleStart.getTime() - b.scheduleStart.getTime()),
+    [parsedLeafTasks, milestones, projectMembers],
+  );
   const { pending: pendingEdits, commit } = useGanttTaskCommits(parsedTasks);
   const { data: relations } = useGetProjectTaskRelations({
     projectId,
     relationType: "blocks",
   });
-  const dependencies = useMemo(
-    () => blockingDependencies(relations ?? []),
-    [relations],
-  );
+  const dependencies = useMemo(() => {
+    const leaves = new Set(parsedLeafTasks.map((task) => task.id));
+    return blockingDependencies(relations ?? []).filter(
+      (relation) =>
+        leaves.has(relation.blockerId) && leaves.has(relation.blockedId),
+    );
+  }, [relations, parsedLeafTasks]);
   // A date change that breaks a dependency waits here (shown in place, not
   // saved) while the user decides what to do about it. Only the edit itself
   // is kept, with the dependencies it broke: what still breaks and what would
@@ -295,10 +327,10 @@ function RouteComponent() {
     edit: GanttTaskEdit;
     assignee: TaskAssignee;
     // A plain move or resize takes whoever is assigned, and whichever
-    // feature the task is in, when it's saved, so a reassignment or a move
-    // to another feature made meanwhile isn't undone.
+    // milestone the task is in, when it's saved, so a reassignment or a move
+    // to another milestone made meanwhile isn't undone.
     changesAssignee: boolean;
-    changesFeature: boolean;
+    changesMilestone: boolean;
     brokenIds: ReadonlySet<string>;
   } | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
@@ -320,14 +352,15 @@ function RouteComponent() {
   const heldTask = heldEdit ? savedTasksById.get(heldEdit.taskId) : undefined;
   const heldDraft = useMemo(() => {
     if (!heldEdit || !heldTask) return null;
-    const { edit, changesAssignee, changesFeature } = heldEdit;
+    const { edit, changesAssignee, changesMilestone } = heldEdit;
     return {
       edit: {
         ...edit,
         userId: changesAssignee ? edit.userId : heldTask.userId || null,
-        featureId: changesFeature
-          ? edit.featureId
-          : (heldTask.featureId ?? null),
+        featureId: heldTask.featureId ?? null,
+        milestoneId: changesMilestone
+          ? edit.milestoneId
+          : (heldTask.milestoneId ?? null),
       },
       assignee: changesAssignee
         ? heldEdit.assignee
@@ -375,9 +408,7 @@ function RouteComponent() {
     );
   }, [savedTasks, heldEdit, heldDraft]);
   const spans = useMemo(() => spansOf(displayedTasks), [displayedTasks]);
-  // Bars whose drag moves an arrow; only they report drags, so other drags
-  // never re-render the chart. Grouped by assignee, a feature among them
-  // keeps its row.
+  // Only task bars participating in a dependency report their live drag.
   const dependentTaskIds = useMemo(
     () =>
       new Set(
@@ -423,16 +454,18 @@ function RouteComponent() {
   );
   const scheduledTasks = useMemo(() => {
     const visibleIds = new Set(visibleTasks.map((task) => task.id));
-    return displayedTasks.filter((task) => visibleIds.has(task.id));
-  }, [displayedTasks, visibleTasks]);
+    return displayedTasks.filter((task) =>
+      task.entityKind === "milestone"
+        ? shownEntities.includes("milestone")
+        : visibleIds.has(task.id) &&
+          shownEntities.includes(task.type === "bug" ? "bug" : "task"),
+    );
+  }, [displayedTasks, visibleTasks, shownEntities]);
 
   const unassignedLabel = t("tasks:assignee.unassigned");
   const unknownLabel = t("common:people.unknown");
-  const unknownFeatureLabel = t("tasks:features.unknown");
-  const noFeatureLabel = t("tasks:gantt.featureLanes.noFeature");
-  // From the whole board (planned and archived included), so a slice keeps
-  // its title while the feature itself is filtered out or undated.
-  const boardFeatures = getFeatureIndex(project).features;
+  const unknownMilestoneLabel = t("tasks:gantt.milestones.unknown");
+  const noMilestoneLabel = t("tasks:milestones.none");
   const assigneeFilterValues = view.filters.filters.assignee;
   const assigneeFilterNegated =
     view.filters.filters.negated?.includes("assignee") ?? false;
@@ -448,9 +481,6 @@ function RouteComponent() {
             },
             unassignedLabel,
             unknownLabel,
-            features: boardFeatures,
-            unknownFeatureLabel,
-            featureRowIds: dependentTaskIds,
           })
         : null,
     [
@@ -462,47 +492,46 @@ function RouteComponent() {
       assigneeFilterNegated,
       unassignedLabel,
       unknownLabel,
-      boardFeatures,
-      unknownFeatureLabel,
-      dependentTaskIds,
     ],
   );
-  const featureLanes = useMemo(
+  const milestoneLanes = useMemo(
     () =>
-      groupByFeature
-        ? groupGanttTasksByFeature(scheduledTasks, {
-            listedFeatureIds: visibleTasks
-              .filter((task) => task.type === "feature")
-              .map((task) => task.id),
-            features: boardFeatures,
-            noFeatureLabel,
-            unknownFeatureLabel,
-          })
+      groupByMilestone
+        ? groupGanttTasksByMilestone(
+            scheduledTasks,
+            milestones,
+            noMilestoneLabel,
+            unknownMilestoneLabel,
+          ).filter(
+            (lane) =>
+              shownEntities.includes("milestone") || lane.tasks.length > 0,
+          )
         : null,
     [
-      groupByFeature,
+      groupByMilestone,
       scheduledTasks,
-      visibleTasks,
-      boardFeatures,
-      noFeatureLabel,
-      unknownFeatureLabel,
+      milestones,
+      shownEntities,
+      noMilestoneLabel,
+      unknownMilestoneLabel,
     ],
   );
-  // Grouped by assignee, features with tasks on the chart leave the rows for
-  // their members' lane headers, unless they're in a dependency (its arrows
-  // and early-start warning need their row); the count and empty state
-  // follow what's drawn. Grouped by feature, every task on the chart is
-  // drawn once: as a row, or a feature as the bar in its lane's header.
-  const rowCount = assigneeLanes
-    ? assigneeLanes.reduce((count, lane) => count + lane.tasks.length, 0)
+  const rowCount = milestoneLanes
+    ? milestoneLanes.reduce(
+        (count, lane) =>
+          count +
+          lane.tasks.length +
+          (shownEntities.includes("milestone") &&
+          lane.milestoneId &&
+          milestones.some((milestone) => milestone.id === lane.milestoneId)
+            ? 1
+            : 0),
+        0,
+      )
     : scheduledTasks.length;
-  const totalRowCount = useMemo(
-    () =>
-      groupByAssignee
-        ? groupedRowTasks(parsedTasks, dependentTaskIds).length
-        : parsedTasks.length,
-    [groupByAssignee, parsedTasks, dependentTaskIds],
-  );
+  const totalRowCount = groupByMilestone
+    ? parsedLeafTasks.length + milestones.length
+    : parsedTasks.length;
   const assigneeLanesByKey = useMemo(
     () => new Map((assigneeLanes ?? []).map((lane) => [lane.key, lane])),
     [assigneeLanes],
@@ -518,51 +547,40 @@ function RouteComponent() {
         droppable: lane.droppable,
       });
     }
-    for (const lane of featureLanes ?? []) {
+    for (const lane of milestoneLanes ?? []) {
       targets.set(lane.key, {
-        kind: "feature",
+        kind: "milestone",
         key: lane.key,
+        milestoneId: lane.milestoneId,
         featureId: lane.featureId,
         name: lane.name,
         droppable: lane.droppable,
       });
     }
     return targets;
-  }, [assigneeLanes, featureLanes]);
+  }, [assigneeLanes, milestoneLanes]);
   const resolveLane = useCallback(
     (laneKey: string) => laneTargets.get(laneKey) ?? null,
     [laneTargets],
   );
   const visibleRowIds = (laneKey: string, tasks: readonly ScheduledTask[]) =>
-    collapsedLaneKeys.has(laneKey)
-      ? ""
-      : tasks.map((task) => task.id).join(",");
-  // Which rows are on screen and in what order, how many feature tracks tall
-  // each assignee lane header is, and which feature lane headers draw their
-  // feature's bar; the dependency lines measure them again whenever this
-  // changes.
-  const renderedRowsKey = assigneeLanes
-    ? assigneeLanes
-        .map(
-          (lane) =>
-            `${lane.key}:${lane.featureTrackCount}:${visibleRowIds(lane.key, lane.tasks)}`,
-        )
-        .join("|")
-    : featureLanes
-      ? featureLanes
-          .map(
-            (lane) =>
-              `${lane.key}:${lane.feature ? "bar" : ""}:${visibleRowIds(lane.key, lane.tasks)}`,
-          )
-          .join("|")
-      : scheduledTasks.map((task) => task.id).join(",");
-  // Dragging a bar into another lane reassigns it, or moves it to another
-  // feature; each needs its own permission.
+    tasks
+      .flatMap((task) =>
+        task.entityKind === "milestone"
+          ? [
+              `${task.id}:${task.scheduleStart.getTime()}:${task.scheduleEnd.getTime()}`,
+            ]
+          : collapsedLaneKeys.has(laneKey)
+            ? []
+            : [task.id],
+      )
+      .join(",");
+  // Assignee/lead changes and milestone membership use their own permissions.
   const laneDragKind: GanttLaneDrag["kind"] | null =
     groupByAssignee && canAssignTasks()
       ? "assignee"
-      : groupByFeature && canUpdateTasks()
-        ? "feature"
+      : groupByMilestone && canUpdateTasks()
+        ? "milestone"
         : null;
   const laneDragFor = (laneKey: string): GanttLaneDrag | undefined =>
     laneDragKind
@@ -600,7 +618,7 @@ function RouteComponent() {
         edit,
         assignee,
         changesAssignee: !keepsAssignee,
-        changesFeature: changes.feature,
+        changesMilestone: changes.milestone,
         brokenIds: new Set(broken.map((dependency) => dependency.id)),
       });
       return;
@@ -616,7 +634,7 @@ function RouteComponent() {
     for (const move of heldPlan?.moves ?? []) {
       const related = savedTasksById.get(move.taskId);
       if (!related) continue;
-      // Only once the moved task's dates have saved (not its feature move):
+      // Only once the moved task's dates have saved (not its milestone move):
       // if they fail, the tasks moved to make room for it stay where they
       // were.
       commit(
@@ -626,6 +644,7 @@ function RouteComponent() {
           end: move.to.end,
           userId: related.userId || null,
           featureId: related.featureId ?? null,
+          milestoneId: related.milestoneId ?? null,
         },
         {
           name: related.assigneeName,
@@ -675,11 +694,28 @@ function RouteComponent() {
     tasks: parsedTasks,
     extraSpans: openingSpans,
     ready: rangeReady,
+    showEmptyTimeline: groupByMilestone && milestones.length > 0,
     weekStartsOn,
     dayColumnWidthRem,
     railWidthRem,
     scrollElement,
   });
+
+  // Dependency geometry follows the visible rows and expanded lanes.
+  const renderedRowsKey =
+    `${timeline?.rangeStart.getTime()}:${timeline?.days.length}:${isMobile}:` +
+    (assigneeLanes
+      ? assigneeLanes
+          .map((lane) => `${lane.key}:${visibleRowIds(lane.key, lane.tasks)}`)
+          .join("|")
+      : milestoneLanes
+        ? milestoneLanes
+            .map(
+              (lane) =>
+                `${lane.key}:${lane.milestone ? "bar" : ""}:${visibleRowIds(lane.key, lane.tasks)}`,
+            )
+            .join("|")
+        : scheduledTasks.map((task) => task.id).join(","));
 
   const renderTaskRow = (
     task: ScheduledTask,
@@ -706,7 +742,11 @@ function RouteComponent() {
         showAssignee={showAssignee}
         showBarAssignee={showBarAssignee}
         laneDrag={laneDrag}
-        onOpenTask={() => openTask(task.id)}
+        onOpenTask={() =>
+          task.entityKind === "milestone"
+            ? openMilestoneDetails(projectId, task.milestone.id)
+            : openTask(task.id)
+        }
         onCommit={(edit) => commitTaskEdit(task, edit)}
         onDragChange={dragChangeFor(task.id)}
         dependencyNote={dependencyNote(task.id)}
@@ -816,6 +856,7 @@ function RouteComponent() {
       toolbar={
         <ProjectToolbar
           view={view}
+          filterLabel={t("tasks:gantt.milestones.taskFilters")}
           display={
             <>
               <DisplaySection>
@@ -829,12 +870,19 @@ function RouteComponent() {
               <DisplaySection>
                 <GanttGroupByControl />
                 <WeekStartControl />
+                <GanttEntityFilterControl />
               </DisplaySection>
             </>
           }
         />
       }
-      summary={<TaskCount shown={rowCount} total={totalRowCount} />}
+      summary={
+        milestones.length ? (
+          <GanttItemCount shown={rowCount} total={totalRowCount} />
+        ) : (
+          <TaskCount shown={rowCount} total={totalRowCount} />
+        )
+      }
       filterBar={
         <ActiveFiltersBar
           subjects={view.subjects}
@@ -847,6 +895,29 @@ function RouteComponent() {
         hideAppName
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
+        {milestoneQuery.isPending && (
+          <p
+            role="status"
+            className="border-b border-border px-4 py-2 text-sm text-muted-foreground"
+          >
+            {t("tasks:milestones.loading")}
+          </p>
+        )}
+        {milestoneQuery.isError && (
+          <div
+            role="status"
+            className="flex items-center gap-2 border-b border-border px-4 py-2 text-sm text-muted-foreground"
+          >
+            {t("tasks:milestones.loadError")}
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={() => void milestoneQuery.refetch()}
+            >
+              {t("tasks:releases.retry")}
+            </Button>
+          </div>
+        )}
         <div className="border-b border-border/80 px-3 py-2 sm:px-4">
           <h1 className="sr-only">{t("tasks:gantt.title")}</h1>
           <div className="flex flex-wrap items-center gap-2">
@@ -892,7 +963,9 @@ function RouteComponent() {
           </div>
         </div>
 
-        {!timeline || parsedTasks.length === 0 ? (
+        {!timeline ||
+        (parsedTasks.length === 0 &&
+          !milestoneLanes?.some((lane) => lane.milestoneId)) ? (
           <div className="flex flex-1 items-center justify-center px-6">
             <div className="max-w-sm text-center">
               <h2 className="text-sm font-semibold text-foreground">
@@ -1063,8 +1136,9 @@ function RouteComponent() {
                   {assigneeLanes
                     ? assigneeLanes.map((lane) => {
                         const collapsed =
-                          lane.tasks.length > 0 &&
-                          collapsedLaneKeys.has(lane.key);
+                          lane.tasks.some(
+                            (task) => task.entityKind !== "milestone",
+                          ) && collapsedLaneKeys.has(lane.key);
                         const labelId = `${laneLabelIdPrefix}-${lane.key}`;
                         const laneDrag = laneDragFor(lane.key);
                         return (
@@ -1081,29 +1155,38 @@ function RouteComponent() {
                               onToggle={() => toggleLane(lane.key)}
                               timeline={timeline}
                               showTaskRail={showTaskRail}
-                              railWidthRem={railWidthRem}
+                              pixelsPerDay={pixelsPerDay}
+                              isMobile={isMobile}
+                              laneDrag={laneDrag}
+                              onOpenMilestone={(id) =>
+                                openMilestoneDetails(projectId, id)
+                              }
+                              onCommitMilestone={commitTaskEdit}
                               rowGridTemplateColumns={rowGridTemplateColumns}
-                              onOpenFeature={openTask}
                             />
                             {collapsed
                               ? null
-                              : lane.tasks.map((task) =>
-                                  renderTaskRow(task, {
-                                    showAssignee: false,
-                                    laneDrag,
-                                  }),
-                                )}
+                              : lane.tasks
+                                  .filter(
+                                    (task) => task.entityKind !== "milestone",
+                                  )
+                                  .map((task) =>
+                                    renderTaskRow(task, {
+                                      showAssignee: false,
+                                      laneDrag,
+                                    }),
+                                  )}
                           </GanttLaneGroup>
                         );
                       })
-                    : featureLanes
-                      ? featureLanes.map((lane) => {
+                    : milestoneLanes
+                      ? milestoneLanes.map((lane) => {
                           const collapsed =
                             lane.tasks.length > 0 &&
                             collapsedLaneKeys.has(lane.key);
                           const labelId = `${laneLabelIdPrefix}-${lane.key}`;
                           const laneDrag = laneDragFor(lane.key);
-                          const { feature } = lane;
+                          const { milestone } = lane;
                           return (
                             <GanttLaneGroup
                               key={lane.key}
@@ -1111,7 +1194,7 @@ function RouteComponent() {
                               labelId={labelId}
                               dropTarget={dropTargetLaneKey === lane.key}
                             >
-                              <GanttFeatureLaneHeader
+                              <GanttMilestoneLaneHeader
                                 lane={lane}
                                 labelId={labelId}
                                 collapsed={collapsed}
@@ -1121,20 +1204,13 @@ function RouteComponent() {
                                 isMobile={isMobile}
                                 showTaskRail={showTaskRail}
                                 rowGridTemplateColumns={rowGridTemplateColumns}
-                                onOpenFeature={openTask}
-                                onCommitFeature={(edit) => {
-                                  if (feature) commitTaskEdit(feature, edit);
+                                onOpenMilestone={(id) =>
+                                  openMilestoneDetails(projectId, id)
+                                }
+                                onCommitMilestone={(edit) => {
+                                  if (milestone)
+                                    commitTaskEdit(milestone, edit);
                                 }}
-                                onFeatureDragChange={
-                                  feature
-                                    ? dragChangeFor(feature.id)
-                                    : undefined
-                                }
-                                featureDependencyNote={
-                                  feature
-                                    ? dependencyNote(feature.id)
-                                    : undefined
-                                }
                               />
                               {collapsed
                                 ? null

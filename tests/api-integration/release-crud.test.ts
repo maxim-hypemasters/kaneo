@@ -85,6 +85,7 @@ describe("release CRUD", () => {
     const progress = {
       tasks: { total: 0, completed: 0 },
       features: { total: 0, completed: 0 },
+      milestones: { total: 0, completed: 0 },
       unfinished: 0,
     };
     const read = await ctx.app.request(`/api/release/${release.id}`);
@@ -341,16 +342,26 @@ describe("release progress", () => {
     await insertTask(ctx.project.id, { ...inRelease, status: "done" });
     await insertTask(ctx.project.id, { ...inRelease, status: "archived" });
     await insertTask(ctx.project.id, { ...inRelease, status: "planned" });
-    await insertTask(ctx.project.id, {
-      ...inRelease,
-      type: "feature",
-      status: "in-progress",
-    });
-    await insertTask(ctx.project.id, {
-      ...inRelease,
-      type: "feature",
-      status: "done",
-    });
+    const feature = await insertTask(ctx.project.id, { type: "feature" });
+    const secondFeature = await insertTask(ctx.project.id, { type: "feature" });
+    await db.insert(schema.milestoneTable).values([
+      {
+        featureId: feature.id,
+        title: "Active",
+        status: "in-progress",
+        columnId: ctx.columns.inProgress.id,
+        releaseId: release.id,
+        position: 0,
+      },
+      {
+        featureId: secondFeature.id,
+        title: "Complete",
+        status: "done",
+        columnId: ctx.columns.done.id,
+        releaseId: release.id,
+        position: 0,
+      },
+    ]);
     await insertTask(ctx.project.id, { releaseId: other.id, status: "done" });
     await insertTask(ctx.project.id, { status: "to-do" });
 
@@ -359,7 +370,8 @@ describe("release progress", () => {
         .progress;
     expect(await read()).toEqual({
       tasks: { total: 4, completed: 1 },
-      features: { total: 2, completed: 1 },
+      features: { total: 2, completed: 0 },
+      milestones: { total: 2, completed: 1 },
       unfinished: 3,
     });
 
@@ -370,7 +382,8 @@ describe("release progress", () => {
       .where(eq(schema.columnTable.id, ctx.columns.inProgress.id));
     expect(await read()).toEqual({
       tasks: { total: 4, completed: 1 },
-      features: { total: 2, completed: 2 },
+      features: { total: 2, completed: 0 },
+      milestones: { total: 2, completed: 2 },
       unfinished: 2,
     });
 
@@ -387,7 +400,8 @@ describe("release progress", () => {
         "2.4",
         {
           tasks: { total: 4, completed: 1 },
-          features: { total: 2, completed: 2 },
+          features: { total: 2, completed: 0 },
+          milestones: { total: 2, completed: 2 },
           unfinished: 2,
         },
       ],
@@ -396,6 +410,7 @@ describe("release progress", () => {
         {
           tasks: { total: 1, completed: 1 },
           features: { total: 0, completed: 0 },
+          milestones: { total: 0, completed: 0 },
           unfinished: 0,
         },
       ],
@@ -411,9 +426,12 @@ describe("deleting what holds releases", () => {
     });
     const release = await insertRelease(project.id);
     const feature = await insertTask(project.id, { type: "feature" });
-    await db.execute(
-      sql`update task set release_id = ${release.id} where id = ${feature.id}`,
-    );
+    await db.insert(schema.milestoneTable).values({
+      featureId: feature.id,
+      title: "Delivery",
+      releaseId: release.id,
+      position: 0,
+    });
     const task = await insertTask(project.id, { featureId: feature.id });
     await db.execute(
       sql`update task set release_id = ${release.id} where id = ${task.id}`,

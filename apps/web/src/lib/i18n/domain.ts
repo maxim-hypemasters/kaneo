@@ -7,7 +7,11 @@ export function getStatusLabel(status: string) {
   });
 }
 
-export function getStatusDisplayLabel(status: string, columnName?: string) {
+export function getStatusDisplayLabel(
+  status: string | null,
+  columnName?: string,
+) {
+  if (status === null) return "";
   const defaultName = DEFAULT_COLUMNS.find(
     (column) => column.id === status,
   )?.name;

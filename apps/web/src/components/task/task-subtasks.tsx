@@ -41,7 +41,7 @@ type TaskSubtasksProps = {
   // The feature's project, which its tasks share.
   projectId: string;
   workspaceId: string;
-  featureStatus: string;
+  featureStatus: string | null;
   featureReleaseId?: string | null;
   milestoneFilter?: MilestoneFilter;
 };
@@ -51,8 +51,6 @@ export default function TaskSubtasks({
   featureId,
   projectId,
   workspaceId,
-  featureStatus,
-  featureReleaseId,
   milestoneFilter = "all",
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
@@ -66,7 +64,12 @@ export default function TaskSubtasks({
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { tasks: allTasks, ready } = useFeatureTasks(featureId, projectId);
+  const {
+    tasks: allTasks,
+    ready,
+    isError: tasksError,
+    refetch: retryTasks,
+  } = useFeatureTasks(featureId, projectId);
   const subtasks = allTasks.filter(
     ({ task }) =>
       milestoneFilter === "all" ||
@@ -89,8 +92,7 @@ export default function TaskSubtasks({
   const canCreate = canCreateTasks();
 
   const todoSlug = columns.find((c) => !c.isFinal)?.slug;
-  const canCreateSubtask =
-    featureStatus === "planned" || (!isLoadingColumns && Boolean(todoSlug));
+  const canCreateSubtask = !isLoadingColumns && Boolean(todoSlug);
 
   const completedCount = allTasks.filter((s) => s.isCompleted).length;
   const totalCount = subtasks.length;
@@ -254,7 +256,7 @@ export default function TaskSubtasks({
     if (!canCreate || !canEdit || !newTitle.trim() || createTask.isPending) {
       return;
     }
-    const initialStatus = featureStatus === "planned" ? "planned" : todoSlug;
+    const initialStatus = todoSlug ?? "planned";
     if (!initialStatus) return;
 
     try {
@@ -460,7 +462,15 @@ export default function TaskSubtasks({
           </div>
         )}
 
-        {!isAdding && ready && totalCount === 0 && (
+        {tasksError && (
+          <div role="alert" className="flex items-center gap-2 px-2 text-xs">
+            <span>{t("common:error.title")}</span>
+            <Button variant="ghost" size="xs" onClick={() => void retryTasks()}>
+              {t("common:error.tryAgain")}
+            </Button>
+          </div>
+        )}
+        {!tasksError && !isAdding && ready && totalCount === 0 && (
           <p className="px-2 py-1 text-muted-foreground text-xs">
             {t(
               milestoneFilter === "all"
@@ -476,9 +486,7 @@ export default function TaskSubtasks({
           open
           onClose={() => setIsCreatingFeature(false)}
           projectId={projectId}
-          status={featureStatus === "planned" ? "planned" : todoSlug}
           type="feature"
-          releaseId={featureReleaseId ?? undefined}
         />
       )}
 

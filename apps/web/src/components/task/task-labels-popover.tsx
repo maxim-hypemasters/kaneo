@@ -104,8 +104,15 @@ function TaskLabelsMenu({ task, workspaceId, onClose }: TaskLabelsMenuProps) {
         label.name.toLowerCase() === name.toLowerCase(),
     );
 
-  const refreshTasks = () =>
-    queryClient.invalidateQueries({ queryKey: ["tasks", task.projectId] });
+  const refreshTasks = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["tasks", task.projectId],
+    });
+    if (task.type === "feature")
+      await queryClient.invalidateQueries({
+        queryKey: ["feature-library", task.projectId],
+      });
+  };
 
   const toggleLabel = async (labelId: string) => {
     const workspaceLabel = workspaceLabels.find(

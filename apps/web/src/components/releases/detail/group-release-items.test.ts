@@ -35,7 +35,7 @@ it("groups tasks under their feature, then the tasks without one", () => {
   });
 
   expect(groups.features).toEqual([
-    { feature: checkout, inRelease: true, tasks: [pay], tasksElsewhere: 0 },
+    { feature: checkout, inRelease: false, tasks: [pay], tasksElsewhere: 0 },
   ]);
   expect(groups.standalone).toEqual([loose]);
 });
@@ -59,7 +59,7 @@ it("shows a feature outside the release for its tasks in it, counting the rest",
   ]);
 });
 
-it("puts unfinished first, in-release features first and done features last", () => {
+it("puts unfinished Tasks first and sorts knowledge groups without Feature workflow semantics", () => {
   const shipped = item("shipped", { type: "feature", status: "done" });
   const other = item("other", { type: "feature", releaseId: "r2" });
   const live = item("live", { type: "feature" });
@@ -79,7 +79,6 @@ it("puts unfinished first, in-release features first and done features last", ()
   expect(groups.features.map((entry) => entry.feature.id)).toEqual([
     "live",
     "other",
-    "shipped",
   ]);
   expect(groups.features[0].tasks).toEqual([openTask, doneTask]);
   expect(groups.standalone).toEqual([loosePlanned, looseDone]);
@@ -94,4 +93,37 @@ it("leaves archived items out", () => {
     ],
   });
   expect(groups).toEqual({ features: [], standalone: [] });
+});
+
+it("resolves knowledge Features outside the board and includes explicitly planned empty milestones", () => {
+  const full = {
+    columns: [{ tasks: [] }],
+    plannedTasks: [],
+    archivedTasks: [],
+  };
+  const index = getFeatureIndex(full, [
+    {
+      id: "feature",
+      title: "Knowledge",
+      number: 1,
+      projectId: "p",
+      status: null,
+      archivedAt: null,
+    },
+  ]);
+  const groups = groupReleaseItems(full, "r1", index, done, [
+    {
+      id: "m",
+      featureId: "feature",
+      title: "Delivery",
+      position: 0,
+      releaseId: "r1",
+    },
+  ]);
+  expect(groups.features).toHaveLength(1);
+  expect(groups.features[0].feature).toMatchObject({
+    id: "feature",
+    status: null,
+  });
+  expect(groups.features[0].tasks).toEqual([]);
 });

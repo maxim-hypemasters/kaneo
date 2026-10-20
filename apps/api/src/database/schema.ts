@@ -644,12 +644,13 @@ export const taskTable = pgTable(
     }),
     title: text("title").notNull(),
     description: text("description"),
-    status: text("status").notNull().default("to-do"),
+    status: text("status").default("to-do"),
     columnId: text("column_id").references(() => columnTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
     }),
-    priority: text("priority").default("low").notNull(),
+    priority: text("priority").default("low"),
+    archivedAt: timestamp("archived_at", { mode: "date" }),
     startDate: timestamp("start_date", { mode: "date" }),
     dueDate: timestamp("due_date", { mode: "date" }),
     // A feature groups tasks and bugs of its own project and can't belong to one.
@@ -685,6 +686,10 @@ export const taskTable = pgTable(
     check(
       "task_feature_shape_check",
       sql`${table.type} in ('task', 'bug', 'feature') and (${table.type} <> 'feature' or ${table.featureId} is null) and ${table.featureId} <> ${table.id}`,
+    ),
+    check(
+      "task_planning_shape_check",
+      sql`(${table.type} = 'feature' and ${table.status} is null and ${table.priority} is null and ${table.columnId} is null and ${table.userId} is null and ${table.startDate} is null and ${table.dueDate} is null and ${table.releaseId} is null) or (${table.type} in ('task', 'bug') and ${table.status} is not null and ${table.priority} is not null and ${table.archivedAt} is null)`,
     ),
     index("task_featureId_idx").on(table.featureId),
     index("task_milestoneId_idx").on(table.milestoneId),
@@ -728,6 +733,20 @@ export const milestoneTable = pgTable(
     description: text("description"),
     startDate: date("start_date", { mode: "string" }),
     endDate: date("end_date", { mode: "string" }),
+    leadId: text("lead_id").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    status: text("status").notNull().default("planned"),
+    columnId: text("column_id").references(() => columnTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    priority: text("priority").notNull().default("no-priority"),
+    releaseId: text("release_id").references(() => releaseTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
     position: integer("position").notNull().default(0),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(utcNow)
@@ -747,6 +766,7 @@ export const milestoneTable = pgTable(
       table.position,
       table.id,
     ),
+    index("milestone_releaseId_idx").on(table.releaseId),
   ],
 );
 

@@ -18,12 +18,12 @@ import { assertTaskPosition } from "./next-task-position";
 async function updateTask(
   id: string,
   title: string,
-  status: string,
+  status: string | null | undefined,
   startDate: Date | undefined,
   dueDate: Date | undefined,
   projectId: string,
   description: string | undefined,
-  priority: string,
+  priority: string | null | undefined,
   position: number,
   userId?: string,
   currentUserId?: string,
@@ -32,6 +32,7 @@ async function updateTask(
 
   let [existingTask] = await db
     .select({
+      type: taskTable.type,
       id: taskTable.id,
       title: taskTable.title,
       priority: taskTable.priority,
@@ -59,7 +60,21 @@ async function updateTask(
     });
   }
 
-  await assertValidTaskStatus(status, projectId);
+  const feature = existingTask.type === "feature";
+  if (
+    feature &&
+    [status, priority, userId, startDate, dueDate].some(
+      (value) => value != null,
+    )
+  )
+    throw new HTTPException(400, {
+      message: "Features do not have planning fields",
+    });
+  if (!feature && (!status || !priority))
+    throw new HTTPException(400, {
+      message: "Tasks and Bugs require status and priority",
+    });
+  if (status) await assertValidTaskStatus(status, projectId);
 
   const normalizedUserId = userId?.trim() || undefined;
 
@@ -74,7 +89,7 @@ async function updateTask(
   const column = await db.query.columnTable.findFirst({
     where: and(
       eq(columnTable.projectId, projectId),
-      eq(columnTable.slug, status),
+      eq(columnTable.slug, status ?? "planned"),
     ),
   });
 
@@ -90,6 +105,7 @@ async function updateTask(
       throw new HTTPException(404, { message: "Project not found" });
     const [locked] = await tx
       .select({
+        type: taskTable.type,
         id: taskTable.id,
         title: taskTable.title,
         priority: taskTable.priority,
@@ -119,13 +135,13 @@ async function updateTask(
       .update(taskTable)
       .set({
         title,
-        status,
-        columnId: column?.id ?? null,
+        status: feature ? null : status,
+        columnId: feature ? null : (column?.id ?? null),
         startDate: startDate || null,
         dueDate: dueDate || null,
         projectId,
         description,
-        priority,
+        priority: feature ? null : priority,
         position,
         userId: normalizedUserId ?? null,
       })

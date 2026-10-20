@@ -3,7 +3,11 @@ import { MAX_TASK_POSITION } from "./controllers/next-task-position";
 import { TICKET_ID_PATTERN } from "./ticket-id";
 import { VALID_PRIORITIES } from "./validate-task-fields";
 import { TASK_TYPES } from "./task-type";
-import { transferMilestoneSchema } from "./transfers/schema";
+import {
+  planningSnapshotSchema,
+  transferReleaseSchema,
+  transferMilestoneSchema,
+} from "./transfers/schema";
 
 export const taskTypeBody = z.enum(TASK_TYPES);
 
@@ -71,7 +75,7 @@ export const listTasksQuery = z.object({
   dueAfter: z.string().optional(),
   releaseId: z.string().min(1).optional().openapi({
     description:
-      "Only tasks and features in this release, or none for those in no release.",
+      "Only Tasks and Bugs in this release, or none for those in no release.",
   }),
 });
 
@@ -97,8 +101,11 @@ export const createTaskBody = z.object({
   description: z.string(),
   startDate: z.string().optional(),
   dueDate: z.string().optional(),
-  priority,
-  status: z.string().openapi({ description: "The target column's slug." }),
+  priority: priority.optional(),
+  status: z
+    .string()
+    .optional()
+    .openapi({ description: "The target column's slug." }),
   userId: z.string().optional().openapi({ description: "Assignee, if any." }),
   draftAssetIds: z.array(z.string()).max(100).optional(),
   customFields: z
@@ -114,7 +121,7 @@ export const createTaskBody = z.object({
   }),
   releaseId: z.string().min(1).nullable().optional().openapi({
     description:
-      "A release of the project, or null for none. Omitted, the task starts in its feature's release, or in none.",
+      "A release of the project, or null for none. Omitted, the task starts in its milestone's release, or in none.",
   }),
 });
 
@@ -126,8 +133,8 @@ export const updateTaskBody = z.object({
   }),
   startDate: z.string().optional(),
   dueDate: z.string().optional(),
-  priority,
-  status: z.string(),
+  priority: priority.nullable().optional(),
+  status: z.string().nullable().optional(),
   projectId: z.string(),
   position: z.number().int().min(0).max(MAX_TASK_POSITION),
   userId: z.string().optional(),
@@ -141,16 +148,23 @@ export const moveTaskBody = z.object({
 });
 
 export const importTasksBody = z.object({
-  version: z.literal(2).optional().openapi({
-    description:
-      "Version 2 imports portable Feature/milestone hierarchy atomically. Omit for legacy per-task imports.",
-  }),
+  version: z
+    .union([z.literal(2), z.literal(3)])
+    .optional()
+    .openapi({
+      description:
+        "Version 2 imports portable Feature/milestone hierarchy atomically. Omit for legacy per-task imports.",
+    }),
   milestones: z.array(transferMilestoneSchema).optional(),
+  releases: z.array(transferReleaseSchema).optional(),
   tasks: z.array(
     z.object({
       key: z.string().min(1).optional(),
       featureKey: z.string().min(1).nullable().optional(),
       milestoneKey: z.string().min(1).nullable().optional(),
+      releaseKey: z.string().min(1).nullable().optional(),
+      archivedAt: z.string().datetime().nullable().optional(),
+      planningSnapshots: z.array(planningSnapshotSchema).optional(),
       labels: z
         .array(
           z.object({
@@ -164,8 +178,8 @@ export const importTasksBody = z.object({
         .optional()
         .openapi({ description: "Defaults to task for older exports." }),
       description: z.string().optional(),
-      status: z.string(),
-      priority: z.string().optional(),
+      status: z.string().nullable().optional(),
+      priority: z.string().nullable().optional(),
       startDate: z.string().nullable().optional(),
       dueDate: z.string().nullable().optional(),
       userId: z.string().nullable().optional(),
@@ -196,9 +210,9 @@ export const updateTaskReleaseBody = z.object({
   }),
 });
 export const updateTypeBody = z.object({
-  type: taskTypeBody.openapi({
+  type: z.enum(["task", "bug"]).openapi({
     description:
-      "Tasks and bugs keep their feature when switching between those types. Making either a feature removes its parent. A feature can become a task or bug only when it has no members.",
+      "Tasks and bugs keep identity and membership. Features cannot be converted.",
   }),
 });
 export const updateDescriptionBody = z.object({ description: z.string() });

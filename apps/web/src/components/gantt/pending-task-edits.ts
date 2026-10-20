@@ -26,7 +26,11 @@ export function classifyEdit(task: ScheduledTask, edit: GanttTaskEdit) {
       !sameDay(task.scheduleStart, edit.start) ||
       !sameDay(task.scheduleEnd, edit.end),
     assignee: (task.userId || null) !== edit.userId,
-    feature: (task.featureId ?? null) !== edit.featureId,
+    milestone:
+      (task.milestoneId ?? null) !==
+      (edit.milestoneId === undefined
+        ? (task.milestoneId ?? null)
+        : edit.milestoneId),
   };
 }
 
@@ -44,7 +48,10 @@ export function applyPendingEdit(
     assigneeId: pending.userId,
     assigneeName: pending.assigneeName,
     assigneeImage: pending.assigneeImage,
-    featureId: pending.featureId,
+    milestoneId:
+      pending.milestoneId === undefined
+        ? task.milestoneId
+        : pending.milestoneId,
   };
 }
 
@@ -56,6 +63,6 @@ export function pendingEditLanded(
     sameDay(task.scheduleStart, pending.start) &&
     sameDay(task.scheduleEnd, pending.end) &&
     (task.userId || null) === pending.userId &&
-    (task.featureId ?? null) === pending.featureId
+    (task.milestoneId ?? null) === (pending.milestoneId ?? null)
   );
 }

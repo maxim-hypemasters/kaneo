@@ -43,6 +43,9 @@ vi.mock("@/hooks/mutations/task/use-update-task-release", () => ({
 vi.mock("@/hooks/queries/release/use-get-releases", () => ({
   useGetReleases: () => ({ ...mocks.releases, refetch: mocks.refetch }),
 }));
+vi.mock("@/hooks/queries/milestone/use-get-milestones", () => ({
+  useGetMilestones: () => ({ data: [{ id: "m", releaseId: "2.5" }] }),
+}));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({ canUpdateTasks: mocks.canUpdateTasks }),
 }));
@@ -71,7 +74,7 @@ const releases = [
 
 type PopoverTask = Pick<
   Task,
-  "id" | "projectId" | "type" | "featureId" | "releaseId"
+  "id" | "projectId" | "type" | "featureId" | "milestoneId" | "releaseId"
 >;
 
 const plainTask: PopoverTask = {
@@ -129,7 +132,7 @@ describe("TaskReleasePopover", () => {
     ]);
   });
 
-  it("marks the release of the task's feature", async () => {
+  it("marks the release of the task's milestone", async () => {
     queryClient.setQueryData(["tasks", "project-1"], {
       columns: [
         {
@@ -140,11 +143,11 @@ describe("TaskReleasePopover", () => {
         },
       ],
     });
-    renderPopover({ ...plainTask, featureId: "checkout" });
+    renderPopover({ ...plainTask, featureId: "checkout", milestoneId: "m" });
 
     expect(
       await screen.findByRole("option", {
-        name: /2\.5tasks:releases.featureReleaseHint/,
+        name: /2\.5tasks:releases.milestoneReleaseHint/,
       }),
     ).toBeInTheDocument();
   });
@@ -198,23 +201,11 @@ describe("TaskReleasePopover", () => {
     expect(mocks.updateRelease).not.toHaveBeenCalled();
   });
 
-  it("says a feature's tasks follow it, and how many moved", async () => {
-    mocks.updateRelease.mockResolvedValue({ movedTaskIds: ["a", "b"] });
+  it("keeps the release picker closed for knowledge Features", () => {
     renderPopover({ ...plainTask, type: "feature" });
-
-    expect(
-      await screen.findByText("tasks:releases.followNote"),
-    ).toBeInTheDocument();
-    await pick(/^2\.4/);
-
-    await waitFor(() =>
-      expect(mocks.toastSuccess).toHaveBeenCalledWith(
-        "tasks:releases.movedWithFeature:2",
-        expect.anything(),
-      ),
-    );
+    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    expect(mocks.updateRelease).not.toHaveBeenCalled();
   });
-
   it("reports a rejected change", async () => {
     mocks.updateRelease.mockRejectedValue(new Error("Release not found"));
     renderPopover();

@@ -1,5 +1,9 @@
 import { SourceHttpError } from "../http.js";
-import type { ImportedProject, ReadProjectOptions } from "../types.js";
+import type {
+  ImportedProject,
+  ReadProjectOptions,
+  ImportedPlanningSnapshot,
+} from "../types.js";
 import { orderTasks } from "./board.js";
 import type { KaneoClient, KaneoMember } from "./client.js";
 import { collectLabels, mapColumns, mapRelations, mapTask } from "./mapping.js";
@@ -41,6 +45,30 @@ export async function readKaneoProject(
     ? await client.getProjectDescription(projectId)
     : project.description;
 
+  if (client.listFeatures) {
+    try {
+      const known = new Set(tasks.map((task) => task.id));
+      tasks.push(
+        ...(await client.listFeatures(projectId)).filter(
+          (task) => !known.has(task.id),
+        ),
+      );
+    } catch (error) {
+      if (!(error instanceof SourceHttpError) || error.status !== 404)
+        throw error;
+    }
+  }
+  let releases: ImportedProject["releases"];
+  if (client.listReleases) {
+    try {
+      releases = (await client.listReleases(projectId)).map(
+        ({ id, ...release }) => ({ key: id, ...release }),
+      );
+    } catch (error) {
+      if (!(error instanceof SourceHttpError) || error.status !== 404)
+        throw error;
+    }
+  }
   const ordered = orderTasks(columns, tasks);
   const details = await readTaskDetails(client, ordered, {
     includeComments: options.includeComments,
@@ -57,7 +85,22 @@ export async function readKaneoProject(
       comments: details.comments.get(task.id),
     }),
   );
-  const milestones = await readMilestones(client, ordered);
+  for (const feature of importedTasks.filter(
+    (task) => task.type === "feature",
+  )) {
+    const result = await readOptional(() => client.listActivities(feature.key));
+    if (result.status === "ok")
+      feature.planningSnapshots = result.value
+        .filter((row) => row.type === "feature_planning_snapshot")
+        .map(
+          (row) =>
+            ({
+              ...row.eventData,
+              createdAt: row.createdAt,
+            }) as ImportedPlanningSnapshot,
+        );
+  }
+  const milestones = await readMilestones(client, ordered, members);
   const { relations, outsideProject } = mapRelations(
     details.relations,
     new Set(ordered.map((task) => task.id)),
@@ -83,6 +126,7 @@ export async function readKaneoProject(
     tasks: importedTasks,
     relations,
     ...(milestones.length ? { milestones } : {}),
+    ...(releases?.length ? { releases } : {}),
     warnings,
   };
 }

@@ -216,47 +216,26 @@ it("hides duplication without task-create permission", () => {
 });
 
 describe("feature actions", () => {
-  it("converts a task into a feature", () => {
+  it("offers only leaf conversion for Tasks", () => {
     renderTask(task);
+    expect(screen.queryByText("tasks:features.convertToFeature")).toBeNull();
     fireEvent.click(
-      screen.getByRole("button", { name: "tasks:features.convertToFeature" }),
+      screen.getByRole("button", { name: "tasks:features.convertToBug" }),
     );
-    expect(updateTaskType).toHaveBeenCalledWith({ task, type: "feature" });
-    expect(screen.queryByText("tasks:features.convertToTask")).toBeNull();
-    expect(screen.queryByText("tasks:features.remove")).toBeNull();
+    expect(updateTaskType).toHaveBeenCalledWith({ task, type: "bug" });
   });
-
-  it("converts an empty feature into a task", () => {
-    const feature = {
-      ...task,
-      type: "feature" as const,
-      subtaskCounts: { completed: 0, total: 0 },
-    };
-    renderTask(feature);
-    const convert = screen.getByRole("button", {
-      name: "tasks:features.convertToTask",
-    });
-    expect(convert).toBeEnabled();
-    fireEvent.click(convert);
-    expect(updateTaskType).toHaveBeenCalledWith({
-      task: feature,
-      type: "task",
-    });
-  });
-
-  it("explains why a feature with tasks can't become a task", () => {
-    renderTask({
-      ...task,
-      type: "feature",
-      subtaskCounts: { completed: 1, total: 3 },
-    });
-    const convert = screen.getByRole("button", {
-      name: /tasks:features.convertToTask/,
-    });
-    expect(convert).toBeDisabled();
-    expect(convert).toHaveTextContent("tasks:features.convertLeafBlocked");
-  });
-
+  it.each([0, 3])(
+    "keeps Feature identity immutable with %s children",
+    (total) => {
+      renderTask({
+        ...task,
+        type: "feature",
+        subtaskCounts: { completed: 0, total },
+      });
+      expect(screen.queryByText("tasks:features.convertToTask")).toBeNull();
+      expect(screen.queryByText("tasks:features.convertToBug")).toBeNull();
+    },
+  );
   it("takes a task out of its feature", () => {
     const member = { ...task, featureId: "feature-1" };
     renderTask(member);
@@ -273,7 +252,7 @@ describe("feature actions", () => {
     updateTaskType.mockRejectedValueOnce(new Error("409"));
     renderTask(task);
     fireEvent.click(
-      screen.getByRole("button", { name: "tasks:features.convertToFeature" }),
+      screen.getByRole("button", { name: "tasks:features.convertToBug" }),
     );
     await vi.waitFor(() =>
       expect(toastError).toHaveBeenCalledWith("tasks:features.typeError"),

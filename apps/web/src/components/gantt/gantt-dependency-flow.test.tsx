@@ -1,3 +1,18 @@
+vi.mock("@/hooks/queries/milestone/use-get-project-milestones", () => {
+  const data: never[] = [];
+  return {
+    useGetProjectMilestones: () => ({
+      data,
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    }),
+  };
+});
+vi.mock("@tanstack/react-query", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-query")>()),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
 import {
   cleanup,
   fireEvent,
@@ -674,175 +689,20 @@ describe("Gantt dependencies", () => {
     expect(bar("Design")).not.toHaveAccessibleDescription();
   });
 
-  it("keeps a feature in a dependency as a row when grouped, with its arrow and warning", () => {
-    m.groupBy = "assignee";
-    // Design blocks the Checkout feature but ends after it starts. Checkout's
-    // one task also puts it on the Unassigned line as a slice.
+  it("ignores knowledge Feature relations while retaining leaf dependencies", () => {
     setTasks(
-      task("Design", "2026-09-01", "2026-09-04"),
-      task("Checkout", "2026-09-03", "2026-09-06", { type: "feature" }),
-      task("Cart", "2026-09-04", "2026-09-05", { featureId: "Checkout" }),
-      task("Search", "2026-09-07", "2026-09-08", { type: "feature" }),
-      task("Query", "2026-09-07", "2026-09-08", { featureId: "Search" }),
-    );
-    m.relations = [blocks("Design", "Checkout")];
-    const { container } = show();
-
-    expect(
-      container.querySelector('[data-gantt-row="Checkout"]'),
-    ).not.toBeNull();
-    expect(
-      screen.getByRole("button", {
-        name: "tasks:gantt.featureSliceAria:Checkout",
-      }),
-    ).toBeInTheDocument();
-    // A feature outside any dependency still leaves the rows.
-    expect(container.querySelector('[data-gantt-row="Search"]')).toBeNull();
-    expect(linePaths()).toHaveLength(1);
-    expect(linePaths()[0]).toHaveAttribute("data-broken");
-    expect(
-      screen.getByRole("button", {
-        name: "tasks:gantt.featureBar.ariaLabelGrouped:Checkout",
-      }),
-    ).toHaveAccessibleDescription(
-      "tasks:gantt.dependencies.startsBeforeBlocker:Design",
-    );
-  });
-
-  it("attaches a feature's arrows to its lane header when grouped by feature", () => {
-    m.groupBy = "feature";
-    // Design (no feature) blocks the Checkout feature but ends after it
-    // starts.
-    setTasks(
-      task("Design", "2026-09-01", "2026-09-04"),
-      task("Checkout", "2026-09-03", "2026-09-06", { type: "feature" }),
-      task("Cart", "2026-09-04", "2026-09-05", { featureId: "Checkout" }),
-    );
-    m.relations = [blocks("Design", "Checkout")];
-    const { container } = show();
-
-    const header = container.querySelector<HTMLElement>(
-      '[data-gantt-lane="feature:Checkout"] [data-gantt-row="Checkout"]',
-    );
-    if (!header) throw new Error("feature header row not rendered");
-    expect(
-      container.querySelectorAll('[data-gantt-row="Checkout"]'),
-    ).toHaveLength(1);
-    expect(linePaths()).toHaveLength(1);
-    expect(linePaths()[0]).toHaveAttribute("data-broken");
-    expect(
-      within(header).getByRole("button", {
-        name: "tasks:gantt.featureBar.ariaLabel:Checkout",
-      }),
-    ).toHaveAccessibleDescription(
-      "tasks:gantt.dependencies.startsBeforeBlocker:Design",
-    );
-  });
-
-  it("drops a task's arrow while its feature lane is collapsed", () => {
-    m.groupBy = "feature";
-    setTasks(
+      task("Knowledge", "2026-09-01", "2026-09-06", { type: "feature" }),
       task("Design", "2026-09-01", "2026-09-03"),
-      task("Checkout", "2026-09-03", "2026-09-08", { type: "feature" }),
-      task("Cart", "2026-09-04", "2026-09-06", { featureId: "Checkout" }),
+      task("Build", "2026-09-03", "2026-09-05"),
     );
-    m.relations = [blocks("Design", "Cart")];
+    m.relations = [blocks("Knowledge", "Build"), blocks("Design", "Build")];
     const { container } = show();
-    const checkoutLane = container.querySelector<HTMLElement>(
-      '[data-gantt-lane="feature:Checkout"]',
-    );
-    if (!checkoutLane) throw new Error("Checkout lane not rendered");
-    const toggle = within(checkoutLane).getByRole("button", {
-      name: "Checkout tasks:gantt.laneTaskCount:1",
-    });
-    expect(linePaths()).toHaveLength(1);
-
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(linePaths()).toHaveLength(0);
-
-    fireEvent.click(toggle);
-    expect(linePaths()).toHaveLength(1);
-  });
-
-  it("asks before a feature's own bar breaks a dependency when grouped by feature", () => {
-    m.groupBy = "feature";
-    // The Checkout feature blocks Ship, which starts the day it ends.
-    setTasks(
-      task("Checkout", "2026-09-01", "2026-09-03", { type: "feature" }),
-      task("Cart", "2026-09-01", "2026-09-02", { featureId: "Checkout" }),
-      task("Ship", "2026-09-03", "2026-09-05"),
-    );
-    m.relations = [blocks("Checkout", "Ship")];
-    show();
-
+    expect(container.querySelector('[data-gantt-row="Knowledge"]')).toBeNull();
+    expect(screen.queryByRole("button", { name: /featureBar/ })).toBeNull();
     dragBy(
-      screen.getByRole("button", {
-        name: "tasks:gantt.featureBar.ariaLabel:Checkout",
-      }),
+      screen.getByRole("button", { name: "tasks:gantt.taskAriaLabel:Design" }),
       88,
     );
-
-    expect(m.update).not.toHaveBeenCalled();
-    fireEvent.click(
-      within(screen.getByRole("alertdialog")).getByRole("button", {
-        name: "tasks:gantt.dependencies.moveOnly",
-      }),
-    );
-    expect(m.update).toHaveBeenCalledTimes(1);
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "Checkout",
-        startDate: isoDay(9, 3),
-        dueDate: isoDay(9, 5),
-      }),
-    );
-  });
-
-  it("still plans around a feature drawn on its members' lines", async () => {
-    m.groupBy = "assignee";
-    // Design blocks the Checkout feature, whose one task also draws it on
-    // the Unassigned line.
-    setTasks(
-      task("Design", "2026-09-01", "2026-09-03"),
-      task("Checkout", "2026-09-03", "2026-09-06", { type: "feature" }),
-      task("Cart", "2026-09-04", "2026-09-05", { featureId: "Checkout" }),
-    );
-    m.relations = [blocks("Design", "Checkout")];
-    show();
-
-    expect(
-      screen.getByRole("button", {
-        name: "tasks:gantt.featureSliceAria:Checkout",
-      }),
-    ).toBeInTheDocument();
-
-    dragBy(
-      screen.getByRole("button", {
-        name: "tasks:gantt.taskAriaLabelGrouped:Design",
-      }),
-      88,
-    );
-
-    const dialog = screen.getByRole("alertdialog");
-    expect(within(dialog).getByText("Checkout")).toBeInTheDocument();
-    fireEvent.click(
-      within(dialog).getByRole("button", {
-        name: "tasks:gantt.dependencies.moveRelated:1",
-      }),
-    );
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "Design", startDate: isoDay(9, 3) }),
-    );
-    // The feature keeps its four days and starts the day Design now ends.
-    await waitFor(() =>
-      expect(m.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: "Checkout",
-          startDate: isoDay(9, 5),
-          dueDate: isoDay(9, 8),
-        }),
-      ),
-    );
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
   });
 });

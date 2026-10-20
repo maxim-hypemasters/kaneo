@@ -1,9 +1,4 @@
-import { getReleaseIndex } from "@/lib/releases/release-index";
-import {
-  finalStatuses,
-  type ReleaseItemCounts,
-  releaseProgress,
-} from "@/lib/releases/release-progress";
+import { type ReleaseItemCounts } from "@/lib/releases/release-progress";
 import type { Release } from "@/types/release";
 import type Task from "@/types/task";
 
@@ -26,7 +21,9 @@ export function countsFromProgress(
     tasks: progress.tasks.total,
     completedTasks: progress.tasks.completed,
     features: progress.features.total,
-    completedFeatures: progress.features.completed,
+    completedFeatures: 0,
+    milestones: progress.milestones?.total ?? 0,
+    completedMilestones: progress.milestones?.completed ?? 0,
     unfinished: progress.unfinished,
   };
 }
@@ -43,37 +40,16 @@ export function liveBoard<T>(
   return board.dataUpdatedAt >= releasesUpdatedAt ? board.data : undefined;
 }
 
-// Each release's counts: from the board when there is one, so changes made in
-// this window show at once, otherwise from the API. Archived items count in
-// the totals, as the API counts them.
+// The board excludes Milestones, so complete release totals come from the API.
 export function countReleaseItems(
   releases: ReadonlyArray<Pick<Release, "id" | "progress">>,
   board: CountsBoard | undefined,
 ): ReadonlyMap<string, ReleaseItemCounts> {
-  const counts = new Map<string, ReleaseItemCounts>();
-  if (!board) {
-    for (const release of releases) {
-      counts.set(release.id, countsFromProgress(release.progress));
-    }
-    return counts;
-  }
-  const index = getReleaseIndex(board);
-  const done = finalStatuses(board.columns);
-  const archived = new Map<string, Task[]>();
-  for (const task of board.archivedTasks) {
-    if (!task.releaseId) continue;
-    const items = archived.get(task.releaseId);
-    if (items) items.push(task);
-    else archived.set(task.releaseId, [task]);
-  }
-  for (const release of releases) {
-    counts.set(
+  void board;
+  return new Map(
+    releases.map((release) => [
       release.id,
-      releaseProgress(
-        [...(index.get(release.id) ?? []), ...(archived.get(release.id) ?? [])],
-        done,
-      ),
-    );
-  }
-  return counts;
+      countsFromProgress(release.progress),
+    ]),
+  );
 }

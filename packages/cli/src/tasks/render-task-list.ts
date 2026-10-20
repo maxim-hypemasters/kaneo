@@ -40,7 +40,9 @@ export function renderTaskList(ui: Ui, view: TaskListView): string[] {
     }))
     .filter((group) => group.tasks.length > 0);
   const known = new Set(view.columns.map((column) => column.slug));
-  const orphans = view.tasks.filter((task) => !known.has(task.status));
+  const orphans = view.tasks.filter(
+    (task) => task.status === null || !known.has(task.status),
+  );
   if (orphans.length > 0) {
     groups.push({
       column: { slug: "other", name: "Other", isFinal: false },
@@ -86,7 +88,12 @@ export function renderTaskList(ui: Ui, view: TaskListView): string[] {
         header: "Due",
         optional: true,
         cell: (task): Cell =>
-          dueSegments(ui, task.dueDate, finalSlugs.has(task.status), view.now),
+          dueSegments(
+            ui,
+            task.dueDate,
+            task.status !== null && finalSlugs.has(task.status),
+            view.now,
+          ),
       },
     ],
     { width: ui.caps.columns, indent: 4, gap: 2 },

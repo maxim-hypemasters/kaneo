@@ -100,6 +100,28 @@ export function mapTask(
 
   return {
     key: task.id,
+    ...(task.type === "feature" &&
+    [
+      task.status,
+      task.priority,
+      task.userId,
+      task.startDate,
+      task.dueDate,
+      task.releaseId,
+    ].some((value) => value != null)
+      ? {
+          legacyPlanning: {
+            status: task.status,
+            priority: task.priority,
+            userId: task.userId,
+            startDate: task.startDate,
+            dueDate: task.dueDate,
+            releaseId: task.releaseId,
+          },
+        }
+      : {}),
+    ...(task.releaseId === undefined ? {} : { releaseKey: task.releaseId }),
+    ...(task.archivedAt === undefined ? {} : { archivedAt: task.archivedAt }),
     ...(task.type === "task" || task.type === "bug" || task.type === "feature"
       ? { type: task.type }
       : {}),
@@ -108,7 +130,8 @@ export function mapTask(
       ? { milestoneKey: task.milestoneId }
       : {}),
     ...(typeof task.number === "number" ? { number: task.number } : {}),
-    columnKey: !archived && columnKeys.has(task.status) ? task.status : null,
+    columnKey:
+      !archived && columnKeys.has(task.status ?? "") ? task.status : null,
     ...(archived ? { archived: true } : {}),
     title: task.title,
     description: extras.description ?? task.description ?? "",

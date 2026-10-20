@@ -4,7 +4,8 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AssigneeAvatar } from "@/components/task/properties/assignee-avatar";
 import { cn } from "@/lib/cn";
-import { GanttFeatureBarLabel } from "./gantt-feature-bar-label";
+import { canDropIntoMilestone } from "./group-gantt-tasks-by-milestone";
+import { GanttMilestoneBarLabel } from "./gantt-milestone-bar-label";
 import { GanttLaneHint } from "./gantt-lane-hint";
 import { laneKeyAtPoint } from "./gantt-lane-dom";
 import { GanttResizeHandle } from "./gantt-resize-handle";
@@ -46,7 +47,7 @@ type GanttTaskBarProps = {
   // Read out with the bar, e.g. that it starts before a blocker ends.
   dependencyNote?: string;
   // Starts a task's bar with its assignee's avatar, for lanes that don't
-  // say who does the work (grouped by feature).
+  // say who does the work (grouped by milestone).
   showAssignee?: boolean;
 };
 
@@ -140,6 +141,7 @@ export function GanttTaskBar({
       end,
       userId: current.userId || null,
       featureId: current.featureId ?? null,
+      milestoneId: current.milestoneId ?? null,
     });
   };
 
@@ -256,13 +258,12 @@ export function GanttTaskBar({
   };
 
   const laneHintLabel = (target: GanttLaneTarget) => {
-    if (target.kind === "feature") {
-      if (!target.droppable) {
-        return t("tasks:gantt.featureLanes.cannotMove", { name: target.name });
-      }
-      return target.featureId
-        ? t("tasks:gantt.featureLanes.moveTo", { name: target.name })
-        : t("tasks:gantt.featureLanes.remove");
+    if (target.kind === "milestone") {
+      if (!target.droppable)
+        return t("tasks:gantt.milestones.cannotMove", { name: target.name });
+      return target.milestoneId
+        ? t("tasks:gantt.milestones.moveTo", { name: target.name })
+        : t("tasks:gantt.milestones.remove");
     }
     if (!target.droppable) {
       return t("tasks:gantt.cannotAssign", { name: target.name });
@@ -336,7 +337,14 @@ export function GanttTaskBar({
       if (!key || key === lane.laneKey) return null;
       // Lanes can change mid-drag (a realtime update, members loading), so
       // resolve against the latest ones.
-      return (latestRef.current.laneDrag ?? lane).resolveLane(key);
+      const target = (latestRef.current.laneDrag ?? lane).resolveLane(key);
+      if (target?.kind === "milestone") {
+        return {
+          ...target,
+          droppable: canDropIntoMilestone(latestRef.current.task, target),
+        };
+      }
+      return target;
     };
 
     const syncLane = () => {
@@ -439,10 +447,11 @@ export function GanttTaskBar({
           dropLane?.kind === "assignee"
             ? dropLane.userId
             : current.userId || null,
-        featureId:
-          dropLane?.kind === "feature"
-            ? dropLane.featureId
-            : (current.featureId ?? null),
+        featureId: current.featureId ?? null,
+        milestoneId:
+          dropLane?.kind === "milestone"
+            ? dropLane.milestoneId
+            : (current.milestoneId ?? null),
       });
     };
 
@@ -476,23 +485,23 @@ export function GanttTaskBar({
     isMobile && barWidthPx < MIN_INLINE_LABEL_PX && lineEnd <= trackCount;
   const showResizeHandles = !isMobile || barWidthPx >= MIN_TOUCH_RESIZABLE_PX;
 
-  const isFeature = task.type === "feature";
-  const counts = isFeature ? task.subtaskCounts : undefined;
+  const isMilestone = task.entityKind === "milestone";
+  const counts = isMilestone ? task.subtaskCounts : undefined;
   const progress =
     counts && counts.total > 0
       ? {
-          text: t("tasks:gantt.featureBar.progress", {
+          text: t("tasks:gantt.milestones.bar.progress", {
             completed: counts.completed,
             total: counts.total,
           }),
-          aria: t("tasks:gantt.featureBar.progressAria", {
+          aria: t("tasks:gantt.milestones.bar.progressAria", {
             completed: counts.completed,
             count: counts.total,
           }),
         }
       : null;
   const assigneeNote =
-    showAssignee && !isFeature
+    showAssignee && !isMilestone
       ? task.userId
         ? t("tasks:gantt.featureLanes.assignee", {
             name: task.assigneeName?.trim() || t("common:people.unknown"),
@@ -515,12 +524,12 @@ export function GanttTaskBar({
       .filter(Boolean)
       .join(" ") || undefined;
 
-  const ariaLabel = isFeature
+  const ariaLabel = isMilestone
     ? laneDrag?.kind === "assignee"
-      ? t("tasks:gantt.featureBar.ariaLabelGrouped", { title: task.title })
-      : t("tasks:gantt.featureBar.ariaLabel", { title: task.title })
-    : laneDrag?.kind === "feature"
-      ? t("tasks:gantt.featureLanes.taskAriaLabel", { title: task.title })
+      ? t("tasks:gantt.milestones.bar.ariaLabelGrouped", { title: task.title })
+      : t("tasks:gantt.milestones.bar.ariaLabel", { title: task.title })
+    : laneDrag?.kind === "milestone"
+      ? t("tasks:gantt.milestones.taskAriaLabel", { title: task.title })
       : laneDrag
         ? t("tasks:gantt.taskAriaLabelGrouped", { title: task.title })
         : t("tasks:gantt.taskAriaLabel", { title: task.title });
@@ -538,21 +547,21 @@ export function GanttTaskBar({
       }}
     >
       <div
-        data-gantt-bar={isFeature ? "feature" : "task"}
+        data-gantt-bar={isMilestone ? "milestone" : "task"}
         style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
         className={cn(
           "relative mx-1 flex min-h-[44px] min-w-0 items-stretch text-left sm:h-11 sm:min-h-0",
-          // A feature keeps a task bar's hit area but only draws the thinner
+          // A milestone keeps a task bar's hit area but only draws the thinner
           // summary band inside it; the band carries the hover, focus and
           // lifted styles instead.
-          isFeature
+          isMilestone
             ? "group/bar"
             : "group overflow-hidden rounded-md border border-primary/25 bg-background text-sm font-medium leading-none text-foreground shadow-sm transition-colors hover:border-primary/40",
-          !isFeature && laneView && "shadow-lg ring-2 ring-primary/40",
+          !isMilestone && laneView && "shadow-lg ring-2 ring-primary/40",
           laneView ? "pointer-events-none" : "pointer-events-auto",
         )}
       >
-        {isFeature && (
+        {isMilestone && (
           // Centred in the row, so dependency arrows still meet its ends.
           <GanttSummaryShape
             clippedStart={clippedStart}
@@ -570,7 +579,7 @@ export function GanttTaskBar({
             edge="start"
             label={t("tasks:gantt.resizeStart")}
             disabled={!startIsVisible}
-            summary={isFeature}
+            summary={isMilestone}
             onPointerDown={handleResizeLeftPointerDown}
           />
         )}
@@ -584,7 +593,7 @@ export function GanttTaskBar({
           aria-describedby={describedBy}
           className={cn(
             "relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5",
-            isFeature && "flex items-center focus-visible:outline-hidden",
+            isMilestone && "flex items-center focus-visible:outline-hidden",
           )}
           onPointerDown={handleMovePointerDown}
           onKeyDown={(e) => {
@@ -594,8 +603,8 @@ export function GanttTaskBar({
             }
           }}
         >
-          {isFeature ? (
-            <GanttFeatureBarLabel
+          {isMilestone ? (
+            <GanttMilestoneBarLabel
               title={task.title}
               progress={progress?.text ?? null}
               textOutside={labelOutside}
@@ -655,7 +664,7 @@ export function GanttTaskBar({
             edge="end"
             label={t("tasks:gantt.resizeDue")}
             disabled={!endIsVisible}
-            summary={isFeature}
+            summary={isMilestone}
             onPointerDown={handleResizeRightPointerDown}
           />
         )}
@@ -666,7 +675,7 @@ export function GanttTaskBar({
           style={{ gridColumn: `${lineEnd} / ${trackCount + 1}` }}
           className={cn(
             "min-w-0 truncate pl-1 text-xs text-foreground/80",
-            isFeature ? "font-semibold" : "font-medium",
+            isMilestone ? "font-semibold" : "font-medium",
           )}
         >
           {task.type === "bug" && (

@@ -21,11 +21,16 @@ import type { FilterSubject } from "./filter-subject";
 type FilterMenuProps = {
   subjects: FilterSubject[];
   activeCount: number;
+  label?: string;
 };
 
-export function FilterMenu({ subjects, activeCount }: FilterMenuProps) {
+export function FilterMenu({
+  subjects,
+  activeCount,
+  label: customLabel,
+}: FilterMenuProps) {
   const { t } = useTranslation();
-  const label = t("common:actions.filter");
+  const label = customLabel ?? t("common:actions.filter");
   const [open, setOpen] = useState(false);
   useShortcut("addFilter", () => setOpen((value) => !value));
 

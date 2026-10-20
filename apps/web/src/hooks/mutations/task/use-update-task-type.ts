@@ -7,7 +7,7 @@ import { invalidateMyWork } from "@/lib/invalidate-my-work";
 
 type Variables = {
   task: Pick<Task, "id" | "projectId" | "featureId">;
-  type: TaskType;
+  type: Exclude<TaskType, "feature">;
 };
 
 export function useUpdateTaskType() {

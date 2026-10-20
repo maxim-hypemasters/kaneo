@@ -65,8 +65,8 @@ export function ReleaseItemGroups({
                 workspaceId={rowProps.workspaceId}
                 releaseId={rowProps.releaseId}
                 projectSlug={rowProps.projectSlug}
-                column={columns.get(task.status)}
-                done={done.has(task.status)}
+                column={columns.get(task.status ?? "")}
+                done={done.has(task.status ?? "")}
               />
             ))}
           </ul>

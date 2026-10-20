@@ -8,7 +8,6 @@ export const TASK_TYPE_LABELS = {
 
 export const TASK_TYPE_CONVERSIONS = {
   task: "tasks:features.convertToTask",
-  feature: "tasks:features.convertToFeature",
   bug: "tasks:features.convertToBug",
 } as const;
 

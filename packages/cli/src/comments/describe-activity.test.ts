@@ -34,6 +34,31 @@ const activity = (overrides: Partial<TaskActivity>): TaskActivity => ({
 const summary = (overrides: Partial<TaskActivity>) =>
   describeActivity(activity(overrides), lookups).summary;
 
+it("retains milestone names after deletion and describes former Feature planning", () => {
+  expect(
+    summary({
+      type: "milestone_deleted",
+      eventData: { milestoneTitle: "First playable" },
+    }),
+  ).toBe("deleted milestone “First playable”");
+  expect(
+    describeActivity(
+      activity({
+        type: "feature_planning_snapshot",
+        eventData: {
+          status: "in-progress",
+          priority: "high",
+          releaseName: "0.70",
+        },
+      }),
+      lookups,
+    ),
+  ).toEqual({
+    summary: "preserved previous Feature planning",
+    detail: "Status: In Progress · Priority: High · Release: 0.70",
+  });
+});
+
 describe("describeActivity", () => {
   it("shows a comment with a plain excerpt", () => {
     expect(

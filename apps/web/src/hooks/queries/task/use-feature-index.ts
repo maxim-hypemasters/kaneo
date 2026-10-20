@@ -1,8 +1,10 @@
+import { useMemo } from "react";
 import { getFeatureIndex } from "@/lib/features/feature-index";
 import { useCachedBoard } from "./use-cached-board";
-
-// The project's features, from whatever board is already cached (nothing is
-// fetched). getFeatureIndex returns the same index until the board changes.
+import { useGetProjectFeatures } from "./use-get-project-features";
+const identity = <T>(value: T) => value;
 export function useFeatureIndex(projectId: string | undefined) {
-  return useCachedBoard(projectId, getFeatureIndex);
+  const board = useCachedBoard(projectId, identity);
+  const { data: features } = useGetProjectFeatures(projectId);
+  return useMemo(() => getFeatureIndex(board, features), [board, features]);
 }

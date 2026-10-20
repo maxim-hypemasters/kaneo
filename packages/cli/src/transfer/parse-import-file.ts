@@ -1,4 +1,14 @@
-import type { ExportedMilestone } from "../api/export-import.js";
+import {
+  calendarDay,
+  isArchiveTimestamp,
+  parsePlanningSnapshots,
+  parseReleaseDefinitions,
+} from "./knowledge-transfer-fields.js";
+import type {
+  ExportedMilestone,
+  ExportedRelease,
+  PlanningSnapshot,
+} from "../api/export-import.js";
 import { Result } from "effect";
 import { InvalidArgument } from "../errors/errors.js";
 import { TASK_TYPES, type TaskType } from "../api/task-features.js";
@@ -8,6 +18,9 @@ export type ImportCandidate = {
   readonly key?: string;
   readonly featureKey?: string | null;
   readonly milestoneKey?: string | null;
+  readonly releaseKey?: string | null;
+  readonly archivedAt?: string | null;
+  readonly planningSnapshots?: ReadonlyArray<PlanningSnapshot>;
   readonly labelDefinitions?: ReadonlyArray<{
     readonly name: string;
     readonly color: string;
@@ -156,7 +169,8 @@ export function parseImportDocument(
 export type ImportDocument = {
   readonly tasks: ReadonlyArray<ImportCandidate>;
   readonly hierarchy?: {
-    readonly version: 2;
+    readonly version: 2 | 3;
+    readonly releases?: ReadonlyArray<ExportedRelease>;
     readonly milestones: ReadonlyArray<ExportedMilestone>;
   };
 };
@@ -184,18 +198,12 @@ export function parseTransferDocument(
     }
     return Result.succeed({ tasks: parsed.success });
   }
-  if (document.version !== 2)
+  if (document.version !== 2 && document.version !== 3)
     return Result.fail(invalid("Unsupported import version."));
   if (!Array.isArray(document.milestones))
     return Result.fail(invalid("Version 2 needs a list of milestones."));
   const milestones: ExportedMilestone[] = [];
-  const isDay = (value: string) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-    const day = new Date(`${value}T00:00:00.000Z`);
-    return (
-      !Number.isNaN(day.getTime()) && day.toISOString().slice(0, 10) === value
-    );
-  };
+  const isDay = calendarDay;
   for (const item of document.milestones) {
     if (!isRecord(item))
       return Result.fail(
@@ -231,6 +239,15 @@ export function parseTransferDocument(
       return Result.fail(
         invalid("Invalid milestone definition in version 2 import."),
       );
+    if (
+      ["status", "priority", "leadId", "releaseKey"].some(
+        (field) =>
+          item[field] !== undefined &&
+          !(typeof item[field] === "string" && String(item[field]).trim()) &&
+          !(["leadId", "releaseKey"].includes(field) && item[field] === null),
+      )
+    )
+      return Result.fail(invalid("Invalid milestone planning field."));
     milestones.push({
       key: item.key,
       featureKey: item.featureKey,
@@ -239,6 +256,14 @@ export function parseTransferDocument(
       startDate: startDate ?? null,
       endDate: endDate ?? null,
       position: Number(item.position),
+      ...(typeof item.status === "string" ? { status: item.status } : {}),
+      ...(typeof item.priority === "string" ? { priority: item.priority } : {}),
+      ...(item.leadId === null || typeof item.leadId === "string"
+        ? { leadId: item.leadId }
+        : {}),
+      ...(item.releaseKey === null || typeof item.releaseKey === "string"
+        ? { releaseKey: item.releaseKey }
+        : {}),
     });
   }
   const sourceTasks = document.tasks as Fields[];
@@ -270,6 +295,28 @@ export function parseTransferDocument(
         labels.push({ name: label.name, color: label.color });
       }
     }
+    if (
+      !(
+        item.releaseKey === undefined ||
+        item.releaseKey === null ||
+        (typeof item.releaseKey === "string" && item.releaseKey.trim())
+      ) ||
+      !isArchiveTimestamp(item.archivedAt)
+    )
+      return Result.fail(
+        invalid(`Task ${index + 1} has invalid release or archive metadata.`),
+      );
+    const snapshots = parsePlanningSnapshots(item.planningSnapshots);
+    if (Result.isFailure(snapshots)) return Result.fail(snapshots.failure);
+    if (
+      candidate.type !== "feature" &&
+      ((snapshots.success?.length ?? 0) > 0 || item.archivedAt != null)
+    )
+      return Result.fail(
+        invalid(
+          "Only Features retain knowledge archive metadata and planning snapshots.",
+        ),
+      );
     tasks.push({
       ...candidate,
       key: item.key,
@@ -278,6 +325,15 @@ export function parseTransferDocument(
         ? {}
         : { milestoneKey: item.milestoneKey }),
       labelDefinitions: labels,
+      ...(item.releaseKey === null || typeof item.releaseKey === "string"
+        ? { releaseKey: item.releaseKey }
+        : {}),
+      ...(item.archivedAt === null || typeof item.archivedAt === "string"
+        ? { archivedAt: item.archivedAt }
+        : {}),
+      ...(snapshots.success === undefined
+        ? {}
+        : { planningSnapshots: snapshots.success }),
     });
   }
   const taskKeys = new Map(tasks.map((task) => [task.key, task]));
@@ -317,5 +373,27 @@ export function parseTransferDocument(
         invalid("A milestone reference must belong to the task's Feature."),
       );
   }
-  return Result.succeed({ tasks, hierarchy: { version: 2, milestones } });
+  const parsedReleases = parseReleaseDefinitions(document.releases);
+  if (Result.isFailure(parsedReleases))
+    return Result.fail(parsedReleases.failure);
+  const releases = parsedReleases.success;
+  const releaseKeys = new Set(releases.map((release) => release.key));
+  if (
+    [...tasks, ...milestones].some(
+      (item) => item.releaseKey != null && !releaseKeys.has(item.releaseKey),
+    )
+  )
+    return Result.fail(
+      invalid(
+        "Release references must point to a release in the import document.",
+      ),
+    );
+  return Result.succeed({
+    tasks,
+    hierarchy: {
+      version: document.version,
+      milestones,
+      ...(document.version === 3 ? { releases } : {}),
+    },
+  });
 }

@@ -1,3 +1,10 @@
+import {
+  milestoneStatusIsDone,
+  moveMilestoneFollowers,
+  recordMilestoneActivity,
+  resolveMilestonePlanning,
+  type MilestonePlanningFields,
+} from "./planning";
 import { linkSelectedMilestoneTasks } from "./link-selected-tasks";
 import { assertMilestoneDates } from "./dates";
 import { lockAuthorizedProject } from "./access-scope";
@@ -10,7 +17,7 @@ import { retryTransaction } from "../utils/retry-transaction";
 import { recordMilestoneChange, type MilestoneTransaction } from "./membership";
 import { readMilestone, readMilestones } from "./read-milestones";
 
-type Fields = {
+type Fields = MilestonePlanningFields & {
   title: string;
   description?: string | null;
   startDate?: string | null;
@@ -77,6 +84,12 @@ export async function createMilestone(
         expectedWorkspaceId,
       );
       assertMilestoneDates(metadata);
+      const planning = await resolveMilestonePlanning(
+        tx,
+        feature.projectId,
+        metadata,
+        true,
+      );
       const [last] = await tx
         .select({
           position: sql<number>`coalesce(max(${milestoneTable.position}), -1)`,
@@ -88,11 +101,19 @@ export async function createMilestone(
         .values({
           featureId,
           ...metadata,
+          ...planning,
           position: Number(last?.position ?? -1) + 1,
         })
         .returning();
       if (!created)
         throw new HTTPException(500, { message: "Failed to create milestone" });
+      await recordMilestoneActivity(
+        tx,
+        featureId,
+        created,
+        "milestone_created",
+        userId,
+      );
       const linked = await linkSelectedMilestoneTasks(
         tx,
         created.id,
@@ -155,14 +176,66 @@ export async function updateMilestone(
         endDate:
           fields.endDate === undefined ? current.endDate : fields.endDate,
       });
+      const planning = await resolveMilestonePlanning(
+        tx,
+        feature.projectId,
+        fields,
+      );
+      const movedTaskIds =
+        fields.releaseId !== undefined && fields.releaseId !== current.releaseId
+          ? await moveMilestoneFollowers(
+              tx,
+              current,
+              feature.projectId,
+              fields.releaseId,
+              userId,
+            )
+          : [];
       const [updated] = await tx
         .update(milestoneTable)
-        .set(fields)
+        .set({ ...fields, ...planning })
         .where(eq(milestoneTable.id, id))
         .returning();
       if (!updated)
         throw new HTTPException(404, { message: "Milestone not found" });
+      await recordMilestoneActivity(
+        tx,
+        featureId,
+        updated,
+        "milestone_updated",
+        userId,
+        Object.fromEntries(
+          Object.entries(fields).map(([key, value]) => [
+            key,
+            { from: current[key as keyof typeof current], to: value },
+          ]),
+        ),
+      );
+      if (
+        current.status !== updated.status ||
+        current.columnId !== updated.columnId
+      ) {
+        const wasDone = await milestoneStatusIsDone(
+          tx,
+          feature.projectId,
+          current,
+        );
+        const isDone = await milestoneStatusIsDone(
+          tx,
+          feature.projectId,
+          updated,
+        );
+        if (wasDone !== isDone)
+          await recordMilestoneActivity(
+            tx,
+            featureId,
+            updated,
+            isDone ? "milestone_completed" : "milestone_reopened",
+            userId,
+          );
+      }
       return {
+        movedTaskIds,
         milestone: await readMilestone(id, tx),
         projectId: feature.projectId,
       };
@@ -174,6 +247,13 @@ export async function updateMilestone(
     id,
     userId,
   );
+  for (const taskId of result.movedTaskIds)
+    await publishEvent("task.updated", {
+      taskId,
+      projectId: result.projectId,
+      userId,
+    });
+  await publishEvent("release.changed", { projectId: result.projectId });
   return result.milestone;
 }
 export async function deleteMilestone(
@@ -214,6 +294,13 @@ export async function deleteMilestone(
         .returning();
       if (!deleted)
         throw new HTTPException(404, { message: "Milestone not found" });
+      await recordMilestoneActivity(
+        tx,
+        featureId,
+        deleted,
+        "milestone_deleted",
+        userId,
+      );
       return { projectId: feature.projectId, featureId };
     }),
   );

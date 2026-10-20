@@ -39,12 +39,12 @@ describe("user preferences", () => {
     expect(useUserPreferencesStore.getState().weekStartsOn).toBe(0);
   });
 
-  it("restores a stored grouping by feature", async () => {
+  it("migrates the former Feature grouping to Milestone", async () => {
     storePreferences({ ganttGroupBy: "feature" });
 
     await useUserPreferencesStore.persist.rehydrate();
 
-    expect(useUserPreferencesStore.getState().ganttGroupBy).toBe("feature");
+    expect(useUserPreferencesStore.getState().ganttGroupBy).toBe("milestone");
   });
 
   it("persists a changed grouping", () => {
@@ -61,7 +61,8 @@ describe("isGanttGroupBy", () => {
   it("accepts only the known groupings", () => {
     expect(isGanttGroupBy("none")).toBe(true);
     expect(isGanttGroupBy("assignee")).toBe(true);
-    expect(isGanttGroupBy("feature")).toBe(true);
+    expect(isGanttGroupBy("milestone")).toBe(true);
+    expect(isGanttGroupBy("feature")).toBe(false);
     expect(isGanttGroupBy("status")).toBe(false);
     expect(isGanttGroupBy(1)).toBe(false);
     expect(isGanttGroupBy(undefined)).toBe(false);

@@ -15,7 +15,7 @@ export type RelatedTaskJson = {
   readonly type?: string;
   readonly ticketId: string | null;
   readonly title: string;
-  readonly status: string;
+  readonly status: string | null;
   readonly completed: boolean;
   readonly url: string;
 };

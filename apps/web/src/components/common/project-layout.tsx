@@ -1,3 +1,4 @@
+import { MilestoneDetailsSheet } from "@/components/task/milestones/milestone-details-sheet";
 import { ShortcutKeys } from "@/components/shortcuts/shortcut-keys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
@@ -77,13 +78,15 @@ export default function ProjectLayout({
     activeView ??
     (location.pathname.includes("/backlog")
       ? "backlog"
-      : location.pathname.includes("/releases")
-        ? "releases"
-        : location.pathname.includes("/calendar")
-          ? "calendar"
-          : location.pathname.includes("/gantt")
-            ? "gantt"
-            : "board");
+      : location.pathname.includes("/features")
+        ? "features"
+        : location.pathname.includes("/releases")
+          ? "releases"
+          : location.pathname.includes("/calendar")
+            ? "calendar"
+            : location.pathname.includes("/gantt")
+              ? "gantt"
+              : "board");
   const currentView = resolveProjectView(resolvedRoute, viewMode);
   const showViews = showViewSwitcher && !unavailableReason;
 
@@ -204,6 +207,7 @@ export default function ProjectLayout({
         )}
       </Layout.Content>
 
+      <MilestoneDetailsSheet projectId={projectId} workspaceId={workspaceId} />
       <CreateProjectModal
         open={isCreateProjectModalOpen}
         onClose={() => setIsCreateProjectModalOpen(false)}

@@ -1,3 +1,7 @@
+import {
+  milestoneStatusIsDone,
+  recordMilestoneActivity,
+} from "../../milestone/planning";
 import { recordMilestoneChange } from "../../milestone/membership";
 import { and, asc, count, eq, isNotNull, notInArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -9,6 +13,7 @@ import {
   externalLinkTable,
   integrationTable,
   projectTable,
+  milestoneTable,
   taskTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
@@ -117,11 +122,18 @@ async function moveTask({
 
   await assertProjectAccess(currentUserId, destinationProjectId);
 
-  const resolvedColumn = await resolveDestinationStatus(
-    destinationProjectId,
-    existingTask.status,
-    destinationStatus,
-  );
+  if (existingTask.type === "feature" && destinationStatus !== undefined)
+    throw new HTTPException(400, {
+      message: "Features do not have a workflow status",
+    });
+  const resolvedColumn =
+    existingTask.type === "feature"
+      ? { id: null, slug: "planned" }
+      : await resolveDestinationStatus(
+          destinationProjectId,
+          existingTask.status ?? "planned",
+          destinationStatus,
+        );
 
   const { movedTask, leftFeatureId } = await db.transaction(async (tx) => {
     for (const projectId of [sourceProject.id, destinationProjectId].sort()) {
@@ -141,12 +153,15 @@ async function moveTask({
         });
     }
     const nextTaskNumber = await claimTaskNumber(destinationProjectId, tx);
-    const nextPosition = await nextTaskPosition(
-      tx,
-      destinationProjectId,
-      resolvedColumn.slug,
-      resolvedColumn.id,
-    );
+    const nextPosition =
+      existingTask.type === "feature"
+        ? 0
+        : await nextTaskPosition(
+            tx,
+            destinationProjectId,
+            resolvedColumn.slug,
+            resolvedColumn.id,
+          );
 
     // Read under the lock, so a feature or release the task joined since
     // the read above is the one it leaves (and the one whose progress
@@ -175,8 +190,8 @@ async function moveTask({
       .update(taskTable)
       .set({
         projectId: destinationProjectId,
-        status: resolvedColumn.slug,
-        columnId: resolvedColumn.id,
+        status: existingTask.type === "feature" ? null : resolvedColumn.slug,
+        columnId: existingTask.type === "feature" ? null : resolvedColumn.id,
         number: nextTaskNumber,
         position: nextPosition,
         // Features and releases stay within a project, so the task leaves
@@ -211,6 +226,69 @@ async function moveTask({
           message:
             "This feature still has tasks. Take them out of it before moving it to another project.",
         });
+      }
+    }
+
+    if (updatedTask.type === "feature") {
+      const [first] = await tx
+        .select()
+        .from(columnTable)
+        .where(
+          and(
+            eq(columnTable.projectId, destinationProjectId),
+            eq(columnTable.isFinal, false),
+          ),
+        )
+        .orderBy(asc(columnTable.position), asc(columnTable.id))
+        .limit(1);
+      const milestones = await tx
+        .select()
+        .from(milestoneTable)
+        .where(eq(milestoneTable.featureId, taskId))
+        .orderBy(asc(milestoneTable.id))
+        .for("update");
+      const reset = {
+        columnId: first?.id ?? null,
+        status: first?.slug ?? "planned",
+        releaseId: null,
+        leadId: null,
+      };
+      await tx
+        .update(milestoneTable)
+        .set(reset)
+        .where(eq(milestoneTable.featureId, taskId));
+      for (const milestone of milestones) {
+        const changes = Object.fromEntries(
+          Object.entries(reset)
+            .filter(
+              ([key, value]) =>
+                milestone[key as keyof typeof milestone] !== value,
+            )
+            .map(([key, value]) => [
+              key,
+              { from: milestone[key as keyof typeof milestone], to: value },
+            ]),
+        );
+        if (Object.keys(changes).length)
+          await recordMilestoneActivity(
+            tx,
+            taskId,
+            milestone,
+            "milestone_updated",
+            currentUserId,
+            changes,
+            sourceProject.id,
+          );
+        if (await milestoneStatusIsDone(tx, sourceProject.id, milestone))
+          await recordMilestoneActivity(
+            tx,
+            taskId,
+            milestone,
+            "milestone_reopened",
+            currentUserId,
+            {},
+            sourceProject.id,
+          );
       }
     }
 
@@ -304,7 +382,7 @@ async function moveTask({
     toProjectId: destinationProject.id,
     toProjectName: destinationProject.name,
     oldStatus: existingTask.status,
-    newStatus: resolvedColumn.slug,
+    newStatus: movedTask.status,
   });
   if (leftFeatureId) {
     await publishFeatureChange({

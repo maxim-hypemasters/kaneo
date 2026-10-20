@@ -48,7 +48,10 @@ export function TaskShortcuts({
   const { canUpdateTasks, canAssignTasks } = useWorkspacePermission();
   const active = { enabled: enabled && Boolean(task) };
   const editable = { enabled: active.enabled && canUpdateTasks() };
-  const assignable = { enabled: active.enabled && canAssignTasks() };
+  const assignable = {
+    enabled: active.enabled && !isFeature && canAssignTasks(),
+  };
+  const planning = { enabled: editable.enabled && !isFeature };
 
   const openTask = (target: { id: string; projectId: string } | undefined) => {
     if (!target) return;
@@ -58,11 +61,11 @@ export function TaskShortcuts({
     });
   };
 
-  useShortcut("changeStatus", () => clickTaskAction("status"), editable);
-  useShortcut("changePriority", () => clickTaskAction("priority"), editable);
+  useShortcut("changeStatus", () => clickTaskAction("status"), planning);
+  useShortcut("changePriority", () => clickTaskAction("priority"), planning);
   useShortcut("assignTask", () => clickTaskAction("assignee"), assignable);
   useShortcut("changeLabels", () => clickTaskAction("labels"), editable);
-  useShortcut("setDueDate", () => clickTaskAction("dueDate"), editable);
+  useShortcut("setDueDate", () => clickTaskAction("dueDate"), planning);
   useShortcut("moveToProject", () => clickTaskAction("move"), editable);
   useShortcut("addLink", () => clickTaskAction("addLink"), editable);
   useShortcut("createSubtask", () => clickTaskAction("addSubtask"), {
@@ -138,7 +141,7 @@ export function TaskShortcuts({
     },
     { enabled: editable.enabled && !isFeature },
   );
-  useShortcut("setRelease", () => clickTaskAction("release"), editable);
+  useShortcut("setRelease", () => clickTaskAction("release"), planning);
   useShortcut(
     "openParent",
     () =>

@@ -26,7 +26,7 @@ export function SubtasksHoverList({
     (board?.columns ?? []).map((column) => [column.slug, column]),
   );
   const rows = tasks.map((task) => {
-    const column = columns.get(task.status);
+    const column = columns.get(task.status ?? "");
     return { task, column, isCompleted: column?.isFinal ?? false };
   });
   const completed = rows.filter((row) => row.isCompleted).length;

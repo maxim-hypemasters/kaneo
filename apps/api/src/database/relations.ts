@@ -453,6 +453,18 @@ export const customFieldValueTableRelations = relations(
 export const milestoneTableRelations = relations(
   milestoneTable,
   ({ one, many }) => ({
+    lead: one(userTable, {
+      fields: [milestoneTable.leadId],
+      references: [userTable.id],
+    }),
+    column: one(columnTable, {
+      fields: [milestoneTable.columnId],
+      references: [columnTable.id],
+    }),
+    release: one(releaseTable, {
+      fields: [milestoneTable.releaseId],
+      references: [releaseTable.id],
+    }),
     feature: one(taskTable, {
       fields: [milestoneTable.featureId],
       references: [taskTable.id],

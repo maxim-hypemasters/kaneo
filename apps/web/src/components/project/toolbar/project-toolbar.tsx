@@ -9,12 +9,14 @@ type ProjectToolbarProps = {
   view: ProjectTaskView;
   display: ReactNode;
   actions?: ReactNode;
+  filterLabel?: string;
 };
 
 export function ProjectToolbar({
   view,
   display,
   actions,
+  filterLabel,
 }: ProjectToolbarProps) {
   useFilterShortcuts(view.subjects, view.filters.clearFilters);
 
@@ -30,6 +32,7 @@ export function ProjectToolbar({
       <FilterMenu
         subjects={view.subjects}
         activeCount={view.filters.activeFilterCount}
+        label={filterLabel}
       />
       <DisplayMenu>{display}</DisplayMenu>
     </>

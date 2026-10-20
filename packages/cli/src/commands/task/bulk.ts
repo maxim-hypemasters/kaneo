@@ -144,6 +144,16 @@ export const runTaskBulk = Effect.fn("command.task.bulk")(function* (options: {
   const { workspaceId, tasks } = yield* withSpinner(`Checking ${count}`)(
     resolveBulkTasks(options.tasks),
   );
+  if (
+    ["status", "priority", "assignee", "unassign", "due"].includes(
+      change.kind,
+    ) &&
+    tasks.some((task) => task.type === "feature")
+  )
+    return yield* new InvalidArgument({
+      message:
+        "Features are knowledge records without planning fields. Exclude Features from this bulk planning change.",
+    });
   const plan: Plan = yield* withSpinner("Checking the change")(
     planChange(change, workspaceId, tasks),
   );

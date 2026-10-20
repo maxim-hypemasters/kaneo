@@ -1,10 +1,12 @@
 import { SourceHttpError } from "../http.js";
 import type { ImportedMilestone } from "../types.js";
-import type { KaneoBoardTask, KaneoClient } from "./client.js";
+import { mapPriority } from "./mapping.js";
+import type { KaneoBoardTask, KaneoClient, KaneoMember } from "./client.js";
 
 export async function readMilestones(
   client: KaneoClient,
   tasks: KaneoBoardTask[],
+  members: ReadonlyMap<string, KaneoMember> = new Map(),
 ): Promise<ImportedMilestone[]> {
   const milestones: ImportedMilestone[] = [];
   for (const feature of tasks.filter((task) => task.type === "feature")) {
@@ -22,6 +24,18 @@ export async function readMilestones(
               ? (milestone.targetDate ?? null)
               : milestone.endDate,
           position: milestone.position,
+          ...(milestone.status === undefined
+            ? {}
+            : { status: milestone.status }),
+          ...(milestone.priority === undefined
+            ? {}
+            : { priority: mapPriority(milestone.priority) }),
+          ...(milestone.releaseId === undefined
+            ? {}
+            : { releaseKey: milestone.releaseId }),
+          ...(milestone.leadId && members.has(milestone.leadId)
+            ? { lead: members.get(milestone.leadId)! }
+            : {}),
         })),
       );
     } catch (error) {

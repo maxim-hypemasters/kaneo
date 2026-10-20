@@ -66,7 +66,6 @@ describe("releaseId in task payloads", () => {
     const board = boardTasks(await ctx.get(`/task/tasks/${ctx.project.id}`));
     expect(board.map(({ id, releaseId }) => ({ id, releaseId }))).toEqual(
       [
-        { id: ctx.feature.id, releaseId: ctx.release.id },
         { id: ctx.task.id, releaseId: ctx.release.id },
         { id: ctx.planned.id, releaseId: ctx.other.id },
         { id: ctx.loose.id, releaseId: null },
@@ -85,7 +84,8 @@ describe("releaseId in task payloads", () => {
     expect(await ctx.get(`/task/features/${ctx.project.id}`)).toEqual([
       expect.objectContaining({
         id: ctx.feature.id,
-        releaseId: ctx.release.id,
+        releaseId: null,
+        status: null,
       }),
     ]);
   });
@@ -97,9 +97,7 @@ describe("releaseId in task payloads", () => {
         await ctx.get(`/task/tasks/${ctx.project.id}?releaseId=${releaseId}`),
       ).map(({ id }) => id);
 
-    expect(await ids(ctx.release.id)).toEqual(
-      [ctx.feature.id, ctx.task.id].sort(),
-    );
+    expect(await ids(ctx.release.id)).toEqual([ctx.task.id]);
     expect(await ids(ctx.other.id)).toEqual([ctx.planned.id]);
     expect(await ids("none")).toEqual([ctx.loose.id]);
     expect(await ids("unknown-release")).toEqual([]);
@@ -122,7 +120,7 @@ describe("releaseId in task payloads", () => {
       ...body.plannedTasks,
       ...body.archivedTasks,
     ];
-    expect(tasks).toHaveLength(4);
+    expect(tasks).toHaveLength(3);
     for (const task of tasks) expect(task.releaseId).toBeNull();
     expect(JSON.stringify(body)).not.toContain(ctx.release.id);
   });

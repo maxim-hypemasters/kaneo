@@ -6,7 +6,7 @@ export const DuplicatedTask = Schema.Struct({
   projectId: Schema.String,
   number: Schema.NullOr(Schema.Number),
   title: Schema.String,
-  status: Schema.String,
+  status: Schema.NullOr(Schema.String),
 });
 export type DuplicatedTask = typeof DuplicatedTask.Type;
 

@@ -38,6 +38,7 @@ async function getAssignedTasks(
   const openAndMine = and(
     eq(projectTable.workspaceId, workspaceId),
     isNull(projectTable.archivedAt),
+    inArray(taskTable.type, ["task", "bug"]),
     eq(taskTable.userId, userId),
     ne(taskTable.status, "archived"),
     sql`not coalesce((
@@ -88,10 +89,10 @@ async function getAssignedTasks(
         title: taskTable.title,
         type: taskTable.type,
         milestoneId: taskTable.milestoneId,
-        status: taskTable.status,
+        status: sql<string>`${taskTable.status}`,
         statusName: statusColumn.name,
         statusIcon: statusColumn.icon,
-        priority: taskTable.priority,
+        priority: sql<string>`${taskTable.priority}`,
         dueDate: taskTable.dueDate,
         projectName: projectTable.name,
         projectSlug: projectTable.slug,

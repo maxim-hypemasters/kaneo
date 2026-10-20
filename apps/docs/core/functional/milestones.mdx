@@ -3,7 +3,7 @@ title: "Feature milestones"
 description: "Organize a Feature into milestones and follow the progress of its Tasks and Bugs."
 ---
 
-Open a **Feature** and use **+** in the **Milestones** section of its right sidebar. On smaller screens, the section appears above the Tasks list. Give the milestone a title, and optionally add start and end dates. Milestones belong to that Feature; they do not have task numbers or their own workflow.
+Open a **Feature** and use **+** in the **Milestones** section of its right sidebar. On smaller screens, the section appears above the Tasks list. Give the milestone a title, and optionally add start and end dates. Milestones belong to that Feature and do not consume task numbers. They are planning units with their own manually controlled workflow status, Milestone Lead, priority, release, and optional dates. Select the open action beside a milestone to see its details panel.
 
 Use **Link tasks** in the creation dialog to select Tasks and Bugs in that Feature that have no milestone. Search by title or item identifier. Saving creates the milestone and links all selected work together, so a failed selection cannot leave a partially created milestone. Leave the selection empty to create an empty milestone.
 
@@ -25,13 +25,13 @@ Quick-adding a Task or Bug while a milestone is selected puts the new work in th
 
 Select its Feature first, then choose **Milestone** in creation or properties. Only milestones owned by that Feature are offered. Each Task or Bug can have one milestone; choose **No milestone** to clear it.
 
-Changing or removing the Feature clears the milestone. Moving a Task or Bug to another project, or converting it to Feature, also clears it. Converting between Task and Bug and duplicating a leaf item preserve its milestone.
+Changing or removing the Feature clears the milestone. Moving a Task or Bug to another project, also clears it. Converting between Task and Bug and duplicating a leaf item preserve its milestone.
 
 ## Edit and remove
 
-Use a milestone's menu to edit its title or dates, move it up or down, or delete it. Duplicate titles are allowed. Deleting a milestone keeps its Tasks and Bugs in their Feature and Release, with no milestone assigned.
+Use a milestone's menu to edit its title or dates, move it up or down, or delete it. Its details panel also edits its lead, status, priority and release. Lead changes require task assignment permission; other milestone management uses task update permission. Status follows the project workflow and stays independent of calculated child progress. Dates, status, priority and lead changes do not change linked work. Release changes use the [follower rules](/core/functional/releases#how-tasks-follow-their-milestone). Duplicate titles are allowed. Deleting a milestone keeps its Tasks and Bugs in their Feature and Release, with no milestone assigned.
 
-A Feature must have no child work and no milestones before it can become a Task or Bug. Deleting a Feature removes its milestones and keeps its child work under the existing Feature deletion rules. Duplicating a Feature creates an empty Feature.
+Features cannot be converted to Tasks or Bugs, and leaf work cannot be converted to Features. Deleting a Feature removes its milestones and keeps its child work under the existing Feature deletion rules. Duplicating a Feature creates an empty Feature.
 
 Milestone management uses the existing **Update tasks** permission. Reading milestones requires access to the Feature's project and task read permission.
 
@@ -39,8 +39,10 @@ Milestone management uses the existing **Update tasks** permission. Reading mile
 
 The authenticated API, CLI milestone commands, and MCP milestone tools support listing, creation, editing, ordering, deletion, and Task/Bug assignment. API task lists can be filtered by Feature and milestone before pagination.
 
-Milestone creation accepts optional `taskIds` to link existing Tasks and Bugs atomically. Every selected item must already belong to the owning Feature. Linking work does not change its Feature, Release, status, or deadlines.
+Milestone creation accepts optional `taskIds` to link existing Tasks and Bugs atomically. Every selected item must already belong to the owning Feature. Linking work does not change its Feature, status, or deadlines. A task without a release inherits the milestone's release; existing release choices remain.
 
-Native JSON exports use version 2 with portable Feature, milestone, and work-item references. Import the complete document to preserve that hierarchy; the importer generates new database IDs and applies the document atomically. Invalid references fail without importing partial work. Legacy flat files continue to use their individual task outcomes and default to no milestone.
+Native JSON exports use version 3 with portable Feature, milestone, release and work-item references, Feature archive state and planning-history snapshots, and milestone planning metadata. Import the complete document to preserve that hierarchy; the importer generates new database IDs and applies the document atomically. Invalid references fail without importing partial work. Legacy flat files continue to use their individual task outcomes and default to no milestone.
 
 Connected Kaneo imports preserve milestone definitions, metadata, order, and linked Tasks/Bugs when the source supports milestones. Older sources remain supported; a former milestone target date becomes its end date. Other providers do not infer milestones from labels or other metadata.
+
+Feature history records milestone creation, planning changes, completion/reopening, and deletion with the milestone name retained. Task-level changes stay in each Task or Bug's activity. Project milestone summaries are paginated for Gantt; clients do not need one read per Feature.

@@ -1,8 +1,6 @@
 import { Layers } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/cn";
 import type { ReleaseFeatureGroup as Group } from "./group-release-items";
 import { type ReleaseItemColumn, ReleaseItemRow } from "./release-item-row";
 import { ReleaseTaskLink } from "./release-task-link";
@@ -39,15 +37,13 @@ export function ReleaseFeatureGroup({
 }: ReleaseFeatureGroupProps) {
   const { t } = useTranslation();
   const titleId = useId();
-  const statusId = useId();
   const { feature } = group;
-  const featureDone = done.has(feature.status);
   const progress = getReleaseWorkProgress(group.tasks, done, started);
-  const milestoneGroups = groupReleaseMilestones(group.tasks, milestones);
-  // As text, like the task rows: strike-through alone says nothing to a
-  // screen reader.
-  const statusName =
-    columns.get(feature.status)?.name ?? t("tasks:status.planned");
+  const milestoneGroups = groupReleaseMilestones(
+    group.tasks,
+    milestones,
+    releaseId,
+  );
 
   return (
     <section aria-labelledby={titleId}>
@@ -62,29 +58,14 @@ export function ReleaseFeatureGroup({
             projectId={feature.projectId}
             releaseId={releaseId}
             taskId={feature.id}
-            aria-describedby={statusId}
-            className={cn(
-              "touch-hitbox relative flex min-w-0 rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring",
-              featureDone && "text-muted-foreground line-through",
-            )}
+            className="touch-hitbox relative flex min-w-0 rounded-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span id={titleId} className="truncate">
               {feature.title}
             </span>
           </ReleaseTaskLink>
-          <span
-            id={statusId}
-            className="max-w-32 shrink-0 truncate font-normal text-muted-foreground text-xs"
-          >
-            {statusName}
-          </span>
         </h3>
         <ReleaseWorkProgress progress={progress} ready={progressReady} glyph />
-        {group.inRelease ? null : (
-          <Badge variant="outline" size="sm">
-            {t("tasks:releases.detail.featureElsewhere")}
-          </Badge>
-        )}
         {group.tasksElsewhere > 0 ? (
           <span className="ml-auto text-muted-foreground text-xs">
             {t("tasks:releases.detail.tasksElsewhere", {
@@ -98,6 +79,7 @@ export function ReleaseFeatureGroup({
           <ReleaseMilestoneSection
             key={milestoneGroup.milestone?.id ?? "unassigned"}
             group={milestoneGroup}
+            projectId={feature.projectId}
             workspaceId={workspaceId}
             releaseId={releaseId}
             projectSlug={projectSlug}
@@ -116,8 +98,8 @@ export function ReleaseFeatureGroup({
               workspaceId={workspaceId}
               releaseId={releaseId}
               projectSlug={projectSlug}
-              column={columns.get(task.status)}
-              done={done.has(task.status)}
+              column={columns.get(task.status ?? "")}
+              done={done.has(task.status ?? "")}
             />
           ))}
         </ul>

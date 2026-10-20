@@ -72,29 +72,19 @@ function renderGroup(feature: Task) {
 afterEach(cleanup);
 
 describe("ReleaseFeatureGroup", () => {
-  it("says a finished feature is done in text, not only by strike-through", () => {
-    renderGroup(task("Checkout", { type: "feature", status: "done" }));
-
-    expect(screen.getByRole("region", { name: "Checkout" })).toBeVisible();
+  it("shows knowledge Feature headings without status or completion styling", () => {
+    renderGroup(
+      task("Checkout", { type: "feature", status: null, priority: null }),
+    );
     const heading = screen.getByRole("heading", { level: 3 });
     expect(heading).toHaveTextContent("Checkout");
-    expect(heading).toHaveTextContent("Done");
+    expect(heading).not.toHaveTextContent("To Do");
+    expect(screen.getByRole("link", { name: "Checkout" })).not.toHaveAttribute(
+      "aria-describedby",
+    );
     expect(
-      screen.getByRole("link", { name: "Checkout" }),
-    ).toHaveAccessibleDescription("Done");
-  });
-
-  it("names an open feature's column, or Planned for one on no column", () => {
-    renderGroup(task("Checkout", { type: "feature" }));
-    expect(
-      screen.getByRole("link", { name: "Checkout" }),
-    ).toHaveAccessibleDescription("To Do");
-    cleanup();
-
-    renderGroup(task("Search", { type: "feature", status: "planned" }));
-    expect(
-      screen.getByRole("link", { name: "Search" }),
-    ).toHaveAccessibleDescription("tasks:status.planned");
+      screen.getByRole("img", { name: "100% · 1/1 completed in this release" }),
+    ).toBeVisible();
   });
 
   const groupProps = {
@@ -136,8 +126,8 @@ describe("ReleaseFeatureGroup", () => {
       screen.getByRole("img", { name: "33% · 1/3 completed in this release" }),
     ).toBeVisible();
     expect(
-      screen.getByText("tasks:releases.detail.featureElsewhere"),
-    ).toBeVisible();
+      screen.queryByText("tasks:releases.detail.featureElsewhere"),
+    ).toBeNull();
     expect(
       screen.getByText("tasks:releases.detail.tasksElsewhere"),
     ).toBeVisible();

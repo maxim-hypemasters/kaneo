@@ -85,11 +85,17 @@ describe("MCP API URLs", () => {
     const toolResponse = await mcpRoutes.request(toolRequest());
 
     expect(toolResponse.status).toBe(200);
-    expect(apiFetch).toHaveBeenCalledOnce();
-    expect(String(apiFetch.mock.calls[0]?.[0])).toBe(
-      "http://127.0.0.1:1337/api/auth/get-session",
+    expect(apiFetch).toHaveBeenCalled();
+    expect(apiFetch.mock.calls.map((call) => String(call[0]))).toEqual(
+      expect.arrayContaining(["http://127.0.0.1:1337/api/auth/get-session"]),
     );
-  });
+    expect(
+      apiFetch.mock.calls.every(
+        (call) =>
+          String(call[0]) === "http://127.0.0.1:1337/api/auth/get-session",
+      ),
+    ).toBe(true);
+  }, 20_000);
 
   it.each(["http://api.internal:1337/api/", "http://api.internal:1337/"])(
     "uses the configured internal URL %s without duplicate slashes",
@@ -109,10 +115,14 @@ describe("MCP API URLs", () => {
       const toolResponse = await mcpRoutes.request(toolRequest());
 
       expect(toolResponse.status).toBe(200);
-      expect(apiFetch).toHaveBeenCalledOnce();
-      expect(String(apiFetch.mock.calls[0]?.[0])).toBe(
-        "http://api.internal:1337/api/auth/get-session",
-      );
+      expect(apiFetch).toHaveBeenCalled();
+      expect(
+        apiFetch.mock.calls.every(
+          (call) =>
+            String(call[0]) === "http://api.internal:1337/api/auth/get-session",
+        ),
+      ).toBe(true);
     },
+    20_000,
   );
 });

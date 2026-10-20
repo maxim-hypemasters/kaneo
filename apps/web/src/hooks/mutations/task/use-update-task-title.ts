@@ -21,6 +21,13 @@ export function useUpdateTaskTitle() {
     },
     onSuccess: (updated, variables, context) => {
       invalidateMyWork(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: ["project-features", variables.projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-library", variables.projectId],
+      });
+
       queryClient.invalidateQueries({
         queryKey: ["task", variables.id],
       });

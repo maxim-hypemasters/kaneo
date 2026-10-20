@@ -29,7 +29,7 @@ export function ReleasePickerMenu({
     labels: {
       none: t("common:modals.createTask.noRelease"),
       unknown: t("tasks:releases.unknown"),
-      featureRelease: t("tasks:releases.featureReleaseHint"),
+      featureRelease: t("tasks:releases.milestoneReleaseHint"),
     },
     rangeOf: (release) =>
       formatReleaseRange(release.startDate, release.submissionDate, { today }),

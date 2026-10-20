@@ -1,3 +1,4 @@
+import { createMilestone } from "../../apps/api/src/milestone/write-milestones";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
 import db, { schema } from "../../apps/api/src/database";
@@ -29,12 +30,24 @@ async function setup() {
     .update(schema.projectTable)
     .set({ lastTaskNumber: feature.number ?? 1 })
     .where(eq(schema.projectTable.id, fixture.project.id));
+  const milestone = await createMilestone(
+    feature.id,
+    { title: "Bug delivery", releaseId: release.id },
+    member.user.id,
+  );
   mockAuthenticatedSession(member.user);
-  return { ...member, ...fixture, release, feature, app: createApp().app };
+  return {
+    ...member,
+    ...fixture,
+    release,
+    feature,
+    milestone,
+    app: createApp().app,
+  };
 }
 
 describe("Bug items", () => {
-  it("creates bugs in a feature with inherited release and the normal task permissions", async () => {
+  it("creates bugs in a milestone with inherited release and the normal task permissions", async () => {
     const ctx = await setup();
     const response = await ctx.app.request(
       `/api/task/${ctx.project.id}`,
@@ -45,6 +58,7 @@ describe("Bug items", () => {
         status: "in-progress",
         priority: "high",
         featureId: ctx.feature.id,
+        milestoneId: ctx.milestone.id,
         userId: ctx.user.id,
       }),
     );
@@ -90,7 +104,7 @@ describe("Bug items", () => {
     }
   });
 
-  it("preserves feature and release while switching Task and Bug, but clears the parent on promotion", async () => {
+  it("preserves Feature and Release while switching Task and Bug, and rejects promotion", async () => {
     const ctx = await setup();
     const task = await insertTask(ctx.project.id, {
       featureId: ctx.feature.id,
@@ -140,12 +154,7 @@ describe("Bug items", () => {
       `/api/task/type/${task.id}`,
       jsonRequest("PUT", { type: "feature" }),
     );
-    expect(promoted.status).toBe(200);
-    expect(await promoted.json()).toMatchObject({
-      type: "feature",
-      featureId: null,
-      releaseId: ctx.release.id,
-    });
+    expect(promoted.status).toBe(400);
     const demoted = await ctx.app.request(
       `/api/task/type/${task.id}`,
       jsonRequest("PUT", { type: "bug" }),
@@ -153,7 +162,7 @@ describe("Bug items", () => {
     expect(demoted.status).toBe(200);
     expect(await demoted.json()).toMatchObject({
       type: "bug",
-      featureId: null,
+      featureId: ctx.feature.id,
       releaseId: ctx.release.id,
     });
     expect(
@@ -218,13 +227,9 @@ describe("Bug items", () => {
     ).json();
     expect(plain.pagination.total).toBe(1);
     const features = await (
-      await ctx.app.request(`/api/task/tasks/${ctx.project.id}?type=feature`)
+      await ctx.app.request(`/api/task/${ctx.feature.id}?view=board`)
     ).json();
-    expect(
-      features.data.columns.flatMap(
-        (column: { tasks: unknown[] }) => column.tasks,
-      )[0],
-    ).toMatchObject({ subtaskCounts: { total: 3, completed: 1 } });
+    expect(features.subtaskCounts).toEqual({ total: 3, completed: 1 });
     expect(
       (await ctx.app.request(`/api/task/tasks/${ctx.project.id}?type=defect`))
         .status,

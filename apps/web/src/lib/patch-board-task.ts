@@ -42,7 +42,7 @@ export function patchBoardTask(
   const archivedTasks = board.archivedTasks.filter(
     (task) => task.id !== taskId,
   );
-  if (task) {
+  if (task && task.type !== "feature") {
     const target =
       task.status === "planned"
         ? plannedTasks

@@ -1,3 +1,7 @@
+import {
+  createMilestone,
+  updateMilestone,
+} from "../../apps/api/src/milestone/write-milestones";
 import { readFile } from "node:fs/promises";
 import { asc, eq, sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vite-plus/test";
@@ -5,7 +9,6 @@ import db, { schema } from "../../apps/api/src/database";
 import getTask from "../../apps/api/src/task/controllers/get-task";
 import updateTaskType from "../../apps/api/src/task/controllers/update-task-type";
 import { setTaskType } from "../../apps/api/src/task/feature-hierarchy/assign-feature";
-import updateTaskRelease from "../../apps/api/src/task/controllers/update-task-release";
 import { getRelease } from "../../apps/api/src/release/read-releases";
 import { readReleaseProgress } from "../../apps/api/src/release/progress/read-release-progress";
 import { migrateFeatureHierarchy } from "../../apps/api/src/migrations/feature-hierarchy";
@@ -67,7 +70,8 @@ describe("Bug progress and schema upgrades", () => {
     expect((await getRelease(ctx.release.id)).progress).toEqual({
       tasks: { total: 5, completed: 2 },
       features: { total: 1, completed: 0 },
-      unfinished: 3,
+      milestones: { total: 0, completed: 0 },
+      unfinished: 2,
     });
     expect((await readReleaseProgress(ctx.release.id, "UTC")).current).toEqual({
       scope: 5,
@@ -102,17 +106,18 @@ describe("Bug progress and schema upgrades", () => {
           .from(schema.taskTable)
           .where(eq(schema.taskTable.id, task.id))
           .for("update");
-        await setTaskType(tx, locked!, "feature", ctx.user.id);
+        await setTaskType(tx, locked!, "task", ctx.user.id);
         throw rollback;
       }),
     ).rejects.toBe(rollback);
     expect(await events(ctx.release.id)).toEqual(beforeRollback);
     expect((await getTask(task.id)).type).toBe("bug");
-    await setType("feature");
+    await expect(setType("feature")).rejects.toThrow(
+      "Features cannot be converted",
+    );
     expect(
       (await readReleaseProgress(ctx.release.id, "UTC")).current.scope,
-    ).toBe(0);
-    await setType("bug");
+    ).toBe(1);
     await db
       .update(schema.taskTable)
       .set({ status: "done" })
@@ -135,7 +140,7 @@ describe("Bug progress and schema upgrades", () => {
     );
   });
 
-  it("moves following bugs with their feature and preserves explicit release overrides", async () => {
+  it("moves following bugs with their milestone and preserves explicit release overrides", async () => {
     const ctx = await setup();
     const next = await insertRelease(ctx.project.id);
     const override = await insertRelease(ctx.project.id);
@@ -143,21 +148,24 @@ describe("Bug progress and schema upgrades", () => {
       type: "feature",
       releaseId: ctx.release.id,
     });
+    const milestone = await createMilestone(
+      feature.id,
+      { title: "Ship bugs", releaseId: ctx.release.id },
+      ctx.user.id,
+    );
     const follower = await insertTask(ctx.project.id, {
       type: "bug",
       featureId: feature.id,
+      milestoneId: milestone.id,
       releaseId: ctx.release.id,
     });
     const independent = await insertTask(ctx.project.id, {
       type: "bug",
       featureId: feature.id,
+      milestoneId: milestone.id,
       releaseId: override.id,
     });
-    await updateTaskRelease({
-      id: feature.id,
-      releaseId: next.id,
-      currentUserId: ctx.user.id,
-    });
+    await updateMilestone(milestone.id, { releaseId: next.id }, ctx.user.id);
     expect((await getTask(follower.id)).releaseId).toBe(next.id);
     expect((await getTask(independent.id)).releaseId).toBe(override.id);
     expect((await readReleaseProgress(next.id, "UTC")).current.scope).toBe(1);

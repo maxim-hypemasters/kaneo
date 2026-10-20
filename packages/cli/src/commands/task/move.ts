@@ -27,6 +27,11 @@ export const runTaskMove = Effect.fn("command.task.move")(function* (options: {
   const resolved = yield* withSpinner(`Loading ${options.task}`)(
     resolveTask(options.task),
   );
+  if (resolved.task.type === "feature" && Option.isSome(options.status))
+    return yield* new InvalidArgument({
+      message:
+        "Features do not have a workflow status. Omit --status when moving a Feature.",
+    });
   const fromLabel = resolved.ticketId ?? resolved.task.id.slice(0, 8);
   const projects = (yield* withSpinner("Loading projects")(
     listProjects(resolved.workspaceId),

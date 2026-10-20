@@ -53,6 +53,51 @@ const createBody = (
 ) => requests.find(([method]) => method === "POST")?.[2];
 
 describe("runTaskCreate --release", () => {
+  it("creates a knowledge Feature without planning fields or a workflow lookup", async () => {
+    const run = await runCommand(
+      runTaskCreate({ ...options, type: "feature" }),
+      {
+        ...routes,
+        "POST /api/task/p1": () =>
+          json({
+            id: "f",
+            projectId: "p1",
+            number: 7,
+            title: "Knowledge",
+            description: "",
+            type: "feature",
+            status: null,
+            priority: null,
+            startDate: null,
+            dueDate: null,
+            createdAt: "2026-10-20T00:00:00Z",
+            userId: null,
+          }),
+      },
+    );
+    expect(Result.isSuccess(run.result)).toBe(true);
+    expect(createBody(run.requests)).toEqual({
+      title: "Write the welcome email",
+      description: "",
+      type: "feature",
+    });
+    expect(
+      run.requests.some(([, path]) => path.startsWith("/api/column/")),
+    ).toBe(false);
+    expect(run.json()).toMatchObject({
+      type: "feature",
+      status: null,
+      priority: null,
+    });
+  });
+  it("rejects Feature planning options before writing", async () => {
+    const run = await runCommand(
+      runTaskCreate({ ...options, type: "feature", priority: "urgent" }),
+      routes,
+    );
+    expect(Result.isFailure(run.result)).toBe(true);
+    expect(createBody(run.requests)).toBeUndefined();
+  });
   it("sends and returns an explicit Bug type", async () => {
     const run = await runCommand(
       runTaskCreate({ ...options, type: "bug" }),

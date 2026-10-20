@@ -109,7 +109,7 @@ export function useFilterSubjects({
     listSubject("type", {
       label: t("tasks:boardFilters.subjects.type"),
       icon: <TaskTypeGlyph type="task" decorative />,
-      options: TASK_TYPES.map((type) => ({
+      options: TASK_TYPES.filter((type) => type !== "feature").map((type) => ({
         value: type,
         label: t(TASK_TYPE_LABELS[type]),
         icon: <TaskTypeGlyph type={type} decorative />,

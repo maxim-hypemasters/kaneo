@@ -16,6 +16,7 @@ const task = (id: string, values: Partial<Task>) =>
 const progress = {
   tasks: { total: 9, completed: 4 },
   features: { total: 2, completed: 1 },
+  milestones: { total: 3, completed: 1 },
   unfinished: 6,
 };
 
@@ -26,12 +27,14 @@ describe("countReleaseItems", () => {
       tasks: 9,
       completedTasks: 4,
       features: 2,
-      completedFeatures: 1,
+      completedFeatures: 0,
+      milestones: 3,
+      completedMilestones: 1,
       unfinished: 6,
     });
   });
 
-  it("counts the board's items, archived ones in the totals only", () => {
+  it("keeps complete milestone aggregates authoritative when a task-only board is cached", () => {
     const board = {
       columns: [
         {
@@ -63,14 +66,16 @@ describe("countReleaseItems", () => {
       board,
     );
     expect(counts.get("r1")).toEqual({
-      tasks: 4,
-      completedTasks: 1,
-      features: 1,
+      tasks: 9,
+      completedTasks: 4,
+      features: 2,
       completedFeatures: 0,
-      unfinished: 3,
+      milestones: 3,
+      completedMilestones: 1,
+      unfinished: 6,
     });
-    expect(counts.get("r2")).toMatchObject({ tasks: 1, unfinished: 1 });
-    expect(counts.get("r3")).toMatchObject({ tasks: 0, unfinished: 0 });
+    expect(counts.get("r2")).toEqual(counts.get("r1"));
+    expect(counts.get("r3")).toEqual(counts.get("r1"));
   });
 });
 

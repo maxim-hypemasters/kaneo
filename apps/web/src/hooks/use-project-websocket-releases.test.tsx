@@ -133,6 +133,26 @@ afterEach(() => {
 });
 
 describe("release list realtime", () => {
+  it("refreshes Feature-linked work and the library after coalesced task and label updates", () => {
+    mocks.client.getQueryData.mockImplementation((key: unknown[]) =>
+      key[0] === "project-features" ? [{ id: "f" }] : undefined,
+    );
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("TASK_UPDATED", { taskId: "t" });
+    Socket.current.message("TASK_LABEL_UPDATED", { taskId: "f" });
+    vi.advanceTimersByTime(300);
+    expect(mocks.client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["task-relations", "f"],
+    });
+    expect(mocks.client.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["feature-library", "p"],
+    });
+    expect(
+      mocks.client.invalidateQueries.mock.calls.filter(
+        ([filters]) => filters?.queryKey?.[0] === "feature-library",
+      ),
+    ).toHaveLength(1);
+  });
   const milestoneCalls = () =>
     mocks.client.invalidateQueries.mock.calls.filter(
       ([filters]) => filters?.queryKey?.[0] === "feature-milestones",

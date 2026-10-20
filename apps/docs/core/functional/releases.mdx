@@ -3,9 +3,9 @@ title: "Releases"
 description: "Plan what ships together, with a start date, a code freeze, and a submission date."
 ---
 
-A release is a named plan for a project, such as “2.4,” with three dates: when work starts, when changes stop, and when it ships. It holds features and tasks of that project, much like a sprint or a cycle in other tools. Use one when a group of work has to be ready by the same day.
+A release is a named plan for a project, such as “2.4,” with three dates: when work starts, when changes stop, and when it ships. It holds milestones and Tasks/Bugs of that project, much like a sprint or a cycle in other tools. Use one when a group of work has to be ready by the same day.
 
-Each Task, Bug, or Feature is in one release at most, and only in a release of its own project. Bugs follow the same membership and feature-following rules as Tasks. Counts labeled **Tasks** include both Tasks and Bugs.
+Each Task, Bug, or Milestone is in one release at most, and only in a release of its own project. Bugs follow the same membership and milestone-following rules as Tasks. Counts labeled **Tasks** include both Tasks and Bugs.
 
 ## Open Releases
 
@@ -17,7 +17,7 @@ The list has three sections:
 - **Upcoming:** releases that haven't started, the soonest start first.
 - **Past:** releases whose submission date has passed, the most recent first. The section is collapsed while there are active or upcoming releases.
 
-Each row shows the release's name and phase, a countdown such as “Code freeze in 3 days,” its three dates, how many of its tasks are done (for example **12/30**), and how many features, tasks, and unfinished items it holds. Select a row to [open the release](#follow-a-release).
+Each row shows the release's name and phase, a countdown such as “Code freeze in 3 days,” its three dates, how many of its tasks are done (for example **12/30**), and how many Feature knowledge groups, milestones, tasks, and unfinished items it holds. Select a row to [open the release](#follow-a-release).
 
 ## The three dates
 
@@ -54,40 +54,24 @@ When the project already has releases, the dialog suggests dates that start the 
 
 To change a release's name, dates, or description, open the actions menu on its row in the list, or open the release, and choose **Edit release**. Choose **Save** to apply the change. Its phase updates at once.
 
-To delete a release, choose **Delete release** in the same menus and confirm. Its features and tasks stay in the project without a release, and each one's activity records that it left the release. A deleted release can't be restored: to get it back, create it again and put the work back in it.
+To delete a release, choose **Delete release** in the same menus and confirm. Its milestones and tasks stay in the project without a release, and each one's activity records that it left the release. A deleted release can't be restored: to get it back, create it again and put the work back in it.
 
 ## Put work in a release
 
-- **In a task or feature:** open it, select **Release** in its properties, and pick a release, or **No release** to take it out. In an open task, **Shift+C** opens the same list. The list shows each release's dates, and marks the release of the task's feature with **Feature's release**.
-- **When you create a task:** select the **Release** chip in the new task window. If you chose a feature, the chip follows it and shows, for example, “2.4 (from feature).” Pick a release, or **No release**, to choose for yourself. **Create more** keeps your choice for the next task.
-- **From a release:** choose **New**, then **New task**, **New feature**, or **New bug**. The creation window starts with that release selected. A task you create with **C** or the command menu while a release is open also starts in that release.
+- **In a Task/Bug or Milestone:** select **Release** in its properties and choose a release or **No release**. Features have no release property.
+- **When creating work:** choosing a milestone uses its release unless you explicitly choose another release or **No release**. New Features never inherit a release.
+- **From a release:** new Tasks and Bugs start in that release. **New feature** creates a knowledge record without planning fields.
 
-## How tasks follow their feature
+## How tasks follow their milestone
 
-A feature and its tasks usually ship together, so the tasks follow the feature's release:
+- New Tasks/Bugs inherit their milestone's release when the release is omitted. Explicit values, including none, win.
+- Assigning existing work to a milestone inherits its release only if the work currently has no release. Choosing a milestone never changes its Feature.
+- Changing a milestone's release moves linked Tasks/Bugs whose release equals its previous release, including none. Work assigned to another release stays there.
+- Clearing or deleting a milestone preserves child releases. Feature deletion also preserves child work and planning fields.
 
-- **Putting a feature in a release** also moves the feature's tasks that were in its previous release, or in no release if it had none. Its tasks in a different release stay where they are. A message says how many tasks moved with the feature.
-- **Creating a task in a feature** puts it in the feature's release, unless you pick another release or **No release** for it.
-- **Adding an existing task to a feature**, or moving it to another feature, puts it in the feature's release only when it has no release yet. A task already in a release keeps it.
+For example, a milestone in 2.4 has two Tasks in 2.4 and a Bug explicitly deferred to 2.5. Moving the milestone to 2.6 moves the two Tasks, while the Bug stays in 2.5. New work inherits 2.6 unless a release is chosen explicitly. Task/Bug duplication and Task ↔ Bug conversion preserve release membership. Moving work to another project clears it.
 
-A task follows its feature while both are in the same release, or both are in none. There is no separate setting. Moving a task to another release on its own stops it following, and putting it back in the feature's release makes it follow again.
-
-For example, the feature “New onboarding flow” is in 2.4, and so are its tasks “Welcome screen” and “Invite teammates step.” Its third task, “Onboarding emails,” was moved to 2.5 on its own because it can wait.
-
-- Put the feature in 2.6, and “Welcome screen” and “Invite teammates step” move to 2.6 with it. “Onboarding emails” stays in 2.5.
-- Create a task in the feature, and it starts in 2.6. The **Release** chip shows “2.6 (from feature)” until you pick something else.
-- Add a task with no release to the feature, and it joins 2.6. A task already in 2.4 stays in 2.4.
-- Put “Onboarding emails” in 2.6, and it follows the feature again from then on.
-
-Some changes keep a task's release as it is:
-
-- taking the task out of its feature;
-- converting a task to a feature, or a feature to a task;
-- deleting its feature, or any other task.
-
-Duplicating a task or a feature puts the copy in the same release. Moving a task to another project takes it out of its release, because releases belong to one project.
-
-Each change of a task's release appears in its activity, in an entry such as **added the task to release “2.4”**. That includes tasks that moved with their feature, items moved by [Move unfinished](#move-unfinished-work), and tasks that left a deleted release. Creating a task in a release records only its creation.
+Each release change appears in the Task/Bug activity; milestone release changes appear in its owning Feature's history. Creation records only the initial creation.
 
 ## Follow a release
 
@@ -105,15 +89,15 @@ History begins when progress tracking becomes available on your instance; a shad
 
 Below the chart is the release's work:
 
-- One group for each feature in the release, with the feature's tasks that are in it.
-- A group for a feature that isn't in the release but has tasks in it, marked **Feature not in this release**.
+- Feature knowledge headings for visible release work or explicitly planned milestones.
+- Milestones assigned to the release, including empty ones, and milestone groups containing visible release work.
 - **Tasks without a feature** last.
 
 In each group, unfinished items come first and finished ones are dimmed below them. Archived tasks aren't listed. When some of a feature's tasks are in another release, or in none, its group says how many, such as “2 more tasks outside this release.” Select an item to open it in the task panel.
 
-Each Feature header shows a completion percentage and completed/total count for its visible Tasks and Bugs in this release. Completion follows workflow columns marked **Done** and is independent of the Feature's own status. An empty Feature shows **0% · 0/0**.
+Each Feature header shows a completion percentage and completed/total count for its visible Tasks and Bugs in this release. Completion follows workflow columns marked **Done** and does not imply a Feature workflow status. An empty Feature shows **0% · 0/0**.
 
-When a Feature has milestones, its work is grouped under those milestones in their manual order, with **No milestone** last for unassigned work. Only groups with visible work in this release appear. Each group shows its own completion counter and a diamond indicating unstarted, active, or completed work. Features without milestones keep a flat list.
+When a Feature has milestones, its work is grouped under those milestones in their manual order, with **No milestone** last for unassigned work. Empty milestones explicitly assigned to the release also appear. Each group shows its completion counter and progress diamond separately from its manually controlled milestone status. Select its title to open the milestone panel. Features without milestones keep a flat list.
 
 These row counters exclude archived work and work in other releases. The Feature window and its milestone overview keep their full ownership counts, while the release's overall totals and historical chart continue including archived work.
 
@@ -129,7 +113,7 @@ When a release reaches its code freeze or its submission date with work left, mo
 
 Unfinished means not archived and not in a column with **Done** turned on in the project's [workflow](/core/functional/configure-workflows). Planned tasks in the backlog count as unfinished.
 
-Each item moves on its own. When an unfinished feature moves, its finished tasks don't go with it: they stay in the release they shipped in. Each moved item records the change in its activity.
+Each item moves on its own. Unfinished milestones and Tasks/Bugs are handled independently, so completed child work stays in the release it shipped in. Each moved item records the change in its activity.
 
 ## Find a release's work
 
@@ -143,7 +127,7 @@ Each item moves on its own. When an unfinished feature moves, its finished tasks
 | See releases and their progress | Access to the project | Everyone, including viewers |
 | Create or edit a release | Manage projects | Admin, Owner |
 | Delete a release | Manage projects and edit tasks | Admin, Owner |
-| Put tasks and features in a release | Edit tasks | Member, Admin, Owner |
+| Put Tasks/Bugs and milestones in a release | Edit tasks | Member, Admin, Owner |
 | Move unfinished work | Edit tasks | Member, Admin, Owner |
 
 These are the starting roles; an admin can [change them](/core/functional/collaborate-with-team#choose-a-role). Controls you can't use are hidden, and the same rules apply to API keys, the CLI, and MCP clients.
@@ -151,3 +135,5 @@ These are the starting roles; an admin can [change them](/core/functional/collab
 ## Use releases from other tools
 
 The [Kaneo CLI](/cli/reference) and the [MCP server](/core/integrations/mcp) can list, create, edit, and delete releases and set a task's release. The API's [endpoint reference](/api-reference/introduction) lists the routes under **Releases**.
+
+Release summaries count milestone execution totals separately from Feature knowledge groups. The historical chart remains Task/Bug-only: editing milestone metadata alone does not create history events.

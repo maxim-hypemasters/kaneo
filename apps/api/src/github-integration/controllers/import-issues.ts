@@ -454,13 +454,18 @@ async function applyPage(
         : 0;
     const priority = current.prioritySeen ? null : extractIssuePriority(labels);
     const status = current.statusSeen ? null : extractIssueStatus(labels);
-    if (priority || status)
+    if (task.type !== "feature" && (priority || status))
       await tx
         .update(taskTable)
         .set({
           ...(priority ? { priority } : {}),
           ...(status
-            ? await resolveImportedStatus(tx, project.id, status, task.status)
+            ? await resolveImportedStatus(
+                tx,
+                project.id,
+                status,
+                task.status ?? undefined,
+              )
             : {}),
         })
         .where(
@@ -550,8 +555,15 @@ async function importIssue(
       .set({
         title: issue.title,
         description: formatTaskDescriptionFromIssue(issue.body, task.id),
-        ...(await resolveImportedStatus(tx, projectId, status, task.status)),
-        ...(priority ? { priority } : {}),
+        ...(task.type === "feature"
+          ? {}
+          : await resolveImportedStatus(
+              tx,
+              projectId,
+              status,
+              task.status ?? undefined,
+            )),
+        ...(task.type !== "feature" && priority ? { priority } : {}),
       })
       .where(and(eq(taskTable.id, task.id), eq(taskTable.projectId, projectId)))
       .returning({ id: taskTable.id });

@@ -34,6 +34,11 @@ export const runTaskAssign = Effect.fn("command.task.assign")(
     const resolved = yield* withSpinner(`Loading ${options.task}`)(
       resolveTask(options.task),
     );
+    if (resolved.task.type === "feature")
+      return yield* new InvalidArgument({
+        message:
+          "Features are knowledge records without planning fields. Plan work with milestones.",
+      });
     const label = resolved.ticketId ?? resolved.task.id.slice(0, 8);
 
     const assignee: Assignee | null = options.unassign

@@ -18,7 +18,7 @@ import {
 import type { Release } from "@/types/release";
 import type Task from "@/types/task";
 import type { ReleaseItemCounts } from "@/lib/releases/release-progress";
-import type { ReleaseMilestone } from "@/fetchers/release/get-release-milestones";
+import type { ReleaseMilestoneMetadata as ReleaseMilestone } from "./release-milestone-groups";
 import { ReleaseDetailPage } from "./release-detail-page";
 
 const m = vi.hoisted(() => ({
@@ -150,6 +150,18 @@ vi.mock("./release-progress-section", () => ({
     return <section aria-label="progress-history">{props.release.id}</section>;
   },
 }));
+vi.mock("@/hooks/queries/task/use-get-project-features", () => ({
+  useGetProjectFeatures: () => ({
+    data: (
+      (m.board.data as { columns?: Array<{ tasks: Task[] }> })?.columns ?? []
+    )
+      .flatMap((column) => column.tasks)
+      .filter((task) => task.type === "feature"),
+    isError: false,
+    isFetching: false,
+    refetch: vi.fn(),
+  }),
+}));
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
   useGetTasks: () => ({ ...m.board, refetch: vi.fn() }),
 }));
@@ -185,9 +197,10 @@ const release: Release = {
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
   progress: {
-    tasks: { total: 0, completed: 0 },
-    features: { total: 0, completed: 0 },
-    unfinished: 0,
+    tasks: { total: 4, completed: 1 },
+    features: { total: 2, completed: 0 },
+    milestones: { total: 0, completed: 0 },
+    unfinished: 3,
   },
 };
 
@@ -445,8 +458,8 @@ describe("ReleaseDetailPage", () => {
 
     const search = screen.getByRole("region", { name: "Search" });
     expect(
-      within(search).getByText("tasks:releases.detail.featureElsewhere"),
-    ).toBeInTheDocument();
+      within(search).queryByText("tasks:releases.detail.featureElsewhere"),
+    ).toBeNull();
     expect(
       within(search).getByText("tasks:releases.detail.tasksElsewhere:1"),
     ).toBeInTheDocument();
@@ -471,9 +484,11 @@ describe("ReleaseDetailPage", () => {
       counts: {
         tasks: 4,
         completedTasks: 1,
-        features: 1,
+        features: 2,
         completedFeatures: 0,
-        unfinished: 4,
+        milestones: 0,
+        completedMilestones: 0,
+        unfinished: 3,
       },
       today: "2026-10-17",
     });
@@ -500,7 +515,7 @@ describe("ReleaseDetailPage", () => {
     );
     expect(
       screen.getByRole("dialog", { name: "move-unfinished" }),
-    ).toHaveTextContent("4");
+    ).toHaveTextContent("3");
   });
 
   it("keeps Move unfinished in the menu while work is in progress", () => {
@@ -535,7 +550,7 @@ describe("ReleaseDetailPage", () => {
     expect(m.createTask).toHaveBeenCalledWith({
       type,
       projectId: "project-1",
-      releaseId: "r1",
+      releaseId: type === "feature" ? undefined : "r1",
     });
     expect(
       screen.getByRole("dialog", { name: `create-${type}` }),
@@ -568,7 +583,7 @@ describe("ReleaseDetailPage", () => {
     expect(m.createTask).toHaveBeenCalledWith({
       type,
       projectId: "project-1",
-      releaseId: "r1",
+      releaseId: type === "feature" ? undefined : "r1",
     });
   });
 

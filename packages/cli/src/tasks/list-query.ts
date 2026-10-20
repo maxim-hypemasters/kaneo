@@ -127,7 +127,7 @@ export function filterTasks(
   return tasks.filter(
     (task) =>
       hasLabels(task, filters.labels) &&
-      !(filters.open && finalSlugs.has(task.status)),
+      !(filters.open && finalSlugs.has(task.status ?? "")),
   );
 }
 
@@ -144,7 +144,7 @@ function sortKey(
 ): number | string | null {
   switch (field) {
     case "priority":
-      return PRIORITY_RANK[task.priority] ?? 0;
+      return PRIORITY_RANK[task.priority ?? ""] ?? 0;
     case "dueDate":
       return task.dueDate ? new Date(task.dueDate).getTime() : null;
     case "createdAt":

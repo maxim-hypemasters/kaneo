@@ -2,7 +2,7 @@ import { Effect, Option, Result } from "effect";
 import { taskTypeOf } from "../api/task-features.js";
 import { InvalidArgument } from "../errors/errors.js";
 import { withSpinner } from "../output/spinner.js";
-import { taskArgument, taskLabel, taskRef } from "../relations/task-ref.js";
+import { taskLabel, taskRef } from "../relations/task-ref.js";
 import { type ResolvedTask, resolveTask } from "./resolve-task.js";
 
 export function notAFeature(task: ResolvedTask): InvalidArgument {
@@ -11,7 +11,7 @@ export function notAFeature(task: ResolvedTask): InvalidArgument {
     hint:
       task.task.type === undefined
         ? "This Kaneo server has no features yet. Update it, then try again."
-        : `Make it one with kaneo task edit ${taskArgument(taskRef(task))} --type feature, or pass a feature.`,
+        : "Choose an existing Feature, or create one with kaneo task create --type feature.",
   });
 }
 

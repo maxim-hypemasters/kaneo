@@ -23,6 +23,8 @@ async function moveFeatureTaskToBeta() {
       projectId: ctx.alpha.id,
       title: "Acquire Contoso",
       type: "feature",
+      status: null,
+      priority: null,
       number: 2,
     })
     .returning();
@@ -176,6 +178,8 @@ describe("feature activity across projects", () => {
         projectId: ctx.alpha.id,
         title: "Acquire Contoso",
         type: "feature",
+        status: null,
+        priority: null,
         number: 2,
       })
       .returning();

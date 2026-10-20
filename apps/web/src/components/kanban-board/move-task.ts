@@ -62,6 +62,10 @@ export function moveBoardTask(
       const old = previous.get(task.id);
       return old?.position !== task.position || old.status !== task.status;
     })
+    .filter(
+      (task): task is typeof task & { status: string } =>
+        typeof task.status === "string" && task.type !== "feature",
+    )
     .map((task) => ({
       id: task.id,
       position: task.position ?? 0,
@@ -72,11 +76,16 @@ export function moveBoardTask(
   const expectedTasks = project.columns
     .filter((column) => column.id === source.id || column.id === destination.id)
     .flatMap((column) =>
-      column.tasks.map((task) => ({
-        id: task.id,
-        position: task.position ?? null,
-        status: task.status,
-      })),
+      column.tasks
+        .filter(
+          (task): task is typeof task & { status: string } =>
+            typeof task.status === "string" && task.type !== "feature",
+        )
+        .map((task) => ({
+          id: task.id,
+          position: task.position ?? null,
+          status: task.status,
+        })),
     );
   return { project: next, tasks, expectedTasks };
 }

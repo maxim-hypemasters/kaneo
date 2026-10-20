@@ -1,3 +1,4 @@
+import { archiveFeature } from "@/fetchers/task/feature-library";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -43,10 +44,9 @@ import { getTaskPath } from "@/lib/task-link";
 import { toast } from "@/lib/toast";
 import useProjectStore from "@/store/project";
 import type Task from "@/types/task";
-import { TASK_TYPES, type TaskType } from "@/types/task";
+import type { TaskType } from "@/types/task";
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { TASK_TYPE_CONVERSIONS } from "@/lib/task-type";
-import { HttpError } from "@/lib/http-error";
 import { PriorityGlyph } from "@/components/task-chips/priority-glyph";
 import { DueDateSubmenu } from "./due-date-submenu";
 
@@ -106,8 +106,6 @@ export default function TaskCardContextMenuContent({
   const canAssign = canAssignTasks();
 
   const isFeature = task.type === "feature";
-  // The API refuses to make a feature with tasks a task.
-  const convertBlocked = isFeature && (task.subtaskCounts?.total ?? 0) > 0;
 
   const usersOptions = useMemo(() => {
     return projectMembers?.map((member) => ({
@@ -146,19 +144,11 @@ export default function TaskCardContextMenuContent({
     });
   };
 
-  const handleConvert = async (type: TaskType) => {
+  const handleConvert = async (type: Exclude<TaskType, "feature">) => {
     try {
       await updateTaskType({ task, type });
-    } catch (error) {
-      toast.error(
-        t(
-          type !== "feature" &&
-            error instanceof HttpError &&
-            error.status === 409
-            ? "tasks:features.convertLeafBlocked"
-            : "tasks:features.typeError",
-        ),
-      );
+    } catch {
+      toast.error(t("tasks:features.typeError"));
     }
   };
 
@@ -213,7 +203,7 @@ export default function TaskCardContextMenuContent({
 
       {(canEdit || canAssign) && <ContextMenuSeparator />}
 
-      {canEdit && (
+      {canEdit && !isFeature && (
         <ContextMenuSub>
           <ContextMenuSubTrigger>
             <PriorityGlyph priority="high" />
@@ -246,7 +236,7 @@ export default function TaskCardContextMenuContent({
         </ContextMenuSub>
       )}
 
-      {canEdit && (
+      {canEdit && !isFeature && (
         <ContextMenuSub>
           <ContextMenuSubTrigger>
             <CircleDot className="size-3.5 text-muted-foreground" />
@@ -269,9 +259,9 @@ export default function TaskCardContextMenuContent({
         </ContextMenuSub>
       )}
 
-      {canEdit && <DueDateSubmenu task={task} />}
+      {canEdit && !isFeature && <DueDateSubmenu task={task} />}
 
-      {canAssign && usersOptions && (
+      {canAssign && !isFeature && usersOptions && (
         <ContextMenuSub>
           <ContextMenuSubTrigger>
             <UserRound className="size-3.5 text-muted-foreground" />
@@ -317,12 +307,12 @@ export default function TaskCardContextMenuContent({
       {canEdit && (
         <>
           <ContextMenuSeparator />
-          {TASK_TYPES.filter((type) => type !== (task.type ?? "task")).map(
-            (type) => (
+          {(["task", "bug"] as const)
+            .filter((type) => !isFeature && type !== (task.type ?? "task"))
+            .map((type) => (
               <ContextMenuItem
                 key={type}
                 className="[&>svg]:mx-0"
-                disabled={convertBlocked}
                 onClick={() => void handleConvert(type)}
               >
                 <TaskTypeGlyph
@@ -330,17 +320,9 @@ export default function TaskCardContextMenuContent({
                   decorative
                   className="size-3.5 text-muted-foreground"
                 />
-                <span className="flex min-w-0 flex-col">
-                  <span>{t(TASK_TYPE_CONVERSIONS[type])}</span>
-                  {convertBlocked && (
-                    <span className="text-muted-foreground text-xs">
-                      {t("tasks:features.convertLeafBlocked")}
-                    </span>
-                  )}
-                </span>
+                <span>{t(TASK_TYPE_CONVERSIONS[type])}</span>
               </ContextMenuItem>
-            ),
-          )}
+            ))}
           {task.featureId && (
             <ContextMenuItem
               className="[&>svg]:mx-0"
@@ -373,12 +355,39 @@ export default function TaskCardContextMenuContent({
                 <>
                   <ContextMenuItem
                     className="[&>svg]:mx-0"
-                    onClick={() => handleChange("status", "archived")}
+                    onClick={async () => {
+                      if (!isFeature) {
+                        void handleChange("status", "archived");
+                        return;
+                      }
+                      try {
+                        await archiveFeature(task.id, !task.archivedAt);
+                        for (const queryKey of [
+                          ["task", task.id],
+                          ["project-features", task.projectId],
+                          ["feature-library", task.projectId],
+                          ["activities", task.id],
+                        ])
+                          void queryClient.invalidateQueries({ queryKey });
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : t("tasks:features.library.saveError"),
+                        );
+                      }
+                    }}
                   >
                     <Archive className="size-3.5 text-muted-foreground" />
-                    <span>{t("tasks:actions.archive")}</span>
+                    <span>
+                      {t(
+                        isFeature && task.archivedAt
+                          ? "tasks:features.library.restore"
+                          : "tasks:actions.archive",
+                      )}
+                    </span>
                   </ContextMenuItem>
-                  {task.status !== "planned" && (
+                  {!isFeature && task.status !== "planned" && (
                     <ContextMenuItem
                       className="[&>svg]:mx-0"
                       onClick={() => handleChange("status", "planned")}

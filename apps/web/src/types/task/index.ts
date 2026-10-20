@@ -29,7 +29,7 @@ type Task = {
   number: number | null;
   description: string | null;
   descriptionDeferred?: boolean;
-  status: string;
+  status: string | null;
   priority: string | null;
   startDate: string | null;
   dueDate: string | null;
@@ -41,6 +41,7 @@ type Task = {
   assigneeName: string | null;
   assigneeImage?: string | null;
   projectId: string;
+  archivedAt?: string | null;
   columnId?: string | null;
   // "feature" groups tasks of its project; a task belongs to at most one.
   // Optional while older cached data and hand-built tasks lack them.

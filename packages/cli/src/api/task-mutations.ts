@@ -10,8 +10,8 @@ export const CreatedTask = Schema.Struct({
   number: Schema.NullOr(Schema.Number),
   title: Schema.String,
   description: NullableString,
-  status: Schema.String,
-  priority: Schema.String,
+  status: Schema.NullOr(Schema.String),
+  priority: Schema.NullOr(Schema.String),
   startDate: NullableString,
   dueDate: NullableString,
   createdAt: Schema.String,
@@ -29,8 +29,8 @@ const EditableTask = Schema.Struct({
   id: Schema.String,
   projectId: Schema.String,
   title: Schema.String,
-  status: Schema.String,
-  priority: Schema.String,
+  status: Schema.NullOr(Schema.String),
+  priority: Schema.NullOr(Schema.String),
   position: Schema.NullOr(Schema.Number),
   userId: NullableString,
   dueDate: NullableString,
@@ -41,14 +41,14 @@ export type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
 export type CreateTaskBody = {
   readonly title: string;
   readonly description: string;
-  readonly priority: Priority;
-  readonly status: string;
+  readonly priority?: Priority;
+  readonly status?: string;
   readonly userId?: string;
   readonly dueDate?: string;
   readonly startDate?: string;
   readonly type?: TaskType;
   readonly featureId?: string;
-  // Omitted, the task starts in its feature's release; null means none.
+  // Omitted, the task starts in its milestone's release; null means none.
   readonly releaseId?: string | null;
   readonly milestoneId?: string | null;
 };

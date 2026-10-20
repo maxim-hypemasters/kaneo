@@ -48,7 +48,7 @@ async function getTaskRelations(
       title: string;
       type: TaskType;
       milestoneId: string | null;
-      status: string;
+      status: string | null;
       isCompleted: boolean;
       priority: string | null;
       number: number | null;

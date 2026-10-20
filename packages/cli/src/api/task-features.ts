@@ -31,7 +31,7 @@ export const updateTaskFeature = Effect.fnUntraced(function* (
 
 export const updateTaskType = Effect.fnUntraced(function* (
   id: string,
-  type: TaskType,
+  type: Exclude<TaskType, "feature">,
 ) {
   const api = yield* KaneoApi;
   return yield* api.request(

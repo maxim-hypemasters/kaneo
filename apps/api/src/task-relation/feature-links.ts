@@ -4,10 +4,7 @@ import db from "../database";
 import { projectTable, taskRelationTable, taskTable } from "../database/schema";
 import { publishEvent } from "../events";
 import { assertProjectAccess } from "../project-access/assert-project-access";
-import {
-  setTaskFeature,
-  setTaskType,
-} from "../task/feature-hierarchy/assign-feature";
+import { setTaskFeature } from "../task/feature-hierarchy/assign-feature";
 import { publishFeatureChange } from "../task/feature-hierarchy/publish-feature-change";
 
 // Features replaced subtasks, but published clients (MCP 0.1.13, CLI 0.1.1)
@@ -75,7 +72,7 @@ export async function projectFeatureLinks(projectId: string) {
 }
 
 // "Make target a subtask of source": the target joins the source's feature.
-// A plain source becomes a feature first; a source that is itself in a
+// A source that is itself in a
 // feature hands the target to that feature and keeps a related link between
 // the two, as the conversion of existing subtasks does.
 export async function linkSubtaskAsFeature({
@@ -102,7 +99,7 @@ export async function linkSubtaskAsFeature({
       )
       .orderBy(taskTable.id)
       .for("update", { of: taskTable });
-    let source = locked.find(({ task }) => task.id === sourceTaskId)?.task;
+    const source = locked.find(({ task }) => task.id === sourceTaskId)?.task;
     const target = locked.find(({ task }) => task.id === targetTaskId)?.task;
     if (!source) {
       throw new HTTPException(404, { message: "Source task not found" });
@@ -124,13 +121,14 @@ export async function linkSubtaskAsFeature({
     }
 
     let featureId = source.id;
-    let promoted = false;
     if (source.type !== "feature") {
       if (source.featureId) {
         featureId = source.featureId;
       } else {
-        source = await setTaskType(tx, source, "feature", userId);
-        promoted = true;
+        throw new HTTPException(409, {
+          message:
+            "Create a Feature first; Tasks and Bugs cannot become Features",
+        });
       }
     }
     if (target.featureId === featureId) {
@@ -173,15 +171,14 @@ export async function linkSubtaskAsFeature({
       updated,
       related,
       previousFeatureId: target.featureId,
-      promotedId: promoted ? source.id : null,
     };
   });
 
-  const { updated, related, previousFeatureId, promotedId } = result;
+  const { updated, related, previousFeatureId } = result;
   await publishFeatureChange({
     projectId: updated.projectId,
     taskId: updated.id,
-    featureIds: [previousFeatureId, updated.featureId, promotedId],
+    featureIds: [previousFeatureId, updated.featureId],
     userId,
   });
   if (related) {

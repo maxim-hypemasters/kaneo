@@ -9,11 +9,12 @@ export type TaskDetailJson = {
   readonly type: TaskType;
   readonly featureId: string | null;
   readonly releaseId: string | null;
+  readonly archivedAt?: string | null;
   readonly milestoneId: string | null;
   readonly description: string | null;
-  readonly status: string;
-  readonly statusName: string;
-  readonly priority: string;
+  readonly status: string | null;
+  readonly statusName: string | null;
+  readonly priority: string | null;
   readonly assignee: {
     readonly id: string;
     readonly name: string | null;
@@ -41,6 +42,7 @@ export function toTaskDetailJson(resolved: ResolvedTask): TaskDetailJson {
     type: taskTypeOf(task),
     featureId: task.featureId ?? null,
     releaseId: task.releaseId ?? null,
+    ...(task.archivedAt === undefined ? {} : { archivedAt: task.archivedAt }),
     milestoneId: task.milestoneId ?? null,
     description: task.description,
     status: task.status,

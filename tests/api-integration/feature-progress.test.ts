@@ -1,3 +1,4 @@
+import getTask from "../../apps/api/src/task/controllers/get-task";
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import updateColumn from "../../apps/api/src/column/controllers/update-column";
@@ -6,7 +7,6 @@ import { eventContext } from "../../apps/api/src/events";
 import { createApp } from "../../apps/api/src/index";
 import { getPublicProject } from "../../apps/api/src/project/controllers/get-public-project";
 import deleteTask from "../../apps/api/src/task/controllers/delete-task";
-import getTasks from "../../apps/api/src/task/controllers/get-tasks";
 import updateTaskFeature from "../../apps/api/src/task/controllers/update-task-feature";
 import updateTaskStatus from "../../apps/api/src/task/controllers/update-task-status";
 import {
@@ -31,7 +31,25 @@ async function addTask(
   numbers += 1;
   const [task] = await db
     .insert(schema.taskTable)
-    .values({ projectId, title: "Task", status, number: numbers, ...values })
+    .values({
+      projectId,
+      title: "Task",
+      status,
+      number: numbers,
+      ...values,
+      ...(values.type === "feature"
+        ? {
+            status: null,
+            priority: null,
+            columnId: null,
+            userId: null,
+            startDate: null,
+            dueDate: null,
+            releaseId: null,
+            archivedAt: values.status === "archived" ? new Date() : null,
+          }
+        : {}),
+    })
     .returning();
   return task;
 }
@@ -39,13 +57,8 @@ async function addTask(
 const addFeature = (projectId: string, status = "to-do") =>
   addTask(projectId, status, { type: "feature" });
 
-async function countsFor(projectId: string, taskId: string) {
-  const { data } = await getTasks(projectId);
-  return [
-    ...data.columns.flatMap((c) => c.tasks),
-    ...data.plannedTasks,
-    ...data.archivedTasks,
-  ].find((task) => task.id === taskId)?.subtaskCounts;
+async function countsFor(_projectId: string, taskId: string) {
+  return (await getTask(taskId, true)).subtaskCounts;
 }
 
 async function setup() {
@@ -75,12 +88,11 @@ describe("feature progress", () => {
     const tasks = (await response.json()).data.columns.flatMap(
       (column: { tasks: unknown[] }) => column.tasks,
     );
-    expect(tasks).toEqual([
-      expect.objectContaining({
-        id: feature.id,
-        subtaskCounts: { completed: 1, total: 2 },
-      }),
-    ]);
+    expect(tasks).toEqual([]);
+    expect(await countsFor(ctx.project.id, feature.id)).toEqual({
+      completed: 1,
+      total: 2,
+    });
     expect(await countsFor(ctx.project.id, plain.id)).toEqual({
       completed: 0,
       total: 0,
@@ -110,7 +122,7 @@ describe("feature progress", () => {
     });
     await db
       .update(schema.taskTable)
-      .set({ status: "archived" })
+      .set({ archivedAt: new Date() })
       .where(eq(schema.taskTable.id, feature.id));
     expect(await countsFor(ctx.project.id, feature.id)).toEqual({
       completed: 1,
@@ -155,7 +167,7 @@ describe("feature progress", () => {
     await step({ completed: 0, total: 0 });
   });
 
-  it("shows feature progress on a public board", async () => {
+  it("keeps public execution work visible without Feature cards", async () => {
     const ctx = await setup();
     await db
       .update(schema.projectTable)
@@ -168,11 +180,13 @@ describe("feature progress", () => {
     expect(
       board.columns
         .flatMap((column) => column.tasks)
-        .find((task) => task.id === feature.id),
-    ).toMatchObject({
-      type: "feature",
-      subtaskCounts: { completed: 1, total: 1 },
-    });
+        .some((task) => task.id === feature.id),
+    ).toBe(false);
+    expect(board.columns.flatMap((column) => column.tasks)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ featureId: feature.id, type: "task" }),
+      ]),
+    );
   });
 });
 
@@ -238,7 +252,7 @@ describe("live feature progress", () => {
     }
   });
 
-  it("updates the feature's card when one of its tasks is deleted", async () => {
+  it("refreshes the Feature knowledge record when linked work is deleted", async () => {
     const ctx = await setup();
     const feature = await addFeature(ctx.project.id);
     const task = await addTask(ctx.project.id, "to-do", {

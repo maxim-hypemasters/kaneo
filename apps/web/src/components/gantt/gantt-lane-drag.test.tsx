@@ -1,3 +1,18 @@
+vi.mock("@/hooks/queries/milestone/use-get-project-milestones", () => {
+  const data: never[] = [];
+  return {
+    useGetProjectMilestones: () => ({
+      data,
+      isPending: false,
+      isError: false,
+      refetch: vi.fn(),
+    }),
+  };
+});
+vi.mock("@tanstack/react-query", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-query")>()),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
 import {
   cleanup,
   fireEvent,

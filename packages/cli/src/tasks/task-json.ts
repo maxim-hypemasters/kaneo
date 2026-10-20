@@ -12,9 +12,9 @@ export type TaskJson = {
   readonly type: TaskType;
   readonly featureId: string | null;
   readonly milestoneId: string | null;
-  readonly status: string;
-  readonly statusName: string;
-  readonly priority: string;
+  readonly status: string | null;
+  readonly statusName: string | null;
+  readonly priority: string | null;
   readonly assignee: {
     readonly id: string;
     readonly name: string | null;

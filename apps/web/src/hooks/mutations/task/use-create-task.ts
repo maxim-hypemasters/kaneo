@@ -51,6 +51,9 @@ function useCreateTask() {
       });
       if (variables.type === "feature") {
         void queryClient.invalidateQueries({
+          queryKey: ["feature-library", variables.projectId],
+        });
+        void queryClient.invalidateQueries({
           queryKey: ["project-features", variables.projectId],
         });
       }
@@ -58,6 +61,9 @@ function useCreateTask() {
         queryKey: ["feature-milestones", variables.projectId],
       });
       if (variables.featureId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["task-relations", variables.featureId],
+        });
         void queryClient.invalidateQueries({
           queryKey: ["task", variables.featureId],
         });

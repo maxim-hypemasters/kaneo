@@ -65,7 +65,7 @@ it("names each task's feature from the public board, wherever it sits", () => {
 
   render(<PublicKanbanView project={project} onTaskClick={onTaskClick} />);
 
-  expect(screen.getByText("tasks:features.badge")).toBeVisible();
+  expect(screen.queryByText("tasks:features.badge")).not.toBeInTheDocument();
   const chips = screen.getAllByRole("button", { name: /features.chipLabel/ });
   expect(chips).toHaveLength(1);
   fireEvent.click(chips[0]);
