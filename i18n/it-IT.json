@@ -2491,7 +2491,10 @@
 			"deleteConfirmDescription": "Questo rimuoverà permanentemente il progetto e tutti i suoi dati. Non puoi annullare questa azione.",
 			"deletedToast": "Progetto eliminato",
 			"deleteProject": "Elimina Progetto",
-			"switcherLabel": "Cambia progetto o vista"
+			"switcherLabel": "Cambia progetto o vista",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Cerca attività, progetti, commenti...",

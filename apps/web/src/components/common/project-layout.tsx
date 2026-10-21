@@ -7,7 +7,6 @@ import MobileProjectNav from "@/components/common/header/mobile-project-nav";
 import ProjectCrumbSelect from "@/components/common/header/project-crumb-select";
 import WorkspaceCrumbSelect from "@/components/common/header/workspace-crumb-select";
 import Layout from "@/components/common/layout";
-import { ProjectScopeToggle } from "@/components/project/views/project-scope-toggle";
 import {
   isTaskLayoutView,
   PROJECT_ROUTE_PATHS,
@@ -43,7 +42,6 @@ type ProjectLayoutProps = {
   summary?: ReactNode;
   filterBar?: ReactNode;
   children: ReactNode;
-  showViewSwitcher?: boolean;
   activeView?: ProjectRoute;
 };
 
@@ -54,7 +52,6 @@ export default function ProjectLayout({
   summary,
   filterBar,
   children,
-  showViewSwitcher = true,
   activeView,
 }: ProjectLayoutProps) {
   const { t } = useTranslation();
@@ -88,7 +85,9 @@ export default function ProjectLayout({
               ? "gantt"
               : "board");
   const currentView = resolveProjectView(resolvedRoute, viewMode);
-  const showViews = showViewSwitcher && !unavailableReason;
+  const showCreate =
+    resolvedRoute !== "releases" && Boolean(project) && canCreateTasks();
+  const showToolbar = Boolean(summary || toolbar || showCreate);
 
   // "Tasks" on the backlog or releases returns to the task view shown last,
   // however it was reached: a deep link, the default project view, or the
@@ -104,7 +103,7 @@ export default function ProjectLayout({
     projectId,
     currentRoute: resolvedRoute,
   });
-  useProjectViewShortcuts(goToView, currentView, showViews);
+  useProjectViewShortcuts(goToView, currentView, !unavailableReason);
 
   const handleProjectSwitch = (nextProjectId: string) => {
     navigate({
@@ -166,33 +165,26 @@ export default function ProjectLayout({
 
       {unavailableReason ? null : (
         <TooltipProvider>
-          <div
-            className={cn(
-              // On phones the toolbar takes a second row when it doesn't fit
-              // beside the view links, rather than covering or clipping them.
-              "flex min-h-11 shrink-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 border-border/80 border-b px-2 py-1 sm:h-11 sm:flex-nowrap sm:px-3 sm:py-0",
-              { "bg-card/80 backdrop-blur": !!background },
-            )}
-          >
-            {showViewSwitcher && (
-              <ProjectScopeToggle
-                workspaceId={workspaceId}
-                projectId={projectId}
-                currentView={currentView}
-                onSelect={goToView}
-              />
-            )}
-            {summary}
-            <div className="ml-auto flex shrink-0 items-center gap-1">
-              {resolvedRoute !== "releases" && project && canCreateTasks() && (
-                <NewWorkMenu onSelect={setCreateType} />
+          {showToolbar && (
+            <div
+              data-slot="project-toolbar"
+              className={cn(
+                "flex min-h-11 shrink-0 flex-wrap items-center gap-x-2.5 gap-y-1.5 border-border/80 border-b px-2 py-1 sm:h-11 sm:flex-nowrap sm:px-3 sm:py-0",
+                { "bg-card/80 backdrop-blur": !!background },
               )}
-              {toolbar}
+            >
+              {summary}
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                {showCreate && <NewWorkMenu onSelect={setCreateType} />}
+                {toolbar}
+              </div>
             </div>
-          </div>
-          <div className={cn({ "bg-card/80 backdrop-blur": !!background })}>
-            {filterBar}
-          </div>
+          )}
+          {filterBar && (
+            <div className={cn({ "bg-card/80 backdrop-blur": !!background })}>
+              {filterBar}
+            </div>
+          )}
         </TooltipProvider>
       )}
 

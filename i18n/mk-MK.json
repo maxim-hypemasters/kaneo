@@ -2449,7 +2449,10 @@
 			"deleteConfirmDescription": "Ова трајно ќе го отстрани проектот и сите негови податоци. Не можеш да ја вратиш оваа акција.",
 			"deletedToast": "Проектот е избришан",
 			"deleteProject": "Избриши проект",
-			"switcherLabel": "Промени проект или приказ"
+			"switcherLabel": "Промени проект или приказ",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Пребарај задачи, проекти, коментари...",

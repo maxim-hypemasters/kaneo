@@ -2491,7 +2491,10 @@
 			"deleteConfirmDescription": "Isso removerá permanentemente o projeto e todos os seus dados. Você não pode desfazer esta ação.",
 			"deletedToast": "Projeto excluído",
 			"deleteProject": "Excluir projeto",
-			"switcherLabel": "Trocar de projeto ou visualização"
+			"switcherLabel": "Trocar de projeto ou visualização",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Buscar tarefas, projetos, comentários...",

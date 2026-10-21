@@ -2449,7 +2449,10 @@
 			"deleteConfirmDescription": "Dadurch wird das Projekt und alle zugehörigen Daten dauerhaft entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
 			"deletedToast": "Projekt gelöscht",
 			"deleteProject": "Projekt löschen",
-			"switcherLabel": "Projekt oder Ansicht wechseln"
+			"switcherLabel": "Projekt oder Ansicht wechseln",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Aufgaben, Projekte, Kommentare suchen...",

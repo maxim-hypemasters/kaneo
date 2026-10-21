@@ -2449,7 +2449,10 @@
 			"deleteConfirmDescription": "Bu, layihəni və bütün məlumatlarını həmişəlik siləcək. Bu əməliyyatı geri qaytara bilməzsiniz.",
 			"deletedToast": "Layihə silindi",
 			"deleteProject": "Layihəni sil",
-			"switcherLabel": "Layihəni və ya görünüşü dəyiş"
+			"switcherLabel": "Layihəni və ya görünüşü dəyiş",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Tapşırıqları, layihələri və şərhləri axtar...",

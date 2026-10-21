@@ -2407,7 +2407,10 @@
 			"deleteConfirmDescription": "프로젝트와 모든 데이터가 영구적으로 제거됩니다. 이 작업은 취소할 수 없습니다.",
 			"deletedToast": "프로젝트가 삭제되었습니다",
 			"deleteProject": "프로젝트 삭제",
-			"switcherLabel": "프로젝트 또는 보기 전환"
+			"switcherLabel": "프로젝트 또는 보기 전환",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "작업, 프로젝트, 댓글 검색...",

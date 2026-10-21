@@ -2449,7 +2449,10 @@
 			"deleteConfirmDescription": "Bu, projeyi ve tüm verilerini kalıcı olarak kaldıracak. Bu işlemi geri alamazsınız.",
 			"deletedToast": "Proje silindi",
 			"deleteProject": "Projeyi Sil",
-			"switcherLabel": "Proje veya görünüm değiştir"
+			"switcherLabel": "Proje veya görünüm değiştir",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Talep, proje, yorum ara...",

@@ -12,6 +12,7 @@ const project = vi.hoisted(() => ({
     error: unknown;
   },
   canCreate: true,
+  shortcuts: vi.fn(),
   creation: {} as {
     open: boolean;
     type: string;
@@ -31,7 +32,7 @@ vi.mock("@tanstack/react-router", () => ({
   ),
 }));
 vi.mock("@/components/project/views/use-project-view-shortcuts", () => ({
-  useProjectViewShortcuts: () => undefined,
+  useProjectViewShortcuts: (...args: unknown[]) => project.shortcuts(...args),
 }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -82,6 +83,7 @@ afterEach(() => {
   localStorage.removeItem("user-preferences");
   useUserPreferencesStore.setState({ viewMode: "board", taskLayout: "board" });
   project.canCreate = true;
+  project.shortcuts.mockClear();
 });
 
 function renderLayout(activeView: ProjectRoute = "board") {
@@ -115,6 +117,11 @@ describe("ProjectLayout access states", () => {
     ).toBeVisible();
     expect(screen.queryByText("Board content")).toBeNull();
     expect(screen.queryByText("Toolbar action")).toBeNull();
+    expect(project.shortcuts).toHaveBeenLastCalledWith(
+      expect.any(Function),
+      "board",
+      false,
+    );
   });
 
   it("shows a not-found state on 404", () => {
@@ -137,78 +144,88 @@ describe("ProjectLayout access states", () => {
     expect(screen.getByText("5 tasks")).toBeVisible();
   });
 
-  it("marks tasks as current and links the backlog", () => {
+  it("keeps the toolbar and shortcuts without horizontal navigation", () => {
     project.current = { data: { name: "Alpha" }, error: null };
     renderLayout();
 
     expect(
-      screen
-        .getByRole("link", { name: "tasks:title" })
-        .getAttribute("aria-current"),
-    ).toBe("page");
-    const backlog = screen.getByRole("link", { name: "tasks:view.backlog" });
-    expect(backlog.getAttribute("aria-current")).toBeNull();
-    expect(backlog.getAttribute("href")).toBe(
-      "/dashboard/workspace/$workspaceId/project/$projectId/backlog",
-    );
-  });
-});
-
-describe("ProjectLayout releases", () => {
-  it("links the Features library alongside execution and release views", () => {
-    project.current = { data: { name: "Alpha" }, error: null };
-    renderLayout();
-
-    const links = screen
-      .getByRole("navigation", { name: "tasks:view.heading" })
-      .querySelectorAll("a");
-    expect([...links].map((link) => link.textContent)).toEqual([
+      screen.queryByRole("navigation", { name: "tasks:view.heading" }),
+    ).toBeNull();
+    for (const name of [
       "tasks:title",
       "tasks:view.backlog",
       "tasks:features.library.title",
       "tasks:view.releases",
-    ]);
-    const releases = screen.getByRole("link", { name: "tasks:view.releases" });
-    expect(releases.getAttribute("aria-current")).toBeNull();
-    expect(releases.getAttribute("href")).toBe(
-      "/dashboard/workspace/$workspaceId/project/$projectId/releases",
+    ])
+      expect(screen.queryByRole("link", { name })).toBeNull();
+    expect(screen.getByText("Toolbar action")).toBeVisible();
+    expect(screen.getByText("5 tasks")).toBeVisible();
+    expect(project.shortcuts).toHaveBeenLastCalledWith(
+      expect.any(Function),
+      "board",
+      true,
+    );
+  });
+});
+
+describe("ProjectLayout toolbar", () => {
+  it("wraps its remaining controls on phones", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    renderLayout("backlog");
+    const toolbar = screen
+      .getByRole("button", { name: "Toolbar action" })
+      .closest('[data-slot="project-toolbar"]');
+    expect(toolbar).toHaveClass("flex-wrap", "sm:flex-nowrap");
+    expect(
+      screen.queryByRole("navigation", { name: "tasks:view.heading" }),
+    ).toBeNull();
+  });
+
+  it("omits an empty toolbar while retaining filters and content", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    const { container } = render(
+      <ProjectLayout
+        projectId="project-1"
+        workspaceId="workspace-1"
+        activeView="releases"
+        filterBar={<button type="button">Filter release</button>}
+      >
+        <p>Release content</p>
+      </ProjectLayout>,
+    );
+    expect(container.querySelector('[data-slot="project-toolbar"]')).toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Filter release" }),
+    ).toBeVisible();
+    expect(screen.getByText("Release content")).toBeVisible();
+    expect(project.shortcuts).toHaveBeenLastCalledWith(
+      expect.any(Function),
+      "releases",
+      true,
     );
   });
 
-  it("wraps the toolbar below the view links on phones instead of scrolling them", () => {
+  it("omits an otherwise empty task toolbar when creation is unavailable", () => {
     project.current = { data: { name: "Alpha" }, error: null };
-    renderLayout("backlog");
-
-    const nav = screen.getByRole("navigation", { name: "tasks:view.heading" });
-    // A scrolling nav with a hidden scrollbar cut Releases off at 375px.
-    expect(nav.className).not.toMatch(/overflow-(x-)?(auto|scroll)/);
-    expect(nav).not.toHaveClass("shrink-0");
-    expect(nav.parentElement).toHaveClass("flex-wrap", "sm:flex-nowrap");
-    for (const link of nav.querySelectorAll("a")) {
-      expect(link.firstElementChild).toHaveClass("truncate");
-    }
+    project.canCreate = false;
+    const { container } = render(
+      <ProjectLayout
+        projectId="project-1"
+        workspaceId="workspace-1"
+        activeView="board"
+      >
+        <p>Task content</p>
+      </ProjectLayout>,
+    );
+    expect(container.querySelector('[data-slot="project-toolbar"]')).toBeNull();
+    expect(screen.getByText("Task content")).toBeVisible();
   });
 
-  it("marks Releases as current and keeps the last task view", () => {
+  it("keeps the last task layout while Releases is open", () => {
     project.current = { data: { name: "Alpha" }, error: null };
     useUserPreferencesStore.setState({ taskLayout: "gantt" });
-
     renderLayout("releases");
-
-    expect(
-      screen
-        .getByRole("link", { name: "tasks:view.releases" })
-        .getAttribute("aria-current"),
-    ).toBe("page");
-    expect(
-      screen
-        .getByRole("link", { name: "tasks:title" })
-        .getAttribute("aria-current"),
-    ).toBeNull();
     expect(useUserPreferencesStore.getState().taskLayout).toBe("gantt");
-    expect(
-      screen.getByRole("link", { name: "tasks:title" }).getAttribute("href"),
-    ).toBe("/dashboard/workspace/$workspaceId/project/$projectId/gantt");
   });
 });
 
@@ -259,9 +276,7 @@ describe("ProjectLayout tasks view", () => {
     cleanup();
     renderLayout("backlog");
 
-    expect(
-      screen.getByRole("link", { name: "tasks:title" }).getAttribute("href"),
-    ).toBe("/dashboard/workspace/$workspaceId/project/$projectId/board");
+    expect(useUserPreferencesStore.getState().taskLayout).toBe("list");
   });
 
   it("keeps the last task view while the backlog is open", () => {
@@ -271,8 +286,10 @@ describe("ProjectLayout tasks view", () => {
     renderLayout("backlog");
 
     expect(useUserPreferencesStore.getState().taskLayout).toBe("calendar");
-    expect(
-      screen.getByRole("link", { name: "tasks:title" }).getAttribute("href"),
-    ).toBe("/dashboard/workspace/$workspaceId/project/$projectId/calendar");
+    expect(project.shortcuts).toHaveBeenLastCalledWith(
+      expect.any(Function),
+      "backlog",
+      true,
+    );
   });
 });

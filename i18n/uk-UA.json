@@ -2533,7 +2533,10 @@
 			"deleteConfirmDescription": "Це назавжди видалить проєкт та всі його дані. Цю дію неможливо скасувати.",
 			"deletedToast": "Проєкт видалено",
 			"deleteProject": "Видалити проєкт",
-			"switcherLabel": "Змінити проєкт або вигляд"
+			"switcherLabel": "Змінити проєкт або вигляд",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Пошук завдань, проєктів, коментарів...",

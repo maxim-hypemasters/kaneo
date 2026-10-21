@@ -2449,7 +2449,10 @@
 			"deleteConfirmDescription": "Dit zal het project en alle data permanent verwijderen. Dit kan niet ongedaan worden gemaakt.",
 			"deletedToast": "Project verwijderd",
 			"deleteProject": "Project verwijderen",
-			"switcherLabel": "Project of weergave wisselen"
+			"switcherLabel": "Project of weergave wisselen",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Zoek taken, projecten, reacties...",
