@@ -2541,7 +2541,10 @@
 			"deleteConfirmDescription": "Проект и все его данные будут безвозвратно удалены. Это действие нельзя отменить.",
 			"deletedToast": "Проект удалён",
 			"deleteProject": "Удалить проект",
-			"switcherLabel": "Сменить проект или вид"
+			"switcherLabel": "Сменить проект или вид",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Поиск задач, проектов, комментариев...",

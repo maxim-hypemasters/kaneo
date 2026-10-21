@@ -2407,7 +2407,10 @@
 			"deleteConfirmDescription": "Thao tác này sẽ xóa vĩnh viễn dự án và toàn bộ dữ liệu của nó. Bạn không thể hoàn tác hành động này.",
 			"deletedToast": "Đã xóa dự án",
 			"deleteProject": "Xóa dự án",
-			"switcherLabel": "Chuyển dự án hoặc chế độ xem"
+			"switcherLabel": "Chuyển dự án hoặc chế độ xem",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Tìm công việc, dự án, bình luận...",

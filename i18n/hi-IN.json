@@ -2449,7 +2449,10 @@
 			"deleteConfirmDescription": "यह प्रोजेक्ट और इसका सभी डेटा स्थायी रूप से हटा दिया जाएगा। यह कार्रवाई पूर्ववत नहीं की जा सकती।",
 			"deletedToast": "प्रोजेक्ट हटाया गया",
 			"deleteProject": "प्रोजेक्ट हटाएँ",
-			"switcherLabel": "प्रोजेक्ट या व्यू बदलें"
+			"switcherLabel": "प्रोजेक्ट या व्यू बदलें",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "कार्य, प्रोजेक्ट, टिप्पणियाँ खोजें...",

@@ -2407,7 +2407,10 @@
 			"deleteConfirmDescription": "這會永久移除專案及其所有資料，此操作無法復原。",
 			"deletedToast": "專案已刪除",
 			"deleteProject": "刪除專案",
-			"switcherLabel": "切換專案或檢視"
+			"switcherLabel": "切換專案或檢視",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "搜尋任務、專案、留言...",

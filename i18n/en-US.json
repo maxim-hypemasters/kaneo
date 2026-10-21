@@ -2448,7 +2448,10 @@
 			"deleteConfirmDescription": "This will permanently remove the project and all its data. You can't undo this action.",
 			"deletedToast": "Project deleted",
 			"deleteProject": "Delete Project",
-			"switcherLabel": "Switch project or view"
+			"switcherLabel": "Switch project or view",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Search tasks, projects, comments...",

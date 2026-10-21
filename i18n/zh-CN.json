@@ -2407,7 +2407,10 @@
 			"deleteConfirmDescription": "这将永久删除项目及其所有数据，此操作不可撤销。",
 			"deletedToast": "项目已删除",
 			"deleteProject": "删除项目",
-			"switcherLabel": "切换项目或视图"
+			"switcherLabel": "切换项目或视图",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "搜索任务、项目、评论…",

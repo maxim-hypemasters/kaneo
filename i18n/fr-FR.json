@@ -2491,7 +2491,10 @@
 			"deleteConfirmDescription": "Cela supprimera définitivement le projet et toutes ses données. Vous ne pouvez pas annuler cette action.",
 			"deletedToast": "Projet supprimé",
 			"deleteProject": "Supprimer le projet",
-			"switcherLabel": "Changer de projet ou de vue"
+			"switcherLabel": "Changer de projet ou de vue",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Rechercher des tâches, projets, commentaires...",

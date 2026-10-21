@@ -661,7 +661,10 @@
 			"deleteConfirmDescription": "Spowoduje to trwałe usunięcie projektu i wszystkich jego danych. Nie można tego cofnąć.",
 			"deletedToast": "Projekt usunięty",
 			"deleteProject": "Usuń projekt",
-			"switcherLabel": "Przełącz projekt lub widok"
+			"switcherLabel": "Przełącz projekt lub widok",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Szukaj zadań, projektów i komentarzy...",

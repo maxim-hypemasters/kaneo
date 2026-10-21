@@ -16,10 +16,8 @@ import {
 import {
   arrayMove,
   SortableContext,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import {
@@ -33,10 +31,13 @@ import {
   Trash2Icon,
   LinkIcon,
 } from "lucide-react";
-import { type CSSProperties, type ReactNode, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { ProjectProgress } from "@/components/project-progress";
+import { ProjectSidebarMenu } from "@/components/project/views/project-sidebar-menu";
+import { useProjectMenuExpansion } from "@/components/project/views/use-project-menu-expansion";
+import { useProjectSidebarScope } from "@/components/project/views/use-project-sidebar-scope";
+import { SidebarProjectItem } from "@/components/sidebar-project-item";
 import { useOpenProject } from "@/components/project/views/use-open-project";
 import {
   Collapsible,
@@ -56,17 +57,13 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import icons from "@/constants/project-icons";
 import useDeleteProject from "@/hooks/mutations/project/use-delete-project";
 import useReorderProjects from "@/hooks/mutations/project/use-reorder-projects";
 import useGetProjects from "@/hooks/queries/project/use-get-projects";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { EASE_OUT_CSS } from "@/lib/motion";
 import { toast } from "@/lib/toast";
 import type { ProjectWithTasks } from "@/types/project";
 import CreateProjectModal from "./shared/modals/create-project-modal";
@@ -81,49 +78,9 @@ import {
 } from "./ui/alert-dialog";
 import { Button } from "./ui/button";
 
-function SortableProjectItem({
-  id,
-  canReorder,
-  children,
-}: {
-  id: string;
-  canReorder: boolean;
-  children: ReactNode;
-}) {
-  const { listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({
-      id,
-      disabled: !canReorder,
-      // The reorder already moves the row; animating the index change too
-      // replays the same move from a stale offset.
-      animateLayoutChanges: () => false,
-      // dnd-kit defaults to `ease`; this is the app's curve.
-      transition: { duration: 200, easing: EASE_OUT_CSS },
-    });
-
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    // `listeners` without `attributes`: the latter puts role="button" and a tab
-    // stop on the row, wrapping the link and the dropdown inside it.
-    <SidebarMenuItem
-      ref={setNodeRef}
-      style={style}
-      data-kaneo-sortable=""
-      className={isDragging ? "opacity-0" : undefined}
-      {...(canReorder ? listeners : {})}
-    >
-      {children}
-    </SidebarMenuItem>
-  );
-}
-
 export function NavProjects() {
   const { t } = useTranslation();
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { data: workspace } = useActiveWorkspace();
   const { data: projects } = useGetProjects(
     {
@@ -148,6 +105,12 @@ export function NavProjects() {
       strict: false,
     });
 
+  const menus = useProjectMenuExpansion(
+    workspace?.id,
+    currentWorkspaceId === workspace?.id ? currentProjectId : undefined,
+  );
+  const activeScope = useProjectSidebarScope(workspace?.id || "");
+
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] =
     useState(false);
   const [isDeleteProjectModalOpen, setIsDeleteProjectModalOpen] =
@@ -170,6 +133,7 @@ export function NavProjects() {
   };
 
   const handleProjectClick = (project: ProjectWithTasks) => {
+    setOpenMobile(false);
     openProject(workspace?.id || "", project.id);
   };
 
@@ -260,36 +224,18 @@ export function NavProjects() {
                     items={projects?.map((project) => project.id) ?? []}
                     strategy={verticalListSortingStrategy}
                   >
-                    {projects?.map((project) => {
-                      const ProjectIcon =
-                        icons[project.icon as keyof typeof icons] ||
-                        icons.Layout;
-
-                      return (
-                        <SortableProjectItem
-                          key={project.id}
-                          id={project.id}
-                          canReorder={canReorder}
-                        >
-                          <SidebarMenuButton
-                            isActive={isCurrentProject(project.id)}
-                            size="default"
-                            className="h-8 text-sm"
-                            onClick={() => handleProjectClick(project)}
-                          >
-                            <ProjectIcon aria-hidden="true" />
-                            <span className="min-w-0 flex-1 truncate">
-                              {project.name}
-                            </span>
-                            {/* Gives way to the row menu, which sits here on hover. */}
-                            <ProjectProgress
-                              percentage={
-                                project.statistics.completionPercentage
-                              }
-                              className="text-muted-foreground max-md:hidden group-focus-within/menu-item:opacity-0 group-hover/menu-item:opacity-0 group-has-data-popup-open/menu-item:opacity-0"
-                            />
-                          </SidebarMenuButton>
-
+                    {projects?.map((project) => (
+                      <SidebarProjectItem
+                        key={`${workspace.id}:${project.id}`}
+                        project={project}
+                        canReorder={canReorder}
+                        current={isCurrentProject(project.id)}
+                        expanded={menus.isExpanded(project.id)}
+                        onExpandedChange={(open) =>
+                          menus.setExpanded(project.id, open)
+                        }
+                        onOpen={() => handleProjectClick(project)}
+                        actions={
                           <DropdownMenu>
                             <DropdownMenuTrigger
                               render={
@@ -300,7 +246,7 @@ export function NavProjects() {
                                   onPointerDown={(event) =>
                                     event.stopPropagation()
                                   }
-                                  className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground after:-inset-2 after:absolute md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-popup-open:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0"
+                                  className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground after:-inset-2 after:absolute md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden group-focus-within/project-header:opacity-100 group-hover/project-header:opacity-100 data-popup-open:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0"
                                 />
                               }
                             >
@@ -375,9 +321,20 @@ export function NavProjects() {
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </SortableProjectItem>
-                      );
-                    })}
+                        }
+                      >
+                        <ProjectSidebarMenu
+                          workspaceId={workspace.id}
+                          projectId={project.id}
+                          projectName={project.name}
+                          activeScope={
+                            activeScope?.projectId === project.id
+                              ? activeScope.scope
+                              : null
+                          }
+                        />
+                      </SidebarProjectItem>
+                    ))}
                   </SortableContext>
                 </SidebarMenu>
 

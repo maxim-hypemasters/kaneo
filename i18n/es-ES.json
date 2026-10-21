@@ -2491,7 +2491,10 @@
 			"deletedToast": "Proyecto eliminado",
 			"deleteProject": "Eliminar proyecto",
 			"projectSettings": "Ajustes del proyecto",
-			"switcherLabel": "Cambiar de proyecto o vista"
+			"switcherLabel": "Cambiar de proyecto o vista",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Busca tareas, proyectos, comentarios...",

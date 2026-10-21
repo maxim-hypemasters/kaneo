@@ -2407,7 +2407,10 @@
 			"deleteConfirmDescription": "Ini akan menghapus proyek dan semua datanya secara permanen. Anda tidak dapat membatalkan tindakan ini.",
 			"deletedToast": "Proyek dihapus",
 			"deleteProject": "Hapus Proyek",
-			"switcherLabel": "Ganti proyek atau tampilan"
+			"switcherLabel": "Ganti proyek atau tampilan",
+			"expandProject": "Expand {{name}}",
+			"collapseProject": "Collapse {{name}}",
+			"navigationLabel": "{{name}} navigation"
 		},
 		"search": {
 			"inputPlaceholder": "Cari tugas, proyek, komentar...",
