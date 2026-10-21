@@ -8,6 +8,8 @@ import type Task from "@/types/task";
 import { useProjectSlugs } from "../sections/use-project-slugs";
 import { RemoveFromFeatureButton } from "./remove-from-feature-button";
 import { useTaskFeature } from "./use-task-feature";
+import { taskReleaseSearch } from "../task-release-origin";
+import { useTaskReleaseOrigin } from "../task-release-origin-context";
 
 type FeatureBreadcrumbProps = {
   task: Pick<Task, "id" | "projectId" | "featureId">;
@@ -20,6 +22,7 @@ export function FeatureBreadcrumb({
 }: FeatureBreadcrumbProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const origin = useTaskReleaseOrigin();
   const feature = useTaskFeature(task);
   const displayIdOf = useProjectSlugs(workspaceId);
   const { canUpdateTasks } = useWorkspacePermission();
@@ -58,6 +61,7 @@ export function FeatureBreadcrumb({
               projectId: feature.projectId,
               taskId: feature.id,
             },
+            search: taskReleaseSearch(origin, feature.projectId),
           })
         }
       >

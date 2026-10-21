@@ -1,5 +1,7 @@
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { useNavigate } from "@tanstack/react-router";
+import { taskReleaseSearch } from "./task-release-origin";
+import { useTaskReleaseOrigin } from "./task-release-origin-context";
 import { Ban, Link2, Search, X } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -92,6 +94,7 @@ export default function TaskRelations({
 }: TaskRelationsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const origin = useTaskReleaseOrigin();
   const [commandOpen, setCommandOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRelationType, setSelectedRelationType] =
@@ -256,6 +259,7 @@ export default function TaskRelations({
     navigate({
       to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
       params: { workspaceId, projectId: linked.projectId, taskId: linked.id },
+      search: taskReleaseSearch(origin, linked.projectId),
     });
   };
 

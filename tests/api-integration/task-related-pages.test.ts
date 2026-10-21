@@ -128,6 +128,72 @@ describe("bounded board related pages", () => {
       ).toBeNull();
     }
   });
+  it.each([false, true])(
+    "retains unmapped statuses without moving real later-page columns on public=%s reads",
+    async (isPublic) => {
+      const { app, project, task } = await fixture();
+      const [legacy] = await db
+        .insert(schema.taskTable)
+        .values({
+          projectId: project.id,
+          title: "Deleted-column bug",
+          type: "bug",
+          number: 2,
+          status: "removed-column",
+        })
+        .returning();
+      await db.insert(schema.taskTable).values([
+        {
+          projectId: project.id,
+          title: "Planned",
+          number: 3,
+          status: "planned",
+        },
+        {
+          projectId: project.id,
+          title: "Archived",
+          number: 4,
+          status: "archived",
+        },
+      ]);
+      if (isPublic) mockAnonymousSession();
+      const response = await app.request(
+        `/api/${isPublic ? "public-project" : "task/tasks"}/${project.id}`,
+      );
+      expect(response.status).toBe(200);
+      const json = await response.json();
+      const board = isPublic ? json : json.data;
+      expect(board.plannedTasks).toHaveLength(2);
+      expect(board.plannedTasks).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: legacy.id,
+            status: "removed-column",
+            type: "bug",
+          }),
+          expect.objectContaining({ status: "planned" }),
+        ]),
+      );
+      expect(board.archivedTasks).toHaveLength(1);
+      expect(
+        board.columns.find(
+          (column: { slug: string }) => column.slug === "extra-236",
+        ).tasks,
+      ).toEqual([
+        expect.objectContaining({ id: task.id, status: "extra-236" }),
+      ]);
+      expect(
+        board.columns.some(
+          (column: { slug: string }) => column.slug === "removed-column",
+        ),
+      ).toBe(false);
+      expect(
+        await db.query.taskTable.findFirst({
+          where: eq(schema.taskTable.id, legacy.id),
+        }),
+      ).toMatchObject({ status: "removed-column" });
+    },
+  );
   it("rejects other workspaces, revoked public visibility and invalid metadata pages", async () => {
     const { app, project } = await fixture();
     for (const query of [

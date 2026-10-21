@@ -110,6 +110,55 @@ describe("bounded board cache updates", () => {
       patchBoardTask(moved, "a", { projectId: "other" })?.columns[1].tasks,
     ).toHaveLength(0);
   });
+
+  it("keeps missing-column work discoverable through release edits and later status refreshes", () => {
+    const client = new QueryClient();
+    const legacy = patchBoardTask(board(), "a", {
+      projectId: "p",
+      status: "removed-column",
+      type: "bug",
+    })!;
+    client.setQueryData(["tasks", "p"], legacy);
+    updateBoardTaskCache(client, "p", "a", { releaseId: "release" });
+    const linked = client.getQueryData<ProjectWithTasks>(["tasks", "p"])!;
+    expect(linked.columns.flatMap((column) => column.tasks)).toEqual([]);
+    expect(linked.plannedTasks).toEqual([
+      expect.objectContaining({
+        id: "a",
+        type: "bug",
+        status: "removed-column",
+        releaseId: "release",
+        labels: [{ id: "label" }],
+      }),
+    ]);
+    const active = patchBoardTask(linked, "a", {
+      projectId: "p",
+      status: "doing",
+    })!;
+    expect(active.plannedTasks).toEqual([]);
+    expect(active.columns[1].tasks).toHaveLength(1);
+    const archived = patchBoardTask(linked, "a", {
+      projectId: "p",
+      status: "archived",
+    })!;
+    expect(archived.plannedTasks).toEqual([]);
+    expect(archived.archivedTasks).toHaveLength(1);
+    client.clear();
+  });
+
+  it("does not invent a partial card when a release update targets work absent from the cache", () => {
+    const client = new QueryClient();
+    client.setQueryData(["tasks", "p"], board());
+    updateBoardTaskCache(client, "not-loaded", "missing", {
+      releaseId: "release",
+    });
+    expect(client.getQueryData(["tasks", "not-loaded"])).toBeUndefined();
+    updateBoardTaskCache(client, "p", "missing", { releaseId: "release" });
+    expect(
+      client.getQueryData<ProjectWithTasks>(["tasks", "p"])?.plannedTasks,
+    ).toEqual([]);
+    client.clear();
+  });
 });
 
 it("rejects a late mutation response after a newer socket patch", () => {

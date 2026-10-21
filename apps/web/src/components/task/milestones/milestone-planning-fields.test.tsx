@@ -56,6 +56,38 @@ const milestone = {
   endDate: null,
 };
 describe("Milestone planning controls", () => {
+  it("omits derived status and dates only during creation", () => {
+    render(
+      <MilestonePlanningFields
+        projectId="p"
+        workspaceId="w"
+        milestone={milestone}
+        creating
+        onChange={vi.fn()}
+      />,
+    );
+    for (const name of [
+      "tasks:status.label",
+      "tasks:milestones.startDate",
+      "tasks:milestones.endDate",
+    ])
+      expect(screen.queryByText(name)).not.toBeInTheDocument();
+    const lead = screen.getByRole("button", { name: "tasks:milestones.lead" });
+    const priority = screen.getByRole("button", {
+      name: "tasks:priority.label",
+    });
+    const release = screen.getByRole("button", {
+      name: "tasks:releases.property",
+    });
+    expect(lead).toBeEnabled();
+    expect(priority).toBeEnabled();
+    expect(lead.closest("label")?.parentElement).toBe(
+      priority.closest("label")?.parentElement,
+    );
+    expect(release.closest("label")?.parentElement).toHaveClass(
+      "sm:col-span-2",
+    );
+  });
   it("changes only the selected milestone planning field", async () => {
     const onChange = vi.fn();
     render(
@@ -100,6 +132,18 @@ describe("Milestone planning controls", () => {
     expect(
       screen.getByRole("button", { name: "tasks:priority.label" }),
     ).toBeEnabled();
+  });
+  it("ignores a planning choice opened before submission starts", async () => {
+    const onChange = vi.fn();
+    const props = { projectId: "p", workspaceId: "w", milestone, onChange };
+    const { rerender } = render(<MilestonePlanningFields {...props} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:releases.property" }),
+    );
+    await screen.findByRole("option", { name: "0.70" });
+    rerender(<MilestonePlanningFields {...props} pending />);
+    fireEvent.click(screen.getByRole("option", { name: "0.70" }));
+    expect(onChange).not.toHaveBeenCalled();
   });
   it("keeps planning readable without update permission", () => {
     mocks.update = false;

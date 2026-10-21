@@ -75,6 +75,10 @@ const columnCalls = () =>
   mocks.client.invalidateQueries.mock.calls.filter(
     ([filters]) => filters?.queryKey?.[0] === "columns",
   );
+const candidateCalls = () =>
+  mocks.client.invalidateQueries.mock.calls.filter(
+    ([filters]) => filters?.queryKey?.[0] === "release-link-candidates",
+  );
 // Release execution totals are authoritative, including derived milestones.
 const releasesRefreshes = () =>
   releaseCalls().filter(([filters]) => filters.refetchType !== "none").length;
@@ -88,6 +92,27 @@ const releaseMilestoneKeys = [
   ["feature-milestones", "p", "release", "another-release"],
 ];
 const otherProjectMilestones = ["feature-milestones", "other", "release", "r"];
+const candidateKeys = [
+  ["feature-create-candidates", "p", "", 1],
+  ["feature-create-candidates", "p", "Core", 2],
+  ["release-link-candidates", "p", "r", "task", "", 1],
+  ["release-link-candidates", "p", "another-release", "milestone", "Launch", 2],
+];
+const otherCandidateKey = [
+  "release-link-candidates",
+  "other",
+  "r",
+  "task",
+  "",
+  1,
+];
+function expectCandidatesInvalidated() {
+  for (const key of candidateKeys)
+    expect(milestoneCache.getQueryState(key)?.isInvalidated).toBe(true);
+  expect(milestoneCache.getQueryState(otherCandidateKey)?.isInvalidated).toBe(
+    false,
+  );
+}
 const initialWorkflow = [
   { id: "a", slug: "todo", position: 0, isFinal: false },
   { id: "b", slug: "active", position: 1, isFinal: false },
@@ -118,6 +143,8 @@ beforeEach(() => {
   milestoneCache = new QueryClient();
   for (const key of [...releaseMilestoneKeys, otherProjectMilestones])
     milestoneCache.setQueryData(key, []);
+  for (const key of [...candidateKeys, otherCandidateKey])
+    milestoneCache.setQueryData(key, []);
   milestoneCache.setQueryData(["columns", "p"], initialWorkflow);
   milestoneCache.setQueryData(["columns", "other"], initialWorkflow);
   mocks.client.invalidateQueries.mockImplementation((filters, options) =>
@@ -133,6 +160,35 @@ afterEach(() => {
 });
 
 describe("release list realtime", () => {
+  it("refetches mounted linking candidates once for a mixed remote event burst", async () => {
+    const read = vi.fn().mockResolvedValue([{ id: "available" }]);
+    const observer = new QueryObserver(milestoneCache, {
+      queryKey: candidateKeys[0],
+      queryFn: read,
+      staleTime: Infinity,
+    });
+    const unsubscribe = observer.subscribe(() => {});
+    renderHook(() => useProjectWebSocket("p"));
+    for (const type of [
+      "TASK_UPDATED",
+      "TASK_MOVED",
+      "MILESTONES_UPDATED",
+      "RELEASES_UPDATED",
+    ])
+      Socket.current.message(type, { taskId: "a", featureId: "f" });
+    expect(read).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(read).toHaveBeenCalledOnce();
+    expect(candidateCalls()).toHaveLength(1);
+    expect(observer.getCurrentResult().data).toEqual([{ id: "available" }]);
+    expect(milestoneCache.getQueryState(candidateKeys[1])?.isInvalidated).toBe(
+      true,
+    );
+    expect(milestoneCache.getQueryState(otherCandidateKey)?.isInvalidated).toBe(
+      false,
+    );
+    unsubscribe();
+  });
   it("refetches mounted release execution totals once after a remote task burst", async () => {
     const key = ["releases", "p"];
     milestoneCache.setQueryData(key, [{ id: "r", completedMilestones: 0 }]);
@@ -283,6 +339,7 @@ describe("release list realtime", () => {
     vi.advanceTimersByTime(300);
     expect(milestoneCalls()).toHaveLength(1);
     expectReleaseMilestonesInvalidated();
+    expectCandidatesInvalidated();
   });
   it("refreshes only details belonging to the changed Feature", () => {
     renderHook(() => useProjectWebSocket("p"));
@@ -312,10 +369,12 @@ describe("release list realtime", () => {
     Socket.current.onopen?.();
     expect(milestoneCalls()).toHaveLength(1);
     expectReleaseMilestonesInvalidated();
+    expectCandidatesInvalidated();
     Socket.current.message("MILESTONES_UPDATED");
     unmount();
     vi.advanceTimersByTime(300);
     expect(milestoneCalls()).toHaveLength(1);
+    expect(candidateCalls()).toHaveLength(1);
   });
   it("polls milestones in disconnected fallback", () => {
     renderHook(() => useProjectWebSocket("p"));
@@ -329,12 +388,15 @@ describe("release list realtime", () => {
       [{ queryKey: ["feature-milestones", "p"] }],
     ]);
     expectReleaseMilestonesInvalidated();
+    expectCandidatesInvalidated();
   });
   it("refreshes release metadata and chart without loading the board", () => {
     renderHook(() => useProjectWebSocket("p"));
     Socket.current.message("RELEASES_UPDATED");
     vi.advanceTimersByTime(300);
     expect(mocks.client.invalidateQueries.mock.calls).toEqual([
+      [{ queryKey: ["release-link-candidates", "p"] }],
+      [{ queryKey: ["feature-create-candidates", "p"] }],
       [{ queryKey: ["releases", "p"] }],
       [{ queryKey: ["release-progress", "p"] }],
     ]);

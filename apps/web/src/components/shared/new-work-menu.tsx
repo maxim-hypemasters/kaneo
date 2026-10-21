@@ -1,9 +1,15 @@
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Diamond, Link, Plus } from "lucide-react";
 import { type ReactElement, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
+import {
+  Menu,
+  MenuItem,
+  MenuPopup,
+  MenuSeparator,
+  MenuTrigger,
+} from "@/components/ui/menu";
 import type { TaskType } from "@/types/task";
 
 const OPTIONS = [
@@ -13,7 +19,8 @@ const OPTIONS = [
 ] as const;
 
 type NewWorkMenuProps = {
-  onSelect: (type: TaskType) => void;
+  onSelect?: (type: TaskType) => void;
+  onLink?: (kind: "task" | "milestone") => void;
   children?: ReactElement;
   disabled?: boolean;
   className?: string;
@@ -24,6 +31,7 @@ type NewWorkMenuProps = {
 
 export function NewWorkMenu({
   onSelect,
+  onLink,
   children,
   disabled,
   className,
@@ -59,22 +67,46 @@ export function NewWorkMenu({
       </MenuTrigger>
       <MenuPopup
         align={align}
-        className="w-44"
+        className={onLink ? "w-64" : "w-44"}
         // Selection opens a dialog or inline input that owns focus; Escape returns it.
         finalFocus={() => !selected.current}
       >
-        {OPTIONS.map(({ type, label }) => (
-          <MenuItem
-            key={type}
-            onClick={() => {
-              selected.current = true;
-              onSelect(type);
-            }}
-          >
-            <TaskTypeGlyph type={type} decorative />
-            {t(label)}
-          </MenuItem>
-        ))}
+        {onSelect &&
+          OPTIONS.map(({ type, label }) => (
+            <MenuItem
+              key={type}
+              onClick={() => {
+                selected.current = true;
+                onSelect(type);
+              }}
+            >
+              <TaskTypeGlyph type={type} decorative />
+              {t(label)}
+            </MenuItem>
+          ))}
+        {onSelect && onLink && <MenuSeparator />}
+        {onLink && (
+          <>
+            <MenuItem
+              onClick={() => {
+                selected.current = true;
+                onLink("milestone");
+              }}
+            >
+              <Diamond aria-hidden="true" />
+              {t("tasks:releases.link.milestoneAction")}
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                selected.current = true;
+                onLink("task");
+              }}
+            >
+              <Link aria-hidden="true" />
+              {t("tasks:releases.link.taskAction")}
+            </MenuItem>
+          </>
+        )}
       </MenuPopup>
     </Menu>
   );

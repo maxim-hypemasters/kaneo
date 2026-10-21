@@ -11,6 +11,11 @@ export type MilestoneInput = {
 export type MilestoneCreateInput = MilestoneInput & {
   title: string;
   taskIds?: string[];
+  newTasks?: MilestoneTaskDraft[];
+};
+export type MilestoneTaskDraft = {
+  title: string;
+  type: "task" | "bug";
 };
 export type Milestone = MilestoneInput & {
   title: string;

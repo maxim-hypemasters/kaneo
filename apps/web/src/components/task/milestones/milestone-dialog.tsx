@@ -17,52 +17,51 @@ import { MilestonePlanningFields } from "./milestone-planning-fields";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import type { MilestoneInput } from "@/fetchers/milestone/milestones";
 import type { Milestone } from "@/fetchers/milestone/milestones";
-import { useMilestoneCandidates } from "@/hooks/queries/milestone/use-milestone-candidates";
-import { deriveMilestoneDates } from "./derive-milestone-dates";
-import { deriveMilestoneStatus } from "./derive-milestone-status";
-import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import { MilestoneDraftTasks } from "./milestone-draft-tasks";
+import {
+  MAX_MILESTONE_DRAFT_TASKS,
+  type MilestoneDraftTask,
+} from "./milestone-draft-task";
+
 export function MilestoneDialog({
   projectId,
   featureId,
   milestone,
+  initialReleaseId,
   onClose,
 }: {
   projectId: string;
   featureId: string;
   milestone?: Milestone;
+  initialReleaseId?: string | null;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState(milestone?.title ?? "");
   const { data: workspace } = useActiveWorkspace();
+  const { canCreateTasks } = useWorkspacePermission();
   const [planning, setPlanning] = useState<MilestoneInput>({
     leadId: milestone?.leadId ?? null,
     priority: milestone?.priority ?? "no-priority",
-    releaseId: milestone?.releaseId ?? null,
+    releaseId: milestone ? milestone.releaseId : (initialReleaseId ?? null),
   });
-  const [error, setError] = useState<"save" | "selection" | null>(null);
+  const [error, setError] = useState<{
+    kind: "save" | "selection";
+    detail?: string;
+  } | null>(null);
   const [taskIds, setTaskIds] = useState<string[]>([]);
-  const selectedTaskIds = new Set(taskIds);
-  const candidates = useMilestoneCandidates(
-    projectId,
-    milestone ? "" : featureId,
-  );
-  const columns = useGetColumns(projectId);
-  const selectedTasks =
-    candidates.data?.tasks.filter((task) => selectedTaskIds.has(task.id)) ?? [];
-  const dates =
-    milestone ??
-    deriveMilestoneDates(
-      selectedTasks,
-      Intl.DateTimeFormat().resolvedOptions().timeZone,
-    );
+  const [newTasks, setNewTasks] = useState<MilestoneDraftTask[]>([]);
   const [hasUnavailableTasks, setHasUnavailableTasks] = useState(false);
   const mutations = useMilestoneMutations(projectId, featureId);
   const pending = mutations.create.isPending || mutations.update.isPending;
   const valid =
     title.trim().length > 0 &&
     title.trim().length <= 255 &&
-    !hasUnavailableTasks;
+    !hasUnavailableTasks &&
+    newTasks.length <= MAX_MILESTONE_DRAFT_TASKS &&
+    (newTasks.length === 0 || canCreateTasks()) &&
+    newTasks.every((task) => task.title.trim().length > 0);
   return (
     <Dialog
       open
@@ -70,7 +69,7 @@ export function MilestoneDialog({
         if (!open && !pending) onClose();
       }}
     >
-      <DialogPopup>
+      <DialogPopup showCloseButton={!pending}>
         <form
           className="contents"
           onSubmit={async (e) => {
@@ -91,17 +90,32 @@ export function MilestoneDialog({
                 await mutations.create.mutateAsync({
                   ...input,
                   ...(taskIds.length ? { taskIds } : {}),
+                  ...(newTasks.length
+                    ? {
+                        newTasks: newTasks.map(({ title, type }) => ({
+                          title: title.trim(),
+                          type,
+                        })),
+                      }
+                    : {}),
                 });
               onClose();
             } catch (error) {
-              setError(
-                !milestone &&
+              setError({
+                kind:
+                  !milestone &&
                   taskIds.length > 0 &&
                   error instanceof HttpError &&
                   error.status === 409
-                  ? "selection"
-                  : "save",
-              );
+                    ? "selection"
+                    : "save",
+                detail:
+                  newTasks.length > 0 &&
+                  error instanceof HttpError &&
+                  error.status === 400
+                    ? error.message
+                    : undefined,
+              });
             }
           }}
         >
@@ -128,39 +142,18 @@ export function MilestoneDialog({
               workspaceId={workspace?.id ?? ""}
               milestone={{
                 leadId: planning.leadId ?? null,
-                status:
-                  milestone?.status ??
-                  (selectedTasks.length > 0 &&
-                  !columns.data &&
-                  columns.isPending
-                    ? ""
-                    : deriveMilestoneStatus(selectedTasks, columns.data ?? [])),
+                status: milestone?.status ?? "to-do",
                 priority: planning.priority ?? "no-priority",
                 releaseId: planning.releaseId ?? null,
-                startDate: dates.startDate,
-                endDate: dates.endDate,
+                startDate: milestone?.startDate ?? null,
+                endDate: milestone?.endDate ?? null,
               }}
               pending={pending}
+              creating={!milestone}
               onChange={(value) =>
                 setPlanning((current) => ({ ...current, ...value }))
               }
             />
-            {!milestone && columns.isError && (
-              <div
-                role="alert"
-                className="flex items-center justify-between gap-2 text-sm"
-              >
-                <p>{t("common:error.title")}</p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => void columns.refetch()}
-                >
-                  {t("common:error.tryAgain")}
-                </Button>
-              </div>
-            )}
             {!milestone && (
               <MilestoneTaskPicker
                 projectId={projectId}
@@ -171,12 +164,22 @@ export function MilestoneDialog({
                 onUnavailableChange={setHasUnavailableTasks}
               />
             )}
+            {!milestone && canCreateTasks() && (
+              <MilestoneDraftTasks
+                value={newTasks}
+                onChange={setNewTasks}
+                disabled={pending}
+              />
+            )}
             {error && (
               <p role="alert" className="text-sm text-destructive-foreground">
                 {t(
-                  error === "selection"
+                  error.kind === "selection"
                     ? "tasks:milestones.taskSelectionChanged"
                     : "tasks:milestones.saveError",
+                )}
+                {error.detail && (
+                  <span className="mt-1 block">{error.detail}</span>
                 )}
               </p>
             )}

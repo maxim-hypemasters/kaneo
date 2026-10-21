@@ -1,3 +1,7 @@
+import { createMilestoneTasks } from "./create-milestone-tasks";
+import { createMilestoneInTransaction } from "./create-milestone-in-transaction";
+import { lockTaskCreationProject } from "../task/controllers/create-task-in-transaction";
+import { milestoneTaskDraftsSchema, type MilestoneTaskDraft } from "./schema";
 import {
   assertReadonlyMilestoneStatus,
   moveMilestoneFollowers,
@@ -8,7 +12,7 @@ import {
 import { linkSelectedMilestoneTasks } from "./link-selected-tasks";
 import { assertReadonlyMilestoneDates } from "./dates";
 import { lockAuthorizedProject } from "./access-scope";
-import { asc, eq, sql } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../database";
 import { milestoneTable, taskTable } from "../database/schema";
@@ -26,7 +30,22 @@ async function lockOwner(
   featureId: string,
   expectedProjectId?: string,
   expectedWorkspaceId?: string,
+  createsTasks = false,
 ) {
+  let projectId = expectedProjectId;
+  if (createsTasks) {
+    const [owner] = await tx
+      .select({ projectId: taskTable.projectId })
+      .from(taskTable)
+      .where(eq(taskTable.id, featureId));
+    if (!owner) throw new HTTPException(404, { message: "Feature not found" });
+    if (expectedProjectId && owner.projectId !== expectedProjectId)
+      throw new HTTPException(409, {
+        message: "Feature changed projects; retry the request",
+      });
+    projectId = owner.projectId;
+    await lockTaskCreationProject(tx, owner.projectId, expectedWorkspaceId);
+  }
   await lockAuthorizedProject(tx, expectedProjectId, expectedWorkspaceId);
   const [feature] = await tx
     .select()
@@ -34,7 +53,7 @@ async function lockOwner(
     .where(eq(taskTable.id, featureId))
     .for("update");
   if (!feature) throw new HTTPException(404, { message: "Feature not found" });
-  if (expectedProjectId && feature.projectId !== expectedProjectId)
+  if (projectId && feature.projectId !== projectId)
     throw new HTTPException(409, {
       message: "Feature changed projects; retry the request",
     });
@@ -65,7 +84,7 @@ export async function publishMilestoneChange(
 }
 export async function createMilestone(
   featureId: string,
-  fields: Fields & { taskIds?: string[] },
+  fields: Fields & { taskIds?: string[]; newTasks?: MilestoneTaskDraft[] },
   userId: string,
   expectedProjectId?: string,
   expectedWorkspaceId?: string,
@@ -73,7 +92,13 @@ export async function createMilestone(
 ) {
   assertReadonlyMilestoneDates(fields);
   assertReadonlyMilestoneStatus(fields);
-  const { taskIds = [], ...metadata } = fields;
+  const { taskIds = [], newTasks: inputDrafts = [], ...metadata } = fields;
+  const drafts = milestoneTaskDraftsSchema.safeParse(inputDrafts);
+  if (!drafts.success)
+    throw new HTTPException(400, {
+      message:
+        "New work must contain at most 100 Tasks/Bugs with nonempty titles",
+    });
   if (new Set(taskIds).size !== taskIds.length)
     throw new HTTPException(400, { message: "Task ids must be unique" });
   const result = await retryTransaction(() =>
@@ -83,34 +108,12 @@ export async function createMilestone(
         featureId,
         expectedProjectId,
         expectedWorkspaceId,
+        drafts.data.length > 0,
       );
-      const planning = await resolveMilestonePlanning(
+      const created = await createMilestoneInTransaction(
         tx,
-        feature.projectId,
+        feature,
         metadata,
-      );
-      const [last] = await tx
-        .select({
-          position: sql<number>`coalesce(max(${milestoneTable.position}), -1)`,
-        })
-        .from(milestoneTable)
-        .where(eq(milestoneTable.featureId, featureId));
-      const [created] = await tx
-        .insert(milestoneTable)
-        .values({
-          featureId,
-          ...metadata,
-          ...planning,
-          position: Number(last?.position ?? -1) + 1,
-        })
-        .returning();
-      if (!created)
-        throw new HTTPException(500, { message: "Failed to create milestone" });
-      await recordMilestoneActivity(
-        tx,
-        featureId,
-        created,
-        "milestone_created",
         userId,
       );
       const linked = await linkSelectedMilestoneTasks(
@@ -120,7 +123,16 @@ export async function createMilestone(
         taskIds,
         userId,
       );
+      const createdTasks = await createMilestoneTasks(
+        tx,
+        feature,
+        created,
+        drafts.data,
+        userId,
+        expectedWorkspaceId,
+      );
       return {
+        createdTasks,
         milestone: await readMilestone(
           created.id,
           tx,
@@ -133,6 +145,16 @@ export async function createMilestone(
       };
     }),
   );
+  for (const task of result.createdTasks) {
+    await publishEvent("task.created", {
+      ...task,
+      taskId: task.id,
+      userId: task.userId ?? "",
+      currentUserId: userId,
+      type: "created",
+      content: null,
+    });
+  }
   await publishMilestoneChange(
     result.projectId,
     featureId,
@@ -141,7 +163,7 @@ export async function createMilestone(
   );
   for (const id of result.previousMilestoneIds)
     await publishMilestoneChange(result.projectId, featureId, id, userId);
-  if (result.taskIds.length) {
+  if (result.taskIds.length || result.createdTasks.length) {
     for (const taskId of [...result.taskIds, featureId]) {
       await publishEvent("task.updated", {
         taskId,

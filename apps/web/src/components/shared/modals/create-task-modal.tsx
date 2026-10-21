@@ -92,6 +92,16 @@ import {
 import { ReleasePickerChip } from "./create-task/release-picker-chip";
 import { TaskTypeChip } from "./create-task/task-type-chip";
 import { getInitialTaskColumn } from "./initial-task-column";
+import {
+  emptyFeatureComposition,
+  featureCompositionInput,
+  hasFeatureCompositionChanges,
+  validFeatureComposition,
+  type FeatureCompositionDraft,
+} from "./create-task/feature-composition";
+import { FeatureCompositionSection } from "./create-task/feature-composition-section";
+import { featureCreationOrigin } from "./create-task/feature-creation-origin";
+import { useTaskReleaseOrigin } from "@/components/task/task-release-origin-context";
 
 type CreateTaskModalProps = {
   open: boolean;
@@ -103,6 +113,8 @@ type CreateTaskModalProps = {
   type?: TaskType;
   // The release the dialog starts out with; its Release chip can change it.
   releaseId?: string;
+  // A suggestion for new Feature children; never a planning field on the Feature.
+  originReleaseId?: string;
   initialFeature?: { id: string; title: string };
   initialMilestoneId?: string;
 };
@@ -160,6 +172,7 @@ function CreateTaskModalContent({
   instant = false,
   type = "task",
   releaseId,
+  originReleaseId,
   initialFeature,
   initialMilestoneId,
 }: CreateTaskModalProps) {
@@ -234,6 +247,24 @@ function CreateTaskModalContent({
     [t],
   );
   const location = useLocation();
+  const releaseOrigin = useTaskReleaseOrigin();
+  const [compositionOrigin] = useState(() =>
+    featureCreationOrigin({
+      pathname: location.pathname,
+      search: location.search as Record<string, unknown> | undefined,
+      projectId,
+      originReleaseId,
+      context: releaseOrigin,
+    }),
+  );
+  const [compositionSession, setCompositionSession] = useState<{
+    projectId: string;
+    defaultReleaseId: string | null;
+    value: FeatureCompositionDraft;
+  } | null>(null);
+  const [pendingContextChange, setPendingContextChange] = useState<
+    { kind: "project"; id: string } | { kind: "type"; type: TaskType } | null
+  >(null);
   const { data: workspace } = useActiveWorkspace();
   const { data: workspaceUsers } = useGetActiveWorkspaceUsers(
     workspace?.id || "",
@@ -242,9 +273,11 @@ function CreateTaskModalContent({
   const { data: workspaceLabels = [] } = useGetLabelsByWorkspace(
     workspace?.id || "",
   );
-  const { canCreateTasks, canCreateLabels } = useWorkspacePermission();
+  const { canCreateTasks, canCreateLabels, canUpdateTasks } =
+    useWorkspacePermission();
   const canCreateTaskCapability = canCreateTasks();
   const canCreateLabelCapability = canCreateLabels();
+  const canManageComposition = canUpdateTasks();
 
   const [title, setTitle] = useState("");
   const titleRef = useAutoGrowTextarea(title);
@@ -278,6 +311,36 @@ function CreateTaskModalContent({
     (candidate) => candidate.id === (explicitProjectId || selectedProjectId),
   );
   const resolvedProjectId = resolvedProject?.id ?? "";
+  const composition =
+    compositionSession?.projectId === resolvedProjectId
+      ? compositionSession.value
+      : null;
+  const initializeComposition = useCallback(
+    (defaultReleaseId: string | null) => {
+      setCompositionSession((current) =>
+        current?.projectId === resolvedProjectId
+          ? current
+          : {
+              projectId: resolvedProjectId,
+              defaultReleaseId,
+              value: emptyFeatureComposition(defaultReleaseId),
+            },
+      );
+    },
+    [resolvedProjectId],
+  );
+  const compositionDirty =
+    composition !== null &&
+    hasFeatureCompositionChanges(
+      composition,
+      compositionSession?.defaultReleaseId,
+    );
+  const compositionValid =
+    composition !== null &&
+    validFeatureComposition(composition) &&
+    (canManageComposition ||
+      (composition.milestones.length === 0 &&
+        composition.existingTasks.length === 0));
   const { data: projectMembers } = useGetProjectMembers({
     workspaceId: workspace?.id || "",
     projectId: resolvedProjectId,
@@ -352,6 +415,7 @@ function CreateTaskModalContent({
   );
 
   const handleCustomFieldChange = (fieldId: string, value: string) => {
+    if (submittingRef.current) return;
     setCustomFieldValues((prev) => ({
       ...prev,
       [fieldId]: value,
@@ -418,8 +482,39 @@ function CreateTaskModalContent({
     !sameReleaseChoice(releaseChoice, initialReleaseChoice(releaseId)) ||
     labels.length > 0 ||
     stagedAssetsRef.current.length > 0 ||
-    hasCustomFieldChanges,
+    hasCustomFieldChanges ||
+    compositionDirty,
   );
+
+  const applyContextChange = (
+    change: NonNullable<typeof pendingContextChange>,
+  ) => {
+    if (submittingRef.current) return;
+    setCompositionSession(null);
+    setPendingContextChange(null);
+    if (change.kind === "type") {
+      setTaskType(change.type);
+      if (change.type === "feature") setMilestoneId(null);
+    } else {
+      setFeatureChoice(null);
+      setMilestoneId(null);
+      setReleaseChoice(FOLLOW_MILESTONE_RELEASE);
+      setSelectedProjectId(change.id);
+    }
+  };
+  const requestContextChange = (
+    change: NonNullable<typeof pendingContextChange>,
+  ) => {
+    if (submittingRef.current) return;
+    const changed =
+      change.kind === "type"
+        ? change.type !== taskType
+        : change.id !== resolvedProjectId;
+    if (!changed) return;
+    if (taskType === "feature" && compositionDirty)
+      setPendingContextChange(change);
+    else applyContextChange(change);
+  };
 
   useEffect(() => {
     activeRef.current = true;
@@ -441,6 +536,7 @@ function CreateTaskModalContent({
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) return;
+    if (submittingRef.current) return;
 
     if (hasUnsavedChanges && !didSubmitRef.current) {
       setDiscardConfirmationOpen(true);
@@ -538,6 +634,7 @@ function CreateTaskModalContent({
       submittingRef.current ||
       pendingUploadsRef.current > 0 ||
       !canCreateTaskCapability ||
+      (taskType === "feature" && !compositionValid) ||
       (taskType !== "feature" && awaitingColumns) ||
       !title.trim() ||
       !resolvedProjectId ||
@@ -558,6 +655,7 @@ function CreateTaskModalContent({
 
     submittingRef.current = true;
     setIsSubmitting(true);
+    setLabelsOpen(false);
     try {
       let submitStatus = taskStatus;
       if (taskType !== "feature" && !status) {
@@ -621,6 +719,13 @@ function CreateTaskModalContent({
               }
             : {}),
           type: taskType,
+          ...(taskType === "feature" &&
+          composition &&
+          (composition.milestones.length ||
+            composition.existingTasks.length ||
+            composition.newTasks.length)
+            ? { featureComposition: featureCompositionInput(composition) }
+            : {}),
           featureId,
           ...(milestoneId && chosenFeature?.kind === "existing"
             ? { milestoneId }
@@ -665,6 +770,7 @@ function CreateTaskModalContent({
       });
 
       if (createMore) {
+        setCompositionSession(null);
         setTitle("");
         setDescription("");
         setPriority("no-priority");
@@ -719,7 +825,7 @@ function CreateTaskModalContent({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (!open || discardConfirmationOpen) return;
+      if (!open || discardConfirmationOpen || pendingContextChange) return;
 
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
@@ -733,7 +839,14 @@ function CreateTaskModalContent({
         }
       }
     },
-    [open, discardConfirmationOpen, title, resolvedProjectId, workspace?.id],
+    [
+      open,
+      discardConfirmationOpen,
+      pendingContextChange,
+      title,
+      resolvedProjectId,
+      workspace?.id,
+    ],
   );
 
   useEffect(() => {
@@ -754,6 +867,7 @@ function CreateTaskModalContent({
   };
 
   const toggleLabel = (labelName: string) => {
+    if (submittingRef.current) return;
     const existingLabel = labels.find((l) => l.name === labelName);
     if (existingLabel) {
       setLabels(labels.filter((l) => l.name !== labelName));
@@ -776,11 +890,13 @@ function CreateTaskModalContent({
   };
 
   const handleCreateNewClick = () => {
+    if (submittingRef.current) return;
     setNewLabelName(searchValue);
     setLabelsStep("color");
   };
 
   const handleColorSelect = async (color: LabelColor) => {
+    if (submittingRef.current) return;
     setSelectedColor(color);
 
     if (!newLabelName.trim() || !workspace?.id) return;
@@ -816,6 +932,7 @@ function CreateTaskModalContent({
   };
 
   const removeLabel = (labelName: string) => {
+    if (submittingRef.current) return;
     setLabels(labels.filter((l) => l.name !== labelName));
   };
 
@@ -827,7 +944,7 @@ function CreateTaskModalContent({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="kaneo-create-task-modal max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
+        className="kaneo-create-task-modal max-w-2xl max-h-[90vh] flex flex-col overflow-clip"
         showCloseButton={false}
         instant={instant}
       >
@@ -854,523 +971,570 @@ function CreateTaskModalContent({
           onSubmit={handleSubmit}
           className="flex flex-col flex-1 min-h-0 space-y-6"
         >
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-6 px-6">
-            <textarea
-              ref={titleRef}
-              rows={1}
-              value={title}
-              onChange={(e) => setTitle(stripLineBreaks(e.target.value))}
-              onKeyDown={(e) => {
-                // Single-line title: Enter submits like the input it replaced.
-                if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-              autoFocus
-              placeholder={copy.titlePlaceholder}
-              aria-label={copy.titlePlaceholder}
-              className="block w-full resize-none overflow-hidden border-0 bg-transparent px-0 py-3 font-semibold text-2xl text-foreground leading-tight tracking-tight outline-none placeholder:text-muted-foreground"
-              required
-            />
-
-            <div className="min-h-[200px]">
-              <TaskDescriptionEditor
-                key={editorVersion}
-                value={description}
-                onChange={setDescription}
-                placeholder={copy.descriptionPlaceholder}
-                projectId={resolvedProjectId || undefined}
-                uploadAsset={stageAsset}
-              />
-            </div>
-
-            {labels.length > 0 && (
-              <div className="flex flex-wrap mb-2">
-                {labels.map((label) => (
-                  <Badge
-                    key={label.name}
-                    color={label.color}
-                    variant="outline"
-                    className="flex items-center gap-1 pl-3 cursor-pointer hover:bg-accent/50 transition-colors"
-                    onClick={() => removeLabel(label.name)}
-                  >
-                    <span
-                      className="inline-block w-2 h-2 mr-1.5 rounded-full"
-                      style={{
-                        backgroundColor: resolveLabelColor(label.color),
-                      }}
-                    />
-                    <span className="max-w-20 truncate">{label.name}</span>
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center gap-2 py-2">
-              <TaskTypeChip
-                value={taskType}
-                onChange={(nextType) => {
-                  setTaskType(nextType);
-                  if (nextType === "feature") setMilestoneId(null);
+          <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
+            <fieldset
+              disabled={isSubmitting}
+              className="min-w-0 space-y-6 border-0 px-6"
+              inert={isSubmitting || undefined}
+            >
+              <textarea
+                ref={titleRef}
+                rows={1}
+                value={title}
+                onChange={(e) => {
+                  if (!submittingRef.current)
+                    setTitle(stripLineBreaks(e.target.value));
                 }}
+                onKeyDown={(e) => {
+                  // Single-line title: Enter submits like the input it replaced.
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }}
+                autoFocus
+                placeholder={copy.titlePlaceholder}
+                aria-label={copy.titlePlaceholder}
+                className="block w-full resize-none overflow-hidden border-0 bg-transparent px-0 py-3 font-semibold text-2xl text-foreground leading-tight tracking-tight outline-none placeholder:text-muted-foreground"
+                required
                 disabled={isSubmitting}
               />
-              {!explicitProjectId && (
-                <Popover>
+
+              <div className="min-h-[200px]">
+                <TaskDescriptionEditor
+                  key={editorVersion}
+                  value={description}
+                  onChange={(next) => {
+                    if (!submittingRef.current) setDescription(next);
+                  }}
+                  placeholder={copy.descriptionPlaceholder}
+                  projectId={resolvedProjectId || undefined}
+                  uploadAsset={stageAsset}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              {labels.length > 0 && (
+                <div className="flex flex-wrap mb-2">
+                  {labels.map((label) => (
+                    <Badge
+                      key={label.name}
+                      color={label.color}
+                      variant="outline"
+                      className="flex items-center gap-1 pl-3 cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={() => removeLabel(label.name)}
+                    >
+                      <span
+                        className="inline-block w-2 h-2 mr-1.5 rounded-full"
+                        style={{
+                          backgroundColor: resolveLabelColor(label.color),
+                        }}
+                      />
+                      <span className="max-w-20 truncate">{label.name}</span>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-2 py-2">
+                <TaskTypeChip
+                  value={taskType}
+                  onChange={(nextType) => {
+                    requestContextChange({ kind: "type", type: nextType });
+                  }}
+                  disabled={isSubmitting}
+                />
+                {!explicitProjectId && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={isSubmitting}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                          resolvedProjectId
+                            ? "bg-accent/30 text-foreground"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        <FolderKanban className="w-3.5 h-3.5" />
+                        <span>
+                          {resolvedProject?.name ||
+                            t("common:modals.createTask.selectProject")}
+                        </span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-1" align="start">
+                      <div className="space-y-1">
+                        {workspaceProjects?.map((workspaceProject) => (
+                          <button
+                            key={workspaceProject.id}
+                            type="button"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                            disabled={
+                              isPreparingDraft ||
+                              stagedAssetsRef.current.length > 0 ||
+                              isSubmitting
+                            }
+                            onClick={() => {
+                              if (
+                                pendingUploadsRef.current === 0 &&
+                                stagedAssetsRef.current.length === 0 &&
+                                !submittingRef.current
+                              ) {
+                                requestContextChange({
+                                  kind: "project",
+                                  id: workspaceProject.id,
+                                });
+                              }
+                            }}
+                          >
+                            <span className="text-sm truncate">
+                              {workspaceProject.name}
+                            </span>
+                            {resolvedProjectId === workspaceProject.id && (
+                              <Check className="ml-auto h-4 w-4 shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+                {taskType !== "feature" && (
+                  <FeaturePickerChip
+                    projectId={resolvedProjectId}
+                    projectSlug={resolvedProject?.slug}
+                    value={featureChoice}
+                    onChange={(choice) => {
+                      setFeatureChoice(choice);
+                      setMilestoneId(null);
+                    }}
+                    disabled={isSubmitting}
+                  />
+                )}
+                {chosenFeature?.kind === "existing" && (
+                  <MilestonePicker
+                    projectId={resolvedProjectId}
+                    featureId={chosenFeature.id}
+                    value={milestoneId}
+                    onChange={setMilestoneId}
+                    disabled={isSubmitting}
+                  />
+                )}
+                {taskType !== "feature" && (
+                  <>
+                    <ReleasePickerChip
+                      projectId={resolvedProjectId}
+                      value={releaseChoice}
+                      feature={chosenFeature}
+                      milestoneId={milestoneId}
+                      onChange={setReleaseChoice}
+                      disabled={isSubmitting}
+                    />
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-accent/50 text-foreground rounded-md text-xs font-medium border border-border">
+                      {getColumnIcon(
+                        taskStatus,
+                        initialColumn?.isFinal,
+                        initialColumn?.icon,
+                      )}
+                      {statusLabel}
+                    </div>
+
+                    <Popover
+                      open={startDateOpen}
+                      onOpenChange={setStartDateOpen}
+                    >
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                            startDate
+                              ? "bg-accent/30 text-foreground"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="w-3.5 h-3.5" />
+                          <span>
+                            {startDate
+                              ? formatDateMedium(startDate)
+                              : t("common:modals.createTask.startDate")}
+                          </span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-65 p-0" align="start">
+                        <DatePickerMenu
+                          label={t("common:modals.createTask.startDate")}
+                          placeholder={t(
+                            "tasks:datePicker.startDatePlaceholder",
+                          )}
+                          clearLabel={t(
+                            "common:modals.createTask.clearStartDate",
+                          )}
+                          value={startDate ?? null}
+                          onChange={(date) => {
+                            setStartDate(date ?? undefined);
+                            setStartDateOpen(false);
+                          }}
+                          bounds={dueDate ? { after: dueDate } : undefined}
+                          formatLimit={(date) =>
+                            t("tasks:due.fullDate", { date })
+                          }
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                            priority !== "no-priority"
+                              ? "bg-accent/30 text-foreground"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {getPriorityIcon(priority)}
+                          <span>
+                            {selectedPriority
+                              ? selectedPriority.label
+                              : t("common:modals.createTask.priority")}
+                          </span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-1" align="start">
+                        <div className="space-y-1">
+                          {priorityOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                              onClick={() =>
+                                setPriority(option.value as Priority)
+                              }
+                            >
+                              {getPriorityIcon(option.value)}
+                              <span className="text-sm">{option.label}</span>
+                              {priority === option.value && (
+                                <Check className="ml-auto h-4 w-4" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                            selectedUser
+                              ? "bg-accent/30 text-foreground"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {selectedUser ? (
+                            <>
+                              <Avatar className="h-4 w-4">
+                                <AvatarImage
+                                  src={selectedUser.image ?? ""}
+                                  alt={selectedUser.name}
+                                />
+                                <AvatarFallback className="text-[10px] font-medium border border-border/30">
+                                  {getInitials(selectedUser.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{selectedUser.name}</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserIcon className="w-3.5 h-3.5" />
+                              <span>
+                                {t("common:modals.createTask.assign")}
+                              </span>
+                            </>
+                          )}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-1" align="start">
+                        <div className="space-y-1">
+                          <button
+                            type="button"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                            onClick={() => setAssigneeId("")}
+                          >
+                            <div
+                              className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
+                              title={t(
+                                "common:modals.createTask.assignUnassignedTitle",
+                              )}
+                            >
+                              <span className="text-[10px] font-medium text-muted-foreground">
+                                ?
+                              </span>
+                            </div>
+                            <span className="text-sm">
+                              {t("common:modals.createTask.assignUnassigned")}
+                            </span>
+                            {!selectedUser && (
+                              <Check className="ml-auto h-4 w-4" />
+                            )}
+                          </button>
+                          {assigneeOptions.map((member) => (
+                            <button
+                              key={member.id}
+                              type="button"
+                              className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                              onClick={() => setAssigneeId(member.id)}
+                            >
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage
+                                  src={member.image ?? ""}
+                                  alt={member.name}
+                                />
+                                <AvatarFallback className="text-xs font-medium border border-border/30">
+                                  {getInitials(member.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm">{member.name}</span>
+                              {selectedUser?.id === member.id && (
+                                <Check className="ml-auto h-4 w-4" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+
+                    <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
+                            dueDate
+                              ? "bg-accent/30 text-foreground"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          <CalendarIcon className="w-3.5 h-3.5" />
+                          <span>
+                            {dueDate
+                              ? formatDateMedium(dueDate)
+                              : t("common:modals.createTask.dueDate")}
+                          </span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-65 p-0" align="start">
+                        <DatePickerMenu
+                          label={t("common:modals.createTask.dueDate")}
+                          placeholder={t("tasks:datePicker.dueDatePlaceholder")}
+                          clearLabel={t(
+                            "common:modals.createTask.clearDueDate",
+                          )}
+                          value={dueDate ?? null}
+                          onChange={(date) => {
+                            setDueDate(date ?? undefined);
+                            setDueDateOpen(false);
+                          }}
+                          bounds={startDate ? { before: startDate } : undefined}
+                          formatLimit={(date) =>
+                            t("tasks:datePicker.startsOn", { date })
+                          }
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </>
+                )}
+                <Popover open={labelsOpen} onOpenChange={setLabelsOpen}>
                   <PopoverTrigger asChild>
                     <button
                       type="button"
+                      disabled={isSubmitting}
                       className={cn(
                         "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                        resolvedProjectId
+                        labels.length > 0
                           ? "bg-accent/30 text-foreground"
                           : "text-muted-foreground",
                       )}
                     >
-                      <FolderKanban className="w-3.5 h-3.5" />
-                      <span>
-                        {resolvedProject?.name ||
-                          t("common:modals.createTask.selectProject")}
-                      </span>
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>{t("common:modals.createTask.labels")}</span>
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-48 p-1" align="start">
-                    <div className="space-y-1">
-                      {workspaceProjects?.map((workspaceProject) => (
-                        <button
-                          key={workspaceProject.id}
-                          type="button"
-                          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                          disabled={
-                            isPreparingDraft ||
-                            stagedAssetsRef.current.length > 0 ||
-                            isSubmitting
-                          }
-                          onClick={() => {
-                            if (
-                              pendingUploadsRef.current === 0 &&
-                              stagedAssetsRef.current.length === 0 &&
-                              !submittingRef.current
-                            ) {
-                              if (workspaceProject.id !== resolvedProjectId) {
-                                setFeatureChoice(null);
-                                setMilestoneId(null);
-                                setReleaseChoice(FOLLOW_MILESTONE_RELEASE);
-                              }
-                              setSelectedProjectId(workspaceProject.id);
-                            }
-                          }}
-                        >
-                          <span className="text-sm truncate">
-                            {workspaceProject.name}
-                          </span>
-                          {resolvedProjectId === workspaceProject.id && (
-                            <Check className="ml-auto h-4 w-4 shrink-0" />
+                  <PopoverContent className="p-0" align="start">
+                    {labelsStep === "select" && (
+                      <div className="w-auto">
+                        <div className="flex items-center gap-2 p-2 border-b border-border">
+                          <Search className="w-3 h-3 text-muted-foreground" />
+                          <input
+                            ref={searchInputRef}
+                            value={searchValue}
+                            onChange={(e) => setSearchValue(e.target.value)}
+                            placeholder={t(
+                              "common:modals.createTask.searchLabels",
+                            )}
+                            className="w-full bg-transparent border-none text-foreground text-base focus:outline-none placeholder:text-muted-foreground sm:text-xs"
+                          />
+                        </div>
+
+                        <div className="py-1">
+                          {filteredLabels.length === 0 &&
+                            searchValue.length === 0 && (
+                              <span className="text-xs text-muted-foreground px-2">
+                                {t("common:modals.createTask.noLabelsFound")}
+                              </span>
+                            )}
+                          {filteredLabels.map((label) => (
+                            <button
+                              key={label.id}
+                              type="button"
+                              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-accent/50 text-left"
+                              onClick={() => toggleLabel(label.name)}
+                            >
+                              <div className="flex-shrink-0 w-3 flex justify-center">
+                                {labels.some((l) => l.name === label.name) && (
+                                  <Check className="w-3 h-3" />
+                                )}
+                              </div>
+                              <span
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{
+                                  backgroundColor: resolveLabelColor(
+                                    label.color,
+                                  ),
+                                }}
+                              />
+                              <span className="max-w-20 truncate">
+                                {label.name}
+                              </span>
+                            </button>
+                          ))}
+
+                          {canCreateLabelCapability &&
+                            isCreatingNewLabel &&
+                            filteredLabels.length > 0 && (
+                              <div className="border-t border-border my-1" />
+                            )}
+                          {canCreateLabelCapability && isCreatingNewLabel && (
+                            <button
+                              type="button"
+                              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-accent/50 text-left"
+                              onClick={handleCreateNewClick}
+                            >
+                              <div className="flex-shrink-0 w-3 flex justify-center">
+                                <Plus className="w-3 h-3" />
+                              </div>
+                              <span
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{
+                                  backgroundColor:
+                                    labelColors.find(
+                                      (c) => c.value === selectedColor,
+                                    )?.color || "var(--color-neutral-400)",
+                                }}
+                              />
+                              <span className="truncate">
+                                {t("common:modals.createTask.createLabel", {
+                                  name: searchValue,
+                                })}
+                              </span>
+                            </button>
                           )}
-                        </button>
-                      ))}
-                    </div>
+                        </div>
+                      </div>
+                    )}
+                    {labelsStep === "color" && (
+                      <div className="w-auto">
+                        <div className="flex items-center justify-between p-2 border-b border-border">
+                          <span className="text-xs font-medium">
+                            {t("common:modals.createTask.chooseColor")}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setLabelsStep("select")}
+                            className="w-4 h-4 flex items-center justify-center hover:bg-accent/50 rounded"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        <div className="py-1">
+                          {labelColors.map((color) => (
+                            <button
+                              key={color.value}
+                              type="button"
+                              className={cn(
+                                "w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-accent/50 text-left",
+                                selectedColor === color.value && "bg-accent/30",
+                              )}
+                              onClick={() =>
+                                handleColorSelect(color.value as LabelColor)
+                              }
+                            >
+                              <span
+                                className="w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: color.color }}
+                              />
+                              <span className="truncate">{color.label}</span>
+                              {selectedColor === color.value && (
+                                <Check className="w-3 h-3 ml-auto" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </PopoverContent>
                 </Popover>
-              )}
-              {taskType !== "feature" && (
-                <FeaturePickerChip
+                {customFields.length > 0 && (
+                  <div className="flex w-full flex-wrap items-center gap-2">
+                    {customFields.map((field) => (
+                      <CustomFieldChip
+                        key={field.id}
+                        field={field}
+                        value={customFieldValues[field.id] ?? ""}
+                        onChange={(value) =>
+                          handleCustomFieldChange(field.id, value)
+                        }
+                        invalid={
+                          showMissingRequired &&
+                          missingRequired.some(({ id }) => id === field.id)
+                        }
+                        disabled={isSubmitting}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+              {taskType === "feature" && resolvedProjectId && workspace?.id && (
+                <FeatureCompositionSection
+                  key={`${resolvedProjectId}:${editorVersion}`}
                   projectId={resolvedProjectId}
-                  projectSlug={resolvedProject?.slug}
-                  value={featureChoice}
-                  onChange={(choice) => {
-                    setFeatureChoice(choice);
-                    setMilestoneId(null);
+                  workspaceId={workspace.id}
+                  origin={compositionOrigin}
+                  value={composition}
+                  defaultReleaseId={
+                    compositionSession?.defaultReleaseId ?? null
+                  }
+                  onReady={initializeComposition}
+                  onChange={(next) => {
+                    if (submittingRef.current) return;
+                    setCompositionSession((current) =>
+                      current?.projectId === resolvedProjectId
+                        ? { ...current, value: next }
+                        : current,
+                    );
                   }}
                   disabled={isSubmitting}
+                  canManage={canManageComposition}
                 />
               )}
-              {chosenFeature?.kind === "existing" && (
-                <MilestonePicker
-                  projectId={resolvedProjectId}
-                  featureId={chosenFeature.id}
-                  value={milestoneId}
-                  onChange={setMilestoneId}
-                  disabled={isSubmitting}
-                />
-              )}
-              {taskType !== "feature" && (
-                <>
-                  <ReleasePickerChip
-                    projectId={resolvedProjectId}
-                    value={releaseChoice}
-                    feature={chosenFeature}
-                    milestoneId={milestoneId}
-                    onChange={setReleaseChoice}
-                    disabled={isSubmitting}
-                  />
-                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-accent/50 text-foreground rounded-md text-xs font-medium border border-border">
-                    {getColumnIcon(
-                      taskStatus,
-                      initialColumn?.isFinal,
-                      initialColumn?.icon,
-                    )}
-                    {statusLabel}
-                  </div>
-
-                  <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                          startDate
-                            ? "bg-accent/30 text-foreground"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="w-3.5 h-3.5" />
-                        <span>
-                          {startDate
-                            ? formatDateMedium(startDate)
-                            : t("common:modals.createTask.startDate")}
-                        </span>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-65 p-0" align="start">
-                      <DatePickerMenu
-                        label={t("common:modals.createTask.startDate")}
-                        placeholder={t("tasks:datePicker.startDatePlaceholder")}
-                        clearLabel={t(
-                          "common:modals.createTask.clearStartDate",
-                        )}
-                        value={startDate ?? null}
-                        onChange={(date) => {
-                          setStartDate(date ?? undefined);
-                          setStartDateOpen(false);
-                        }}
-                        bounds={dueDate ? { after: dueDate } : undefined}
-                        formatLimit={(date) =>
-                          t("tasks:due.fullDate", { date })
-                        }
-                      />
-                    </PopoverContent>
-                  </Popover>
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                          priority !== "no-priority"
-                            ? "bg-accent/30 text-foreground"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {getPriorityIcon(priority)}
-                        <span>
-                          {selectedPriority
-                            ? selectedPriority.label
-                            : t("common:modals.createTask.priority")}
-                        </span>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-1" align="start">
-                      <div className="space-y-1">
-                        {priorityOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            type="button"
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                            onClick={() =>
-                              setPriority(option.value as Priority)
-                            }
-                          >
-                            {getPriorityIcon(option.value)}
-                            <span className="text-sm">{option.label}</span>
-                            {priority === option.value && (
-                              <Check className="ml-auto h-4 w-4" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                          selectedUser
-                            ? "bg-accent/30 text-foreground"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {selectedUser ? (
-                          <>
-                            <Avatar className="h-4 w-4">
-                              <AvatarImage
-                                src={selectedUser.image ?? ""}
-                                alt={selectedUser.name}
-                              />
-                              <AvatarFallback className="text-[10px] font-medium border border-border/30">
-                                {getInitials(selectedUser.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{selectedUser.name}</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserIcon className="w-3.5 h-3.5" />
-                            <span>{t("common:modals.createTask.assign")}</span>
-                          </>
-                        )}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-1" align="start">
-                      <div className="space-y-1">
-                        <button
-                          type="button"
-                          className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                          onClick={() => setAssigneeId("")}
-                        >
-                          <div
-                            className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
-                            title={t(
-                              "common:modals.createTask.assignUnassignedTitle",
-                            )}
-                          >
-                            <span className="text-[10px] font-medium text-muted-foreground">
-                              ?
-                            </span>
-                          </div>
-                          <span className="text-sm">
-                            {t("common:modals.createTask.assignUnassigned")}
-                          </span>
-                          {!selectedUser && (
-                            <Check className="ml-auto h-4 w-4" />
-                          )}
-                        </button>
-                        {assigneeOptions.map((member) => (
-                          <button
-                            key={member.id}
-                            type="button"
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                            onClick={() => setAssigneeId(member.id)}
-                          >
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage
-                                src={member.image ?? ""}
-                                alt={member.name}
-                              />
-                              <AvatarFallback className="text-xs font-medium border border-border/30">
-                                {getInitials(member.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{member.name}</span>
-                            {selectedUser?.id === member.id && (
-                              <Check className="ml-auto h-4 w-4" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
-                  <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                          dueDate
-                            ? "bg-accent/30 text-foreground"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="w-3.5 h-3.5" />
-                        <span>
-                          {dueDate
-                            ? formatDateMedium(dueDate)
-                            : t("common:modals.createTask.dueDate")}
-                        </span>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-65 p-0" align="start">
-                      <DatePickerMenu
-                        label={t("common:modals.createTask.dueDate")}
-                        placeholder={t("tasks:datePicker.dueDatePlaceholder")}
-                        clearLabel={t("common:modals.createTask.clearDueDate")}
-                        value={dueDate ?? null}
-                        onChange={(date) => {
-                          setDueDate(date ?? undefined);
-                          setDueDateOpen(false);
-                        }}
-                        bounds={startDate ? { before: startDate } : undefined}
-                        formatLimit={(date) =>
-                          t("tasks:datePicker.startsOn", { date })
-                        }
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </>
-              )}
-              <Popover open={labelsOpen} onOpenChange={setLabelsOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                      labels.length > 0
-                        ? "bg-accent/30 text-foreground"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    <Tag className="w-3.5 h-3.5" />
-                    <span>{t("common:modals.createTask.labels")}</span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="p-0" align="start">
-                  {labelsStep === "select" && (
-                    <div className="w-auto">
-                      <div className="flex items-center gap-2 p-2 border-b border-border">
-                        <Search className="w-3 h-3 text-muted-foreground" />
-                        <input
-                          ref={searchInputRef}
-                          value={searchValue}
-                          onChange={(e) => setSearchValue(e.target.value)}
-                          placeholder={t(
-                            "common:modals.createTask.searchLabels",
-                          )}
-                          className="w-full bg-transparent border-none text-foreground text-base focus:outline-none placeholder:text-muted-foreground sm:text-xs"
-                        />
-                      </div>
-
-                      <div className="py-1">
-                        {filteredLabels.length === 0 &&
-                          searchValue.length === 0 && (
-                            <span className="text-xs text-muted-foreground px-2">
-                              {t("common:modals.createTask.noLabelsFound")}
-                            </span>
-                          )}
-                        {filteredLabels.map((label) => (
-                          <button
-                            key={label.id}
-                            type="button"
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-accent/50 text-left"
-                            onClick={() => toggleLabel(label.name)}
-                          >
-                            <div className="flex-shrink-0 w-3 flex justify-center">
-                              {labels.some((l) => l.name === label.name) && (
-                                <Check className="w-3 h-3" />
-                              )}
-                            </div>
-                            <span
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{
-                                backgroundColor: resolveLabelColor(label.color),
-                              }}
-                            />
-                            <span className="max-w-20 truncate">
-                              {label.name}
-                            </span>
-                          </button>
-                        ))}
-
-                        {canCreateLabelCapability &&
-                          isCreatingNewLabel &&
-                          filteredLabels.length > 0 && (
-                            <div className="border-t border-border my-1" />
-                          )}
-                        {canCreateLabelCapability && isCreatingNewLabel && (
-                          <button
-                            type="button"
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-accent/50 text-left"
-                            onClick={handleCreateNewClick}
-                          >
-                            <div className="flex-shrink-0 w-3 flex justify-center">
-                              <Plus className="w-3 h-3" />
-                            </div>
-                            <span
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{
-                                backgroundColor:
-                                  labelColors.find(
-                                    (c) => c.value === selectedColor,
-                                  )?.color || "var(--color-neutral-400)",
-                              }}
-                            />
-                            <span className="truncate">
-                              {t("common:modals.createTask.createLabel", {
-                                name: searchValue,
-                              })}
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {labelsStep === "color" && (
-                    <div className="w-auto">
-                      <div className="flex items-center justify-between p-2 border-b border-border">
-                        <span className="text-xs font-medium">
-                          {t("common:modals.createTask.chooseColor")}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setLabelsStep("select")}
-                          className="w-4 h-4 flex items-center justify-center hover:bg-accent/50 rounded"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-
-                      <div className="py-1">
-                        {labelColors.map((color) => (
-                          <button
-                            key={color.value}
-                            type="button"
-                            className={cn(
-                              "w-full flex items-center gap-2 px-2 py-1.5 text-xs hover:bg-accent/50 text-left",
-                              selectedColor === color.value && "bg-accent/30",
-                            )}
-                            onClick={() =>
-                              handleColorSelect(color.value as LabelColor)
-                            }
-                          >
-                            <span
-                              className="w-2 h-2 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: color.color }}
-                            />
-                            <span className="truncate">{color.label}</span>
-                            {selectedColor === color.value && (
-                              <Check className="w-3 h-3 ml-auto" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
-              {customFields.length > 0 && (
-                <div className="flex w-full flex-wrap items-center gap-2">
-                  {customFields.map((field) => (
-                    <CustomFieldChip
-                      key={field.id}
-                      field={field}
-                      value={customFieldValues[field.id] ?? ""}
-                      onChange={(value) =>
-                        handleCustomFieldChange(field.id, value)
-                      }
-                      invalid={
-                        showMissingRequired &&
-                        missingRequired.some(({ id }) => id === field.id)
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            </fieldset>
           </div>
 
           {taskType !== "feature" && awaitingColumns && columnsError && (
@@ -1395,7 +1559,10 @@ function CreateTaskModalContent({
                 <input
                   type="checkbox"
                   checked={createMore}
-                  onChange={(e) => setCreateMore(e.target.checked)}
+                  disabled={isSubmitting}
+                  onChange={(e) => {
+                    if (!submittingRef.current) setCreateMore(e.target.checked);
+                  }}
                   className="rounded border-border bg-background text-primary focus:ring-ring focus:ring-offset-0 focus:ring-2 transition-[border-color,box-shadow]"
                 />
                 {t("common:modals.createTask.createMore")}
@@ -1416,6 +1583,7 @@ function CreateTaskModalContent({
             <Button
               type="button"
               onClick={() => handleOpenChange(false)}
+              disabled={isSubmitting}
               variant="outline"
               size="sm"
               className="border-border text-foreground hover:bg-accent"
@@ -1427,6 +1595,7 @@ function CreateTaskModalContent({
               disabled={
                 !title.trim() ||
                 !resolvedProjectId ||
+                (taskType === "feature" && !compositionValid) ||
                 (taskType !== "feature" && assigneeUnconfirmed) ||
                 isSubmitting ||
                 (taskType !== "feature" && awaitingColumns) ||
@@ -1445,14 +1614,25 @@ function CreateTaskModalContent({
       </DialogContent>
 
       <AlertDialog
-        open={discardConfirmationOpen}
-        onOpenChange={setDiscardConfirmationOpen}
+        open={discardConfirmationOpen || pendingContextChange !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setPendingContextChange(null);
+            setDiscardConfirmationOpen(false);
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{copy.discardTitle}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {pendingContextChange
+                ? t("tasks:featureComposer.contextChangeTitle")
+                : copy.discardTitle}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {copy.discardDescription}
+              {pendingContextChange
+                ? t("tasks:featureComposer.contextChangeDescription")
+                : copy.discardDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1465,9 +1645,15 @@ function CreateTaskModalContent({
               type="button"
               variant="destructive"
               size="sm"
-              onClick={closeAndReset}
+              onClick={() =>
+                pendingContextChange
+                  ? applyContextChange(pendingContextChange)
+                  : closeAndReset()
+              }
             >
-              {copy.discardButton}
+              {pendingContextChange
+                ? t("tasks:featureComposer.contextChangeConfirm")
+                : copy.discardButton}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1500,6 +1686,7 @@ function CreateTaskModal(props: CreateTaskModalProps) {
         location.pathname,
         props.projectId,
         props.releaseId,
+        props.originReleaseId,
         props.initialFeature?.id,
         props.initialMilestoneId,
       ])}

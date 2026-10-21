@@ -105,6 +105,18 @@ const requireMilestoneLeadPermission = async (
   }
   return next();
 };
+const requireMilestoneTaskCreatePermission = async (
+  c: import("hono").Context,
+  next: import("hono").Next,
+) => {
+  const body: unknown = await c.req.json().catch(() => ({}));
+  if (body && typeof body === "object" && !Array.isArray(body)) {
+    const newTasks = (body as { newTasks?: unknown }).newTasks;
+    if (Array.isArray(newTasks) && newTasks.length > 0)
+      return requireWorkspacePermission({ task: ["create"] })(c, next);
+  }
+  return next();
+};
 const listRoute = createRoute({
   method: "get",
   operationId: "listFeatureMilestones",
@@ -128,8 +140,12 @@ const createMilestoneRoute = createRoute({
   tags: ["Milestones"],
   summary: "Create a feature milestone",
   description:
-    "Optionally assign existing Tasks/Bugs from the same Feature atomically. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409 without creating a milestone.",
-  middleware: [...writeFeature, requireMilestoneLeadPermission],
+    "Atomically create a milestone, link existing Tasks/Bugs from its Feature, and optionally create up to 100 title-only Tasks/Bugs. New work requires task:create and inherits the selected release. Required custom fields must have valid defaults. Validation or insertion failure rolls back all work and number allocation. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409.",
+  middleware: [
+    ...writeFeature,
+    requireMilestoneLeadPermission,
+    requireMilestoneTaskCreatePermission,
+  ],
   request: {
     params: featureParam,
     query: milestoneScheduleQuery,

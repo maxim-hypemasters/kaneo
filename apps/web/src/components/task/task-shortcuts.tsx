@@ -17,6 +17,8 @@ import {
   focusTaskAction,
 } from "./task-action-target";
 import { useRelationPickerStore } from "./task-relation-picker-store";
+import { taskReleaseSearch } from "./task-release-origin";
+import { useTaskReleaseOrigin } from "./task-release-origin-context";
 
 type TaskShortcutsProps = {
   taskId: string;
@@ -33,6 +35,7 @@ export function TaskShortcuts({
 }: TaskShortcutsProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const origin = useTaskReleaseOrigin();
   const { user } = useAuth();
   const { data: task } = useGetTask(taskId);
   const copyActions = useTaskCopyActions({ taskId, projectId, workspaceId });
@@ -58,6 +61,7 @@ export function TaskShortcuts({
     navigate({
       to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
       params: { workspaceId, projectId: target.projectId, taskId: target.id },
+      search: taskReleaseSearch(origin, target.projectId),
     });
   };
 

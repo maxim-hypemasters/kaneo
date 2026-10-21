@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import bulkOperation from "@/fetchers/task/bulk-operation";
@@ -17,6 +18,7 @@ export function useBulkOperations() {
     void queryClientRef.invalidateQueries({ queryKey: ["release-progress"] });
     void queryClientRef.invalidateQueries({ queryKey: ["feature-milestones"] });
     void queryClientRef.invalidateQueries({ queryKey: ["releases"] });
+    invalidateWorkLinkCandidates(queryClientRef);
   };
 
   const bulkDelete = useMutation({

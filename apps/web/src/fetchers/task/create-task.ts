@@ -21,7 +21,7 @@ async function createTask(
   // releaseId: omitted, the task starts in its feature's release; null is none.
   placement: Pick<
     CreateTaskRequest,
-    "type" | "featureId" | "releaseId" | "milestoneId"
+    "type" | "featureId" | "releaseId" | "milestoneId" | "featureComposition"
   > = {},
 ) {
   if (!projectId) {
@@ -44,6 +44,9 @@ async function createTask(
       customFields,
       draftAssetIds,
       ...(placement.type ? { type: placement.type } : {}),
+      ...(placement.featureComposition !== undefined
+        ? { featureComposition: placement.featureComposition }
+        : {}),
       ...(placement.featureId ? { featureId: placement.featureId } : {}),
       ...(placement.milestoneId ? { milestoneId: placement.milestoneId } : {}),
       ...(placement.type !== "feature" && placement.releaseId !== undefined

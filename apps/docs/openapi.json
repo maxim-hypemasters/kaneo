@@ -2667,6 +2667,69 @@
           "endDate"
         ]
       },
+      "ReleaseLinkCandidate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "task",
+              "bug",
+              "milestone"
+            ]
+          },
+          "number": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "featureId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "featureTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "projectSlug": {
+            "type": "string"
+          },
+          "releaseId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "releaseName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "number",
+          "featureId",
+          "featureTitle",
+          "projectSlug",
+          "releaseId",
+          "releaseName"
+        ]
+      },
       "DeletedRelease": {
         "type": "object",
         "properties": {
@@ -11552,6 +11615,216 @@
         }
       }
     },
+    "/task/feature-link-candidates/{projectId}": {
+      "get": {
+        "operationId": "listFeatureLinkCandidates",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Find existing work for a new Feature",
+        "description": "Search nonarchived Tasks and Bugs without a Feature in this project, including Done work. Eligibility and title/identifier search are applied before pagination. Returns compact identity and current release metadata.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Eligible Tasks and Bugs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "task",
+                              "bug"
+                            ]
+                          },
+                          "number": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "projectSlug": {
+                            "type": "string"
+                          },
+                          "releaseId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "releaseName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "type",
+                          "number",
+                          "projectSlug",
+                          "releaseId",
+                          "releaseName"
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "page": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "totalPages": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid search or pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing task:read permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed workspaces; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Candidate read timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/task/{id}/description": {
       "get": {
         "operationId": "getTaskDescriptionPage",
@@ -13104,7 +13377,7 @@
           "Tasks"
         ],
         "summary": "Create task",
-        "description": "Add a task, bug or feature to a project, defaulting to task. Tasks and Bugs use the column named by status; Features omit planning fields. Tasks and bugs may belong to a feature. Without releaseId they inherit their milestone's release; an explicit releaseId, or null for none, wins.",
+        "description": "Add a task, bug or feature to a project, defaulting to task. Tasks and Bugs use the column named by status; Features omit planning fields. Tasks and bugs may belong to a feature. Without releaseId they inherit their milestone's release; an explicit releaseId, or null for none, wins. Feature-only featureComposition creates milestones, links unowned nonarchived Tasks/Bugs and creates title-only work in the same transaction. Failures roll back every record and number allocation. Existing work preserves non-null releases; new work follows its draft milestone, or unassignedReleaseId when no milestone is selected.",
         "parameters": [
           {
             "schema": {
@@ -13206,6 +13479,126 @@
                     ],
                     "minLength": 1,
                     "description": "A release of the project, or null for none. Omitted, the task starts in its milestone's release, or in none."
+                  },
+                  "featureComposition": {
+                    "type": "object",
+                    "properties": {
+                      "milestones": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            },
+                            "leadId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "minLength": 1
+                            },
+                            "priority": {
+                              "type": "string",
+                              "enum": [
+                                "no-priority",
+                                "low",
+                                "medium",
+                                "high",
+                                "urgent"
+                              ]
+                            },
+                            "releaseId": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "minLength": 1
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "title"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "existingTasks": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "milestoneKey": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "minLength": 1,
+                              "maxLength": 255
+                            }
+                          },
+                          "required": [
+                            "id"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "newTasks": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "title": {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            "type": {
+                              "type": "string",
+                              "enum": [
+                                "task",
+                                "bug"
+                              ],
+                              "default": "task"
+                            },
+                            "milestoneKey": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "minLength": 1,
+                              "maxLength": 255
+                            }
+                          },
+                          "required": [
+                            "title"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 100
+                      },
+                      "unassignedReleaseId": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "minLength": 1
+                      }
+                    },
+                    "additionalProperties": false,
+                    "description": "Feature-only milestone and Task/Bug drafts, saved atomically with the new Feature. Existing work must have no Feature. Milestones or existing links additionally require task:update; non-null milestone leads require task:assign."
                   }
                 },
                 "required": [
@@ -13247,8 +13640,18 @@
               }
             }
           },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "403": {
-            "description": "No access to the project, or missing task:create permission",
+            "description": "No project access, or missing task:create, task:update or task:assign permission required by the request",
             "content": {
               "application/json": {
                 "schema": {
@@ -13268,7 +13671,7 @@
             }
           },
           "409": {
-            "description": "featureId isn't a feature, or the task is a feature",
+            "description": "Invalid Feature membership or stale existing-work selection",
             "content": {
               "application/json": {
                 "schema": {
@@ -16703,6 +17106,185 @@
         }
       }
     },
+    "/release/{id}/link-candidates": {
+      "get": {
+        "operationId": "getReleaseLinkCandidates",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Find existing work to link to a release",
+        "description": "Paginated same-project candidates not explicitly assigned to this release. Task candidates include nonarchived Tasks and Bugs, including completed work. Milestone candidates include empty milestones and milestones owned by archived Features. Search matches task titles or identifiers, or milestone titles and owning Feature titles. Linking through the existing assignment endpoints moves membership from the current release; milestone follower rules remain in effect.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "task",
+                "milestone"
+              ],
+              "description": "Task candidates include Bugs."
+            },
+            "required": true,
+            "description": "Task candidates include Bugs.",
+            "name": "kind",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Existing work eligible to link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReleaseLinkCandidate"
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "page": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "totalPages": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid candidate kind, search or pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No project access or missing task:read permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Release project or workspace changed; retry the request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Candidate request timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/release/{id}/move-unfinished": {
       "post": {
         "operationId": "moveUnfinishedReleaseItems",
@@ -17101,7 +17683,7 @@
           "Milestones"
         ],
         "summary": "Create a feature milestone",
-        "description": "Optionally assign existing Tasks/Bugs from the same Feature atomically. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409 without creating a milestone.",
+        "description": "Atomically create a milestone, link existing Tasks/Bugs from its Feature, and optionally create up to 100 title-only Tasks/Bugs. New work requires task:create and inherits the selected release. Required custom fields must have valid defaults. Validation or insertion failure rolls back all work and number allocation. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409.",
         "parameters": [
           {
             "schema": {
@@ -17169,6 +17751,32 @@
                       "null"
                     ],
                     "maxLength": 10000
+                  },
+                  "newTasks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "task",
+                            "bug"
+                          ],
+                          "default": "task"
+                        }
+                      },
+                      "required": [
+                        "title"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 100,
+                    "description": "Title-only Task/Bug drafts to create atomically with the milestone and existing links. Requires task:create permission. Defaults and required custom fields follow normal task creation."
                   },
                   "taskIds": {
                     "type": "array",

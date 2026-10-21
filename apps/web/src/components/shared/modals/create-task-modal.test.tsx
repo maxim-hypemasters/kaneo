@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import {
@@ -17,6 +18,7 @@ import {
 } from "vite-plus/test";
 
 import CreateTaskModal from "./create-task-modal";
+import { TaskReleaseOriginProvider } from "@/components/task/task-release-origin-context";
 
 function createTestQueryClient() {
   return new QueryClient({
@@ -44,6 +46,10 @@ let workspaceId = "workspace-1";
 let projects: { id: string; name: string; slug: string }[] | undefined;
 let columnsError = false;
 let columnsFetching = false;
+let canManageFeature = true;
+let releasesFetching = false;
+let releasesError = false;
+const refetchReleases = vi.fn();
 const refetchColumns = vi.fn();
 let projectColumns:
   | { id: string; slug: string; name: string; isFinal: boolean }[]
@@ -68,6 +74,7 @@ let releases:
       startDate: string;
       codeFreezeDate: string;
       submissionDate: string;
+      projectId?: string;
     }[]
   | undefined;
 vi.mock("@/hooks/queries/milestone/use-get-milestones", () => ({
@@ -82,6 +89,10 @@ vi.mock("@/lib/upload-draft-asset", () => ({
 }));
 
 beforeEach(() => {
+  canManageFeature = true;
+  releasesFetching = false;
+  releasesError = false;
+  refetchReleases.mockReset();
   workspaceId = "workspace-1";
   projects = [
     { id: "project-1", name: "Alpha", slug: "alp" },
@@ -96,6 +107,7 @@ beforeEach(() => {
   releases = [
     {
       id: "r24",
+      projectId: "project-1",
       name: "2.4",
       startDate: "2026-10-01",
       codeFreezeDate: "2026-10-15",
@@ -103,6 +115,7 @@ beforeEach(() => {
     },
     {
       id: "r25",
+      projectId: "project-1",
       name: "2.5",
       startDate: "2026-11-01",
       codeFreezeDate: "2026-11-15",
@@ -152,12 +165,14 @@ vi.mock("@/components/task/task-description-editor", () => ({
     taskId?: string;
     uploadAsset: (file: File) => Promise<unknown>;
     onChange: (value: string) => void;
+    disabled?: boolean;
   }) => {
     uploadAsset = props.uploadAsset;
     return (
       <textarea
         data-testid="description-editor"
         data-task-id={props.taskId}
+        disabled={props.disabled}
         onChange={(event) => props.onChange(event.target.value)}
       />
     );
@@ -203,6 +218,7 @@ vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canCreateTasks: () => true,
     canCreateLabels: () => true,
+    canUpdateTasks: () => canManageFeature,
   }),
 }));
 
@@ -233,9 +249,183 @@ vi.mock("@/hooks/queries/release/use-get-releases", () => ({
   useGetReleases: () => ({
     data: releases,
     isPending: releases === undefined,
-    isError: false,
+    isError: releasesError,
+    isFetching: releasesFetching,
+    refetch: refetchReleases,
   }),
 }));
+
+vi.mock("./create-task/feature-composition", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("./create-task/feature-composition")>();
+  return {
+    ...actual,
+    FeatureComposer: ({
+      value,
+      onChange,
+      disabled,
+      canManage,
+      defaultReleaseId,
+    }: {
+      value: import("./create-task/feature-composition").FeatureCompositionDraft;
+      onChange: (
+        value: import("./create-task/feature-composition").FeatureCompositionDraft,
+      ) => void;
+      disabled?: boolean;
+      canManage: boolean;
+      defaultReleaseId?: string | null;
+    }) => (
+      <section aria-label="Feature composer">
+        <output data-testid="feature-composition-state">
+          {JSON.stringify(value)}
+        </output>
+        {canManage && (
+          <>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() =>
+                onChange({
+                  ...value,
+                  milestones: [
+                    ...value.milestones,
+                    {
+                      key: "m1",
+                      title: "Launch",
+                      leadId: null,
+                      priority: "no-priority",
+                      releaseId: defaultReleaseId ?? null,
+                    },
+                  ],
+                })
+              }
+            >
+              Add milestone draft
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() =>
+                onChange({
+                  ...value,
+                  existingTasks: [
+                    {
+                      id: "existing",
+                      title: "Existing",
+                      number: 4,
+                      type: "bug",
+                      projectSlug: "ALP",
+                      releaseId: null,
+                      releaseName: null,
+                      milestoneKey: null,
+                    },
+                  ],
+                })
+              }
+            >
+              Link existing work
+            </button>
+            {value.milestones.length > 0 && value.existingTasks.length > 0 && (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() =>
+                  onChange({
+                    ...value,
+                    existingTasks: value.existingTasks.map((task) => ({
+                      ...task,
+                      milestoneKey: value.milestones[0].key,
+                    })),
+                  })
+                }
+              >
+                Place existing work in milestone
+              </button>
+            )}
+          </>
+        )}
+        {canManage && value.milestones.length > 0 && (
+          <>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() =>
+                onChange({
+                  ...value,
+                  newTasks: [
+                    ...value.newTasks,
+                    {
+                      key: `new${value.newTasks.length + 1}`,
+                      title: "Draft Task",
+                      type: "task",
+                      milestoneKey: value.milestones[0].key,
+                    },
+                  ],
+                })
+              }
+            >
+              Add new draft
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() =>
+                onChange({
+                  ...value,
+                  newTasks: [
+                    ...value.newTasks,
+                    {
+                      key: `new${value.newTasks.length + 1}`,
+                      title: "Draft Bug",
+                      type: "bug",
+                      milestoneKey: value.milestones[0].key,
+                    },
+                  ],
+                })
+              }
+            >
+              Add new bug draft
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() =>
+                onChange({
+                  ...value,
+                  newTasks: value.newTasks.map((task) => ({
+                    ...task,
+                    title: " ",
+                  })),
+                })
+              }
+            >
+              Blank draft title
+            </button>
+            <select
+              aria-label="Milestone release"
+              value={value.milestones[0].releaseId ?? ""}
+              disabled={disabled}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  milestones: value.milestones.map((milestone, index) =>
+                    index === 0
+                      ? { ...milestone, releaseId: event.target.value || null }
+                      : milestone,
+                  ),
+                })
+              }
+            >
+              <option value="">No release</option>
+              <option value="r24">2.4</option>
+              <option value="r25">2.5</option>
+            </select>
+          </>
+        )}
+      </section>
+    ),
+  };
+});
 
 vi.mock("@/hooks/queries/project/use-get-projects", () => ({
   default: () => ({ data: projects }),
@@ -1794,4 +1984,529 @@ describe("CreateTaskModal releases", () => {
       await screen.findByText("common:modals.createTask.discardTitle"),
     ).toBeInTheDocument();
   });
+});
+
+describe("CreateTaskModal Feature composition", () => {
+  const featureTitle = (value = "Feature with work") =>
+    fireEvent.change(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+      { target: { value } },
+    );
+  const draft = () =>
+    JSON.parse(
+      screen.getByTestId("feature-composition-state").textContent!,
+    ) as import("./create-task/feature-composition").FeatureCompositionDraft;
+  const addMilestone = () =>
+    fireEvent.click(
+      screen.getByRole("button", { name: "Add milestone draft" }),
+    );
+  const addNew = () =>
+    fireEvent.click(screen.getByRole("button", { name: "Add new draft" }));
+
+  it("defaults every milestone to the current release page before inherited Feature context", () => {
+    useLocation.mockReturnValue({
+      pathname:
+        "/dashboard/workspace/workspace-1/project/project-1/releases/r25",
+      search: { originReleaseId: "r24" },
+    });
+    render(
+      <TaskReleaseOriginProvider
+        origin={{ projectId: "project-1", releaseId: "r24" }}
+      >
+        <CreateTaskModal
+          open
+          type="feature"
+          projectId="project-1"
+          onClose={vi.fn()}
+        />
+      </TaskReleaseOriginProvider>,
+      { wrapper: createWrapper() },
+    );
+    addMilestone();
+    expect(draft().milestones[0].releaseId).toBe("r25");
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Milestone release" }),
+      { target: { value: "" } },
+    );
+    addMilestone();
+    expect(draft().milestones.map((milestone) => milestone.releaseId)).toEqual([
+      null,
+      "r25",
+    ]);
+  });
+
+  it("submits the Feature, milestones, existing links and Task/Bug drafts in one request", async () => {
+    const onClose = vi.fn();
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-1"
+        originReleaseId="r24"
+        onClose={onClose}
+      />,
+      { wrapper: createWrapper() },
+    );
+    featureTitle();
+    addMilestone();
+    expect(
+      screen.queryByRole("combobox", { name: "New work release" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Link existing work" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Place existing work in milestone" }),
+    );
+    addNew();
+    fireEvent.click(screen.getByRole("button", { name: "Add new bug draft" }));
+    expect(createTask).not.toHaveBeenCalled();
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(createTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "feature",
+        featureComposition: {
+          milestones: [
+            {
+              key: "m1",
+              title: "Launch",
+              leadId: null,
+              priority: "no-priority",
+              releaseId: "r24",
+            },
+          ],
+          existingTasks: [{ id: "existing", milestoneKey: "m1" }],
+          newTasks: [
+            { title: "Draft Task", type: "task", milestoneKey: "m1" },
+            { title: "Draft Bug", type: "bug", milestoneKey: "m1" },
+          ],
+        },
+      }),
+    );
+    expect(createTask.mock.calls[0][0]).not.toHaveProperty("releaseId");
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("retains the complete draft after a failed save and retries the same hierarchy", async () => {
+    createTask.mockRejectedValueOnce(
+      new Error("Required field has no default"),
+    );
+    const onClose = vi.fn();
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-1"
+        onClose={onClose}
+      />,
+      { wrapper: createWrapper() },
+    );
+    featureTitle();
+    addMilestone();
+    fireEvent.click(screen.getByRole("button", { name: "Link existing work" }));
+    addNew();
+    submit();
+    await vi.waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: "common:modals.createTask.createButtonFeature",
+        }),
+      ).not.toBeDisabled(),
+    );
+    expect(draft().milestones).toHaveLength(1);
+    expect(draft().existingTasks).toHaveLength(1);
+    expect(draft().newTasks).toHaveLength(1);
+    expect(onClose).not.toHaveBeenCalled();
+    submit();
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(createTask.mock.calls[1]).toEqual(createTask.mock.calls[0]);
+  });
+
+  it("rejects blank child titles without discarding the draft", () => {
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-1"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    featureTitle();
+    addMilestone();
+    addNew();
+    fireEvent.click(screen.getByRole("button", { name: "Blank draft title" }));
+    expect(
+      screen.getByRole("button", {
+        name: "common:modals.createTask.createButtonFeature",
+      }),
+    ).toBeDisabled();
+    submit();
+    expect(createTask).not.toHaveBeenCalled();
+    expect(draft().newTasks[0].title).toBe(" ");
+  });
+
+  it("treats hierarchy-only drafts as unsaved and cancels without writing records", async () => {
+    const onClose = vi.fn();
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-1"
+        onClose={onClose}
+      />,
+      { wrapper: createWrapper() },
+    );
+    addMilestone();
+    addNew();
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:actions.cancel" }),
+    );
+    expect(
+      await screen.findByText("common:modals.createTask.discardTitleFeature"),
+    ).toBeInTheDocument();
+    expect(createTask).not.toHaveBeenCalled();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "common:modals.createTask.discardButtonFeature",
+      }),
+    );
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("confirms type changes before clearing composition and preserves Feature text", async () => {
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-1"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    featureTitle("Keep the title");
+    fireEvent.change(screen.getByTestId("description-editor"), {
+      target: { value: "Keep the description" },
+    });
+    addMilestone();
+    addNew();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "common:modals.createTask.type common:modals.createTask.typeFeature",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitemradio", {
+        name: "common:modals.createTask.typeTask",
+      }),
+    );
+    expect(
+      await screen.findByText("tasks:featureComposer.contextChangeTitle"),
+    ).toBeInTheDocument();
+    expect(createTask).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "common:actions.cancel",
+      }),
+    );
+    expect(draft().milestones).toHaveLength(1);
+    expect(draft().newTasks).toHaveLength(1);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "common:modals.createTask.type common:modals.createTask.typeFeature",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitemradio", {
+        name: "common:modals.createTask.typeTask",
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "tasks:featureComposer.contextChangeConfirm",
+      }),
+    );
+    expect(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.taskTitlePlaceholder",
+      ),
+    ).toHaveValue("Keep the title");
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      type: "task",
+      description: "Keep the description",
+    });
+    expect(createTask.mock.calls[0][0]).not.toHaveProperty(
+      "featureComposition",
+    );
+  });
+
+  it("confirms project changes and clears all project-bound hierarchy state", async () => {
+    render(<CreateTaskModal open type="feature" onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    await chooseBeta();
+    featureTitle("Keep the knowledge");
+    addMilestone();
+    addNew();
+    fireEvent.click(screen.getByRole("button", { name: "Beta" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Alpha" }));
+    expect(
+      await screen.findByText("tasks:featureComposer.contextChangeTitle"),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "tasks:featureComposer.contextChangeConfirm",
+      }),
+    );
+    expect(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+    ).toHaveValue("Keep the knowledge");
+    expect(draft()).toEqual({
+      milestones: [],
+      existingTasks: [],
+      newTasks: [],
+      unassignedReleaseId: null,
+    });
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      type: "feature",
+      projectId: "project-1",
+    });
+  });
+
+  it("creates the Feature without child controls when task-update permission is absent", async () => {
+    canManageFeature = false;
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-1"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    expect(
+      screen.queryByRole("button", { name: "Add milestone draft" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Link existing work" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add new draft" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Add new bug draft" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "New work release" }),
+    ).not.toBeInTheDocument();
+    featureTitle();
+    submit();
+    await vi.waitFor(() => expect(createTask).toHaveBeenCalledOnce());
+    expect(createTask.mock.calls[0][0]).not.toHaveProperty(
+      "featureComposition",
+    );
+  });
+
+  it("keeps hierarchy scrolling separate from the fixed form actions", () => {
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-1"
+        onClose={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+    addMilestone();
+    addNew();
+    const dialog = screen.getByRole("dialog");
+    // Focus may scroll overflow-hidden containers, moving fixed form actions.
+    expect(dialog).toHaveClass("overflow-clip");
+    expect(dialog).not.toHaveClass("overflow-hidden");
+    const hierarchy = screen.getByTestId("feature-composition-state");
+    const scrollBody = hierarchy.closest(".overflow-y-auto");
+    // A native fieldset does not scroll its anonymous content box reliably.
+    expect(scrollBody?.tagName).toBe("DIV");
+    expect(scrollBody).toContainElement(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+    );
+    expect(scrollBody).not.toContainElement(
+      screen.getByRole("button", { name: "common:actions.cancel" }),
+    );
+    expect(scrollBody).not.toContainElement(
+      screen.getByRole("button", {
+        name: "common:modals.createTask.createButtonFeature",
+      }),
+    );
+  });
+
+  it("freezes the form and resets the entire hierarchy after Create more", async () => {
+    let resolveSave!: (value: Awaited<ReturnType<typeof createTask>>) => void;
+    createTask.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    const onClose = vi.fn();
+    render(
+      <CreateTaskModal
+        open
+        type="feature"
+        projectId="project-1"
+        originReleaseId="r24"
+        onClose={onClose}
+      />,
+      { wrapper: createWrapper() },
+    );
+    featureTitle();
+    addMilestone();
+    addNew();
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Milestone release" }),
+      { target: { value: "r25" } },
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "common:modals.createTask.createMore",
+      }),
+    );
+    submit();
+    expect(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+    ).toBeDisabled();
+    expect(screen.getByTestId("description-editor")).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "common:actions.cancel" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("checkbox", {
+        name: "common:modals.createTask.createMore",
+      }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Add new draft" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("combobox", { name: "Milestone release" }),
+    ).toBeDisabled();
+    expect(createTask.mock.calls[0][0]).toMatchObject({
+      featureComposition: {
+        milestones: [expect.objectContaining({ releaseId: "r25" })],
+        newTasks: [expect.objectContaining({ milestoneKey: "m1" })],
+      },
+    });
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(onClose).not.toHaveBeenCalled();
+    await act(async () =>
+      resolveSave({
+        id: "feature-more",
+        title: "Feature with work",
+        status: null,
+        type: "feature",
+        projectId: "project-1",
+        createdAt: "2026-10-21T00:00:00.000Z",
+      }),
+    );
+    expect(draft()).toEqual({
+      milestones: [],
+      existingTasks: [],
+      newTasks: [],
+      unassignedReleaseId: "r24",
+    });
+    expect(
+      screen.getByPlaceholderText(
+        "common:modals.createTask.featureTitlePlaceholder",
+      ),
+    ).toHaveValue("");
+    expect(
+      screen.queryByRole("button", { name: "Add new draft" }),
+    ).not.toBeInTheDocument();
+    addMilestone();
+    expect(draft().milestones[0].releaseId).toBe("r24");
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("waits for fresh origin resolution, offers retry, and snapshots manual release overrides", () => {
+    releasesFetching = true;
+    const props = {
+      open: true,
+      type: "feature" as const,
+      projectId: "project-1",
+      originReleaseId: "r24",
+      onClose: vi.fn(),
+    };
+    const { rerender } = render(<CreateTaskModal {...props} />, {
+      wrapper: createWrapper(),
+    });
+    featureTitle();
+    expect(
+      screen.queryByRole("region", { name: "Feature composer" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "common:modals.createTask.createButtonFeature",
+      }),
+    ).toBeDisabled();
+    releasesFetching = false;
+    releasesError = true;
+    rerender(<CreateTaskModal {...props} />);
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "tasks:featureComposer.releaseContextError",
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:error.tryAgain" }),
+    );
+    expect(refetchReleases).toHaveBeenCalledOnce();
+    releasesError = false;
+    rerender(<CreateTaskModal {...props} />);
+    expect(draft().unassignedReleaseId).toBe("r24");
+    addMilestone();
+    expect(draft().milestones[0].releaseId).toBe("r24");
+    fireEvent.change(
+      screen.getByRole("combobox", { name: "Milestone release" }),
+      { target: { value: "" } },
+    );
+    releasesFetching = true;
+    releasesError = true;
+    rerender(<CreateTaskModal {...props} />);
+    expect(draft().milestones[0].releaseId).toBeNull();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it.each(["deleted", "foreign-project"])(
+    "defaults to No release for a %s origin",
+    (kind) => {
+      if (kind === "deleted") releases = [];
+      else
+        releases = releases?.map((release) => ({
+          ...release,
+          projectId: "project-2",
+        }));
+      render(
+        <CreateTaskModal
+          open
+          type="feature"
+          projectId="project-1"
+          originReleaseId="r24"
+          onClose={vi.fn()}
+        />,
+        { wrapper: createWrapper() },
+      );
+      expect(draft().unassignedReleaseId).toBeNull();
+      addMilestone();
+      expect(draft().milestones[0].releaseId).toBeNull();
+    },
+  );
 });

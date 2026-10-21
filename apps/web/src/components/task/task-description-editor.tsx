@@ -12,6 +12,7 @@ type TaskDescriptionEditorProps = {
   uploadAsset?: (
     file: File,
   ) => Promise<Awaited<ReturnType<typeof uploadTaskImage>>>;
+  disabled?: boolean;
 };
 
 export default function TaskDescriptionEditor({
@@ -22,6 +23,7 @@ export default function TaskDescriptionEditor({
   projectId,
   ensureTaskId,
   uploadAsset,
+  disabled,
 }: TaskDescriptionEditorProps) {
   const { t } = useTranslation();
 
@@ -34,6 +36,7 @@ export default function TaskDescriptionEditor({
       projectId={projectId}
       ensureTaskId={ensureTaskId}
       uploadAsset={uploadAsset}
+      disabled={disabled}
       uploadSurface="description"
       className="[&_.kaneo-comment-editor-content_.ProseMirror]:min-h-[11rem] [&_.kaneo-comment-editor-content_.ProseMirror]:max-h-none [&_.kaneo-comment-editor-content_.ProseMirror]:overflow-visible [&_.kaneo-comment-editor-content_.ProseMirror]:px-0 [&_.kaneo-comment-editor-content_.ProseMirror]:pt-1 [&_.kaneo-comment-editor-content_.ProseMirror]:pb-2"
     />

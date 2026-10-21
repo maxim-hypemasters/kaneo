@@ -14,6 +14,11 @@ import moveUnfinishedItems from "./controllers/move-unfinished-items";
 import updateRelease from "./controllers/update-release";
 import { getRelease, listReleases } from "./read-releases";
 import { readReleaseMilestones } from "./read-release-milestones";
+import { readReleaseLinkCandidates } from "./read-link-candidates";
+import {
+  releaseLinkCandidatesQuery,
+  releaseLinkCandidatesSchema,
+} from "./link-candidates-schema";
 import { milestoneScheduleQuery } from "../milestone/schema";
 import { readReleaseProgress } from "./progress/read-release-progress";
 import {
@@ -120,6 +125,34 @@ const getReleaseMilestonesRoute = createRoute({
       "Release project or workspace changed; retry the request",
     ),
     503: errorResponse("Release milestones request timed out"),
+  },
+});
+
+const getReleaseLinkCandidatesRoute = createRoute({
+  method: "get",
+  operationId: "getReleaseLinkCandidates",
+  path: "/{id}/link-candidates",
+  tags: ["Releases"],
+  summary: "Find existing work to link to a release",
+  description:
+    "Paginated same-project candidates not explicitly assigned to this release. Task candidates include nonarchived Tasks and Bugs, including completed work. Milestone candidates include empty milestones and milestones owned by archived Features. Search matches task titles or identifiers, or milestone titles and owning Feature titles. Linking through the existing assignment endpoints moves membership from the current release; milestone follower rules remain in effect.",
+  middleware: [
+    workspaceAccess.fromRelease("id"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
+  request: { params: releaseParam, query: releaseLinkCandidatesQuery },
+  responses: {
+    200: jsonResponse(
+      "Existing work eligible to link",
+      releaseLinkCandidatesSchema,
+    ),
+    400: errorResponse("Invalid candidate kind, search or pagination"),
+    403: errorResponse("No project access or missing task:read permission"),
+    404: errorResponse("Release not found"),
+    409: errorResponse(
+      "Release project or workspace changed; retry the request",
+    ),
+    503: errorResponse("Candidate request timed out"),
   },
 });
 
@@ -271,6 +304,17 @@ const release = apiRouter<BaseVariables & { workspaceId: string }>()
         c.get("authorizedProjectId"),
         c.get("workspaceId"),
         c.req.valid("query").timeZone,
+      ),
+      200,
+    ),
+  )
+  .openapi(getReleaseLinkCandidatesRoute, async (c) =>
+    c.json(
+      await readReleaseLinkCandidates(
+        c.req.valid("param").id,
+        c.get("authorizedProjectId"),
+        c.get("workspaceId"),
+        c.req.valid("query"),
       ),
       200,
     ),

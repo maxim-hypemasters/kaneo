@@ -75,6 +75,9 @@ function KanbanBoard({
     onMutate: (variables) => ({ previousBoard: variables.previousBoard }),
     onSuccess: (_result, variables) => {
       if (variables.tasks.some((task) => task.status !== undefined)) {
+        void queryClient.invalidateQueries({
+          queryKey: ["release-link-candidates", variables.projectId],
+        });
         invalidateMyWork(queryClient);
         void queryClient.invalidateQueries({
           queryKey: ["release-progress", variables.projectId],

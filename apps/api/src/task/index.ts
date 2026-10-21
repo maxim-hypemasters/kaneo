@@ -1,5 +1,10 @@
 import { taskResource } from "./task-resource";
 import {
+  featureLinkCandidatesQuery,
+  featureLinkCandidatesSchema,
+} from "./feature-link-candidates-schema";
+import { readFeatureLinkCandidates } from "./controllers/read-feature-link-candidates";
+import {
   featureLibraryQuery,
   featureLibrarySchema,
 } from "./feature-library-schema";
@@ -61,6 +66,7 @@ import {
   requireBulkTaskEntitlement,
   requireBulkTaskPermission,
   requireTaskAssigneePermission,
+  requireFeatureCompositionPermission,
 } from "./controllers/require-task-permission";
 import updateTask from "./controllers/update-task";
 import updateTaskAssignee from "./controllers/update-task-assignee";
@@ -185,6 +191,28 @@ const featureLibraryRoute = createRoute({
     409: errorResponse("Project changed workspaces; retry"),
     403: errorResponse("No project access"),
     404: errorResponse("Project not found"),
+  },
+});
+const featureLinkCandidatesRoute = createRoute({
+  method: "get",
+  operationId: "listFeatureLinkCandidates",
+  path: "/feature-link-candidates/{projectId}",
+  tags: ["Features"],
+  summary: "Find existing work for a new Feature",
+  description:
+    "Search nonarchived Tasks and Bugs without a Feature in this project, including Done work. Eligibility and title/identifier search are applied before pagination. Returns compact identity and current release metadata.",
+  middleware: [
+    workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
+  request: { params: projectIdParam, query: featureLinkCandidatesQuery },
+  responses: {
+    200: jsonResponse("Eligible Tasks and Bugs", featureLinkCandidatesSchema),
+    400: errorResponse("Invalid search or pagination"),
+    403: errorResponse("Missing task:read permission"),
+    404: errorResponse("Project not found"),
+    409: errorResponse("Project changed workspaces; retry"),
+    503: errorResponse("Candidate read timed out"),
   },
 });
 const archiveFeatureRoute = createRoute({
@@ -367,11 +395,12 @@ const createTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Create task",
   description:
-    "Add a task, bug or feature to a project, defaulting to task. Tasks and Bugs use the column named by status; Features omit planning fields. Tasks and bugs may belong to a feature. Without releaseId they inherit their milestone's release; an explicit releaseId, or null for none, wins.",
+    "Add a task, bug or feature to a project, defaulting to task. Tasks and Bugs use the column named by status; Features omit planning fields. Tasks and bugs may belong to a feature. Without releaseId they inherit their milestone's release; an explicit releaseId, or null for none, wins. Feature-only featureComposition creates milestones, links unowned nonarchived Tasks/Bugs and creates title-only work in the same transaction. Failures roll back every record and number allocation. Existing work preserves non-null releases; new work follows its draft milestone, or unassignedReleaseId when no milestone is selected.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["create"] }),
     requireEntitlement,
+    requireFeatureCompositionPermission,
   ] as const,
   request: {
     params: projectIdParam,
@@ -383,11 +412,14 @@ const createTaskRoute = createRoute({
   responses: {
     200: jsonResponse("The created task", taskSchema),
     400: errorResponse("Invalid body"),
+    402: errorResponse("Workspace plan has expired"),
     403: errorResponse(
-      "No access to the project, or missing task:create permission",
+      "No project access, or missing task:create, task:update or task:assign permission required by the request",
     ),
     404: errorResponse("Project, feature or release not found"),
-    409: errorResponse("featureId isn't a feature, or the task is a feature"),
+    409: errorResponse(
+      "Invalid Feature membership or stale existing-work selection",
+    ),
   },
 });
 
@@ -1005,6 +1037,16 @@ const descriptionMatchesRoute = createRoute({
 });
 
 const task = apiRouter<BaseVariables & { workspaceId: string }>()
+  .openapi(featureLinkCandidatesRoute, async (c) =>
+    c.json(
+      await readFeatureLinkCandidates(
+        c.req.valid("param").projectId,
+        c.get("workspaceId"),
+        c.req.valid("query"),
+      ),
+      200,
+    ),
+  )
   .openapi(descriptionPageRoute, async (c) =>
     c.json(
       await getDescriptionPage(c.req.valid("param").id, c.req.valid("query")),
@@ -1155,6 +1197,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       featureId,
       milestoneId,
       releaseId,
+      featureComposition,
     } = c.req.valid("json");
 
     const parsedStartDate =
@@ -1185,6 +1228,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       milestoneId,
       expectedWorkspaceId: c.get("workspaceId"),
       releaseId,
+      featureComposition,
     });
 
     return c.json(taskResource(task), 200);

@@ -34,6 +34,7 @@ import { ReleaseItemsSkeleton } from "./release-items-skeleton";
 import { ReleaseNotFound } from "./release-not-found";
 import { ReleaseProgressSection } from "./release-progress-section";
 import { ReleaseGroupingFeedback } from "./release-grouping-feedback";
+import { ReleaseLinkDialog } from "./release-link-dialog";
 
 const NO_RELEASES: Release[] = [];
 
@@ -76,6 +77,7 @@ export function ReleaseDetailPage({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
   const [createType, setCreateType] = useState<TaskType | null>(null);
+  const [linkKind, setLinkKind] = useState<"task" | "milestone" | null>(null);
 
   const done = useMemo(
     () => finalStatuses(workflowQuery.data ?? board?.columns ?? []),
@@ -115,6 +117,9 @@ export function ReleaseDetailPage({
   );
   const openCreate = permissions.canCreateTasks
     ? (type: TaskType) => setCreateType(type)
+    : undefined;
+  const openLink = permissions.canMoveItems
+    ? (kind: "task" | "milestone") => setLinkKind(kind)
     : undefined;
   const progressReady =
     !boardQuery.isPending && workflowQuery.data !== undefined;
@@ -167,7 +172,7 @@ export function ReleaseDetailPage({
             }}
           />
         ) : (
-          <ReleaseDetailEmpty onCreate={openCreate} />
+          <ReleaseDetailEmpty onCreate={openCreate} onLink={openLink} />
         );
     } else if (boardQuery.isError) {
       items = (
@@ -219,8 +224,13 @@ export function ReleaseDetailPage({
       workspaceId={workspaceId}
       activeView="releases"
       toolbar={
-        release && openCreate ? (
-          <NewWorkMenu variant="outline" size="xs" onSelect={openCreate} />
+        release && (openCreate || openLink) ? (
+          <NewWorkMenu
+            variant="outline"
+            size="xs"
+            onSelect={openCreate}
+            onLink={openLink}
+          />
         ) : null
       }
     >
@@ -266,8 +276,19 @@ export function ReleaseDetailPage({
             type={createType ?? "task"}
             projectId={projectId}
             releaseId={createType === "feature" ? undefined : release.id}
+            originReleaseId={release.id}
             onClose={() => setCreateType(null)}
           />
+          {linkKind && permissions.canMoveItems && (
+            <ReleaseLinkDialog
+              key={`${release.id}-${linkKind}`}
+              projectId={projectId}
+              releaseId={release.id}
+              releaseName={release.name}
+              kind={linkKind}
+              onClose={() => setLinkKind(null)}
+            />
+          )}
         </>
       ) : null}
 
@@ -275,6 +296,7 @@ export function ReleaseDetailPage({
         taskId={taskId}
         projectId={projectId}
         workspaceId={workspaceId}
+        originReleaseId={releaseId}
         onClose={onCloseTask}
       />
     </ProjectLayout>

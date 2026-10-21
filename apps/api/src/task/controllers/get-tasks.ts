@@ -469,8 +469,17 @@ async function getTasksPage(
       externalLinks: taskExternalLinksMap.get(task.id) || [],
     }));
 
+  // Legacy work can outlive its workflow column. Keep it discoverable without
+  // changing its stored status or inventing a workflow column.
+  const representedStatuses = new Set(
+    projectColumns.map((column) => column.slug),
+  );
   const plannedTasks = paginatedTasks
-    .filter((task) => task.status === "planned")
+    .filter(
+      (task) =>
+        task.status !== "archived" &&
+        (task.status === "planned" || !representedStatuses.has(task.status)),
+    )
     .map((task) => ({
       ...task,
       subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },

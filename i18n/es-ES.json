@@ -3714,7 +3714,29 @@
 				"trackingSince": "History starts {{date}}. Earlier progress is unavailable.",
 				"upcoming": "Progress will appear when this release starts."
 			},
-			"milestoneReleaseHint": "Milestone release"
+			"milestoneReleaseHint": "Milestone release",
+			"link": {
+				"milestoneAction": "Link existing milestone",
+				"taskAction": "Link existing tasks or bugs",
+				"milestonesTitle": "Link milestones to {{release}}",
+				"tasksTitle": "Link tasks or bugs to {{release}}",
+				"searchMilestones": "Search milestones or features…",
+				"searchTasks": "Search tasks or bugs…",
+				"selectedCount": "{{count}} selected",
+				"selected": "Selected work",
+				"noRelease": "No release",
+				"loading": "Loading work…",
+				"loadError": "Could not load work.",
+				"noMilestones": "No milestones available to link.",
+				"noTasks": "No tasks or bugs available to link.",
+				"noMatches": "No matching work.",
+				"linkSelected": "Link selected",
+				"linking": "Linking…",
+				"partialError": "{{succeeded}} linked. {{failed}} could not be linked. Retry or remove the remaining items.",
+				"saveError": "Could not link the selected work.",
+				"remove": "Remove {{title}} from selection",
+				"pageLabel": "Page {{page}} of {{total}}"
+			}
 		},
 		"createMenu": {
 			"label": "Create work item",
@@ -3779,7 +3801,38 @@
 			"open": "Open milestone",
 			"planned": "Planned",
 			"planningSnapshot": "Previous planning: {{values}}",
-			"workProgress": "Linked work progress"
+			"workProgress": "Linked work progress",
+			"newTasks": "New tasks",
+			"newTaskTitle": "New work title {{index}}",
+			"newTaskType": "New work type {{index}}",
+			"removeNewTask": "Remove new work item {{index}}",
+			"newTasksCount": "{{count}}/100",
+			"newTaskTitleRequired": "Enter a title for each new Task or Bug.",
+			"releaseContextError": "Could not load the release for this milestone."
+		},
+		"featureComposer": {
+			"addMilestone": "New milestone",
+			"milestoneTitle": "Milestone title {{index}}",
+			"removeMilestone": "Remove milestone {{index}}",
+			"draftMilestone": "Milestone {{index}}",
+			"linkTasks": "Link existing tasks or bugs",
+			"searchTasks": "Search tasks by title or ID",
+			"selectedWork": "Selected work",
+			"removeExistingTask": "Remove {{title}}",
+			"workMilestone": "Milestone for {{title}}",
+			"unassignedRelease": "Release for new work without a milestone",
+			"loadingTasks": "Loading Tasks and Bugs…",
+			"loadTasksError": "Could not load Tasks and Bugs.",
+			"noEligibleTasks": "No Tasks or Bugs available to link.",
+			"noMatches": "No matching Tasks or Bugs.",
+			"releaseContextError": "Could not load the release defaults for this Feature.",
+			"contextChangeTitle": "Discard milestone and work drafts?",
+			"contextChangeDescription": "Switching project or type clears these milestone drafts and work selections. Your title and description are kept.",
+			"contextChangeConfirm": "Discard drafts and switch",
+			"work": "Work",
+			"removeMilestoneWithWorkTitle": "Remove milestone and new work?",
+			"removeMilestoneWithWorkDescription": "Removing “{{title}}” discards the new Task/Bug drafts inside it ({{count}}). Existing work stays selected without a milestone.",
+			"removeMilestoneWithWorkConfirm": "Remove milestone and drafts"
 		}
 	},
 	"invitations": {

@@ -1,4 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
+import { taskReleaseSearch } from "./task-release-origin";
+import { useTaskReleaseOrigin } from "./task-release-origin-context";
 import { AnimatePresence } from "framer-motion";
 import { Trash2Icon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -55,6 +57,7 @@ export default function TaskSubtasks({
 }: TaskSubtasksProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const origin = useTaskReleaseOrigin();
   const [isAdding, setIsAdding] = useState(false);
   const [newType, setNewType] = useState<"task" | "bug">("task");
   const [isCreatingFeature, setIsCreatingFeature] = useState(false);
@@ -210,6 +213,10 @@ export default function TaskSubtasks({
                 projectId: subtasks[focusedIndex].task.projectId,
                 taskId: subtasks[focusedIndex].task.id,
               },
+              search: taskReleaseSearch(
+                origin,
+                subtasks[focusedIndex].task.projectId,
+              ),
             });
           }
           break;
@@ -238,6 +245,7 @@ export default function TaskSubtasks({
     hasSelection,
     clearSelection,
     navigate,
+    origin,
     workspaceId,
     toggleSelection,
   ]);
@@ -405,6 +413,7 @@ export default function TaskSubtasks({
                         projectId: subtask.task.projectId,
                         taskId: subtask.task.id,
                       },
+                      search: taskReleaseSearch(origin, subtask.task.projectId),
                     })
                   }
                   onDeleteClick={() => setDeleteTaskId(subtask.task.id)}

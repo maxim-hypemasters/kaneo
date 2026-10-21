@@ -11,11 +11,12 @@ import {
 } from "@/components/ui/empty";
 import type { TaskType } from "@/types/task";
 
-// Absent onCreate for viewers who can't create tasks.
 export function ReleaseDetailEmpty({
   onCreate,
+  onLink,
 }: {
   onCreate?: (type: TaskType) => void;
+  onLink?: (kind: "task" | "milestone") => void;
 }) {
   const { t } = useTranslation();
 
@@ -32,9 +33,9 @@ export function ReleaseDetailEmpty({
           {t("tasks:releases.detail.emptyHint")}
         </EmptyDescription>
       </EmptyHeader>
-      {onCreate ? (
+      {onCreate || onLink ? (
         <EmptyContent>
-          <NewWorkMenu variant="outline" onSelect={onCreate} />
+          <NewWorkMenu variant="outline" onSelect={onCreate} onLink={onLink} />
         </EmptyContent>
       ) : null}
     </Empty>

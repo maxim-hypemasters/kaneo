@@ -21,6 +21,7 @@ import { cn } from "@/lib/cn";
 import { SectionHeader } from "../sections/section-header";
 import { SectionAddButton } from "../sections/section-add-button";
 import { MilestoneDialog } from "./milestone-dialog";
+import { CreateFeatureMilestoneDialog } from "./create-feature-milestone-dialog";
 import { MilestoneRow } from "./milestone-row";
 export type MilestoneFilter = "all" | "none" | { id: string };
 export function FeatureMilestones({
@@ -137,15 +138,18 @@ export function FeatureMilestones({
           {t("tasks:milestones.none")}
         </span>
       </button>
-      {editing && (
+      {editing === "new" && (
+        <CreateFeatureMilestoneDialog
+          projectId={projectId}
+          featureId={featureId}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing && editing !== "new" && (
         <MilestoneDialog
           projectId={projectId}
           featureId={featureId}
-          milestone={
-            editing === "new"
-              ? undefined
-              : (data.find((item) => item.id === editing.id) ?? editing)
-          }
+          milestone={data.find((item) => item.id === editing.id) ?? editing}
           onClose={() => setEditing(null)}
         />
       )}

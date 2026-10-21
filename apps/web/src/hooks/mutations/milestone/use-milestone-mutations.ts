@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   createMilestone,
@@ -13,6 +14,7 @@ import { milestonesKey } from "@/hooks/queries/milestone/use-get-milestones";
 export function useMilestoneMutations(projectId: string, featureId: string) {
   const client = useQueryClient();
   const refresh = () => {
+    invalidateWorkLinkCandidates(client, projectId);
     void client.invalidateQueries({
       queryKey: ["project-features", projectId],
     });
@@ -34,16 +36,15 @@ export function useMilestoneMutations(projectId: string, featureId: string) {
         createMilestone(featureId, input),
       onSuccess: (_data, variables) => {
         refresh();
-        if (variables.taskIds?.length) {
-          void client.invalidateQueries({ queryKey: ["tasks", projectId] });
+        if (variables.taskIds?.length || variables.newTasks?.length) {
           void client.invalidateQueries({
             queryKey: ["task-relations", featureId],
           });
-          for (const id of variables.taskIds) {
-            void client.invalidateQueries({ queryKey: ["task", id] });
-            void client.invalidateQueries({ queryKey: ["activities", id] });
-            void client.invalidateQueries({ queryKey: ["task-relations", id] });
-          }
+        }
+        for (const id of variables.taskIds ?? []) {
+          void client.invalidateQueries({ queryKey: ["task", id] });
+          void client.invalidateQueries({ queryKey: ["activities", id] });
+          void client.invalidateQueries({ queryKey: ["task-relations", id] });
         }
       },
       onError: (error, variables) => {
@@ -107,6 +108,7 @@ export function useSetTaskMilestone(projectId: string, featureId: string) {
       milestoneId: string | null;
     }) => setTaskMilestone(id, milestoneId),
     onSuccess: (_data, { id }) => {
+      invalidateWorkLinkCandidates(client, projectId);
       void client.invalidateQueries({ queryKey: ["releases", projectId] });
       void client.invalidateQueries({
         queryKey: milestonesKey(projectId),

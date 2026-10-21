@@ -58,6 +58,15 @@ beforeEach(() => {
     {},
   );
   queryClient.setQueryData(["release-progress", "other", "r3", "UTC"], {});
+  queryClient.setQueryData(
+    ["release-link-candidates", "p", "r1", "task", "", 1],
+    [],
+  );
+  queryClient.setQueryData(
+    ["release-link-candidates", "p", "r2", "milestone", "", 2],
+    [],
+  );
+  queryClient.setQueryData(["release-link-candidates", "other"], []);
 });
 afterEach(() => queryClient.clear());
 
@@ -87,10 +96,16 @@ it("patches a plain task on the board without refetching it", async () => {
   for (const key of [
     ["release-progress", "p", "r1", "UTC"],
     ["release-progress", "p", "r2", "Europe/Belgrade"],
+    ["release-link-candidates", "p", "r1", "task", "", 1],
+    ["release-link-candidates", "p", "r2", "milestone", "", 2],
   ])
     expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
   expect(
     queryClient.getQueryState(["release-progress", "other", "r3", "UTC"])
+      ?.isInvalidated,
+  ).toBe(false);
+  expect(
+    queryClient.getQueryState(["release-link-candidates", "other"])
       ?.isInvalidated,
   ).toBe(false);
 });

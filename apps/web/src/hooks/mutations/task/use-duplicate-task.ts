@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CopyPlusIcon } from "lucide-react";
 import { invalidateFeatureChange } from "@/lib/invalidate-feature-change";
@@ -26,6 +27,7 @@ export function useDuplicateTask() {
       if (task.featureId)
         invalidateFeatureChange(queryClient, task.projectId, [task.featureId]);
       else {
+        invalidateWorkLinkCandidates(queryClient, task.projectId);
         void queryClient.invalidateQueries({
           queryKey: ["releases", task.projectId],
         });
