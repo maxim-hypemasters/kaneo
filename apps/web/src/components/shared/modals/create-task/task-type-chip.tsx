@@ -46,10 +46,17 @@ export function TaskTypeChip({ value, onChange, disabled }: TaskTypeChipProps) {
           <MenuGroupLabel>{t("common:modals.createTask.type")}</MenuGroupLabel>
           <MenuRadioGroup
             value={value}
-            onValueChange={(next) => onChange(next as TaskType)}
+            onValueChange={(next) => {
+              if (!disabled) onChange(next as TaskType);
+            }}
           >
             {TASK_TYPES.map((type) => (
-              <MenuRadioItem key={type} value={type} closeOnClick>
+              <MenuRadioItem
+                key={type}
+                value={type}
+                closeOnClick
+                disabled={disabled}
+              >
                 <span className="flex items-center gap-2">
                   <TaskTypeGlyph type={type} decorative />
                   <span>{t(labels[type])}</span>

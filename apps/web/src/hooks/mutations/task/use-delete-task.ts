@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFeatureIndex } from "@/lib/features/feature-index";
 import { invalidateFeatureChange } from "@/lib/invalidate-feature-change";
@@ -51,6 +52,7 @@ export function useDeleteTask() {
       if (changed.length)
         invalidateFeatureChange(queryClient, deletedTask.projectId, changed);
       else {
+        invalidateWorkLinkCandidates(queryClient, deletedTask.projectId);
         void queryClient.invalidateQueries({
           queryKey: ["releases", deletedTask.projectId],
         });

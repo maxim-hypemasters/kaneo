@@ -16,7 +16,12 @@ export function useGetReleases<TData = Release[]>(
   {
     enabled = true,
     select,
-  }: { enabled?: boolean; select?: (releases: Release[]) => TData } = {},
+    refetchOnMount = true,
+  }: {
+    enabled?: boolean;
+    select?: (releases: Release[]) => TData;
+    refetchOnMount?: boolean | "always";
+  } = {},
 ) {
   return useQuery({
     queryKey: releasesKey(projectId ?? ""),
@@ -24,7 +29,7 @@ export function useGetReleases<TData = Release[]>(
       [...(await getReleases(projectId ?? ""))].sort(compareReleasesByStart),
     enabled: enabled && !!projectId,
     staleTime: 60_000,
-    refetchOnMount: true,
+    refetchOnMount,
     select,
   });
 }

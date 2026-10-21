@@ -115,4 +115,22 @@ describe("project milestone summaries", () => {
       query,
     });
   });
+  it("submits mixed draft work with existing links in one creation request", async () => {
+    mocks.create.mockResolvedValue(Response.json({ id: "m" }));
+    const input = {
+      title: "Launch",
+      releaseId: "release",
+      taskIds: ["existing"],
+      newTasks: [
+        { title: "Implement launch", type: "task" as const },
+        { title: "Fix launch", type: "bug" as const },
+      ],
+    };
+    await createMilestone("feature", input, "Europe/Belgrade");
+    expect(mocks.create).toHaveBeenCalledExactlyOnceWith({
+      param: { featureId: "feature" },
+      json: input,
+      query: { timeZone: "Europe/Belgrade" },
+    });
+  });
 });

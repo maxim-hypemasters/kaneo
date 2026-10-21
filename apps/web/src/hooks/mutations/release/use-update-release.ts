@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import updateRelease, {
   type UpdateReleaseInput,
@@ -14,6 +15,7 @@ export function useUpdateRelease() {
   return useMutation({
     mutationFn: ({ id, data }: Variables) => updateRelease(id, data),
     onSuccess: (release, { projectId }) => {
+      invalidateWorkLinkCandidates(queryClient, projectId);
       queryClient.setQueryData<Release[]>(releasesKey(projectId), (releases) =>
         releases ? upsertRelease(releases, release) : releases,
       );

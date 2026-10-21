@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import type { QueryClient } from "@tanstack/react-query";
 import { releasesKey } from "@/hooks/queries/release/use-get-releases";
 
@@ -15,6 +16,7 @@ export function invalidateReleaseChange(
   if (board)
     void queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
   void queryClient.invalidateQueries({ queryKey: releasesKey(projectId) });
+  invalidateWorkLinkCandidates(queryClient, projectId);
   void queryClient.invalidateQueries({
     queryKey: ["release-progress", projectId],
   });

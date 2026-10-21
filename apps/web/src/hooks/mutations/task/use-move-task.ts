@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FolderInputIcon } from "lucide-react";
 import { invalidateFeatureChange } from "@/lib/invalidate-feature-change";
@@ -37,6 +38,7 @@ export function useMoveTask() {
       void queryClient.invalidateQueries({
         queryKey: ["releases", result.destinationProjectId],
       });
+      invalidateWorkLinkCandidates(queryClient, result.destinationProjectId);
       void queryClient.invalidateQueries({
         queryKey: ["feature-milestones", result.destinationProjectId],
       });
@@ -53,6 +55,7 @@ export function useMoveTask() {
           context.featureId,
         ]);
       else {
+        invalidateWorkLinkCandidates(queryClient, result.sourceProjectId);
         void queryClient.invalidateQueries({
           queryKey: ["releases", result.sourceProjectId],
         });

@@ -19,6 +19,7 @@ import {
 } from "@/lib/features/feature-index";
 import type Task from "@/types/task";
 import { FeatureBreadcrumb } from "./feature-breadcrumb";
+import { TaskReleaseOriginProvider } from "../task-release-origin-context";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -132,6 +133,36 @@ describe("FeatureBreadcrumb", () => {
     expect(
       screen.getByRole("button", { name: openFeatureName }),
     ).toBeInTheDocument();
+  });
+
+  it("retains release context when navigating to a Feature in the same project", () => {
+    render(
+      <TaskReleaseOriginProvider
+        origin={{ projectId: "project-1", releaseId: "release-1" }}
+      >
+        <FeatureBreadcrumb task={task} workspaceId="workspace-1" />
+      </TaskReleaseOriginProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: openFeatureName }));
+    expect(mocks.navigate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        search: { originReleaseId: "release-1" },
+      }),
+    );
+  });
+
+  it("does not carry another project's release into Feature navigation", () => {
+    render(
+      <TaskReleaseOriginProvider
+        origin={{ projectId: "another-project", releaseId: "release-1" }}
+      >
+        <FeatureBreadcrumb task={task} workspaceId="workspace-1" />
+      </TaskReleaseOriginProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: openFeatureName }));
+    expect(mocks.navigate).toHaveBeenCalledWith(
+      expect.objectContaining({ search: {} }),
+    );
   });
 
   it("takes the task out of its feature", async () => {

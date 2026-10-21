@@ -21,11 +21,25 @@ const planning = {
     .optional(),
   releaseId: z.string().min(1).nullable().optional(),
 };
+export const milestoneTaskDraftSchema = z
+  .object({
+    title: z.string().trim().min(1),
+    type: z.enum(["task", "bug"]).default("task"),
+  })
+  .strict();
+export const milestoneTaskDraftsSchema = z
+  .array(milestoneTaskDraftSchema)
+  .max(100);
+export type MilestoneTaskDraft = z.infer<typeof milestoneTaskDraftSchema>;
 export const createMilestoneBody = z
   .object({
     title,
     ...planning,
     description: description.optional(),
+    newTasks: milestoneTaskDraftsSchema.optional().openapi({
+      description:
+        "Title-only Task/Bug drafts to create atomically with the milestone and existing links. Requires task:create permission. Defaults and required custom fields follow normal task creation.",
+    }),
     taskIds: z.array(z.string().min(1)).optional().openapi({
       description:
         "Existing Task/Bug ids in this Feature to assign atomically. Existing milestone membership is replaced.",

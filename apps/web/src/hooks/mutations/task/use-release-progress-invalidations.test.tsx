@@ -11,18 +11,21 @@ import bulkOperation from "@/fetchers/task/bulk-operation";
 import deleteTask from "@/fetchers/task/delete-task";
 import updateTaskStatus from "@/fetchers/task/update-task-status";
 import updateTaskDueDate from "@/fetchers/task/update-task-due-date";
+import updateTaskTitle from "@/fetchers/task/update-task-title";
 import { useUpdateColumn } from "@/hooks/mutations/column/use-update-column";
 import { invalidateFeatureChange } from "@/lib/invalidate-feature-change";
 import type Task from "@/types/task";
 import { useBulkOperations } from "./use-bulk-operations";
 import { useUpdateTaskStatus } from "./use-update-task-status";
 import { useUpdateTaskDueDate } from "./use-update-task-due-date";
+import { useUpdateTaskTitle } from "./use-update-task-title";
 
 vi.mock("@/fetchers/column/update-column", () => ({ default: vi.fn() }));
 vi.mock("@/fetchers/task/bulk-operation", () => ({ default: vi.fn() }));
 vi.mock("@/fetchers/task/delete-task", () => ({ default: vi.fn() }));
 vi.mock("@/fetchers/task/update-task-status", () => ({ default: vi.fn() }));
 vi.mock("@/fetchers/task/update-task-due-date", () => ({ default: vi.fn() }));
+vi.mock("@/fetchers/task/update-task-title", () => ({ default: vi.fn() }));
 
 const progressKey = ["release-progress", "p", "r1", "UTC"];
 const releasesKey = ["releases", "p"];
@@ -43,15 +46,52 @@ beforeEach(() => {
   queryClient.setQueryData(["release-progress", "other", "r2", "UTC"], {});
   queryClient.setQueryData(releasesKey, [{ id: "r1", completedMilestones: 0 }]);
   queryClient.setQueryData(["releases", "other"], []);
+  queryClient.setQueryData(["release-link-candidates", "p"], []);
+  queryClient.setQueryData(["release-link-candidates", "other"], []);
   vi.mocked(updateTaskStatus).mockResolvedValue({} as never);
   vi.mocked(updateTaskDueDate).mockResolvedValue({
     dueDate: "2026-11-06T12:00:00Z",
   } as never);
   vi.mocked(updateColumn).mockResolvedValue({} as never);
+  vi.mocked(updateTaskTitle).mockResolvedValue({ title: "Renamed" } as never);
   vi.mocked(bulkOperation).mockResolvedValue({} as never);
   vi.mocked(deleteTask).mockReset();
 });
 afterEach(() => queryClient.clear());
+
+it("refetches an open linking picker after a narrow Task or Feature title edit", async () => {
+  const candidateKey = ["release-link-candidates", "p"];
+  const read = vi.fn().mockResolvedValue([{ id: "t", title: "Renamed" }]);
+  const { result } = renderHook(
+    () => ({
+      candidates: useQuery({
+        queryKey: candidateKey,
+        queryFn: read,
+        staleTime: Infinity,
+      }),
+      mutation: useUpdateTaskTitle(),
+    }),
+    { wrapper },
+  );
+  expect(read).not.toHaveBeenCalled();
+  await act(async () => {
+    await result.current.mutation.mutateAsync({
+      id: "t",
+      projectId: "p",
+      title: "Renamed",
+    } as Task);
+  });
+  await waitFor(() =>
+    expect(result.current.candidates.data).toEqual([
+      { id: "t", title: "Renamed" },
+    ]),
+  );
+  expect(read).toHaveBeenCalledOnce();
+  expect(
+    queryClient.getQueryState(["release-link-candidates", "other"])
+      ?.isInvalidated,
+  ).toBe(false);
+});
 
 it("refetches a mounted chart after a same-window status change", async () => {
   const readProgress = vi
@@ -86,6 +126,13 @@ it("refetches a mounted chart after a same-window status change", async () => {
     }),
   );
   expect(readProgress).toHaveBeenCalledTimes(1);
+  expect(
+    queryClient.getQueryState(["release-link-candidates", "p"])?.isInvalidated,
+  ).toBe(true);
+  expect(
+    queryClient.getQueryState(["release-link-candidates", "other"])
+      ?.isInvalidated,
+  ).toBe(false);
   expect(
     queryClient.getQueryState(["feature-milestones", "p", "f"])?.isInvalidated,
   ).toBe(true);
@@ -219,6 +266,10 @@ it.each([
     });
     expect(queryClient.getQueryState(progressKey)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(releasesKey)?.isInvalidated).toBe(true);
+    expect(
+      queryClient.getQueryState(["release-link-candidates", "p"])
+        ?.isInvalidated,
+    ).toBe(true);
   },
 );
 
@@ -234,6 +285,9 @@ it("refreshes progress after a partially successful bulk deletion", async () => 
   });
   expect(queryClient.getQueryState(progressKey)?.isInvalidated).toBe(true);
   expect(queryClient.getQueryState(releasesKey)?.isInvalidated).toBe(true);
+  expect(
+    queryClient.getQueryState(["release-link-candidates", "p"])?.isInvalidated,
+  ).toBe(true);
 });
 
 it("leaves progress fresh after an assignee-only bulk update", async () => {
@@ -243,6 +297,9 @@ it("leaves progress fresh after an assignee-only bulk update", async () => {
   });
   expect(queryClient.getQueryState(progressKey)?.isInvalidated).toBe(false);
   expect(queryClient.getQueryState(releasesKey)?.isInvalidated).toBe(false);
+  expect(
+    queryClient.getQueryState(["release-link-candidates", "p"])?.isInvalidated,
+  ).toBe(false);
 });
 
 it("refreshes derived schedules after bulk date edits without changing release completion", async () => {

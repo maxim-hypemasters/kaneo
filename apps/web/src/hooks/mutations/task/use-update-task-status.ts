@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import updateTaskStatus from "@/fetchers/task/update-task-status";
@@ -9,6 +10,7 @@ export function useUpdateTaskStatus() {
   return useMutation({
     mutationFn: (task: Task) => updateTaskStatus(task.id, task),
     onSuccess: (_, variables) => {
+      invalidateWorkLinkCandidates(queryClient, variables.projectId);
       invalidateMyWork(queryClient);
       void queryClient.invalidateQueries({
         queryKey: ["release-progress", variables.projectId],

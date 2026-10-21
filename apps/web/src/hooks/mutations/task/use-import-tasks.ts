@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import importTasks, { type ImportDocument } from "@/fetchers/task/import-tasks";
 
@@ -14,6 +15,7 @@ const useImportTasks = () => {
       document: ImportDocument;
     }) => importTasks(projectId, document),
     onSuccess: (_, { projectId }) => {
+      invalidateWorkLinkCandidates(queryClient, projectId);
       invalidateMyWork(queryClient);
       void queryClient.invalidateQueries({
         queryKey: ["release-progress", projectId],

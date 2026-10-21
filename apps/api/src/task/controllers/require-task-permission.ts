@@ -100,3 +100,35 @@ export async function requireTaskAssigneePermission(c: Context, next: Next) {
 
   return next();
 }
+
+export async function requireFeatureCompositionPermission(
+  c: Context,
+  next: Next,
+) {
+  const { featureComposition } = await readJsonBody(c);
+  if (
+    !featureComposition ||
+    typeof featureComposition !== "object" ||
+    Array.isArray(featureComposition)
+  )
+    return next();
+  const { milestones, existingTasks } = featureComposition as {
+    milestones?: unknown;
+    existingTasks?: unknown;
+  };
+  const hasMilestones = Array.isArray(milestones) && milestones.length > 0;
+  const hasLinks = Array.isArray(existingTasks) && existingTasks.length > 0;
+  if (!hasMilestones && !hasLinks) return next();
+  const assignsLead =
+    Array.isArray(milestones) &&
+    milestones.some(
+      (milestone) =>
+        milestone &&
+        typeof milestone === "object" &&
+        typeof milestone.leadId === "string" &&
+        milestone.leadId.length > 0,
+    );
+  return requireWorkspacePermission({
+    task: assignsLead ? ["update", "assign"] : ["update"],
+  })(c, next);
+}

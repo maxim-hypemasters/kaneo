@@ -19,6 +19,7 @@ export function MilestonePlanningFields({
   milestone,
   onChange,
   pending = false,
+  creating = false,
 }: {
   projectId: string;
   workspaceId: string;
@@ -28,6 +29,7 @@ export function MilestonePlanningFields({
   >;
   onChange: (input: MilestoneInput) => void;
   pending?: boolean;
+  creating?: boolean;
 }) {
   const { t } = useTranslation();
   const permission = useWorkspacePermission();
@@ -49,7 +51,10 @@ export function MilestonePlanningFields({
         loading={members.isPending}
         error={members.isError}
         onRetry={() => void members.refetch()}
-        onSelect={(value) => onChange({ leadId: value || null })}
+        onSelect={(value) => {
+          if (canEdit && permission.canAssignTasks())
+            onChange({ leadId: value || null });
+        }}
       >
         {lead?.name ??
           (milestone.leadId
@@ -60,20 +65,22 @@ export function MilestonePlanningFields({
               )
             : t("tasks:popover.assignee.unassigned"))}
       </MilestonePlanningChoice>
-      <dl className="min-w-0 space-y-1.5 text-sm">
-        <dt>{t("tasks:status.label")}</dt>
-        <dd
-          aria-label={t("tasks:status.label")}
-          className="flex min-h-9 items-center gap-2"
-        >
-          {milestone.status
-            ? getColumnIcon(milestone.status, milestone.status === "done")
-            : null}
-          {milestone.status
-            ? getStatusDisplayLabel(milestone.status)
-            : t("common:empty.loading")}
-        </dd>
-      </dl>
+      {!creating && (
+        <dl className="min-w-0 space-y-1.5 text-sm">
+          <dt>{t("tasks:status.label")}</dt>
+          <dd
+            aria-label={t("tasks:status.label")}
+            className="flex min-h-9 items-center gap-2"
+          >
+            {milestone.status
+              ? getColumnIcon(milestone.status, milestone.status === "done")
+              : null}
+            {milestone.status
+              ? getStatusDisplayLabel(milestone.status)
+              : t("common:empty.loading")}
+          </dd>
+        </dl>
+      )}
       <MilestonePlanningChoice
         label={t("tasks:priority.label")}
         disabled={!canEdit}
@@ -85,44 +92,51 @@ export function MilestonePlanningFields({
             selected: priority === milestone.priority,
           }),
         )}
-        onSelect={(priority) =>
-          onChange({ priority: priority as Milestone["priority"] })
-        }
+        onSelect={(priority) => {
+          if (canEdit)
+            onChange({ priority: priority as Milestone["priority"] });
+        }}
       >
         {getPriorityIcon(milestone.priority ?? "no-priority")}
         {getPriorityLabel(milestone.priority ?? "no-priority")}
       </MilestonePlanningChoice>
-      <MilestonePlanningChoice
-        label={t("tasks:releases.property")}
-        disabled={!canEdit}
-        options={[
-          {
-            value: "",
-            label: t("tasks:releases.none"),
-            selected: !milestone.releaseId,
-          },
-          ...(releases.data ?? []).map((release) => ({
-            value: release.id,
-            label: release.name,
-            selected: release.id === milestone.releaseId,
-          })),
-        ]}
-        loading={releases.isPending}
-        error={releases.isError}
-        onRetry={() => void releases.refetch()}
-        onSelect={(value) => onChange({ releaseId: value || null })}
-      >
-        {release?.name ??
-          t(
-            milestone.releaseId
-              ? "tasks:releases.unknown"
-              : "tasks:releases.none",
-          )}
-      </MilestonePlanningChoice>
-      <MilestoneScheduleDates
-        startDate={milestone.startDate}
-        endDate={milestone.endDate}
-      />
+      <div className={creating ? "sm:col-span-2" : undefined}>
+        <MilestonePlanningChoice
+          label={t("tasks:releases.property")}
+          disabled={!canEdit}
+          options={[
+            {
+              value: "",
+              label: t("tasks:releases.none"),
+              selected: !milestone.releaseId,
+            },
+            ...(releases.data ?? []).map((release) => ({
+              value: release.id,
+              label: release.name,
+              selected: release.id === milestone.releaseId,
+            })),
+          ]}
+          loading={releases.isPending}
+          error={releases.isError}
+          onRetry={() => void releases.refetch()}
+          onSelect={(value) => {
+            if (canEdit) onChange({ releaseId: value || null });
+          }}
+        >
+          {release?.name ??
+            t(
+              milestone.releaseId
+                ? "tasks:releases.unknown"
+                : "tasks:releases.none",
+            )}
+        </MilestonePlanningChoice>
+      </div>
+      {!creating && (
+        <MilestoneScheduleDates
+          startDate={milestone.startDate}
+          endDate={milestone.endDate}
+        />
+      )}
     </div>
   );
 }

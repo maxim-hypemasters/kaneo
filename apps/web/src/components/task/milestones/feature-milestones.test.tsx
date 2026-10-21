@@ -65,6 +65,7 @@ vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canUpdateTasks: () => mocks.canEdit,
     canAssignTasks: () => mocks.canEdit,
+    canCreateTasks: () => mocks.canEdit,
   }),
 }));
 vi.mock("@/hooks/queries/workspace/use-active-workspace", () => ({
@@ -264,11 +265,11 @@ describe("Feature milestones", () => {
     ).not.toBeInTheDocument();
     expect(document.querySelector("textarea")).not.toBeInTheDocument();
     expect(
-      screen.getByLabelText("tasks:milestones.startDate"),
-    ).toHaveTextContent("tasks:properties.noDate");
-    expect(screen.getByLabelText("tasks:milestones.endDate")).toHaveTextContent(
-      "tasks:properties.noDate",
-    );
+      screen.queryByLabelText("tasks:milestones.startDate"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("tasks:milestones.endDate"),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "tasks:milestones.startDate" }),
     ).not.toBeInTheDocument();
@@ -333,39 +334,25 @@ describe("Feature milestones", () => {
     expect(mocks.update.mock.calls[0][0]).not.toHaveProperty("endDate");
     expect(mocks.update.mock.calls[0][0]).not.toHaveProperty("status");
   });
-  it("previews a canonical read-only status from selected work and sends no status field", () => {
+  it("keeps derived status and schedule hidden while selecting existing work", () => {
     mocks.candidates = [
       {
-        id: "queued",
-        title: "Queued task",
+        id: "t",
+        title: "Task A",
+        type: "task",
         number: 1,
-        type: "task",
         milestoneId: null,
-        status: "to-do",
+        status: "done",
+        dueDate: "2026-11-02T12:00:00.000Z",
       },
       {
-        id: "done",
-        title: "Done bug",
-        number: 2,
+        id: "b",
+        title: "Bug B",
         type: "bug",
-        milestoneId: null,
-        status: "shipped",
-      },
-      {
-        id: "active",
-        title: "Active task",
-        number: 3,
-        type: "task",
+        number: 2,
         milestoneId: null,
         status: "building",
-      },
-      {
-        id: "archived",
-        title: "Archived",
-        number: 4,
-        type: "bug",
-        milestoneId: null,
-        status: "archived",
+        startDate: "2026-11-05T12:00:00.000Z",
       },
     ];
     view();
@@ -375,100 +362,26 @@ describe("Feature milestones", () => {
     fireEvent.change(screen.getByLabelText("tasks:milestones.titleLabel"), {
       target: { value: "New milestone" },
     });
-    const status = () => screen.getByLabelText("tasks:status.label");
-    expect(status()).toHaveTextContent("to-do");
-    expect(
-      screen.queryByRole("button", { name: "tasks:status.label" }),
-    ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-2.*Done bug/ }));
-    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-4.*Archived/ }));
-    expect(status()).toHaveTextContent("done");
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: /WEB-1.*Queued task/ }),
-    );
-    expect(status()).toHaveTextContent("in-progress");
-    fireEvent.click(
-      screen.getByRole("checkbox", { name: /WEB-3.*Active task/ }),
-    );
-    expect(status()).toHaveTextContent("in-progress");
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:milestones.save" }),
-    );
-    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty("status");
-  });
-  it("previews only selected nonarchived schedules and updates when a selection is cleared", () => {
-    const date = (day: number) => new Date(2026, 10, day, 12).toISOString();
-    mocks.candidates = [
-      {
-        id: "t",
-        title: "Task A",
-        type: "task",
-        number: 1,
-        milestoneId: null,
-        startDate: date(6),
-        dueDate: date(2),
-      },
-      {
-        id: "b",
-        title: "Bug B",
-        type: "bug",
-        number: 2,
-        milestoneId: null,
-        startDate: null,
-        dueDate: date(10),
-      },
-      {
-        id: "archived",
-        title: "Archived",
-        type: "task",
-        number: 3,
-        milestoneId: null,
-        status: "archived",
-        startDate: date(1),
-        dueDate: date(30),
-      },
-      {
-        id: "other",
-        title: "Unselected",
-        type: "bug",
-        number: 4,
-        milestoneId: null,
-        startDate: date(1),
-        dueDate: date(30),
-      },
-    ];
-    view();
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:milestones.add" }),
-    );
-    fireEvent.change(screen.getByLabelText("tasks:milestones.titleLabel"), {
-      target: { value: "Alpha" },
-    });
     fireEvent.click(screen.getByRole("checkbox", { name: /WEB-1.*Task A/ }));
     fireEvent.click(screen.getByRole("checkbox", { name: /WEB-2.*Bug B/ }));
-    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-3.*Archived/ }));
     expect(
-      screen.getByLabelText("tasks:milestones.startDate"),
-    ).toHaveTextContent("Nov 2, 2026");
-    expect(screen.getByLabelText("tasks:milestones.endDate")).toHaveTextContent(
-      "Nov 10, 2026",
-    );
-    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-1.*Task A/ }));
+      screen.queryByLabelText("tasks:status.label"),
+    ).not.toBeInTheDocument();
     expect(
-      screen.getByLabelText("tasks:milestones.startDate"),
-    ).toHaveTextContent("Nov 10, 2026");
-    expect(screen.getByLabelText("tasks:milestones.endDate")).toHaveTextContent(
-      "Nov 10, 2026",
-    );
+      screen.queryByLabelText("tasks:milestones.startDate"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("tasks:milestones.endDate"),
+    ).not.toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.save" }),
     );
     expect(mocks.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Alpha",
-        taskIds: ["b", "archived"],
-      }),
+      expect.objectContaining({ taskIds: ["t", "b"] }),
     );
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty("status");
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty("startDate");
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty("endDate");
   });
   it("refreshes the read-only edit schedule without clearing a metadata draft", async () => {
     mocks.data = [

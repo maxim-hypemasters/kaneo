@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { applyBoardReorder } from "@/components/kanban-board/apply-reorder";
 import {
   getBoardCacheVersion,
@@ -92,6 +93,14 @@ export function useProjectWebSocket(projectId: string) {
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
     let releasesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
     let milestonesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    let linkCandidatesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    function refreshLinkCandidates() {
+      if (linkCandidatesRefreshTimer !== null) return;
+      linkCandidatesRefreshTimer = setTimeout(() => {
+        linkCandidatesRefreshTimer = null;
+        if (!disposed) invalidateWorkLinkCandidates(queryClient, projectId);
+      }, RELEASES_REFRESH_DELAY_MS);
+    }
     let workflowDirty = false;
     const milestoneOwnersDirty = new Set<string>();
     function refreshMilestones(featureId?: string, workflowChanged = false) {
@@ -316,6 +325,9 @@ export function useProjectWebSocket(projectId: string) {
         if (offlineSince !== null) {
           reconcileReleases(offlineSince);
           reconcileMilestoneDetails();
+          invalidateWorkLinkCandidates(queryClient, projectId, {
+            cancelRefetch: false,
+          });
           void queryClient.invalidateQueries(
             { queryKey: ["feature-milestones", projectId] },
             { cancelRefetch: false },
@@ -365,6 +377,7 @@ export function useProjectWebSocket(projectId: string) {
             return;
           }
           if (message.type === "MILESTONES_UPDATED") {
+            refreshLinkCandidates();
             refreshReleases();
             refreshProgress();
             refreshMilestones(
@@ -381,6 +394,7 @@ export function useProjectWebSocket(projectId: string) {
           )
             refreshMilestones(undefined, message.type === "PROJECT_UPDATED");
           if (message.type === "RELEASES_UPDATED") {
+            refreshLinkCandidates();
             refreshReleases();
             refreshProgress();
             return;
@@ -393,11 +407,15 @@ export function useProjectWebSocket(projectId: string) {
                   (task: { status?: string }) => task.status !== undefined,
                 ))
             ) {
+              refreshLinkCandidates();
               refreshReleases();
               refreshProgress();
             }
           }
-          if (message.type === "TASK_RELATION_UPDATED") refreshReleases();
+          if (message.type === "TASK_RELATION_UPDATED") {
+            refreshLinkCandidates();
+            refreshReleases();
+          }
           if (
             message.taskId &&
             [
@@ -468,6 +486,7 @@ export function useProjectWebSocket(projectId: string) {
               queryKey: ["project-task-relations", projectId],
             });
           if (message.type === "PROJECT_MOVED") {
+            refreshLinkCandidates();
             markBoardCacheChanged(queryClient, projectId);
             for (const queryKey of [
               ["projects"],
@@ -779,6 +798,7 @@ export function useProjectWebSocket(projectId: string) {
           // Refresh only when realtime delivery could not reconnect.
           fallbackInterval = setInterval(() => {
             reconcileMilestoneDetails();
+            invalidateWorkLinkCandidates(queryClient, projectId);
             void queryClient.invalidateQueries({
               queryKey: ["feature-milestones", projectId],
             });
@@ -869,6 +889,8 @@ export function useProjectWebSocket(projectId: string) {
       clearPing();
       if (fallbackInterval !== null) clearInterval(fallbackInterval);
       if (milestonesRefreshTimer !== null) clearTimeout(milestonesRefreshTimer);
+      if (linkCandidatesRefreshTimer !== null)
+        clearTimeout(linkCandidatesRefreshTimer);
       if (retryTimeout !== null) {
         clearTimeout(retryTimeout);
       }

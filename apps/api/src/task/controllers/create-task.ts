@@ -1,301 +1,79 @@
-import { lockAuthorizedProject } from "../../milestone/access-scope";
-import { retryTransaction } from "../../utils/retry-transaction";
-import { lockMilestone } from "../../milestone/membership";
-import { extractAssetIds } from "../../storage/cleanup-assets";
-import { and, eq, inArray, isNull } from "drizzle-orm";
-import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import {
-  assetTable,
-  columnTable,
-  customFieldDefinitionTable,
-  customFieldValueTable,
-  taskTable,
-  projectTable,
-  userTable,
-} from "../../database/schema";
+import { HTTPException } from "hono/http-exception";
 import { publishEvent } from "../../events";
-import {
-  assertAssignableUser,
-  getProjectWorkspaceId,
-} from "../../utils/assert-assignable-user";
-import {
-  assertRequiredCustomFields,
-  assertValidTaskStatus,
-  isCustomFieldValueEmpty,
-} from "../validate-task-fields";
-import {
-  lockFeature,
-  type TaskType,
-} from "../feature-hierarchy/assign-feature";
+import { retryTransaction } from "../../utils/retry-transaction";
 import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
-import { lockRelease } from "../../release/membership/assign-release";
-import { releaseForNewTask } from "../../release/membership/follow-feature-release";
-import { claimTaskNumber } from "./claim-task-numbers";
-import { nextTaskPosition } from "./next-task-position";
+import {
+  createTaskInTransaction,
+  type CreateTaskInput,
+} from "./create-task-in-transaction";
+import { createFeatureCompositionInTransaction } from "./create-feature-composition-in-transaction";
+import {
+  featureCompositionSchema,
+  type FeatureCompositionInput,
+} from "../feature-composition-schema";
 
-type CustomFieldInput = {
-  fieldId: string;
-  value: string;
-};
-
-function deduplicateCustomFields(
-  customFields?: CustomFieldInput[],
-): CustomFieldInput[] | undefined {
-  if (!customFields) {
-    return undefined;
-  }
-
-  const fieldsById = new Map<string, CustomFieldInput>();
-
-  for (const customField of customFields) {
-    fieldsById.set(customField.fieldId, customField);
-  }
-
-  return Array.from(fieldsById.values());
-}
-
-async function createTask({
-  projectId,
-  currentUserId,
-  userId,
-  title,
-  status,
-  startDate,
-  dueDate,
-  description,
-  priority,
-  customFields,
-  draftAssetIds,
-  type = "task",
-  featureId,
-  milestoneId,
-  expectedWorkspaceId,
-  releaseId,
-}: {
-  projectId: string;
-  currentUserId: string;
-  userId?: string;
-  title: string;
-  status?: string;
-  startDate?: Date;
-  dueDate?: Date;
-  description?: string;
-  priority?: string;
-  customFields?: CustomFieldInput[];
-  draftAssetIds?: string[];
-  type?: TaskType;
-  featureId?: string;
-  milestoneId?: string | null;
-  expectedWorkspaceId?: string;
-  // Omitted follows the milestone; null explicitly means no release.
-  releaseId?: string | null;
-}) {
-  if (type === "feature" && featureId) {
+async function createTask(
+  input: CreateTaskInput & { featureComposition?: FeatureCompositionInput },
+) {
+  const parsed =
+    input.featureComposition === undefined
+      ? undefined
+      : featureCompositionSchema.safeParse(input.featureComposition);
+  if (parsed && (!parsed.success || input.type !== "feature"))
     throw new HTTPException(400, {
-      message: "A feature can't belong to another feature",
+      message: "Invalid Feature creation drafts",
     });
-  }
-  if (type === "feature" && milestoneId)
-    throw new HTTPException(400, {
-      message: "Features cannot belong to milestones",
-    });
-  if (
-    type === "feature" &&
-    [status, priority, userId, startDate, dueDate, releaseId].some(
-      (value) => value != null,
-    )
-  )
-    throw new HTTPException(400, {
-      message: "Features do not have planning fields",
-    });
-  const resolvedStatus = status || "to-do";
-  const resolvedPriority = priority || "no-priority";
-  const normalizedCustomFields = deduplicateCustomFields(customFields);
-
-  const normalizedUserId = userId?.trim() || undefined;
-
-  if (type !== "feature")
-    await assertValidTaskStatus(resolvedStatus, projectId);
-
-  const allFields = await db
-    .select()
-    .from(customFieldDefinitionTable)
-    .where(eq(customFieldDefinitionTable.projectId, projectId));
-
-  const mergedCustomFields: CustomFieldInput[] = normalizedCustomFields ?? [];
-  const providedFieldIds = new Set(mergedCustomFields.map((f) => f.fieldId));
-
-  for (const field of allFields) {
-    if (
-      !providedFieldIds.has(field.id) &&
-      field.required &&
-      field.defaultValue != null &&
-      !isCustomFieldValueEmpty(
-        field.defaultValue,
-        field.type as
-          | "number"
-          | "boolean"
-          | "date"
-          | "dropdown"
-          | "multiselect",
-      )
-    ) {
-      mergedCustomFields.push({
-        fieldId: field.id,
-        value: field.defaultValue,
-      });
-    }
-  }
-
-  await assertRequiredCustomFields(projectId, mergedCustomFields);
-
-  let assignee: { name: string } | undefined;
-
-  if (normalizedUserId) {
-    await assertAssignableUser(
-      normalizedUserId,
-      await getProjectWorkspaceId(projectId),
-      projectId,
-    );
-
-    [assignee] = await db
-      .select({ name: userTable.name })
-      .from(userTable)
-      .where(eq(userTable.id, normalizedUserId));
-  }
-
-  const column = await db.query.columnTable.findFirst({
-    where: and(
-      eq(columnTable.projectId, projectId),
-      eq(columnTable.slug, resolvedStatus),
-    ),
-  });
-
-  const createdTask = await retryTransaction(() =>
+  const composition = parsed?.success ? parsed.data : undefined;
+  const { task, assigneeName, graph } = await retryTransaction(() =>
     db.transaction(async (tx) => {
-      if (milestoneId)
-        await lockAuthorizedProject(
-          tx,
-          projectId,
-          expectedWorkspaceId,
-          "update",
-        );
-      if (featureId) await lockFeature(tx, featureId, projectId);
-      const milestone = milestoneId
-        ? await lockMilestone(tx, milestoneId, featureId, projectId)
-        : null;
-      const taskNumber = await claimTaskNumber(projectId, tx);
-      if (releaseId) await lockRelease(tx, releaseId, projectId);
-      const nextPosition =
-        type === "feature"
-          ? 0
-          : await nextTaskPosition(
+      const result = await createTaskInTransaction(tx, input);
+      return {
+        ...result,
+        graph: composition
+          ? await createFeatureCompositionInTransaction(
               tx,
-              projectId,
-              resolvedStatus,
-              column?.id ?? null,
-            );
-
-      const [task] = await tx
-        .insert(taskTable)
-        .values({
-          projectId,
-          userId: normalizedUserId ?? null,
-          title: title || "",
-          status: type === "feature" ? null : resolvedStatus,
-          columnId: type === "feature" ? null : (column?.id ?? null),
-          startDate: startDate || null,
-          dueDate: dueDate || null,
-          description: description || "",
-          priority: type === "feature" ? null : resolvedPriority,
-          number: taskNumber,
-          position: nextPosition,
-          type,
-          featureId: featureId ?? null,
-          milestoneId: milestoneId ?? null,
-          releaseId: releaseForNewTask(releaseId, milestone?.releaseId ?? null),
-        })
-        .returning();
-
-      if (task && draftAssetIds?.length) {
-        const referenced = extractAssetIds(description);
-        const ids = [...new Set(draftAssetIds)].filter((id) =>
-          referenced.has(id),
-        );
-        if (ids.length) {
-          // claimTaskNumber already holds the project row lock in this transaction.
-          const project = await tx.query.projectTable.findFirst({
-            columns: { workspaceId: true },
-            where: eq(projectTable.id, projectId),
-          });
-          if (!project)
-            throw new HTTPException(404, { message: "Project not found" });
-          const claimed = await tx
-            .update(assetTable)
-            .set({
-              taskId: task.id,
-              surface: "description",
-              workspaceId: project.workspaceId,
-            })
-            .where(
-              and(
-                inArray(assetTable.id, ids),
-                eq(assetTable.projectId, projectId),
-                eq(assetTable.createdBy, currentUserId),
-                eq(assetTable.surface, "draft"),
-                isNull(assetTable.taskId),
-              ),
+              result.task,
+              composition,
+              input.currentUserId,
+              input.expectedWorkspaceId,
             )
-            .returning({ id: assetTable.id });
-          if (claimed.length !== ids.length)
-            throw new HTTPException(400, {
-              message:
-                "Some staged uploads are unavailable or belong to another owner/project",
-            });
-        }
-      }
-
-      if (task && mergedCustomFields.length) {
-        await tx.insert(customFieldValueTable).values(
-          mergedCustomFields.map(({ fieldId, value }) => ({
-            taskId: task.id,
-            fieldId,
-            value: value.trim(),
-          })),
-        );
-      }
-
-      return task;
+          : null,
+      };
     }),
   );
-
-  if (!createdTask) {
-    throw new HTTPException(500, {
-      message: "Failed to create task",
+  for (const created of [task, ...(graph?.createdTasks ?? [])])
+    await publishEvent("task.created", {
+      ...created,
+      taskId: created.id,
+      userId: created.userId ?? "",
+      currentUserId: input.currentUserId,
+      type: "created",
+      content: null,
     });
+  if (graph) {
+    for (const milestone of graph.milestones)
+      await publishEvent("milestone.changed", {
+        projectId: task.projectId,
+        featureId: task.id,
+        milestoneId: milestone.id,
+        userId: input.currentUserId,
+      });
+    if (graph.linkedTaskIds.length || graph.createdTasks.length)
+      await publishFeatureChange({
+        projectId: task.projectId,
+        featureIds: [task.id, ...graph.linkedTaskIds],
+        userId: input.currentUserId,
+      });
   }
-
-  await publishEvent("task.created", {
-    ...createdTask,
-    taskId: createdTask.id,
-    userId: createdTask.userId ?? "",
-    currentUserId: currentUserId,
-    type: "created",
-    content: null,
-  });
-  if (createdTask.featureId) {
+  if (task.featureId) {
     await publishFeatureChange({
-      projectId,
-      featureIds: [createdTask.featureId],
-      userId: currentUserId,
+      projectId: task.projectId,
+      featureIds: [task.featureId],
+      userId: input.currentUserId,
     });
   }
-
-  return {
-    ...createdTask,
-    assigneeName: assignee?.name,
-  };
+  return { ...task, assigneeName };
 }
 
 export default createTask;

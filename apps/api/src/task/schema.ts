@@ -3,6 +3,7 @@ import { MAX_TASK_POSITION } from "./controllers/next-task-position";
 import { TICKET_ID_PATTERN } from "./ticket-id";
 import { VALID_PRIORITIES } from "./validate-task-fields";
 import { TASK_TYPES } from "./task-type";
+import { featureCompositionSchema } from "./feature-composition-schema";
 import {
   planningSnapshotSchema,
   transferReleaseSchema,
@@ -96,34 +97,46 @@ export const bulkUpdateBody = z.object({
   }),
 });
 
-export const createTaskBody = z.object({
-  title: z.string(),
-  description: z.string(),
-  startDate: z.string().optional(),
-  dueDate: z.string().optional(),
-  priority: priority.optional(),
-  status: z
-    .string()
-    .optional()
-    .openapi({ description: "The target column's slug." }),
-  userId: z.string().optional().openapi({ description: "Assignee, if any." }),
-  draftAssetIds: z.array(z.string()).max(100).optional(),
-  customFields: z
-    .array(z.object({ fieldId: z.string(), value: z.string() }))
-    .optional(),
-  type: taskTypeBody.optional().openapi({ description: "Defaults to task." }),
-  featureId: z.string().min(1).optional().openapi({
-    description: "Create the task inside this feature of the project.",
-  }),
-  milestoneId: z.string().min(1).nullable().optional().openapi({
-    description:
-      "A milestone belonging to the selected Feature. Does not change Feature membership.",
-  }),
-  releaseId: z.string().min(1).nullable().optional().openapi({
-    description:
-      "A release of the project, or null for none. Omitted, the task starts in its milestone's release, or in none.",
-  }),
-});
+export const createTaskBody = z
+  .object({
+    title: z.string(),
+    description: z.string(),
+    startDate: z.string().optional(),
+    dueDate: z.string().optional(),
+    priority: priority.optional(),
+    status: z
+      .string()
+      .optional()
+      .openapi({ description: "The target column's slug." }),
+    userId: z.string().optional().openapi({ description: "Assignee, if any." }),
+    draftAssetIds: z.array(z.string()).max(100).optional(),
+    customFields: z
+      .array(z.object({ fieldId: z.string(), value: z.string() }))
+      .optional(),
+    type: taskTypeBody.optional().openapi({ description: "Defaults to task." }),
+    featureId: z.string().min(1).optional().openapi({
+      description: "Create the task inside this feature of the project.",
+    }),
+    milestoneId: z.string().min(1).nullable().optional().openapi({
+      description:
+        "A milestone belonging to the selected Feature. Does not change Feature membership.",
+    }),
+    releaseId: z.string().min(1).nullable().optional().openapi({
+      description:
+        "A release of the project, or null for none. Omitted, the task starts in its milestone's release, or in none.",
+    }),
+    featureComposition: featureCompositionSchema.optional().openapi({
+      description:
+        "Feature-only milestone and Task/Bug drafts, saved atomically with the new Feature. Existing work must have no Feature. Milestones or existing links additionally require task:update; non-null milestone leads require task:assign.",
+    }),
+  })
+  .refine(
+    (body) => body.featureComposition === undefined || body.type === "feature",
+    {
+      message: "Creation drafts are only supported for Features",
+      path: ["featureComposition"],
+    },
+  );
 
 export const updateTaskBody = z.object({
   title: z.string(),

@@ -40,6 +40,8 @@ const metadataKeys = [
   ["feature-milestones", "p", "other-feature"],
   ["feature-milestones", "p", "release", "r"],
   ["feature-milestones", "p", "release", "another-release"],
+  ["release-link-candidates", "p", "r", "task", "", 1],
+  ["release-link-candidates", "p", "another-release", "milestone", "Launch", 2],
 ];
 beforeEach(() => {
   client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
@@ -48,6 +50,7 @@ beforeEach(() => {
   client.setQueryData(["feature-milestones", "other", "release", "r"], []);
   client.setQueryData(["releases", "p"], []);
   client.setQueryData(["releases", "other"], []);
+  client.setQueryData(["release-link-candidates", "other"], []);
   vi.clearAllMocks();
 });
 afterEach(() => client.clear());
@@ -56,6 +59,9 @@ function expectProjectMilestonesInvalidated() {
     expect(client.getQueryState(key)?.isInvalidated).toBe(true);
   expect(
     client.getQueryState(["feature-milestones", "other", "f2"])?.isInvalidated,
+  ).toBe(false);
+  expect(
+    client.getQueryState(["release-link-candidates", "other"])?.isInvalidated,
   ).toBe(false);
   expect(
     client.getQueryState(["feature-milestones", "other", "release", "r"])
@@ -90,6 +96,53 @@ it("refreshes candidates after a stale selection without invalidating task value
   expect(client.getQueryState(keys[1])?.isInvalidated).toBe(true);
   expect(client.getQueryState(["task", "t"])?.isInvalidated).toBe(false);
   expectProjectMilestonesInvalidated();
+});
+it("refreshes Feature work and release history when only new drafts are saved", async () => {
+  vi.mocked(createMilestone).mockResolvedValue({ id: "m" } as never);
+  client.setQueryData(["release-progress", "p", "r", "UTC"], {});
+  client.setQueryData(["release-progress", "other", "r", "UTC"], {});
+  client.setQueryData(["task-relations", "other-feature"], []);
+  const { result } = renderHook(() => useMilestoneMutations("p", "f"), {
+    wrapper,
+  });
+  await act(async () => {
+    await result.current.create.mutateAsync({
+      title: "Launch",
+      newTasks: [{ title: "Fix launch", type: "bug" }],
+    });
+  });
+  for (const key of [
+    ["task-relations", "f"],
+    ["tasks", "p"],
+    ["releases", "p"],
+    ["release-progress", "p", "r", "UTC"],
+  ])
+    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+  expectProjectMilestonesInvalidated();
+  for (const key of [
+    ["task", "t"],
+    ["task-relations", "other-feature"],
+    ["release-progress", "other", "r", "UTC"],
+  ])
+    expect(client.getQueryState(key)?.isInvalidated).toBe(false);
+});
+it("does not refresh saved work after an atomic draft save is rejected", async () => {
+  vi.mocked(createMilestone).mockRejectedValue(
+    new HttpError(400, "Required custom fields have no defaults"),
+  );
+  const { result } = renderHook(() => useMilestoneMutations("p", "f"), {
+    wrapper,
+  });
+  await act(async () => {
+    await result.current.create
+      .mutateAsync({
+        title: "Launch",
+        newTasks: [{ title: "Fix launch", type: "bug" }],
+      })
+      .catch(() => undefined);
+  });
+  for (const key of [...keys, ...metadataKeys])
+    expect(client.getQueryState(key)?.isInvalidated).toBe(false);
 });
 it("refreshes release grouping after a local milestone rename", async () => {
   vi.mocked(updateMilestone).mockResolvedValue({ id: "m" } as never);

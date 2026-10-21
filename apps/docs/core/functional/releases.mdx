@@ -62,6 +62,12 @@ To delete a release, choose **Delete release** in the same menus and confirm. It
 - **When creating work:** choosing a milestone uses its release unless you explicitly choose another release or **No release**. New Features never inherit a release.
 - **From a release:** new Tasks and Bugs start in that release. **New feature** creates a knowledge record without planning fields.
 
+Opening a Feature from a release also preselects that release when you create a milestone, including after opening the Feature in its full-page view. Choose another release or **No release** to override the suggestion. Existing milestones keep their own release when edited.
+
+From a release's **New** menu, choose **Link existing milestone** or **Link existing tasks or bugs** to add existing work. Search, select items across pages, then choose **Link selected**. Each row shows its current release or **No release**. Work from another release moves into the open release; already assigned items are omitted. Completed Tasks/Bugs and empty milestones are available, while archived Tasks/Bugs are excluded.
+
+Linking a Task/Bug changes only its release, preserving its Feature and milestone. Linking a milestone applies the follower rules below, keeping explicit child release overrides. Linking requires **Edit tasks**, independently of permission to create work. If an item cannot be linked, successful assignments remain saved and the remaining selection can be retried or removed.
+
 ## How tasks follow their milestone
 
 - New Tasks/Bugs inherit their milestone's release when the release is omitted. Explicit values, including none, win.

@@ -10,6 +10,7 @@ it("refreshes the release list, as a task joining a feature can take its release
     ["project-features", "p"],
     ["task", "t1"],
     ["activities", "t1"],
+    ["release-link-candidates", "p", "r", "task", "", 1],
   ])
     queryClient.setQueryData(queryKey, {});
 
@@ -21,6 +22,7 @@ it("refreshes the release list, as a task joining a feature can take its release
     ["project-features", "p"],
     ["task", "t1"],
     ["activities", "t1"],
+    ["release-link-candidates", "p", "r", "task", "", 1],
   ])
     expect(queryClient.getQueryState(queryKey)?.isInvalidated).toBe(true);
 });

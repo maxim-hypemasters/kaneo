@@ -1,3 +1,4 @@
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import {
   getBoardCacheVersion,
   markBoardCacheChanged,
@@ -20,6 +21,7 @@ export function useUpdateTaskTitle() {
       };
     },
     onSuccess: (updated, variables, context) => {
+      invalidateWorkLinkCandidates(queryClient, variables.projectId);
       invalidateMyWork(queryClient);
       void queryClient.invalidateQueries({
         queryKey: ["project-features", variables.projectId],

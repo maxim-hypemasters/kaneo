@@ -48,7 +48,8 @@ export function patchBoardTask(
         ? plannedTasks
         : task.status === "archived"
           ? archivedTasks
-          : columns.find((column) => column.slug === task.status)?.tasks;
+          : (columns.find((column) => column.slug === task.status)?.tasks ??
+            (typeof task.status === "string" ? plannedTasks : undefined));
     if (!target) return null;
     target.push(task);
     target.sort((left, right) => (left.position ?? 0) - (right.position ?? 0));

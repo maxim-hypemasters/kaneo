@@ -104,4 +104,35 @@ describe("createTask", () => {
       }),
     );
   });
+  it("sends Feature composition without assigning planning fields to the Feature", async () => {
+    const featureComposition = {
+      milestones: [{ key: "core", title: "Core", releaseId: "r" }],
+      newTasks: [{ title: "Bug", type: "bug" as const, milestoneKey: "core" }],
+      unassignedReleaseId: "r",
+    };
+    await createTask(
+      "Knowledge",
+      "Documentation",
+      "p",
+      undefined,
+      null,
+      undefined,
+      undefined,
+      undefined,
+      [],
+      [],
+      { type: "feature", featureComposition },
+    );
+    expect(mocks.post).toHaveBeenCalledExactlyOnceWith({
+      param: { projectId: "p" },
+      json: {
+        title: "Knowledge",
+        description: "Documentation",
+        type: "feature",
+        customFields: [],
+        draftAssetIds: [],
+        featureComposition,
+      },
+    });
+  });
 });
