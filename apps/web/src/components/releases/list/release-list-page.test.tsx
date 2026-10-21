@@ -17,6 +17,7 @@ import {
   vi,
 } from "vite-plus/test";
 import getTasks from "@/fetchers/task/get-tasks";
+import getReleaseProgress from "@/fetchers/release/get-release-progress";
 import type { Release } from "@/types/release";
 import { ReleaseListPage } from "./release-list-page";
 
@@ -38,7 +39,11 @@ const m = vi.hoisted(() => ({
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) =>
-      options && "count" in options ? `${key}:${options.count}` : key,
+      options && "count" in options
+        ? `${key}:${options.count}`
+        : options && "percentage" in options
+          ? `${key}:${options.percentage}:${options.completed}/${options.total}`
+          : key,
   }),
 }));
 vi.mock("@tanstack/react-router", () => ({
@@ -88,6 +93,9 @@ vi.mock("@/hooks/queries/release/use-get-releases", () => ({
 // The real useGetTasks loads the board through this; it stays loading unless
 // a test gives it a board.
 vi.mock("@/fetchers/task/get-tasks", () => ({
+  default: vi.fn(() => new Promise(() => {})),
+}));
+vi.mock("@/fetchers/release/get-release-progress", () => ({
   default: vi.fn(() => new Promise(() => {})),
 }));
 vi.mock("@/lib/releases/use-release-today", () => ({
@@ -165,6 +173,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks();
   m.releases = {
     data: [past, active, upcoming],
     isError: false,
@@ -186,52 +195,88 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ReleaseListPage", () => {
-  it("lists active and upcoming releases with past ones collapsed", () => {
+  it("lists future, active and past rows and loads history only for active releases", async () => {
     renderPage();
-
-    const activeSection = screen.getByRole("region", {
-      name: /tasks:releases\.sections\.active/,
-    });
-    const link = within(activeSection).getByRole("link", {
-      name: "Release a",
-    });
+    expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(
+      ["Release u", "Release a", "Release p"],
+    );
+    const link = screen.getByRole("link", { name: "Release a" });
     expect(link).toHaveAttribute(
       "href",
       "/dashboard/workspace/workspace-1/project/project-1/releases/a",
     );
     expect(
-      within(activeSection).getByText("tasks:releases.phase.codeFreeze"),
+      screen.getByText("tasks:releases.phase.codeFreeze"),
     ).toBeInTheDocument();
+    expect(screen.getAllByRole("status")).toHaveLength(1);
     expect(
-      within(activeSection).getByText(
-        "tasks:releases.countdown.submissionIn:3",
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Release u" })).toBeInTheDocument();
-
-    const pastToggle = screen.getByRole("button", {
-      name: /tasks:releases\.sections\.past/,
-    });
-    expect(pastToggle).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("link", { name: "Release p" })).toBeNull();
-
-    fireEvent.click(pastToggle);
-
-    expect(pastToggle).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("link", { name: "Release p" })).toBeInTheDocument();
+      screen.queryByRole("button", { name: /timeline\.(expand|collapse)/ }),
+    ).not.toBeInTheDocument();
+    await act(async () => {});
+    expect(getReleaseProgress).toHaveBeenCalledExactlyOnceWith(
+      "a",
+      expect.any(String),
+    );
     expect(screen.getByTestId("summary")).toHaveTextContent(
       "tasks:releases.count:3",
     );
   });
 
-  it("shows past releases open when nothing else is current", () => {
-    m.releases.data = [past];
+  it("keeps upcoming and past releases compact when none are active", () => {
+    m.releases.data = [past, upcoming];
     renderPage();
 
-    expect(
-      screen.queryByRole("button", { name: /tasks:releases\.sections\.past/ }),
-    ).toBeNull();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(getReleaseProgress).not.toHaveBeenCalled();
     expect(screen.getByRole("link", { name: "Release p" })).toBeInTheDocument();
+  });
+
+  it("loads all overlapping active histories, including both active phases", async () => {
+    const inProgress = release("b", "2026-10-10", "2026-10-19", "2026-10-28");
+    m.releases.data = [past, active, upcoming, inProgress];
+    renderPage();
+    expect(screen.getAllByRole("status")).toHaveLength(2);
+    expect(
+      screen.getByText("tasks:releases.phase.inProgress"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("tasks:releases.phase.codeFreeze"),
+    ).toBeInTheDocument();
+    await act(async () => {});
+    expect(vi.mocked(getReleaseProgress).mock.calls.map(([id]) => id)).toEqual([
+      "b",
+      "a",
+    ]);
+  });
+
+  it("recomputes chart visibility after deletion and subsequent release data arrives", async () => {
+    m.releases.data = [active];
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const page = () => (
+      <QueryClientProvider client={queryClient}>
+        <ReleaseListPage workspaceId="workspace-1" projectId="project-1" />
+      </QueryClientProvider>
+    );
+    const { rerender } = render(page());
+    m.releases.data = [];
+    rerender(page());
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    m.releases.data = [upcoming];
+    rerender(page());
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    m.releases.data = [
+      upcoming,
+      release("new-active", "2026-10-10", "2026-10-19", "2026-10-28"),
+    ];
+    rerender(page());
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    await act(async () => {});
+    expect(vi.mocked(getReleaseProgress).mock.calls.map(([id]) => id)).toEqual([
+      "a",
+      "new-active",
+    ]);
   });
 
   it("reads progress for screen readers and shows the counts", () => {
@@ -239,12 +284,12 @@ describe("ReleaseListPage", () => {
     renderPage();
 
     expect(
-      screen.getByText("tasks:releases.progressAria:5"),
+      screen.getByRole("img", {
+        name: "tasks:releases.timeline.completion:60:3/5",
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "tasks:releases.counts.features:1 · tasks:releases.counts.tasks:5 · tasks:releases.counts.unfinished:2",
-      ),
+      screen.getByText("tasks:releases.counts.features:1"),
     ).toBeInTheDocument();
   });
 
@@ -252,7 +297,9 @@ describe("ReleaseListPage", () => {
     m.releases.data = [active];
     renderPage();
     expect(
-      screen.getByText("tasks:releases.progressAria:5"),
+      screen.getByRole("img", {
+        name: "tasks:releases.timeline.completion:60:3/5",
+      }),
     ).toBeInTheDocument();
     expect(getTasks).not.toHaveBeenCalled();
   });

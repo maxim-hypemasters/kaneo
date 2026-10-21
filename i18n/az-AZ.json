@@ -3657,6 +3657,10 @@
 				"saveError": "Could not link the selected work.",
 				"remove": "Remove {{title}} from selection",
 				"pageLabel": "Page {{page}} of {{total}}"
+			},
+			"timeline": {
+				"label": "Releases by date",
+				"completion": "{{percentage}}% · {{completed}} of {{total}} tasks and bugs completed"
 			}
 		},
 		"createMenu": {
