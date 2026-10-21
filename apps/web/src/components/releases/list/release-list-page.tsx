@@ -37,8 +37,6 @@ export function ReleaseListPage({
     isFetching,
     refetch,
   } = useGetReleases(projectId);
-  // Loaded for live counts (useReleaseCounts reads it from the cache); the
-  // API's progress shows until it arrives.
   const today = useReleaseToday();
   const permissions = useReleasePermissions();
   const counts = useReleaseCounts(projectId, releases ?? NO_RELEASES);
@@ -58,7 +56,7 @@ export function ReleaseListPage({
   const movingCounts = moving ? counts.get(moving.id) : undefined;
 
   let content = <ReleaseListSkeleton />;
-  if (releases && releases.length > 0) {
+  if (releases) {
     content = (
       <ReleaseList
         releases={releases}
@@ -66,6 +64,11 @@ export function ReleaseListPage({
         today={today}
         workspaceId={workspaceId}
         permissions={permissions}
+        emptyState={
+          <ReleaseListEmpty
+            onCreate={permissions.canManage ? openCreate : undefined}
+          />
+        }
         onEdit={(release) => {
           setEditing(release);
           setFormOpen(true);
@@ -78,12 +81,6 @@ export function ReleaseListPage({
           setMoving(release);
           setMoveOpen(true);
         }}
-      />
-    );
-  } else if (releases) {
-    content = (
-      <ReleaseListEmpty
-        onCreate={permissions.canManage ? openCreate : undefined}
       />
     );
   } else if (isError) {

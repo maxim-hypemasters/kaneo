@@ -19,6 +19,7 @@ const m = vi.hoisted(() => ({
     refetch: vi.fn(),
   },
   useGetReleaseProgress: vi.fn(),
+  chart: vi.fn(),
 }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -33,7 +34,10 @@ vi.mock("@/hooks/queries/release/use-get-release-progress", () => ({
   },
 }));
 vi.mock("./release-progress-chart", () => ({
-  ReleaseProgressChart: () => <div>chart</div>,
+  ReleaseProgressChart: (props: unknown) => {
+    m.chart(props);
+    return <div>chart</div>;
+  },
 }));
 const release = {
   id: "release-1",
@@ -51,9 +55,17 @@ const counts: ReleaseItemCounts = {
 };
 const today = "2026-10-17";
 
-function renderSection() {
+function renderSection(
+  presentation?: "detail" | "overview",
+  itemCounts = counts,
+) {
   return render(
-    <ReleaseProgressSection release={release} counts={counts} today={today} />,
+    <ReleaseProgressSection
+      release={release}
+      counts={itemCounts}
+      today={today}
+      presentation={presentation}
+    />,
   );
 }
 
@@ -82,6 +94,7 @@ beforeEach(() => {
     refetch: vi.fn(),
   };
   m.useGetReleaseProgress.mockClear();
+  m.chart.mockClear();
 });
 afterEach(cleanup);
 
@@ -97,6 +110,11 @@ describe("ReleaseProgressSection", () => {
       "tasks:releases.chart.loading",
     );
     expectMetadata();
+    const heading = screen.getByRole("heading", {
+      name: "tasks:releases.chart.title",
+    });
+    expect(heading.closest(".sr-only")).toBeNull();
+    expect(heading.closest("section")).toHaveClass("border-b", "px-4");
   });
 
   it("lets a failed request retry without replacing the release page", () => {
@@ -121,5 +139,81 @@ describe("ReleaseProgressSection", () => {
     expect(
       screen.queryByText("tasks:releases.dates.start"),
     ).not.toBeInTheDocument();
+  });
+
+  it("uses the same history query and chart in overview with only secondary counts", () => {
+    const history = { current: { scope: 7, started: 3, completed: 2 } };
+    m.query.data = history;
+    renderSection("overview", { ...counts, milestones: 2 });
+
+    expect(m.useGetReleaseProgress).toHaveBeenCalledWith(
+      "project-1",
+      "release-1",
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
+    expect(m.chart).toHaveBeenCalledWith({
+      release,
+      history,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    });
+    expect(
+      screen.getByText(
+        "tasks:releases.counts.features:1 · tasks:releases.counts.milestones:2",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/tasks:releases.counts.tasks/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/tasks:releases.counts.unfinished/),
+    ).not.toBeInTheDocument();
+    const heading = screen.getByRole("heading", {
+      name: "tasks:releases.chart.title",
+    });
+    expect(heading.closest(".sr-only")).not.toBeNull();
+    expect(heading.closest("section")).not.toHaveClass("border-b", "px-4");
+  });
+
+  it("omits an empty overview secondary summary", () => {
+    m.query.data = {};
+    renderSection("overview", { ...counts, features: 0, milestones: 0 });
+    expect(screen.queryByText(/tasks:releases.counts/)).not.toBeInTheDocument();
+    expect(screen.getByText("chart")).toBeInTheDocument();
+  });
+
+  it.each(["detail", "overview"] as const)(
+    "retains the cached %s chart after a background refresh fails",
+    (presentation) => {
+      m.query.data = {};
+      m.query.isError = true;
+      renderSection(presentation);
+      expect(screen.getByText("chart")).toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: "tasks:releases.retry" }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it("keeps initial overview loading and retry feedback inside the progress section", () => {
+    const view = renderSection("overview");
+    const section = screen
+      .getByRole("heading", { name: "tasks:releases.chart.title" })
+      .closest("section");
+    expect(section).toContainElement(screen.getByRole("status"));
+    m.query.isError = true;
+    view.rerender(
+      <ReleaseProgressSection
+        release={release}
+        counts={counts}
+        today={today}
+        presentation="overview"
+      />,
+    );
+    expect(section).toContainElement(screen.getByRole("alert"));
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:releases.retry" }),
+    );
+    expect(m.query.refetch).toHaveBeenCalledOnce();
   });
 });

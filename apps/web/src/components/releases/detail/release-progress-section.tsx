@@ -13,10 +13,12 @@ export function ReleaseProgressSection({
   release,
   counts,
   today,
+  presentation = "detail",
 }: {
   release: Release;
   counts: ReleaseItemCounts;
   today: string;
+  presentation?: "detail" | "overview";
 }) {
   const { t } = useTranslation();
   const id = useId();
@@ -26,13 +28,30 @@ export function ReleaseProgressSection({
     release.id,
     timeZone,
   );
+  const overview = presentation === "overview";
+  const secondaryCounts = [
+    counts.features > 0 &&
+      t("tasks:releases.counts.features", { count: counts.features }),
+    (counts.milestones ?? 0) > 0 &&
+      t("tasks:releases.counts.milestones", { count: counts.milestones }),
+  ].filter(Boolean);
 
   return (
     <section
       aria-labelledby={id}
-      className="space-y-4 border-border/80 border-b px-4 pt-3 pb-5 sm:px-6"
+      className={
+        overview
+          ? "min-w-0 space-y-3 pb-5"
+          : "space-y-4 border-border/80 border-b px-4 pt-3 pb-5 sm:px-6"
+      }
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div
+        className={
+          overview
+            ? "sr-only"
+            : "flex flex-wrap items-center justify-between gap-2"
+        }
+      >
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h2 id={id} className="font-medium text-sm">
             {t("tasks:releases.chart.title")}
@@ -41,8 +60,15 @@ export function ReleaseProgressSection({
             {t("tasks:releases.chart.tasksOnly")}
           </span>
         </div>
-        <ReleaseCounts counts={counts} className="whitespace-normal" />
+        {!overview && (
+          <ReleaseCounts counts={counts} className="whitespace-normal" />
+        )}
       </div>
+      {overview && secondaryCounts.length > 0 && (
+        <p className="text-muted-foreground text-xs tabular-nums">
+          {secondaryCounts.join(" · ")}
+        </p>
+      )}
       {progress.data ? (
         <ReleaseProgressChart
           release={release}
