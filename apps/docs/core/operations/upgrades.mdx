@@ -165,3 +165,15 @@ Apply the database migration before enabling the new API and web contracts. Back
 The upgrade keeps Feature IDs, numbers, links, documentation, comments and hierarchy. Each existing Feature gets one immutable activity snapshot containing its former planning values. Archived state moves to an explicit archive timestamp; active planning fields become null. No replacement milestones are created, child releases are unchanged, and historical release events are not rewritten.
 
 Existing milestones keep their dates, ordering and membership. They start without a lead or release, with no priority and the first nonfinal project workflow column (or Planned when no such column exists). Assign milestone planning values after upgrade. Features are now in the Features library and milestones replace them in Gantt. Native version 3 transfers preserve the new planning and history metadata; older formats remain importable.
+
+### Milestone dates derived from linked work
+
+This change requires no database migration. Milestone start/end dates now span their nonarchived linked Tasks and Bugs, including work in other releases. A single task date contributes one day; a milestone without dated work has no range. Progress totals retain their existing archived-work rules.
+
+Stored manual milestone dates remain as unused legacy data and never serve as a fallback. Existing activity stays readable. The matching API rejects direct milestone date writes, including null; update web, CLI and MCP clients together. Milestone metadata accepts an optional IANA `timeZone`, defaulting to UTC; the browser supplies its own zone. Gantt milestone bars cannot be resized or rescheduled, while lead reassignment remains available. Native v3 exports include informational derived dates in UTC. Old import date fields are accepted but do not override dates derived from imported work.
+
+### Milestone status derived from linked work
+
+No migration is required. Milestone status now derives from all nonarchived linked Tasks/Bugs across releases: Done when every eligible item is Done and at least one exists, In Progress when any item is active or completed, otherwise To Do. Project workflow Done flags and nonfinal-column ordering determine completion/activity. Empty milestones are To Do. Mixed Done/To Do work is In Progress because completed work counts as started. Existing progress counters retain their archived-work rules.
+
+Stored manual status and column values remain ignored legacy data. Existing activity stays readable. Update API, web, CLI and MCP clients together: manual milestone status/column writes now return 400, including null, and native/connected imports do not restore manual status overrides. Release completion totals and Move unfinished use the same derived completion rule.

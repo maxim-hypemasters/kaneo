@@ -88,18 +88,15 @@ describe("feature milestones", () => {
     expect(second.position).toBe(1);
     const edit = await ctx.call("PATCH", `/milestone/${first.id}`, {
       description: "A checkpoint",
-      endDate: "2028-02-29",
     });
     expect(edit.status).toBe(200);
     expect(await edit.json()).toMatchObject({
       description: "A checkpoint",
-      endDate: "2028-02-29",
     });
     expect(
       (
         await ctx.call("PATCH", `/milestone/${first.id}`, {
           description: null,
-          endDate: null,
         })
       ).status,
     ).toBe(200);
@@ -115,92 +112,58 @@ describe("feature milestones", () => {
     ]);
   });
 
-  it("validates partial milestone date updates against the stored range and allows clearing each bound", async () => {
+  it("rejects manual date writes including null without changing stored legacy dates", async () => {
     const ctx = await setup();
-    const created = await ctx.call(
-      "POST",
-      `/milestone/feature/${ctx.feature.id}`,
-      { title: "Range", startDate: "2026-10-20", endDate: "2026-10-24" },
-    );
-    expect(created.status).toBe(200);
-    const milestone = await created.json();
-    expect(milestone).toMatchObject({
-      startDate: "2026-10-20",
-      endDate: "2026-10-24",
-    });
-    expect(milestone).not.toHaveProperty("targetDate");
-    expect(
-      (
-        await ctx.call("PATCH", `/milestone/${milestone.id}`, {
-          startDate: "2026-10-25",
-        })
-      ).status,
-    ).toBe(400);
-    expect(
-      (
-        await ctx.call("PATCH", `/milestone/${milestone.id}`, {
-          endDate: "2026-10-19",
-        })
-      ).status,
-    ).toBe(400);
-    expect(
-      (
-        await ctx.call("PATCH", `/milestone/${milestone.id}`, {
-          startDate: "2026-10-24",
-        })
-      ).status,
-    ).toBe(200);
-    expect(
-      (await ctx.call("PATCH", `/milestone/${milestone.id}`, { endDate: null }))
-        .status,
-    ).toBe(200);
-    expect(
-      (
-        await ctx.call("PATCH", `/milestone/${milestone.id}`, {
-          startDate: "2026-10-30",
-        })
-      ).status,
-    ).toBe(200);
-    expect(
-      (
-        await ctx.call("PATCH", `/milestone/${milestone.id}`, {
-          startDate: null,
-          endDate: "2026-10-01",
-        })
-      ).status,
-    ).toBe(200);
-    expect(
-      (
-        await ctx.call("POST", `/milestone/feature/${ctx.feature.id}`, {
-          title: "Invalid",
-          startDate: "2026-10-20",
-          endDate: "2026-10-19",
-        })
-      ).status,
-    ).toBe(400);
-  });
-
-  it("serializes concurrent date edits so incompatible partial patches cannot leave an inverted range", async () => {
-    const ctx = await setup();
-    const response = await ctx.call(
-      "POST",
-      `/milestone/feature/${ctx.feature.id}`,
-      { title: "Race", startDate: "2026-10-20", endDate: "2026-10-30" },
-    );
-    const milestone = await response.json();
-    const results = await Promise.all([
-      ctx.call("PATCH", `/milestone/${milestone.id}`, {
-        startDate: "2026-10-25",
-      }),
-      ctx.call("PATCH", `/milestone/${milestone.id}`, {
-        endDate: "2026-10-22",
-      }),
-    ]);
-    expect(results.map((result) => result.status).sort()).toEqual([200, 400]);
+    const milestone = await ctx.milestone();
+    await db
+      .update(schema.milestoneTable)
+      .set({
+        legacyStartDate: "2026-10-20",
+        legacyEndDate: "2026-10-24",
+      })
+      .where(eq(schema.milestoneTable.id, milestone.id));
+    for (const fields of [
+      { startDate: "2026-10-25" },
+      { endDate: "2026-10-19" },
+      { startDate: null },
+      { endDate: null },
+      { startDate: "2026-10-20", endDate: "2026-10-24" },
+    ]) {
+      expect(
+        (
+          await ctx.call("PATCH", `/milestone/${milestone.id}`, {
+            title: "Unchanged",
+            ...fields,
+          })
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await ctx.call("POST", `/milestone/feature/${ctx.feature.id}`, {
+            title: "Rejected",
+            ...fields,
+          })
+        ).status,
+      ).toBe(400);
+    }
     const final = await (
       await ctx.call("GET", `/milestone/${milestone.id}`)
     ).json();
-    expect(final.startDate <= final.endDate).toBe(true);
+    expect(final).toMatchObject({
+      title: milestone.title,
+      startDate: null,
+      endDate: null,
+    });
+    expect(final).not.toHaveProperty("legacyStartDate");
+    expect(final).not.toHaveProperty("legacyEndDate");
+    expect(
+      await db.query.milestoneTable.findFirst({
+        where: eq(schema.milestoneTable.id, milestone.id),
+      }),
+    ).toMatchObject({
+      legacyStartDate: "2026-10-20",
+      legacyEndDate: "2026-10-24",
+    });
   });
 
   it("requires a Feature owner and validates titles and calendar dates", async () => {

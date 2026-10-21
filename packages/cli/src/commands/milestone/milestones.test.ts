@@ -42,10 +42,8 @@ describe("milestone commands", () => {
         id: "m1",
         title: Option.none(),
         description: Option.none(),
-        startDate: Option.none(),
-        endDate: Option.none(),
+
         lead: Option.some("none"),
-        status: Option.some("in-progress"),
         priority: Option.some("urgent"),
         release: Option.some("release-1"),
       }),
@@ -57,7 +55,6 @@ describe("milestone commands", () => {
       "/api/milestone/m1",
       {
         leadId: null,
-        status: "in-progress",
         priority: "urgent",
         releaseId: "release-1",
       },
@@ -70,7 +67,6 @@ describe("milestone commands", () => {
         projectId: "p1",
         featureTitle: "Combat",
         leadId: "lead",
-        status: "in-progress",
         columnId: "col",
         priority: "urgent",
         releaseId: "release-1",
@@ -101,8 +97,6 @@ describe("milestone commands", () => {
         feature: "KAN-1",
         title: " Ship ",
         description: Option.none(),
-        startDate: Option.some("2026-10-25"),
-        endDate: Option.some("2026-11-01"),
       }),
       routes,
     );
@@ -110,7 +104,7 @@ describe("milestone commands", () => {
     expect(run.requests.at(-1)).toEqual([
       "POST",
       "/api/milestone/feature/t1",
-      { title: "Ship", startDate: "2026-10-25", endDate: "2026-11-01" },
+      { title: "Ship" },
     ]);
     expect(run.json()).toMatchObject({
       progress: { total: 3, started: 2, completed: 1 },
@@ -131,15 +125,13 @@ describe("milestone commands", () => {
         id: "m1",
         title: Option.none(),
         description: Option.some(""),
-        startDate: Option.some("none"),
-        endDate: Option.some("none"),
       }),
       routes,
     );
     expect(run.requests.at(-1)).toEqual([
       "PATCH",
       "/api/milestone/m1",
-      { description: null, startDate: null, endDate: null },
+      { description: null },
     ]);
   });
   it("reorders a complete unique list and rejects duplicates before requests", async () => {
@@ -202,54 +194,42 @@ describe("milestone commands", () => {
   });
 });
 
-it("allows either date alone and omits untouched fields on edit", async () => {
-  const run = await runCommand(
-    runMilestoneCreate({
-      feature: "KAN-1",
-      title: "Ship",
-      description: Option.none(),
-      startDate: Option.some("2026-10-25"),
-      endDate: Option.none(),
-    }),
-    routes,
-  );
-  expect(Result.isSuccess(run.result)).toBe(true);
-  expect(run.requests.at(-1)).toEqual([
-    "POST",
-    "/api/milestone/feature/t1",
-    { title: "Ship", startDate: "2026-10-25" },
-  ]);
+it("reads derived dates without adding date fields to metadata writes", async () => {
+  const derived = {
+    ...milestone,
+    startDate: "2026-10-25",
+    endDate: "2026-11-01",
+  };
+  const result = await runCommand(runMilestoneView({ id: "m1" }), {
+    ...routes,
+    "GET /api/milestone/m1": () => json(derived),
+  });
+  expect(result.json()).toEqual(derived);
   const edit = await runCommand(
     runMilestoneEdit({
       id: "m1",
-      title: Option.none(),
+      title: Option.some("New title"),
       description: Option.none(),
-      startDate: Option.none(),
-      endDate: Option.some("none"),
     }),
     routes,
   );
   expect(edit.requests.at(-1)).toEqual([
     "PATCH",
     "/api/milestone/m1",
-    { endDate: null },
+    { title: "New title" },
   ]);
 });
-it("rejects reversed and invalid date ranges before requests", async () => {
-  for (const startDate of ["2026-11-02", "2026-02-30"]) {
-    const run = await runCommand(
-      runMilestoneCreate({
-        feature: "KAN-1",
-        title: "Ship",
-        description: Option.none(),
-        startDate: Option.some(startDate),
-        endDate: Option.some("2026-11-01"),
-      }),
-      routes,
-    );
-    expect(Result.isFailure(run.result)).toBe(true);
-    expect(run.requests).toEqual([]);
-  }
+it("rejects metadata edits without an editable field", async () => {
+  const result = await runCommand(
+    runMilestoneEdit({
+      id: "m1",
+      title: Option.none(),
+      description: Option.none(),
+    }),
+    routes,
+  );
+  expect(Result.isFailure(result.result)).toBe(true);
+  expect(result.requests).toEqual([]);
 });
 
 it("creates and links selected Tasks/Bugs in one write using resolved unique IDs", async () => {
@@ -264,8 +244,7 @@ it("creates and links selected Tasks/Bugs in one write using resolved unique IDs
       feature: "KAN-1",
       title: "Ship",
       description: Option.none(),
-      startDate: Option.none(),
-      endDate: Option.none(),
+
       task: ["KAN-2", "t3", "KAN-2"],
     }),
     {
@@ -296,8 +275,7 @@ it.each([
         feature: "KAN-1",
         title: "Ship",
         description: Option.none(),
-        startDate: Option.none(),
-        endDate: Option.none(),
+
         task: ["KAN-2"],
       }),
       {
@@ -315,8 +293,7 @@ it("does not create a milestone when a selected task cannot be resolved", async 
       feature: "KAN-1",
       title: "Ship",
       description: Option.none(),
-      startDate: Option.none(),
-      endDate: Option.none(),
+
       task: ["missing"],
     }),
     routes,

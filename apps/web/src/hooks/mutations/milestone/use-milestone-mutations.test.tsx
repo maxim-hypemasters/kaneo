@@ -46,6 +46,8 @@ beforeEach(() => {
   for (const key of [...keys, ...metadataKeys]) client.setQueryData(key, []);
   client.setQueryData(["feature-milestones", "other", "f2"], []);
   client.setQueryData(["feature-milestones", "other", "release", "r"], []);
+  client.setQueryData(["releases", "p"], []);
+  client.setQueryData(["releases", "other"], []);
   vi.clearAllMocks();
 });
 afterEach(() => client.clear());
@@ -154,6 +156,10 @@ it.each(["m", null])(
       await result.current.mutateAsync({ id: "t", milestoneId });
     });
     expectProjectMilestonesInvalidated();
+    expect(client.getQueryState(["releases", "p"])?.isInvalidated).toBe(true);
+    expect(client.getQueryState(["releases", "other"])?.isInvalidated).toBe(
+      false,
+    );
     for (const key of [
       ["tasks", "p"],
       ["task", "t"],

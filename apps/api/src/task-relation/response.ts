@@ -1,4 +1,4 @@
-import { responseTimestamp, z } from "../openapi";
+import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
 import { taskTypeSchema } from "../task/response";
 
 const relationTypeDescription =
@@ -10,6 +10,8 @@ const relatedTaskSchema = z
     title: z.string(),
     type: taskTypeSchema,
     milestoneId: z.string().nullable(),
+    startDate: nullableResponseTimestamp,
+    dueDate: nullableResponseTimestamp,
     status: z.string().nullable(),
     isCompleted: z.boolean().openapi({
       description: "Whether the task is in a final column of its own project.",

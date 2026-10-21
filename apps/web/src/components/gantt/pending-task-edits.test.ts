@@ -8,6 +8,7 @@ import {
   pendingEditLanded,
 } from "./pending-task-edits";
 import { toIsoDay } from "./timeline";
+import { scheduledMilestones } from "./scheduled-milestones";
 
 const day = (value: string) => parseISO(value);
 
@@ -43,6 +44,24 @@ const pending: PendingTaskEdit = {
   hasStartDate: true,
   hasDueDate: true,
 };
+
+const milestone = scheduledMilestones([
+  {
+    id: "m",
+    featureId: "checkout",
+    featureTitle: "Checkout",
+    projectId: "project",
+    title: "Launch",
+    leadId: "alice",
+    status: "to-do",
+    priority: "no-priority",
+    releaseId: null,
+    position: 0,
+    startDate: "2026-09-01",
+    endDate: "2026-09-03",
+    progress: { total: 1, started: 0, completed: 0 },
+  },
+])[0]!;
 
 describe("classifyEdit", () => {
   it("tells date changes and assignee changes apart", () => {
@@ -126,6 +145,12 @@ describe("classifyEdit", () => {
       ).assignee,
     ).toBe(false);
   });
+
+  it("limits milestone edits to their lead, ignoring stale dates and membership", () => {
+    expect(
+      classifyEdit(milestone, { ...pending, milestoneId: "another" }),
+    ).toEqual({ dates: false, assignee: true, milestone: false });
+  });
 });
 
 describe("applyPendingEdit", () => {
@@ -161,6 +186,32 @@ describe("applyPendingEdit", () => {
     expect(
       applyPendingEdit(task, { ...pending, hasStartDate: false }),
     ).toMatchObject({ startDate: null, dueDate: toIsoDay(pending.end) });
+  });
+
+  it("preserves fresh derived bounds while a milestone lead edit is pending", () => {
+    const refreshed = {
+      ...milestone,
+      startDate: "2026-09-08",
+      dueDate: "2026-09-20",
+      scheduleStart: day("2026-09-08"),
+      scheduleEnd: day("2026-09-20"),
+    };
+    expect(
+      applyPendingEdit(refreshed, {
+        ...pending,
+        milestoneId: null,
+        hasStartDate: false,
+        hasDueDate: false,
+      }),
+    ).toMatchObject({
+      startDate: "2026-09-08",
+      dueDate: "2026-09-20",
+      scheduleStart: refreshed.scheduleStart,
+      scheduleEnd: refreshed.scheduleEnd,
+      userId: "bob",
+      milestoneId: "m",
+      milestone: { id: "m", leadId: "bob" },
+    });
   });
 });
 
@@ -205,6 +256,21 @@ describe("pendingEditLanded", () => {
       pendingEditLanded(
         { ...landed, featureId: undefined },
         { ...pending, featureId: null },
+      ),
+    ).toBe(true);
+  });
+
+  it("settles a milestone lead edit independently of newly derived dates", () => {
+    expect(pendingEditLanded(milestone, pending)).toBe(false);
+    expect(
+      pendingEditLanded(
+        {
+          ...milestone,
+          userId: "bob",
+          scheduleStart: day("2026-09-08"),
+          scheduleEnd: day("2026-09-20"),
+        },
+        pending,
       ),
     ).toBe(true);
   });

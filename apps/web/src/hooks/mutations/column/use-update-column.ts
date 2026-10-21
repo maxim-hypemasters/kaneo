@@ -26,6 +26,9 @@ export function useUpdateColumn() {
         void queryClient.invalidateQueries({
           queryKey: ["feature-milestones", variables.projectId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["releases", variables.projectId],
+        });
       }
       await Promise.all([
         queryClient.invalidateQueries({

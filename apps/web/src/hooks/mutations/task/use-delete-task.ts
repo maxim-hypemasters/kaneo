@@ -51,6 +51,9 @@ export function useDeleteTask() {
       if (changed.length)
         invalidateFeatureChange(queryClient, deletedTask.projectId, changed);
       else {
+        void queryClient.invalidateQueries({
+          queryKey: ["releases", deletedTask.projectId],
+        });
         void queryClient.invalidateQueries({ queryKey: boardKey });
         void queryClient.invalidateQueries({
           queryKey: ["release-progress", deletedTask.projectId],

@@ -65,10 +65,10 @@ vi.mock("./milestone-planning-fields", () => ({
   MilestonePlanningFields: ({
     onChange,
   }: {
-    onChange: (value: { status: string }) => void;
+    onChange: (value: { priority: "high" }) => void;
   }) => (
-    <button onClick={() => onChange({ status: "done" })}>
-      Set milestone Done
+    <button onClick={() => onChange({ priority: "high" })}>
+      Set milestone priority
     </button>
   ),
 }));
@@ -115,15 +115,21 @@ function view() {
   );
 }
 describe("Milestone details", () => {
-  it("shows separate manual planning and linked work progress", async () => {
+  it("edits planning metadata while retaining calculated work progress", async () => {
     view();
     expect(await screen.findByText("50% · 1/2")).toBeInTheDocument();
+    expect(mocks.read).toHaveBeenCalledWith(
+      "m",
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
     expect(screen.getByText("Battle knowledge")).toBeInTheDocument();
     expect(screen.getByText("Linked work")).toBeInTheDocument();
     expect(screen.queryByText("Other milestone work")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Set milestone Done" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Set milestone priority" }),
+    );
     expect(mocks.update).toHaveBeenCalledWith(
-      { id: "m", status: "done" },
+      { id: "m", priority: "high" },
       expect.anything(),
     );
     expect(screen.getByText("50% · 1/2")).toBeInTheDocument();

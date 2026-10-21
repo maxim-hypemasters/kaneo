@@ -1,15 +1,21 @@
-import { milestoneDatesAreOrdered } from "./dates";
 import { isoDay } from "../release/release-dates";
 import { pagingNumber, responseTimestamp, z } from "../openapi";
+import { releaseProgressQuery } from "../release/progress/response";
 
 export const milestoneParam = z.object({ id: z.string().min(1) });
 export const featureParam = z.object({ featureId: z.string().min(1) });
 const title = z.string().trim().min(1).max(255);
 const description = z.string().max(10_000).nullable();
 const calendarDate = isoDay.nullable();
+export const milestoneScheduleQuery = releaseProgressQuery.extend({
+  timeZone: releaseProgressQuery.shape.timeZone.openapi({
+    description:
+      "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+    example: "Europe/Belgrade",
+  }),
+});
 const planning = {
   leadId: z.string().min(1).nullable().optional(),
-  status: z.string().min(1).optional(),
   priority: z
     .enum(["no-priority", "low", "medium", "high", "urgent"])
     .optional(),
@@ -20,17 +26,12 @@ export const createMilestoneBody = z
     title,
     ...planning,
     description: description.optional(),
-    startDate: calendarDate.optional(),
-    endDate: calendarDate.optional(),
     taskIds: z.array(z.string().min(1)).optional().openapi({
       description:
         "Existing Task/Bug ids in this Feature to assign atomically. Existing milestone membership is replaced.",
     }),
   })
-  .refine(milestoneDatesAreOrdered, {
-    message: "Milestone start date must be on or before end date",
-    path: ["endDate"],
-  })
+  .strict()
   .refine(
     (body) =>
       !body.taskIds || new Set(body.taskIds).size === body.taskIds.length,
@@ -41,17 +42,12 @@ export const updateMilestoneBody = z
     title: title.optional(),
     ...planning,
     description: description.optional(),
-    startDate: calendarDate.optional(),
-    endDate: calendarDate.optional(),
   })
+  .strict()
   .refine(
     (body) => Object.values(body).some((value) => value !== undefined),
     "At least one field is required",
-  )
-  .refine(milestoneDatesAreOrdered, {
-    message: "Milestone start date must be on or before end date",
-    path: ["endDate"],
-  });
+  );
 export const reorderMilestonesBody = z.object({
   milestoneIds: z.array(z.string().min(1)),
 });
@@ -61,11 +57,27 @@ export const milestoneSchema = z
     featureId: z.string(),
     title: z.string(),
     description,
-    startDate: calendarDate,
-    endDate: calendarDate,
+    startDate: calendarDate.openapi({
+      readOnly: true,
+      description:
+        "Earliest scheduled day of linked nonarchived Tasks/Bugs in the requested timezone. Null when no linked work is scheduled.",
+    }),
+    endDate: calendarDate.openapi({
+      readOnly: true,
+      description:
+        "Latest scheduled day of linked nonarchived Tasks/Bugs in the requested timezone. Null when no linked work is scheduled.",
+    }),
     leadId: z.string().nullable(),
-    status: z.string(),
-    columnId: z.string().nullable(),
+    status: z.enum(["to-do", "in-progress", "done"]).openapi({
+      readOnly: true,
+      description:
+        "Derived from all linked nonarchived Tasks/Bugs: nonempty all-Done work is Done; any active or completed work makes unfinished milestones In Progress; otherwise To Do.",
+    }),
+    columnId: z.null().openapi({
+      readOnly: true,
+      description:
+        "Milestone status is computed and has no assigned workflow column.",
+    }),
     priority: z.string(),
     releaseId: z.string().nullable(),
     position: z.number().int(),
@@ -79,7 +91,7 @@ export const milestoneSchema = z
   })
   .openapi("Milestone");
 
-export const projectMilestonesQuery = z.object({
+export const projectMilestonesQuery = milestoneScheduleQuery.extend({
   page: pagingNumber(1, 1_000_000).optional(),
   limit: pagingNumber(1, 100).optional(),
 });

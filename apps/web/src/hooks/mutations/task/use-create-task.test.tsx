@@ -23,11 +23,12 @@ beforeEach(() => {
 afterEach(() => queryClient.clear());
 
 it.each([
-  ["in a release", "r1", true],
-  ["in no release", null, false],
+  ["in a release", "r1", undefined, true, true],
+  ["in no release", null, undefined, false, false],
+  ["in a milestone with an explicit empty release", null, "m", true, false],
 ])(
-  "refreshes the release list only for a task created %s",
-  async (_case, releaseId, refreshed) => {
+  "refreshes affected release and chart totals for a task created %s",
+  async (_case, releaseId, milestoneId, refreshed, chartRefreshed) => {
     vi.mocked(createTask).mockResolvedValue({
       id: "t1",
       projectId: "p",
@@ -42,6 +43,7 @@ it.each([
         projectId: "p",
         status: "to-do",
         priority: "no-priority",
+        ...(milestoneId ? { milestoneId, featureId: "f" } : {}),
       } as never);
     });
 
@@ -51,6 +53,6 @@ it.each([
     expect(
       queryClient.getQueryState(["release-progress", "p", "r1", "UTC"])
         ?.isInvalidated,
-    ).toBe(refreshed);
+    ).toBe(chartRefreshed);
   },
 );

@@ -1,8 +1,8 @@
 import { openMilestoneDetails } from "@/store/milestone-details";
-import { getPriorityIcon } from "@/lib/priority";
 import { Diamond, Ellipsis, ArrowUpRight } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import type { Milestone } from "@/fetchers/milestone/milestones";
@@ -11,7 +11,7 @@ import { milestoneDateLabel } from "./milestone-date-label";
 export function MilestoneRow({
   milestone,
   projectId,
-  planningLabel,
+  releaseName,
   selected,
   canEdit,
   first,
@@ -24,7 +24,7 @@ export function MilestoneRow({
 }: {
   milestone: Milestone;
   projectId: string;
-  planningLabel?: string;
+  releaseName?: string;
   selected: boolean;
   canEdit: boolean;
   first: boolean;
@@ -56,22 +56,35 @@ export function MilestoneRow({
         <Diamond
           aria-hidden="true"
           className={cn(
-            "size-3.5 shrink-0 text-muted-foreground",
-            started > 0 && "text-amber-500",
-            total > 0 && completed === total && "fill-primary text-primary",
+            "size-3.5 shrink-0",
+            milestone.status === "done"
+              ? "fill-primary text-primary"
+              : milestone.status === "in-progress"
+                ? "text-amber-500"
+                : "text-muted-foreground",
           )}
         />
+        <span className="sr-only">
+          {getStatusDisplayLabel(milestone.status ?? "to-do")}
+        </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate" title={milestone.title}>
-            {milestone.title}
-          </span>
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            {getPriorityIcon(milestone.priority ?? "no-priority")}
-            <span className="truncate">
-              {planningLabel ??
-                milestone.status ??
-                t("tasks:milestones.planned")}
+          <span className="flex min-w-0 items-baseline gap-1">
+            <span className="min-w-0 truncate" title={milestone.title}>
+              {milestone.title}
             </span>
+            {releaseName && (
+              <>
+                <span aria-hidden="true" className="text-muted-foreground">
+                  ·
+                </span>
+                <span
+                  className="max-w-[45%] shrink-0 truncate text-xs text-muted-foreground"
+                  title={releaseName}
+                >
+                  {releaseName}
+                </span>
+              </>
+            )}
           </span>
           {dates && (
             <span

@@ -24,6 +24,8 @@ const document = {
       title: "Bug",
       type: "bug",
       status: "done",
+      startDate: "2026-10-26T00:00:00.000Z",
+      dueDate: "2026-11-03T00:00:00.000Z",
       featureKey: "f",
       milestoneKey: "m",
       labels: [{ name: "Regression", color: "red" }],
@@ -77,9 +79,9 @@ describe("milestone transfers", () => {
       await ctx.app.request(`/api/task/export/${ctx.source.project.id}`)
     ).json();
     expect(exported).toMatchObject({
-      version: 2,
+      version: 3,
       milestones: [
-        { title: "First ship", startDate: "2026-10-25", endDate: "2026-11-01" },
+        { title: "First ship", startDate: "2026-10-26", endDate: "2026-11-03" },
       ],
     });
     const result = await ctx.post(ctx.target.project.id, exported);
@@ -107,8 +109,8 @@ describe("milestone transfers", () => {
     });
     expect(milestone).toMatchObject({
       description: "Description",
-      startDate: "2026-10-25",
-      endDate: "2026-11-01",
+      legacyStartDate: null,
+      legacyEndDate: null,
     });
     expect(
       exported.tasks.map((item: { key: string }) => item.key),
@@ -121,12 +123,9 @@ describe("milestone transfers", () => {
     ).toMatchObject([{ name: "Regression" }]);
   });
 
-  it.each([
-    { endDate: undefined, expectedEnd: "2026-11-04" },
-    { endDate: null, expectedEnd: null },
-  ])(
-    "accepts legacy targetDate as an import fallback, preserving explicit null: %j",
-    async ({ endDate, expectedEnd }) => {
+  it.each([{ endDate: undefined }, { endDate: null }])(
+    "accepts but ignores former targetDate and manual date values: %j",
+    async ({ endDate }) => {
       const ctx = await setup();
       const legacy = {
         ...document,
@@ -145,8 +144,8 @@ describe("milestone transfers", () => {
         await ctx.app.request(`/api/task/export/${ctx.source.project.id}`)
       ).json();
       expect(exported.milestones[0]).toMatchObject({
-        startDate: null,
-        endDate: expectedEnd,
+        startDate: "2026-10-26",
+        endDate: "2026-11-03",
       });
       expect(exported.milestones[0]).not.toHaveProperty("targetDate");
     },
@@ -445,8 +444,8 @@ describe("milestone transfers", () => {
       milestoneId: milestone!.id,
     });
     expect(milestone).toMatchObject({
-      startDate: "2026-10-25",
-      endDate: "2026-11-02",
+      legacyStartDate: null,
+      legacyEndDate: null,
     });
   });
 });

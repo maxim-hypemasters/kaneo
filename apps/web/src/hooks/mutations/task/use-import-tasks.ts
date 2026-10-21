@@ -21,6 +21,7 @@ const useImportTasks = () => {
       void queryClient.invalidateQueries({
         queryKey: ["feature-milestones", projectId],
       });
+      void queryClient.invalidateQueries({ queryKey: ["releases", projectId] });
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
       void queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
       void queryClient.invalidateQueries({

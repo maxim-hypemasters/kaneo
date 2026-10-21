@@ -23,14 +23,16 @@ function sameDay(left: Date, right: Date) {
 export function classifyEdit(task: ScheduledTask, edit: GanttTaskEdit) {
   return {
     dates:
-      !sameDay(task.scheduleStart, edit.start) ||
-      !sameDay(task.scheduleEnd, edit.end),
+      task.entityKind !== "milestone" &&
+      (!sameDay(task.scheduleStart, edit.start) ||
+        !sameDay(task.scheduleEnd, edit.end)),
     assignee: (task.userId || null) !== edit.userId,
     milestone:
+      task.entityKind !== "milestone" &&
       (task.milestoneId ?? null) !==
-      (edit.milestoneId === undefined
-        ? (task.milestoneId ?? null)
-        : edit.milestoneId),
+        (edit.milestoneId === undefined
+          ? (task.milestoneId ?? null)
+          : edit.milestoneId),
   };
 }
 
@@ -38,6 +40,16 @@ export function applyPendingEdit(
   task: ScheduledTask,
   pending: PendingTaskEdit,
 ): ScheduledTask {
+  if (task.entityKind === "milestone") {
+    return {
+      ...task,
+      userId: pending.userId,
+      assigneeId: pending.userId,
+      assigneeName: pending.assigneeName,
+      assigneeImage: pending.assigneeImage,
+      milestone: { ...task.milestone, leadId: pending.userId },
+    };
+  }
   return {
     ...task,
     scheduleStart: pending.start,
@@ -59,6 +71,9 @@ export function pendingEditLanded(
   task: ScheduledTask,
   pending: PendingTaskEdit,
 ) {
+  if (task.entityKind === "milestone") {
+    return (task.userId || null) === pending.userId;
+  }
   return (
     sameDay(task.scheduleStart, pending.start) &&
     sameDay(task.scheduleEnd, pending.end) &&

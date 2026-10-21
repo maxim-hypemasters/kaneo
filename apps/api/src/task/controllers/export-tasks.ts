@@ -1,5 +1,6 @@
 import { redactInaccessibleActivity } from "../../activity/redaction/redact-inaccessible-activity";
 import { planningSnapshotSchema } from "../transfers/schema";
+import { readMilestoneExecution } from "../../milestone/execution";
 import { eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
@@ -93,6 +94,11 @@ async function exportTasks(projectId: string, viewerId?: string) {
             .where(inArray(milestoneTable.featureId, featureIds))
             .orderBy(milestoneTable.position, milestoneTable.id)
         : [];
+      const schedules = await readMilestoneExecution(
+        tx,
+        projectId,
+        milestones.map((milestone) => milestone.id),
+      );
 
       const releases = await tx
         .select()
@@ -130,11 +136,8 @@ async function exportTasks(projectId: string, viewerId?: string) {
             featureId,
             title,
             description,
-            startDate,
-            endDate,
             position,
             leadId,
-            status,
             priority,
             releaseId,
           }) => ({
@@ -142,11 +145,11 @@ async function exportTasks(projectId: string, viewerId?: string) {
             featureKey: featureId,
             title,
             description,
-            startDate,
-            endDate,
+            startDate: schedules.get(id)?.startDate ?? null,
+            endDate: schedules.get(id)?.endDate ?? null,
             position,
             leadId,
-            status,
+            status: schedules.get(id)?.status ?? ("to-do" as const),
             priority,
             releaseKey: releaseId,
           }),

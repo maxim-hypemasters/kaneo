@@ -458,7 +458,7 @@ export const milestoneTableRelations = relations(
       references: [userTable.id],
     }),
     column: one(columnTable, {
-      fields: [milestoneTable.columnId],
+      fields: [milestoneTable.legacyColumnId],
       references: [columnTable.id],
     }),
     release: one(releaseTable, {

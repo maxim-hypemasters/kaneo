@@ -1,8 +1,4 @@
-import { getStatusDisplayLabel } from "@/lib/i18n/domain";
-import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
-import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
 import { useState } from "react";
 import { Diamond } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -41,13 +37,7 @@ export function FeatureMilestones({
   const { t } = useTranslation();
   const { canUpdateTasks } = useWorkspacePermission();
   const canEdit = canUpdateTasks();
-  const { data: workspace } = useActiveWorkspace();
-  const { data: columns = [] } = useGetColumns(projectId);
   const { data: releases = [] } = useGetReleases(projectId);
-  const { data: members = [] } = useGetProjectMembers({
-    projectId,
-    workspaceId: workspace?.id ?? "",
-  });
   const {
     data = [],
     isPending,
@@ -106,16 +96,9 @@ export function FeatureMilestones({
           key={m.id}
           milestone={m}
           projectId={projectId}
-          planningLabel={[
-            getStatusDisplayLabel(
-              m.status ?? "planned",
-              columns.find((c) => c.slug === m.status)?.name,
-            ),
-            members.find((member) => member.id === m.leadId)?.name,
-            releases.find((release) => release.id === m.releaseId)?.name,
-          ]
-            .filter(Boolean)
-            .join(" · ")}
+          releaseName={
+            releases.find((release) => release.id === m.releaseId)?.name
+          }
           selected={typeof filter === "object" && filter.id === m.id}
           canEdit={canEdit}
           first={index === 0}
@@ -158,7 +141,11 @@ export function FeatureMilestones({
         <MilestoneDialog
           projectId={projectId}
           featureId={featureId}
-          milestone={editing === "new" ? undefined : editing}
+          milestone={
+            editing === "new"
+              ? undefined
+              : (data.find((item) => item.id === editing.id) ?? editing)
+          }
           onClose={() => setEditing(null)}
         />
       )}

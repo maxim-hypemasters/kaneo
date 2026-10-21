@@ -1,6 +1,7 @@
 import { Diamond } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { openMilestoneDetails } from "@/store/milestone-details";
 import { cn } from "@/lib/cn";
 import { type ReleaseItemColumn, ReleaseItemRow } from "./release-item-row";
@@ -68,8 +69,7 @@ export function ReleaseMilestoneSection({
           )}
           {group.milestone?.status && (
             <span className="truncate font-normal text-muted-foreground">
-              {columns.get(group.milestone.status)?.name ??
-                t("tasks:status.planned")}
+              {getStatusDisplayLabel(group.milestone.status)}
             </span>
           )}
         </h4>

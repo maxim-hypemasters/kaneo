@@ -386,19 +386,18 @@ export function useProjectWebSocket(projectId: string) {
             return;
           }
           if (RELEASE_PROGRESS_MESSAGES.includes(message.type)) {
-            void queryClient.invalidateQueries({
-              queryKey: releasesKey(projectId),
-              refetchType: "none",
-            });
             if (
               message.type !== "TASKS_REORDERED" ||
               (Array.isArray(message.tasks) &&
                 message.tasks.some(
                   (task: { status?: string }) => task.status !== undefined,
                 ))
-            )
+            ) {
+              refreshReleases();
               refreshProgress();
+            }
           }
+          if (message.type === "TASK_RELATION_UPDATED") refreshReleases();
           if (
             message.taskId &&
             [

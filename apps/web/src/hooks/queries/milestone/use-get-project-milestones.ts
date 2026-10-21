@@ -1,10 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { getProjectMilestones } from "@/fetchers/milestone/milestones";
 import { milestonesKey } from "./use-get-milestones";
-export function useGetProjectMilestones(projectId: string) {
+export function useGetProjectMilestones(
+  projectId: string,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+) {
   return useQuery({
-    queryKey: [...milestonesKey(projectId), "project"],
-    queryFn: () => getProjectMilestones(projectId),
+    queryKey: [...milestonesKey(projectId), "project", timeZone],
+    queryFn: () => getProjectMilestones(projectId, timeZone),
     enabled: Boolean(projectId),
     staleTime: 30_000,
     refetchOnMount: true,

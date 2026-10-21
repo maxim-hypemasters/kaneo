@@ -35,6 +35,9 @@ export function useMoveTask() {
         queryKey: ["release-progress", result.destinationProjectId],
       });
       void queryClient.invalidateQueries({
+        queryKey: ["releases", result.destinationProjectId],
+      });
+      void queryClient.invalidateQueries({
         queryKey: ["feature-milestones", result.destinationProjectId],
       });
       toast.success(t("tasks:move.success"), { icon: FolderInputIcon });
@@ -50,6 +53,9 @@ export function useMoveTask() {
           context.featureId,
         ]);
       else {
+        void queryClient.invalidateQueries({
+          queryKey: ["releases", result.sourceProjectId],
+        });
         queryClient.invalidateQueries({
           queryKey: ["tasks", result.sourceProjectId],
         });

@@ -3,7 +3,7 @@ title: "Feature milestones"
 description: "Organize a Feature into milestones and follow the progress of its Tasks and Bugs."
 ---
 
-Open a **Feature** and use **+** in the **Milestones** section of its right sidebar. On smaller screens, the section appears above the Tasks list. Give the milestone a title, and optionally add start and end dates. Milestones belong to that Feature and do not consume task numbers. They are planning units with their own manually controlled workflow status, Milestone Lead, priority, release, and optional dates. Select the open action beside a milestone to see its details panel.
+Open a **Feature** and use **+** in the **Milestones** section of its right sidebar. On smaller screens, the section appears above the Tasks list. Give the milestone a title and optionally link existing Tasks and Bugs. Milestones belong to that Feature and do not consume task numbers. They are planning units with Milestone Lead, priority, release, and read-only status and dates derived from linked work. Select the open action beside a milestone to see its details panel.
 
 Use **Link tasks** in the creation dialog to select Tasks and Bugs in that Feature that have no milestone. Search by title or item identifier. Saving creates the milestone and links all selected work together, so a failed selection cannot leave a partially created milestone. Leave the selection empty to create an empty milestone.
 
@@ -13,7 +13,7 @@ The milestone overview shows its date range, percentage complete, and completed/
 
 Tasks and Bugs count together. Completion follows the project's columns marked **Done**. Started work includes completed work and nonfinal columns after the first nonfinal column, ordered by column position and ID. Archived work remains in the total. Progress always counts all linked work, even when the visible Tasks list is filtered.
 
-Start and end dates are optional calendar days. When both are set, the end date must be on or after the start date. These dates do not change task deadlines or automatically complete the milestone.
+Start and end dates are read-only. They span the earliest to latest scheduled dates of all linked, nonarchived Tasks and Bugs, across releases and independently of filters. Work with only a start or due date contributes one day; reversed ranges are normalized. Undated work contributes nothing, and a milestone without dated work has no date range. The displayed calendar days use your browser’s timezone. Progress totals still include archived work. Changing task dates or milestone membership updates the range. Task statuses determine the milestone status.
 
 ## Choose the work to show
 
@@ -29,7 +29,7 @@ Changing or removing the Feature clears the milestone. Moving a Task or Bug to a
 
 ## Edit and remove
 
-Use a milestone's menu to edit its title or dates, move it up or down, or delete it. Its details panel also edits its lead, status, priority and release. Lead changes require task assignment permission; other milestone management uses task update permission. Status follows the project workflow and stays independent of calculated child progress. Dates, status, priority and lead changes do not change linked work. Release changes use the [follower rules](/core/functional/releases#how-tasks-follow-their-milestone). Duplicate titles are allowed. Deleting a milestone keeps its Tasks and Bugs in their Feature and Release, with no milestone assigned.
+Use a milestone's menu to edit its title, move it up or down, or delete it. Its details panel also edits its lead, priority and release. Lead changes require task assignment permission; other milestone management uses task update permission. Milestone status is read-only: **Done** when every nonarchived linked Task/Bug is in a Done column and at least one exists; **In Progress** when any eligible work is completed or in an active nonfinal column; otherwise **To Do**, including empty milestones. Nonfinal columns after the first, ordered by position and ID, count as active, including review work. Backlog and unknown statuses do not count as active. Completed work mixed with To Do work is In Progress because completed work counts as started. Status uses the entire milestone across releases and filters. Existing progress totals still include archived work, so their population differs from status. Priority and lead changes do not change linked work. Release changes use the [follower rules](/core/functional/releases#how-tasks-follow-their-milestone). Duplicate titles are allowed. Deleting a milestone keeps its Tasks and Bugs in their Feature and Release, with no milestone assigned.
 
 Features cannot be converted to Tasks or Bugs, and leaf work cannot be converted to Features. Deleting a Feature removes its milestones and keeps its child work under the existing Feature deletion rules. Duplicating a Feature creates an empty Feature.
 
@@ -37,12 +37,12 @@ Milestone management uses the existing **Update tasks** permission. Reading mile
 
 ## Automation and transfers
 
-The authenticated API, CLI milestone commands, and MCP milestone tools support listing, creation, editing, ordering, deletion, and Task/Bug assignment. API task lists can be filtered by Feature and milestone before pagination.
+The authenticated API, CLI milestone commands, and MCP milestone tools support listing, creation, editing, ordering, deletion, and Task/Bug assignment. API task lists can be filtered by Feature and milestone before pagination. Milestone responses retain `startDate` and `endDate` as `YYYY-MM-DD` or null. Their optional IANA `timeZone` query parameter defaults to UTC. Direct status, column and date writes are rejected, including null. Responses return canonical `to-do`, `in-progress` or `done`, with a null `columnId`.
 
 Milestone creation accepts optional `taskIds` to link existing Tasks and Bugs atomically. Every selected item must already belong to the owning Feature. Linking work does not change its Feature, status, or deadlines. A task without a release inherits the milestone's release; existing release choices remain.
 
-Native JSON exports use version 3 with portable Feature, milestone, release and work-item references, Feature archive state and planning-history snapshots, and milestone planning metadata. Import the complete document to preserve that hierarchy; the importer generates new database IDs and applies the document atomically. Invalid references fail without importing partial work. Legacy flat files continue to use their individual task outcomes and default to no milestone.
+Native JSON exports use version 3 with portable Feature, milestone, release and work-item references, Feature archive state and planning-history snapshots, and milestone planning metadata. Import the complete document to preserve that hierarchy; the importer generates new database IDs and applies the document atomically. Invalid references fail without importing partial work. Exported milestone status and dates are informational; dates are derived in UTC. Legacy milestone status and date fields remain accepted on import but are ignored when restoring milestones; imported Task/Bug dates and links determine the range. Legacy flat files continue to use their individual task outcomes and default to no milestone.
 
-Connected Kaneo imports preserve milestone definitions, metadata, order, and linked Tasks/Bugs when the source supports milestones. Older sources remain supported; a former milestone target date becomes its end date. Other providers do not infer milestones from labels or other metadata.
+Connected Kaneo imports preserve milestone definitions, metadata, order, and linked Tasks/Bugs when the source supports milestones. Older sources remain supported; former manual milestone dates are accepted but do not override the range derived from linked work. Other providers do not infer milestones from labels or other metadata.
 
-Feature history records milestone creation, planning changes, completion/reopening, and deletion with the milestone name retained. Task-level changes stay in each Task or Bug's activity. Project milestone summaries are paginated for Gantt; clients do not need one read per Feature.
+Feature history records milestone creation, editable planning changes and deletion with the milestone name retained. Previous manual completion/reopening history stays readable; derived status changes follow the linked Tasks/Bugs and their own activity. Task-level changes stay in each Task or Bug's activity. Project milestone summaries are paginated for Gantt; clients do not need one read per Feature.

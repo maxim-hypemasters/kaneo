@@ -48,6 +48,8 @@ async function getTaskRelations(
       title: string;
       type: TaskType;
       milestoneId: string | null;
+      startDate: Date | null;
+      dueDate: Date | null;
       status: string | null;
       isCompleted: boolean;
       priority: string | null;
@@ -65,6 +67,8 @@ async function getTaskRelations(
         title: taskTable.title,
         type: taskTable.type,
         milestoneId: taskTable.milestoneId,
+        startDate: taskTable.startDate,
+        dueDate: taskTable.dueDate,
         status: taskTable.status,
         isCompleted: taskIsCompleted,
         priority: taskTable.priority,

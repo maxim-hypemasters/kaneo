@@ -16,13 +16,22 @@ describe("getReleaseMilestones", () => {
     ];
     mocks.get.mockResolvedValue(Response.json(milestones));
 
-    expect(await getReleaseMilestones("r")).toEqual(milestones);
-    expect(mocks.get).toHaveBeenCalledExactlyOnceWith({ param: { id: "r" } });
+    expect(await getReleaseMilestones("r", "Europe/Belgrade")).toEqual(
+      milestones,
+    );
+    expect(mocks.get).toHaveBeenCalledExactlyOnceWith({
+      param: { id: "r" },
+      query: { timeZone: "Europe/Belgrade" },
+    });
   });
 
   it("returns an empty list when the release has no milestones", async () => {
     mocks.get.mockResolvedValue(Response.json([]));
     expect(await getReleaseMilestones("r")).toEqual([]);
+    expect(mocks.get).toHaveBeenCalledExactlyOnceWith({
+      param: { id: "r" },
+      query: { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+    });
   });
 
   it("exposes failures for the release view's retry state", async () => {

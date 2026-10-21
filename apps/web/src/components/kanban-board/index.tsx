@@ -79,6 +79,13 @@ function KanbanBoard({
         void queryClient.invalidateQueries({
           queryKey: ["release-progress", variables.projectId],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["feature-milestones", variables.projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["releases", variables.projectId],
+        });
+        void queryClient.invalidateQueries({ queryKey: ["task-relations"] });
         void queryClient.invalidateQueries({ queryKey: ["projects"] });
       }
       void queryClient.invalidateQueries({

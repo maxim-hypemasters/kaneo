@@ -3,12 +3,15 @@ import { and, asc, count, eq, inArray } from "drizzle-orm";
 import { columnTable, milestoneTable, taskTable } from "../database/schema";
 import { boundedTaskRead } from "../task/bounded-read";
 import { milestoneProgress } from "./progress";
+import { readMilestoneExecution } from "./execution";
+import { milestoneMetadata } from "./metadata";
 
 export async function readProjectMilestones(
   projectId: string,
   page = 1,
   limit = 50,
   expectedWorkspaceId?: string,
+  timeZone = "UTC",
 ) {
   return boundedTaskRead(async (tx) => {
     await assertAuthorizedProjectSnapshot(tx, projectId, expectedWorkspaceId);
@@ -59,9 +62,15 @@ export async function readProjectMilestones(
           )
           .groupBy(taskTable.milestoneId, taskTable.status)
       : [];
+    const schedules = await readMilestoneExecution(
+      tx,
+      projectId,
+      rows.map(({ milestone }) => milestone.id),
+      timeZone,
+    );
     return {
       data: rows.map(({ milestone, featureTitle }) => ({
-        ...milestone,
+        ...milestoneMetadata(milestone, schedules.get(milestone.id)),
         projectId,
         featureTitle,
         progress: milestoneProgress(

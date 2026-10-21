@@ -1,7 +1,4 @@
-import {
-  milestoneStatusIsDone,
-  recordMilestoneActivity,
-} from "../../milestone/planning";
+import { recordMilestoneActivity } from "../../milestone/planning";
 import { recordMilestoneChange } from "../../milestone/membership";
 import { and, asc, count, eq, isNotNull, notInArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -230,17 +227,6 @@ async function moveTask({
     }
 
     if (updatedTask.type === "feature") {
-      const [first] = await tx
-        .select()
-        .from(columnTable)
-        .where(
-          and(
-            eq(columnTable.projectId, destinationProjectId),
-            eq(columnTable.isFinal, false),
-          ),
-        )
-        .orderBy(asc(columnTable.position), asc(columnTable.id))
-        .limit(1);
       const milestones = await tx
         .select()
         .from(milestoneTable)
@@ -248,8 +234,6 @@ async function moveTask({
         .orderBy(asc(milestoneTable.id))
         .for("update");
       const reset = {
-        columnId: first?.id ?? null,
-        status: first?.slug ?? "planned",
         releaseId: null,
         leadId: null,
       };
@@ -277,16 +261,6 @@ async function moveTask({
             "milestone_updated",
             currentUserId,
             changes,
-            sourceProject.id,
-          );
-        if (await milestoneStatusIsDone(tx, sourceProject.id, milestone))
-          await recordMilestoneActivity(
-            tx,
-            taskId,
-            milestone,
-            "milestone_reopened",
-            currentUserId,
-            {},
             sourceProject.id,
           );
       }

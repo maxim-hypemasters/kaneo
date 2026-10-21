@@ -19,6 +19,7 @@ import {
   featureParam,
   milestoneParam,
   milestoneSchema,
+  milestoneScheduleQuery,
   projectMilestonesQuery,
   projectMilestonesSchema,
   reorderMilestonesBody,
@@ -111,7 +112,7 @@ const listRoute = createRoute({
   tags: ["Milestones"],
   summary: "List feature milestones",
   middleware: [...readFeature],
-  request: { params: featureParam },
+  request: { params: featureParam, query: milestoneScheduleQuery },
   responses: {
     200: jsonResponse(
       "Ordered milestones and unfiltered task/bug progress",
@@ -131,6 +132,7 @@ const createMilestoneRoute = createRoute({
   middleware: [...writeFeature, requireMilestoneLeadPermission],
   request: {
     params: featureParam,
+    query: milestoneScheduleQuery,
     body: {
       required: true,
       content: { "application/json": { schema: createMilestoneBody } },
@@ -153,6 +155,7 @@ const reorderRoute = createRoute({
   middleware: [...writeFeature],
   request: {
     params: featureParam,
+    query: milestoneScheduleQuery,
     body: {
       required: true,
       content: { "application/json": { schema: reorderMilestonesBody } },
@@ -171,7 +174,7 @@ const getRoute = createRoute({
   tags: ["Milestones"],
   summary: "Get milestone",
   middleware: [...readItem],
-  request: { params: milestoneParam },
+  request: { params: milestoneParam, query: milestoneScheduleQuery },
   responses: { 200: jsonResponse("The milestone", milestoneSchema), ...errors },
 });
 const updateRoute = createRoute({
@@ -183,6 +186,7 @@ const updateRoute = createRoute({
   middleware: [...writeItem, requireMilestoneLeadPermission],
   request: {
     params: milestoneParam,
+    query: milestoneScheduleQuery,
     body: {
       required: true,
       content: { "application/json": { schema: updateMilestoneBody } },
@@ -219,6 +223,7 @@ export default apiRouter<BaseVariables & { workspaceId: string }>()
         c.req.valid("query").page,
         c.req.valid("query").limit,
         c.get("workspaceId"),
+        c.req.valid("query").timeZone,
       ),
       200,
     ),
@@ -231,6 +236,7 @@ export default apiRouter<BaseVariables & { workspaceId: string }>()
           tx,
           c.get("authorizedProjectId"),
           c.get("workspaceId"),
+          c.req.valid("query").timeZone,
         ),
       ),
       200,
@@ -244,6 +250,7 @@ export default apiRouter<BaseVariables & { workspaceId: string }>()
         c.get("userId"),
         c.get("authorizedProjectId"),
         c.get("workspaceId"),
+        c.req.valid("query").timeZone,
       ),
       200,
     ),
@@ -256,6 +263,7 @@ export default apiRouter<BaseVariables & { workspaceId: string }>()
         c.get("userId"),
         c.get("authorizedProjectId"),
         c.get("workspaceId"),
+        c.req.valid("query").timeZone,
       ),
       200,
     ),
@@ -268,6 +276,7 @@ export default apiRouter<BaseVariables & { workspaceId: string }>()
           tx,
           c.get("authorizedProjectId"),
           c.get("workspaceId"),
+          c.req.valid("query").timeZone,
         ),
       ),
       200,
@@ -281,6 +290,7 @@ export default apiRouter<BaseVariables & { workspaceId: string }>()
         c.get("userId"),
         c.get("authorizedProjectId"),
         c.get("workspaceId"),
+        c.req.valid("query").timeZone,
       ),
       200,
     ),

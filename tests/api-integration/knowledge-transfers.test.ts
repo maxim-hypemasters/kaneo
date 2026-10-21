@@ -56,6 +56,8 @@ describe("knowledge and planning transfers", () => {
           featureKey: "f",
           milestoneKey: "m",
           releaseKey: "r",
+          startDate: "2026-10-03T00:00:00.000Z",
+          dueDate: "2026-10-15T00:00:00.000Z",
         },
       ],
       milestones: [
@@ -96,11 +98,11 @@ describe("knowledge and planning transfers", () => {
     });
     expect(exported.milestones[0]).toMatchObject({
       leadId: source.user.id,
-      status: "in-progress",
+      status: "done",
       priority: "urgent",
       position: 4,
-      startDate: "2026-10-02",
-      endDate: "2026-10-14",
+      startDate: "2026-10-03",
+      endDate: "2026-10-15",
     });
     const target = await createProjectFixture({
       workspaceId: source.workspace.id,
@@ -294,7 +296,7 @@ describe("connected Kaneo planning transfers", () => {
     });
     expect(exported.milestones[0]).toMatchObject({
       leadId: ctx.user.id,
-      status: "doing",
+      status: "to-do",
       priority: "urgent",
       releaseKey: exported.releases[0].key,
       position: 3,

@@ -173,6 +173,12 @@ describe("filtered board dragging", () => {
     expect(mocks.invalidateQueries).not.toHaveBeenCalledWith({
       queryKey: ["projects"],
     });
+    expect(mocks.invalidateQueries).not.toHaveBeenCalledWith({
+      queryKey: ["feature-milestones", "p"],
+    });
+    expect(mocks.invalidateQueries).not.toHaveBeenCalledWith({
+      queryKey: ["releases", "p"],
+    });
     view.unmount();
   });
 });
@@ -234,6 +240,12 @@ it("refreshes personal work after a cross-column status change", () => {
   });
   expect(mocks.invalidateQueries).toHaveBeenCalledWith({
     queryKey: ["projects"],
+  });
+  expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+    queryKey: ["feature-milestones", "p"],
+  });
+  expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+    queryKey: ["releases", "p"],
   });
 });
 

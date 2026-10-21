@@ -40,25 +40,23 @@ describe("milestone tools", () => {
       {
         featureId: "f",
         title: " First ",
-        startDate: "2026-10-20",
-        endDate: "2026-11-01",
+
         taskIds: ["t", "b"],
       },
       "/api/milestone/feature/f",
       "POST",
       {
         title: "First",
-        startDate: "2026-10-20",
-        endDate: "2026-11-01",
+
         taskIds: ["t", "b"],
       },
     ],
     [
       "update_milestone",
-      { milestoneId: "m", description: null, startDate: null, endDate: null },
+      { milestoneId: "m", description: null },
       "/api/milestone/m",
       "PATCH",
-      { description: null, startDate: null, endDate: null },
+      { description: null },
     ],
     [
       "delete_milestone",
@@ -103,6 +101,22 @@ describe("milestone tools", () => {
       { featureId: "f", title: "First", endDate: "2026-02-30" },
     ],
     ["update_milestone", { milestoneId: "m" }],
+    ["create_milestone", { featureId: "f", title: "Ship", status: "done" }],
+    ["create_milestone", { featureId: "f", title: "Ship", status: null }],
+    [
+      "update_milestone",
+      { milestoneId: "m", title: "Ship", status: "in-progress" },
+    ],
+    ["update_milestone", { milestoneId: "m", title: "Ship", status: null }],
+    [
+      "update_milestone",
+      { milestoneId: "m", title: "Ship", columnId: "column" },
+    ],
+    ["create_milestone", { featureId: "f", title: "Ship", startDate: null }],
+    ["create_milestone", { featureId: "f", title: "Ship", endDate: null }],
+    ["update_milestone", { milestoneId: "m", title: "Ship", startDate: null }],
+    ["update_milestone", { milestoneId: "m", title: "Ship", endDate: null }],
+    ["update_milestone", { milestoneId: "m", timeZone: "UTC" }],
     [
       "create_milestone",
       { featureId: "f", title: "Ship", taskIds: ["t", "t"] },
@@ -133,6 +147,43 @@ describe("milestone tools", () => {
     expect(result.isError).toBe(true);
     expect(client.json).not.toHaveBeenCalled();
   });
+  it.each([
+    ["list_milestones", { featureId: "f" }, "/api/milestone/feature/f"],
+    ["get_milestone", { milestoneId: "m" }, "/api/milestone/m"],
+    [
+      "list_project_milestones",
+      { projectId: "p", page: 2 },
+      "/api/milestone/project/p",
+    ],
+    [
+      "create_milestone",
+      { featureId: "f", title: "Ship" },
+      "/api/milestone/feature/f",
+    ],
+    [
+      "update_milestone",
+      { milestoneId: "m", title: "Ship" },
+      "/api/milestone/m",
+    ],
+    [
+      "reorder_milestones",
+      { featureId: "f", milestoneIds: ["m"] },
+      "/api/milestone/feature/f/order",
+    ],
+  ])(
+    "%s sends date timezone as a query, not editable metadata",
+    async (name, args, path) => {
+      const { client, tools } = setup();
+      await tools.get(name)!.handler({ ...args, timeZone: "Europe/Belgrade" });
+      const [requested, options] = client.json.mock.calls.at(-1)!;
+      const url = new URL(requested, "https://example.test");
+      expect(url.pathname).toBe(path);
+      expect(url.searchParams.get("timeZone")).toBe("Europe/Belgrade");
+      if (options && "body" in options) {
+        expect(JSON.parse(String(options.body))).not.toHaveProperty("timeZone");
+      }
+    },
+  );
   it("preserves assignment and sends Feature/milestone filters before pagination", async () => {
     const { client, tools } = setup();
     await tools.get("create_task")!.handler({

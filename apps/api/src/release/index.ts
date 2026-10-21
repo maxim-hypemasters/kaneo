@@ -14,6 +14,7 @@ import moveUnfinishedItems from "./controllers/move-unfinished-items";
 import updateRelease from "./controllers/update-release";
 import { getRelease, listReleases } from "./read-releases";
 import { readReleaseMilestones } from "./read-release-milestones";
+import { milestoneScheduleQuery } from "../milestone/schema";
 import { readReleaseProgress } from "./progress/read-release-progress";
 import {
   releaseProgressHistorySchema,
@@ -99,17 +100,18 @@ const getReleaseMilestonesRoute = createRoute({
   tags: ["Releases"],
   summary: "Get release feature milestone metadata",
   description:
-    "Ordered milestone metadata for features assigned to this release or referenced by its nonarchived tasks and bugs. Includes empty milestones. Progress is calculated from the release's visible work by the client.",
+    "Ordered metadata for explicitly assigned milestones and Features referenced by the release's nonarchived Tasks/Bugs. Includes empty milestones. Dates cover all linked nonarchived scheduled work in the requested timezone; displayed release progress remains release-scoped.",
   middleware: [
     workspaceAccess.fromRelease("id"),
     requireWorkspacePermission({ task: ["read"] }),
   ] as const,
-  request: { params: releaseParam },
+  request: { params: releaseParam, query: milestoneScheduleQuery },
   responses: {
     200: jsonResponse(
       "The release's feature milestones",
       releaseMilestoneListSchema,
     ),
+    400: errorResponse("Invalid timezone"),
     403: errorResponse(
       "No access to the release's project or missing task:read permission",
     ),
@@ -268,6 +270,7 @@ const release = apiRouter<BaseVariables & { workspaceId: string }>()
         c.req.valid("param").id,
         c.get("authorizedProjectId"),
         c.get("workspaceId"),
+        c.req.valid("query").timeZone,
       ),
       200,
     ),

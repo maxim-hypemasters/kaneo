@@ -27,10 +27,7 @@ export type Milestone = typeof Milestone.Type;
 export type MilestoneFields = {
   readonly title?: string;
   readonly description?: string | null;
-  readonly startDate?: string | null;
-  readonly endDate?: string | null;
   readonly leadId?: string | null;
-  readonly status?: string;
   readonly priority?: string;
   readonly releaseId?: string | null;
 };

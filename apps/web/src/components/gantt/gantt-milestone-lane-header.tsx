@@ -23,13 +23,12 @@ type GanttMilestoneLaneHeaderProps = {
   showTaskRail: boolean;
   rowGridTemplateColumns: string;
   onOpenMilestone: (milestoneId: string) => void;
-  // Saves a move or resize of the milestone's own bar.
+  // Dates are derived; this callback cannot reschedule the milestone.
   onCommitMilestone: (edit: GanttTaskEdit) => void;
 };
 
 // The header of a lane grouped by milestone: its name and task count in the
-// rail, and on the timeline the milestone's own bar (its own dates: moving or
-// resizing it reschedules the milestone, never its tasks) over a thin line
+// rail, and on the timeline the milestone's derived date span over a thin line
 // spanning its tasks, so the two can be compared at a glance.
 export function GanttMilestoneLaneHeader({
   lane,

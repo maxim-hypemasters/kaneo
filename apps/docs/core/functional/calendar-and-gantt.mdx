@@ -30,7 +30,7 @@ For unscheduled ideas, use the [backlog](/core/functional/backlog-planning). For
 
 ### Milestones
 
-Milestones replace Feature scheduling. Each milestone uses its own lead and explicit start/end dates and shows its owning Feature beside the title, so duplicate names remain distinguishable. Click its bar or open action to edit it in the milestone panel. Dragging or resizing changes only that milestone; linked task dates stay unchanged. Features remain knowledge links and do not have scheduled bars.
+Milestones replace Feature scheduling. Each milestone uses its own lead and a read-only range derived from its nonarchived linked Tasks and Bugs and shows its owning Feature beside the title, so duplicate names remain distinguishable. Click its bar or open action to edit it in the milestone panel. Milestone bars cannot be moved horizontally or resized. Edit linked Task/Bug dates to change the milestone range. Features remain knowledge links and do not have scheduled bars.
 
 ### Dependencies
 
@@ -56,7 +56,7 @@ The lines follow the **Release** filter. Filter by a release to see only its tas
 
 ### Group by assignee / lead
 
-Choose **Assignee / Lead** under **Display → Group by** for a lane per member, plus **Unassigned**. Tasks/Bugs use their assignees; milestones use their leads. Dragging a milestone to another member's lane changes its lead when you have assignment permission. Task reassignment works the same way. Moving sideways may also edit that item's dates. **Esc** cancels a drag. On touch screens, use the details panel.
+Choose **Assignee / Lead** under **Display → Group by** for a lane per member, plus **Unassigned**. Tasks/Bugs use their assignees; milestones use their leads. Dragging a milestone to another member's lane changes its lead when you have assignment permission. Task reassignment works the same way. Moving Tasks/Bugs sideways may edit their dates; milestone dragging changes only the lead. **Esc** cancels a drag. On touch screens, use the details panel.
 
 Milestone bars sit on the lead's header row, with Tasks and Bugs underneath. Milestones with overlapping dates use separate tracks in that header. Collapsing a lead hides the task rows while keeping the milestones visible.
 
@@ -64,6 +64,6 @@ Milestone bars sit on the lead's header row, with Tasks and Bugs underneath. Mil
 
 Choose **Milestone** for one lane per milestone and **No milestone** for unassigned work. Milestones without dates keep a lane without a bar. Each lane identifies its owning Feature. The saved older **Feature** grouping preference becomes **Milestone**.
 
-Task filters apply to Tasks and Bugs; the separate entity controls show or hide milestones, Tasks and Bugs. Milestone planning remains visible independently of task-only filters. Calculated progress and manual status remain separate.
+Task filters apply to Tasks and Bugs; the separate entity controls show or hide milestones, Tasks and Bugs. Milestone planning remains visible independently of task-only filters. Milestone status is read-only and derived from all nonarchived linked Tasks/Bugs; task filters do not change it. Progress keeps its existing counting rules.
 
-Dragging a Task/Bug into a milestone lane assigns it only when that milestone belongs to the task's existing Feature. Dropping into **No milestone** clears membership. A drag never changes the Feature implicitly. Milestone moves do not shift child dates. Dependencies remain between Tasks/Bugs; Feature relations do not produce milestone dependency arrows.
+Dragging a Task/Bug into a milestone lane assigns it only when that milestone belongs to the task's existing Feature. Dropping into **No milestone** clears membership. A drag never changes the Feature implicitly. Milestone lead changes do not shift child dates. Their date ranges use all nonarchived linked work across releases, regardless of task filters. Dependencies remain between Tasks/Bugs; Feature relations do not produce milestone dependency arrows.

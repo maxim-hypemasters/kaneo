@@ -71,7 +71,7 @@ describe("milestone Gantt lanes", () => {
     expect(lanes[1].name).toBe("Knowledge · later");
     expect(lanes[2].tasks.map((item) => item.id)).toEqual(["loose"]);
   });
-  it("uses a milestone's explicit dates rather than its linked work's extent", () => {
+  it("uses the full milestone date range independently of visible linked work", () => {
     const record = definition("first", {
       startDate: "2026-10-10",
       endDate: "2026-10-20",

@@ -24,6 +24,14 @@ describe("progress calendar days", () => {
     expect(progressDay(instant, "Europe/Belgrade")).toBe("2026-10-19");
     expect(progressDay(instant, "America/New_York")).toBe("2026-10-18");
   });
+  it("keeps calendar years below 1000 in ISO format", () => {
+    expect(progressDay(new Date("0001-01-01T00:00:00Z"), "UTC")).toBe(
+      "0001-01-01",
+    );
+    expect(progressDay(new Date("0999-12-31T00:00:00Z"), "UTC")).toBe(
+      "0999-12-31",
+    );
+  });
   it("advances dates across DST and leap days without skipping a date", () => {
     expect(nextProgressDay("2026-03-29")).toBe("2026-03-30");
     expect(nextProgressDay("2026-10-25")).toBe("2026-10-26");

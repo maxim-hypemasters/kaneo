@@ -73,14 +73,14 @@ it("upgrades existing target dates into end dates while preserving metadata, lin
       );
       expect(milestones[0]).toMatchObject({
         id: "legacy-dated",
-        startDate: null,
-        endDate: "2026-11-03",
+        legacyStartDate: null,
+        legacyEndDate: "2026-11-03",
         position: 4,
       });
       expect(milestones[1]).toMatchObject({
         id: "legacy-empty",
-        startDate: null,
-        endDate: null,
+        legacyStartDate: null,
+        legacyEndDate: null,
         position: 8,
       });
       const [linked] = await tx
@@ -110,8 +110,8 @@ it("upgrades existing target dates into end dates while preserving metadata, lin
           await nested.insert(schema.milestoneTable).values({
             featureId: feature.id,
             title: "Inverted",
-            startDate: "2026-11-04",
-            endDate: "2026-11-03",
+            legacyStartDate: "2026-11-04",
+            legacyEndDate: "2026-11-03",
           });
         }),
       ).rejects.toMatchObject({ cause: { code: "23514" } });

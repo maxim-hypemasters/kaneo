@@ -8,4 +8,6 @@ JSON and CSV exports include each item's explicit `type`: `task`, `bug`, or
 
 JSON version 3 includes portable item keys, Feature membership, milestone definitions, and milestone links. Import the complete document to retain its hierarchy.
 
-Version 3 preserves release definitions, milestone lead/status/priority/release, Feature archive state, and immutable planning-history snapshots. Older hierarchy files remain accepted; former Feature planning values become history rather than active fields. Imported releases require `project:update`, and assigning a nonnull milestone lead requires `task:assign`.
+Version 3 preserves release definitions, milestone lead/priority/release and informational derived status, Feature archive state, and immutable planning-history snapshots. Older hierarchy files remain accepted; former Feature planning values become history rather than active fields. Imported releases require `project:update`, and assigning a nonnull milestone lead requires `task:assign`.
+
+Milestone status and dates are read-only, derived from linked nonarchived Tasks/Bugs after import. Legacy manual milestone status and dates remain accepted in older files but never override the derived values.

@@ -227,7 +227,7 @@ describe("GanttTaskBar", () => {
       );
     }
     const buttons = within(bar).getAllByRole("button");
-    expect(buttons).toHaveLength(3);
+    expect(buttons).toHaveLength(1);
     for (const button of buttons) {
       expect(button).toHaveClass("focus-visible:outline-hidden");
       expect(button).not.toHaveClass("focus-visible:outline-none");
@@ -254,16 +254,16 @@ describe("GanttTaskBar", () => {
     expect(early.bar?.style.gridColumn).toBe("1 / 6");
     expect(tips(early.bar)).toEqual(["end"]);
     expect(
-      screen.getByRole("button", { name: "tasks:gantt.resizeStart" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "tasks:gantt.resizeStart" }),
+    ).toBeNull();
     cleanup();
 
     const late = show(milestone("2026-09-25", "2026-10-10"));
     expect(late.bar?.style.gridColumn).toBe("25 / 31");
     expect(tips(late.bar)).toEqual(["start"]);
     expect(
-      screen.getByRole("button", { name: "tasks:gantt.resizeDue" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "tasks:gantt.resizeDue" }),
+    ).toBeNull();
   });
 
   it("says a milestone kept on an assignee lane can be reassigned", () => {
@@ -292,47 +292,29 @@ describe("GanttTaskBar", () => {
     expect(onOpenTask).toHaveBeenCalledTimes(1);
     fireEvent.keyDown(milestoneBar(), { key: "Enter" });
     expect(onOpenTask).toHaveBeenCalledTimes(2);
+    fireEvent.keyDown(milestoneBar(), { key: " " });
+    expect(onOpenTask).toHaveBeenCalledTimes(3);
     expect(onCommit).not.toHaveBeenCalled();
   });
 
-  it("moves a milestone, keeping its assignee and feature", () => {
-    const { onCommit, onOpenTask } = show(
+  it("keeps a milestone's derived dates fixed during a horizontal drag", () => {
+    const { bar, onCommit, onOpenTask } = show(
       milestone("2026-09-03", "2026-09-05"),
     );
 
     drag(milestoneBar(), 2 * DAY_PX);
 
-    expect(onCommit).toHaveBeenCalledWith({
-      start: parseISO("2026-09-05"),
-      end: parseISO("2026-09-07"),
-      userId: "u1",
-      featureId: null,
-      milestoneId: "checkout",
-    });
+    expect(bar?.style.gridColumn).toBe("3 / 6");
+    expect(onCommit).not.toHaveBeenCalled();
     expect(onOpenTask).not.toHaveBeenCalled();
   });
 
-  it("resizes a milestone from either end", () => {
-    const { onCommit } = show(milestone("2026-09-03", "2026-09-05"));
-
-    drag(screen.getByRole("button", { name: "tasks:gantt.resizeDue" }), DAY_PX);
-    expect(onCommit).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        start: parseISO("2026-09-03"),
-        end: parseISO("2026-09-06"),
-      }),
-    );
-
-    drag(
-      screen.getByRole("button", { name: "tasks:gantt.resizeStart" }),
-      -DAY_PX,
-    );
-    expect(onCommit).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        start: parseISO("2026-09-02"),
-        end: parseISO("2026-09-05"),
-      }),
-    );
+  it("has no milestone resize handles on desktop or mobile", () => {
+    show(milestone("2026-09-03", "2026-09-05"));
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    cleanup();
+    show(milestone("2026-09-03", "2026-09-09"), { isMobile: true });
+    expect(screen.getAllByRole("button")).toHaveLength(1);
   });
 
   it("draws a short phone bar's title and progress after it", () => {
