@@ -129,11 +129,6 @@ export async function writeProjectContent(
     hierarchy.memberships,
     {
       releases: releaseIds,
-      columns: board.byKey,
-      defaultColumn:
-        board.byKey.get(
-          columnPlan.columns.find((column) => !column.isFinal)?.key ?? "",
-        ) ?? null,
       assign: assignees.match,
     },
   );

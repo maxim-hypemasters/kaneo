@@ -8,11 +8,13 @@ import {
   taskTable,
 } from "../database/schema";
 import { boundedTaskRead } from "../task/bounded-read";
+import { readMilestoneExecution } from "../milestone/execution";
 
 export async function readReleaseMilestones(
   id: string,
   expectedProjectId: string | undefined,
   expectedWorkspaceId: string,
+  timeZone = "UTC",
 ) {
   return boundedTaskRead(async (tx) => {
     const [release] = await tx
@@ -35,7 +37,7 @@ export async function readReleaseMilestones(
       });
 
     const leaf = alias(taskTable, "release_milestone_leaf");
-    return tx
+    const milestones = await tx
       .select({
         id: milestoneTable.id,
         featureId: milestoneTable.featureId,
@@ -43,12 +45,8 @@ export async function readReleaseMilestones(
         position: milestoneTable.position,
         featureTitle: taskTable.title,
         leadId: milestoneTable.leadId,
-        status: milestoneTable.status,
-        columnId: milestoneTable.columnId,
         priority: milestoneTable.priority,
         releaseId: milestoneTable.releaseId,
-        startDate: milestoneTable.startDate,
-        endDate: milestoneTable.endDate,
       })
       .from(milestoneTable)
       .innerJoin(taskTable, eq(taskTable.id, milestoneTable.featureId))
@@ -80,5 +78,18 @@ export async function readReleaseMilestones(
         asc(milestoneTable.position),
         asc(milestoneTable.id),
       );
+    const schedules = await readMilestoneExecution(
+      tx,
+      release.projectId,
+      milestones.map((milestone) => milestone.id),
+      timeZone,
+    );
+    return milestones.map((milestone) => ({
+      ...milestone,
+      status: schedules.get(milestone.id)?.status ?? ("to-do" as const),
+      columnId: null,
+      startDate: schedules.get(milestone.id)?.startDate ?? null,
+      endDate: schedules.get(milestone.id)?.endDate ?? null,
+    }));
   }, "Release milestones request took too long; retry later");
 }

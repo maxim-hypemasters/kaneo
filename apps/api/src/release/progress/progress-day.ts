@@ -17,7 +17,7 @@ export function progressDay(date: Date, timeZone: string) {
   }).formatToParts(date);
   const part = (type: string) =>
     parts.find((item) => item.type === type)?.value;
-  return `${part("year")}-${part("month")}-${part("day")}`;
+  return `${part("year")?.padStart(4, "0")}-${part("month")}-${part("day")}`;
 }
 
 // Arithmetic on calendar dates, after timestamps have been bucketed in the

@@ -21,6 +21,9 @@ export function useUpdateTaskDueDate() {
     },
     onSuccess: (updated, variables, context) => {
       invalidateMyWork(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: ["feature-milestones", variables.projectId],
+      });
       queryClient.invalidateQueries({
         queryKey: ["task", variables.id],
       });

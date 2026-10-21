@@ -11,4 +11,6 @@ Version 3 documents preserve Feature and milestone hierarchy through portable so
 
 Version 2/3 label definitions and attachments also require `label:create` and `label:update`, following the normal label permission rules.
 
-Version 3 preserves release definitions, milestone lead/status/priority/release, Feature archive state, and immutable planning-history snapshots. Older hierarchy files remain accepted; former Feature planning values become history rather than active fields. Imported releases require `project:update`, and assigning a nonnull milestone lead requires `task:assign`.
+Version 3 preserves release definitions, milestone lead/priority/release and informational derived status, Feature archive state, and immutable planning-history snapshots. Older hierarchy files remain accepted; former Feature planning values become history rather than active fields. Imported releases require `project:update`, and assigning a nonnull milestone lead requires `task:assign`.
+
+Milestone status and dates are read-only, derived from linked nonarchived Tasks/Bugs after import. Legacy manual milestone status and dates remain accepted in older files but never override the derived values.

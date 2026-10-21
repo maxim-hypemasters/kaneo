@@ -23,8 +23,14 @@ const mocks = vi.hoisted(() => ({
   canEdit: true,
   candidates: [] as MilestoneCandidate[],
   candidatesPending: false,
+  releases: [] as Array<{ id: string; name: string }>,
+  members: [] as Array<{ id: string; name: string }>,
 }));
 vi.mock("@/lib/i18n", () => ({ i18n: { t: (key: string) => key } }));
+vi.mock("@/lib/i18n/domain", () => ({
+  getStatusDisplayLabel: (status: string, name?: string) => name ?? status,
+  getPriorityLabel: (priority: string) => priority,
+}));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string, args?: Record<string, unknown>) =>
@@ -68,15 +74,29 @@ vi.mock("@/hooks/queries/column/use-get-columns", () => ({
   useGetColumns: () => ({
     data: [
       { id: "todo", slug: "to-do", name: "To Do", position: 0, isFinal: false },
+      {
+        id: "active",
+        slug: "building",
+        name: "Custom active",
+        position: 1,
+        isFinal: false,
+      },
+      {
+        id: "done",
+        slug: "shipped",
+        name: "Custom final",
+        position: 2,
+        isFinal: true,
+      },
     ],
     refetch: vi.fn(),
   }),
 }));
 vi.mock("@/hooks/queries/release/use-get-releases", () => ({
-  useGetReleases: () => ({ data: [], refetch: vi.fn() }),
+  useGetReleases: () => ({ data: mocks.releases, refetch: vi.fn() }),
 }));
 vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
-  default: () => ({ data: [], refetch: vi.fn() }),
+  default: () => ({ data: mocks.members, refetch: vi.fn() }),
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: vi.fn() } }));
 const milestone = (id: string, completed = 0, total = 0) => ({
@@ -98,6 +118,8 @@ beforeEach(() => {
   mocks.canEdit = true;
   mocks.candidates = [];
   mocks.candidatesPending = false;
+  mocks.releases = [];
+  mocks.members = [];
   vi.clearAllMocks();
 });
 afterEach(cleanup);
@@ -120,14 +142,27 @@ function view() {
   render(<FilteredMilestones />);
   return onFilter;
 }
-async function selectMilestoneDay(label: string, day: string) {
-  fireEvent.click(screen.getByRole("button", { name: label }));
-  fireEvent.change(await screen.findByRole("combobox", { name: label }), {
-    target: { value: day },
-  });
-  fireEvent.click(await screen.findByRole("option"));
-}
 describe("Feature milestones", () => {
+  it("shows the linked release beside the milestone name without planning metadata", () => {
+    mocks.releases = [{ id: "r", name: "Release 0.70" }];
+    mocks.members = [{ id: "lead", name: "Milestone lead" }];
+    mocks.data = [
+      {
+        ...milestone("Alpha", 1, 4),
+        releaseId: "r",
+        status: "in-progress",
+        priority: "urgent",
+        leadId: "lead",
+      },
+    ];
+    view();
+    const name = screen.getByTitle("Alpha");
+    const release = screen.getByTitle("Release 0.70");
+    expect(name.parentElement).toBe(release.parentElement);
+    expect(screen.getByText("in-progress")).toHaveClass("sr-only");
+    expect(screen.queryByText("urgent")).not.toBeInTheDocument();
+    expect(screen.queryByText("Milestone lead")).not.toBeInTheDocument();
+  });
   it("shows empty state with no selected filter and no All tasks button", () => {
     view();
     expect(screen.getByText("tasks:milestones.empty")).toBeInTheDocument();
@@ -216,7 +251,7 @@ describe("Feature milestones", () => {
     );
     expect(mocks.refetch).toHaveBeenCalledOnce();
   });
-  it("creates metadata through an accessible dialog", async () => {
+  it("creates metadata without writing the read-only schedule", () => {
     view();
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.add" }),
@@ -228,17 +263,29 @@ describe("Feature milestones", () => {
       screen.queryByLabelText("tasks:milestones.description"),
     ).not.toBeInTheDocument();
     expect(document.querySelector("textarea")).not.toBeInTheDocument();
-    await selectMilestoneDay("tasks:milestones.endDate", "2026-11-01");
+    expect(
+      screen.getByLabelText("tasks:milestones.startDate"),
+    ).toHaveTextContent("tasks:properties.noDate");
+    expect(screen.getByLabelText("tasks:milestones.endDate")).toHaveTextContent(
+      "tasks:properties.noDate",
+    );
+    expect(
+      screen.queryByRole("button", { name: "tasks:milestones.startDate" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "tasks:milestones.endDate" }),
+    ).not.toBeInTheDocument();
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.save" }),
     );
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Alpha",
-        startDate: null,
-        endDate: "2026-11-01",
       }),
     );
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty("startDate");
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty("endDate");
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty("status");
   });
   it("edits visible metadata without clearing an existing hidden description", async () => {
     mocks.data = [
@@ -266,7 +313,12 @@ describe("Feature milestones", () => {
     fireEvent.change(screen.getByLabelText("tasks:milestones.titleLabel"), {
       target: { value: "Renamed milestone" },
     });
-    await selectMilestoneDay("tasks:milestones.endDate", "2026-11-06");
+    expect(
+      screen.getByLabelText("tasks:milestones.startDate"),
+    ).toHaveTextContent("Nov 2, 2026");
+    expect(screen.getByLabelText("tasks:milestones.endDate")).toHaveTextContent(
+      "Nov 4, 2026",
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.save" }),
     );
@@ -274,13 +326,117 @@ describe("Feature milestones", () => {
       expect.objectContaining({
         id: "legacy",
         title: "Renamed milestone",
-        startDate: "2026-11-02",
-        endDate: "2026-11-06",
       }),
     );
     expect(mocks.update.mock.calls[0][0]).not.toHaveProperty("description");
+    expect(mocks.update.mock.calls[0][0]).not.toHaveProperty("startDate");
+    expect(mocks.update.mock.calls[0][0]).not.toHaveProperty("endDate");
+    expect(mocks.update.mock.calls[0][0]).not.toHaveProperty("status");
   });
-  it("uses the shared date picker to reject an end before the start and save a range", async () => {
+  it("previews a canonical read-only status from selected work and sends no status field", () => {
+    mocks.candidates = [
+      {
+        id: "queued",
+        title: "Queued task",
+        number: 1,
+        type: "task",
+        milestoneId: null,
+        status: "to-do",
+      },
+      {
+        id: "done",
+        title: "Done bug",
+        number: 2,
+        type: "bug",
+        milestoneId: null,
+        status: "shipped",
+      },
+      {
+        id: "active",
+        title: "Active task",
+        number: 3,
+        type: "task",
+        milestoneId: null,
+        status: "building",
+      },
+      {
+        id: "archived",
+        title: "Archived",
+        number: 4,
+        type: "bug",
+        milestoneId: null,
+        status: "archived",
+      },
+    ];
+    view();
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:milestones.add" }),
+    );
+    fireEvent.change(screen.getByLabelText("tasks:milestones.titleLabel"), {
+      target: { value: "New milestone" },
+    });
+    const status = () => screen.getByLabelText("tasks:status.label");
+    expect(status()).toHaveTextContent("to-do");
+    expect(
+      screen.queryByRole("button", { name: "tasks:status.label" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-2.*Done bug/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-4.*Archived/ }));
+    expect(status()).toHaveTextContent("done");
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /WEB-1.*Queued task/ }),
+    );
+    expect(status()).toHaveTextContent("in-progress");
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /WEB-3.*Active task/ }),
+    );
+    expect(status()).toHaveTextContent("in-progress");
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:milestones.save" }),
+    );
+    expect(mocks.create.mock.calls[0][0]).not.toHaveProperty("status");
+  });
+  it("previews only selected nonarchived schedules and updates when a selection is cleared", () => {
+    const date = (day: number) => new Date(2026, 10, day, 12).toISOString();
+    mocks.candidates = [
+      {
+        id: "t",
+        title: "Task A",
+        type: "task",
+        number: 1,
+        milestoneId: null,
+        startDate: date(6),
+        dueDate: date(2),
+      },
+      {
+        id: "b",
+        title: "Bug B",
+        type: "bug",
+        number: 2,
+        milestoneId: null,
+        startDate: null,
+        dueDate: date(10),
+      },
+      {
+        id: "archived",
+        title: "Archived",
+        type: "task",
+        number: 3,
+        milestoneId: null,
+        status: "archived",
+        startDate: date(1),
+        dueDate: date(30),
+      },
+      {
+        id: "other",
+        title: "Unselected",
+        type: "bug",
+        number: 4,
+        milestoneId: null,
+        startDate: date(1),
+        dueDate: date(30),
+      },
+    ];
     view();
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.add" }),
@@ -288,32 +444,88 @@ describe("Feature milestones", () => {
     fireEvent.change(screen.getByLabelText("tasks:milestones.titleLabel"), {
       target: { value: "Alpha" },
     });
-    await selectMilestoneDay("tasks:milestones.startDate", "2026-11-02");
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:milestones.endDate" }),
-    );
-    const end = await screen.findByRole("combobox", {
-      name: "tasks:milestones.endDate",
-    });
-    fireEvent.change(end, { target: { value: "2026-11-01" } });
-    expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-1.*Task A/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-2.*Bug B/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-3.*Archived/ }));
     expect(
-      screen.getByText(/tasks:datePicker.beforeStart/),
-    ).toBeInTheDocument();
-    fireEvent.change(end, { target: { value: "2026-11-04" } });
-    fireEvent.click(await screen.findByRole("option"));
+      screen.getByLabelText("tasks:milestones.startDate"),
+    ).toHaveTextContent("Nov 2, 2026");
+    expect(screen.getByLabelText("tasks:milestones.endDate")).toHaveTextContent(
+      "Nov 10, 2026",
+    );
+    fireEvent.click(screen.getByRole("checkbox", { name: /WEB-1.*Task A/ }));
+    expect(
+      screen.getByLabelText("tasks:milestones.startDate"),
+    ).toHaveTextContent("Nov 10, 2026");
+    expect(screen.getByLabelText("tasks:milestones.endDate")).toHaveTextContent(
+      "Nov 10, 2026",
+    );
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:milestones.save" }),
     );
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Alpha",
-        startDate: "2026-11-02",
-        endDate: "2026-11-04",
+        taskIds: ["b", "archived"],
       }),
     );
   });
-  it("creates the milestone and links selected Tasks and Bugs in one request", async () => {
+  it("refreshes the read-only edit schedule without clearing a metadata draft", async () => {
+    mocks.data = [
+      {
+        ...milestone("m"),
+        startDate: "2026-11-02",
+        endDate: "2026-11-04",
+        status: "to-do",
+      },
+    ];
+    const { rerender } = render(
+      <FeatureMilestones
+        projectId="p"
+        featureId="f"
+        filter="all"
+        onFilter={vi.fn()}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:milestones.actions" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "tasks:milestones.edit" }),
+    );
+    fireEvent.change(screen.getByLabelText("tasks:milestones.titleLabel"), {
+      target: { value: "Draft title" },
+    });
+    mocks.data = [
+      {
+        ...milestone("m"),
+        startDate: "2026-11-03",
+        endDate: "2026-11-07",
+        status: "done",
+      },
+    ];
+    rerender(
+      <FeatureMilestones
+        projectId="p"
+        featureId="f"
+        filter="all"
+        onFilter={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByLabelText("tasks:milestones.startDate"),
+    ).toHaveTextContent("Nov 3, 2026");
+    expect(screen.getByLabelText("tasks:milestones.endDate")).toHaveTextContent(
+      "Nov 7, 2026",
+    );
+    expect(screen.getByLabelText("tasks:milestones.titleLabel")).toHaveValue(
+      "Draft title",
+    );
+    expect(screen.getByLabelText("tasks:status.label")).toHaveTextContent(
+      "done",
+    );
+  });
+  it("creates the milestone and links selected Tasks and Bugs in one request", () => {
     mocks.candidates = [
       { id: "t", title: "Task A", type: "task", number: 1, milestoneId: null },
       { id: "b", title: "Bug B", type: "bug", number: 2, milestoneId: null },
@@ -344,8 +556,6 @@ describe("Feature milestones", () => {
     expect(mocks.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "New milestone",
-        startDate: null,
-        endDate: null,
         taskIds: ["t", "b"],
       }),
     );

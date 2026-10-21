@@ -14,6 +14,7 @@ import {
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "@/lib/toast";
+import { ArchiveFeatureDialog } from "./archive-feature-dialog";
 
 export function FeatureLibraryPage({
   projectId,
@@ -28,6 +29,11 @@ export function FeatureLibraryPage({
   const query = useDebouncedValue(search, 200);
   const [archived, setArchived] = useState(false);
   const [page, setPage] = useState(1);
+  const [featureToArchive, setFeatureToArchive] = useState<{
+    id: string;
+    title: string;
+    projectId: string;
+  } | null>(null);
   const { canUpdateTasks } = useWorkspacePermission();
   const result = useQuery({
     queryKey: ["feature-library", projectId, query, archived, page],
@@ -145,9 +151,16 @@ export function FeatureLibraryPage({
                           ? "tasks:features.library.restore"
                           : "tasks:features.library.archive",
                       )}
-                      onClick={() =>
-                        archive.mutate({ id: feature.id, archived: !archived })
-                      }
+                      onClick={() => {
+                        if (archived)
+                          archive.mutate({ id: feature.id, archived: false });
+                        else
+                          setFeatureToArchive({
+                            id: feature.id,
+                            title: feature.title,
+                            projectId,
+                          });
+                      }}
                     >
                       {archived ? <ArchiveRestore /> : <Archive />}
                     </Button>
@@ -178,6 +191,12 @@ export function FeatureLibraryPage({
             )}
           </>
         )}
+        <ArchiveFeatureDialog
+          feature={featureToArchive}
+          onOpenChange={(open) => {
+            if (!open) setFeatureToArchive(null);
+          }}
+        />
       </div>
     </ProjectLayout>
   );

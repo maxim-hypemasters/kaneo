@@ -731,14 +731,18 @@ export const milestoneTable = pgTable(
       }),
     title: text("title").notNull(),
     description: text("description"),
-    startDate: date("start_date", { mode: "string" }),
-    endDate: date("end_date", { mode: "string" }),
+    // Former manual dates remain stored for compatibility, but public dates
+    // are derived from linked work and never read these values.
+    legacyStartDate: date("start_date", { mode: "string" }),
+    legacyEndDate: date("end_date", { mode: "string" }),
     leadId: text("lead_id").references(() => userTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
     }),
-    status: text("status").notNull().default("planned"),
-    columnId: text("column_id").references(() => columnTable.id, {
+    // Retain former manual workflow values for compatibility; public status
+    // is derived from linked work and has no assigned workflow column.
+    legacyStatus: text("status").notNull().default("planned"),
+    legacyColumnId: text("column_id").references(() => columnTable.id, {
       onDelete: "set null",
       onUpdate: "cascade",
     }),
@@ -759,7 +763,7 @@ export const milestoneTable = pgTable(
   (table) => [
     check(
       "milestone_date_order_check",
-      sql`${table.startDate} is null or ${table.endDate} is null or ${table.startDate} <= ${table.endDate}`,
+      sql`${table.legacyStartDate} is null or ${table.legacyEndDate} is null or ${table.legacyStartDate} <= ${table.legacyEndDate}`,
     ),
     index("milestone_featureId_position_idx").on(
       table.featureId,

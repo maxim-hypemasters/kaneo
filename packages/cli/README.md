@@ -86,7 +86,7 @@ Credentials are resolved in this order: `--token`, then `KANEO_API_KEY`, then th
 | `kaneo task bulk` | Apply one change to many tasks at once |
 | `kaneo task attach`, `images` | Upload files to a task, show the images in its description |
 | `kaneo feature list`, `archive`, `unarchive` | Browse the Feature knowledge library and manage its archive state |
-| `kaneo milestone list-project`, `create`, `edit` | Plan delivery with milestone leads, workflow, release, priority and dates |
+| `kaneo milestone list-project`, `create`, `edit` | Plan delivery with milestone leads, release and priority |
 | `kaneo task relation`, `link`, `activity` | Features, blockers and related tasks, links, and the task's history |
 | `kaneo task export`, `import` | Export a project's tasks as JSON and create tasks from such a file |
 | `kaneo comment list`, `add`, `edit`, `delete` | Read and manage task comments |
@@ -149,12 +149,12 @@ kaneo release list -p KAN
 Milestones belong to a Feature, and Tasks/Bugs can link to one milestone of their existing Feature:
 
 ```bash
-kaneo milestone create "First playable" --feature KAN-12 --start-date 2026-11-02 --end-date 2026-11-20
+kaneo milestone create "First playable" --feature KAN-12 --task KAN-15
 kaneo milestone create "Bug fixes" --feature KAN-12 --task KAN-15 --task KAN-16
 kaneo milestone list --feature KAN-12
 kaneo milestone list-project -p KAN --page 1 --limit 50
 kaneo milestone view <milestone-id>
-kaneo milestone edit <milestone-id> --lead <user-id> --status in-progress --priority high --release <release-id> --end-date none
+kaneo milestone edit <milestone-id> --lead <user-id> --priority high --release <release-id>
 kaneo milestone order --feature KAN-12 --milestone <first-id> --milestone <second-id>
 kaneo task create "Fix movement" --type bug --feature KAN-12 --milestone <milestone-id>
 kaneo task edit KAN-15 --milestone <milestone-id>
@@ -166,9 +166,9 @@ kaneo milestone delete <milestone-id> --yes
 
 Repeat `--task` while creating a milestone to link existing Tasks/Bugs atomically. They must already belong to the selected Feature and may be reassigned from another milestone; an invalid selection leaves everything unchanged.
 
-Start and end dates are optional calendar days. Either can be set alone or cleared with `none`; when both are set, the start must be on or before the end. Dates do not change task deadlines.
+Milestone start/end dates are read-only UTC calendar days derived from nonarchived linked Tasks/Bugs. A single available date contributes one day; empty or undated milestones have no range. Dates span all linked releases and do not shrink with list filters. Change the linked work’s dates to change this range. The milestone create/edit commands do not accept status or date flags.
 
-`order` takes the complete milestone ID list in the desired order; stale lists are rejected. Assignment does not change Feature membership. Deleting a milestone keeps its Tasks/Bugs in the Feature and Release. Metadata and assignment require task update permission; progress reads use task read permission. Progress includes archived Tasks/Bugs and all linked work, independently of list filters. Milestone workflow status is manual and independent of calculated task progress. Lead changes require task assignment permission. Archiving a Feature leaves its milestones and linked work active.
+`order` takes the complete milestone ID list in the desired order; stale lists are rejected. Assignment does not change Feature membership. Deleting a milestone keeps its Tasks/Bugs in the Feature and Release. Metadata and assignment require task update permission; progress reads use task read permission. Progress includes archived Tasks/Bugs and all linked work, independently of list filters. Milestone status is read-only: all nonarchived linked work Done means Done, any active or completed work means In Progress, otherwise To Do. Empty milestones are To Do. Mixed Done/To Do work is In Progress because completed work counts as started. Done and active work follow project workflow flags and ordering. Status uses all linked releases and ignores filters; progress still includes archived work. Lead changes require task assignment permission. Archiving a Feature leaves its milestones and linked work active.
 
 Commands that delete or remove data ask for confirmation in a terminal and need `--yes` in scripts. Comments and descriptions can be read from a file with `-F <file>`, or from stdin with `-`.
 

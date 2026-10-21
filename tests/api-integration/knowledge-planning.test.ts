@@ -157,37 +157,34 @@ describe("Feature knowledge and milestone planning", () => {
     ).toBe(400);
     expect((await task(ctx.feature.id))?.status).toBeNull();
   });
-  it("validates and returns manual milestone planning independently of child status", async () => {
+  it("validates editable milestone planning while deriving status from child work", async () => {
     const ctx = await setup();
     const child = await ctx.leaf("Unstarted bug", { type: "bug" });
     const updated = await updateMilestone(
       ctx.milestone.id,
       {
         leadId: ctx.user.id,
-        status: "done",
         priority: "urgent",
-        startDate: "2026-10-01",
-        endDate: "2026-10-20",
       },
       ctx.user.id,
     );
     expect(updated).toMatchObject({
       leadId: ctx.user.id,
-      status: "done",
-      columnId: ctx.columns.done.id,
+      status: "to-do",
+      columnId: null,
       priority: "urgent",
       progress: { completed: 0, started: 0, total: 1 },
     });
     expect((await task(child.id))?.status).toBe("to-do");
     expect((await getRelease(ctx.release.id)).progress.milestones).toEqual({
       total: 1,
-      completed: 1,
+      completed: 0,
     });
     const history = await db
       .select()
       .from(schema.activityTable)
       .where(eq(schema.activityTable.taskId, ctx.feature.id));
-    expect(history.map((row) => row.type)).toContain("milestone_completed");
+    expect(history.map((row) => row.type)).not.toContain("milestone_completed");
   });
   it("inherits release only for omitted new-work values and null existing work", async () => {
     const ctx = await setup();
@@ -310,7 +307,7 @@ describe("Feature knowledge and milestone planning", () => {
       .where(eq(schema.milestoneTable.id, ctx.milestone.id));
     expect(stored?.title).toBe("Delivery");
   });
-  it("task completion changes calculated progress without changing manual milestone status", async () => {
+  it("task completion and reopening change derived milestone status", async () => {
     const ctx = await setup();
     const child = await ctx.leaf("Done bug", { type: "bug" });
     await updateTaskStatus({
@@ -319,7 +316,7 @@ describe("Feature knowledge and milestone planning", () => {
       currentUserId: ctx.user.id,
     });
     expect((await readProjectMilestones(ctx.project.id)).data[0]).toMatchObject(
-      { status: "to-do", progress: { total: 1, started: 1, completed: 1 } },
+      { status: "done", progress: { total: 1, started: 1, completed: 1 } },
     );
     await updateTaskStatus({
       id: child.id,

@@ -228,30 +228,8 @@ export async function importHierarchy(
         featureId: taskIds.get(milestone.featureKey)!,
         title: milestone.title,
         description: milestone.description ?? null,
-        startDate: milestone.startDate ?? null,
-        endDate: milestone.endDate ?? null,
         position: milestone.position,
         leadId: milestone.leadId ?? null,
-        status: coerceStatus(
-          milestone.status ??
-            [...columns]
-              .sort(
-                (a, b) => a.position - b.position || a.id.localeCompare(b.id),
-              )
-              .find((column) => !column.isFinal)?.slug ??
-            "planned",
-          statuses,
-        ).status,
-        columnId:
-          columnIds.get(
-            milestone.status ??
-              [...columns]
-                .sort(
-                  (a, b) => a.position - b.position || a.id.localeCompare(b.id),
-                )
-                .find((column) => !column.isFinal)?.slug ??
-              "planned",
-          ) ?? null,
         priority: coercePriority(milestone.priority ?? "no-priority").priority,
         releaseId: milestone.releaseKey
           ? releaseIds.get(milestone.releaseKey)!

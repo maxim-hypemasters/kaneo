@@ -106,10 +106,7 @@ describe("milestone creation with existing work", () => {
           );
         }
       });
-    const response = await ctx.create([ctx.task.id, ctx.bug.id], {
-      startDate: "2026-11-01",
-      endDate: "2026-11-03",
-    });
+    const response = await ctx.create([ctx.task.id, ctx.bug.id]);
     expect(response.status).toBe(200);
     const milestone = await response.json();
     expect(milestone.progress).toEqual({ total: 2, started: 1, completed: 1 });

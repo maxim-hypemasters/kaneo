@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -371,6 +372,80 @@ afterEach(() => {
 });
 
 describe("Gantt milestone planning gestures", () => {
+  it.each(["done", "in-progress"])(
+    "keeps a milestone's canonical %s status independent of conflicting workflow columns",
+    (status) => {
+      m.groupBy = "none";
+      m.milestones = [
+        milestone("checkout", {
+          status,
+          columnId: null,
+          startDate: "2026-09-01",
+          endDate: "2026-09-10",
+        }),
+      ];
+      m.project = {
+        name: "Project",
+        slug: "PROJ",
+        columns: [
+          {
+            id: "custom-done",
+            slug: "done",
+            name: "Waiting for work",
+            isFinal: false,
+            icon: "Clock",
+            tasks: [
+              { ...task("task", "2026-09-01", "2026-09-03"), status: "done" },
+            ],
+          },
+          {
+            id: "custom-progress",
+            slug: "in-progress",
+            name: "Already shipped",
+            isFinal: true,
+            icon: "CheckCircle2",
+            tasks: [
+              {
+                ...task("bug", "2026-09-03", "2026-09-05", { type: "bug" }),
+                status: "in-progress",
+              },
+            ],
+          },
+        ],
+        plannedTasks: [],
+        archivedTasks: [],
+      };
+      const { container } = show();
+      const milestoneRow = container.querySelector<HTMLElement>(
+        '[data-gantt-row="milestone:checkout"]',
+      );
+      expect(milestoneRow).toBeInTheDocument();
+      expect(
+        milestoneRow?.querySelector("[data-gantt-rail] button"),
+      ).toHaveTextContent(`${status}tasks:milestones.title`);
+      expect(milestoneRow).not.toHaveTextContent("Waiting for work");
+      expect(milestoneRow).not.toHaveTextContent("Already shipped");
+      expect(milestoneRow?.querySelector("svg.lucide-clock")).toBeNull();
+      expect(
+        milestoneRow?.querySelector("svg.lucide-circle-check-big"),
+      ).toBeNull();
+      // Task/Bug status presentation and plain scheduling bars stay unchanged.
+      for (const [id, expected] of [
+        ["task", "done"],
+        ["bug", "in-progress"],
+      ]) {
+        const row = container.querySelector<HTMLElement>(
+          `[data-gantt-row="${id}"]`,
+        );
+        expect(
+          row?.querySelector("[data-gantt-rail] button"),
+        ).toHaveTextContent(`${expected}PROJ-1`);
+        expect(
+          row?.querySelector('[data-gantt-bar="task"]'),
+        ).toBeInTheDocument();
+      }
+    },
+  );
   it("shows undated milestone lanes, task membership, and No milestone last", () => {
     const { container } = show();
     expect(
@@ -457,13 +532,10 @@ describe("Gantt milestone planning gestures", () => {
       expect(inLane(container, "milestone:checkout", "cart")).toBe(true),
     );
   });
-  it("moves only a milestone's explicit dates without touching linked work", () => {
+  it("does not reschedule a milestone through a horizontal drag", () => {
     const { container } = show();
     drag(milestoneBar(container, "checkout"), { dx: 88 });
-    expect(m.updateMilestone).toHaveBeenCalledWith("checkout", {
-      startDate: "2026-09-03",
-      endDate: "2026-09-12",
-    });
+    expect(m.updateMilestone).not.toHaveBeenCalled();
     expect(m.update).not.toHaveBeenCalled();
     expect(m.assignment).not.toHaveBeenCalled();
   });
@@ -535,7 +607,7 @@ describe("Gantt milestone planning gestures", () => {
     fireEvent.click(toggle);
     expect(alice.querySelector('[data-gantt-row="cart"]')).toBeInTheDocument();
   });
-  it("saves a header milestone's dates and lead without editing linked work", () => {
+  it("changes only the lead during a diagonal header milestone drag", () => {
     m.groupBy = "assignee";
     const { container } = show();
     const bar = milestoneBar(container, "checkout");
@@ -547,28 +619,76 @@ describe("Gantt milestone planning gestures", () => {
     });
     expect(m.updateMilestone).toHaveBeenCalledWith("checkout", {
       leadId: "u2",
-      startDate: "2026-09-03",
-      endDate: "2026-09-12",
     });
     expect(m.update).not.toHaveBeenCalled();
     expect(m.updateAssignee).not.toHaveBeenCalled();
     expect(m.assignment).not.toHaveBeenCalled();
   });
-  it("resizes only a milestone and keeps linked work dates", () => {
+  it("can reassign a milestone lead when its derived span is clipped", () => {
+    m.groupBy = "assignee";
+    m.milestones = [
+      milestone("checkout", {
+        startDate: "1999-01-01",
+        endDate: "2035-12-31",
+      }),
+    ];
+    const { container } = show();
+    const bar = milestoneBar(container, "checkout");
+    expect(
+      bar
+        .closest("[data-gantt-bar]")
+        ?.querySelector("[data-gantt-summary-tip]"),
+    ).toBeNull();
+    drag(bar, { dx: 88, dy: 60, over: lane(container, "member:u2") });
+    expect(m.updateMilestone).toHaveBeenCalledWith("checkout", {
+      leadId: "u2",
+    });
+    expect(m.update).not.toHaveBeenCalled();
+    expect(m.updateAssignee).not.toHaveBeenCalled();
+  });
+  it("keeps newly derived dates visible while a milestone lead save is pending", async () => {
+    m.groupBy = "assignee";
+    let complete!: () => void;
+    m.updateMilestone.mockReturnValue(
+      new Promise<void>((resolve) => {
+        complete = resolve;
+      }),
+    );
+    const { container, rerender } = show();
+    const initialColumns = milestoneBar(
+      container,
+      "checkout",
+    ).closest<HTMLElement>("[data-gantt-bar]")!.style.gridColumn;
+    drag(milestoneBar(container, "checkout"), {
+      dy: 60,
+      over: lane(container, "member:u2"),
+    });
+    m.milestones = m.milestones.map((item) =>
+      item.id === "checkout"
+        ? { ...item, startDate: "2026-09-03", endDate: "2026-09-12" }
+        : item,
+    );
+    const Component = m.component;
+    rerender(<Component />);
+    const updatedBar = milestoneBar(container, "checkout");
+    expect(
+      updatedBar.closest<HTMLElement>("[data-gantt-bar]")!.style.gridColumn,
+    ).not.toBe(initialColumns);
+    expect(lane(container, "member:u2")).toContainElement(updatedBar);
+    await act(async () => complete());
+  });
+  it("does not expose milestone resize controls", () => {
     const { container } = show();
     const row = container.querySelector<HTMLElement>(
       '[data-gantt-row="milestone:checkout"]',
     );
     if (!row) throw new Error("missing milestone row");
-    const handle = within(row).getByRole("button", {
-      name: "tasks:gantt.resizeDue",
-    });
-    drag(handle, { dx: 88 });
-    expect(m.updateMilestone).toHaveBeenCalledWith("checkout", {
-      startDate: "2026-09-01",
-      endDate: "2026-09-12",
-    });
-    expect(m.update).not.toHaveBeenCalled();
+    expect(
+      within(row).queryByRole("button", { name: "tasks:gantt.resizeDue" }),
+    ).toBeNull();
+    expect(
+      within(row).queryByRole("button", { name: "tasks:gantt.resizeStart" }),
+    ).toBeNull();
   });
   it("links Bugs using the same ownership rules as Tasks", () => {
     setTasks(

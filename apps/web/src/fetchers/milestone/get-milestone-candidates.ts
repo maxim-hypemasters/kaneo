@@ -6,6 +6,9 @@ export type MilestoneCandidate = {
   number: number | null;
   type: "task" | "bug";
   milestoneId: string | null;
+  status?: string | null;
+  startDate?: string | null;
+  dueDate?: string | null;
 };
 export type MilestoneCandidates = {
   projectSlug: string;
@@ -57,6 +60,9 @@ export async function getMilestoneCandidates(
       number: task.number,
       type: task.type,
       milestoneId: task.milestoneId,
+      status: task.status,
+      startDate: task.startDate,
+      dueDate: task.dueDate,
     });
   }
   return {

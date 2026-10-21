@@ -17,6 +17,10 @@ import { MilestonePlanningFields } from "./milestone-planning-fields";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import type { MilestoneInput } from "@/fetchers/milestone/milestones";
 import type { Milestone } from "@/fetchers/milestone/milestones";
+import { useMilestoneCandidates } from "@/hooks/queries/milestone/use-milestone-candidates";
+import { deriveMilestoneDates } from "./derive-milestone-dates";
+import { deriveMilestoneStatus } from "./derive-milestone-status";
+import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 export function MilestoneDialog({
   projectId,
   featureId,
@@ -33,24 +37,31 @@ export function MilestoneDialog({
   const { data: workspace } = useActiveWorkspace();
   const [planning, setPlanning] = useState<MilestoneInput>({
     leadId: milestone?.leadId ?? null,
-    status: milestone?.status,
     priority: milestone?.priority ?? "no-priority",
     releaseId: milestone?.releaseId ?? null,
-    startDate: milestone?.startDate ?? null,
-    endDate: milestone?.endDate ?? null,
   });
-  const startDate = planning.startDate ?? "";
-  const endDate = planning.endDate ?? "";
-  const invalidRange = Boolean(startDate && endDate && startDate > endDate);
   const [error, setError] = useState<"save" | "selection" | null>(null);
   const [taskIds, setTaskIds] = useState<string[]>([]);
+  const selectedTaskIds = new Set(taskIds);
+  const candidates = useMilestoneCandidates(
+    projectId,
+    milestone ? "" : featureId,
+  );
+  const columns = useGetColumns(projectId);
+  const selectedTasks =
+    candidates.data?.tasks.filter((task) => selectedTaskIds.has(task.id)) ?? [];
+  const dates =
+    milestone ??
+    deriveMilestoneDates(
+      selectedTasks,
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
+    );
   const [hasUnavailableTasks, setHasUnavailableTasks] = useState(false);
   const mutations = useMilestoneMutations(projectId, featureId);
   const pending = mutations.create.isPending || mutations.update.isPending;
   const valid =
     title.trim().length > 0 &&
     title.trim().length <= 255 &&
-    !invalidRange &&
     !hasUnavailableTasks;
   return (
     <Dialog
@@ -103,6 +114,7 @@ export function MilestoneDialog({
             <label className="flex flex-col gap-1.5 text-sm">
               {t("tasks:milestones.titleLabel")}
               <Input
+                type="text"
                 autoFocus
                 disabled={pending}
                 required
@@ -116,25 +128,38 @@ export function MilestoneDialog({
               workspaceId={workspace?.id ?? ""}
               milestone={{
                 leadId: planning.leadId ?? null,
-                status: planning.status ?? "",
+                status:
+                  milestone?.status ??
+                  (selectedTasks.length > 0 &&
+                  !columns.data &&
+                  columns.isPending
+                    ? ""
+                    : deriveMilestoneStatus(selectedTasks, columns.data ?? [])),
                 priority: planning.priority ?? "no-priority",
                 releaseId: planning.releaseId ?? null,
-                startDate,
-                endDate,
+                startDate: dates.startDate,
+                endDate: dates.endDate,
               }}
               pending={pending}
               onChange={(value) =>
                 setPlanning((current) => ({ ...current, ...value }))
               }
             />
-            {invalidRange && (
-              <p
-                id="milestone-date-range-error"
+            {!milestone && columns.isError && (
+              <div
                 role="alert"
-                className="text-sm text-destructive-foreground"
+                className="flex items-center justify-between gap-2 text-sm"
               >
-                {t("tasks:milestones.invalidDateRange")}
-              </p>
+                <p>{t("common:error.title")}</p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => void columns.refetch()}
+                >
+                  {t("common:error.tryAgain")}
+                </Button>
+              </div>
             )}
             {!milestone && (
               <MilestoneTaskPicker

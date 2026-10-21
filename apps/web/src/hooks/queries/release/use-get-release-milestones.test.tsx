@@ -25,18 +25,19 @@ afterEach(cleanup);
 
 describe("useGetReleaseMilestones", () => {
   it("shares the project milestone prefix while keeping releases distinct", () => {
-    renderHook(() => useGetReleaseMilestones("p", "r"));
+    renderHook(() => useGetReleaseMilestones("p", "r", "Europe/Belgrade"));
     const options = mocks.query.mock.calls[0][0];
     expect(options).toMatchObject({
-      queryKey: ["feature-milestones", "p", "release", "r"],
+      queryKey: ["feature-milestones", "p", "release", "r", "Europe/Belgrade"],
       enabled: true,
       staleTime: 30_000,
       refetchOnMount: true,
     });
     expect(releaseMilestonesKey("p", "other")).not.toEqual(options.queryKey);
     expect(releaseMilestonesKey("other", "r")).not.toEqual(options.queryKey);
+    expect(releaseMilestonesKey("p", "r", "UTC")).not.toEqual(options.queryKey);
     options.queryFn();
-    expect(mocks.get).toHaveBeenCalledExactlyOnceWith("r");
+    expect(mocks.get).toHaveBeenCalledExactlyOnceWith("r", "Europe/Belgrade");
   });
 
   it.each([

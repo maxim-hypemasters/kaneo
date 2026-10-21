@@ -133,7 +133,7 @@ A [Feature](/core/functional/plan-and-execute-tasks#group-work-into-features) is
 
 ### Milestones
 
-Milestone tools manage Feature-owned planning units with lead, workflow status, priority, release and dates. `list_project_milestones` returns paginated project summaries for scheduling without one request per Feature. `set_task_milestone` changes membership within the Task/Bug's existing Feature. Lead changes require assignment permission; management requires task update permission. Manual status is separate from calculated linked-work progress.
+Milestone tools manage Feature-owned planning units with lead, workflow status, priority, release and dates. `list_project_milestones` returns paginated project summaries for scheduling without one request per Feature. `set_task_milestone` changes membership within the Task/Bug's existing Feature. Lead changes require assignment permission; management requires task update permission. Milestone status and dates are read-only and derived from nonarchived linked Tasks/Bugs. All eligible work Done means Done; any active or completed work means In Progress; otherwise To Do, including empty milestones. Status ignores filters and release boundaries; progress keeps its existing counting rules.
 
 ### Releases
 

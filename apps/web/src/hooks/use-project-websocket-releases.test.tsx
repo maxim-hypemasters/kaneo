@@ -75,7 +75,7 @@ const columnCalls = () =>
   mocks.client.invalidateQueries.mock.calls.filter(
     ([filters]) => filters?.queryKey?.[0] === "columns",
   );
-// Invalidations that read the list again, and those that only mark it stale.
+// Release execution totals are authoritative, including derived milestones.
 const releasesRefreshes = () =>
   releaseCalls().filter(([filters]) => filters.refetchType !== "none").length;
 const releasesMarkedStale = () =>
@@ -133,6 +133,29 @@ afterEach(() => {
 });
 
 describe("release list realtime", () => {
+  it("refetches mounted release execution totals once after a remote task burst", async () => {
+    const key = ["releases", "p"];
+    milestoneCache.setQueryData(key, [{ id: "r", completedMilestones: 0 }]);
+    const read = vi
+      .fn()
+      .mockResolvedValue([{ id: "r", completedMilestones: 1 }]);
+    const observer = new QueryObserver(milestoneCache, {
+      queryKey: key,
+      queryFn: read,
+      staleTime: Infinity,
+    });
+    const unsubscribe = observer.subscribe(() => {});
+    renderHook(() => useProjectWebSocket("p"));
+    expect(read).not.toHaveBeenCalled();
+    Socket.current.message("TASK_UPDATED", { taskId: "a", windowId: "other" });
+    Socket.current.message("TASK_UPDATED", { taskId: "b", windowId: "other" });
+    await vi.advanceTimersByTimeAsync(300);
+    expect(read).toHaveBeenCalledOnce();
+    expect(observer.getCurrentResult().data).toEqual([
+      { id: "r", completedMilestones: 1 },
+    ]);
+    unsubscribe();
+  });
   it("refreshes Feature-linked work and the library after coalesced task and label updates", () => {
     mocks.client.getQueryData.mockImplementation((key: unknown[]) =>
       key[0] === "project-features" ? [{ id: "f" }] : undefined,
@@ -324,23 +347,23 @@ describe("release list realtime", () => {
     "TASK_DELETED",
     "TASK_MOVED",
     "PROJECT_UPDATED",
-  ])("only marks the release list stale on %s", (type) => {
+  ])("refreshes derived milestone totals in the release list on %s", (type) => {
     renderHook(() => useProjectWebSocket("p"));
     Socket.current.message(type, { taskId: "a" });
     vi.advanceTimersByTime(300);
-    expect(releasesMarkedStale()).toBe(1);
-    expect(releasesRefreshes()).toBe(0);
+    expect(releasesMarkedStale()).toBe(0);
+    expect(releasesRefreshes()).toBe(1);
     expect(progressCalls()).toHaveLength(1);
   });
 
-  it("only marks it stale after a reorder, which can change statuses", () => {
+  it("refreshes milestone totals after a reorder that changes statuses", () => {
     renderHook(() => useProjectWebSocket("p"));
     Socket.current.message("TASKS_REORDERED", {
       tasks: [{ id: "a", position: 1, status: "todo" }],
     });
     vi.advanceTimersByTime(300);
-    expect(releasesMarkedStale()).toBe(1);
-    expect(releasesRefreshes()).toBe(0);
+    expect(releasesMarkedStale()).toBe(0);
+    expect(releasesRefreshes()).toBe(1);
     expect(progressCalls()).toHaveLength(1);
   });
 
@@ -351,9 +374,18 @@ describe("release list realtime", () => {
     });
     vi.advanceTimersByTime(300);
     expect(progressCalls()).toEqual([]);
+    expect(releaseCalls()).toEqual([]);
   });
 
-  it.each(["TASK_LABEL_UPDATED", "COMMENT_UPDATED", "TASK_RELATION_UPDATED"])(
+  it("refreshes milestone totals when legacy relation writes change membership", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("TASK_RELATION_UPDATED", { taskId: "a" });
+    vi.advanceTimersByTime(300);
+    expect(releasesRefreshes()).toBe(1);
+    expect(progressCalls()).toEqual([]);
+  });
+
+  it.each(["TASK_LABEL_UPDATED", "COMMENT_UPDATED"])(
     "leaves it alone on %s",
     (type) => {
       renderHook(() => useProjectWebSocket("p"));
@@ -375,11 +407,11 @@ describe("release list realtime", () => {
     expect(progressCalls()).toHaveLength(1);
     Socket.current.message("TASK_UPDATED", { taskId: "g" });
     vi.advanceTimersByTime(300);
-    expect(releasesRefreshes()).toBe(1);
+    expect(releasesRefreshes()).toBe(2);
     expect(progressCalls()).toHaveLength(2);
     Socket.current.message("RELEASES_UPDATED");
     vi.advanceTimersByTime(300);
-    expect(releasesRefreshes()).toBe(2);
+    expect(releasesRefreshes()).toBe(3);
     expect(progressCalls()).toHaveLength(3);
   });
 

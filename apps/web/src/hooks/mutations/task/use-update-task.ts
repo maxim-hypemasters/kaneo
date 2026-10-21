@@ -23,6 +23,9 @@ export function useUpdateTask() {
       void queryClient.invalidateQueries({
         queryKey: ["feature-milestones", variables.projectId],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["releases", variables.projectId],
+      });
       queryClient.invalidateQueries({
         queryKey: ["task", variables.id],
       });

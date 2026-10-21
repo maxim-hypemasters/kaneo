@@ -1,4 +1,5 @@
 import { archiveFeature } from "@/fetchers/task/feature-library";
+import { ArchiveFeatureDialog } from "@/components/features/archive-feature-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -10,7 +11,7 @@ import {
   Unlink2,
   UserRound,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -106,6 +107,7 @@ export default function TaskCardContextMenuContent({
   const canAssign = canAssignTasks();
 
   const isFeature = task.type === "feature";
+  const [isArchiveFeatureOpen, setIsArchiveFeatureOpen] = useState(false);
 
   const usersOptions = useMemo(() => {
     return projectMembers?.map((member) => ({
@@ -195,232 +197,250 @@ export default function TaskCardContextMenuContent({
   };
 
   return (
-    <ContextMenuContent className="w-46">
-      <ContextMenuItem className="[&>svg]:mx-0" onClick={handleCopyTaskLink}>
-        <LinkIcon className="size-3.5 text-muted-foreground" />
-        <span>{t("tasks:contextMenu.copyLink")}</span>
-      </ContextMenuItem>
+    <>
+      <ContextMenuContent className="w-46">
+        <ContextMenuItem className="[&>svg]:mx-0" onClick={handleCopyTaskLink}>
+          <LinkIcon className="size-3.5 text-muted-foreground" />
+          <span>{t("tasks:contextMenu.copyLink")}</span>
+        </ContextMenuItem>
 
-      {(canEdit || canAssign) && <ContextMenuSeparator />}
+        {(canEdit || canAssign) && <ContextMenuSeparator />}
 
-      {canEdit && !isFeature && (
-        <ContextMenuSub>
-          <ContextMenuSubTrigger>
-            <PriorityGlyph priority="high" />
-            <span>{t("tasks:priority.label")}</span>
-          </ContextMenuSubTrigger>
-          <ContextMenuSubContent className="w-48">
-            <ContextMenuCheckboxItem
-              key="no-priority"
-              checked={task.priority === "no-priority"}
-              onCheckedChange={() => handleChange("priority", "no-priority")}
-              closeOnClick
-              className="[&_svg]:text-muted-foreground"
-            >
-              {getPriorityIcon("no-priority")}
-              <span>{getPriorityLabel("no-priority")}</span>
-            </ContextMenuCheckboxItem>
-            {["low", "medium", "high", "urgent"].map((priority) => (
+        {canEdit && !isFeature && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <PriorityGlyph priority="high" />
+              <span>{t("tasks:priority.label")}</span>
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-48">
               <ContextMenuCheckboxItem
-                key={priority}
-                checked={task.priority === priority}
-                onCheckedChange={() => handleChange("priority", priority)}
+                key="no-priority"
+                checked={task.priority === "no-priority"}
+                onCheckedChange={() => handleChange("priority", "no-priority")}
                 closeOnClick
                 className="[&_svg]:text-muted-foreground"
               >
-                {getPriorityIcon(priority)}
-                <span className="capitalize">{getPriorityLabel(priority)}</span>
+                {getPriorityIcon("no-priority")}
+                <span>{getPriorityLabel("no-priority")}</span>
               </ContextMenuCheckboxItem>
-            ))}
-          </ContextMenuSubContent>
-        </ContextMenuSub>
-      )}
-
-      {canEdit && !isFeature && (
-        <ContextMenuSub>
-          <ContextMenuSubTrigger>
-            <CircleDot className="size-3.5 text-muted-foreground" />
-            <span>{t("tasks:status.label")}</span>
-          </ContextMenuSubTrigger>
-          <ContextMenuSubContent className="w-48">
-            {columns.map((col) => (
-              <ContextMenuCheckboxItem
-                key={col.slug}
-                checked={task.status === col.slug}
-                onCheckedChange={() => handleChange("status", col.slug)}
-                closeOnClick
-                className="[&_svg]:text-muted-foreground"
-              >
-                {getColumnIcon(col.slug, col.isFinal, col.icon)}
-                <span>{col.name}</span>
-              </ContextMenuCheckboxItem>
-            ))}
-          </ContextMenuSubContent>
-        </ContextMenuSub>
-      )}
-
-      {canEdit && !isFeature && <DueDateSubmenu task={task} />}
-
-      {canAssign && !isFeature && usersOptions && (
-        <ContextMenuSub>
-          <ContextMenuSubTrigger>
-            <UserRound className="size-3.5 text-muted-foreground" />
-            <span>{t("tasks:assignee.label")}</span>
-          </ContextMenuSubTrigger>
-          <ContextMenuSubContent className="w-48">
-            <ContextMenuCheckboxItem
-              checked={!task.userId}
-              onCheckedChange={() => handleChange("userId", "")}
-              closeOnClick
-            >
-              <div
-                className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
-                title={t("tasks:assignee.unassigned")}
-              >
-                <span className="text-[10px] font-medium text-muted-foreground">
-                  ?
-                </span>{" "}
-              </div>
-              {t("tasks:assignee.unassigned")}
-            </ContextMenuCheckboxItem>
-            {usersOptions.map((user) => (
-              <ContextMenuCheckboxItem
-                key={user.value}
-                checked={task.userId === user.value}
-                onCheckedChange={() => handleChange("userId", user.value ?? "")}
-                closeOnClick
-              >
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-                  <AvatarFallback className="text-xs font-medium border border-border/30">
-                    {getInitials(user.name)}
-                  </AvatarFallback>
-                </Avatar>
-
-                {user.label}
-              </ContextMenuCheckboxItem>
-            ))}
-          </ContextMenuSubContent>
-        </ContextMenuSub>
-      )}
-
-      {canEdit && (
-        <>
-          <ContextMenuSeparator />
-          {(["task", "bug"] as const)
-            .filter((type) => !isFeature && type !== (task.type ?? "task"))
-            .map((type) => (
-              <ContextMenuItem
-                key={type}
-                className="[&>svg]:mx-0"
-                onClick={() => void handleConvert(type)}
-              >
-                <TaskTypeGlyph
-                  type={type}
-                  decorative
-                  className="size-3.5 text-muted-foreground"
-                />
-                <span>{t(TASK_TYPE_CONVERSIONS[type])}</span>
-              </ContextMenuItem>
-            ))}
-          {task.featureId && (
-            <ContextMenuItem
-              className="[&>svg]:mx-0"
-              onClick={handleRemoveFromFeature}
-            >
-              <Unlink2 className="size-3.5 text-muted-foreground" />
-              <span>{t("tasks:features.remove")}</span>
-            </ContextMenuItem>
-          )}
-        </>
-      )}
-
-      {(canCreate || canEdit || canDelete) && (
-        <>
-          {(canCreate || canEdit) && (
-            <>
-              <ContextMenuSeparator />
-
-              {canCreate && (
-                <ContextMenuItem
-                  className="[&>svg]:mx-0"
-                  onClick={handleDuplicateTask}
+              {["low", "medium", "high", "urgent"].map((priority) => (
+                <ContextMenuCheckboxItem
+                  key={priority}
+                  checked={task.priority === priority}
+                  onCheckedChange={() => handleChange("priority", priority)}
+                  closeOnClick
+                  className="[&_svg]:text-muted-foreground"
                 >
-                  <Copy className="size-3.5 text-muted-foreground" />
-                  <span>{t("tasks:actions.duplicate")}</span>
-                </ContextMenuItem>
-              )}
+                  {getPriorityIcon(priority)}
+                  <span className="capitalize">
+                    {getPriorityLabel(priority)}
+                  </span>
+                </ContextMenuCheckboxItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
 
-              {canEdit && (
-                <>
+        {canEdit && !isFeature && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <CircleDot className="size-3.5 text-muted-foreground" />
+              <span>{t("tasks:status.label")}</span>
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-48">
+              {columns.map((col) => (
+                <ContextMenuCheckboxItem
+                  key={col.slug}
+                  checked={task.status === col.slug}
+                  onCheckedChange={() => handleChange("status", col.slug)}
+                  closeOnClick
+                  className="[&_svg]:text-muted-foreground"
+                >
+                  {getColumnIcon(col.slug, col.isFinal, col.icon)}
+                  <span>{col.name}</span>
+                </ContextMenuCheckboxItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
+
+        {canEdit && !isFeature && <DueDateSubmenu task={task} />}
+
+        {canAssign && !isFeature && usersOptions && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <UserRound className="size-3.5 text-muted-foreground" />
+              <span>{t("tasks:assignee.label")}</span>
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-48">
+              <ContextMenuCheckboxItem
+                checked={!task.userId}
+                onCheckedChange={() => handleChange("userId", "")}
+                closeOnClick
+              >
+                <div
+                  className="w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center"
+                  title={t("tasks:assignee.unassigned")}
+                >
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    ?
+                  </span>{" "}
+                </div>
+                {t("tasks:assignee.unassigned")}
+              </ContextMenuCheckboxItem>
+              {usersOptions.map((user) => (
+                <ContextMenuCheckboxItem
+                  key={user.value}
+                  checked={task.userId === user.value}
+                  onCheckedChange={() =>
+                    handleChange("userId", user.value ?? "")
+                  }
+                  closeOnClick
+                >
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
+                    <AvatarFallback className="text-xs font-medium border border-border/30">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  {user.label}
+                </ContextMenuCheckboxItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
+
+        {canEdit && (
+          <>
+            <ContextMenuSeparator />
+            {(["task", "bug"] as const)
+              .filter((type) => !isFeature && type !== (task.type ?? "task"))
+              .map((type) => (
+                <ContextMenuItem
+                  key={type}
+                  className="[&>svg]:mx-0"
+                  onClick={() => void handleConvert(type)}
+                >
+                  <TaskTypeGlyph
+                    type={type}
+                    decorative
+                    className="size-3.5 text-muted-foreground"
+                  />
+                  <span>{t(TASK_TYPE_CONVERSIONS[type])}</span>
+                </ContextMenuItem>
+              ))}
+            {task.featureId && (
+              <ContextMenuItem
+                className="[&>svg]:mx-0"
+                onClick={handleRemoveFromFeature}
+              >
+                <Unlink2 className="size-3.5 text-muted-foreground" />
+                <span>{t("tasks:features.remove")}</span>
+              </ContextMenuItem>
+            )}
+          </>
+        )}
+
+        {(canCreate || canEdit || canDelete) && (
+          <>
+            {(canCreate || canEdit) && (
+              <>
+                <ContextMenuSeparator />
+
+                {canCreate && (
                   <ContextMenuItem
                     className="[&>svg]:mx-0"
-                    onClick={async () => {
-                      if (!isFeature) {
-                        void handleChange("status", "archived");
-                        return;
-                      }
-                      try {
-                        await archiveFeature(task.id, !task.archivedAt);
-                        for (const queryKey of [
-                          ["task", task.id],
-                          ["project-features", task.projectId],
-                          ["feature-library", task.projectId],
-                          ["activities", task.id],
-                        ])
-                          void queryClient.invalidateQueries({ queryKey });
-                      } catch (error) {
-                        toast.error(
-                          error instanceof Error
-                            ? error.message
-                            : t("tasks:features.library.saveError"),
-                        );
-                      }
-                    }}
+                    onClick={handleDuplicateTask}
                   >
-                    <Archive className="size-3.5 text-muted-foreground" />
-                    <span>
-                      {t(
-                        isFeature && task.archivedAt
-                          ? "tasks:features.library.restore"
-                          : "tasks:actions.archive",
-                      )}
-                    </span>
+                    <Copy className="size-3.5 text-muted-foreground" />
+                    <span>{t("tasks:actions.duplicate")}</span>
                   </ContextMenuItem>
-                  {!isFeature && task.status !== "planned" && (
+                )}
+
+                {canEdit && (
+                  <>
                     <ContextMenuItem
                       className="[&>svg]:mx-0"
-                      onClick={() => handleChange("status", "planned")}
+                      onClick={async () => {
+                        if (!isFeature) {
+                          void handleChange("status", "archived");
+                          return;
+                        }
+                        if (!task.archivedAt) {
+                          setIsArchiveFeatureOpen(true);
+                          return;
+                        }
+                        try {
+                          await archiveFeature(task.id, false);
+                          for (const queryKey of [
+                            ["task", task.id],
+                            ["project-features", task.projectId],
+                            ["feature-library", task.projectId],
+                            ["activities", task.id],
+                          ])
+                            void queryClient.invalidateQueries({ queryKey });
+                        } catch (error) {
+                          toast.error(
+                            error instanceof Error
+                              ? error.message
+                              : t("tasks:features.library.saveError"),
+                          );
+                        }
+                      }}
                     >
-                      <Clock className="size-3.5 text-muted-foreground" />
-                      <span>{t("tasks:actions.markAsPlanned")}</span>
+                      <Archive className="size-3.5 text-muted-foreground" />
+                      <span>
+                        {t(
+                          isFeature && task.archivedAt
+                            ? "tasks:features.library.restore"
+                            : "tasks:actions.archive",
+                        )}
+                      </span>
                     </ContextMenuItem>
-                  )}
-                </>
-              )}
-            </>
-          )}
+                    {!isFeature && task.status !== "planned" && (
+                      <ContextMenuItem
+                        className="[&>svg]:mx-0"
+                        onClick={() => handleChange("status", "planned")}
+                      >
+                        <Clock className="size-3.5 text-muted-foreground" />
+                        <span>{t("tasks:actions.markAsPlanned")}</span>
+                      </ContextMenuItem>
+                    )}
+                  </>
+                )}
+              </>
+            )}
 
-          {canDelete && (
-            <>
-              <ContextMenuSeparator />
+            {canDelete && (
+              <>
+                <ContextMenuSeparator />
 
-              <ContextMenuItem
-                className="text-destructive [&>svg]:mx-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setTimeout(() => {
-                    onDeleteClick();
-                  }, 0);
-                }}
-              >
-                <Trash2 className="size-3.5" />
-                <span>{t("tasks:actions.delete")}</span>
-              </ContextMenuItem>
-            </>
-          )}
-        </>
-      )}
-    </ContextMenuContent>
+                <ContextMenuItem
+                  className="text-destructive [&>svg]:mx-0"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setTimeout(() => {
+                      onDeleteClick();
+                    }, 0);
+                  }}
+                >
+                  <Trash2 className="size-3.5" />
+                  <span>{t("tasks:actions.delete")}</span>
+                </ContextMenuItem>
+              </>
+            )}
+          </>
+        )}
+      </ContextMenuContent>
+      <ArchiveFeatureDialog
+        feature={
+          isFeature && isArchiveFeatureOpen
+            ? { id: task.id, title: task.title, projectId: task.projectId }
+            : null
+        }
+        onOpenChange={setIsArchiveFeatureOpen}
+      />
+    </>
   );
 }

@@ -5,13 +5,17 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { FeatureLibraryPage } from "./feature-library-page";
 const mocks = vi.hoisted(() => ({ read: vi.fn(), archive: vi.fn() }));
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({
+    t: (key: string, options?: { title?: string }) =>
+      options?.title ? `${key} ${options.title}` : key,
+  }),
 }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, ...props }: { children: ReactNode }) => (
@@ -83,7 +87,7 @@ describe("Feature library", () => {
       expect(mocks.read).toHaveBeenCalledWith("p", "Battle", true, 1),
     );
   });
-  it("archives through the explicit Feature operation and refreshes both Feature caches", async () => {
+  it("only archives after confirmation and refreshes Feature caches", async () => {
     mocks.read.mockResolvedValue(page);
     mocks.archive.mockResolvedValue({});
     const cache = view();
@@ -93,7 +97,17 @@ describe("Feature library", () => {
         name: "tasks:features.library.archive",
       }),
     );
+    const dialog = await screen.findByRole("alertdialog", {
+      name: "tasks:features.library.archiveDialogTitle Battle knowledge",
+    });
+    expect(mocks.archive).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "tasks:features.library.archive",
+      }),
+    );
     await waitFor(() => expect(mocks.archive).toHaveBeenCalledWith("f", true));
+    expect(mocks.archive).toHaveBeenCalledTimes(1);
     await waitFor(() =>
       expect(invalidate).toHaveBeenCalledWith({
         queryKey: ["project-features", "p"],
@@ -102,6 +116,69 @@ describe("Feature library", () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: ["feature-library", "p"],
     });
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+    );
+  });
+  it("cancels without archiving the Feature", async () => {
+    mocks.read.mockResolvedValue(page);
+    view();
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "tasks:features.library.archive",
+      }),
+    );
+    fireEvent.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "common:actions.cancel",
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+    );
+    expect(mocks.archive).not.toHaveBeenCalled();
+    expect(screen.getByText("Battle knowledge")).toBeInTheDocument();
+  });
+  it("restores archived Features without an archive confirmation", async () => {
+    mocks.read.mockResolvedValue(page);
+    mocks.archive.mockResolvedValue({});
+    view();
+    await screen.findByText("Battle knowledge");
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:features.library.archived" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "tasks:features.library.restore",
+      }),
+    );
+    await waitFor(() => expect(mocks.archive).toHaveBeenCalledWith("f", false));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+  it("keeps failed archive confirmation open for retry", async () => {
+    mocks.read.mockResolvedValue(page);
+    mocks.archive
+      .mockRejectedValueOnce(new Error("Offline"))
+      .mockResolvedValueOnce({});
+    view();
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "tasks:features.library.archive",
+      }),
+    );
+    const dialog = await screen.findByRole("alertdialog");
+    const confirm = within(dialog).getByRole("button", {
+      name: "tasks:features.library.archive",
+    });
+    fireEvent.click(confirm);
+    await waitFor(() => expect(mocks.archive).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(confirm).toBeEnabled());
+    expect(dialog).toBeInTheDocument();
+    fireEvent.click(confirm);
+    await waitFor(() => expect(mocks.archive).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(),
+    );
   });
   it("keeps a retry action for unavailable knowledge records", async () => {
     mocks.read

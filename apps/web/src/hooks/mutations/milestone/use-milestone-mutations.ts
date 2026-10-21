@@ -107,6 +107,7 @@ export function useSetTaskMilestone(projectId: string, featureId: string) {
       milestoneId: string | null;
     }) => setTaskMilestone(id, milestoneId),
     onSuccess: (_data, { id }) => {
+      void client.invalidateQueries({ queryKey: ["releases", projectId] });
       void client.invalidateQueries({
         queryKey: milestonesKey(projectId),
       });

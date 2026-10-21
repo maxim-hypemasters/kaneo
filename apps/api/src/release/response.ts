@@ -46,7 +46,7 @@ export const releaseWithProgressSchema = releaseSchema
       })
       .openapi({
         description:
-          "The release's execution work and distinct Feature knowledge groups. Tasks and Bugs share the task counts. Milestone completion follows its manual workflow status. Archived execution items count in totals.",
+          "The release's execution work and distinct Feature knowledge groups. Tasks and Bugs share the task counts. A milestone is completed when its nonempty linked nonarchived work is all Done, across all releases. Archived Tasks/Bugs remain in task totals.",
       }),
   })
   .openapi("ReleaseWithProgress");
@@ -61,12 +61,22 @@ export const releaseMilestoneSchema = z
     position: z.number().int(),
     featureTitle: z.string(),
     leadId: z.string().nullable(),
-    status: z.string(),
-    columnId: z.string().nullable(),
+    status: z
+      .enum(["to-do", "in-progress", "done"])
+      .openapi({ readOnly: true }),
+    columnId: z.null().openapi({ readOnly: true }),
     priority: z.string(),
     releaseId: z.string().nullable(),
-    startDate: day.nullable(),
-    endDate: day.nullable(),
+    startDate: day.nullable().openapi({
+      readOnly: true,
+      description:
+        "Earliest scheduled day of all linked nonarchived Tasks/Bugs in the requested timezone.",
+    }),
+    endDate: day.nullable().openapi({
+      readOnly: true,
+      description:
+        "Latest scheduled day of all linked nonarchived Tasks/Bugs in the requested timezone.",
+    }),
   })
   .openapi("ReleaseMilestone");
 

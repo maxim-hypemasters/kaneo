@@ -3543,8 +3543,8 @@
 			"milestones": {
 				"assigneeLead": "Assignee / Milestone Lead",
 				"bar": {
-					"ariaLabel": "Milestone {{title}}: open or drag to reschedule",
-					"ariaLabelGrouped": "Milestone {{title}}: open, or drag to reschedule or change lead",
+					"ariaLabel": "Milestone {{title}}: open details",
+					"ariaLabelGrouped": "Milestone {{title}}: open details or drag to change lead",
 					"progress": "{{completed}}/{{total}}",
 					"progressAria": "{{completed}} of {{count}} completed"
 				},
@@ -3873,7 +3873,10 @@
 				"search": "Search features…",
 				"title": "Features",
 				"activityArchived": "archived this Feature",
-				"activityRestored": "restored this Feature"
+				"activityRestored": "restored this Feature",
+				"archiveDialogDescription": "The Feature will move to Archived. Its milestones, Tasks, and Bugs keep their current state. You can restore it later.",
+				"archiveDialogTitle": "Archive “{{title}}”?",
+				"archiving": "Archiving…"
 			}
 		},
 		"releases": {
@@ -4115,7 +4118,6 @@
 			"dateRange": "{{start}} – {{end}}",
 			"endDate": "End date",
 			"endsOn": "Ends {{date}}",
-			"invalidDateRange": "End date must be on or after the start date.",
 			"startDate": "Start date",
 			"startsOn": "Starts {{date}}",
 			"clearTasks": "Clear selection",
@@ -4130,8 +4132,6 @@
 			"taskSelectionChanged": "Some selected work changed. Review the refreshed list and try again. No milestone or assignments were saved.",
 			"unavailableTasks": "Some selected work is no longer available. Remove it from the selection before saving.",
 			"noUnassignedTasks": "No Tasks or Bugs available to link.",
-			"clearEndDate": "Clear end date",
-			"endDatePlaceholder": "Set end date…",
 			"activityCompleted": "completed milestone “{{title}}”",
 			"activityCreated": "created milestone “{{title}}”",
 			"activityDeleted": "deleted milestone “{{title}}”",

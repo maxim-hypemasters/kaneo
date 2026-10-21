@@ -1,12 +1,12 @@
 import {
-  milestoneStatusIsDone,
+  assertReadonlyMilestoneStatus,
   moveMilestoneFollowers,
   recordMilestoneActivity,
   resolveMilestonePlanning,
   type MilestonePlanningFields,
 } from "./planning";
 import { linkSelectedMilestoneTasks } from "./link-selected-tasks";
-import { assertMilestoneDates } from "./dates";
+import { assertReadonlyMilestoneDates } from "./dates";
 import { lockAuthorizedProject } from "./access-scope";
 import { asc, eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -20,8 +20,6 @@ import { readMilestone, readMilestones } from "./read-milestones";
 type Fields = MilestonePlanningFields & {
   title: string;
   description?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
 };
 async function lockOwner(
   tx: MilestoneTransaction,
@@ -71,7 +69,10 @@ export async function createMilestone(
   userId: string,
   expectedProjectId?: string,
   expectedWorkspaceId?: string,
+  timeZone = "UTC",
 ) {
+  assertReadonlyMilestoneDates(fields);
+  assertReadonlyMilestoneStatus(fields);
   const { taskIds = [], ...metadata } = fields;
   if (new Set(taskIds).size !== taskIds.length)
     throw new HTTPException(400, { message: "Task ids must be unique" });
@@ -83,12 +84,10 @@ export async function createMilestone(
         expectedProjectId,
         expectedWorkspaceId,
       );
-      assertMilestoneDates(metadata);
       const planning = await resolveMilestonePlanning(
         tx,
         feature.projectId,
         metadata,
-        true,
       );
       const [last] = await tx
         .select({
@@ -122,7 +121,13 @@ export async function createMilestone(
         userId,
       );
       return {
-        milestone: await readMilestone(created.id, tx),
+        milestone: await readMilestone(
+          created.id,
+          tx,
+          undefined,
+          undefined,
+          timeZone,
+        ),
         projectId: feature.projectId,
         ...linked,
       };
@@ -153,7 +158,10 @@ export async function updateMilestone(
   userId: string,
   expectedProjectId?: string,
   expectedWorkspaceId?: string,
+  timeZone = "UTC",
 ) {
+  assertReadonlyMilestoneDates(fields);
+  assertReadonlyMilestoneStatus(fields);
   const result = await retryTransaction(() =>
     db.transaction(async (tx) => {
       const featureId = await ownerId(tx, id);
@@ -170,12 +178,6 @@ export async function updateMilestone(
         .for("update");
       if (!current)
         throw new HTTPException(404, { message: "Milestone not found" });
-      assertMilestoneDates({
-        startDate:
-          fields.startDate === undefined ? current.startDate : fields.startDate,
-        endDate:
-          fields.endDate === undefined ? current.endDate : fields.endDate,
-      });
       const planning = await resolveMilestonePlanning(
         tx,
         feature.projectId,
@@ -211,32 +213,9 @@ export async function updateMilestone(
           ]),
         ),
       );
-      if (
-        current.status !== updated.status ||
-        current.columnId !== updated.columnId
-      ) {
-        const wasDone = await milestoneStatusIsDone(
-          tx,
-          feature.projectId,
-          current,
-        );
-        const isDone = await milestoneStatusIsDone(
-          tx,
-          feature.projectId,
-          updated,
-        );
-        if (wasDone !== isDone)
-          await recordMilestoneActivity(
-            tx,
-            featureId,
-            updated,
-            isDone ? "milestone_completed" : "milestone_reopened",
-            userId,
-          );
-      }
       return {
         movedTaskIds,
-        milestone: await readMilestone(id, tx),
+        milestone: await readMilestone(id, tx, undefined, undefined, timeZone),
         projectId: feature.projectId,
       };
     }),
@@ -317,6 +296,7 @@ export async function reorderMilestones(
   userId: string,
   expectedProjectId?: string,
   expectedWorkspaceId?: string,
+  timeZone = "UTC",
 ) {
   if (new Set(milestoneIds).size !== milestoneIds.length)
     throw new HTTPException(400, { message: "Milestone ids must be unique" });
@@ -346,7 +326,13 @@ export async function reorderMilestones(
           .set({ position })
           .where(eq(milestoneTable.id, id));
       return {
-        milestones: await readMilestones(featureId, tx),
+        milestones: await readMilestones(
+          featureId,
+          tx,
+          undefined,
+          undefined,
+          timeZone,
+        ),
         projectId: feature.projectId,
       };
     }),

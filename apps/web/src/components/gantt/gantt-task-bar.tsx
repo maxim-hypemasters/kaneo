@@ -38,7 +38,7 @@ type GanttTaskBarProps = {
   pixelsPerDay: number;
   isMobile?: boolean;
   // Present only when the bar may be dragged into another lane (assignee or
-  // feature).
+  // milestone). A milestone itself may only change its lead.
   laneDrag?: GanttLaneDrag;
   onCommit: (edit: GanttTaskEdit) => void;
   onOpenTask: () => void;
@@ -83,6 +83,8 @@ export function GanttTaskBar({
   showAssignee = false,
 }: GanttTaskBarProps) {
   const { t } = useTranslation();
+  const isMilestone = task.entityKind === "milestone";
+  const canMoveDates = !isMilestone;
   const noteId = useId();
   const assigneeId = useId();
   const progressId = useId();
@@ -116,8 +118,12 @@ export function GanttTaskBar({
   const endGestureRef = useRef<(() => void) | null>(null);
   useEffect(() => () => endGestureRef.current?.(), []);
 
-  const displayStart = dragDisplay?.start ?? task.scheduleStart;
-  const displayEnd = dragDisplay?.end ?? task.scheduleEnd;
+  const displayStart = canMoveDates
+    ? (dragDisplay?.start ?? task.scheduleStart)
+    : task.scheduleStart;
+  const displayEnd = canMoveDates
+    ? (dragDisplay?.end ?? task.scheduleEnd)
+    : task.scheduleEnd;
 
   const trackCount = timeline.days.length;
   const { barInView, lineStart, lineEnd, clippedStart, clippedEnd } =
@@ -283,13 +289,17 @@ export function GanttTaskBar({
     const originY = event.clientY;
     const initialStart = task.scheduleStart;
     const initialEnd = task.scheduleEnd;
-    if (!startIsVisible || !endIsVisible) {
+    if (canMoveDates && (!startIsVisible || !endIsVisible)) {
       onOpenTask();
       return;
     }
     // Touch drags pan the timeline instead (the browser cancels the
     // gesture), so lanes are only targeted by mouse and pen.
-    const lane = event.pointerType === "touch" ? undefined : laneDrag;
+    const lane =
+      event.pointerType === "touch" ||
+      (isMilestone && laneDrag?.kind !== "assignee")
+        ? undefined
+        : laneDrag;
     const durationDays = differenceInCalendarDays(initialEnd, initialStart);
     const startIdx = differenceInCalendarDays(
       initialStart,
@@ -316,6 +326,10 @@ export function GanttTaskBar({
         : Math.abs(clientX - originX);
 
     const datesFor = (clientX: number) => {
+      if (!canMoveDates) {
+        const current = latestRef.current.task;
+        return { start: current.scheduleStart, end: current.scheduleEnd };
+      }
       const deltaDays = Math.round((clientX - originX) / pxPerDay);
       const maxStart = trackCount - 1 - durationDays;
       const nextStartIdx = Math.max(
@@ -409,7 +423,7 @@ export function GanttTaskBar({
         dragging = true;
         drag.start();
       }
-      setDragDisplay(datesFor(ev.clientX));
+      if (canMoveDates) setDragDisplay(datesFor(ev.clientX));
       syncLane();
     };
 
@@ -440,6 +454,8 @@ export function GanttTaskBar({
       }
       const { start, end: due } = datesFor(ev.clientX);
       const dropLane = target?.droppable ? target : null;
+      if (current.entityKind === "milestone" && dropLane?.kind !== "assignee")
+        return;
       commit({
         start,
         end: due,
@@ -483,9 +499,9 @@ export function GanttTaskBar({
   const barWidthPx = (lineEnd - lineStart) * pxPerDay;
   const labelOutside =
     isMobile && barWidthPx < MIN_INLINE_LABEL_PX && lineEnd <= trackCount;
-  const showResizeHandles = !isMobile || barWidthPx >= MIN_TOUCH_RESIZABLE_PX;
+  const showResizeHandles =
+    canMoveDates && (!isMobile || barWidthPx >= MIN_TOUCH_RESIZABLE_PX);
 
-  const isMilestone = task.entityKind === "milestone";
   const counts = isMilestone ? task.subtaskCounts : undefined;
   const progress =
     counts && counts.total > 0
@@ -592,7 +608,10 @@ export function GanttTaskBar({
           }
           aria-describedby={describedBy}
           className={cn(
-            "relative z-10 min-h-[44px] min-w-0 flex-1 cursor-grab touch-manipulation overflow-hidden px-2 text-left active:cursor-grabbing sm:min-h-0 sm:px-2.5",
+            "relative z-10 min-h-[44px] min-w-0 flex-1 touch-manipulation overflow-hidden px-2 text-left sm:min-h-0 sm:px-2.5",
+            canMoveDates || laneDrag?.kind === "assignee"
+              ? "cursor-grab active:cursor-grabbing"
+              : "cursor-pointer",
             isMilestone && "flex items-center focus-visible:outline-hidden",
           )}
           onPointerDown={handleMovePointerDown}

@@ -5,6 +5,8 @@ import db from "../database";
 import { columnTable, milestoneTable, taskTable } from "../database/schema";
 import type { MilestoneTransaction } from "./membership";
 import { milestoneProgress } from "./progress";
+import { readMilestoneExecution } from "./execution";
+import { milestoneMetadata } from "./metadata";
 
 type ReadDatabase = Pick<MilestoneTransaction, "select">;
 export async function readMilestones(
@@ -12,6 +14,7 @@ export async function readMilestones(
   database: ReadDatabase = db,
   expectedProjectId?: string,
   expectedWorkspaceId?: string,
+  timeZone = "UTC",
 ) {
   await lockAuthorizedProject(database, expectedProjectId, expectedWorkspaceId);
   const [feature] = await database
@@ -60,8 +63,14 @@ export async function readMilestones(
       ),
     )
     .groupBy(taskTable.milestoneId, taskTable.status);
+  const schedules = await readMilestoneExecution(
+    database,
+    feature.projectId,
+    milestones.map((row) => row.id),
+    timeZone,
+  );
   return milestones.map((row) => ({
-    ...row,
+    ...milestoneMetadata(row, schedules.get(row.id)),
     progress: milestoneProgress(
       statuses.filter((status) => status.milestoneId === row.id),
       columns,
@@ -74,6 +83,7 @@ export async function readMilestone(
   database: ReadDatabase = db,
   expectedProjectId?: string,
   expectedWorkspaceId?: string,
+  timeZone = "UTC",
 ) {
   const [row] = await database
     .select({ featureId: milestoneTable.featureId })
@@ -86,6 +96,7 @@ export async function readMilestone(
       database,
       expectedProjectId,
       expectedWorkspaceId,
+      timeZone,
     )
   ).find((milestone) => milestone.id === id);
   if (!found) throw new HTTPException(404, { message: "Milestone not found" });

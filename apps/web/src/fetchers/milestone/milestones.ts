@@ -4,12 +4,9 @@ import { HttpError } from "@/lib/http-error";
 export type MilestoneInput = {
   title?: string;
   leadId?: string | null;
-  status?: string;
   priority?: "no-priority" | "low" | "medium" | "high" | "urgent";
   releaseId?: string | null;
   description?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
 };
 export type MilestoneCreateInput = MilestoneInput & {
   title: string;
@@ -22,6 +19,8 @@ export type Milestone = MilestoneInput & {
   columnId: string | null;
   priority: "no-priority" | "low" | "medium" | "high" | "urgent";
   releaseId: string | null;
+  startDate: string | null;
+  endDate: string | null;
   id: string;
   featureId: string;
   position: number;
@@ -34,28 +33,41 @@ async function result<T>(response: Response): Promise<T> {
   if (!response.ok) throw await HttpError.fromResponse(response);
   return response.json();
 }
-export async function getMilestones(featureId: string): Promise<Milestone[]> {
+export async function getMilestones(
+  featureId: string,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+): Promise<Milestone[]> {
   return result(
-    await client.milestone.feature[":featureId"].$get({ param: { featureId } }),
+    await client.milestone.feature[":featureId"].$get({
+      param: { featureId },
+      query: { timeZone },
+    }),
   );
 }
 export async function createMilestone(
   featureId: string,
   input: MilestoneCreateInput,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
 ): Promise<Milestone> {
   return result(
     await client.milestone.feature[":featureId"].$post({
       param: { featureId },
       json: input,
+      query: { timeZone },
     }),
   );
 }
 export async function updateMilestone(
   id: string,
   input: MilestoneInput,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
 ): Promise<Milestone> {
   return result(
-    await client.milestone[":id"].$patch({ param: { id }, json: input }),
+    await client.milestone[":id"].$patch({
+      param: { id },
+      json: input,
+      query: { timeZone },
+    }),
   );
 }
 export async function deleteMilestone(id: string): Promise<void> {
@@ -65,11 +77,13 @@ export async function deleteMilestone(id: string): Promise<void> {
 export async function reorderMilestones(
   featureId: string,
   milestoneIds: string[],
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
 ): Promise<Milestone[]> {
   return result(
     await client.milestone.feature[":featureId"].order.$put({
       param: { featureId },
       json: { milestoneIds },
+      query: { timeZone },
     }),
   );
 }
@@ -86,11 +100,20 @@ export type MilestoneWithFeature = Milestone & {
   featureTitle: string;
   projectId: string;
 };
-export async function getMilestone(id: string): Promise<Milestone> {
-  return result(await client.milestone[":id"].$get({ param: { id } }));
+export async function getMilestone(
+  id: string,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+): Promise<Milestone> {
+  return result(
+    await client.milestone[":id"].$get({
+      param: { id },
+      query: { timeZone },
+    }),
+  );
 }
 export async function getProjectMilestones(
   projectId: string,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
 ): Promise<MilestoneWithFeature[]> {
   const all: MilestoneWithFeature[] = [];
   let page = 1;
@@ -98,7 +121,7 @@ export async function getProjectMilestones(
   do {
     const response = await client.milestone.project[":projectId"].$get({
       param: { projectId },
-      query: { page: String(page), limit: "100" },
+      query: { page: String(page), limit: "100", timeZone },
     });
     const value = await result<{
       data: MilestoneWithFeature[];

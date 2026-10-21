@@ -5,10 +5,39 @@ import TaskCardContextMenuContent from "./task-card-context-menu-content";
 
 const duplicateTask = vi.fn();
 const canCreateTasks = vi.fn(() => true);
-const { updateTaskType, updateTaskFeature, toastError } = vi.hoisted(() => ({
+const {
+  updateTaskType,
+  updateTaskFeature,
+  updateTaskStatus,
+  archiveFeature,
+  invalidateQueries,
+  toastError,
+} = vi.hoisted(() => ({
   updateTaskType: vi.fn(),
   updateTaskFeature: vi.fn(),
+  updateTaskStatus: vi.fn(),
+  archiveFeature: vi.fn(),
+  invalidateQueries: vi.fn(),
   toastError: vi.fn(),
+}));
+vi.mock("@/fetchers/task/feature-library", () => ({ archiveFeature }));
+vi.mock("@/components/features/archive-feature-dialog", () => ({
+  ArchiveFeatureDialog: ({
+    feature,
+    onOpenChange,
+  }: {
+    feature: { id: string; title: string; projectId: string } | null;
+    onOpenChange: (open: boolean) => void;
+  }) =>
+    feature ? (
+      <div role="alertdialog" aria-label={`Archive ${feature.title}`}>
+        <span>{feature.id}</span>
+        <span>{feature.projectId}</span>
+        <button type="button" onClick={() => onOpenChange(false)}>
+          Cancel archive confirmation
+        </button>
+      </div>
+    ) : null,
 }));
 vi.mock("@/hooks/mutations/task/use-duplicate-task", () => ({
   useDuplicateTask: () => ({ mutate: duplicateTask }),
@@ -92,7 +121,7 @@ vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
 
 vi.mock("@tanstack/react-query", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-query")>()),
-  useQueryClient: () => ({ getQueryData: () => [] }),
+  useQueryClient: () => ({ getQueryData: () => [], invalidateQueries }),
 }));
 
 vi.mock("@/hooks/mutations/task/use-update-task", () => ({
@@ -112,7 +141,7 @@ vi.mock("@/hooks/mutations/task/use-update-task-due-date", () => ({
 }));
 
 vi.mock("@/hooks/mutations/task/use-update-task-status", () => ({
-  useUpdateTaskStatus: () => ({ mutateAsync: vi.fn() }),
+  useUpdateTaskStatus: () => ({ mutateAsync: updateTaskStatus }),
 }));
 
 vi.mock("@/hooks/mutations/task/use-update-task-status-priority", () => ({
@@ -216,6 +245,62 @@ it("hides duplication without task-create permission", () => {
 });
 
 describe("feature actions", () => {
+  it("opens Feature archive confirmation without sending an archive write and allows cancellation", () => {
+    renderTask({ ...task, type: "feature" });
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:actions.archive" }),
+    );
+    const confirmation = screen.getByRole("alertdialog", {
+      name: "Archive Test task",
+    });
+    expect(confirmation).toHaveTextContent(task.id);
+    expect(confirmation).toHaveTextContent(task.projectId);
+    expect(archiveFeature).not.toHaveBeenCalled();
+    expect(updateTaskStatus).not.toHaveBeenCalled();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Cancel archive confirmation" }),
+    );
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(archiveFeature).not.toHaveBeenCalled();
+  });
+
+  it("restores an archived Feature immediately and refreshes its caches", async () => {
+    archiveFeature.mockResolvedValueOnce({});
+    renderTask({
+      ...task,
+      type: "feature",
+      archivedAt: "2026-10-20T00:00:00.000Z",
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:features.library.restore" }),
+    );
+    expect(archiveFeature).toHaveBeenCalledWith(task.id, false);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await vi.waitFor(() =>
+      expect(invalidateQueries).toHaveBeenCalledWith({
+        queryKey: ["feature-library", task.projectId],
+      }),
+    );
+    expect(updateTaskStatus).not.toHaveBeenCalled();
+  });
+
+  it.each(["task", "bug"] as const)(
+    "keeps %s archiving immediate without Feature confirmation",
+    (type) => {
+      const leaf = { ...task, type };
+      renderTask(leaf);
+      fireEvent.click(
+        screen.getByRole("button", { name: "tasks:actions.archive" }),
+      );
+      expect(updateTaskStatus).toHaveBeenCalledWith({
+        ...leaf,
+        status: "archived",
+      });
+      expect(archiveFeature).not.toHaveBeenCalled();
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    },
+  );
+
   it("offers only leaf conversion for Tasks", () => {
     renderTask(task);
     expect(screen.queryByText("tasks:features.convertToFeature")).toBeNull();

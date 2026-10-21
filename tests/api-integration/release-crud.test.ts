@@ -344,24 +344,37 @@ describe("release progress", () => {
     await insertTask(ctx.project.id, { ...inRelease, status: "planned" });
     const feature = await insertTask(ctx.project.id, { type: "feature" });
     const secondFeature = await insertTask(ctx.project.id, { type: "feature" });
-    await db.insert(schema.milestoneTable).values([
-      {
-        featureId: feature.id,
-        title: "Active",
-        status: "in-progress",
-        columnId: ctx.columns.inProgress.id,
-        releaseId: release.id,
-        position: 0,
-      },
-      {
-        featureId: secondFeature.id,
-        title: "Complete",
-        status: "done",
-        columnId: ctx.columns.done.id,
-        releaseId: release.id,
-        position: 0,
-      },
-    ]);
+    const [activeMilestone, completedMilestone] = await db
+      .insert(schema.milestoneTable)
+      .values([
+        {
+          featureId: feature.id,
+          title: "Active",
+          legacyStatus: "done",
+          legacyColumnId: ctx.columns.done.id,
+          releaseId: release.id,
+          position: 0,
+        },
+        {
+          featureId: secondFeature.id,
+          title: "Complete",
+          legacyStatus: "planned",
+          releaseId: release.id,
+          position: 0,
+        },
+      ])
+      .returning();
+    await insertTask(ctx.project.id, {
+      featureId: feature.id,
+      milestoneId: activeMilestone!.id,
+      releaseId: other.id,
+      status: "in-progress",
+    });
+    await insertTask(ctx.project.id, {
+      featureId: secondFeature.id,
+      milestoneId: completedMilestone!.id,
+      status: "done",
+    });
     await insertTask(ctx.project.id, { releaseId: other.id, status: "done" });
     await insertTask(ctx.project.id, { status: "to-do" });
 
@@ -408,8 +421,8 @@ describe("release progress", () => {
       [
         "2.5",
         {
-          tasks: { total: 1, completed: 1 },
-          features: { total: 0, completed: 0 },
+          tasks: { total: 2, completed: 2 },
+          features: { total: 1, completed: 0 },
           milestones: { total: 0, completed: 0 },
           unfinished: 0,
         },

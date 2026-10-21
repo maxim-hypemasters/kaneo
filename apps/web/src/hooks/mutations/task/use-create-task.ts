@@ -60,6 +60,10 @@ function useCreateTask() {
       void queryClient.invalidateQueries({
         queryKey: ["feature-milestones", variables.projectId],
       });
+      if (data.releaseId || variables.milestoneId)
+        void queryClient.invalidateQueries({
+          queryKey: releasesKey(variables.projectId),
+        });
       if (variables.featureId) {
         void queryClient.invalidateQueries({
           queryKey: ["task-relations", variables.featureId],
@@ -68,13 +72,10 @@ function useCreateTask() {
           queryKey: ["task", variables.featureId],
         });
       }
-      // Picked or taken from its feature, the release's progress changed.
+      // Historical progress counts only work assigned to a release.
       if (data.releaseId) {
         void queryClient.invalidateQueries({
           queryKey: ["release-progress", variables.projectId],
-        });
-        void queryClient.invalidateQueries({
-          queryKey: releasesKey(variables.projectId),
         });
       }
     },

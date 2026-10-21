@@ -26,9 +26,10 @@ export function MilestoneDetailsSheet({
   } = useMilestoneDetailsStore();
   const { t } = useTranslation();
   const id = openedProject === projectId ? milestoneId : null;
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const query = useQuery({
-    queryKey: ["feature-milestones", projectId, "detail", id],
-    queryFn: () => getMilestone(id!),
+    queryKey: ["feature-milestones", projectId, "detail", id, timeZone],
+    queryFn: () => getMilestone(id!, timeZone),
     enabled: Boolean(id),
     staleTime: 30_000,
   });

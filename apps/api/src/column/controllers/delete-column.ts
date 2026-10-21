@@ -2,7 +2,7 @@ import { publishEvent } from "../../events";
 import { eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { columnTable, milestoneTable, taskTable } from "../../database/schema";
+import { columnTable, taskTable } from "../../database/schema";
 
 async function deleteColumn(id: string) {
   const existing = await db.query.columnTable.findFirst({
@@ -24,16 +24,6 @@ async function deleteColumn(id: string) {
         "Cannot delete column that contains tasks. Move or delete tasks first.",
     });
   }
-
-  const [milestoneCount] = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(milestoneTable)
-    .where(eq(milestoneTable.columnId, id));
-  if (Number(milestoneCount?.count ?? 0) > 0)
-    throw new HTTPException(409, {
-      message:
-        "Cannot delete column that contains milestones. Move milestones first.",
-    });
 
   await db.delete(columnTable).where(eq(columnTable.id, id));
 

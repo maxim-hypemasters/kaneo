@@ -44,7 +44,10 @@ const transferMilestoneFields = z.object({
   }),
   position: z.number().int().min(0).max(2_147_483_646),
   leadId: z.string().nullable().optional(),
-  status: z.string().optional(),
+  status: z.string().optional().openapi({
+    description:
+      "Informational derived status on export. Accepted as legacy import metadata and ignored; linked Tasks/Bugs determine milestone status.",
+  }),
   priority: z.string().optional(),
   releaseKey: z.string().nullable().optional(),
 });

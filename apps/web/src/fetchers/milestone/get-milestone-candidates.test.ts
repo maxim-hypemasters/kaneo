@@ -15,7 +15,13 @@ const task = (
   projectId = "p",
   milestoneId: string | null = null,
 ) => ({ id, title: id, number, type, status, projectId, milestoneId });
-const link = (targetTask: ReturnType<typeof task>, featureId = "f") => ({
+const link = (
+  targetTask: ReturnType<typeof task> & {
+    startDate?: string | null;
+    dueDate?: string | null;
+  },
+  featureId = "f",
+) => ({
   id: `feature:${targetTask.id}:${featureId}`,
   relationType: "subtask",
   sourceTaskId: featureId,
@@ -65,6 +71,36 @@ describe("milestone candidate loading", () => {
       ]),
     );
     expect((await getMilestoneCandidates("p", "f")).tasks).toEqual([]);
+  });
+  it("retains complete schedules and archive status for selected-work date previews", async () => {
+    mocks.relations.mockResolvedValueOnce(
+      Response.json([
+        link({
+          ...task("t", 1),
+          startDate: "2026-11-02T04:30:00Z",
+          dueDate: "2026-11-06T18:00:00Z",
+        }),
+        link({
+          ...task("b", 2, "bug", "archived"),
+          startDate: null,
+          dueDate: "2026-11-10T12:00:00Z",
+        }),
+      ]),
+    );
+    expect((await getMilestoneCandidates("p", "f")).tasks).toEqual([
+      expect.objectContaining({
+        id: "t",
+        status: "todo",
+        startDate: "2026-11-02T04:30:00Z",
+        dueDate: "2026-11-06T18:00:00Z",
+      }),
+      expect.objectContaining({
+        id: "b",
+        status: "archived",
+        startDate: null,
+        dueDate: "2026-11-10T12:00:00Z",
+      }),
+    ]);
   });
   it("rejects unavailable relation summaries without returning a partial selection list", async () => {
     mocks.relations.mockResolvedValueOnce(

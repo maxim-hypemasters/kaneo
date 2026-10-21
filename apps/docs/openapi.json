@@ -1966,7 +1966,8 @@
                   ]
                 },
                 "status": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "Informational derived status on export. Accepted as legacy import metadata and ignored; linked Tasks/Bugs determine milestone status."
                 },
                 "priority": {
                   "type": "string"
@@ -2443,7 +2444,7 @@
                   "features",
                   "unfinished"
                 ],
-                "description": "The release's execution work and distinct Feature knowledge groups. Tasks and Bugs share the task counts. Milestone completion follows its manual workflow status. Archived execution items count in totals."
+                "description": "The release's execution work and distinct Feature knowledge groups. Tasks and Bugs share the task counts. A milestone is completed when its nonempty linked nonarchived work is all Done, across all releases. Archived Tasks/Bugs remain in task totals."
               }
             },
             "required": [
@@ -2609,13 +2610,17 @@
             ]
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "to-do",
+              "in-progress",
+              "done"
+            ],
+            "readOnly": true
           },
           "columnId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "null",
+            "readOnly": true
           },
           "priority": {
             "type": "string"
@@ -2632,7 +2637,9 @@
               "null"
             ],
             "format": "date",
-            "example": "2026-10-20"
+            "example": "2026-10-20",
+            "readOnly": true,
+            "description": "Earliest scheduled day of all linked nonarchived Tasks/Bugs in the requested timezone."
           },
           "endDate": {
             "type": [
@@ -2640,7 +2647,9 @@
               "null"
             ],
             "format": "date",
-            "example": "2026-10-20"
+            "example": "2026-10-20",
+            "readOnly": true,
+            "description": "Latest scheduled day of all linked nonarchived Tasks/Bugs in the requested timezone."
           }
         },
         "required": [
@@ -2717,7 +2726,9 @@
             ],
             "format": "date",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-            "example": "2026-10-20"
+            "example": "2026-10-20",
+            "readOnly": true,
+            "description": "Earliest scheduled day of linked nonarchived Tasks/Bugs in the requested timezone. Null when no linked work is scheduled."
           },
           "endDate": {
             "type": [
@@ -2726,7 +2737,9 @@
             ],
             "format": "date",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-            "example": "2026-10-20"
+            "example": "2026-10-20",
+            "readOnly": true,
+            "description": "Latest scheduled day of linked nonarchived Tasks/Bugs in the requested timezone. Null when no linked work is scheduled."
           },
           "leadId": {
             "type": [
@@ -2735,13 +2748,19 @@
             ]
           },
           "status": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "to-do",
+              "in-progress",
+              "done"
+            ],
+            "readOnly": true,
+            "description": "Derived from all linked nonarchived Tasks/Bugs: nonempty all-Done work is Done; any active or completed work makes unfinished milestones In Progress; otherwise To Do."
           },
           "columnId": {
-            "type": [
-              "string",
-              "null"
-            ]
+            "type": "null",
+            "readOnly": true,
+            "description": "Milestone status is computed and has no assigned workflow column."
           },
           "priority": {
             "type": "string"
@@ -5218,6 +5237,20 @@
               "null"
             ]
           },
+          "startDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
           "status": {
             "type": [
               "string",
@@ -5261,6 +5294,8 @@
           "title",
           "type",
           "milestoneId",
+          "startDate",
+          "dueDate",
           "status",
           "isCompleted",
           "priority",
@@ -14034,7 +14069,8 @@
                           ]
                         },
                         "status": {
-                          "type": "string"
+                          "type": "string",
+                          "description": "Informational derived status on export. Accepted as legacy import metadata and ignored; linked Tasks/Bugs determine milestone status."
                         },
                         "priority": {
                           "type": "string"
@@ -16562,7 +16598,7 @@
           "Releases"
         ],
         "summary": "Get release feature milestone metadata",
-        "description": "Ordered milestone metadata for features assigned to this release or referenced by its nonarchived tasks and bugs. Includes empty milestones. Progress is calculated from the release's visible work by the client.",
+        "description": "Ordered metadata for explicitly assigned milestones and Features referenced by the release's nonarchived Tasks/Bugs. Includes empty milestones. Dates cover all linked nonarchived scheduled work in the requested timezone; displayed release progress remains release-scoped.",
         "parameters": [
           {
             "schema": {
@@ -16571,6 +16607,20 @@
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "UTC",
+              "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+              "example": "Europe/Belgrade"
+            },
+            "required": false,
+            "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+            "name": "timeZone",
+            "in": "query"
           }
         ],
         "responses": {
@@ -16583,6 +16633,16 @@
                   "items": {
                     "$ref": "#/components/schemas/ReleaseMilestone"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid timezone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -16780,6 +16840,20 @@
           },
           {
             "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "UTC",
+              "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+              "example": "Europe/Belgrade"
+            },
+            "required": false,
+            "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+            "name": "timeZone",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "integer",
               "minimum": 1,
               "maximum": 1000000
@@ -16936,6 +17010,20 @@
             "required": true,
             "name": "featureId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "UTC",
+              "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+              "example": "Europe/Belgrade"
+            },
+            "required": false,
+            "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+            "name": "timeZone",
+            "in": "query"
           }
         ],
         "responses": {
@@ -17023,6 +17111,20 @@
             "required": true,
             "name": "featureId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "UTC",
+              "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+              "example": "Europe/Belgrade"
+            },
+            "required": false,
+            "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+            "name": "timeZone",
+            "in": "query"
           }
         ],
         "requestBody": {
@@ -17042,10 +17144,6 @@
                       "string",
                       "null"
                     ],
-                    "minLength": 1
-                  },
-                  "status": {
-                    "type": "string",
                     "minLength": 1
                   },
                   "priority": {
@@ -17072,24 +17170,6 @@
                     ],
                     "maxLength": 10000
                   },
-                  "startDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "format": "date",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                    "example": "2026-10-20"
-                  },
-                  "endDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "format": "date",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                    "example": "2026-10-20"
-                  },
                   "taskIds": {
                     "type": "array",
                     "items": {
@@ -17101,7 +17181,8 @@
                 },
                 "required": [
                   "title"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -17200,6 +17281,20 @@
             "required": true,
             "name": "featureId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "UTC",
+              "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+              "example": "Europe/Belgrade"
+            },
+            "required": false,
+            "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+            "name": "timeZone",
+            "in": "query"
           }
         ],
         "requestBody": {
@@ -17320,6 +17415,20 @@
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "UTC",
+              "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+              "example": "Europe/Belgrade"
+            },
+            "required": false,
+            "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+            "name": "timeZone",
+            "in": "query"
           }
         ],
         "responses": {
@@ -17403,6 +17512,20 @@
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "default": "UTC",
+              "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+              "example": "Europe/Belgrade"
+            },
+            "required": false,
+            "description": "IANA timezone used to display the linked work's schedule as calendar dates. Defaults to UTC.",
+            "name": "timeZone",
+            "in": "query"
           }
         ],
         "requestBody": {
@@ -17422,10 +17545,6 @@
                       "string",
                       "null"
                     ],
-                    "minLength": 1
-                  },
-                  "status": {
-                    "type": "string",
                     "minLength": 1
                   },
                   "priority": {
@@ -17451,26 +17570,9 @@
                       "null"
                     ],
                     "maxLength": 10000
-                  },
-                  "startDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "format": "date",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                    "example": "2026-10-20"
-                  },
-                  "endDate": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "format": "date",
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                    "example": "2026-10-20"
                   }
-                }
+                },
+                "additionalProperties": false
               }
             }
           }

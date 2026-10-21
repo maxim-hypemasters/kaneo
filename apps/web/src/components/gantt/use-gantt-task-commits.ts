@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
@@ -137,13 +136,7 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
         sentRef.current.add(seq);
         if (task.entityKind === "milestone") {
           await updateMilestone(task.milestone.id, {
-            ...(kind.dates
-              ? {
-                  startDate: format(edit.start, "yyyy-MM-dd"),
-                  endDate: format(edit.end, "yyyy-MM-dd"),
-                }
-              : {}),
-            ...(kind.assignee ? { leadId: edit.userId } : {}),
+            leadId: edit.userId,
           });
           refreshMilestone(task);
         } else if (kind.dates) {

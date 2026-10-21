@@ -1,20 +1,16 @@
 import { recordMilestoneActivity } from "../../milestone/planning";
 import { publishMilestoneChange } from "../../milestone/write-milestones";
-import { and, asc, eq, ne, not, exists, or, isNull } from "drizzle-orm";
+import { and, asc, eq, not } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import {
-  columnTable,
-  milestoneTable,
-  releaseTable,
-  taskTable,
-} from "../../database/schema";
+import { milestoneTable, releaseTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { retryTransaction } from "../../utils/retry-transaction";
 import { lockRelease, setReleaseOf } from "../membership/assign-release";
 import { publishReleaseChange } from "../membership/publish-release-change";
 import { recordReleaseChange } from "../membership/record-release-change";
 import { isUnfinishedItem } from "../unfinished-item";
+import { milestoneIsCompleted } from "../../milestone/completion";
 
 // Moves each unfinished item on its own: a feature's tasks don't follow it
 // here, so a finished task stays in the release it shipped in.
@@ -70,27 +66,7 @@ async function moveUnfinishedItems(
             eq(taskTable.projectId, projectId),
             eq(taskTable.type, "feature"),
             eq(milestoneTable.releaseId, id),
-            ne(milestoneTable.status, "archived"),
-            not(
-              exists(
-                tx
-                  .select({ id: columnTable.id })
-                  .from(columnTable)
-                  .where(
-                    and(
-                      eq(columnTable.projectId, projectId),
-                      eq(columnTable.isFinal, true),
-                      or(
-                        eq(columnTable.id, milestoneTable.columnId),
-                        and(
-                          isNull(milestoneTable.columnId),
-                          eq(columnTable.slug, milestoneTable.status),
-                        ),
-                      ),
-                    ),
-                  ),
-              ),
-            ),
+            not(milestoneIsCompleted),
           ),
         )
         .orderBy(asc(milestoneTable.id))

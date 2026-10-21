@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vite-plus/test";
-import { createMilestoneBody, updateMilestoneBody } from "./schema";
+import {
+  createMilestoneBody,
+  milestoneScheduleQuery,
+  updateMilestoneBody,
+} from "./schema";
 
 describe("milestone fields", () => {
-  it("trims titles and accepts nullable metadata and real calendar dates", () => {
+  it("trims titles and accepts nullable metadata", () => {
     expect(
       createMilestoneBody.parse({
         title: "  Launch  ",
         description: null,
-        endDate: "2028-02-29",
       }),
-    ).toEqual({ title: "Launch", description: null, endDate: "2028-02-29" });
+    ).toEqual({ title: "Launch", description: null });
   });
   it.each([
     { title: " " },
@@ -23,11 +26,24 @@ describe("milestone fields", () => {
   });
   it("requires at least one patch field and supports clearing metadata", () => {
     expect(updateMilestoneBody.safeParse({}).success).toBe(false);
-    expect(
-      updateMilestoneBody.parse({ description: null, endDate: null }),
-    ).toEqual({ description: null, endDate: null });
+    expect(updateMilestoneBody.parse({ description: null })).toEqual({
+      description: null,
+    });
   });
-  it("accepts independent bounds, same-day ranges and ordered intervals", () => {
+  it.each([
+    { status: "done" },
+    { status: null },
+    { columnId: "column" },
+    { columnId: null },
+  ])("rejects computed status fields %o", (fields) => {
+    expect(
+      createMilestoneBody.safeParse({ title: "Create", ...fields }).success,
+    ).toBe(false);
+    expect(
+      updateMilestoneBody.safeParse({ title: "Edit", ...fields }).success,
+    ).toBe(false);
+  });
+  it("rejects all manual date fields, including null and otherwise valid ranges", () => {
     for (const dates of [
       { startDate: "2026-10-20" },
       { endDate: "2026-10-21" },
@@ -37,8 +53,10 @@ describe("milestone fields", () => {
     ]) {
       expect(
         createMilestoneBody.safeParse({ title: "Range", ...dates }).success,
-      ).toBe(true);
-      expect(updateMilestoneBody.safeParse(dates).success).toBe(true);
+      ).toBe(false);
+      expect(
+        updateMilestoneBody.safeParse({ title: "Updated", ...dates }).success,
+      ).toBe(false);
     }
     expect(
       createMilestoneBody.safeParse({
@@ -57,6 +75,17 @@ describe("milestone fields", () => {
       createMilestoneBody.safeParse({ title: "Range", startDate: "2026-02-30" })
         .success,
     ).toBe(false);
+  });
+  it("validates IANA timezones and defaults to UTC", () => {
+    expect(milestoneScheduleQuery.parse({}).timeZone).toBe("UTC");
+    expect(
+      milestoneScheduleQuery.parse({ timeZone: "Europe/Belgrade" }).timeZone,
+    ).toBe("Europe/Belgrade");
+    for (const timeZone of ["", "Invalid/Zone", "+03:00"]) {
+      expect(milestoneScheduleQuery.safeParse({ timeZone }).success).toBe(
+        false,
+      );
+    }
   });
   it("accepts optional existing task ids only on creation and rejects duplicates", () => {
     expect(

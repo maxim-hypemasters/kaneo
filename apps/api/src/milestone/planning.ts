@@ -1,10 +1,6 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
-import {
-  activityTable,
-  columnTable,
-  milestoneTable,
-  taskTable,
-} from "../database/schema";
+import { HTTPException } from "hono/http-exception";
+import { activityTable, milestoneTable, taskTable } from "../database/schema";
 import {
   assertAssignableUser,
   getProjectWorkspaceId,
@@ -14,23 +10,25 @@ import {
   setReleaseOf,
 } from "../release/membership/assign-release";
 import { recordReleaseChange } from "../release/membership/record-release-change";
-import {
-  assertValidPriority,
-  assertValidTaskStatus,
-} from "../task/validate-task-fields";
+import { assertValidPriority } from "../task/validate-task-fields";
 import type { MilestoneTransaction } from "./membership";
 
 export type MilestonePlanningFields = {
   leadId?: string | null;
-  status?: string;
   priority?: string;
   releaseId?: string | null;
 };
+export function assertReadonlyMilestoneStatus(fields: object) {
+  if (Object.hasOwn(fields, "status") || Object.hasOwn(fields, "columnId")) {
+    throw new HTTPException(400, {
+      message: "Milestone status is derived from linked Tasks and Bugs",
+    });
+  }
+}
 export async function resolveMilestonePlanning(
   tx: MilestoneTransaction,
   projectId: string,
   fields: MilestonePlanningFields,
-  creating = false,
 ) {
   if (fields.leadId)
     await assertAssignableUser(
@@ -41,32 +39,7 @@ export async function resolveMilestonePlanning(
     );
   if (fields.releaseId) await lockRelease(tx, fields.releaseId, projectId);
   if (fields.priority) assertValidPriority(fields.priority);
-  let status = fields.status;
-  if (creating && status === undefined) {
-    const [first] = await tx
-      .select({ slug: columnTable.slug })
-      .from(columnTable)
-      .where(
-        and(
-          eq(columnTable.projectId, projectId),
-          eq(columnTable.isFinal, false),
-        ),
-      )
-      .orderBy(asc(columnTable.position), asc(columnTable.id))
-      .limit(1);
-    status = first?.slug ?? "planned";
-  }
-  if (status === undefined) return { ...fields };
-  await assertValidTaskStatus(status, projectId, tx);
-  const [column] = await tx
-    .select({ id: columnTable.id })
-    .from(columnTable)
-    .where(
-      and(eq(columnTable.projectId, projectId), eq(columnTable.slug, status)),
-    )
-    .orderBy(asc(columnTable.position), asc(columnTable.id))
-    .limit(1);
-  return { ...fields, status, columnId: column?.id ?? null };
+  return { ...fields };
 }
 export async function recordMilestoneActivity(
   tx: MilestoneTransaction,
@@ -127,25 +100,4 @@ export async function moveMilestoneFollowers(
     userId,
   });
   return ids;
-}
-
-export async function milestoneStatusIsDone(
-  tx: MilestoneTransaction,
-  projectId: string,
-  milestone: { columnId: string | null; status: string },
-) {
-  const [column] = await tx
-    .select({ isFinal: columnTable.isFinal })
-    .from(columnTable)
-    .where(
-      and(
-        eq(columnTable.projectId, projectId),
-        milestone.columnId
-          ? eq(columnTable.id, milestone.columnId)
-          : eq(columnTable.slug, milestone.status),
-      ),
-    )
-    .orderBy(asc(columnTable.position), asc(columnTable.id))
-    .limit(1);
-  return column?.isFinal ?? false;
 }

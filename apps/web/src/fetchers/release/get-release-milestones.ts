@@ -1,9 +1,13 @@
 import { client } from "@kaneo/libs";
 import { HttpError } from "@/lib/http-error";
 
-async function getReleaseMilestones(id: string) {
+async function getReleaseMilestones(
+  id: string,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
+) {
   const response = await client.release[":id"].milestones.$get({
     param: { id },
+    query: { timeZone },
   });
 
   if (!response.ok) {

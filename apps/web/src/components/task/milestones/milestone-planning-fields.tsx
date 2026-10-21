@@ -4,16 +4,14 @@ import type {
   Milestone,
   MilestoneInput,
 } from "@/fetchers/milestone/milestones";
-import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
 import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { getPriorityIcon } from "@/lib/priority";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getColumnIcon } from "@/lib/column";
-import { statusMenuOptions } from "../menus/status-menu-options";
 import { assigneeMenuOptions } from "../menus/assignee-menu-options";
-import { MilestoneDateField } from "./milestone-date-field";
+import { MilestoneScheduleDates } from "./milestone-schedule-dates";
 
 export function MilestonePlanningFields({
   projectId,
@@ -33,20 +31,9 @@ export function MilestonePlanningFields({
 }) {
   const { t } = useTranslation();
   const permission = useWorkspacePermission();
-  const columns = useGetColumns(projectId);
   const releases = useGetReleases(projectId);
   const members = useGetProjectMembers({ projectId, workspaceId });
   const canEdit = permission.canUpdateTasks() && !pending;
-  const effectiveStatus =
-    milestone.status ||
-    [...(columns.data ?? [])]
-      .sort(
-        (left, right) =>
-          left.position - right.position || left.id.localeCompare(right.id),
-      )
-      .find((column) => !column.isFinal)?.slug ||
-    "planned";
-  const column = columns.data?.find((c) => c.slug === effectiveStatus);
   const lead = members.data?.find((m) => m.id === milestone.leadId);
   const release = releases.data?.find((r) => r.id === milestone.releaseId);
   return (
@@ -73,18 +60,20 @@ export function MilestonePlanningFields({
               )
             : t("tasks:popover.assignee.unassigned"))}
       </MilestonePlanningChoice>
-      <MilestonePlanningChoice
-        label={t("tasks:status.label")}
-        disabled={!canEdit}
-        options={statusMenuOptions(columns.data ?? [], effectiveStatus)}
-        loading={columns.isPending}
-        error={columns.isError}
-        onRetry={() => void columns.refetch()}
-        onSelect={(status) => onChange({ status })}
-      >
-        {getColumnIcon(effectiveStatus, column?.isFinal, column?.icon)}
-        {getStatusDisplayLabel(effectiveStatus, column?.name)}
-      </MilestonePlanningChoice>
+      <dl className="min-w-0 space-y-1.5 text-sm">
+        <dt>{t("tasks:status.label")}</dt>
+        <dd
+          aria-label={t("tasks:status.label")}
+          className="flex min-h-9 items-center gap-2"
+        >
+          {milestone.status
+            ? getColumnIcon(milestone.status, milestone.status === "done")
+            : null}
+          {milestone.status
+            ? getStatusDisplayLabel(milestone.status)
+            : t("common:empty.loading")}
+        </dd>
+      </dl>
       <MilestonePlanningChoice
         label={t("tasks:priority.label")}
         disabled={!canEdit}
@@ -130,19 +119,9 @@ export function MilestonePlanningFields({
               : "tasks:releases.none",
           )}
       </MilestonePlanningChoice>
-      <MilestoneDateField
-        kind="start"
-        value={milestone.startDate ?? ""}
-        max={milestone.endDate ?? undefined}
-        disabled={!canEdit}
-        onChange={(startDate) => onChange({ startDate: startDate || null })}
-      />
-      <MilestoneDateField
-        kind="end"
-        value={milestone.endDate ?? ""}
-        min={milestone.startDate ?? undefined}
-        disabled={!canEdit}
-        onChange={(endDate) => onChange({ endDate: endDate || null })}
+      <MilestoneScheduleDates
+        startDate={milestone.startDate}
+        endDate={milestone.endDate}
       />
     </div>
   );

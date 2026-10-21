@@ -27,6 +27,9 @@ export function useDuplicateTask() {
         invalidateFeatureChange(queryClient, task.projectId, [task.featureId]);
       else {
         void queryClient.invalidateQueries({
+          queryKey: ["releases", task.projectId],
+        });
+        void queryClient.invalidateQueries({
           queryKey: ["tasks", task.projectId],
         });
         void queryClient.invalidateQueries({

@@ -12,10 +12,10 @@ export function milestoneDatesAreOrdered({
   return startDate == null || endDate == null || startDate <= endDate;
 }
 
-export function assertMilestoneDates(dates: MilestoneDates) {
-  if (!milestoneDatesAreOrdered(dates)) {
+export function assertReadonlyMilestoneDates(fields: object) {
+  if (Object.hasOwn(fields, "startDate") || Object.hasOwn(fields, "endDate")) {
     throw new HTTPException(400, {
-      message: "Milestone start date must be on or before end date",
+      message: "Milestone dates are derived from linked Tasks and Bugs",
     });
   }
 }

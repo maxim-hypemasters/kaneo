@@ -7,10 +7,11 @@ export const milestonesKey = (projectId: string, featureId?: string) =>
 export function useGetMilestones(
   projectId: string,
   featureId: string | null | undefined,
+  timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone,
 ) {
   return useQuery({
-    queryKey: milestonesKey(projectId, featureId ?? ""),
-    queryFn: () => getMilestones(featureId ?? ""),
+    queryKey: [...milestonesKey(projectId, featureId ?? ""), timeZone],
+    queryFn: () => getMilestones(featureId ?? "", timeZone),
     enabled: Boolean(projectId && featureId),
     staleTime: 30_000,
     refetchOnMount: true,

@@ -8,7 +8,7 @@ export function releasesKey(projectId: string) {
 }
 
 // A project's releases with their progress, ordered by start date. Release
-// messages refetch them; task messages only mark them stale (see
+// and task/workflow messages refetch them through a coalesced refresh (see
 // useProjectWebSocket). A select that must keep its result between renders,
 // such as releaseSummaries, has to be a stable function.
 export function useGetReleases<TData = Release[]>(

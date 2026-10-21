@@ -48,12 +48,12 @@ async function milestone(
     position,
     featureTitle: feature!.title,
     leadId: row.leadId,
-    status: row.status,
-    columnId: row.columnId,
+    status: "to-do",
+    columnId: null,
     priority: row.priority,
     releaseId: row.releaseId,
-    startDate: row.startDate,
-    endDate: row.endDate,
+    startDate: null,
+    endDate: null,
   };
 }
 
@@ -187,6 +187,15 @@ describe("release milestone metadata", () => {
           releaseId: ctx.release.id,
         });
         await milestone(feature.id, `Milestone ${index}`, 0, ctx.release.id);
+        if (index === 0) {
+          expect(
+            await readReleaseMilestones(
+              ctx.release.id,
+              ctx.project.id,
+              ctx.workspace.id,
+            ),
+          ).toHaveLength(1);
+        }
       }
       expect(
         await readReleaseMilestones(
@@ -195,8 +204,9 @@ describe("release milestone metadata", () => {
           ctx.workspace.id,
         ),
       ).toHaveLength(40);
-      // Scope recheck, one batch select, and its correlated EXISTS builder.
-      expect(selectCounts).toEqual([3, 3]);
+      // The schedule adds one batch aggregate when metadata exists, regardless
+      // of whether the release contains one milestone or forty.
+      expect(selectCounts).toEqual([3, 4, 4]);
     } finally {
       spy.mockRestore();
     }

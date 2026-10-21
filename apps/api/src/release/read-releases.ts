@@ -1,7 +1,6 @@
 import { asc, eq, getTableColumns, type SQL, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import {
-  columnTable,
   milestoneTable,
   projectTable,
   releaseTable,
@@ -9,11 +8,11 @@ import {
 } from "../database/schema";
 import { boundedTaskRead, type TaskReadDatabase } from "../task/bounded-read";
 import { taskIsCompleted } from "../task/task-is-completed";
+import { milestoneIsCompleted } from "../milestone/completion";
 
 const TIMEOUT_MESSAGE = "Release request took too long; retry later";
 const leafWhere = sql`${taskTable.releaseId} = ${releaseTable.id} and ${taskTable.projectId} = ${releaseTable.projectId} and ${taskTable.type} in ('task', 'bug')`;
 const milestoneWhere = sql`${milestoneTable.releaseId} = ${releaseTable.id} and exists (select 1 from ${taskTable} where ${taskTable.id} = ${milestoneTable.featureId} and ${taskTable.projectId} = ${releaseTable.projectId} and ${taskTable.type} = 'feature')`;
-const milestoneDone = sql`exists (select 1 from ${columnTable} where ${columnTable.projectId} = ${releaseTable.projectId} and ${columnTable.isFinal} and (${columnTable.id} = ${milestoneTable.columnId} or (${milestoneTable.columnId} is null and ${columnTable.slug} = ${milestoneTable.status})))`;
 function selectReleases(tx: TaskReadDatabase, where: SQL | undefined) {
   return tx
     .select({
@@ -35,11 +34,11 @@ function selectReleases(tx: TaskReadDatabase, where: SQL | undefined) {
           Number,
         ),
       milestoneCompleted:
-        sql<number>`(select count(*) from ${milestoneTable} where ${milestoneWhere} and ${milestoneDone})`.mapWith(
+        sql<number>`(select count(*) from ${milestoneTable} where ${milestoneWhere} and ${milestoneIsCompleted})`.mapWith(
           Number,
         ),
       unfinished:
-        sql<number>`(select count(*) from ${taskTable} where ${leafWhere} and ${taskTable.status} <> 'archived' and not ${taskIsCompleted}) + (select count(*) from ${milestoneTable} where ${milestoneWhere} and ${milestoneTable.status} <> 'archived' and not ${milestoneDone})`.mapWith(
+        sql<number>`(select count(*) from ${taskTable} where ${leafWhere} and ${taskTable.status} <> 'archived' and not ${taskIsCompleted}) + (select count(*) from ${milestoneTable} where ${milestoneWhere} and not ${milestoneIsCompleted})`.mapWith(
           Number,
         ),
     })
