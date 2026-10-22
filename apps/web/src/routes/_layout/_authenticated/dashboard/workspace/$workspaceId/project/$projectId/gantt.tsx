@@ -212,7 +212,7 @@ function RouteComponent() {
   const [isTaskRailOpen, setIsTaskRailOpen] = useState(false);
 
   // Wider day columns on small screens so dragging and reading dates is easier.
-  const dayColumnWidthRem = isMobile ? 3.125 : 2.75;
+  const defaultDayColumnWidthRem = isMobile ? 3.125 : 2.75;
   const taskColumnWidthRem = isMobile ? 12 : 14;
   const showTaskRail = !isMobile || isTaskRailOpen;
   const railWidthRem = showTaskRail ? (isMobile ? taskColumnWidthRem : 20) : 0;
@@ -228,7 +228,6 @@ function RouteComponent() {
     null,
   );
   const panTimeline = useDragToPan();
-  useWheelScrollsTime(scrollElement);
   const [pixelsPerDay, setPixelsPerDay] = useState(44);
   const todayCellRef = useRef<HTMLDivElement>(null);
   // Only auto-scroll once per visit to the view: re-running on every timeline
@@ -408,17 +407,6 @@ function RouteComponent() {
     );
   }, [savedTasks, heldEdit, heldDraft]);
   const spans = useMemo(() => spansOf(displayedTasks), [displayedTasks]);
-  // Only task bars participating in a dependency report their live drag.
-  const dependentTaskIds = useMemo(
-    () =>
-      new Set(
-        dependencies.flatMap((dependency) => [
-          dependency.blockerId,
-          dependency.blockedId,
-        ]),
-      ),
-    [dependencies],
-  );
   // The red arrows, in words: for each task starting too early, the tasks
   // that block it and haven't ended yet.
   const earlyStartBlockers = useMemo(() => {
@@ -675,10 +663,8 @@ function RouteComponent() {
     setDraggingTaskId((current) =>
       dragging ? taskId : current === taskId ? null : current,
     );
-  const dragChangeFor = (taskId: string) =>
-    dependentTaskIds.has(taskId)
-      ? (dragging: boolean) => trackDrag(taskId, dragging)
-      : undefined;
+  const dragChangeFor = (taskId: string) => (dragging: boolean) =>
+    trackDrag(taskId, dragging);
 
   const openTask = (taskId: string) =>
     navigate({
@@ -689,16 +675,27 @@ function RouteComponent() {
 
   // The rendered days follow the scroll: the span grows as either edge comes
   // near, and jumps re-centre it on dates outside it.
-  const { timeline, viewport, scrollToDate, scrollByPage } = useGanttRange({
+  const {
+    timeline,
+    viewport,
+    scrollToDate,
+    scrollByPage,
+    dayColumnWidthRem,
+    zoomAt,
+  } = useGanttRange({
     projectId,
     tasks: parsedTasks,
     extraSpans: openingSpans,
     ready: rangeReady,
     showEmptyTimeline: groupByMilestone && milestones.length > 0,
     weekStartsOn,
-    dayColumnWidthRem,
+    dayColumnWidthRem: defaultDayColumnWidthRem,
     railWidthRem,
     scrollElement,
+  });
+  useWheelScrollsTime(scrollElement, {
+    onZoom: zoomAt,
+    isZoomBlocked: () => Boolean(draggingTaskId || laneDragState),
   });
 
   // Dependency geometry follows the visible rows and expanded lanes.

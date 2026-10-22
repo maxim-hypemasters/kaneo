@@ -15,6 +15,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
 }));
 import enUS from "@i18n/en-US.json";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -100,8 +101,9 @@ vi.mock("@/hooks/queries/release/use-get-releases", () => ({
   useGetReleases: (...args: unknown[]) => useGetReleases(...args),
 }));
 
+let mobile = false;
 vi.mock("@/hooks/use-mobile", () => ({
-  useIsMobile: () => false,
+  useIsMobile: () => mobile,
 }));
 
 // Mutable for the same reason as routeParams: read lazily by the mock.
@@ -142,8 +144,9 @@ vi.mock("@/hooks/use-workspace-permission", () => ({
   }),
 }));
 
+const updateTask = vi.fn();
 vi.mock("@/hooks/mutations/task/use-update-task", () => ({
-  useUpdateTask: () => ({ mutateAsync: vi.fn() }),
+  useUpdateTask: () => ({ mutateAsync: updateTask }),
 }));
 
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
@@ -206,18 +209,36 @@ vi.mock("@/components/page-title", () => ({
   default: () => null,
 }));
 
+const barDragChanges = new Map<
+  string,
+  ((dragging: boolean) => void) | undefined
+>();
 vi.mock("@/components/gantt/gantt-task-bar", () => ({
   GanttTaskBar: ({
     task,
     showAssignee,
+    timeline,
+    pixelsPerDay,
+    onDragChange,
   }: {
     task: { id: string; title: string };
     showAssignee?: boolean;
-  }) => (
-    <div data-bar={task.id} data-bar-assignee={showAssignee ? "" : undefined}>
-      {task.title}
-    </div>
-  ),
+    timeline: { gridTemplateColumns: string };
+    pixelsPerDay: number;
+    onDragChange?: (dragging: boolean) => void;
+  }) => {
+    barDragChanges.set(task.id, onDragChange);
+    return (
+      <div
+        data-bar={task.id}
+        data-bar-assignee={showAssignee ? "" : undefined}
+        data-day-columns={timeline.gridTemplateColumns}
+        data-pixels-per-day={pixelsPerDay}
+      >
+        {task.title}
+      </div>
+    );
+  },
 }));
 
 // Resolves against the real en-US bundle, so the assertions fail if the
@@ -328,6 +349,9 @@ afterEach(() => {
   preferences.ganttGroupBy = "none";
   projectMembers.length = 0;
   projectRelations.length = 0;
+  updateTask.mockClear();
+  barDragChanges.clear();
+  mobile = false;
 });
 
 describe("Gantt jump-to-today", () => {
@@ -846,5 +870,164 @@ describe("Gantt releases", () => {
     expect(scrollIntoView).toHaveBeenCalledWith(
       expect.objectContaining({ behavior: "auto", inline: "center" }),
     );
+  });
+});
+
+describe("Gantt Shift-wheel zoom", () => {
+  function setupZoom() {
+    const view = render(<GanttRoute />);
+    const scroller = screen.getByTestId("gantt-scroll-container");
+    const track = [...scroller.querySelectorAll<HTMLElement>("[style]")].find(
+      (element) =>
+        element.style.left === "20rem" &&
+        Boolean(element.style.gridTemplateColumns) &&
+        !element.hasAttribute("data-gantt-release-markers"),
+    );
+    if (!track) throw new Error("timeline track not rendered");
+    Object.defineProperty(track, "clientWidth", {
+      get: () => Number.parseFloat(track.style.width) * 16,
+    });
+    Object.defineProperties(scroller, {
+      clientWidth: { value: 1100 },
+      scrollWidth: { get: () => track.clientWidth + 320 },
+    });
+    scroller.scrollLeft = 2200;
+    const timelineTarget = scroller.querySelector('[aria-current="date"]');
+    if (!timelineTarget) throw new Error("today header not rendered");
+    return { ...view, scroller, track, timelineTarget };
+  }
+
+  function zoom(target: Element, deltaY = -120) {
+    const event = new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      shiftKey: true,
+      deltaY,
+      clientX: 700,
+    });
+    act(() => {
+      target.dispatchEvent(event);
+      vi.advanceTimersByTime(100);
+    });
+    return event;
+  }
+
+  it("scales task geometry, release markers, labels and dependencies together without writing dates", () => {
+    const task = makeTask({
+      id: "source",
+      startDate: "2026-08-28",
+      dueDate: "2026-08-30",
+    });
+    mockProjectWithTasks([
+      task,
+      makeTask({
+        id: "target",
+        startDate: "2026-08-31",
+        dueDate: "2026-09-02",
+      }),
+    ]);
+    projectRelations.push({
+      id: "dependency",
+      sourceTaskId: "source",
+      targetTaskId: "target",
+      relationType: "blocks",
+    });
+    releasesQuery.data = [
+      {
+        id: "release",
+        projectId: "project-1",
+        name: "Launch",
+        startDate: "2026-08-24",
+        codeFreezeDate: "2026-09-04",
+        submissionDate: "2026-09-05",
+      },
+    ];
+    const { container, track, timelineTarget } = setupZoom();
+    const beforeColumns = track.style.gridTemplateColumns;
+    const beforePath = screen
+      .getByTestId("gantt-dependency-lines")
+      .querySelector("path[marker-end]")
+      ?.getAttribute("d");
+    const label = screen.getByRole("list", { name: "Releases" });
+    const beforeLabelWidth = label.style.width;
+
+    expect(zoom(timelineTarget).defaultPrevented).toBe(true);
+
+    expect(track.style.gridTemplateColumns).not.toBe(beforeColumns);
+    const dayWidth = /minmax\(([\d.]+)rem/.exec(
+      track.style.gridTemplateColumns,
+    )?.[1];
+    expect(Number(dayWidth)).toBeGreaterThan(2.75);
+    for (const bar of container.querySelectorAll<HTMLElement>("[data-bar]")) {
+      expect(bar.dataset.dayColumns).toBe(track.style.gridTemplateColumns);
+      expect(Number(bar.dataset.pixelsPerDay)).toBeCloseTo(
+        Number(dayWidth) * 16,
+      );
+    }
+    expect(
+      container.querySelector<HTMLElement>("[data-gantt-release-markers]")
+        ?.style.gridTemplateColumns,
+    ).toBe(track.style.gridTemplateColumns);
+    expect(label.style.width).not.toBe(beforeLabelWidth);
+    expect(
+      screen
+        .getByTestId("gantt-dependency-lines")
+        .querySelector("path[marker-end]")
+        ?.getAttribute("d"),
+    ).not.toBe(beforePath);
+    expect(updateTask).not.toHaveBeenCalled();
+    expect(task).toMatchObject({
+      startDate: "2026-08-28",
+      dueDate: "2026-08-30",
+    });
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
+  });
+
+  it("retains zoom through grouping, filtering and responsive updates, then resets for another project", () => {
+    mockProjectWithTask(
+      makeTask({ startDate: "2026-08-28", dueDate: "2026-09-02" }),
+    );
+    const { rerender, track, timelineTarget } = setupZoom();
+    zoom(timelineTarget);
+    const zoomed = track.style.gridTemplateColumns;
+
+    preferences.ganttGroupBy = "assignee";
+    rerender(<GanttRoute />);
+    expect(track.style.gridTemplateColumns).toBe(zoomed);
+    searchFor("Task");
+    expect(track.style.gridTemplateColumns).toBe(zoomed);
+    mobile = true;
+    rerender(<GanttRoute />);
+    expect(track.style.gridTemplateColumns).toBe(zoomed);
+
+    routeParams.projectId = "project-2";
+    mockProjectWithTask(
+      makeTask({
+        projectId: "project-2",
+        startDate: "2026-08-28",
+        dueDate: "2026-09-02",
+      }),
+      { id: "project-2" },
+    );
+    rerender(<GanttRoute />);
+    expect(track.style.gridTemplateColumns).toContain("minmax(3.125rem");
+  });
+
+  it("suspends zoom for an unrelated task gesture and resumes after it ends", () => {
+    mockProjectWithTask(
+      makeTask({ startDate: "2026-08-28", dueDate: "2026-09-02" }),
+    );
+    const { track, timelineTarget } = setupZoom();
+    const before = track.style.gridTemplateColumns;
+    const drag = barDragChanges.get("task-1");
+    expect(drag).toBeTypeOf("function");
+
+    act(() => drag?.(true));
+    expect(zoom(timelineTarget).defaultPrevented).toBe(true);
+    expect(track.style.gridTemplateColumns).toBe(before);
+    act(() => drag?.(false));
+    zoom(timelineTarget);
+    expect(track.style.gridTemplateColumns).not.toBe(before);
+    expect(updateTask).not.toHaveBeenCalled();
   });
 });

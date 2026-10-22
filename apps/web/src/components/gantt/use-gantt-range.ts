@@ -11,6 +11,13 @@ import { remToPx, shiftScrollLeft } from "./gantt-scroll";
 import type { ScheduledTask } from "./gantt-types";
 import { createGanttViewportStore } from "./gantt-viewport";
 import {
+  ganttZoomAnchor,
+  rangeForZoomAnchor,
+  scrollLeftForZoomAnchor,
+  zoomedDayWidth,
+  type GanttZoomAnchor,
+} from "./gantt-zoom";
+import {
   buildGanttTimeline,
   extendGanttRange,
   GANTT_CHUNK_DAYS,
@@ -78,10 +85,17 @@ export function useGanttRange({
   ready,
   showEmptyTimeline = false,
   weekStartsOn,
-  dayColumnWidthRem,
+  dayColumnWidthRem: defaultDayColumnWidthRem,
   railWidthRem,
   scrollElement,
 }: UseGanttRangeOptions) {
+  const [zoom, setZoom] = useState<{
+    projectId: string;
+    widthRem: number;
+  } | null>(null);
+  if (zoom && zoom.projectId !== projectId) setZoom(null);
+  const dayColumnWidthRem =
+    zoom?.projectId === projectId ? zoom.widthRem : defaultDayColumnWidthRem;
   const initialRange = useMemo(
     () =>
       tasks.length === 0
@@ -129,6 +143,14 @@ export function useGanttRange({
   // While a smooth scroll we started is animating, growing the span would
   // jump scrollLeft under the animation and stop it short.
   const animatingRef = useRef(false);
+  const stopSmoothScrollRef = useRef<(() => void) | null>(null);
+  const pendingZoomRef = useRef<{
+    projectId: string;
+    element: HTMLElement;
+    anchor: GanttZoomAnchor;
+    offsetPx: number;
+    widthRem: number;
+  } | null>(null);
   // The first visible day, to restore after the scroll container remounts
   // (e.g. a search that briefly matched nothing).
   const firstVisibleRef = useRef<{ projectId: string; date: Date } | null>(
@@ -136,6 +158,7 @@ export function useGanttRange({
   );
   const mountedElementRef = useRef<HTMLElement | null>(null);
   const latestRef = useRef({
+    projectId,
     range,
     timeline,
     frozen,
@@ -144,6 +167,7 @@ export function useGanttRange({
   });
   useLayoutEffect(() => {
     latestRef.current = {
+      projectId,
       range,
       timeline,
       frozen,
@@ -182,18 +206,122 @@ export function useGanttRange({
   }, [projectId, scrollElement, viewport]);
 
   const watchSmoothScroll = useCallback((element: HTMLElement) => {
+    stopSmoothScrollRef.current?.();
     animatingRef.current = true;
     let timer = 0;
-    const done = () => {
+    const stop = () => {
       element.removeEventListener("scrollend", done);
       window.clearTimeout(timer);
       animatingRef.current = false;
+      stopSmoothScrollRef.current = null;
+    };
+    const done = () => {
+      stop();
       // Catch up on any growth skipped while animating.
       element.dispatchEvent(new Event("scroll"));
     };
+    stopSmoothScrollRef.current = stop;
     element.addEventListener("scrollend", done);
     timer = window.setTimeout(done, SMOOTH_SCROLL_FALLBACK_MS);
   }, []);
+
+  useLayoutEffect(
+    () => () => {
+      if (!animatingRef.current) return;
+      stopSmoothScrollRef.current?.();
+      scrollElement?.scrollTo({
+        left: scrollElement.scrollLeft,
+        behavior: "instant",
+      });
+    },
+    [projectId, scrollElement],
+  );
+
+  const zoomAt = useCallback(
+    (deltaPx: number, clientX: number) => {
+      const element = scrollElement;
+      const current = latestRef.current;
+      if (
+        !element ||
+        !current.timeline ||
+        !current.frozen ||
+        current.projectId !== projectId ||
+        !Number.isFinite(clientX)
+      )
+        return;
+      const railPx = remToPx(current.railWidthRem);
+      const visiblePx = element.clientWidth - railPx;
+      if (visiblePx <= 0) return;
+      const offsetPx = Math.max(
+        0,
+        Math.min(
+          visiblePx,
+          clientX -
+            element.getBoundingClientRect().left -
+            element.clientLeft -
+            railPx,
+        ),
+      );
+      const pending = pendingZoomRef.current;
+      const prior =
+        pending?.projectId === projectId && pending.element === element
+          ? pending
+          : null;
+      const oldWidth = prior?.widthRem ?? current.dayColumnWidthRem;
+      const widthRem = zoomedDayWidth(oldWidth, deltaPx);
+      if (widthRem === oldWidth) return;
+      const oldDayPx = remToPx(oldWidth);
+      const oldLeft = prior
+        ? scrollLeftForZoomAnchor(
+            prior.anchor,
+            current.timeline.rangeStart,
+            prior.offsetPx,
+            oldDayPx,
+          )
+        : element.scrollLeft;
+      const anchor = ganttZoomAnchor(
+        current.timeline.rangeStart,
+        oldLeft,
+        offsetPx,
+        oldDayPx,
+      );
+      pendingZoomRef.current = {
+        projectId,
+        element,
+        anchor,
+        offsetPx,
+        widthRem,
+      };
+      pendingScrollRef.current = null;
+      pendingShiftPxRef.current = 0;
+      if (current.range) {
+        const dayPx = remToPx(widthRem);
+        const visibleDays = visiblePx / dayPx;
+        const range = rangeForZoomAnchor(
+          current.range,
+          anchor,
+          offsetPx,
+          dayPx,
+          visiblePx,
+          Math.max(
+            GANTT_MAX_DAYS,
+            Math.ceil(visibleDays) + 2 * (GANTT_CHUNK_DAYS + EDGE_DAYS),
+          ),
+        );
+        // A newer wheel gesture also supersedes a date jump queued before
+        // React committed it, even when this range needs no extension.
+        setState({ projectId, range });
+      }
+      if (animatingRef.current) {
+        stopSmoothScrollRef.current?.();
+        // An immediate scroll to the current position cancels the browser's
+        // pending smooth navigation before the zoom anchor is applied.
+        element.scrollTo({ left: element.scrollLeft, behavior: "instant" });
+      }
+      setZoom({ projectId, widthRem });
+    },
+    [projectId, scrollElement],
+  );
 
   const scrollToIndex = useCallback(
     (
@@ -272,6 +400,12 @@ export function useGanttRange({
     const remounted = element !== mountedElementRef.current;
     mountedElementRef.current = element;
     if (!element || !timeline) return;
+    const pendingZoom = pendingZoomRef.current;
+    if (
+      pendingZoom &&
+      (pendingZoom.projectId !== projectId || pendingZoom.element !== element)
+    )
+      pendingZoomRef.current = null;
     const remembered = firstVisibleRef.current;
     if (
       remounted &&
@@ -280,7 +414,19 @@ export function useGanttRange({
     ) {
       pendingScrollRef.current = { date: remembered.date, align: "start" };
     }
-    if (pendingShiftPxRef.current !== 0) {
+    if (pendingZoomRef.current) {
+      const pending = pendingZoomRef.current;
+      pendingZoomRef.current = null;
+      pendingShiftPxRef.current = 0;
+      pendingScrollRef.current = null;
+      const left = scrollLeftForZoomAnchor(
+        pending.anchor,
+        timeline.rangeStart,
+        pending.offsetPx,
+        remToPx(dayColumnWidthRem),
+      );
+      shiftScrollLeft(element, left - element.scrollLeft);
+    } else if (pendingShiftPxRef.current !== 0) {
       shiftScrollLeft(element, pendingShiftPxRef.current);
       pendingShiftPxRef.current = 0;
     }
@@ -299,6 +445,7 @@ export function useGanttRange({
     measure();
   }, [
     timeline,
+    dayColumnWidthRem,
     scrollElement,
     projectId,
     scrollToIndex,
@@ -347,6 +494,15 @@ export function useGanttRange({
       } = latestRef.current;
       if (!element || !shown || !decided) return;
       const target = clampDay(date);
+      if (pendingZoomRef.current) {
+        // Date navigation wins over a wheel update from the same frame.
+        // Wait for the new columns instead of scrolling with their old size.
+        pendingZoomRef.current = null;
+        pendingScrollRef.current = { date: target, align };
+        pendingShiftPxRef.current = 0;
+        setState({ projectId, range: ganttRangeAround(target, weekStartsOn) });
+        return;
+      }
       const index = differenceInCalendarDays(target, shown.rangeStart);
       const dayPx = remToPx(day);
       const visiblePx = element.clientWidth - remToPx(rail);
@@ -396,5 +552,12 @@ export function useGanttRange({
     [scrollElement, scrollToDate],
   );
 
-  return { timeline, viewport, scrollToDate, scrollByPage };
+  return {
+    timeline,
+    viewport,
+    scrollToDate,
+    scrollByPage,
+    dayColumnWidthRem,
+    zoomAt,
+  };
 }

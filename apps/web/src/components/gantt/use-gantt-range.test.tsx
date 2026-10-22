@@ -12,6 +12,7 @@ import type { ScheduledTask } from "./gantt-types";
 import {
   GANTT_CHUNK_DAYS,
   GANTT_FIRST_DAY,
+  GANTT_LAST_DAY,
   GANTT_MAX_DAYS,
   GANTT_MIN_DAYS,
 } from "./timeline";
@@ -49,12 +50,13 @@ function task(
 // A scroll container whose content width follows the rendered day count.
 function scroller(viewportPx = 1100) {
   const element = document.createElement("div");
-  const state = { left: 0, days: 0 };
-  const maxLeft = () => Math.max(0, RAIL_PX + state.days * DAY_PX - viewportPx);
+  const state = { left: 0, days: 0, dayPx: DAY_PX, railPx: RAIL_PX };
+  const maxLeft = () =>
+    Math.max(0, state.railPx + state.days * state.dayPx - viewportPx);
   Object.defineProperties(element, {
     clientWidth: { value: viewportPx },
     scrollWidth: {
-      get: () => Math.max(viewportPx, RAIL_PX + state.days * DAY_PX),
+      get: () => Math.max(viewportPx, state.railPx + state.days * state.dayPx),
     },
     scrollLeft: {
       get: () => state.left,
@@ -73,23 +75,35 @@ type Props = {
   tasks: ScheduledTask[];
   ready?: boolean;
   element: HTMLElement | null;
+  projectId?: string;
+  defaultWidth?: number;
+  railWidth?: number;
 };
 
 function setup(initial: Props, viewportPx?: number) {
   const { element, state } = scroller(viewportPx);
   const props: Props = { ...initial, element: initial.element ?? element };
   const hook = renderHook(
-    ({ tasks, ready = true, element: scrollElement }: Props) => {
+    ({
+      tasks,
+      ready = true,
+      element: scrollElement,
+      projectId = "project",
+      defaultWidth = 2.75,
+      railWidth = 20,
+    }: Props) => {
       const result = useGanttRange({
-        projectId: "project",
+        projectId,
         tasks,
         ready,
         weekStartsOn: 1,
-        dayColumnWidthRem: 2.75,
-        railWidthRem: 20,
+        dayColumnWidthRem: defaultWidth,
+        railWidthRem: railWidth,
         scrollElement,
       });
       state.days = result.timeline?.days.length ?? 0;
+      state.dayPx = result.dayColumnWidthRem * 16;
+      state.railPx = railWidth * 16;
       return result;
     },
     { initialProps: props },
@@ -128,6 +142,247 @@ afterEach(() => {
 });
 
 describe("useGanttRange", () => {
+  it.each([20, 0])(
+    "keeps the fractional date under the pointer with a %srem task rail",
+    (railWidth) => {
+      const { hook, element, state } = setup({
+        tasks: [task("2026-03-07", "2026-03-20")],
+        element: null,
+        railWidth,
+      });
+      element.getBoundingClientRect = () => ({ left: 75 }) as DOMRect;
+      const offset = 177;
+      const clientX = 75 + railWidth * 16 + offset;
+      const dateAtPointer = () => {
+        const index = (element.scrollLeft + offset) / state.dayPx;
+        return {
+          date: addDays(firstDay(hook), Math.floor(index)),
+          fraction: index - Math.floor(index),
+        };
+      };
+      const before = dateAtPointer();
+
+      act(() => hook.result.current.zoomAt(-73, clientX));
+
+      expect(hook.result.current.dayColumnWidthRem).toBeGreaterThan(2.75);
+      expect(dateAtPointer().date).toEqual(before.date);
+      expect(dateAtPointer().fraction).toBeCloseTo(before.fraction);
+      expect(hook.result.current.timeline?.gridTemplateColumns).toContain(
+        `${hook.result.current.dayColumnWidthRem}rem`,
+      );
+    },
+  );
+
+  it("retains its chosen width through refreshed work, responsive defaults, and rail changes", () => {
+    const { hook, props } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      element: null,
+    });
+    hook.rerender({ ...props, defaultWidth: 3.125 });
+    expect(hook.result.current.dayColumnWidthRem).toBe(3.125);
+    act(() => hook.result.current.zoomAt(-60, 600));
+    const chosen = hook.result.current.dayColumnWidthRem;
+
+    hook.rerender({
+      ...props,
+      defaultWidth: 2.75,
+      railWidth: 0,
+      tasks: [task("2026-09-15", "2026-09-21")],
+    });
+
+    expect(hook.result.current.dayColumnWidthRem).toBe(chosen);
+    hook.rerender({
+      ...props,
+      projectId: "another",
+      defaultWidth: 3.125,
+      tasks: [task("2026-10-05", "2026-10-09", "another")],
+    });
+    expect(hook.result.current.dayColumnWidthRem).toBe(3.125);
+    hook.rerender(props);
+    expect(hook.result.current.dayColumnWidthRem).toBe(2.75);
+  });
+
+  it("clamps zoom and leaves the scroll position unchanged at a limit", () => {
+    const { hook, element } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      element: null,
+    });
+    for (let step = 0; step < 20; step++)
+      act(() => hook.result.current.zoomAt(-120, 600));
+    expect(hook.result.current.dayColumnWidthRem).toBe(8);
+    const maximum = element.scrollLeft;
+    act(() => hook.result.current.zoomAt(-120, 600));
+    expect(element.scrollLeft).toBe(maximum);
+    for (let step = 0; step < 20; step++)
+      act(() => hook.result.current.zoomAt(120, 600));
+    expect(hook.result.current.dayColumnWidthRem).toBe(2);
+    const minimum = element.scrollLeft;
+    act(() => hook.result.current.zoomAt(120, 600));
+    expect(element.scrollLeft).toBe(minimum);
+  });
+
+  it("keeps the anchor while zooming out grows the start of the range", () => {
+    const { hook, element, state } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      element: null,
+    });
+    element.scrollLeft = 20 * state.dayPx;
+    const oldStart = firstDay(hook);
+    const offset = 400;
+    const point = (element.scrollLeft + offset) / state.dayPx;
+    const day = addDays(oldStart, Math.floor(point));
+
+    act(() => hook.result.current.zoomAt(120, RAIL_PX + offset));
+
+    expect(firstDay(hook).getTime()).toBeLessThan(oldStart.getTime());
+    const next = (element.scrollLeft + offset) / state.dayPx;
+    expect(addDays(firstDay(hook), Math.floor(next))).toEqual(day);
+    expect(next - Math.floor(next)).toBeCloseTo(point - Math.floor(point));
+  });
+
+  it("pre-expands the end before zoom-out can clamp away the pointer date", () => {
+    const { hook, element, state } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      element: null,
+    });
+    scrollTo(
+      element,
+      element.scrollWidth - element.clientWidth - 5 * state.dayPx,
+    );
+    element.scrollLeft = element.scrollWidth - element.clientWidth;
+    const beforeStart = firstDay(hook);
+    const offset = 200;
+    const point = (element.scrollLeft + offset) / state.dayPx;
+    const day = addDays(beforeStart, Math.floor(point));
+
+    act(() => hook.result.current.zoomAt(120, RAIL_PX + offset));
+
+    const next = (element.scrollLeft + offset) / state.dayPx;
+    expect(addDays(firstDay(hook), Math.floor(next))).toEqual(day);
+    expect(next - Math.floor(next)).toBeCloseTo(point - Math.floor(point));
+    expect(hook.result.current.timeline?.days.length).toBeLessThanOrEqual(
+      GANTT_MAX_DAYS,
+    );
+  });
+
+  it("preserves zoom after a temporary empty view and navigates with the current scale", () => {
+    const { hook, element, props, state } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      element: null,
+    });
+    act(() => hook.result.current.zoomAt(-90, 600));
+    const width = hook.result.current.dayColumnWidthRem;
+    const before = addDays(
+      firstDay(hook),
+      Math.round(element.scrollLeft / state.dayPx),
+    );
+    hook.rerender({ ...props, element: null });
+    const next = scroller();
+    next.state.days = hook.result.current.timeline?.days.length ?? 0;
+    next.state.dayPx = width * 16;
+    hook.rerender({ ...props, element: next.element });
+    expect(hook.result.current.dayColumnWidthRem).toBe(width);
+    expect(
+      addDays(
+        firstDay(hook),
+        Math.round(next.element.scrollLeft / (width * 16)),
+      ),
+    ).toEqual(before);
+
+    act(() =>
+      hook.result.current.scrollToDate(parseISO("2032-02-03"), "start", "auto"),
+    );
+    // This replacement DOM mock follows a different state object.
+    next.state.days = hook.result.current.timeline?.days.length ?? 0;
+    hook.rerender({ ...props, element: next.element });
+    expect(
+      addDays(
+        firstDay(hook),
+        Math.round(next.element.scrollLeft / (width * 16)),
+      ),
+    ).toEqual(parseISO("2032-02-03"));
+  });
+
+  it("cancels smooth date navigation before applying a wheel zoom", () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const { hook, element } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      element: null,
+    });
+    const scroll = vi.spyOn(element, "scrollTo");
+    act(() => hook.result.current.scrollByPage(1));
+    act(() => hook.result.current.zoomAt(-40, 600));
+    expect(scroll).toHaveBeenCalledWith(
+      expect.objectContaining({ behavior: "instant" }),
+    );
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("lets a later date jump supersede a wheel update in the same frame", () => {
+    const { hook, element, state } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      element: null,
+    });
+    const target = addDays(firstDay(hook), 120);
+    act(() => {
+      hook.result.current.zoomAt(-80, 600);
+      hook.result.current.scrollToDate(target, "start", "auto");
+    });
+    expect(
+      addDays(firstDay(hook), Math.round(element.scrollLeft / state.dayPx)),
+    ).toEqual(target);
+    expect(hook.result.current.dayColumnWidthRem).toBeGreaterThan(2.75);
+  });
+
+  it("lets a later wheel gesture supersede a queued date jump in the same frame", () => {
+    const { hook, element, state } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      element: null,
+    });
+    const offset = 200;
+    const before = (element.scrollLeft + offset) / state.dayPx;
+    const expected = addDays(firstDay(hook), Math.floor(before));
+    act(() => {
+      hook.result.current.scrollToDate(parseISO("2032-01-01"), "start", "auto");
+      hook.result.current.zoomAt(-80, RAIL_PX + offset);
+    });
+    const after = (element.scrollLeft + offset) / state.dayPx;
+    expect(addDays(firstDay(hook), Math.floor(after))).toEqual(expected);
+    expect(after - Math.floor(after)).toBeCloseTo(before - Math.floor(before));
+  });
+
+  it("ignores wheel zoom until the complete schedule and a measurable viewport exist", () => {
+    const { hook, props } = setup({
+      tasks: [task("2026-09-14", "2026-09-18")],
+      ready: false,
+      element: null,
+    });
+    act(() => hook.result.current.zoomAt(-120, 600));
+    expect(hook.result.current.dayColumnWidthRem).toBe(2.75);
+    hook.rerender({ ...props, ready: true, element: null });
+    act(() => hook.result.current.zoomAt(-120, 600));
+    expect(hook.result.current.dayColumnWidthRem).toBe(2.75);
+  });
+
+  it.each([
+    ["0001-01-01", "0001-01-05"],
+    ["9999-12-25", "9999-12-31"],
+  ])("keeps supported calendar bounds when zooming near %s", (start, end) => {
+    const { hook, element } = setup({
+      tasks: [task(start, end)],
+      element: null,
+    });
+    act(() =>
+      hook.result.current.scrollToDate(parseISO(start), "start", "auto"),
+    );
+    act(() => hook.result.current.zoomAt(120, 700));
+    expect(hook.result.current.timeline!.rangeStart >= GANTT_FIRST_DAY).toBe(
+      true,
+    );
+    expect(hook.result.current.timeline!.rangeEnd <= GANTT_LAST_DAY).toBe(true);
+    expect(element.scrollLeft).toBeGreaterThanOrEqual(0);
+  });
+
   it("adds room before the start on open without moving the visible dates", () => {
     const { hook, element } = setup({
       tasks: [task("2026-09-14", "2026-09-18")],
