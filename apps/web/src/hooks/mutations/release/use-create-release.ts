@@ -3,6 +3,9 @@ import createRelease, {
   type CreateReleaseInput,
 } from "@/fetchers/release/create-release";
 import { releasesKey } from "@/hooks/queries/release/use-get-releases";
+import { HttpError } from "@/lib/http-error";
+import { invalidateReleaseLinks } from "@/lib/invalidate-release-links";
+import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { upsertRelease } from "@/lib/releases/upsert-release";
 import type { Release } from "@/types/release";
 
@@ -15,11 +18,28 @@ export function useCreateRelease() {
     mutationFn: ({ projectId, data }: Variables) =>
       createRelease(projectId, data),
     // Listed at once, so a page that opens the new release finds it.
-    onSuccess: (release, { projectId }) => {
+    onSuccess: (release, { projectId, data }) => {
       queryClient.setQueryData<Release[]>(releasesKey(projectId), (releases) =>
         releases ? upsertRelease(releases, release) : releases,
       );
-      void queryClient.invalidateQueries({ queryKey: releasesKey(projectId) });
+      if (data.milestoneIds?.length) {
+        invalidateReleaseLinks(
+          queryClient,
+          projectId,
+          data.milestoneIds.map((id) => ({ id, featureId: null })),
+        );
+      } else {
+        void queryClient.invalidateQueries({
+          queryKey: releasesKey(projectId),
+        });
+      }
+    },
+    onError: (error, { projectId }) => {
+      if (
+        error instanceof HttpError &&
+        error.code === "MILESTONE_SELECTION_CONFLICT"
+      )
+        invalidateWorkLinkCandidates(queryClient, projectId);
     },
   });
 }

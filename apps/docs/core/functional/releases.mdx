@@ -43,14 +43,20 @@ The phase and countdown change at midnight on your device. Nothing else happens 
 1. Choose **New release** on the Releases page, or **Create release** in the command menu while you're in the project.
 2. Enter a **Name**. It must be different from the project's other releases.
 3. Pick the **Start**, **Code freeze**, and **Submission** dates.
-4. Add a **Description** of what the release delivers, if that helps.
+4. Optionally activate **Link milestones**, search milestone or Feature names, and select milestones across pages. Only milestones with **No release** are available, including empty and completed milestones and those owned by archived Features. Remove a selection to leave it unassigned.
 5. Choose **Create release**.
 
 When the project already has releases, the dialog suggests dates that start the day after the latest submission, or today if that day has passed, and keep that release's lengths. Change them as needed. Each date picker only offers days that keep the dates in order.
 
+If that latest release has a two- or three-part version name, **Name** also starts with the next version: **0.69 → 0.70** or **v1.4.9 → v1.4.10**. Existing names are skipped, and custom release names leave the field blank. You can edit or clear the suggestion.
+
+The release and selected milestone assignments save together. Linked Tasks/Bugs with **No release** follow their milestone into the new release; explicit child release overrides stay where they are. Cancelling creates nothing. If a milestone was deleted, moved, or assigned elsewhere while you were choosing it, the entire save is rejected and your form stays open for correction. Review the selected milestones and retry.
+
+Milestone selection requires permission to read and edit tasks, in addition to creating releases. Without those task permissions, you can still create a release using the usual fields. To move a milestone already assigned to another release, create the release first and use [Link existing milestone](#put-work-in-a-release) on its detail page.
+
 ## Edit or delete a release
 
-To change a release's name, dates, or description, open the actions menu on its row in the list, or open the release, and choose **Edit release**. Choose **Save** to apply the change. Its phase updates at once.
+To change a release's name or dates, open the actions menu on its row in the list, or open the release, and choose **Edit release**. Choose **Save** to apply the change. Its phase updates at once.
 
 To delete a release, choose **Delete release** in the same menus and confirm. Its milestones and tasks stay in the project without a release, and each one's activity records that it left the release. A deleted release can't be restored: to get it back, create it again and put the work back in it.
 
@@ -81,7 +87,7 @@ Each release change appears in the Task/Bug activity; milestone release changes 
 
 Select a release's name in the overview to open its page. **All releases** takes you back.
 
-The page shows the release's phase, countdown, and description, then one **Progress over time** chart with its start, code freeze, submission, and today marked on the same timeline. The dates and feature, task, and unfinished counts appear alongside the chart, which tracks its tasks by day:
+The page shows the release's phase and countdown, then one **Progress over time** chart with its start, code freeze, submission, and today marked on the same timeline. The dates and feature, task, and unfinished counts appear alongside the chart, which tracks its tasks by day:
 
 - **Scope** is the total number of Tasks and Bugs in the release each day. Its legend shows the current total and net scope growth since the release started: starting with 10 and having 15 now shows **15 · +50%**. Newly created work and existing work linked or moved into the release count equally; removing work reduces growth.
 - **Predicted** is a straight dashed guide from zero at the start to the current task count at code freeze. It shows the steady pace needed to finish that scope by code freeze, rather than estimating future work from past activity. Its legend shows the expected count and percentage for today. Changing the release's task count updates the guide.
@@ -133,6 +139,7 @@ Each item moves on its own. Unfinished milestones and Tasks/Bugs are handled ind
 | --- | --- | --- |
 | See releases and their progress | Access to the project | Everyone, including viewers |
 | Create or edit a release | Manage projects | Admin, Owner |
+| Create a release with milestone links | Manage projects, read tasks, and edit tasks | Admin, Owner |
 | Delete a release | Manage projects and edit tasks | Admin, Owner |
 | Put Tasks/Bugs and milestones in a release | Edit tasks | Member, Admin, Owner |
 | Move unfinished work | Edit tasks | Member, Admin, Owner |
@@ -142,5 +149,7 @@ These are the starting roles; an admin can [change them](/core/functional/collab
 ## Use releases from other tools
 
 The [Kaneo CLI](/cli/reference) and the [MCP server](/core/integrations/mcp) can list, create, edit, and delete releases and set a task's release. The API's [endpoint reference](/api-reference/introduction) lists the routes under **Releases**.
+
+API callers can supply up to 100 unique `milestoneIds` in `POST /release/project/{projectId}` to create a release with unassigned milestone links atomically. Supplying links additionally requires `task:update`; existing callers without them retain the normal creation behavior. `GET /release/project/{projectId}/milestone-link-candidates` requires `task:read` and returns searchable, paginated unassigned milestones in the project. Name conflicts use `RELEASE_NAME_TAKEN`; changed or ineligible selections use `MILESTONE_SELECTION_CONFLICT`, both with HTTP 409.
 
 Release summaries count milestone execution totals separately from Feature knowledge groups. The historical chart remains Task/Bug-only: editing milestone metadata alone does not create history events.

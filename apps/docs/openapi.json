@@ -16476,7 +16476,7 @@
           "Releases"
         ],
         "summary": "Create release",
-        "description": "Add a release to a project. Its name must be unique in the project, and its dates must run start ≤ code freeze ≤ submission.",
+        "description": "Add a release to a project, optionally linking up to 100 milestones currently set to No release in one atomic transaction. Linked work with No release follows its milestone; explicit task releases remain. Selected milestones additionally require task:update. The name must be unique in the project, and dates must run start ≤ code freeze ≤ submission.",
         "parameters": [
           {
             "schema": {
@@ -16527,6 +16527,15 @@
                     "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
                     "example": "2026-10-20",
                     "description": "The day the release ships. On or after the code freeze date."
+                  },
+                  "milestoneIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 100,
+                    "description": "Up to 100 unique milestones with No release in this project. Creating the release and linking them is atomic and additionally requires task:update."
                   }
                 },
                 "required": [
@@ -16581,7 +16590,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing project:update permission",
+            "description": "No project access, missing project:update, or selected milestones without task:update permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -16601,7 +16610,7 @@
             }
           },
           "409": {
-            "description": "A release with this name already exists",
+            "description": "RELEASE_NAME_TAKEN for an existing name; MILESTONE_SELECTION_CONFLICT for missing, moved, deleted or assigned milestones; or a concurrent project/workspace change",
             "content": {
               "application/json": {
                 "schema": {
@@ -16612,6 +16621,191 @@
           },
           "429": {
             "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/release/project/{projectId}/milestone-link-candidates": {
+      "get": {
+        "operationId": "getReleaseMilestoneLinkCandidates",
+        "tags": [
+          "Releases"
+        ],
+        "summary": "Find unassigned milestones for a new release",
+        "description": "Paginated milestones with No release in this project, including empty and completed milestones and those owned by archived Features. Search matches milestone and owning Feature titles. Returns compact identity metadata without progress or schedule calculations.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000,
+              "default": 1
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unassigned milestones eligible for release creation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "featureId": {
+                            "type": "string"
+                          },
+                          "featureTitle": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "featureId",
+                          "featureTitle"
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "page": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "limit": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "totalPages": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid search or pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No project access or missing task:read permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project workspace changed; retry the request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Candidate request timed out",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           }
         }
       }

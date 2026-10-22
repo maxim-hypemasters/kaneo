@@ -451,7 +451,7 @@ describe("ReleaseDetailPage", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "2.4" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Checkout rework")).toBeInTheDocument();
+    expect(screen.queryByText("Checkout rework")).not.toBeInTheDocument();
     expect(
       screen.getByText("tasks:releases.phase.codeFreeze"),
     ).toBeInTheDocument();

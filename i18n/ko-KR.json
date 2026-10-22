@@ -3468,8 +3468,6 @@
 				"codeFreezeLabel": "코드 프리즈",
 				"submissionLabel": "제출일",
 				"pickDate": "날짜 선택",
-				"descriptionLabel": "설명",
-				"descriptionPlaceholder": "이 릴리스에서 제공할 내용 (선택)",
 				"create": "릴리스 만들기",
 				"save": "저장",
 				"createSuccess": "릴리스가 생성되었습니다",
@@ -3586,6 +3584,20 @@
 			"timeline": {
 				"label": "Releases by date",
 				"completion": "{{percentage}}% · {{completed}} of {{total}} tasks and bugs completed"
+			},
+			"milestonePicker": {
+				"title": "Link milestones",
+				"search": "Search milestones or Features",
+				"selectedCount_one": "{{count}} selected",
+				"selectedCount_other": "{{count}} selected",
+				"selected": "Selected milestones",
+				"remove": "Remove {{title}}",
+				"loading": "Loading milestones…",
+				"loadError": "Milestones couldn’t be loaded.",
+				"noMatches": "No milestones match your search.",
+				"empty": "No unassigned milestones available.",
+				"limit": "You can link up to 100 milestones.",
+				"conflict": "Some selected milestones changed or are no longer available. Review your selection and try again."
 			}
 		},
 		"createMenu": {

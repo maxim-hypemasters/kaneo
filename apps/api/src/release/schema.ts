@@ -23,6 +23,17 @@ export const createReleaseBody = z.object({
   startDate,
   codeFreezeDate,
   submissionDate,
+  milestoneIds: z
+    .array(z.string().trim().min(1))
+    .max(100)
+    .refine((ids) => new Set(ids).size === ids.length, {
+      message: "Milestone ids must be unique",
+    })
+    .optional()
+    .openapi({
+      description:
+        "Up to 100 unique milestones with No release in this project. Creating the release and linking them is atomic and additionally requires task:update.",
+    }),
 });
 
 export const updateReleaseBody = z.object({

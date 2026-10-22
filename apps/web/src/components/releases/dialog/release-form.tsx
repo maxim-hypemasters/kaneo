@@ -1,5 +1,5 @@
 import { Rocket } from "lucide-react";
-import { type FormEvent, useId, useRef, useState } from "react";
+import { type FormEvent, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import type { ReleaseMilestoneCandidate } from "@/fetchers/release/get-release-milestone-candidates";
 import { useCreateRelease } from "@/hooks/mutations/release/use-create-release";
 import { useUpdateRelease } from "@/hooks/mutations/release/use-update-release";
 import { HttpError } from "@/lib/http-error";
@@ -23,23 +23,27 @@ import {
   RELEASE_DATE_KINDS,
 } from "../release-date-kinds";
 import { ReleaseDateField } from "./release-date-field";
+import { ReleaseMilestonePicker } from "./release-milestone-picker";
+import { useCanLinkReleaseMilestones } from "./use-can-link-release-milestones";
 import { releaseDateLimits } from "./release-date-limits";
 import {
   type ReleaseFormValues,
   releaseFormValues,
 } from "./release-form-values";
 import { suggestReleaseDates } from "./suggest-release-dates";
+import { suggestReleaseName } from "./suggest-release-name";
 import { type ReleaseFormErrors, validateRelease } from "./validate-release";
 
 type ReleaseFormProps = {
   projectId: string;
   // null creates a release.
   release: Release | null;
-  // The project's releases, for the suggested dates of a new one.
+  // The project's releases, for the suggested name and dates of a new one.
   releases: readonly Release[];
   today: string;
   onClose: () => void;
   onCreated?: (release: Omit<Release, "progress">) => void;
+  onCreatingChange: (creating: boolean) => void;
 };
 
 export function ReleaseForm({
@@ -49,6 +53,7 @@ export function ReleaseForm({
   today,
   onClose,
   onCreated,
+  onCreatingChange,
 }: ReleaseFormProps) {
   const { t } = useTranslation();
   const createRelease = useCreateRelease();
@@ -57,15 +62,31 @@ export function ReleaseForm({
     releaseFormValues(
       release,
       release ? null : suggestReleaseDates(releases, today),
+      release ? "" : suggestReleaseName(releases),
     ),
   );
   const [errors, setErrors] = useState<ReleaseFormErrors>({});
+  const [milestones, setMilestones] = useState<ReleaseMilestoneCandidate[]>([]);
+  const [milestoneConflict, setMilestoneConflict] = useState(false);
+  const [conflictVersion, setConflictVersion] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const nameRef = useRef<HTMLInputElement>(null);
+  const focusNameAfterSave = useRef(false);
   const nameId = useId();
   const nameErrorId = useId();
-  const descriptionId = useId();
   const isEditing = release !== null;
-  const isPending = createRelease.isPending || updateRelease.isPending;
+  const isPending =
+    submitting || createRelease.isPending || updateRelease.isPending;
+  const creationPending = !isEditing && isPending;
+  const canLinkMilestones = useCanLinkReleaseMilestones(!isEditing);
+
+  useEffect(() => {
+    if (!isPending && errors.name && focusNameAfterSave.current) {
+      focusNameAfterSave.current = false;
+      nameRef.current?.focus();
+    }
+  }, [isPending, errors.name]);
 
   const errorText = (field: keyof ReleaseFormErrors) => {
     const error = errors[field];
@@ -89,7 +110,7 @@ export function ReleaseForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (isPending) return;
+    if (isPending || submittingRef.current) return;
     const found = validateRelease(values);
     const { startDate, codeFreezeDate, submissionDate } = values;
     if (
@@ -101,15 +122,17 @@ export function ReleaseForm({
       setErrors(found);
       return;
     }
-    const description = values.description.trim();
     const data = {
       name: values.name.trim(),
-      description: description || null,
       startDate,
       codeFreezeDate,
       submissionDate,
     };
 
+    submittingRef.current = true;
+    setSubmitting(true);
+    setMilestoneConflict(false);
+    if (!isEditing) onCreatingChange(true);
     try {
       if (release) {
         await updateRelease.mutateAsync({ id: release.id, projectId, data });
@@ -117,7 +140,15 @@ export function ReleaseForm({
           icon: Rocket,
         });
       } else {
-        const created = await createRelease.mutateAsync({ projectId, data });
+        const created = await createRelease.mutateAsync({
+          projectId,
+          data: {
+            ...data,
+            ...(milestones.length > 0
+              ? { milestoneIds: milestones.map(({ id }) => id) }
+              : {}),
+          },
+        });
         toast.success(t("tasks:releases.dialog.createSuccess"), {
           icon: Rocket,
         });
@@ -125,14 +156,27 @@ export function ReleaseForm({
       }
       onClose();
     } catch (submitError) {
-      // Names are unique within a project: the one failure the form can tie
-      // to a field, in the viewer's language rather than the API's English.
-      if (submitError instanceof HttpError && submitError.status === 409) {
+      if (
+        submitError instanceof HttpError &&
+        submitError.code === "MILESTONE_SELECTION_CONFLICT"
+      ) {
+        setMilestoneConflict(true);
+        setConflictVersion((version) => version + 1);
+        return;
+      }
+      if (
+        submitError instanceof HttpError &&
+        submitError.status === 409 &&
+        (isEditing ||
+          submitError.code === "RELEASE_NAME_TAKEN" ||
+          submitError.message ===
+            "A release with this name already exists in this project")
+      ) {
         setErrors((current) => ({
           ...current,
           name: { key: "tasks:releases.ux.nameTaken" },
         }));
-        nameRef.current?.focus();
+        focusNameAfterSave.current = true;
         return;
       }
       toast.error(
@@ -144,6 +188,10 @@ export function ReleaseForm({
                 : "tasks:releases.dialog.createError",
             ),
       );
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+      if (!isEditing) onCreatingChange(false);
     }
   };
 
@@ -168,8 +216,10 @@ export function ReleaseForm({
           <Label htmlFor={nameId}>{t("tasks:releases.dialog.nameLabel")}</Label>
           <Input
             ref={nameRef}
+            type="text"
             id={nameId}
             value={values.name}
+            disabled={creationPending}
             maxLength={100}
             autoComplete="off"
             placeholder={t("tasks:releases.dialog.namePlaceholder")}
@@ -194,26 +244,33 @@ export function ReleaseForm({
                 limits={releaseDateLimits(values, kind)}
                 error={errorText(field)}
                 today={today}
+                disabled={creationPending}
                 onChange={(day) => setField(field, day)}
               />
             );
           })}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor={descriptionId}>
-            {t("tasks:releases.dialog.descriptionLabel")}
-          </Label>
-          <Textarea
-            id={descriptionId}
-            value={values.description}
-            maxLength={10_000}
-            placeholder={t("tasks:releases.dialog.descriptionPlaceholder")}
-            onChange={(event) => setField("description", event.target.value)}
+        {canLinkMilestones && (
+          <ReleaseMilestonePicker
+            projectId={projectId}
+            value={milestones}
+            onChange={(next) => {
+              setMilestones(next);
+              setMilestoneConflict(false);
+            }}
+            disabled={creationPending}
+            conflict={milestoneConflict}
+            conflictVersion={conflictVersion}
           />
-        </div>
+        )}
       </DialogPanel>
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={creationPending}
+          onClick={onClose}
+        >
           {t("common:actions.cancel")}
         </Button>
         <Button type="submit" loading={isPending}>

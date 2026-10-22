@@ -49,6 +49,9 @@ vi.mock("@/lib/releases/use-release-today", () => ({
 vi.mock("@/lib/toast", () => ({
   toast: { success: m.success, error: m.error },
 }));
+vi.mock("./use-can-link-release-milestones", () => ({
+  useCanLinkReleaseMilestones: () => false,
+}));
 
 const release: Release = {
   id: "r1",
@@ -106,6 +109,11 @@ describe("ReleaseDialog", () => {
   it("suggests the next release's dates and creates it", async () => {
     const { onOpenChange, onCreated } = renderDialog(null);
 
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+    expect(
+      screen.getByRole("textbox", { name: "tasks:releases.dialog.nameLabel" }),
+    ).toHaveValue("2.5");
+
     expect(
       screen.getByRole("button", {
         name: /tasks:releases\.dialog\.startLabel Oct 21/,
@@ -132,7 +140,6 @@ describe("ReleaseDialog", () => {
       projectId: "project-1",
       data: {
         name: "2.5",
-        description: null,
         startDate: "2026-10-21",
         codeFreezeDate: "2026-11-04",
         submissionDate: "2026-11-09",
@@ -150,6 +157,11 @@ describe("ReleaseDialog", () => {
 
   it("asks for a name before creating", async () => {
     renderDialog(null);
+
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "tasks:releases.dialog.nameLabel" }),
+      { target: { value: "" } },
+    );
 
     await submit("tasks:releases.dialog.create");
 
@@ -187,18 +199,13 @@ describe("ReleaseDialog", () => {
     expect(m.create).not.toHaveBeenCalled();
   });
 
-  it("edits a release, clearing an emptied description", async () => {
+  it("edits a release without overwriting its stored description", async () => {
     const { onOpenChange } = renderDialog(release);
 
     expect(
       screen.getByRole("textbox", { name: "tasks:releases.dialog.nameLabel" }),
     ).toHaveValue("2.4");
-    fireEvent.change(
-      screen.getByRole("textbox", {
-        name: "tasks:releases.dialog.descriptionLabel",
-      }),
-      { target: { value: "   " } },
-    );
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
     await submit("tasks:releases.dialog.save");
 
     expect(m.update).toHaveBeenCalledWith({
@@ -206,7 +213,6 @@ describe("ReleaseDialog", () => {
       projectId: "project-1",
       data: {
         name: "2.4",
-        description: null,
         startDate: "2026-10-01",
         codeFreezeDate: "2026-10-15",
         submissionDate: "2026-10-20",
