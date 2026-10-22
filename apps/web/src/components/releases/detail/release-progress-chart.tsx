@@ -109,6 +109,7 @@ export function ReleaseProgressChart({
           aria-valuetext={
             selected
               ? t("tasks:releases.chart.point", {
+                  scope: selected.scope,
                   started: selected.started,
                   completed: selected.completed,
                   predicted: new Intl.NumberFormat(
@@ -260,6 +261,8 @@ export function ReleaseProgressChart({
       </div>
       <ReleaseProgressLegend
         counts={history.current}
+        startScope={history.startScope}
+        upcoming={upcoming}
         predicted={predictedProgress(
           release,
           history.current.scope,

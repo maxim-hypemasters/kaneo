@@ -29,6 +29,10 @@ export const releaseProgressHistorySchema = z
         "Tracking began at this instant. Earlier totals are unknown.",
     }),
     today: isoDay,
+    startScope: z.number().int().nonnegative().nullable().openapi({
+      description:
+        "Task/Bug scope strictly before local midnight on the release start date in the requested timezone. Null before the release starts or when tracking did not begin strictly before that boundary.",
+    }),
     current: counts,
     points: z.array(counts.extend({ date: isoDay })),
   })

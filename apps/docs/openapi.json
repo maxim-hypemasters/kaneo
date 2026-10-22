@@ -2523,6 +2523,14 @@
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "example": "2026-10-20"
           },
+          "startScope": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "description": "Task/Bug scope strictly before local midnight on the release start date in the requested timezone. Null before the release starts or when tracking did not begin strictly before that boundary."
+          },
           "current": {
             "type": "object",
             "properties": {
@@ -2581,6 +2589,7 @@
         "required": [
           "trackedFrom",
           "today",
+          "startScope",
           "current",
           "points"
         ]
@@ -16902,7 +16911,7 @@
           "Releases"
         ],
         "summary": "Get release progress history",
-        "description": "Daily task scope, started and completed totals in the requested timezone. Started includes completed tasks and tasks in nonfinal columns after the first nonfinal column. Archived tasks remain in scope. History begins when tracking was installed; earlier values are unknown. Future days are omitted, and unchanged days after submission are trimmed.",
+        "description": "Daily Task/Bug scope, started and completed totals in the requested timezone. startScope is the net scope strictly before local midnight on the current release start date; it is null before the release starts or when tracking did not begin strictly before that boundary. Started includes completed tasks and tasks in nonfinal columns after the first nonfinal column. Archived tasks remain in scope. History begins when tracking was installed; earlier values are unknown. Future days are omitted, and unchanged days after submission are trimmed.",
         "parameters": [
           {
             "schema": {

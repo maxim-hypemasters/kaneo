@@ -31,7 +31,7 @@ export function ReleaseProgressTooltip({
       <p className="mb-1.5 font-medium">
         {formatReleaseDate(point.date, { today })}
       </p>
-      {(["predicted", "started", "completed"] as const).map((key) => (
+      {(["scope", "predicted", "started", "completed"] as const).map((key) => (
         <div key={key} className="flex justify-between gap-4 leading-5">
           <span className="text-muted-foreground">
             {t(`tasks:releases.chart.${key}`)}

@@ -48,6 +48,39 @@ describe("release progress geometry", () => {
     expect(unknown.unknownUntil).toBe(CHART_WIDTH);
   });
 
+  it("smooths historical scope additions and removals using the same daily bounds", () => {
+    const geometry = releaseProgressGeometry(release, points, "2026-10-05", 3);
+    const path = progressCurvePath(points, "scope", geometry);
+    expect(path).toMatch(/^M200,/);
+    const segments = [...path.matchAll(/C([\d.,\s-]+)/g)].map((match) =>
+      match[1]
+        .trim()
+        .split(/[\s,]+/)
+        .map(Number),
+    );
+    expect(segments).toHaveLength(2);
+    for (const [index, segment] of segments.entries()) {
+      const start = geometry.y(points[index].scope);
+      const end = geometry.y(points[index + 1].scope);
+      expect(segment[1]).toBe(start);
+      expect(segment[3]).toBe(end);
+      expect(segment.slice(4)).toEqual([
+        geometry.x(points[index + 1].date),
+        end,
+      ]);
+      for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+        const y =
+          (1 - t) ** 3 * start +
+          3 * (1 - t) ** 2 * t * segment[1] +
+          3 * (1 - t) * t ** 2 * segment[3] +
+          t ** 3 * end;
+        expect(y).toBeGreaterThanOrEqual(Math.min(start, end));
+        expect(y).toBeLessThanOrEqual(Math.max(start, end));
+      }
+    }
+    expect(path).toMatch(/ 300,[\d.]+$/);
+  });
+
   it("smooths rises, plateaus and falls without overshoot or crossing the started line", () => {
     const samples = [
       { date: "2026-10-05", scope: 6, started: 0, completed: 0 },

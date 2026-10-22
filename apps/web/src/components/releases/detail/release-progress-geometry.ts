@@ -74,7 +74,7 @@ export function releaseProgressGeometry(
 
 export function progressCurvePath(
   points: readonly ReleaseProgressPoint[],
-  key: "started" | "completed",
+  key: "scope" | "started" | "completed",
   geometry: ReturnType<typeof releaseProgressGeometry>,
 ) {
   return points
