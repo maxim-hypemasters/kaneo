@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import type { Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { SubtaskProgressGlyph } from "@/components/task-chips/subtask-progress-glyph";
 import type { ReleaseItemCounts } from "@/lib/releases/release-progress";
@@ -11,6 +12,7 @@ import type { ReleasePermissions } from "../use-release-permissions";
 import { ReleaseTimelineDate } from "./release-timeline-date";
 
 type ReleaseRowProps = {
+  ref?: Ref<HTMLLIElement>;
   release: Release;
   counts: ReleaseItemCounts;
   today: string;
@@ -22,6 +24,7 @@ type ReleaseRowProps = {
 };
 
 export function ReleaseRow({
+  ref,
   release,
   counts,
   today,
@@ -40,7 +43,10 @@ export function ReleaseRow({
       : 0;
 
   return (
-    <li className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] sm:grid-cols-[5.5rem_minmax(0,1fr)]">
+    <li
+      ref={ref}
+      className="grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] sm:grid-cols-[5.5rem_minmax(0,1fr)]"
+    >
       <ReleaseTimelineDate
         date={release.submissionDate}
         today={today}

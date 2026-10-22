@@ -59,6 +59,7 @@ export function ReleaseListPage({
   if (releases) {
     content = (
       <ReleaseList
+        key={`${workspaceId}:${projectId}`}
         releases={releases}
         counts={counts}
         today={today}

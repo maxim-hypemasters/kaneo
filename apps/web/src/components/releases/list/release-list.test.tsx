@@ -13,6 +13,9 @@ import type { Release } from "@/types/release";
 import { ReleaseList } from "./release-list";
 
 const progress = vi.hoisted(() => vi.fn());
+const scroll = vi.fn(function (this: HTMLElement, options: ScrollToOptions) {
+  if (options.top !== undefined) this.scrollTop = options.top;
+});
 
 vi.mock("react-i18next", () => ({
   initReactI18next: { type: "3rdParty", init: () => {} },
@@ -64,8 +67,42 @@ vi.mock("../release-actions-menu", () => ({
   ReleaseActionsMenu: () => null,
 }));
 
-beforeEach(() => vi.clearAllMocks());
-afterEach(cleanup);
+beforeEach(() => {
+  vi.clearAllMocks();
+  Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+    configurable: true,
+    value: scroll,
+  });
+});
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
+
+function mockTimelineGeometry() {
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+    function (this: HTMLElement) {
+      let top = 100;
+      if (this.tagName === "LI") {
+        const list = this.parentElement;
+        const viewport = list?.parentElement;
+        const index = Array.from(list?.children ?? []).indexOf(this);
+        top += index * 64 - (viewport?.scrollTop ?? 0);
+      }
+      return {
+        x: 0,
+        y: top,
+        top,
+        bottom: top + 64,
+        left: 0,
+        right: 800,
+        width: 800,
+        height: 64,
+        toJSON: () => ({}),
+      };
+    },
+  );
+}
 
 function release(
   id: string,
@@ -134,6 +171,115 @@ function Timeline({
 }
 
 describe("automatic release overview", () => {
+  it("opens at the first active row below many upcoming releases without focusing its link", () => {
+    mockTimelineGeometry();
+    const upcoming = Array.from({ length: 12 }, (_, index) =>
+      release(`future-${index}`, "2026-11-01", "2026-11-30"),
+    );
+    render(
+      <Timeline
+        releases={[
+          ...upcoming,
+          release("in-progress", "2026-10-01", "2026-10-30"),
+          {
+            ...release("code-freeze", "2026-10-10", "2026-10-25"),
+            codeFreezeDate: "2026-10-20",
+          },
+        ]}
+      />,
+    );
+
+    const viewport = screen.getByRole("list").parentElement;
+    expect(scroll).toHaveBeenCalledExactlyOnceWith({
+      top: 12 * 64,
+      behavior: "instant",
+    });
+    expect(scroll.mock.contexts[0]).toBe(viewport);
+    expect(viewport?.scrollTop).toBe(12 * 64);
+    expect(screen.getByRole("link", { name: "code-freeze" })).not.toHaveFocus();
+    expect(screen.getAllByRole("region")).toHaveLength(2);
+  });
+
+  it("preserves manual scrolling through refreshes, date edits, and local-day changes", () => {
+    mockTimelineGeometry();
+    const active = release("active");
+    const future = release("future", "2026-11-01", "2026-11-30");
+    const { rerender } = render(<Timeline releases={[future, active]} />);
+    const viewport = screen.getByRole("list").parentElement!;
+    viewport.scrollTop = 320;
+
+    rerender(<Timeline releases={[{ ...future }, { ...active }]} />);
+    rerender(
+      <Timeline
+        releases={[future, { ...active, submissionDate: "2026-10-29" }]}
+        today="2026-10-22"
+      />,
+    );
+    rerender(<Timeline releases={[future]} today="2026-10-31" />);
+
+    expect(scroll).toHaveBeenCalledTimes(1);
+    expect(viewport.scrollTop).toBe(320);
+  });
+
+  it("stays at the top when entry has no active releases and does not jump when one later becomes active", () => {
+    mockTimelineGeometry();
+    const future = release("future", "2026-11-01", "2026-11-30");
+    const { rerender } = render(<Timeline releases={[future]} />);
+    expect(scroll).not.toHaveBeenCalled();
+    expect(screen.getByRole("list").parentElement?.scrollTop).toBe(0);
+
+    rerender(<Timeline releases={[future]} today="2026-11-01" />);
+    expect(
+      screen.getByRole("region", { name: "History future" }),
+    ).toBeVisible();
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it("does not jump when work is added after an initially empty overview", () => {
+    mockTimelineGeometry();
+    const { rerender } = render(<Timeline releases={[]} />);
+    rerender(
+      <Timeline
+        releases={[
+          release("future", "2026-11-01", "2026-11-30"),
+          release("active"),
+        ]}
+      />,
+    );
+    expect(
+      screen.getByRole("region", { name: "History active" }),
+    ).toBeVisible();
+    expect(scroll).not.toHaveBeenCalled();
+  });
+
+  it("positions a fresh page entry independently when the project scope changes", () => {
+    mockTimelineGeometry();
+    const future = release("future", "2026-11-01", "2026-11-30");
+    const { rerender } = render(
+      <Timeline
+        key="workspace/project"
+        releases={[future, release("active")]}
+      />,
+    );
+    const firstViewport = screen.getByRole("list").parentElement!;
+    firstViewport.scrollTop = 320;
+
+    rerender(
+      <Timeline
+        key="workspace/other-project"
+        releases={[
+          { ...future, projectId: "other-project" },
+          { ...release("active"), projectId: "other-project" },
+        ]}
+      />,
+    );
+    const secondViewport = screen.getByRole("list").parentElement;
+    expect(secondViewport).not.toBe(firstViewport);
+    expect(scroll).toHaveBeenCalledTimes(2);
+    expect(scroll.mock.contexts[1]).toBe(secondViewport);
+    expect(secondViewport?.scrollTop).toBe(64);
+  });
+
   it("renders a continuous phase-ordered timeline with active history and no disclosure controls", () => {
     render(
       <Timeline

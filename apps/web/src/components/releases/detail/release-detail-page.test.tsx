@@ -402,6 +402,14 @@ describe("ReleaseDetailPage", () => {
     m.board.isFetching = true;
     renderPage();
     const feature = screen.getByRole("region", { name: "Checkout" });
+    expect(
+      within(feature).queryByRole("link", { name: /Pay/ }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      within(feature).getByRole("button", {
+        name: "tasks:gantt.showTasks: First milestone",
+      }),
+    );
     expect(within(feature).getByRole("link", { name: /Pay/ })).toBeVisible();
     expect(
       within(feature).queryByRole("img", { name: /progressInRelease/ }),

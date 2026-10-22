@@ -36,13 +36,14 @@ export function ReleaseProgressSection({
       t("tasks:releases.counts.milestones", { count: counts.milestones }),
   ].filter(Boolean);
 
+  // Contain absolute screen-reader labels so they cannot extend page scrolling.
   return (
     <section
       aria-labelledby={id}
       className={
         overview
-          ? "min-w-0 space-y-3 pb-5"
-          : "space-y-4 border-border/80 border-b px-4 pt-3 pb-5 sm:px-6"
+          ? "relative min-w-0 space-y-3 pb-5"
+          : "relative space-y-4 border-border/80 border-b px-4 pt-3 pb-5 sm:px-6"
       }
     >
       <div

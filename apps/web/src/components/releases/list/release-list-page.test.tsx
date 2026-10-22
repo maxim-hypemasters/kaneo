@@ -190,6 +190,10 @@ beforeEach(() => {
     configurable: true,
     value: () => [],
   });
+  Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+    configurable: true,
+    value: vi.fn(),
+  });
 });
 
 afterEach(cleanup);
