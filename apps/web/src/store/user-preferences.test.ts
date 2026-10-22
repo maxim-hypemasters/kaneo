@@ -14,7 +14,50 @@ function storePreferences(state: Record<string, unknown>) {
 
 afterEach(() => {
   localStorage.removeItem("user-preferences");
-  useUserPreferencesStore.setState({ ganttGroupBy: "none", weekStartsOn: 0 });
+  useUserPreferencesStore.setState({
+    ganttGroupBy: "none",
+    weekStartsOn: 0,
+    releaseViews: {},
+  });
+});
+
+describe("release views", () => {
+  it("remembers views separately for each workspace and project", () => {
+    const { setReleaseView } = useUserPreferencesStore.getState();
+    setReleaseView("w1", "p1", "masterplanning");
+    setReleaseView("w1", "p2", "overview");
+    setReleaseView("w2", "p1", "overview");
+
+    expect(useUserPreferencesStore.getState().releaseViews).toEqual({
+      '["w1","p1"]': "masterplanning",
+      '["w1","p2"]': "overview",
+      '["w2","p1"]': "overview",
+    });
+    expect(
+      JSON.parse(localStorage.getItem("user-preferences") ?? "{}").state
+        .releaseViews,
+    ).toEqual(useUserPreferencesStore.getState().releaseViews);
+  });
+
+  it("restores valid views and drops invalid stored view values", async () => {
+    storePreferences({
+      releaseViews: {
+        '["w","p"]': "masterplanning",
+        '["w","other"]': "gantt",
+      },
+    });
+    await useUserPreferencesStore.persist.rehydrate();
+
+    expect(useUserPreferencesStore.getState().releaseViews).toEqual({
+      '["w","p"]': "masterplanning",
+    });
+  });
+
+  it("resets malformed stored release views", async () => {
+    storePreferences({ releaseViews: ["masterplanning"] });
+    await useUserPreferencesStore.persist.rehydrate();
+    expect(useUserPreferencesStore.getState().releaseViews).toEqual({});
+  });
 });
 
 describe("user preferences", () => {

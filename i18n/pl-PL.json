@@ -4131,6 +4131,32 @@
 				"conflict": "Some selected milestones changed or are no longer available. Review your selection and try again.",
 				"selectedCount_few": "{{count}} selected",
 				"selectedCount_many": "{{count}} selected"
+			},
+			"views": {
+				"label": "Release view",
+				"overview": "Overview",
+				"masterplanning": "Masterplanning"
+			},
+			"masterplanning": {
+				"label": "Release masterplanning",
+				"noMilestones": "No milestones in this release.",
+				"noMilestonesUnassigned": "No milestones without a release.",
+				"loadError": "Milestones couldn’t be loaded.",
+				"moveToRelease": "Move to release",
+				"moving": "Moving…",
+				"moveError": "Could not move milestone.",
+				"retryMove": "Try again",
+				"dragMilestone": "Move {{title}} between releases",
+				"moved": "Moved {{title}} to {{release}}",
+				"unresolved": "Some milestone releases are unavailable. Refresh to reconcile them.",
+				"unresolvedTitle": "Release unavailable",
+				"noAccess": "You don’t have permission to view milestones.",
+				"progress": "{{percentage}}% · {{completed}}/{{total}} completed across all linked Tasks and Bugs",
+				"dropHere": "Drop a milestone here",
+				"dragHelp": "Drag milestones to another release, or use Move to release.",
+				"membersError": "Milestone lead names could not be loaded.",
+				"chooseFeature": "Choose the Feature this milestone belongs to.",
+				"noFeatures": "Create a Feature before adding a milestone."
 			}
 		},
 		"createMenu": {
