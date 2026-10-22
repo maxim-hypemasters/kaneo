@@ -83,7 +83,7 @@ const getReleaseProgressRoute = createRoute({
   tags: ["Releases"],
   summary: "Get release progress history",
   description:
-    "Daily task scope, started and completed totals in the requested timezone. Started includes completed tasks and tasks in nonfinal columns after the first nonfinal column. Archived tasks remain in scope. History begins when tracking was installed; earlier values are unknown. Future days are omitted, and unchanged days after submission are trimmed.",
+    "Daily Task/Bug scope, started and completed totals in the requested timezone. startScope is the net scope strictly before local midnight on the current release start date; it is null before the release starts or when tracking did not begin strictly before that boundary. Started includes completed tasks and tasks in nonfinal columns after the first nonfinal column. Archived tasks remain in scope. History begins when tracking was installed; earlier values are unknown. Future days are omitted, and unchanged days after submission are trimmed.",
   middleware: [workspaceAccess.fromRelease("id")] as const,
   request: { params: releaseParam, query: releaseProgressQuery },
   responses: {

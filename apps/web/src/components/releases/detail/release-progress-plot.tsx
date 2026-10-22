@@ -32,6 +32,7 @@ export function ReleaseProgressPlot({
   const todayInRange =
     history.today >= release.startDate && history.today <= geometry.endDate;
   const series = [
+    { key: "scope", color: "text-muted-foreground" },
     { key: "started", color: "text-amber-500" },
     { key: "completed", color: "text-indigo-500" },
   ] as const;

@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import {
   afterEach,
   beforeEach,
@@ -26,6 +32,7 @@ const release = {
 const history: ReleaseProgressHistory = {
   trackedFrom: "2026-10-05T00:00:00.000Z",
   today: "2026-10-07",
+  startScope: null,
   current: { scope: 4, started: 3, completed: 1 },
   points: [
     { date: "2026-10-05", scope: 4, started: 1, completed: 0 },
@@ -55,15 +62,15 @@ function renderChart(data = history) {
 }
 
 describe("ReleaseProgressChart", () => {
-  it("plots exactly predicted, started and completed with today's expected count", () => {
+  it("plots smooth scope, predicted, started and completed with today's expected count", () => {
     const { container } = renderChart();
-    expect(screen.getAllByRole("definition")).toHaveLength(7);
+    expect(screen.getAllByRole("definition")).toHaveLength(8);
     expect(
       [...container.querySelectorAll("[data-series]")].map((path) =>
         path.getAttribute("data-series"),
       ),
-    ).toEqual(["predicted", "started", "completed"]);
-    for (const key of ["started", "completed"]) {
+    ).toEqual(["predicted", "scope", "started", "completed"]);
+    for (const key of ["scope", "started", "completed"]) {
       const path = container.querySelector(`[data-series="${key}"]`);
       expect(path?.getAttribute("d")).toContain("C");
       expect(path?.getAttribute("d")).not.toContain("V");
@@ -71,9 +78,10 @@ describe("ReleaseProgressChart", () => {
     expect(
       screen.getByText("tasks:releases.chart.predicted"),
     ).toBeInTheDocument();
+    expect(screen.getByText("tasks:releases.chart.scope")).toBeInTheDocument();
     expect(
-      screen.queryByText("tasks:releases.chart.scope"),
-    ).not.toBeInTheDocument();
+      container.querySelector('[data-series="scope"]'),
+    ).not.toHaveAttribute("stroke-dasharray");
     expect(screen.getByText("1.7")).toBeInTheDocument();
     expect(screen.getByText("43%")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
@@ -92,7 +100,7 @@ describe("ReleaseProgressChart", () => {
     expect(chart).toHaveAttribute("aria-valuenow", "1");
     expect(chart.getAttribute("aria-valuetext")).toContain('"date":"Oct 6"');
     expect(chart.getAttribute("aria-valuetext")).toContain('"predicted":"1.4"');
-    expect(chart.getAttribute("aria-valuetext")).not.toContain('"scope"');
+    expect(chart.getAttribute("aria-valuetext")).toContain('"scope":4');
     expect(screen.getByText("1.4")).toBeInTheDocument();
     fireEvent.keyDown(chart, { key: "Home" });
     expect(chart).toHaveAttribute("aria-valuenow", "0");
@@ -129,6 +137,34 @@ describe("ReleaseProgressChart", () => {
     expect(chart).toHaveAttribute("aria-valuenow", "1");
     fireEvent.pointerMove(chart, { clientX: 200, pointerType: "mouse" });
     expect(chart).toHaveAttribute("aria-valuenow", "0");
+  });
+
+  it("explores historical scope without replacing the current scope or growth legend", () => {
+    renderChart({
+      ...history,
+      trackedFrom: "2026-10-01T00:00:00.000Z",
+      startScope: 2,
+      points: history.points.map((point, index) => ({
+        ...point,
+        scope: index + 2,
+      })),
+    });
+    const legendRow = screen
+      .getByText("tasks:releases.chart.scope")
+      .closest("div")!;
+    const currentText = legendRow.textContent;
+    expect(within(legendRow).getByText("4")).toBeVisible();
+    expect(within(legendRow).getByText("+100%")).toBeVisible();
+    const chart = screen.getByRole("slider");
+    fireEvent.focus(chart);
+    fireEvent.keyDown(chart, { key: "Home" });
+    expect(chart.getAttribute("aria-valuetext")).toContain('"scope":2');
+    const tooltip = screen.getByText("Oct 5", { selector: "p" }).parentElement!;
+    expect(
+      within(tooltip).getByText("tasks:releases.chart.scope"),
+    ).toBeInTheDocument();
+    expect(within(tooltip).getByText("2")).toBeInTheDocument();
+    expect(legendRow.textContent).toBe(currentText);
   });
 
   it("labels today and keeps submission inside a chart extended by late work", () => {
@@ -172,6 +208,10 @@ describe("ReleaseProgressChart", () => {
     expect(
       container.querySelector('[data-series="completed"]'),
     ).toHaveAttribute("d", "");
+    expect(container.querySelector('[data-series="scope"]')).toHaveAttribute(
+      "d",
+      "",
+    );
     expect(screen.getByText("0%")).toBeInTheDocument();
     expect(screen.getByText("75%")).toBeInTheDocument();
   });

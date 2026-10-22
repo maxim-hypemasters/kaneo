@@ -6,6 +6,7 @@ import {
   getTableColumns,
   isNotNull,
   isNull,
+  lt,
   lte,
   sql,
 } from "drizzle-orm";
@@ -34,8 +35,13 @@ export function readReleaseProgress(id: string, timeZone: string) {
       .where(eq(releaseTable.id, id));
     if (!release)
       throw new HTTPException(404, { message: "Release not found" });
+    const today = progressDay(now, canonicalTimeZone);
+    const startBoundary = sql`(${release.startDate}::date::timestamp at time zone ${canonicalTimeZone})`;
     const [baseline] = await tx
-      .select({ recordedAt: releaseProgressEventTable.recordedAt })
+      .select({
+        recordedAt: releaseProgressEventTable.recordedAt,
+        coversStart: sql<boolean>`${releaseProgressEventTable.recordedAt} < ${startBoundary}`,
+      })
       .from(releaseProgressEventTable)
       .where(
         and(
@@ -47,6 +53,26 @@ export function readReleaseProgress(id: string, timeZone: string) {
       throw new HTTPException(503, {
         message: "Release progress history is not available; retry later",
       });
+
+    let startScope: number | null = null;
+    if (release.startDate <= today && baseline.coversStart) {
+      const [startingCounts] = await tx
+        .select({
+          scope:
+            sql<number>`coalesce(sum(${releaseProgressEventTable.delta}), 0)`.mapWith(
+              Number,
+            ),
+        })
+        .from(releaseProgressEventTable)
+        .where(
+          and(
+            eq(releaseProgressEventTable.releaseId, id),
+            isNotNull(releaseProgressEventTable.status),
+            lt(releaseProgressEventTable.recordedAt, startBoundary),
+          ),
+        );
+      startScope = startingCounts?.scope ?? 0;
+    }
 
     const eventDay = sql<string>`to_char(${releaseProgressEventTable.recordedAt} at time zone ${canonicalTimeZone}, 'YYYY-MM-DD')`;
     const statusChanges = await tx
@@ -102,10 +128,10 @@ export function readReleaseProgress(id: string, timeZone: string) {
         desc(versions.id),
       );
 
-    const today = progressDay(now, canonicalTimeZone);
     return {
       trackedFrom: baseline.recordedAt.toISOString(),
       today,
+      startScope,
       ...buildProgressSeries({
         ...release,
         trackingDay: progressDay(baseline.recordedAt, canonicalTimeZone),
