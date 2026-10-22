@@ -1,9 +1,13 @@
 import { Check, Diamond } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import { Button } from "@/components/ui/button";
 import { useGetMilestones } from "@/hooks/queries/milestone/use-get-milestones";
+import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
 import { cn } from "@/lib/cn";
+import { HttpError } from "@/lib/http-error";
+import { releaseSummaries } from "@/lib/releases/release-summaries";
 
 export function MilestonePicker({
   projectId,
@@ -21,15 +25,24 @@ export function MilestonePicker({
   className?: string;
 }) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
   const {
     data = [],
     isPending,
     isError,
     refetch,
   } = useGetMilestones(projectId, featureId);
+  const releaseQuery = useGetReleases(projectId, {
+    enabled: open && data.some((milestone) => milestone.releaseId),
+    select: releaseSummaries,
+  });
+  const releaseAccessDenied =
+    releaseQuery.error instanceof HttpError &&
+    (releaseQuery.error.status === 401 || releaseQuery.error.status === 403);
+  const releases = releaseAccessDenied ? [] : (releaseQuery.data ?? []);
   const selected = data.find((m) => m.id === value);
   return (
-    <Menu>
+    <Menu open={open} onOpenChange={setOpen}>
       <MenuTrigger
         render={
           <button
@@ -74,17 +87,37 @@ export function MilestonePicker({
             </Button>
           </div>
         )}
-        {data.map((m) => (
-          <MenuItem key={m.id} onClick={() => onChange(m.id)}>
-            <span className="flex w-full min-w-0 items-center gap-2">
-              <Diamond className="size-3.5 shrink-0" />
-              <span className="truncate">{m.title}</span>
-              {value === m.id && (
-                <Check className="ml-auto size-3.5 shrink-0" />
-              )}
-            </span>
-          </MenuItem>
-        ))}
+        {data.map((m) => {
+          const releaseName = m.releaseId
+            ? releases.find((release) => release.id === m.releaseId)?.name
+            : undefined;
+          return (
+            <MenuItem
+              key={m.id}
+              aria-label={releaseName ? `${m.title} · ${releaseName}` : m.title}
+              onClick={() => onChange(m.id)}
+            >
+              <span className="flex w-full min-w-0 items-center gap-2">
+                <Diamond aria-hidden="true" className="size-3.5 shrink-0" />
+                <span className="min-w-0 flex-1 truncate" title={m.title}>
+                  {m.title}
+                </span>
+                {releaseName && (
+                  <span
+                    className="flex min-w-0 max-w-[45%] items-center gap-1 text-xs text-muted-foreground"
+                    title={releaseName}
+                  >
+                    <span aria-hidden="true">·</span>
+                    <span className="truncate">{releaseName}</span>
+                  </span>
+                )}
+                {value === m.id && (
+                  <Check aria-hidden="true" className="size-3.5 shrink-0" />
+                )}
+              </span>
+            </MenuItem>
+          );
+        })}
       </MenuPopup>
     </Menu>
   );

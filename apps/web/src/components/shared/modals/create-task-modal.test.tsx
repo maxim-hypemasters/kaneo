@@ -1055,7 +1055,7 @@ describe("CreateTaskModal features", () => {
       }),
     );
     fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Launch milestone" }),
+      await screen.findByRole("menuitem", { name: /^Launch milestone/ }),
     );
     submit();
     await vi.waitFor(() =>
@@ -1091,7 +1091,7 @@ describe("CreateTaskModal features", () => {
       }),
     );
     fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Launch milestone" }),
+      await screen.findByRole("menuitem", { name: /^Launch milestone/ }),
     );
     await openFeaturePicker("common:modals.createTask.feature Checkout");
     fireEvent.click(
@@ -1684,7 +1684,7 @@ async function pickMilestone() {
     }),
   );
   fireEvent.click(
-    await screen.findByRole("menuitem", { name: "Launch milestone" }),
+    await screen.findByRole("menuitem", { name: /^Launch milestone/ }),
   );
 }
 

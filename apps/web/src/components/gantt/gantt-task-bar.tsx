@@ -84,6 +84,7 @@ export function GanttTaskBar({
 }: GanttTaskBarProps) {
   const { t } = useTranslation();
   const isMilestone = task.entityKind === "milestone";
+  const isBug = !isMilestone && task.type === "bug";
   const canMoveDates = !isMilestone;
   const noteId = useId();
   const assigneeId = useId();
@@ -572,8 +573,18 @@ export function GanttTaskBar({
           // lifted styles instead.
           isMilestone
             ? "group/bar"
-            : "group overflow-hidden rounded-md border border-primary/25 bg-background text-sm font-medium leading-none text-foreground shadow-sm transition-colors hover:border-primary/40",
-          !isMilestone && laneView && "shadow-lg ring-2 ring-primary/40",
+            : cn(
+                "group overflow-hidden rounded-md border bg-background text-sm font-medium leading-none text-foreground shadow-sm transition-colors",
+                isBug
+                  ? "border-destructive/35 hover:border-destructive/55"
+                  : "border-primary/25 hover:border-primary/40",
+              ),
+          !isMilestone &&
+            laneView &&
+            cn(
+              "shadow-lg ring-2",
+              isBug ? "ring-destructive/40" : "ring-primary/40",
+            ),
           laneView ? "pointer-events-none" : "pointer-events-auto",
         )}
       >
@@ -596,6 +607,7 @@ export function GanttTaskBar({
             label={t("tasks:gantt.resizeStart")}
             disabled={!startIsVisible}
             summary={isMilestone}
+            tone={isBug ? "destructive" : "default"}
             onPointerDown={handleResizeLeftPointerDown}
           />
         )}
@@ -630,7 +642,14 @@ export function GanttTaskBar({
             />
           ) : (
             <>
-              <div className="absolute inset-0 z-0 bg-primary/12 transition-colors group-hover:bg-primary/18" />
+              <div
+                className={cn(
+                  "absolute inset-0 z-0 transition-colors",
+                  isBug
+                    ? "bg-destructive/12 group-hover:bg-destructive/18"
+                    : "bg-primary/12 group-hover:bg-primary/18",
+                )}
+              />
               <span className="relative z-10 flex min-w-0 items-center gap-1.5">
                 {showAvatar && (
                   <span aria-hidden="true" data-gantt-bar-avatar="">
@@ -652,7 +671,7 @@ export function GanttTaskBar({
                   {task.type === "bug" && (
                     <TaskTypeGlyph
                       type="bug"
-                      className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+                      className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-destructive-foreground"
                     />
                   )}
                   {task.title}
@@ -684,6 +703,7 @@ export function GanttTaskBar({
             label={t("tasks:gantt.resizeDue")}
             disabled={!endIsVisible}
             summary={isMilestone}
+            tone={isBug ? "destructive" : "default"}
             onPointerDown={handleResizeRightPointerDown}
           />
         )}
@@ -700,7 +720,7 @@ export function GanttTaskBar({
           {task.type === "bug" && (
             <TaskTypeGlyph
               type="bug"
-              className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-muted-foreground"
+              className="mr-1 inline-block size-3.5 shrink-0 align-text-bottom text-destructive-foreground"
             />
           )}
           {task.title}

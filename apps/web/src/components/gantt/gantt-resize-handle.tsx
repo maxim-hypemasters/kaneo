@@ -7,6 +7,7 @@ type GanttResizeHandleProps = {
   // On a feature's summary bar the handle is a lighter strip over the end of
   // the dark band, shown on hover and focus (always on touch screens).
   summary: boolean;
+  tone?: "default" | "destructive";
   onPointerDown: (event: React.PointerEvent) => void;
 };
 
@@ -15,6 +16,7 @@ export function GanttResizeHandle({
   label,
   disabled,
   summary,
+  tone = "default",
   onPointerDown,
 }: GanttResizeHandleProps) {
   return (
@@ -29,7 +31,9 @@ export function GanttResizeHandle({
         summary
           ? "group/handle focus-visible:outline-hidden"
           : cn(
-              "border-primary/15 bg-primary/8 hover:bg-primary/18",
+              tone === "destructive"
+                ? "border-destructive/15 bg-destructive/8 hover:bg-destructive/18"
+                : "border-primary/15 bg-primary/8 hover:bg-primary/18",
               edge === "start" ? "border-r" : "border-l",
               "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
             ),
