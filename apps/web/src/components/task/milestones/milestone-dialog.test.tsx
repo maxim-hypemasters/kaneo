@@ -122,6 +122,33 @@ function linkExisting() {
 }
 
 describe("Milestone creation", () => {
+  it("shows optional owning Feature context without adding it to the creation payload", async () => {
+    render(
+      <MilestoneDialog
+        projectId="p"
+        featureId="f"
+        featureName="Knowledge record"
+        initialReleaseId="r1"
+        onClose={vi.fn()}
+      />,
+    );
+    expect(screen.getByText("tasks:features.property").tagName).toBe("DT");
+    expect(screen.getByText("Knowledge record").tagName).toBe("DD");
+    expect(
+      screen.queryByRole("textbox", { name: "tasks:features.property" }),
+    ).not.toBeInTheDocument();
+    enterTitle();
+    submit();
+    await waitFor(() =>
+      expect(mocks.create).toHaveBeenCalledExactlyOnceWith({
+        title: "Milestone",
+        leadId: null,
+        priority: "no-priority",
+        releaseId: "r1",
+      }),
+    );
+  });
+
   it("combines selected work and trimmed Task/Bug drafts in one save", async () => {
     const onClose = vi.fn();
     render(

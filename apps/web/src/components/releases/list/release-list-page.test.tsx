@@ -8,6 +8,7 @@ import {
   within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import {
   afterEach,
   beforeEach,
@@ -19,6 +20,7 @@ import {
 import getTasks from "@/fetchers/task/get-tasks";
 import getReleaseProgress from "@/fetchers/release/get-release-progress";
 import type { Release } from "@/types/release";
+import type { ReleaseView } from "@/lib/releases/release-view";
 import { ReleaseListPage } from "./release-list-page";
 
 const m = vi.hoisted(() => ({
@@ -132,6 +134,17 @@ vi.mock("../move-unfinished-dialog", () => ({
       </div>
     ) : null,
 }));
+vi.mock("../masterplanning/release-masterplanning", () => ({
+  ReleaseMasterplanning: (props: {
+    releases: Release[];
+    projectId: string;
+  }) => (
+    <div data-testid="masterplanning">
+      {props.projectId}:{" "}
+      {props.releases.map((release) => release.name).join(", ")}
+    </div>
+  ),
+}));
 
 const release = (
   id: string,
@@ -199,6 +212,79 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("ReleaseListPage", () => {
+  it("mounts only the selected view and retains creation controls", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    function Page() {
+      const [view, setView] = useState<ReleaseView>("masterplanning");
+      return (
+        <ReleaseListPage
+          workspaceId="workspace-1"
+          projectId="project-1"
+          view={view}
+          onViewChange={setView}
+        />
+      );
+    }
+    render(
+      <QueryClientProvider client={queryClient}>
+        <Page />
+      </QueryClientProvider>,
+    );
+
+    const tabs = screen.getByRole("tablist", {
+      name: "tasks:releases.views.label",
+    });
+    expect(
+      within(tabs).getByRole("tab", {
+        name: "tasks:releases.views.masterplanning",
+      }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("masterplanning")).toHaveTextContent("project-1");
+    expect(screen.queryByRole("link", { name: "Release a" })).toBeNull();
+    expect(getReleaseProgress).not.toHaveBeenCalled();
+    expect(getTasks).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "tasks:releases.new" }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      within(tabs).getByRole("tab", { name: "tasks:releases.views.overview" }),
+    );
+    expect(screen.queryByTestId("masterplanning")).toBeNull();
+    expect(screen.getByRole("link", { name: "Release a" })).toBeInTheDocument();
+    await act(async () => {});
+    expect(getReleaseProgress).toHaveBeenCalledExactlyOnceWith(
+      "a",
+      expect.any(String),
+    );
+
+    fireEvent.click(
+      within(tabs).getByRole("tab", {
+        name: "tasks:releases.views.masterplanning",
+      }),
+    );
+    expect(screen.getByTestId("masterplanning")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Release a" })).toBeNull();
+  });
+
+  it("offers the view switch to read-only viewers", () => {
+    m.permissions = {
+      canManage: false,
+      canMoveItems: false,
+      canDelete: false,
+      canCreateTasks: false,
+    };
+    renderPage();
+    expect(
+      screen.getByRole("tab", { name: "tasks:releases.views.masterplanning" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "tasks:releases.new" }),
+    ).toBeNull();
+  });
+
   it("lists future, active and past rows and loads history only for active releases", async () => {
     renderPage();
     expect(screen.getAllByRole("link").map((link) => link.textContent)).toEqual(

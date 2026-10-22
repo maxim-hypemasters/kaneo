@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { isReleaseView, type ReleaseView } from "@/lib/releases/release-view";
 
 export const WEEK_START_DAYS = [0, 1, 6] as const;
 export type WeekStartDay = (typeof WEEK_START_DAYS)[number];
@@ -45,6 +46,13 @@ type UserPreferencesStore = {
 
   taskLayout: TaskLayout;
   setTaskLayout: (layout: TaskLayout) => void;
+
+  releaseViews: Record<string, ReleaseView>;
+  setReleaseView: (
+    workspaceId: string,
+    projectId: string,
+    view: ReleaseView,
+  ) => void;
 
   compactMode: boolean;
   setCompactMode: (compact: boolean) => void;
@@ -128,6 +136,15 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       taskLayout: "board",
       setTaskLayout: (layout) => set({ taskLayout: layout }),
 
+      releaseViews: {},
+      setReleaseView: (workspaceId, projectId, view) =>
+        set((state) => ({
+          releaseViews: {
+            ...state.releaseViews,
+            [JSON.stringify([workspaceId, projectId])]: view,
+          },
+        })),
+
       compactMode: false,
       setCompactMode: (compact) => set({ compactMode: compact }),
 
@@ -208,6 +225,17 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
         if (!isDefaultProjectView(state.defaultProjectView)) {
           state.setDefaultProjectView("gantt");
         }
+        const releaseViews = state.releaseViews;
+        state.releaseViews =
+          releaseViews &&
+          typeof releaseViews === "object" &&
+          !Array.isArray(releaseViews)
+            ? Object.fromEntries(
+                Object.entries(releaseViews).filter(([, view]) =>
+                  isReleaseView(view),
+                ),
+              )
+            : {};
       },
     },
   ),

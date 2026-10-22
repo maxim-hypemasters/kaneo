@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type ComponentProps, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -27,14 +27,18 @@ import {
 export function MilestoneDialog({
   projectId,
   featureId,
+  featureName,
   milestone,
   initialReleaseId,
+  finalFocus,
   onClose,
 }: {
   projectId: string;
   featureId: string;
+  featureName?: string;
   milestone?: Milestone;
   initialReleaseId?: string | null;
+  finalFocus?: ComponentProps<typeof DialogPopup>["finalFocus"];
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -69,7 +73,7 @@ export function MilestoneDialog({
         if (!open && !pending) onClose();
       }}
     >
-      <DialogPopup showCloseButton={!pending}>
+      <DialogPopup showCloseButton={!pending} finalFocus={finalFocus}>
         <form
           className="contents"
           onSubmit={async (e) => {
@@ -125,6 +129,14 @@ export function MilestoneDialog({
             </DialogTitle>
           </DialogHeader>
           <DialogPanel className="flex flex-col gap-4">
+            {featureName !== undefined && (
+              <dl className="min-w-0 text-sm">
+                <dt className="text-muted-foreground">
+                  {t("tasks:features.property")}
+                </dt>
+                <dd className="mt-1 break-words font-medium">{featureName}</dd>
+              </dl>
+            )}
             <label className="flex flex-col gap-1.5 text-sm">
               {t("tasks:milestones.titleLabel")}
               <Input

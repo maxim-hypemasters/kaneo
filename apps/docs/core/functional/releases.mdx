@@ -19,6 +19,22 @@ Each compact row shows the release's name, phase, Task/Bug completion percentage
 
 Every active release shows its chart, including when several releases overlap. Upcoming and past releases stay compact; if none are active, all rows are compact. This updates automatically when dates change or the viewer's local day changes. Submission day remains active. History loads only for active releases, and chart loading or retry states do not hide the list.
 
+## Plan milestones across releases
+
+Use the **Overview / Masterplanning** switch above the list. **Overview** keeps the release timeline and active progress charts. **Masterplanning** lists every release with its milestones, followed by a **No release** group for milestones that are not assigned to a release. It does not list Tasks/Bugs or load their rows.
+
+Kaneo remembers the view you last selected for each project on this browser. Links with `view=overview` or `view=masterplanning` open that view directly, including when navigating back or forward. A project you have not opened before starts in Overview.
+
+Masterplanning keeps the same release order, submission-date rail, and active-release positioning as Overview. Empty releases remain visible so you can plan work into them. Each milestone appears once, under its own assigned release, even when some of its Tasks/Bugs have explicit release overrides. Milestones are ordered by owning Feature and their existing manual order within that Feature.
+
+Milestone rows show their owning Feature, lead, priority, derived dates, and progress. The progress diamond and counter describe all linked Tasks/Bugs across releases, including archived work, following the existing milestone counting rules. Derived status and dates exclude archived work. Done milestone names are crossed out. Select a milestone name to open its details.
+
+With **Edit tasks** permission, drag a milestone by its handle into another release or **No release**. You can also use **Move to release** in its row menu, including with a keyboard or on a phone. This changes only the milestone's release. Linked Tasks/Bugs whose release matches the milestone's previous release follow the move, including moves to or from **No release**; explicit child release overrides remain. The Feature and milestone's manual order do not change.
+
+Choose **New milestone** in a release group or **No release** to create a milestone directly from Masterplanning. Select a Feature in the project, then complete the existing milestone form. Its **Release** starts with the group you chose and remains editable, including **No release**. Creating a milestone requires **Edit tasks**; creating new Tasks/Bugs within that form also requires permission to create tasks. Cancelling creates nothing.
+
+The moving row stays pending until its save is reconciled. If saving fails, Kaneo refreshes the membership and offers a retry. Other windows receive the same milestone and linked-work updates without reloading.
+
 ## The three dates
 
 | Date | What it means |
@@ -144,6 +160,8 @@ Each item moves on its own. Unfinished milestones and Tasks/Bugs are handled ind
 | Action | Permission | Default roles |
 | --- | --- | --- |
 | See releases and their progress | Access to the project | Everyone, including viewers |
+| Browse Masterplanning milestones | Read tasks | Everyone, including viewers |
+| Move milestones in Masterplanning | Edit tasks | Member, Admin, Owner |
 | Create or edit a release | Manage projects | Admin, Owner |
 | Create a release with milestone links | Manage projects, read tasks, and edit tasks | Admin, Owner |
 | Delete a release | Manage projects and edit tasks | Admin, Owner |

@@ -90,8 +90,14 @@ let milestoneCache: QueryClient;
 const releaseMilestoneKeys = [
   ["feature-milestones", "p", "release", "r"],
   ["feature-milestones", "p", "release", "another-release"],
+  ["feature-milestones", "p", "project", "UTC"],
+  ["feature-milestones", "p", "project", "America/New_York"],
 ];
-const otherProjectMilestones = ["feature-milestones", "other", "release", "r"];
+const otherProjectMilestoneKeys = [
+  ["feature-milestones", "other", "release", "r"],
+  ["feature-milestones", "other", "project", "UTC"],
+  ["feature-milestones", "other", "project", "America/New_York"],
+];
 const candidateKeys = [
   ["feature-create-candidates", "p", "", 1],
   ["feature-create-candidates", "p", "Core", 2],
@@ -121,9 +127,8 @@ const initialWorkflow = [
 function expectReleaseMilestonesInvalidated() {
   for (const key of releaseMilestoneKeys)
     expect(milestoneCache.getQueryState(key)?.isInvalidated).toBe(true);
-  expect(
-    milestoneCache.getQueryState(otherProjectMilestones)?.isInvalidated,
-  ).toBe(false);
+  for (const key of otherProjectMilestoneKeys)
+    expect(milestoneCache.getQueryState(key)?.isInvalidated).toBe(false);
 }
 
 beforeEach(() => {
@@ -141,7 +146,7 @@ beforeEach(() => {
   );
   mocks.client.invalidateQueries.mockReset();
   milestoneCache = new QueryClient();
-  for (const key of [...releaseMilestoneKeys, otherProjectMilestones])
+  for (const key of [...releaseMilestoneKeys, ...otherProjectMilestoneKeys])
     milestoneCache.setQueryData(key, []);
   for (const key of [...candidateKeys, otherCandidateKey])
     milestoneCache.setQueryData(key, []);
@@ -160,6 +165,88 @@ afterEach(() => {
 });
 
 describe("release list realtime", () => {
+  it("refetches mounted Masterplanning summaries once for a coalesced remote burst", async () => {
+    const key = ["feature-milestones", "p", "project", "UTC"];
+    const changed = [
+      { id: "m", releaseId: "destination", featureTitle: "Renamed Feature" },
+    ];
+    const read = vi.fn().mockResolvedValue(changed);
+    const observer = new QueryObserver(milestoneCache, {
+      queryKey: key,
+      queryFn: read,
+      staleTime: Infinity,
+    });
+    const unsubscribe = observer.subscribe(() => {});
+    renderHook(() => useProjectWebSocket("p"));
+    for (const type of [
+      "TASK_UPDATED",
+      "MILESTONES_UPDATED",
+      "TASK_MOVED",
+      "PROJECT_UPDATED",
+    ])
+      Socket.current.message(type, {
+        taskId: "feature",
+        featureId: "feature",
+        windowId: "another-window",
+      });
+    expect(read).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(300);
+    expect(read).toHaveBeenCalledOnce();
+    expect(observer.getCurrentResult().data).toEqual(changed);
+    expect(
+      milestoneCache.getQueryState([
+        "feature-milestones",
+        "p",
+        "project",
+        "America/New_York",
+      ])?.isInvalidated,
+    ).toBe(true);
+    for (const otherKey of otherProjectMilestoneKeys)
+      expect(milestoneCache.getQueryState(otherKey)?.isInvalidated).toBe(false);
+    unsubscribe();
+  });
+  it.each(["reconnect", "fallback"])(
+    "reconciles mounted Masterplanning summaries through %s without crossing projects",
+    async (source) => {
+      const key = ["feature-milestones", "p", "project", "UTC"];
+      const read = vi.fn().mockResolvedValue([{ id: "m", releaseId: null }]);
+      const observer = new QueryObserver(milestoneCache, {
+        queryKey: key,
+        queryFn: read,
+        staleTime: Infinity,
+      });
+      const unsubscribe = observer.subscribe(() => {});
+      renderHook(() => useProjectWebSocket("p"));
+      expect(read).not.toHaveBeenCalled();
+      if (source === "reconnect") Socket.current.onopen?.();
+      else {
+        for (let retry = 0; retry < 5; retry++) {
+          Socket.current.onclose?.();
+          vi.advanceTimersByTime(1000 * 2 ** retry);
+        }
+        Socket.current.onclose?.();
+        vi.advanceTimersByTime(30_000);
+      }
+      await vi.advanceTimersByTimeAsync(300);
+      expect(read).toHaveBeenCalledOnce();
+      expect(observer.getCurrentResult().data).toEqual([
+        { id: "m", releaseId: null },
+      ]);
+      expect(
+        milestoneCache.getQueryState([
+          "feature-milestones",
+          "p",
+          "project",
+          "America/New_York",
+        ])?.isInvalidated,
+      ).toBe(true);
+      for (const otherKey of otherProjectMilestoneKeys)
+        expect(milestoneCache.getQueryState(otherKey)?.isInvalidated).toBe(
+          false,
+        );
+      unsubscribe();
+    },
+  );
   it("refetches mounted linking candidates once for a mixed remote event burst", async () => {
     const read = vi.fn().mockResolvedValue([{ id: "available" }]);
     const observer = new QueryObserver(milestoneCache, {
