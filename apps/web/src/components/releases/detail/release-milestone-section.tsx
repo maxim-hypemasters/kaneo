@@ -1,6 +1,11 @@
-import { Diamond } from "lucide-react";
-import { useId } from "react";
+import { ChevronRight } from "lucide-react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  Collapsible,
+  CollapsiblePanel,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { openMilestoneDetails } from "@/store/milestone-details";
 import { cn } from "@/lib/cn";
@@ -10,6 +15,7 @@ import {
   type ReleaseMilestoneGroup,
 } from "./release-milestone-groups";
 import { ReleaseWorkProgress } from "./release-work-progress";
+import { ReleaseMilestoneProgressIcon } from "./release-milestone-progress-icon";
 
 export function ReleaseMilestoneSection({
   group,
@@ -34,61 +40,78 @@ export function ReleaseMilestoneSection({
 }) {
   const { t } = useTranslation();
   const titleId = useId();
+  const [expanded, setExpanded] = useState(false);
+  const completed = group.milestone?.status === "done";
   const progress = getReleaseWorkProgress(group.tasks, done, started);
   return (
     <section aria-labelledby={titleId}>
-      <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-border/50 border-b bg-muted/15 py-2 pr-4 pl-7 sm:pl-9">
-        <h4
-          id={titleId}
-          className="flex min-w-0 flex-1 items-center gap-2 text-xs font-medium"
-        >
-          <Diamond
-            aria-hidden="true"
-            className={cn(
-              "size-3.5 shrink-0 text-muted-foreground",
-              !group.milestone && "[stroke-dasharray:2_2]",
-              progressReady && progress.started > 0 && "text-amber-500",
-              progressReady &&
-                progress.total > 0 &&
-                progress.completed === progress.total &&
-                "fill-primary text-primary",
-            )}
-          />
-          {group.milestone ? (
-            <button
+      <Collapsible
+        open={!group.milestone || expanded}
+        onOpenChange={setExpanded}
+      >
+        <div className="relative flex min-h-9 min-w-0 flex-wrap items-center gap-x-2 gap-y-1 border-border/50 border-b bg-muted/15 py-2 pr-4 pl-7 sm:pl-9">
+          {group.milestone && (
+            <CollapsibleTrigger
               type="button"
-              className="min-w-0 rounded-sm break-words text-left hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={() =>
-                openMilestoneDetails(projectId, group.milestone!.id)
-              }
+              aria-label={`${t(expanded ? "tasks:gantt.hideTasks" : "tasks:gantt.showTasks")}: ${group.milestone.title}`}
+              className="touch-hitbox absolute top-1/2 left-1 inline-flex size-4 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:left-3"
             >
-              {group.milestone.title}
-            </button>
-          ) : (
-            <span>{t("tasks:milestones.none")}</span>
+              <ChevronRight
+                aria-hidden="true"
+                className={cn("size-3.5", expanded && "rotate-90")}
+              />
+            </CollapsibleTrigger>
           )}
-          {group.milestone?.status && (
-            <span className="truncate font-normal text-muted-foreground">
-              {getStatusDisplayLabel(group.milestone.status)}
-            </span>
-          )}
-        </h4>
-        <ReleaseWorkProgress progress={progress} ready={progressReady} />
-      </div>
-      <ul>
-        {group.tasks.map((task) => (
-          <ReleaseItemRow
-            key={task.id}
-            task={task}
-            workspaceId={workspaceId}
-            releaseId={releaseId}
-            projectSlug={projectSlug}
-            column={columns.get(task.status ?? "")}
-            done={done.has(task.status ?? "")}
-            nested
-          />
-        ))}
-      </ul>
+          <h4
+            id={titleId}
+            className="flex max-w-full min-w-0 items-center gap-2 text-xs font-medium"
+          >
+            <ReleaseMilestoneProgressIcon
+              progress={progress}
+              ready={progressReady}
+              unassigned={!group.milestone}
+            />
+            {group.milestone ? (
+              <button
+                type="button"
+                className={cn(
+                  "min-w-0 rounded-sm break-words text-left hover:underline focus-visible:ring-2 focus-visible:ring-ring",
+                  completed && "line-through",
+                )}
+                onClick={() =>
+                  openMilestoneDetails(projectId, group.milestone!.id)
+                }
+              >
+                {group.milestone.title}
+              </button>
+            ) : (
+              <span>{t("tasks:milestones.none")}</span>
+            )}
+            {group.milestone?.status && (
+              <span className="sr-only">
+                {getStatusDisplayLabel(group.milestone.status)}
+              </span>
+            )}
+          </h4>
+          <ReleaseWorkProgress progress={progress} ready={progressReady} />
+        </div>
+        <CollapsiblePanel>
+          <ul>
+            {group.tasks.map((task) => (
+              <ReleaseItemRow
+                key={task.id}
+                task={task}
+                workspaceId={workspaceId}
+                releaseId={releaseId}
+                projectSlug={projectSlug}
+                column={columns.get(task.status ?? "")}
+                done={done.has(task.status ?? "")}
+                nested
+              />
+            ))}
+          </ul>
+        </CollapsiblePanel>
+      </Collapsible>
     </section>
   );
 }

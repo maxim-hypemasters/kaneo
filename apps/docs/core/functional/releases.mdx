@@ -13,6 +13,8 @@ Expand a project in the sidebar and choose **Releases**. On phones, open the sid
 
 The overview is a timeline with future releases above active releases and past releases below them. Within each phase, the latest start date comes first. The left rail shows each release's submission date at its top corner and highlights active releases; row spacing follows the content rather than a proportional calendar scale.
 
+Opening the overview scrolls to the first active release in that timeline, keeping it in view even when many upcoming releases are above it. If none are active, the list starts at the top. Background updates preserve your scroll position.
+
 Each compact row shows the release's name, phase, Task/Bug completion percentage, and completed/total count. Active releases—**In progress** and **Code freeze**—always show their **Scope**, **Predicted**, **Started**, and **Completed** history chart, including the start, code freeze, submission, and today markers, plus Feature and milestone counts. Select the release name to [open its detail page](#follow-a-release).
 
 Every active release shows its chart, including when several releases overlap. Upcoming and past releases stay compact; if none are active, all rows are compact. This updates automatically when dates change or the viewer's local day changes. Submission day remains active. History loads only for active releases, and chart loading or retry states do not hide the list.
@@ -110,7 +112,11 @@ In each group, unfinished items come first and finished ones are dimmed below th
 
 Each Feature header shows a completion percentage and completed/total count for its visible Tasks and Bugs in this release. Completion follows workflow columns marked **Done** and does not imply a Feature workflow status. An empty Feature shows **0% · 0/0**.
 
-When a Feature has milestones, its work is grouped under those milestones in their manual order, with **No milestone** last for unassigned work. Empty milestones explicitly assigned to the release also appear. Each group shows its completion counter and progress diamond alongside its read-only milestone status. Status uses all nonarchived linked work across releases, while these counters use visible work in this release. Select its title to open the milestone panel. Features without milestones keep a flat list.
+When a Feature has milestones, its work is grouped under those milestones in their manual order, with **No milestone** last for unassigned work. Empty milestones explicitly assigned to the release also appear. Each group shows a progress diamond and its completion counter beside the milestone name, without a visible status label. Derived status uses all nonarchived linked work across releases, while these counters use visible work in this release. Select its title to open the milestone panel. Features without milestones keep a flat list.
+
+All milestones start with their Tasks/Bugs hidden. Use the arrow beside the diamond to show or hide that work. Done milestones also have a struck-through title. The **No milestone** group stays visible.
+
+The milestone diamond fills clockwise from the top as its Tasks/Bugs in this release are completed, matching the adjacent percentage. It stays empty when progress is still loading or there is no linked release work.
 
 These row counters exclude archived work and work in other releases. The Feature window and its milestone overview keep their full ownership counts, while the release's overall totals and historical chart continue including archived work.
 

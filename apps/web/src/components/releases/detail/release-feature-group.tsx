@@ -77,7 +77,9 @@ export function ReleaseFeatureGroup({
       {milestoneGroups ? (
         milestoneGroups.map((milestoneGroup) => (
           <ReleaseMilestoneSection
-            key={milestoneGroup.milestone?.id ?? "unassigned"}
+            // Keep manual expansion through refreshes and status changes;
+            // reset it when opening a different release.
+            key={`${releaseId}:${milestoneGroup.milestone?.id ?? "unassigned"}`}
             group={milestoneGroup}
             projectId={feature.projectId}
             workspaceId={workspaceId}

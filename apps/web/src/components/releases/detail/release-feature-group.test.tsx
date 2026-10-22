@@ -1,4 +1,10 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type Task from "@/types/task";
@@ -8,6 +14,8 @@ vi.mock("react-i18next", () => ({
   initReactI18next: { type: "3rdParty", init: () => {} },
   useTranslation: () => ({
     t: (key: string, values?: Record<string, unknown>) => {
+      if (key === "tasks:gantt.showTasks") return "Show tasks";
+      if (key === "tasks:gantt.hideTasks") return "Hide tasks";
       if (key === "tasks:releases.detail.progressInRelease")
         return `${values?.percentage}% · ${values?.completed}/${values?.total} completed in this release`;
       return key;
@@ -135,7 +143,7 @@ describe("ReleaseFeatureGroup", () => {
     expect(screen.queryAllByRole("heading", { level: 4 })).toHaveLength(0);
   });
 
-  it("renders ordered expanded milestone groups, hides empty definitions, and places unassigned work last", () => {
+  it("renders ordered collapsed milestone groups, hides empty definitions, and keeps unassigned work visible last", () => {
     render(
       <ReleaseFeatureGroup
         {...groupProps}
@@ -149,6 +157,15 @@ describe("ReleaseFeatureGroup", () => {
         .map((heading) => heading.textContent),
     ).toEqual(["Build", "Ship", "tasks:milestones.none"]);
     const build = screen.getByRole("region", { name: "Build" });
+    const ship = screen.getByRole("region", { name: "Ship" });
+    expect(within(build).queryByRole("link")).not.toBeInTheDocument();
+    expect(within(ship).queryByRole("link")).not.toBeInTheDocument();
+    expect(
+      within(
+        screen.getByRole("region", { name: "tasks:milestones.none" }),
+      ).getByRole("link", { name: /Unassigned/ }),
+    ).toBeVisible();
+    fireEvent.click(within(build).getByRole("button", { name: /^Show tasks/ }));
     expect(within(build).getByRole("link", { name: /Task/ })).toHaveClass(
       "pl-10",
       "sm:pl-12",
@@ -159,7 +176,7 @@ describe("ReleaseFeatureGroup", () => {
       }),
     ).toBeVisible();
     expect(
-      within(screen.getByRole("region", { name: "Ship" })).getByRole("img", {
+      within(ship).getByRole("img", {
         name: "100% · 1/1 completed in this release",
       }),
     ).toBeVisible();
