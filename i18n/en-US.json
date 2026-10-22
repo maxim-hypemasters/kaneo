@@ -3566,8 +3566,6 @@
 				"codeFreezeLabel": "Code freeze",
 				"submissionLabel": "Submission",
 				"pickDate": "Pick a date",
-				"descriptionLabel": "Description",
-				"descriptionPlaceholder": "What this release delivers (optional)",
 				"create": "Create release",
 				"save": "Save",
 				"createSuccess": "Release created",
@@ -3667,6 +3665,20 @@
 			"timeline": {
 				"label": "Releases by date",
 				"completion": "{{percentage}}% · {{completed}} of {{total}} tasks and bugs completed"
+			},
+			"milestonePicker": {
+				"title": "Link milestones",
+				"search": "Search milestones or Features",
+				"selectedCount_one": "{{count}} selected",
+				"selectedCount_other": "{{count}} selected",
+				"selected": "Selected milestones",
+				"remove": "Remove {{title}}",
+				"loading": "Loading milestones…",
+				"loadError": "Milestones couldn’t be loaded.",
+				"noMatches": "No milestones match your search.",
+				"empty": "No unassigned milestones available.",
+				"limit": "You can link up to 100 milestones.",
+				"conflict": "Some selected milestones changed or are no longer available. Review your selection and try again."
 			}
 		},
 		"createMenu": {

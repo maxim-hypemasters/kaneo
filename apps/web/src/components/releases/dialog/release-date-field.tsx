@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DatePickerMenu } from "@/components/common/date-picker/date-picker-menu";
 import { formatPickerDay } from "@/components/common/date-picker/quick-date-labels";
@@ -37,6 +37,7 @@ type ReleaseDateFieldProps = {
   limits: ReleaseDateLimits;
   error?: string;
   today: string;
+  disabled?: boolean;
   onChange: (day: string) => void;
 };
 
@@ -46,10 +47,14 @@ export function ReleaseDateField({
   limits,
   error,
   today,
+  disabled = false,
   onChange,
 }: ReleaseDateFieldProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
   const buttonId = useId();
   const labelId = useId();
   const valueId = useId();
@@ -89,11 +94,15 @@ export function ReleaseDateField({
       <Label id={labelId} htmlFor={buttonId}>
         {label}
       </Label>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open && !disabled}
+        onOpenChange={(next) => !disabled && setOpen(next)}
+      >
         <PopoverTrigger asChild>
           <Button
             id={buttonId}
             type="button"
+            disabled={disabled}
             variant="outline"
             aria-labelledby={`${labelId} ${valueId}`}
             aria-invalid={error ? true : undefined}

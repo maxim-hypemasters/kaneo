@@ -12,6 +12,7 @@ it("refreshes both releases and cached followers once without invalidating anoth
     ["release-progress", "p", "target", "UTC"],
     ["feature-milestones", "p", "project", "UTC"],
     ["release-link-candidates", "p", "r", "task", "", 1],
+    ["release-link-candidates", "p", "create", "milestone", "", 1],
     ["feature-create-candidates", "p", "", 1],
     ["task", "follower"],
     ["activities", "follower"],

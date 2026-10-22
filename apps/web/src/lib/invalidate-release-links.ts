@@ -4,7 +4,7 @@ import type { ReleaseLinkCandidate } from "@/fetchers/release/get-release-link-c
 export function invalidateReleaseLinks(
   client: QueryClient,
   projectId: string,
-  candidates: readonly ReleaseLinkCandidate[],
+  candidates: readonly Pick<ReleaseLinkCandidate, "id" | "featureId">[],
 ) {
   for (const prefix of [
     "tasks",

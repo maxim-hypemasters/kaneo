@@ -3,7 +3,6 @@ import { validateRelease } from "./validate-release";
 
 const valid = {
   name: "2.4",
-  description: "",
   startDate: "2026-10-01",
   codeFreezeDate: "2026-10-15",
   submissionDate: "2026-10-20",
@@ -24,7 +23,6 @@ it("asks for a name and every date", () => {
   expect(
     validateRelease({
       name: "   ",
-      description: "",
       startDate: null,
       codeFreezeDate: null,
       submissionDate: null,

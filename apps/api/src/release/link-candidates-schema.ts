@@ -9,6 +9,9 @@ export const releaseLinkCandidatesQuery = z.object({
   limit: pagingNumber(1, 100, 50),
 });
 
+export const releaseMilestoneLinkCandidatesQuery =
+  releaseLinkCandidatesQuery.omit({ kind: true });
+
 export const releaseLinkCandidateSchema = z
   .object({
     id: z.string(),
@@ -23,16 +26,34 @@ export const releaseLinkCandidateSchema = z
   })
   .openapi("ReleaseLinkCandidate");
 
+const pagination = z.object({
+  total: z.number().int().nonnegative(),
+  page: z.number().int().positive(),
+  limit: z.number().int().positive(),
+  totalPages: z.number().int().nonnegative(),
+});
+
 export const releaseLinkCandidatesSchema = z.object({
   data: z.array(releaseLinkCandidateSchema),
-  pagination: z.object({
-    total: z.number().int().nonnegative(),
-    page: z.number().int().positive(),
-    limit: z.number().int().positive(),
-    totalPages: z.number().int().nonnegative(),
-  }),
+  pagination,
+});
+
+export const releaseMilestoneLinkCandidatesSchema = z.object({
+  data: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      featureId: z.string(),
+      featureTitle: z.string(),
+    }),
+  ),
+  pagination,
 });
 
 export type ReleaseLinkCandidatesQuery = z.infer<
   typeof releaseLinkCandidatesQuery
+>;
+
+export type ReleaseMilestoneLinkCandidatesQuery = z.infer<
+  typeof releaseMilestoneLinkCandidatesQuery
 >;

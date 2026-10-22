@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogPopup } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,18 +24,26 @@ export function ReleaseDialog({
   onCreated,
 }: ReleaseDialogProps) {
   const { t } = useTranslation();
+  const [creating, setCreating] = useState(false);
   const today = useReleaseToday();
   const { data: releases = [], isPending } = useGetReleases(projectId, {
     enabled: open,
   });
-  // A new release's suggested dates come from the others, so its form waits
-  // for them; a failed load leaves the dates to pick.
+  // Snapshot defaults after the project's releases load. A failed initial
+  // load leaves the name and dates for the user to choose.
   const waiting = release === null && isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && creating) return;
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogPopup
         className="sm:max-w-lg"
+        showCloseButton={!creating}
         aria-label={
           waiting ? t("tasks:releases.dialog.createTitle") : undefined
         }
@@ -45,13 +54,14 @@ export function ReleaseDialog({
           </div>
         ) : (
           <ReleaseForm
-            key={release?.id ?? "new"}
+            key={`${projectId}:${release?.id ?? "new"}`}
             projectId={projectId}
             release={release}
             releases={releases}
             today={today}
             onClose={() => onOpenChange(false)}
             onCreated={onCreated}
+            onCreatingChange={setCreating}
           />
         )}
       </DialogPopup>

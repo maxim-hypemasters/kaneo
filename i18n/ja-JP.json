@@ -3468,8 +3468,6 @@
 				"codeFreezeLabel": "コードフリーズ",
 				"submissionLabel": "提出日",
 				"pickDate": "日付を選択",
-				"descriptionLabel": "説明",
-				"descriptionPlaceholder": "このリリースで提供する内容（任意）",
 				"create": "リリースを作成",
 				"save": "保存",
 				"createSuccess": "リリースを作成しました",
@@ -3586,6 +3584,20 @@
 			"timeline": {
 				"label": "Releases by date",
 				"completion": "{{percentage}}% · {{completed}} of {{total}} tasks and bugs completed"
+			},
+			"milestonePicker": {
+				"title": "Link milestones",
+				"search": "Search milestones or Features",
+				"selectedCount_one": "{{count}} selected",
+				"selectedCount_other": "{{count}} selected",
+				"selected": "Selected milestones",
+				"remove": "Remove {{title}}",
+				"loading": "Loading milestones…",
+				"loadError": "Milestones couldn’t be loaded.",
+				"noMatches": "No milestones match your search.",
+				"empty": "No unassigned milestones available.",
+				"limit": "You can link up to 100 milestones.",
+				"conflict": "Some selected milestones changed or are no longer available. Review your selection and try again."
 			}
 		},
 		"createMenu": {

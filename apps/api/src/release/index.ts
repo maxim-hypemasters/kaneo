@@ -15,9 +15,12 @@ import updateRelease from "./controllers/update-release";
 import { getRelease, listReleases } from "./read-releases";
 import { readReleaseMilestones } from "./read-release-milestones";
 import { readReleaseLinkCandidates } from "./read-link-candidates";
+import { readReleaseMilestoneLinkCandidates } from "./read-milestone-link-candidates";
 import {
   releaseLinkCandidatesQuery,
   releaseLinkCandidatesSchema,
+  releaseMilestoneLinkCandidatesQuery,
+  releaseMilestoneLinkCandidatesSchema,
 } from "./link-candidates-schema";
 import { milestoneScheduleQuery } from "../milestone/schema";
 import { readReleaseProgress } from "./progress/read-release-progress";
@@ -156,6 +159,48 @@ const getReleaseLinkCandidatesRoute = createRoute({
   },
 });
 
+const getReleaseMilestoneLinkCandidatesRoute = createRoute({
+  method: "get",
+  operationId: "getReleaseMilestoneLinkCandidates",
+  path: "/project/{projectId}/milestone-link-candidates",
+  tags: ["Releases"],
+  summary: "Find unassigned milestones for a new release",
+  description:
+    "Paginated milestones with No release in this project, including empty and completed milestones and those owned by archived Features. Search matches milestone and owning Feature titles. Returns compact identity metadata without progress or schedule calculations.",
+  middleware: [
+    workspaceAccess.fromProject("projectId"),
+    requireWorkspacePermission({ task: ["read"] }),
+  ] as const,
+  request: {
+    params: projectIdParam,
+    query: releaseMilestoneLinkCandidatesQuery,
+  },
+  responses: {
+    200: jsonResponse(
+      "Unassigned milestones eligible for release creation",
+      releaseMilestoneLinkCandidatesSchema,
+    ),
+    400: errorResponse("Invalid search or pagination"),
+    403: errorResponse("No project access or missing task:read permission"),
+    404: errorResponse("Project not found"),
+    409: errorResponse("Project workspace changed; retry the request"),
+    503: errorResponse("Candidate request timed out"),
+  },
+});
+
+const requireReleaseMilestoneUpdatePermission = async (
+  c: import("hono").Context,
+  next: import("hono").Next,
+) => {
+  const body: unknown = await c.req.json().catch(() => ({}));
+  if (body && typeof body === "object" && !Array.isArray(body)) {
+    const ids = (body as { milestoneIds?: unknown }).milestoneIds;
+    if (Array.isArray(ids) && ids.length > 0)
+      return requireWorkspacePermission({ task: ["update"] })(c, next);
+  }
+  return next();
+};
+
 const createReleaseRoute = createRoute({
   method: "post",
   operationId: "createRelease",
@@ -163,11 +208,12 @@ const createReleaseRoute = createRoute({
   tags: ["Releases"],
   summary: "Create release",
   description:
-    "Add a release to a project. Its name must be unique in the project, and its dates must run start ≤ code freeze ≤ submission.",
+    "Add a release to a project, optionally linking up to 100 milestones currently set to No release in one atomic transaction. Linked work with No release follows its milestone; explicit task releases remain. Selected milestones additionally require task:update. The name must be unique in the project, and dates must run start ≤ code freeze ≤ submission.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ project: ["update"] }),
     requireEntitlement,
+    requireReleaseMilestoneUpdatePermission,
   ] as const,
   request: {
     params: projectIdParam,
@@ -181,10 +227,12 @@ const createReleaseRoute = createRoute({
     400: errorResponse("Invalid body, or dates out of order"),
     402: errorResponse("Workspace plan has expired"),
     403: errorResponse(
-      "No access to the project, or missing project:update permission",
+      "No project access, missing project:update, or selected milestones without task:update permission",
     ),
     404: errorResponse("Project not found"),
-    409: errorResponse("A release with this name already exists"),
+    409: errorResponse(
+      "RELEASE_NAME_TAKEN for an existing name; MILESTONE_SELECTION_CONFLICT for missing, moved, deleted or assigned milestones; or a concurrent project/workspace change",
+    ),
   },
 });
 
@@ -285,6 +333,16 @@ const release = apiRouter<BaseVariables & { workspaceId: string }>()
   .openapi(listProjectReleasesRoute, async (c) =>
     c.json(await listReleases(c.req.valid("param").projectId), 200),
   )
+  .openapi(getReleaseMilestoneLinkCandidatesRoute, async (c) =>
+    c.json(
+      await readReleaseMilestoneLinkCandidates(
+        c.req.valid("param").projectId,
+        c.get("workspaceId"),
+        c.req.valid("query"),
+      ),
+      200,
+    ),
+  )
   .openapi(getReleaseRoute, async (c) =>
     c.json(await getRelease(c.req.valid("param").id), 200),
   )
@@ -321,7 +379,12 @@ const release = apiRouter<BaseVariables & { workspaceId: string }>()
   )
   .openapi(createReleaseRoute, async (c) =>
     c.json(
-      await createRelease(c.req.valid("param").projectId, c.req.valid("json")),
+      await createRelease(
+        c.req.valid("param").projectId,
+        c.req.valid("json"),
+        c.get("userId"),
+        c.get("workspaceId"),
+      ),
       200,
     ),
   )

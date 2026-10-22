@@ -79,11 +79,6 @@ export function ReleaseDetailHeader({
           />
         </div>
       </div>
-      {release.description ? (
-        <p className="max-w-prose whitespace-pre-wrap break-words text-foreground/85 text-sm">
-          {release.description}
-        </p>
-      ) : null}
     </header>
   );
 }

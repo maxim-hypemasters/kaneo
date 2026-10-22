@@ -4,11 +4,10 @@ import { lockTaskCreationProject } from "../task/controllers/create-task-in-tran
 import { milestoneTaskDraftsSchema, type MilestoneTaskDraft } from "./schema";
 import {
   assertReadonlyMilestoneStatus,
-  moveMilestoneFollowers,
   recordMilestoneActivity,
-  resolveMilestonePlanning,
   type MilestonePlanningFields,
 } from "./planning";
+import { updateMilestoneInTransaction } from "./update-milestone-in-transaction";
 import { linkSelectedMilestoneTasks } from "./link-selected-tasks";
 import { assertReadonlyMilestoneDates } from "./dates";
 import { lockAuthorizedProject } from "./access-scope";
@@ -200,40 +199,12 @@ export async function updateMilestone(
         .for("update");
       if (!current)
         throw new HTTPException(404, { message: "Milestone not found" });
-      const planning = await resolveMilestonePlanning(
+      const { movedTaskIds } = await updateMilestoneInTransaction(
         tx,
+        current,
         feature.projectId,
         fields,
-      );
-      const movedTaskIds =
-        fields.releaseId !== undefined && fields.releaseId !== current.releaseId
-          ? await moveMilestoneFollowers(
-              tx,
-              current,
-              feature.projectId,
-              fields.releaseId,
-              userId,
-            )
-          : [];
-      const [updated] = await tx
-        .update(milestoneTable)
-        .set({ ...fields, ...planning })
-        .where(eq(milestoneTable.id, id))
-        .returning();
-      if (!updated)
-        throw new HTTPException(404, { message: "Milestone not found" });
-      await recordMilestoneActivity(
-        tx,
-        featureId,
-        updated,
-        "milestone_updated",
         userId,
-        Object.fromEntries(
-          Object.entries(fields).map(([key, value]) => [
-            key,
-            { from: current[key as keyof typeof current], to: value },
-          ]),
-        ),
       );
       return {
         movedTaskIds,
