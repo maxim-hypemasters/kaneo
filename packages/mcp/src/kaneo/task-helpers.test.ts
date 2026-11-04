@@ -45,4 +45,24 @@ describe("buildFullTaskUpdateBody", () => {
     expect(body.title).toBe("T");
     expect(body.position).toBe(1);
   });
+
+  it("never copies read-only schedule dates back into updates", () => {
+    const existing = {
+      title: "Bug",
+      status: "todo",
+      priority: "low",
+      projectId: "p",
+      position: 1,
+      startDate: "2026-10-26T09:00:00Z",
+      dueDate: "2026-10-26T10:00:00Z",
+    };
+    const body = buildFullTaskUpdateBody(existing, { estimateSeconds: 5400 });
+    expect(body).toMatchObject({ estimateSeconds: 5400 });
+    expect(body).not.toHaveProperty("startDate");
+    expect(body).not.toHaveProperty("dueDate");
+    expect(
+      buildFullTaskUpdateBody(existing, { estimateSeconds: null })
+        .estimateSeconds,
+    ).toBeNull();
+  });
 });

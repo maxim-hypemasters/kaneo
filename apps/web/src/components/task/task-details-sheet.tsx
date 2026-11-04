@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type ComponentProps,
 } from "react";
 import { AlertDialogCreateHandle } from "@/components/ui/alert-dialog";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -25,6 +26,7 @@ type TaskDetailsSheetProps = {
   workspaceId: string;
   originReleaseId?: string;
   onClose: () => void;
+  finalFocus?: ComponentProps<typeof SheetContent>["finalFocus"];
 };
 
 export default function TaskDetailsSheet({
@@ -33,6 +35,7 @@ export default function TaskDetailsSheet({
   workspaceId,
   originReleaseId,
   onClose,
+  finalFocus,
 }: TaskDetailsSheetProps) {
   const navigate = useNavigate();
   const [currentTaskId, setCurrentTaskId] = useState<string | undefined>(
@@ -89,10 +92,12 @@ export default function TaskDetailsSheet({
           // Focusing the first control would pop the "open in full page"
           // tooltip over the actions every time the sheet opens on touch.
           initialFocus={closeButtonRef}
-          finalFocus={() =>
-            document.querySelector<HTMLElement>(
-              `[data-task-id="${lastTaskIdRef.current}"]`,
-            ) ?? true
+          finalFocus={
+            finalFocus ??
+            (() =>
+              document.querySelector<HTMLElement>(
+                `[data-task-id="${lastTaskIdRef.current}"]`,
+              ) ?? true)
           }
         >
           {shownTaskId && (

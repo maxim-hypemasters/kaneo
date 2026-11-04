@@ -88,11 +88,14 @@ const planChange = Effect.fnUntraced(function* (
         value: null,
         applied: { kind: "unassign" },
       } satisfies Plan;
-    case "due":
+    case "estimate":
       return {
-        operation: "updateDueDate",
-        value: change.dueDate,
-        applied: { kind: "due", dueDate: change.dueDate },
+        operation: "updateEstimate",
+        value:
+          change.estimateSeconds === null
+            ? null
+            : String(change.estimateSeconds),
+        applied: { kind: "estimate", estimateSeconds: change.estimateSeconds },
       } satisfies Plan;
     case "addLabel": {
       const [label] = yield* resolveLabels(workspaceId, [change.name]);
@@ -132,7 +135,7 @@ export const runTaskBulk = Effect.fn("command.task.bulk")(function* (options: {
   readonly priority: Option.Option<Priority>;
   readonly assignee: Option.Option<string>;
   readonly unassign: boolean;
-  readonly due: Option.Option<string>;
+  readonly estimateSeconds?: Option.Option<string>;
   readonly addLabel: Option.Option<string>;
   readonly removeLabel: Option.Option<string>;
   readonly delete: boolean;
@@ -145,7 +148,7 @@ export const runTaskBulk = Effect.fn("command.task.bulk")(function* (options: {
     resolveBulkTasks(options.tasks),
   );
   if (
-    ["status", "priority", "assignee", "unassign", "due"].includes(
+    ["status", "priority", "assignee", "unassign", "estimate"].includes(
       change.kind,
     ) &&
     tasks.some((task) => task.type === "feature")
@@ -214,9 +217,9 @@ export const taskBulk = Command.make(
       Flag.withDescription("Remove the assignee from every task"),
       Flag.withDefault(false),
     ),
-    due: Flag.String("due").pipe(
+    estimateSeconds: Flag.String("estimate-seconds").pipe(
       Flag.withDescription(
-        "Due date: YYYY-MM-DD, today, tomorrow, +3d, or none to clear",
+        "Total effort in seconds, in whole minutes; none clears estimates",
       ),
       Flag.optional,
     ),

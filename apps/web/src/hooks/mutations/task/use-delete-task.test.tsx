@@ -18,7 +18,9 @@ vi.mock("@/fetchers/task/delete-task", () => ({
   default: vi.fn(),
 }));
 
-function makeTask(id: string): Task {
+function makeTask(
+  id: string,
+): Task & { estimateSeconds: null; scheduleSource: "none" } {
   return {
     id,
     title: id,
@@ -26,6 +28,8 @@ function makeTask(id: string): Task {
     description: null,
     status: "to-do",
     priority: null,
+    estimateSeconds: null,
+    scheduleSource: "none",
     startDate: null,
     dueDate: null,
     position: 0,
@@ -202,6 +206,7 @@ describe("useDeleteTask", () => {
       startDate: null,
       dueDate: null,
       type: "feature",
+      estimateSeconds: null,
       featureId: null,
       releaseId: null,
       milestoneId: null,

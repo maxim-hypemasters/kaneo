@@ -220,19 +220,39 @@
             "type": "string",
             "description": "One of: no-priority, low, medium, high, urgent."
           },
+          "estimateSeconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 2147483640,
+            "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+          },
+          "scheduleSource": {
+            "type": "string",
+            "enum": [
+              "legacy",
+              "applied",
+              "none"
+            ],
+            "readOnly": true
+          },
           "startDate": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "readOnly": true
           },
           "dueDate": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "readOnly": true
           },
           "position": {
             "type": [
@@ -339,6 +359,7 @@
           "description",
           "status",
           "priority",
+          "estimateSeconds",
           "startDate",
           "dueDate",
           "position",
@@ -1062,6 +1083,9 @@
               "priority": {
                 "type": "null"
               },
+              "estimateSeconds": {
+                "type": "null"
+              },
               "startDate": {
                 "type": "null"
               },
@@ -1150,19 +1174,39 @@
             ],
             "description": "One of: no-priority, low, medium, high, urgent."
           },
+          "estimateSeconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 2147483640,
+            "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+          },
+          "scheduleSource": {
+            "type": "string",
+            "enum": [
+              "legacy",
+              "applied",
+              "none"
+            ],
+            "readOnly": true
+          },
           "startDate": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "readOnly": true
           },
           "dueDate": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "readOnly": true
           },
           "archivedAt": {
             "type": [
@@ -1234,6 +1278,7 @@
           "description",
           "status",
           "priority",
+          "estimateSeconds",
           "startDate",
           "dueDate",
           "archivedAt",
@@ -1334,6 +1379,24 @@
             ],
             "description": "A milestone within this task or bug’s Feature. Null for Features and unassigned items."
           },
+          "estimateSeconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 2147483640,
+            "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+          },
+          "scheduleSource": {
+            "type": "string",
+            "enum": [
+              "legacy",
+              "applied",
+              "none"
+            ],
+            "readOnly": true
+          },
           "status": {
             "type": "string",
             "description": "The slug of the column the task sits in."
@@ -1360,7 +1423,8 @@
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "readOnly": true
           },
           "projectName": {
             "type": "string"
@@ -1388,6 +1452,7 @@
           "title",
           "type",
           "milestoneId",
+          "estimateSeconds",
           "status",
           "statusName",
           "statusIcon",
@@ -1866,7 +1931,7 @@
           "version": {
             "type": "number",
             "enum": [
-              3
+              4
             ]
           },
           "releases": {
@@ -2136,6 +2201,105 @@
               }
             }
           },
+          "estimateSeconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 2147483640,
+            "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+          },
+          "scheduleSource": {
+            "type": "string",
+            "enum": [
+              "legacy",
+              "applied",
+              "none"
+            ],
+            "readOnly": true
+          },
+          "legacyStartDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "legacyDueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "scheduleSnapshots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "legacy",
+                    "applied",
+                    "import"
+                  ]
+                },
+                "startDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "dueDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "assigneeId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "segments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "start": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "end": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "start",
+                      "end"
+                    ]
+                  }
+                },
+                "sourceRevision": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "startDate",
+                "dueDate"
+              ]
+            }
+          },
           "title": {
             "type": "string"
           },
@@ -2198,6 +2362,10 @@
           "releaseKey",
           "archivedAt",
           "planningSnapshots",
+          "estimateSeconds",
+          "legacyStartDate",
+          "legacyDueDate",
+          "scheduleSnapshots",
           "title",
           "type",
           "description",
@@ -5309,19 +5477,39 @@
               "null"
             ]
           },
+          "estimateSeconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 2147483640,
+            "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+          },
+          "scheduleSource": {
+            "type": "string",
+            "enum": [
+              "legacy",
+              "applied",
+              "none"
+            ],
+            "readOnly": true
+          },
           "startDate": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "readOnly": true
           },
           "dueDate": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
+            "format": "date-time",
+            "readOnly": true
           },
           "status": {
             "type": [
@@ -5366,6 +5554,7 @@
           "title",
           "type",
           "milestoneId",
+          "estimateSeconds",
           "startDate",
           "dueDate",
           "status",
@@ -11356,6 +11545,3163 @@
         }
       }
     },
+    "/project-schedule/{projectId}/release/{releaseId}": {
+      "get": {
+        "operationId": "getReleaseSchedule",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Read this release's published planning state and complete work context",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "releaseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "timeZone",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Release planning state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generation": {
+                      "type": "number"
+                    },
+                    "appliedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "outdated": {
+                      "type": "boolean"
+                    },
+                    "legacy": {
+                      "type": "boolean"
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "timeZone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "estimateDayMinutes": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "timeZone",
+                        "estimateDayMinutes"
+                      ]
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "assigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "end": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "segments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "changed": {
+                            "type": "boolean"
+                          },
+                          "completed": {
+                            "type": "boolean"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "number": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "identifier": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "task",
+                              "bug"
+                            ]
+                          },
+                          "assigneeName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentAssigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentAssigneeName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "estimateSeconds": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "exclusiveMinimum": 0,
+                            "maximum": 2147483640,
+                            "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+                          },
+                          "priority": {
+                            "type": "string",
+                            "enum": [
+                              "no-priority",
+                              "low",
+                              "medium",
+                              "high",
+                              "urgent"
+                            ]
+                          },
+                          "currentStart": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentEnd": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "featureId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "featureTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestoneId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestoneTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestonePosition": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "milestoneReleaseId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "assigneeId",
+                          "start",
+                          "end",
+                          "segments",
+                          "reason",
+                          "changed",
+                          "completed",
+                          "title",
+                          "number",
+                          "identifier",
+                          "type",
+                          "assigneeName",
+                          "currentAssigneeId",
+                          "currentAssigneeName",
+                          "estimateSeconds",
+                          "priority",
+                          "currentStart",
+                          "currentEnd",
+                          "featureId",
+                          "featureTitle",
+                          "milestoneId",
+                          "milestoneTitle",
+                          "milestonePosition",
+                          "milestoneReleaseId"
+                        ]
+                      }
+                    },
+                    "timeZone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "releaseId": {
+                      "type": "string"
+                    },
+                    "planned": {
+                      "type": "boolean"
+                    },
+                    "inputRevision": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "generation",
+                    "appliedAt",
+                    "revision",
+                    "outdated",
+                    "legacy",
+                    "settings",
+                    "tasks",
+                    "timeZone",
+                    "releaseId",
+                    "planned",
+                    "inputRevision"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid planning input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No permission or project access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found in this project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Planning inputs changed; recalculate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_AFTER_CODE_FREEZE: resolve work finishing after code freeze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-schedule/{projectId}/release/{releaseId}/preview": {
+      "post": {
+        "operationId": "previewReleaseSchedule",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Preview only this release with default weekday availability, reserving other releases' published work",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "releaseId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "changes": {
+                    "type": "object",
+                    "properties": {
+                      "releaseDates": {
+                        "type": "object",
+                        "properties": {
+                          "codeFreezeDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20"
+                          },
+                          "submissionDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20"
+                          }
+                        },
+                        "required": [
+                          "codeFreezeDate",
+                          "submissionDate"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "moves": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "taskId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            },
+                            "target": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "releaseId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 255
+                                    }
+                                  },
+                                  "required": [
+                                    "releaseId"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "draftKey": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 255
+                                    }
+                                  },
+                                  "required": [
+                                    "draftKey"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "taskId",
+                            "target"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 10000
+                      },
+                      "milestoneMoves": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "milestoneId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            },
+                            "target": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "releaseId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 255
+                                    }
+                                  },
+                                  "required": [
+                                    "releaseId"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "draftKey": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 255
+                                    }
+                                  },
+                                  "required": [
+                                    "draftKey"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "milestoneId",
+                            "target"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 10000
+                      },
+                      "newRelease": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100,
+                            "description": "Unique within the project. Surrounding spaces are trimmed."
+                          },
+                          "startDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20",
+                            "description": "The first day of work."
+                          },
+                          "codeFreezeDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20",
+                            "description": "The day changes stop. On or after the start date."
+                          },
+                          "submissionDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20",
+                            "description": "The day the release ships. On or after the code freeze date."
+                          },
+                          "key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "startDate",
+                          "codeFreezeDate",
+                          "submissionDate",
+                          "key"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Release plan proposal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "planFrom": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "inputRevision": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "number"
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "assigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "end": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "segments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "changed": {
+                            "type": "boolean"
+                          },
+                          "completed": {
+                            "type": "boolean"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "number": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "identifier": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "task",
+                              "bug"
+                            ]
+                          },
+                          "assigneeName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentAssigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentAssigneeName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "estimateSeconds": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "exclusiveMinimum": 0,
+                            "maximum": 2147483640,
+                            "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+                          },
+                          "priority": {
+                            "type": "string",
+                            "enum": [
+                              "no-priority",
+                              "low",
+                              "medium",
+                              "high",
+                              "urgent"
+                            ]
+                          },
+                          "currentStart": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentEnd": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "featureId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "featureTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestoneId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestoneTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestonePosition": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "milestoneReleaseId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "assigneeId",
+                          "start",
+                          "end",
+                          "segments",
+                          "reason",
+                          "changed",
+                          "completed",
+                          "title",
+                          "number",
+                          "identifier",
+                          "type",
+                          "assigneeName",
+                          "currentAssigneeId",
+                          "currentAssigneeName",
+                          "estimateSeconds",
+                          "priority",
+                          "currentStart",
+                          "currentEnd",
+                          "featureId",
+                          "featureTitle",
+                          "milestoneId",
+                          "milestoneTitle",
+                          "milestonePosition",
+                          "milestoneReleaseId"
+                        ]
+                      }
+                    },
+                    "diagnostics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "reason"
+                        ]
+                      }
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "reason"
+                        ]
+                      }
+                    },
+                    "changedCount": {
+                      "type": "number"
+                    },
+                    "scheduledCount": {
+                      "type": "number"
+                    },
+                    "unscheduledCount": {
+                      "type": "number"
+                    },
+                    "changes": {
+                      "type": "object",
+                      "properties": {
+                        "releaseDates": {
+                          "type": "object",
+                          "properties": {
+                            "codeFreezeDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "example": "2026-10-20"
+                            },
+                            "submissionDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "example": "2026-10-20"
+                            }
+                          },
+                          "required": [
+                            "codeFreezeDate",
+                            "submissionDate"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "moves": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "taskId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 255
+                              },
+                              "target": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "releaseId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 255
+                                      }
+                                    },
+                                    "required": [
+                                      "releaseId"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "draftKey": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 255
+                                      }
+                                    },
+                                    "required": [
+                                      "draftKey"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "taskId",
+                              "target"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 10000
+                        },
+                        "milestoneMoves": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "milestoneId": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 255
+                              },
+                              "target": {
+                                "anyOf": [
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "releaseId": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 255
+                                      }
+                                    },
+                                    "required": [
+                                      "releaseId"
+                                    ],
+                                    "additionalProperties": false
+                                  },
+                                  {
+                                    "type": "object",
+                                    "properties": {
+                                      "draftKey": {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 255
+                                      }
+                                    },
+                                    "required": [
+                                      "draftKey"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "milestoneId",
+                              "target"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "maxItems": 10000
+                        },
+                        "newRelease": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 100,
+                              "description": "Unique within the project. Surrounding spaces are trimmed."
+                            },
+                            "startDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "example": "2026-10-20",
+                              "description": "The first day of work."
+                            },
+                            "codeFreezeDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "example": "2026-10-20",
+                              "description": "The day changes stop. On or after the start date."
+                            },
+                            "submissionDate": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                              "example": "2026-10-20",
+                              "description": "The day the release ships. On or after the code freeze date."
+                            },
+                            "key": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "startDate",
+                            "codeFreezeDate",
+                            "submissionDate",
+                            "key"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "releaseId": {
+                      "type": "string"
+                    },
+                    "releaseDates": {
+                      "type": "object",
+                      "properties": {
+                        "startDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20"
+                        },
+                        "codeFreezeDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20"
+                        },
+                        "submissionDate": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                          "example": "2026-10-20"
+                        }
+                      },
+                      "required": [
+                        "startDate",
+                        "codeFreezeDate",
+                        "submissionDate"
+                      ]
+                    },
+                    "timeZone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "dependencies": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "blockerId": {
+                            "type": "string"
+                          },
+                          "blockedId": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "blockerId",
+                          "blockedId"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "expiresAt",
+                    "planFrom",
+                    "revision",
+                    "inputRevision",
+                    "generation",
+                    "tasks",
+                    "diagnostics",
+                    "warnings",
+                    "changedCount",
+                    "scheduledCount",
+                    "unscheduledCount",
+                    "changes",
+                    "releaseId",
+                    "releaseDates",
+                    "timeZone",
+                    "dependencies"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid planning input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No permission or project access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found in this project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Planning inputs changed; recalculate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_AFTER_CODE_FREEZE: resolve work finishing after code freeze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-schedule/{projectId}/release/{releaseId}/apply": {
+      "post": {
+        "operationId": "applyReleaseSchedule",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Apply only the selected release after checking the complete project snapshot",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "releaseId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "asOf": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "revision": {
+                    "type": "string",
+                    "minLength": 64,
+                    "maxLength": 64
+                  },
+                  "generation": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "changes": {
+                    "type": "object",
+                    "properties": {
+                      "releaseDates": {
+                        "type": "object",
+                        "properties": {
+                          "codeFreezeDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20"
+                          },
+                          "submissionDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20"
+                          }
+                        },
+                        "required": [
+                          "codeFreezeDate",
+                          "submissionDate"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "moves": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "taskId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            },
+                            "target": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "releaseId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 255
+                                    }
+                                  },
+                                  "required": [
+                                    "releaseId"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "draftKey": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 255
+                                    }
+                                  },
+                                  "required": [
+                                    "draftKey"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "taskId",
+                            "target"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 10000
+                      },
+                      "milestoneMoves": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "milestoneId": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            },
+                            "target": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "releaseId": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 255
+                                    }
+                                  },
+                                  "required": [
+                                    "releaseId"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "draftKey": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 255
+                                    }
+                                  },
+                                  "required": [
+                                    "draftKey"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "milestoneId",
+                            "target"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "maxItems": 10000
+                      },
+                      "newRelease": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 100,
+                            "description": "Unique within the project. Surrounding spaces are trimmed."
+                          },
+                          "startDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20",
+                            "description": "The first day of work."
+                          },
+                          "codeFreezeDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20",
+                            "description": "The day changes stop. On or after the start date."
+                          },
+                          "submissionDate": {
+                            "type": "string",
+                            "format": "date",
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                            "example": "2026-10-20",
+                            "description": "The day the release ships. On or after the code freeze date."
+                          },
+                          "key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 255
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "startDate",
+                          "codeFreezeDate",
+                          "submissionDate",
+                          "key"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "asOf",
+                  "revision",
+                  "generation",
+                  "timeZone"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Published release planning state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generation": {
+                      "type": "number"
+                    },
+                    "appliedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "outdated": {
+                      "type": "boolean"
+                    },
+                    "legacy": {
+                      "type": "boolean"
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "timeZone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "estimateDayMinutes": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "timeZone",
+                        "estimateDayMinutes"
+                      ]
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "assigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "end": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "segments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "changed": {
+                            "type": "boolean"
+                          },
+                          "completed": {
+                            "type": "boolean"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "number": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "identifier": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "task",
+                              "bug"
+                            ]
+                          },
+                          "assigneeName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentAssigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentAssigneeName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "estimateSeconds": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "exclusiveMinimum": 0,
+                            "maximum": 2147483640,
+                            "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+                          },
+                          "priority": {
+                            "type": "string",
+                            "enum": [
+                              "no-priority",
+                              "low",
+                              "medium",
+                              "high",
+                              "urgent"
+                            ]
+                          },
+                          "currentStart": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "currentEnd": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "featureId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "featureTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestoneId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestoneTitle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "milestonePosition": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "milestoneReleaseId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "assigneeId",
+                          "start",
+                          "end",
+                          "segments",
+                          "reason",
+                          "changed",
+                          "completed",
+                          "title",
+                          "number",
+                          "identifier",
+                          "type",
+                          "assigneeName",
+                          "currentAssigneeId",
+                          "currentAssigneeName",
+                          "estimateSeconds",
+                          "priority",
+                          "currentStart",
+                          "currentEnd",
+                          "featureId",
+                          "featureTitle",
+                          "milestoneId",
+                          "milestoneTitle",
+                          "milestonePosition",
+                          "milestoneReleaseId"
+                        ]
+                      }
+                    },
+                    "timeZone": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "releaseId": {
+                      "type": "string"
+                    },
+                    "planned": {
+                      "type": "boolean"
+                    },
+                    "inputRevision": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "generation",
+                    "appliedAt",
+                    "revision",
+                    "outdated",
+                    "legacy",
+                    "settings",
+                    "tasks",
+                    "timeZone",
+                    "releaseId",
+                    "planned",
+                    "inputRevision"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid planning input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No permission or project access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Release not found in this project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Planning inputs changed; recalculate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_AFTER_CODE_FREEZE: resolve work finishing after code freeze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-schedule/{projectId}": {
+      "get": {
+        "operationId": "getProjectSchedule",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Read the applied project schedule and input revision",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Applied schedule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generation": {
+                      "type": "number"
+                    },
+                    "appliedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "outdated": {
+                      "type": "boolean"
+                    },
+                    "legacy": {
+                      "type": "boolean"
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "timeZone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "estimateDayMinutes": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "timeZone",
+                        "estimateDayMinutes"
+                      ]
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "assigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "end": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "segments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "assigneeId",
+                          "start",
+                          "end",
+                          "segments",
+                          "reason"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "generation",
+                    "appliedAt",
+                    "revision",
+                    "outdated",
+                    "legacy",
+                    "settings",
+                    "tasks"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid planning input or missing setup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No project access or permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Preview is stale or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_AFTER_CODE_FREEZE: resolve work finishing after code freeze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-schedule/{projectId}/settings": {
+      "get": {
+        "operationId": "getPlanningSettings",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Read estimate conversion and planning timezone",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Planning settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "timeZone": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "estimateDayMinutes": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "timeZone",
+                    "estimateDayMinutes"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid planning input or missing setup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No project access or permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Preview is stale or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_AFTER_CODE_FREEZE: resolve work finishing after code freeze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updatePlanningSettings",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Set the project planning timezone and estimate day conversion",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "estimateDayMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1440
+                  }
+                },
+                "required": [
+                  "timeZone",
+                  "estimateDayMinutes"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated schedule setup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generation": {
+                      "type": "number"
+                    },
+                    "appliedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "outdated": {
+                      "type": "boolean"
+                    },
+                    "legacy": {
+                      "type": "boolean"
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "timeZone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "estimateDayMinutes": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "timeZone",
+                        "estimateDayMinutes"
+                      ]
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "assigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "end": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "segments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "assigneeId",
+                          "start",
+                          "end",
+                          "segments",
+                          "reason"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "generation",
+                    "appliedAt",
+                    "revision",
+                    "outdated",
+                    "legacy",
+                    "settings",
+                    "tasks"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid planning input or missing setup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No project access or permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Preview is stale or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_AFTER_CODE_FREEZE: resolve work finishing after code freeze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-schedule/{projectId}/preview": {
+      "post": {
+        "operationId": "previewProjectSchedule",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Preview a capacity-based project schedule without publishing",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "planFrom": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reviewed schedule proposal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "asOf": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "planFrom": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "inputRevision": {
+                      "type": "string"
+                    },
+                    "generation": {
+                      "type": "number"
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "assigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "end": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "segments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "assigneeId",
+                          "start",
+                          "end",
+                          "segments",
+                          "reason"
+                        ]
+                      }
+                    },
+                    "diagnostics": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "reason"
+                        ]
+                      }
+                    },
+                    "warnings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "reason"
+                        ]
+                      }
+                    },
+                    "changedCount": {
+                      "type": "number"
+                    },
+                    "scheduledCount": {
+                      "type": "number"
+                    },
+                    "unscheduledCount": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "asOf",
+                    "expiresAt",
+                    "planFrom",
+                    "revision",
+                    "inputRevision",
+                    "generation",
+                    "tasks",
+                    "diagnostics",
+                    "warnings",
+                    "changedCount",
+                    "scheduledCount",
+                    "unscheduledCount"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid planning input or missing setup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No project access or permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Preview is stale or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_AFTER_CODE_FREEZE: resolve work finishing after code freeze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-schedule/{projectId}/apply": {
+      "post": {
+        "operationId": "applyProjectSchedule",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Atomically apply a revision-checked project schedule",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "asOf": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "planFrom": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "revision": {
+                    "type": "string",
+                    "minLength": 64,
+                    "maxLength": 64
+                  },
+                  "generation": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "asOf",
+                  "planFrom",
+                  "revision",
+                  "generation"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Applied schedule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generation": {
+                      "type": "number"
+                    },
+                    "appliedAt": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "revision": {
+                      "type": "string"
+                    },
+                    "outdated": {
+                      "type": "boolean"
+                    },
+                    "legacy": {
+                      "type": "boolean"
+                    },
+                    "settings": {
+                      "type": "object",
+                      "properties": {
+                        "timeZone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "estimateDayMinutes": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "timeZone",
+                        "estimateDayMinutes"
+                      ]
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "taskId": {
+                            "type": "string"
+                          },
+                          "assigneeId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "end": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "segments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "start": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "end": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                }
+                              },
+                              "required": [
+                                "start",
+                                "end"
+                              ]
+                            }
+                          },
+                          "reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "taskId",
+                          "assigneeId",
+                          "start",
+                          "end",
+                          "segments",
+                          "reason"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "generation",
+                    "appliedAt",
+                    "revision",
+                    "outdated",
+                    "legacy",
+                    "settings",
+                    "tasks"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid planning input or missing setup",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No project access or permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Preview is stale or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_AFTER_CODE_FREEZE: resolve work finishing after code freeze",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/work-calendar/{workspaceId}": {
+      "get": {
+        "operationId": "listWorkCalendars",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Read workspace member availability calendars",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Configured availability calendars",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "userId": {
+                        "type": "string"
+                      },
+                      "timeZone": {
+                        "type": "string"
+                      },
+                      "weeklyIntervals": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "weekday": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 6
+                            },
+                            "startMinute": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 1439
+                            },
+                            "endMinute": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 1440
+                            }
+                          },
+                          "required": [
+                            "weekday",
+                            "startMinute",
+                            "endMinute"
+                          ]
+                        }
+                      },
+                      "timeOff": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "end": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "start",
+                            "end"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "userId",
+                      "timeZone",
+                      "weeklyIntervals",
+                      "timeOff"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid calendar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot manage this calendar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace member not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/work-calendar/{workspaceId}/{userId}": {
+      "put": {
+        "operationId": "saveWorkCalendar",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Configure your working hours and time off; member managers may configure others",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "weeklyIntervals": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "weekday": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        },
+                        "startMinute": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 1439
+                        },
+                        "endMinute": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 1440
+                        }
+                      },
+                      "required": [
+                        "weekday",
+                        "startMinute",
+                        "endMinute"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 70
+                  },
+                  "timeOff": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "start": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "end": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "start",
+                        "end"
+                      ]
+                    },
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "timeZone",
+                  "weeklyIntervals",
+                  "timeOff"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "type": "string"
+                    },
+                    "timeZone": {
+                      "type": "string"
+                    },
+                    "weeklyIntervals": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "weekday": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 6
+                          },
+                          "startMinute": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 1439
+                          },
+                          "endMinute": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 1440
+                          }
+                        },
+                        "required": [
+                          "weekday",
+                          "startMinute",
+                          "endMinute"
+                        ]
+                      }
+                    },
+                    "timeOff": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "start": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "end": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "start",
+                          "end"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "userId",
+                    "timeZone",
+                    "weeklyIntervals",
+                    "timeOff"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid calendar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cannot manage this calendar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace member not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
     "/calendar-feed/project/{projectId}": {
       "get": {
         "operationId": "listCalendarFeeds",
@@ -12878,7 +16224,7 @@
                       "delete",
                       "addLabel",
                       "removeLabel",
-                      "updateDueDate"
+                      "updateEstimate"
                     ]
                   },
                   "value": {
@@ -12886,7 +16232,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "The new value for the chosen operation. Unused by `delete`; null clears an assignee or due date."
+                    "description": "The new value for the chosen operation. Unused by `delete`; null clears an assignee or estimate; estimates are canonical seconds in whole minutes."
                   }
                 },
                 "required": [
@@ -13410,11 +16756,14 @@
                   "description": {
                     "type": "string"
                   },
-                  "startDate": {
-                    "type": "string"
-                  },
-                  "dueDate": {
-                    "type": "string"
+                  "estimateSeconds": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0,
+                    "maximum": 2147483640,
+                    "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
                   },
                   "priority": {
                     "type": "string",
@@ -13582,6 +16931,15 @@
                               ],
                               "default": "task"
                             },
+                            "estimateSeconds": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "exclusiveMinimum": 0,
+                              "maximum": 2147483640,
+                              "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+                            },
                             "milestoneKey": {
                               "type": [
                                 "string",
@@ -13613,7 +16971,8 @@
                 "required": [
                   "title",
                   "description"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -14024,11 +17383,14 @@
                     "type": "string",
                     "description": "Omit to preserve the existing description when updating a list summary."
                   },
-                  "startDate": {
-                    "type": "string"
-                  },
-                  "dueDate": {
-                    "type": "string"
+                  "estimateSeconds": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0,
+                    "maximum": 2147483640,
+                    "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
                   },
                   "priority": {
                     "type": [
@@ -14066,7 +17428,8 @@
                   "title",
                   "projectId",
                   "position"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -14411,9 +17774,15 @@
                         "enum": [
                           3
                         ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          4
+                        ]
                       }
                     ],
-                    "description": "Version 2 imports portable Feature/milestone hierarchy atomically. Omit for legacy per-task imports."
+                    "description": "Version 4 preserves effort and informational schedule history; versions 2/3 and legacy per-task imports remain accepted. Imported schedules are never approved plans."
                   },
                   "milestones": {
                     "type": "array",
@@ -14651,6 +18020,96 @@
                                 ]
                               }
                             }
+                          }
+                        },
+                        "estimateSeconds": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "exclusiveMinimum": 0,
+                          "maximum": 2147483640,
+                          "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
+                        },
+                        "legacyStartDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "legacyDueDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "scheduleSnapshots": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "source": {
+                                "type": "string",
+                                "enum": [
+                                  "legacy",
+                                  "applied",
+                                  "import"
+                                ]
+                              },
+                              "startDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "dueDate": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "assigneeId": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "segments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "start": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    },
+                                    "end": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    }
+                                  },
+                                  "required": [
+                                    "start",
+                                    "end"
+                                  ]
+                                }
+                              },
+                              "sourceRevision": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "startDate",
+                              "dueDate"
+                            ]
                           }
                         },
                         "labels": {
@@ -15086,8 +18545,9 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Update task due date",
-        "description": "Set or clear a task's due date.",
+        "summary": "Task dates are read-only",
+        "deprecated": true,
+        "description": "Direct date writes are no longer supported. Update the estimate, preview a project plan, then apply it. Always returns HTTP 400 for authorized callers.",
         "parameters": [
           {
             "schema": {
@@ -15104,28 +18564,15 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": {
-                  "dueDate": {
-                    "type": "string"
-                  }
-                }
+                "properties": {},
+                "additionalProperties": false
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "The updated task",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TaskResource"
-                }
-              }
-            }
-          },
           "400": {
-            "description": "Invalid date",
+            "description": "Task dates are read-only",
             "content": {
               "application/json": {
                 "schema": {
@@ -17971,6 +21418,15 @@
                             "bug"
                           ],
                           "default": "task"
+                        },
+                        "estimateSeconds": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "exclusiveMinimum": 0,
+                          "maximum": 2147483640,
+                          "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
                         }
                       },
                       "required": [

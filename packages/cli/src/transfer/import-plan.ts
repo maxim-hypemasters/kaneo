@@ -60,6 +60,18 @@ export function planImport(
     }
     return {
       title: candidate.title,
+      ...(candidate.estimateSeconds === undefined
+        ? {}
+        : { estimateSeconds: candidate.estimateSeconds }),
+      ...(candidate.legacyStartDate === undefined
+        ? {}
+        : { legacyStartDate: candidate.legacyStartDate }),
+      ...(candidate.legacyDueDate === undefined
+        ? {}
+        : { legacyDueDate: candidate.legacyDueDate }),
+      ...(candidate.scheduleSnapshots === undefined
+        ? {}
+        : { scheduleSnapshots: candidate.scheduleSnapshots }),
       ...(candidate.key === undefined ? {} : { key: candidate.key }),
       ...(candidate.featureKey === undefined
         ? {}

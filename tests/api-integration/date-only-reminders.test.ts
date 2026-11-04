@@ -36,11 +36,13 @@ async function seedReminder({
   leadTimeMinutes = 14 * 60,
   completed = false,
   enabled = true,
+  applied = false,
 }: {
   dueDate?: string;
   leadTimeMinutes?: number | null;
   completed?: boolean;
   enabled?: boolean;
+  applied?: boolean;
 } = {}) {
   const { user, workspace } = await createWorkspaceMember();
   const { project, columns } = await createProjectFixture({
@@ -57,6 +59,18 @@ async function seedReminder({
       status: column.slug,
       number: 1,
       dueDate: new Date(dueDate),
+      ...(applied
+        ? {
+            scheduleSegments: [
+              {
+                start: new Date(
+                  new Date(dueDate).getTime() - 3600_000,
+                ).toISOString(),
+                end: new Date(dueDate).toISOString(),
+              },
+            ],
+          }
+        : {}),
     })
     .returning();
 
@@ -154,6 +168,35 @@ describe("API integration: date-only reminders", () => {
       expect(sendDueDateReminder).toHaveBeenCalledTimes(1);
     },
   );
+
+  it("uses the exact applied finish for lead reminders and overdue without waiting another day", async () => {
+    const task = await seedReminder({
+      dueDate: "2026-09-23T16:00:00Z",
+      leadTimeMinutes: 60,
+      applied: true,
+    });
+    vi.setSystemTime(new Date("2026-09-23T14:59:59Z"));
+    await checkAllReminders();
+    expectNoDelivery();
+    vi.setSystemTime(new Date("2026-09-23T15:00:00Z"));
+    await checkAllReminders();
+    expect(createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "due_date_reminder",
+        resourceId: task.id,
+      }),
+      expect.any(Object),
+    );
+    expect(sendDueDateReminder).toHaveBeenCalledOnce();
+    vi.setSystemTime(new Date("2026-09-23T16:00:00Z"));
+    await checkAllReminders();
+    expect(createNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "task_overdue", resourceId: task.id }),
+      expect.any(Object),
+    );
+    expect(createNotification).toHaveBeenCalledTimes(2);
+    expect(sendDueDateReminder).toHaveBeenCalledOnce();
+  });
 
   it("does not mark a task overdue until the due day ends", async () => {
     const task = await seedReminder();

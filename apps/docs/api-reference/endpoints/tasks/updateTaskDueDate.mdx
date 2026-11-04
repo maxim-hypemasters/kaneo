@@ -1,4 +1,6 @@
 ---
-title: "Update task due date"
+title: "Task dates are read-only"
 openapi: "PUT /task/due-date/{id}"
 ---
+
+This deprecated endpoint rejects direct date writes with HTTP 400. Update the effort estimate and use project schedule Preview → Apply instead. Task responses retain read-only `startDate` and `dueDate` outputs.

@@ -1,7 +1,7 @@
+import { EstimateInput } from "@/components/task/estimate/estimate-input";
 import { useLocation, useParams } from "@tanstack/react-router";
 import { produce } from "immer";
 import {
-  CalendarIcon,
   CircleAlert,
   Check,
   FolderKanban,
@@ -39,7 +39,6 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { DatePickerMenu } from "@/components/common/date-picker/date-picker-menu";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -68,7 +67,6 @@ import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-projec
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 import { uploadDraftAsset } from "@/lib/upload-draft-asset";
-import { formatDateMedium } from "@/lib/format";
 import { getInitials } from "@/lib/get-initials";
 import { resolveLabelColor } from "@/lib/label-color";
 import { getPriorityIcon } from "@/lib/priority";
@@ -284,10 +282,8 @@ function CreateTaskModalContent({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("no-priority");
   const [assigneeId, setAssigneeId] = useState("");
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-  const [startDateOpen, setStartDateOpen] = useState(false);
-  const [dueDateOpen, setDueDateOpen] = useState(false);
+  const [estimateSeconds, setEstimateSeconds] = useState<number | null>(null);
+  const [estimateValid, setEstimateValid] = useState(true);
   const [createMore, setCreateMore] = useState(false);
   const [labels, setLabels] = useState<Label[]>([]);
   const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
@@ -475,8 +471,7 @@ function CreateTaskModalContent({
     description.trim() ||
     priority !== "no-priority" ||
     assigneeId ||
-    startDate ||
-    dueDate ||
+    estimateSeconds ||
     selectedProjectId ||
     chosenFeature ||
     !sameReleaseChoice(releaseChoice, initialReleaseChoice(releaseId)) ||
@@ -635,7 +630,7 @@ function CreateTaskModalContent({
       pendingUploadsRef.current > 0 ||
       !canCreateTaskCapability ||
       (taskType === "feature" && !compositionValid) ||
-      (taskType !== "feature" && awaitingColumns) ||
+      (taskType !== "feature" && (awaitingColumns || !estimateValid)) ||
       !title.trim() ||
       !resolvedProjectId ||
       (taskType !== "feature" && assigneeUnconfirmed) ||
@@ -713,8 +708,7 @@ function CreateTaskModalContent({
             ? {
                 userId: selectedUser?.id ?? "",
                 priority,
-                startDate: startDate?.toISOString(),
-                dueDate: dueDate?.toISOString(),
+                estimateSeconds,
                 status: submitStatus,
               }
             : {}),
@@ -775,8 +769,8 @@ function CreateTaskModalContent({
         setDescription("");
         setPriority("no-priority");
         setAssigneeId("");
-        setStartDate(undefined);
-        setDueDate(undefined);
+        setEstimateSeconds(null);
+        setEstimateValid(true);
         setLabels([]);
         setLabelsStep("select");
         setSearchValue("");
@@ -1141,49 +1135,13 @@ function CreateTaskModalContent({
                       {statusLabel}
                     </div>
 
-                    <Popover
-                      open={startDateOpen}
-                      onOpenChange={setStartDateOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                            startDate
-                              ? "bg-accent/30 text-foreground"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="w-3.5 h-3.5" />
-                          <span>
-                            {startDate
-                              ? formatDateMedium(startDate)
-                              : t("common:modals.createTask.startDate")}
-                          </span>
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-65 p-0" align="start">
-                        <DatePickerMenu
-                          label={t("common:modals.createTask.startDate")}
-                          placeholder={t(
-                            "tasks:datePicker.startDatePlaceholder",
-                          )}
-                          clearLabel={t(
-                            "common:modals.createTask.clearStartDate",
-                          )}
-                          value={startDate ?? null}
-                          onChange={(date) => {
-                            setStartDate(date ?? undefined);
-                            setStartDateOpen(false);
-                          }}
-                          bounds={dueDate ? { after: dueDate } : undefined}
-                          formatLimit={(date) =>
-                            t("tasks:due.fullDate", { date })
-                          }
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <EstimateInput
+                      value={estimateSeconds}
+                      onChange={setEstimateSeconds}
+
+                      disabled={isSubmitting}
+                      onValidityChange={setEstimateValid}
+                    />
 
                     <Popover>
                       <PopoverTrigger asChild>
@@ -1307,45 +1265,6 @@ function CreateTaskModalContent({
                             </button>
                           ))}
                         </div>
-                      </PopoverContent>
-                    </Popover>
-
-                    <Popover open={dueDateOpen} onOpenChange={setDueDateOpen}>
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors border border-border hover:bg-accent/50",
-                            dueDate
-                              ? "bg-accent/30 text-foreground"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          <CalendarIcon className="w-3.5 h-3.5" />
-                          <span>
-                            {dueDate
-                              ? formatDateMedium(dueDate)
-                              : t("common:modals.createTask.dueDate")}
-                          </span>
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-65 p-0" align="start">
-                        <DatePickerMenu
-                          label={t("common:modals.createTask.dueDate")}
-                          placeholder={t("tasks:datePicker.dueDatePlaceholder")}
-                          clearLabel={t(
-                            "common:modals.createTask.clearDueDate",
-                          )}
-                          value={dueDate ?? null}
-                          onChange={(date) => {
-                            setDueDate(date ?? undefined);
-                            setDueDateOpen(false);
-                          }}
-                          bounds={startDate ? { before: startDate } : undefined}
-                          formatLimit={(date) =>
-                            t("tasks:datePicker.startsOn", { date })
-                          }
-                        />
                       </PopoverContent>
                     </Popover>
                   </>
@@ -1598,7 +1517,8 @@ function CreateTaskModalContent({
                 (taskType === "feature" && !compositionValid) ||
                 (taskType !== "feature" && assigneeUnconfirmed) ||
                 isSubmitting ||
-                (taskType !== "feature" && awaitingColumns) ||
+                (taskType !== "feature" &&
+                  (awaitingColumns || !estimateValid)) ||
                 isPreparingDraft
               }
               aria-busy={isPreparingDraft || isSubmitting}

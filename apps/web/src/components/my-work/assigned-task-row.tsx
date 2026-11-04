@@ -69,6 +69,7 @@ export function AssignedTaskRow({
       </span>
       <DueDateText
         dueDate={task.dueDate}
+        applied={task.scheduleSource === "applied"}
         className="shrink-0 text-right sm:w-20"
       />
     </Link>

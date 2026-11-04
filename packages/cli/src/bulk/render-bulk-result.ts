@@ -8,7 +8,7 @@ export type AppliedChange =
   | { readonly kind: "priority"; readonly priority: string }
   | { readonly kind: "assignee"; readonly name: string }
   | { readonly kind: "unassign" }
-  | { readonly kind: "due"; readonly dueDate: string | null }
+  | { readonly kind: "estimate"; readonly estimateSeconds: number | null }
   | { readonly kind: "addLabel"; readonly labelName: string }
   | { readonly kind: "removeLabel"; readonly labelName: string }
   | { readonly kind: "delete" };
@@ -25,14 +25,6 @@ export type BulkResultView = {
 
 function tasks(count: number): string {
   return count === 1 ? "1 task" : `${count} tasks`;
-}
-
-function day(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 export function bulkHeadline(
@@ -54,11 +46,11 @@ export function bulkHeadline(
       return { text: `Assigned ${all} to ${change.name}`, aside: null };
     case "unassign":
       return { text: `Unassigned ${all}`, aside: null };
-    case "due":
-      return change.dueDate === null
-        ? { text: `Cleared the due date on ${all}`, aside: null }
+    case "estimate":
+      return change.estimateSeconds === null
+        ? { text: `Cleared the estimate on ${all}`, aside: null }
         : {
-            text: `Set the due date to ${day(change.dueDate)} on ${all}`,
+            text: `Set the estimate to ${change.estimateSeconds / 3600} hours on ${all}`,
             aside: null,
           };
     case "addLabel":

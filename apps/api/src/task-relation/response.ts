@@ -1,3 +1,4 @@
+import { estimateSecondsSchema } from "../task/estimate";
 import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
 import { taskTypeSchema } from "../task/response";
 
@@ -10,8 +11,13 @@ const relatedTaskSchema = z
     title: z.string(),
     type: taskTypeSchema,
     milestoneId: z.string().nullable(),
-    startDate: nullableResponseTimestamp,
-    dueDate: nullableResponseTimestamp,
+    estimateSeconds: estimateSecondsSchema,
+    scheduleSource: z
+      .enum(["legacy", "applied", "none"])
+      .optional()
+      .openapi({ readOnly: true }),
+    startDate: nullableResponseTimestamp.openapi({ readOnly: true }),
+    dueDate: nullableResponseTimestamp.openapi({ readOnly: true }),
     status: z.string().nullable(),
     isCompleted: z.boolean().openapi({
       description: "Whether the task is in a final column of its own project.",

@@ -1,3 +1,4 @@
+import { estimateSecondsSchema } from "./estimate";
 import { pagingNumber, z } from "../openapi";
 import { MAX_TASK_POSITION } from "./controllers/next-task-position";
 import { TICKET_ID_PATTERN } from "./ticket-id";
@@ -7,6 +8,7 @@ import { featureCompositionSchema } from "./feature-composition-schema";
 import {
   planningSnapshotSchema,
   transferReleaseSchema,
+  scheduleSnapshotSchema,
   transferMilestoneSchema,
 } from "./transfers/schema";
 
@@ -89,11 +91,11 @@ export const bulkUpdateBody = z.object({
     "delete",
     "addLabel",
     "removeLabel",
-    "updateDueDate",
+    "updateEstimate",
   ]),
   value: z.string().nullable().optional().openapi({
     description:
-      "The new value for the chosen operation. Unused by `delete`; null clears an assignee or due date.",
+      "The new value for the chosen operation. Unused by `delete`; null clears an assignee or estimate; estimates are canonical seconds in whole minutes.",
   }),
 });
 
@@ -101,8 +103,7 @@ export const createTaskBody = z
   .object({
     title: z.string(),
     description: z.string(),
-    startDate: z.string().optional(),
-    dueDate: z.string().optional(),
+    estimateSeconds: estimateSecondsSchema.optional(),
     priority: priority.optional(),
     status: z
       .string()
@@ -130,6 +131,7 @@ export const createTaskBody = z
         "Feature-only milestone and Task/Bug drafts, saved atomically with the new Feature. Existing work must have no Feature. Milestones or existing links additionally require task:update; non-null milestone leads require task:assign.",
     }),
   })
+  .strict()
   .refine(
     (body) => body.featureComposition === undefined || body.type === "feature",
     {
@@ -138,20 +140,21 @@ export const createTaskBody = z
     },
   );
 
-export const updateTaskBody = z.object({
-  title: z.string(),
-  description: z.string().optional().openapi({
-    description:
-      "Omit to preserve the existing description when updating a list summary.",
-  }),
-  startDate: z.string().optional(),
-  dueDate: z.string().optional(),
-  priority: priority.nullable().optional(),
-  status: z.string().nullable().optional(),
-  projectId: z.string(),
-  position: z.number().int().min(0).max(MAX_TASK_POSITION),
-  userId: z.string().optional(),
-});
+export const updateTaskBody = z
+  .object({
+    title: z.string(),
+    description: z.string().optional().openapi({
+      description:
+        "Omit to preserve the existing description when updating a list summary.",
+    }),
+    estimateSeconds: estimateSecondsSchema.optional(),
+    priority: priority.nullable().optional(),
+    status: z.string().nullable().optional(),
+    projectId: z.string(),
+    position: z.number().int().min(0).max(MAX_TASK_POSITION),
+    userId: z.string().optional(),
+  })
+  .strict();
 
 export const moveTaskBody = z.object({
   destinationProjectId: z.string(),
@@ -162,11 +165,11 @@ export const moveTaskBody = z.object({
 
 export const importTasksBody = z.object({
   version: z
-    .union([z.literal(2), z.literal(3)])
+    .union([z.literal(2), z.literal(3), z.literal(4)])
     .optional()
     .openapi({
       description:
-        "Version 2 imports portable Feature/milestone hierarchy atomically. Omit for legacy per-task imports.",
+        "Version 4 preserves effort and informational schedule history; versions 2/3 and legacy per-task imports remain accepted. Imported schedules are never approved plans.",
     }),
   milestones: z.array(transferMilestoneSchema).optional(),
   releases: z.array(transferReleaseSchema).optional(),
@@ -178,6 +181,10 @@ export const importTasksBody = z.object({
       releaseKey: z.string().min(1).nullable().optional(),
       archivedAt: z.string().datetime().nullable().optional(),
       planningSnapshots: z.array(planningSnapshotSchema).optional(),
+      estimateSeconds: estimateSecondsSchema.optional(),
+      legacyStartDate: z.string().datetime().nullable().optional(),
+      legacyDueDate: z.string().datetime().nullable().optional(),
+      scheduleSnapshots: z.array(scheduleSnapshotSchema).optional(),
       labels: z
         .array(
           z.object({
@@ -205,7 +212,7 @@ export const updatePriorityBody = z.object({ priority });
 export const updateAssigneeBody = z.object({
   userId: z.string().nullable().openapi({ description: "Null unassigns." }),
 });
-export const updateDueDateBody = z.object({ dueDate: z.string().optional() });
+export const updateDueDateBody = z.object({}).strict();
 export const updateTitleBody = z.object({ title: z.string() });
 export const updateFeatureBody = z.object({
   featureId: z.string().min(1).nullable().openapi({

@@ -69,6 +69,9 @@ import { initializePlugins } from "./plugins";
 import { migrateGitHubIntegration } from "./plugins/github/migration";
 import project from "./project";
 import release from "./release";
+import projectSchedule from "./scheduling";
+import workCalendar from "./scheduling/calendars";
+import "./scheduling/events";
 import { assertProjectAccess } from "./project-access/assert-project-access";
 import { getPublicProject } from "./project/controllers/get-public-project";
 import { initializeScheduler, shutdownScheduler } from "./scheduler";
@@ -819,6 +822,8 @@ export function createApp() {
 
   const billingApi = api.route("/billing", billing);
   const projectApi = api.route("/project", project);
+  const projectScheduleApi = api.route("/project-schedule", projectSchedule);
+  const workCalendarApi = api.route("/work-calendar", workCalendar);
   const calendarFeedApi = api.route("/calendar-feed", calendarFeed);
   const taskApi = api.route("/task", task);
   const columnApi = api.route("/column", column);
@@ -985,6 +990,8 @@ export function createApp() {
     notificationApi,
     notificationPreferencesApi,
     projectApi,
+    projectScheduleApi,
+    workCalendarApi,
     calendarFeedApi,
     publicProjectApi,
     releaseApi,
@@ -1122,6 +1129,8 @@ const {
   notificationApi,
   notificationPreferencesApi,
   projectApi,
+  projectScheduleApi,
+  workCalendarApi,
   calendarFeedApi,
   publicProjectApi,
   releaseApi,
@@ -1155,6 +1164,8 @@ export type AppType =
   | typeof billingApi
   | typeof configApi
   | typeof projectApi
+  | typeof projectScheduleApi
+  | typeof workCalendarApi
   | typeof calendarFeedApi
   | typeof taskApi
   | typeof columnApi

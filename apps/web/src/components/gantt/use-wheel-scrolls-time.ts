@@ -7,6 +7,7 @@ const LINE_PX = 40;
 type WheelScrollOptions = {
   onZoom?: (deltaPx: number, clientX: number) => void;
   isZoomBlocked?: () => boolean;
+  scrollRows?: boolean;
 };
 
 // A vertical wheel pans time, while Shift+wheel zooms around the pointer.
@@ -75,7 +76,7 @@ export function useWheelScrollsTime(
         return;
       }
       cancelZoom();
-      if (event.shiftKey) return;
+      if (event.shiftKey || latest.current.scrollRows) return;
       if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
       event.preventDefault();
       shiftScrollLeft(element, event.deltaY * unit);

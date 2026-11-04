@@ -13,8 +13,7 @@ async function createTask(
   projectId: string,
   userId: string | undefined,
   status: string | null | undefined,
-  startDate: Date | undefined,
-  dueDate: Date | undefined,
+  estimateSeconds: number | null | undefined,
   priority: CreateTaskRequest["priority"],
   customFields?: { fieldId: string; value: string }[],
   draftAssetIds?: string[],
@@ -36,8 +35,7 @@ async function createTask(
         ? {
             ...(userId ? { userId } : {}),
             ...(status ? { status } : {}),
-            startDate: startDate?.toISOString(),
-            dueDate: dueDate?.toISOString(),
+            estimateSeconds,
             priority,
           }
         : {}),

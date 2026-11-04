@@ -7,7 +7,7 @@ const none: BulkFlags = {
   priority: Option.none(),
   assignee: Option.none(),
   unassign: false,
-  due: Option.none(),
+  estimateSeconds: Option.none(),
   addLabel: Option.none(),
   removeLabel: Option.none(),
   delete: false,
@@ -59,21 +59,20 @@ describe("parseBulkChange", () => {
     ).toEqual({ kind: "delete" });
   });
 
-  it("parses due dates and none to clear", () => {
-    const due = Result.getOrThrow(
-      parseBulkChange({ ...none, due: Option.some("2026-10-20") }, now),
-    );
-    expect(due.kind === "due" && new Date(due.dueDate ?? "").getDate()).toBe(
-      20,
-    );
+  it("parses canonical estimates and none to clear", () => {
     expect(
       Result.getOrThrow(
-        parseBulkChange({ ...none, due: Option.some("none") }, now),
+        parseBulkChange({ ...none, estimateSeconds: Option.some("5400") }, now),
       ),
-    ).toEqual({ kind: "due", dueDate: null });
+    ).toEqual({ kind: "estimate", estimateSeconds: 5400 });
+    expect(
+      Result.getOrThrow(
+        parseBulkChange({ ...none, estimateSeconds: Option.some("none") }, now),
+      ),
+    ).toEqual({ kind: "estimate", estimateSeconds: null });
     expect(
       Result.isFailure(
-        parseBulkChange({ ...none, due: Option.some("soon") }, now),
+        parseBulkChange({ ...none, estimateSeconds: Option.some("soon") }, now),
       ),
     ).toBe(true);
   });

@@ -46,9 +46,7 @@ export async function checkProjectWebhookReminders(): Promise<{
 
       const leadTimeMinutes = config.dueDateReminderLeadTimeMinutes ?? 1440;
       // Count back from expiration while keeping the indexed due date unmodified.
-      const windowEnd = new Date(
-        now.getTime() + leadTimeMinutes * MINUTE_MS - DUE_DATE_DURATION_MS,
-      );
+      const windowEnd = new Date(now.getTime() + leadTimeMinutes * MINUTE_MS);
       const windowStart = new Date(
         windowEnd.getTime() - REMINDER_WINDOW_MINUTES * MINUTE_MS,
       );
@@ -68,7 +66,20 @@ export async function checkProjectWebhookReminders(): Promise<{
           and(
             eq(taskTable.projectId, integration.projectId),
             isNotNull(taskTable.dueDate),
-            between(taskTable.dueDate, windowStart, windowEnd),
+            or(
+              and(
+                isNotNull(taskTable.scheduleSegments),
+                between(taskTable.dueDate, windowStart, windowEnd),
+              ),
+              and(
+                isNull(taskTable.scheduleSegments),
+                between(
+                  taskTable.dueDate,
+                  new Date(windowStart.getTime() - DUE_DATE_DURATION_MS),
+                  new Date(windowEnd.getTime() - DUE_DATE_DURATION_MS),
+                ),
+              ),
+            ),
             isNull(taskReminderSentTable.id),
             or(isNull(columnTable.isFinal), eq(columnTable.isFinal, false)),
             ne(taskTable.status, "archived"),
@@ -78,16 +89,41 @@ export async function checkProjectWebhookReminders(): Promise<{
       for (const task of tasks) {
         if (!task.dueDate) continue;
 
-        const [sentRecord] = await db
-          .insert(taskReminderSentTable)
-          .values({ taskId: task.id, reminderType })
-          .onConflictDoNothing({
-            target: [
-              taskReminderSentTable.taskId,
-              taskReminderSentTable.reminderType,
-            ],
-          })
-          .returning({ id: taskReminderSentTable.id });
+        const sentRecord = await db.transaction(async (tx) => {
+          const [current] = await tx
+            .select({
+              dueDate: taskTable.dueDate,
+              status: taskTable.status,
+              columnId: taskTable.columnId,
+            })
+            .from(taskTable)
+            .where(eq(taskTable.id, task.id))
+            .for("update");
+          if (
+            !current ||
+            current.status === "archived" ||
+            current.dueDate?.getTime() !== task.dueDate?.getTime()
+          )
+            return null;
+          if (current.columnId) {
+            const column = await tx.query.columnTable.findFirst({
+              columns: { isFinal: true },
+              where: eq(columnTable.id, current.columnId),
+            });
+            if (column?.isFinal) return null;
+          }
+          const [claimed] = await tx
+            .insert(taskReminderSentTable)
+            .values({ taskId: task.id, reminderType })
+            .onConflictDoNothing({
+              target: [
+                taskReminderSentTable.taskId,
+                taskReminderSentTable.reminderType,
+              ],
+            })
+            .returning({ id: taskReminderSentTable.id });
+          return claimed ?? null;
+        });
         if (!sentRecord) continue;
 
         const delivered = await sendDueDateReminder(

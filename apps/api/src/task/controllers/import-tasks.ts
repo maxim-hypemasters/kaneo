@@ -1,6 +1,11 @@
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
+import {
+  importedTaskDates,
+  preserveImportedSchedule,
+  type ImportedScheduleFields,
+} from "../transfers/task-schedule";
 import { columnTable, projectTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { filterUsersWithProjectAccess } from "../../project-access/filter-users-with-project-access";
@@ -19,7 +24,8 @@ import { preserveImportedPlanning } from "../transfers/feature-planning";
 import { nextTaskPosition } from "./next-task-position";
 import type { TaskType } from "../task-type";
 
-export type ImportTask = {
+export type ImportTask = ImportedScheduleFields & {
+  estimateSeconds?: number | null;
   title: string;
   type?: TaskType;
   description?: string;
@@ -100,6 +106,15 @@ async function importTasks(
       });
 
       const createdTask = await db.transaction(async (tx) => {
+        const [lockedProject] = await tx
+          .select({ scheduleGeneration: projectTable.scheduleGeneration })
+          .from(projectTable)
+          .where(eq(projectTable.id, projectId))
+          .for("update");
+        if (!lockedProject)
+          throw new HTTPException(409, {
+            message: "Project changed; retry import",
+          });
         const taskNumber = await claimTaskNumber(projectId, tx);
         const position = await nextTaskPosition(
           tx,
@@ -117,14 +132,13 @@ async function importTasks(
             type: taskData.type ?? "task",
             status: taskData.type === "feature" ? null : status,
             columnId: taskData.type === "feature" ? null : (column?.id ?? null),
-            startDate:
-              taskData.type !== "feature" && taskData.startDate
-                ? new Date(taskData.startDate)
-                : null,
-            dueDate:
-              taskData.type !== "feature" && taskData.dueDate
-                ? new Date(taskData.dueDate)
-                : null,
+            ...(taskData.type === "feature"
+              ? {}
+              : importedTaskDates(taskData, lockedProject.scheduleGeneration)),
+            estimateSeconds:
+              taskData.type === "feature"
+                ? null
+                : (taskData.estimateSeconds ?? null),
             description: taskData.description || "",
             priority: taskData.type === "feature" ? null : priority,
             archivedAt:
@@ -138,6 +152,14 @@ async function importTasks(
 
         if (taskData.type === "feature" && task)
           await preserveImportedPlanning(tx, task.id, currentUserId, taskData);
+        else if (task)
+          await preserveImportedSchedule(
+            tx,
+            projectId,
+            task.id,
+            currentUserId,
+            taskData,
+          );
         return task;
       });
 

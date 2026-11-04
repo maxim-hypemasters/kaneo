@@ -25,6 +25,7 @@ export async function createMilestoneTasks(
       expectedWorkspaceId,
       title: draft.title,
       type: draft.type,
+      estimateSeconds: draft.estimateSeconds,
       status,
     });
     created.push(task);

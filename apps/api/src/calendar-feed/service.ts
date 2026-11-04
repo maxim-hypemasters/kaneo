@@ -190,6 +190,7 @@ export async function getCalendarFeed(token: string) {
             ),
             startDate: taskTable.startDate,
             dueDate: taskTable.dueDate,
+            scheduleSegments: taskTable.scheduleSegments,
             createdAt: taskTable.createdAt,
             updatedAt: taskTable.updatedAt,
           })

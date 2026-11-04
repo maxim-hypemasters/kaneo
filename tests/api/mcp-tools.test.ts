@@ -142,28 +142,41 @@ describe("MCP tool catalog", () => {
     expect(apiFetch).not.toHaveBeenCalled();
   });
 
-  it("sets and clears a due date", async () => {
-    await call("update_task_due_date", {
-      taskId: "t1",
-      dueDate: "2026-09-01T10:00:00Z",
-    });
+  it("sets and clears effort without writing read-only dates", async () => {
+    apiFetch.mockImplementation(async (_input, init) =>
+      init?.method === "PUT"
+        ? Response.json({ ok: true })
+        : Response.json({
+            title: "Task",
+            projectId: "p",
+            status: "todo",
+            priority: "medium",
+            position: 1,
+            startDate: "2026-10-26T09:00:00Z",
+            dueDate: "2026-10-26T10:00:00Z",
+          }),
+    );
+    await call("update_task_estimate", { taskId: "t1", estimateSeconds: 5400 });
     expect(lastRequest()).toMatchObject({
-      url: "http://api.test/api/task/due-date/t1",
+      url: "http://api.test/api/task/t1",
       method: "PUT",
-      body: { dueDate: "2026-09-01T10:00:00Z" },
+      body: { estimateSeconds: 5400 },
     });
-
-    await call("update_task_due_date", { taskId: "t1" });
-    expect(lastRequest().body).toEqual({});
+    expect(lastRequest().body).not.toHaveProperty("startDate");
+    expect(lastRequest().body).not.toHaveProperty("dueDate");
+    await call("update_task_estimate", { taskId: "t1", estimateSeconds: null });
+    expect(lastRequest().body.estimateSeconds).toBeNull();
+    expect(tools.has("update_task_due_date")).toBe(false);
   });
 
-  it("rejects a due date that is not an ISO date-time", async () => {
-    const result = await call("update_task_due_date", {
+  it("rejects non-minute estimates and direct schedule writes", async () => {
+    const result = await call("update_task_estimate", {
       taskId: "t1",
-      dueDate: "next tuesday",
+      estimateSeconds: 61,
     });
-
     expect(result.isError).toBe(true);
+    const direct = await call("update_task", { taskId: "t1", dueDate: null });
+    expect(direct.isError).toBe(true);
     expect(apiFetch).not.toHaveBeenCalled();
   });
 

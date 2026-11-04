@@ -96,10 +96,15 @@ export function MilestoneDialog({
                   ...(taskIds.length ? { taskIds } : {}),
                   ...(newTasks.length
                     ? {
-                        newTasks: newTasks.map(({ title, type }) => ({
-                          title: title.trim(),
-                          type,
-                        })),
+                        newTasks: newTasks.map(
+                          ({ title, type, estimateSeconds }) => ({
+                            title: title.trim(),
+                            type,
+                            ...(estimateSeconds !== undefined
+                              ? { estimateSeconds }
+                              : {}),
+                          }),
+                        ),
                       }
                     : {}),
                 });

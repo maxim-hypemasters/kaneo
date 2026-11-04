@@ -75,3 +75,34 @@ it("retains milestone scope when receiving a Redis project broadcast", async () 
   );
   await adapter.shutdown();
 });
+
+it("retains the plan publication signal across Redis instances", async () => {
+  mocks.on.mockClear();
+  const adapter = new RedisBroadcastAdapter();
+  const receive = vi.fn();
+  await adapter.subscribe(receive);
+  const handle = mocks.on.mock.calls.find(
+    ([event]) => event === "pmessage",
+  )![1];
+  handle(
+    "kaneo:ws:*:broadcast",
+    "kaneo:ws:project:broadcast",
+    JSON.stringify({
+      projectId: "project",
+      message: {
+        type: "SCHEDULE_UPDATED",
+        projectId: "project",
+        schedulePublished: true,
+      },
+    }),
+  );
+  expect(receive).toHaveBeenCalledExactlyOnceWith({
+    projectId: "project",
+    message: {
+      type: "SCHEDULE_UPDATED",
+      projectId: "project",
+      schedulePublished: true,
+    },
+  });
+  await adapter.shutdown();
+});

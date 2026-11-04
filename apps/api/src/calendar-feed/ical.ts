@@ -6,6 +6,7 @@ export type CalendarTask = {
   dueDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  scheduleSegments?: Array<{ start: string; end: string }> | null;
 };
 
 function escapeText(value: string) {
@@ -75,6 +76,22 @@ function eventFormatter(timeZone: string) {
     day: "2-digit",
   });
   return (task: CalendarTask) => {
+    if (task.scheduleSegments)
+      return task.scheduleSegments.flatMap((segment, index) => [
+        "BEGIN:VEVENT",
+        `UID:${task.id}${index ? `-segment-${index}` : ""}@kaneo`,
+        `DTSTAMP:${timestamp(task.updatedAt)}`,
+        `CREATED:${timestamp(task.createdAt)}`,
+        `LAST-MODIFIED:${timestamp(task.updatedAt)}`,
+        `DTSTART:${timestamp(new Date(segment.start))}`,
+        `DTEND:${timestamp(new Date(segment.end))}`,
+        `SUMMARY:${escapeText(task.title)}`,
+        ...(task.description
+          ? [`DESCRIPTION:${escapeText(task.description)}`]
+          : []),
+        "TRANSP:OPAQUE",
+        "END:VEVENT",
+      ]);
     const scheduledDate = task.startDate ?? task.dueDate;
     if (!scheduledDate) return [];
     const start = calendarDate(scheduledDate, formatter);

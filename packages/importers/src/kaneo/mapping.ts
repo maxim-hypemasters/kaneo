@@ -136,6 +136,15 @@ export function mapTask(
     title: task.title,
     description: extras.description ?? task.description ?? "",
     priority: mapPriority(task.priority),
+    ...(task.estimateSeconds === undefined
+      ? {}
+      : { estimateSeconds: task.estimateSeconds }),
+    ...(task.legacyStartDate === undefined
+      ? {}
+      : { legacyStartDate: task.legacyStartDate }),
+    ...(task.legacyDueDate === undefined
+      ? {}
+      : { legacyDueDate: task.legacyDueDate }),
     startDate: toIsoDate(task.startDate),
     dueDate: toIsoDate(task.dueDate),
     createdAt: toIsoDate(task.createdAt),

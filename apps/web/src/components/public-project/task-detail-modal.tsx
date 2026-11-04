@@ -1,3 +1,4 @@
+import { useCurrentMinute } from "@/hooks/use-current-minute";
 import {
   Calendar,
   CalendarClock,
@@ -50,6 +51,7 @@ export function PublicTaskDetailModal({
 }: PublicTaskDetailModalProps) {
   const taskIsCompleted = isTaskCompleted(task?.status ?? "", columns);
   const { t } = useTranslation();
+  const now = useCurrentMinute();
   const descriptionQuery = usePublicTaskDescription(task, open);
   const description = task?.descriptionDeferred
     ? descriptionQuery.isError
@@ -140,16 +142,32 @@ export function PublicTaskDetailModal({
 
                 {task.dueDate && (
                   <div
-                    className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md ${dueDateStatusColors[getDueDateStatus(task.dueDate, taskIsCompleted)]}`}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-md ${dueDateStatusColors[getDueDateStatus(task.dueDate, taskIsCompleted, task.scheduleSource === "applied", new Date(now))]}`}
                   >
-                    {getDueDateStatus(task.dueDate, taskIsCompleted) ===
-                      "overdue" && <CalendarX className="w-3 h-3" />}
-                    {getDueDateStatus(task.dueDate, taskIsCompleted) ===
-                      "due-soon" && <CalendarClock className="w-3 h-3" />}
-                    {(getDueDateStatus(task.dueDate, taskIsCompleted) ===
-                      "far-future" ||
-                      getDueDateStatus(task.dueDate, taskIsCompleted) ===
-                        "no-due-date") && <Calendar className="w-3 h-3" />}
+                    {getDueDateStatus(
+                      task.dueDate,
+                      taskIsCompleted,
+                      task.scheduleSource === "applied",
+                      new Date(now),
+                    ) === "overdue" && <CalendarX className="w-3 h-3" />}
+                    {getDueDateStatus(
+                      task.dueDate,
+                      taskIsCompleted,
+                      task.scheduleSource === "applied",
+                      new Date(now),
+                    ) === "due-soon" && <CalendarClock className="w-3 h-3" />}
+                    {(getDueDateStatus(
+                      task.dueDate,
+                      taskIsCompleted,
+                      task.scheduleSource === "applied",
+                      new Date(now),
+                    ) === "far-future" ||
+                      getDueDateStatus(
+                        task.dueDate,
+                        taskIsCompleted,
+                        task.scheduleSource === "applied",
+                        new Date(now),
+                      ) === "no-due-date") && <Calendar className="w-3 h-3" />}
                     <span>
                       {t("publicProject:taskDetail.dueWithDate", {
                         date: formatDateShort(task.dueDate),

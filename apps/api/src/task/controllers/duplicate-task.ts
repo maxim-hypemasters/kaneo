@@ -311,8 +311,10 @@ async function duplicateTask({
             status: sourceTask.status,
             columnId:
               sourceTask.type === "feature" ? null : (column?.id ?? null),
-            startDate: sourceTask.startDate,
-            dueDate: sourceTask.dueDate,
+            estimateSeconds:
+              sourceTask.type === "feature" ? null : sourceTask.estimateSeconds,
+            startDate: null,
+            dueDate: null,
             description,
             priority: sourceTask.priority,
             number: taskNumber,

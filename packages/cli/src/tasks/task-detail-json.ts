@@ -15,6 +15,7 @@ export type TaskDetailJson = {
   readonly status: string | null;
   readonly statusName: string | null;
   readonly priority: string | null;
+  readonly estimateSeconds?: number | null;
   readonly assignee: {
     readonly id: string;
     readonly name: string | null;
@@ -48,6 +49,9 @@ export function toTaskDetailJson(resolved: ResolvedTask): TaskDetailJson {
     status: task.status,
     statusName: column?.name ?? task.status,
     priority: task.priority,
+    ...(task.estimateSeconds === undefined
+      ? {}
+      : { estimateSeconds: task.estimateSeconds }),
     assignee: task.assigneeId
       ? { id: task.assigneeId, name: task.assigneeName }
       : null,

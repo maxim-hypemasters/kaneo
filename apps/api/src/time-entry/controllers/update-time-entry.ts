@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { timeEntryTable } from "../../database/schema";
 import { resolveDuration } from "../duration";
+import { publishEvent } from "../../events";
 
 type UpdateTimeEntryParams = {
   timeEntryId: string;
@@ -40,6 +41,10 @@ async function updateTimeEntry(params: UpdateTimeEntryParams) {
     .where(eq(timeEntryTable.id, timeEntryId))
     .returning();
 
+  if (updatedTimeEntry)
+    await publishEvent("time-entry.updated", {
+      taskId: updatedTimeEntry.taskId,
+    });
   return updatedTimeEntry;
 }
 

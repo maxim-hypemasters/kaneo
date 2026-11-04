@@ -31,6 +31,8 @@ type Task = {
   descriptionDeferred?: boolean;
   status: string | null;
   priority: string | null;
+  estimateSeconds?: number | null;
+  scheduleSource?: "legacy" | "applied" | "none";
   startDate: string | null;
   dueDate: string | null;
   position: number | null;

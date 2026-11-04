@@ -64,6 +64,8 @@ import {
   mcpOauthStateTable,
   notificationTable,
   projectTable,
+  workCalendarTable,
+  projectPlanTable,
   releaseTable,
   releaseProgressEventTable,
   projectWorkflowHistoryTable,
@@ -94,6 +96,8 @@ import {
 config();
 
 export const schema = {
+  workCalendarTable,
+  projectPlanTable,
   dataMigrationTable,
   storageCleanupTable,
   accountTable,

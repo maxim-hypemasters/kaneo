@@ -4,6 +4,34 @@ import { isReminderDue } from "../../../apps/api/src/scheduler/reminder-timing";
 describe("isReminderDue", () => {
   const dueDate = new Date("2026-09-23T00:00:00.000Z");
 
+  it("counts back from the exact applied finish, including timezone and DST offsets", () => {
+    const dueDate = new Date("2026-10-25T16:00:00+01:00");
+    expect(
+      isReminderDue({
+        dueDate,
+        leadTimeMinutes: 60,
+        now: new Date("2026-10-25T15:00:00+01:00"),
+        applied: true,
+      }),
+    ).toBe(true);
+    expect(
+      isReminderDue({
+        dueDate,
+        leadTimeMinutes: 0,
+        now: dueDate,
+        applied: true,
+      }),
+    ).toBe(true);
+    expect(
+      isReminderDue({
+        dueDate,
+        leadTimeMinutes: 0,
+        now: new Date("2026-10-26T16:00:00+01:00"),
+        applied: true,
+      }),
+    ).toBe(false);
+  });
+
   it.each([
     [
       "the previous day's incorrect reminder",

@@ -2,6 +2,20 @@ import { z } from "../../openapi";
 import { isoDay } from "../../release/release-dates";
 import { milestoneDatesAreOrdered } from "../../milestone/dates";
 
+export const scheduleSnapshotSchema = z.object({
+  createdAt: z.string().datetime().optional(),
+  source: z.enum(["legacy", "applied", "import"]).optional(),
+  startDate: z.string().datetime().nullable(),
+  dueDate: z.string().datetime().nullable(),
+  assigneeId: z.string().nullable().optional(),
+  segments: z
+    .array(
+      z.object({ start: z.string().datetime(), end: z.string().datetime() }),
+    )
+    .optional(),
+  sourceRevision: z.string().optional(),
+});
+
 export const planningSnapshotSchema = z.object({
   projectId: z.string().nullable().optional(),
   createdAt: z.string().datetime().optional(),

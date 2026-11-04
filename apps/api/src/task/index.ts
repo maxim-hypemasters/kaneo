@@ -39,10 +39,6 @@ import {
 } from "../storage/s3";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import {
-  validateAndParseDate,
-  validateDateRange,
-} from "../utils/validate-dates";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import bulkUpdateTasks from "./controllers/bulk-update-tasks";
 import createTask from "./controllers/create-task";
@@ -726,8 +722,10 @@ const updateTaskDueDateRoute = createRoute({
   operationId: "updateTaskDueDate",
   path: "/due-date/{id}",
   tags: ["Tasks"],
-  summary: "Update task due date",
-  description: "Set or clear a task's due date.",
+  summary: "Task dates are read-only",
+  deprecated: true,
+  description:
+    "Direct date writes are no longer supported. Update the estimate, preview a project plan, then apply it. Always returns HTTP 400 for authorized callers.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -741,8 +739,7 @@ const updateTaskDueDateRoute = createRoute({
     },
   },
   responses: {
-    200: jsonResponse("The updated task", taskSchema),
-    400: errorResponse("Invalid date"),
+    400: errorResponse("Task dates are read-only"),
     403: errorResponse(
       "No access to the project, or missing task:update permission",
     ),
@@ -1136,7 +1133,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
 
     if (
       operation !== "delete" &&
-      operation !== "updateDueDate" &&
+      operation !== "updateEstimate" &&
       value === undefined
     ) {
       throw new HTTPException(400, {
@@ -1186,8 +1183,6 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const {
       title,
       description,
-      startDate,
-      dueDate,
       priority,
       status,
       userId,
@@ -1198,18 +1193,8 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       milestoneId,
       releaseId,
       featureComposition,
+      estimateSeconds,
     } = c.req.valid("json");
-
-    const parsedStartDate =
-      startDate !== undefined
-        ? validateAndParseDate(startDate, "startDate")
-        : undefined;
-    const parsedDueDate =
-      dueDate !== undefined
-        ? validateAndParseDate(dueDate, "dueDate")
-        : undefined;
-
-    validateDateRange(parsedStartDate, parsedDueDate);
 
     const task = await createTask({
       projectId,
@@ -1217,8 +1202,6 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       userId: userId,
       title,
       description,
-      startDate: parsedStartDate,
-      dueDate: parsedDueDate,
       priority,
       status,
       customFields,
@@ -1229,6 +1212,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       expectedWorkspaceId: c.get("workspaceId"),
       releaseId,
       featureComposition,
+      estimateSeconds,
     });
 
     return c.json(taskResource(task), 200);
@@ -1291,40 +1275,29 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const {
       title,
       description,
-      startDate,
-      dueDate,
       priority,
       status,
       projectId,
       position,
       userId,
+      estimateSeconds,
     } = c.req.valid("json");
 
     const currentUserId = c.get("userId");
-
-    const parsedStartDate =
-      startDate !== undefined
-        ? validateAndParseDate(startDate, "startDate")
-        : undefined;
-    const parsedDueDate =
-      dueDate !== undefined
-        ? validateAndParseDate(dueDate, "dueDate")
-        : undefined;
-
-    validateDateRange(parsedStartDate, parsedDueDate);
 
     const task = await updateTask(
       id,
       title,
       status,
-      parsedStartDate,
-      parsedDueDate,
+      undefined,
+      undefined,
       projectId,
       description,
       priority,
       position,
       userId,
       currentUserId,
+      estimateSeconds,
     );
 
     return c.json(taskResource(task), 200);
@@ -1343,9 +1316,14 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const hierarchy =
       Boolean(document.milestones?.length) ||
       document.tasks.some((task) => task.featureKey || task.milestoneKey);
-    if (hierarchy && document.version !== 2 && document.version !== 3) {
+    if (
+      hierarchy &&
+      document.version !== 2 &&
+      document.version !== 3 &&
+      document.version !== 4
+    ) {
       throw new HTTPException(400, {
-        message: "Hierarchy imports require version 2 or 3",
+        message: "Hierarchy imports require version 2, 3 or 4",
       });
     }
     if (document.releases?.length)
@@ -1359,7 +1337,9 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       await requireWorkspacePermission({ task: ["update"] })(c, async () => {});
     }
     if (
-      (document.version === 2 || document.version === 3) &&
+      (document.version === 2 ||
+        document.version === 3 ||
+        document.version === 4) &&
       document.tasks.some((task) => task.labels?.length)
     ) {
       await requireWorkspacePermission({ label: ["create", "update"] })(
@@ -1368,7 +1348,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       );
     }
     const result =
-      document.version === 2 || document.version === 3
+      document.version === 2 || document.version === 3 || document.version === 4
         ? await importHierarchy(
             projectId,
             document,
@@ -1416,16 +1396,14 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(updateTaskDueDateRoute, async (c) => {
     const { id } = c.req.valid("param");
-    const { dueDate = null } = c.req.valid("json");
+    c.req.valid("json");
     const currentUserId = c.get("userId");
 
-    const task = await updateTaskDueDate({
+    return updateTaskDueDate({
       id,
-      dueDate: dueDate ? validateAndParseDate(dueDate, "dueDate") : null,
+      dueDate: null,
       currentUserId,
     });
-
-    return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskTitleRoute, async (c) => {
     const { id } = c.req.valid("param");

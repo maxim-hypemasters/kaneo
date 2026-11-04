@@ -22,13 +22,15 @@ export function isTaskCompleted(
 export function getDueDateStatus(
   dueDate: string | null,
   isCompleted = false,
+  applied = false,
+  now = new Date(),
 ): DueDateStatus {
   if (!dueDate) return "no-due-date";
   // A finished task cannot be late, so it keeps the neutral badge.
   if (isCompleted) return "far-future";
 
-  const now = new Date();
   const due = new Date(dueDate);
+  if (applied && due.getTime() < now.getTime()) return "overdue";
   const diffInDays = Math.ceil(
     (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
   );

@@ -1,3 +1,4 @@
+import { importedTaskDates, preserveImportedSchedule } from "./task-schedule";
 import { createId } from "@paralleldrive/cuid2";
 import { eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -93,7 +94,12 @@ export async function importHierarchy(
   const prepared = document.tasks.map((item) => {
     const status = coerceStatus(item.status ?? "planned", statuses);
     const priority = coercePriority(item.priority ?? "low");
-    for (const value of [item.startDate, item.dueDate]) {
+    for (const value of [
+      item.startDate,
+      item.dueDate,
+      item.legacyStartDate,
+      item.legacyDueDate,
+    ]) {
       if (value && Number.isNaN(Date.parse(value)))
         throw new HTTPException(400, { message: "Invalid task date" });
     }
@@ -131,7 +137,10 @@ export async function importHierarchy(
       });
   const created = await db.transaction(async (tx) => {
     const [lockedProject] = await tx
-      .select({ workspaceId: projectTable.workspaceId })
+      .select({
+        workspaceId: projectTable.workspaceId,
+        scheduleGeneration: projectTable.scheduleGeneration,
+      })
       .from(projectTable)
       .where(eq(projectTable.id, projectId))
       .for("update");
@@ -170,14 +179,11 @@ export async function importHierarchy(
           status: item.type === "feature" ? null : status,
           columnId: item.type === "feature" ? null : columnId,
           priority: item.type === "feature" ? null : priority,
-          startDate:
-            item.type !== "feature" && item.startDate
-              ? new Date(item.startDate)
-              : null,
-          dueDate:
-            item.type !== "feature" && item.dueDate
-              ? new Date(item.dueDate)
-              : null,
+          ...(item.type === "feature"
+            ? {}
+            : importedTaskDates(item, lockedProject.scheduleGeneration)),
+          estimateSeconds:
+            item.type === "feature" ? null : (item.estimateSeconds ?? null),
           userId: item.type === "feature" ? null : item.userId?.trim() || null,
           releaseId:
             item.type === "feature"
@@ -208,6 +214,8 @@ export async function importHierarchy(
           item.planningSnapshots,
           releaseIds,
         );
+      if (item.type !== "feature")
+        await preserveImportedSchedule(tx, projectId, id, currentUserId, item);
       rows.push({
         success: true as const,
         task: row!,

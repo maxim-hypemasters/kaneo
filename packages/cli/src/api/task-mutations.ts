@@ -16,6 +16,7 @@ export const CreatedTask = Schema.Struct({
   dueDate: NullableString,
   createdAt: Schema.String,
   userId: NullableString,
+  estimateSeconds: Schema.optionalKey(Schema.NullOr(Schema.Number)),
   type: Schema.optionalKey(Schema.String),
   featureId: Schema.optionalKey(NullableString),
   releaseId: Schema.optionalKey(NullableString),
@@ -44,8 +45,7 @@ export type CreateTaskBody = {
   readonly priority?: Priority;
   readonly status?: string;
   readonly userId?: string;
-  readonly dueDate?: string;
-  readonly startDate?: string;
+  readonly estimateSeconds?: number | null;
   readonly type?: TaskType;
   readonly featureId?: string;
   // Omitted, the task starts in its milestone's release; null means none.
@@ -102,19 +102,9 @@ export const updateTaskPriority = Effect.fnUntraced(function* (
   });
 });
 
-export const updateTaskDueDate = Effect.fnUntraced(function* (
+export const updateTaskEstimate = Effect.fnUntraced(function* (
   id: string,
-  dueDate: string | null,
-) {
-  const api = yield* KaneoApi;
-  return yield* api.request("PUT", taskPath("due-date", id), UpdatedTask, {
-    body: dueDate === null ? {} : { dueDate },
-  });
-});
-
-export const updateTaskStartDate = Effect.fnUntraced(function* (
-  id: string,
-  startDate: string | null,
+  estimateSeconds: number | null,
 ) {
   const api = yield* KaneoApi;
   const path = `/api/task/${encodeURIComponent(id)}`;
@@ -129,8 +119,7 @@ export const updateTaskStartDate = Effect.fnUntraced(function* (
       projectId: current.projectId,
       position: current.position ?? 0,
       ...(current.userId ? { userId: current.userId } : {}),
-      ...(current.dueDate ? { dueDate: current.dueDate } : {}),
-      ...(startDate ? { startDate } : {}),
+      estimateSeconds,
     },
   });
 });

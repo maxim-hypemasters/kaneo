@@ -302,12 +302,12 @@ it("leaves progress fresh after an assignee-only bulk update", async () => {
   ).toBe(false);
 });
 
-it("refreshes derived schedules after bulk date edits without changing release completion", async () => {
+it("refreshes the planning metadata after bulk estimate edits without changing release completion", async () => {
   const { result } = renderHook(() => useBulkOperations(), { wrapper });
   await act(async () => {
-    await result.current.bulkDueDate({
+    await result.current.bulkEstimate({
       taskIds: ["t"],
-      dueDate: "2026-11-06T12:00:00Z",
+      estimateSeconds: 3600,
     });
   });
   expect(

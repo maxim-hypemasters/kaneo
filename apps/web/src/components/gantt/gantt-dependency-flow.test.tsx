@@ -1,3 +1,10 @@
+vi.mock("@/components/scheduling/use-project-schedule", () => ({
+  useGetProjectSchedule: () => ({
+    data: undefined,
+    isPending: false,
+    isError: false,
+  }),
+}));
 vi.mock("@/hooks/queries/milestone/use-get-project-milestones", () => {
   const data: never[] = [];
   return {
@@ -13,14 +20,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-query")>()),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
 import {
   afterEach,
@@ -81,6 +81,7 @@ vi.mock("@/hooks/mutations/task/use-update-task-feature", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canAssignTasks: () => true,
+    canUpdateProjects: () => true,
     canUpdateTasks: () => true,
   }),
 }));
@@ -186,9 +187,6 @@ function show() {
 
 const bar = (title: string) =>
   screen.getByRole("button", { name: `tasks:gantt.taskAriaLabel:${title}` });
-const isoDay = (month: number, day: number) =>
-  new Date(2026, month - 1, day).toISOString();
-
 // 44px day columns (see the clientWidth stub), so dx 88 is two days.
 function dragBy(target: HTMLElement, dx: number) {
   startDrag(target, dx);
@@ -202,12 +200,6 @@ function startDrag(target: HTMLElement, dx: number) {
     clientY: 300,
     buttons: 1,
   });
-}
-
-function resizeEndBy(handle: HTMLElement, dx: number) {
-  fireEvent.pointerDown(handle, { button: 0, clientX: 500, clientY: 300 });
-  fireEvent.pointerMove(window, { clientX: 500 + dx, clientY: 300 });
-  fireEvent.pointerUp(window, { clientX: 500 + dx, clientY: 300 });
 }
 
 function setTasks(...tasks: ReturnType<typeof task>[]) {
@@ -296,373 +288,6 @@ describe("Gantt dependencies", () => {
     expect(lines.querySelector("path[data-broken]")).toBeNull();
   });
 
-  it("asks before breaking a dependency and can move the related tasks", async () => {
-    show();
-
-    dragBy(bar("Design"), 88);
-
-    // Nothing is saved while the question is open.
-    expect(m.update).not.toHaveBeenCalled();
-    const dialog = screen.getByRole("alertdialog");
-    expect(
-      within(dialog).getByText("tasks:gantt.dependencies.title:1"),
-    ).toBeInTheDocument();
-    expect(within(dialog).getByText("Build")).toBeInTheDocument();
-
-    fireEvent.click(
-      within(dialog).getByRole("button", {
-        name: "tasks:gantt.dependencies.moveRelated:1",
-      }),
-    );
-
-    // Build waits for Design's save, so it never moves on its own.
-    expect(m.update).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(m.update).toHaveBeenCalledTimes(2));
-    expect(m.update).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({
-        id: "Design",
-        startDate: isoDay(9, 3),
-        dueDate: isoDay(9, 5),
-      }),
-    );
-    // Build keeps its three days and starts the day Design now ends.
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "Build",
-        startDate: isoDay(9, 5),
-        dueDate: isoDay(9, 7),
-      }),
-    );
-    expect(screen.queryByRole("alertdialog")).toBeNull();
-  });
-
-  it("can keep just this change, leaving the dependency broken", () => {
-    show();
-
-    dragBy(bar("Design"), 88);
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:gantt.dependencies.moveOnly" }),
-    );
-
-    expect(m.update).toHaveBeenCalledTimes(1);
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "Design", startDate: isoDay(9, 3) }),
-    );
-    expect(
-      screen
-        .getByTestId("gantt-dependency-lines")
-        .querySelector("path[data-broken]"),
-    ).not.toBeNull();
-  });
-
-  it("undoes the change when cancelled", () => {
-    show();
-
-    const datesShown = (text: string) =>
-      screen.queryAllByText(text, { exact: false }).length;
-    // Build already shows Sep 3 - Sep 5; while asking, Design is previewed
-    // at its new dates too.
-    dragBy(bar("Design"), 88);
-    expect(datesShown("Sep 3, 2026 - Sep 5, 2026")).toBe(2);
-    expect(datesShown("Sep 1, 2026 - Sep 3, 2026")).toBe(0);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "common:actions.cancel" }),
-    );
-
-    expect(m.update).not.toHaveBeenCalled();
-    expect(datesShown("Sep 3, 2026 - Sep 5, 2026")).toBe(1);
-    expect(datesShown("Sep 1, 2026 - Sep 3, 2026")).toBe(1);
-  });
-
-  it("saves moves that keep every dependency without asking", () => {
-    show();
-
-    dragBy(bar("Build"), 88);
-
-    expect(screen.queryByRole("alertdialog")).toBeNull();
-    expect(m.update).toHaveBeenCalledTimes(1);
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "Build", startDate: isoDay(9, 5) }),
-    );
-  });
-
-  it("moves a whole chain along, as far as each task needs", async () => {
-    m.relations = [blocks("Design", "Build"), blocks("Build", "Ship")];
-    show();
-
-    // Three days: Build ends Sep 8, a day after Ship starts.
-    dragBy(bar("Design"), 132);
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "tasks:gantt.dependencies.moveRelated:2",
-      }),
-    );
-
-    await waitFor(() => expect(m.update).toHaveBeenCalledTimes(3));
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "Build",
-        startDate: isoDay(9, 6),
-        dueDate: isoDay(9, 8),
-      }),
-    );
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "Ship",
-        startDate: isoDay(9, 8),
-        dueDate: isoDay(9, 9),
-      }),
-    );
-  });
-
-  it("only shifts the dates a moved-along task already has", async () => {
-    setTasks(
-      task("Design", "2026-09-01", "2026-09-03"),
-      task("Build", null, "2026-09-03"),
-    );
-    show();
-
-    dragBy(bar("Design"), 88);
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "tasks:gantt.dependencies.moveRelated:1",
-      }),
-    );
-
-    await waitFor(() => expect(m.update).toHaveBeenCalledTimes(2));
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "Build",
-        startDate: null,
-        dueDate: isoDay(9, 5),
-      }),
-    );
-  });
-
-  it("leaves the related tasks alone when the moved one fails to save", async () => {
-    m.update.mockImplementation((saved: { id: string }) =>
-      saved.id === "Design"
-        ? Promise.reject(new Error("Server said no"))
-        : Promise.resolve({}),
-    );
-    show();
-
-    dragBy(bar("Design"), 88);
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "tasks:gantt.dependencies.moveRelated:1",
-      }),
-    );
-
-    await waitFor(() => expect(m.toastError).toHaveBeenCalledTimes(1));
-    expect(m.toastError).toHaveBeenCalledWith("Server said no");
-    expect(m.update).toHaveBeenCalledTimes(1);
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "Design" }),
-    );
-  });
-
-  it("only offers keeping or undoing a change the loop would undo", () => {
-    m.relations = [
-      blocks("Design", "Build"),
-      blocks("Build", "Ship"),
-      blocks("Ship", "Design"),
-    ];
-    setTasks(
-      task("Design", "2026-09-01", "2026-09-03"),
-      task("Build", "2026-09-03", "2026-09-05"),
-      task("Ship", "2026-09-05", "2026-09-08"),
-    );
-    show();
-
-    // Design ends two days later but still starts Sep 1: pushing Build and
-    // Ship along would make Ship end even further past Design's start.
-    resizeEndBy(
-      screen.getAllByRole("button", { name: "tasks:gantt.resizeDue" })[0],
-      88,
-    );
-
-    const dialog = screen.getByRole("alertdialog");
-    expect(
-      within(dialog).getByText("tasks:gantt.dependencies.cycleDescription"),
-    ).toBeInTheDocument();
-    expect(
-      within(dialog).queryByRole("button", {
-        name: /tasks:gantt.dependencies.moveRelated/,
-      }),
-    ).toBeNull();
-    fireEvent.click(
-      within(dialog).getByRole("button", {
-        name: "tasks:gantt.dependencies.moveOnly",
-      }),
-    );
-    expect(m.update).toHaveBeenCalledTimes(1);
-  });
-
-  it("keeps asking when someone else's change makes the conflict look old", () => {
-    const view = show();
-    dragBy(bar("Design"), 88);
-
-    // Build now starts before Design's saved end, so against the latest
-    // dates the dependency was already broken; the user still hasn't
-    // answered for theirs.
-    setTasks(
-      task("Design", "2026-09-01", "2026-09-03"),
-      task("Build", "2026-09-02", "2026-09-04"),
-      task("Ship", "2026-09-07", "2026-09-08"),
-    );
-    view.rerender(<m.component />);
-
-    expect(m.update).not.toHaveBeenCalled();
-    expect(
-      within(screen.getByRole("alertdialog")).getByText(
-        "tasks:gantt.dependencies.title:1",
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it("keeps a reassignment made while it asks", () => {
-    const view = show();
-    dragBy(bar("Design"), 88);
-
-    setTasks(
-      {
-        ...task("Design", "2026-09-01", "2026-09-03"),
-        userId: "bob",
-        assigneeId: "bob",
-        assigneeName: "Bob",
-      },
-      task("Build", "2026-09-03", "2026-09-05"),
-      task("Ship", "2026-09-07", "2026-09-08"),
-    );
-    view.rerender(<m.component />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:gantt.dependencies.moveOnly" }),
-    );
-
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "Design",
-        startDate: isoDay(9, 3),
-        userId: "bob",
-      }),
-    );
-  });
-
-  it("keeps a start date a related task was just given", async () => {
-    setTasks(
-      task("Design", "2026-09-01", "2026-09-03"),
-      task("Build", null, "2026-09-03"),
-    );
-    show();
-
-    // Stretch Build to Sep 3-5, which gives it a start date; the refetch
-    // hasn't landed when Design is moved over it.
-    resizeEndBy(
-      screen.getAllByRole("button", { name: "tasks:gantt.resizeDue" })[1],
-      88,
-    );
-    dragBy(bar("Design"), 88);
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "tasks:gantt.dependencies.moveRelated:1",
-      }),
-    );
-
-    await waitFor(() => expect(m.update).toHaveBeenCalledTimes(3));
-    expect(m.update).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        id: "Build",
-        startDate: isoDay(9, 5),
-        dueDate: isoDay(9, 7),
-      }),
-    );
-  });
-
-  it("never lets a related task's queue skip ahead of its earlier save", async () => {
-    let finishFirstBuildSave: (() => void) | undefined;
-    m.update.mockImplementation((saved: { id: string }) => {
-      if (saved.id === "Design") {
-        return Promise.reject(new Error("Server said no"));
-      }
-      if (!finishFirstBuildSave) {
-        return new Promise((resolve) => {
-          finishFirstBuildSave = () => resolve({});
-        });
-      }
-      return Promise.resolve({});
-    });
-    show();
-
-    dragBy(bar("Build"), 88);
-    // Design over the moved Build; its save fails while Build's is open.
-    dragBy(bar("Design"), 132);
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "tasks:gantt.dependencies.moveRelated:1",
-      }),
-    );
-    await waitFor(() => expect(m.toastError).toHaveBeenCalledTimes(1));
-    dragBy(bar("Build"), 44);
-    await Promise.resolve();
-
-    const buildSaves = () =>
-      m.update.mock.calls.filter(([saved]) => saved.id === "Build").length;
-    expect(buildSaves()).toBe(1);
-    // The moves made on top of the failed save are dropped with it, but only
-    // once Build's first save has settled.
-    finishFirstBuildSave?.();
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(buildSaves()).toBe(1);
-  });
-
-  it("plans from the latest data when tasks change while it asks", async () => {
-    const view = show();
-    dragBy(bar("Design"), 88);
-
-    // Someone else lengthens Build to start a day later meanwhile.
-    setTasks(
-      task("Design", "2026-09-01", "2026-09-03"),
-      task("Build", "2026-09-04", "2026-09-07"),
-      task("Ship", "2026-09-07", "2026-09-08"),
-    );
-    view.rerender(<m.component />);
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "tasks:gantt.dependencies.moveRelated:1",
-      }),
-    );
-
-    await waitFor(() => expect(m.update).toHaveBeenCalledTimes(2));
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "Build",
-        startDate: isoDay(9, 5),
-        dueDate: isoDay(9, 8),
-      }),
-    );
-  });
-
-  it("saves the change once the latest data no longer breaks anything", async () => {
-    const view = show();
-    dragBy(bar("Design"), 88);
-
-    setTasks(
-      task("Design", "2026-09-01", "2026-09-03"),
-      task("Build", "2026-09-06", "2026-09-08"),
-      task("Ship", "2026-09-07", "2026-09-08"),
-    );
-    view.rerender(<m.component />);
-
-    await waitFor(() => expect(m.update).toHaveBeenCalledTimes(1));
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "Design", startDate: isoDay(9, 3) }),
-    );
-    expect(screen.queryByRole("alertdialog")).toBeNull();
-  });
-
   it("fades a dragged bar's lines until it is dropped", () => {
     show();
 
@@ -703,6 +328,29 @@ describe("Gantt dependencies", () => {
       screen.getByRole("button", { name: "tasks:gantt.taskAriaLabel:Design" }),
       88,
     );
-    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(m.update).not.toHaveBeenCalled();
+    expect(linePaths()).toHaveLength(1);
+  });
+
+  it("keeps dates and dependent work fixed during horizontal gestures", () => {
+    const { container } = show();
+    const before = container
+      .querySelector('[data-gantt-row="Design"] [data-gantt-bar]')
+      ?.getAttribute("style");
+    dragBy(bar("Design"), 88);
+    expect(m.update).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(
+      container
+        .querySelector('[data-gantt-row="Design"] [data-gantt-bar]')
+        ?.getAttribute("style"),
+    ).toBe(before);
+    expect(
+      screen.queryByRole("button", { name: "tasks:gantt.resizeStart" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "tasks:gantt.resizeDue" }),
+    ).toBeNull();
   });
 });

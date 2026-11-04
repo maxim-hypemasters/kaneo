@@ -616,6 +616,9 @@ export function broadcastToProject(
       ...message,
       ...(previous?.message.linksChanged ? { linksChanged: true } : {}),
       ...(previous?.message.taskTitleChanged ? { taskTitleChanged: true } : {}),
+      ...(previous?.message.schedulePublished
+        ? { schedulePublished: true }
+        : {}),
     },
     excludeInitiatorId,
   });

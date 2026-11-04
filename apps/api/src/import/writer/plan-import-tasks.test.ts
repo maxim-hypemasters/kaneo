@@ -138,6 +138,10 @@ describe("planImportTasks", () => {
       priority: "no-priority",
       startDate: null,
       dueDate: new Date("2026-11-01T00:00:00.000Z"),
+      estimateSeconds: null,
+      legacyStartDate: null,
+      legacyDueDate: new Date("2026-11-01T00:00:00.000Z"),
+      scheduleSnapshots: undefined,
       createdAt: new Date("2021-03-04T05:06:07.000Z"),
       userId: "u-ana",
     });

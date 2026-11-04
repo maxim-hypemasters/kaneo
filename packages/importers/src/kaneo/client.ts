@@ -37,6 +37,9 @@ export type KaneoBoardTask = {
   priority: string | null;
   startDate?: string | null;
   dueDate?: string | null;
+  estimateSeconds?: number | null;
+  legacyStartDate?: string | null;
+  legacyDueDate?: string | null;
   position: number | null;
   createdAt?: string | null;
   userId: string | null;

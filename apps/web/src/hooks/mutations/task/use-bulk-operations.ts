@@ -143,18 +143,18 @@ export function useBulkOperations() {
     },
   });
 
-  const bulkDueDate = useMutation({
+  const bulkEstimate = useMutation({
     mutationFn: async ({
       taskIds,
-      dueDate,
+      estimateSeconds,
     }: {
       taskIds: string[];
-      dueDate: string | null;
+      estimateSeconds: number | null;
     }) => {
       await bulkOperation({
         taskIds,
-        operation: "updateDueDate",
-        value: dueDate,
+        operation: "updateEstimate",
+        value: estimateSeconds == null ? null : String(estimateSeconds),
       });
     },
     onSuccess: () => {
@@ -175,6 +175,6 @@ export function useBulkOperations() {
     bulkMoveToBoard: bulkMoveToBoard.mutateAsync,
     bulkPriority: bulkPriority.mutateAsync,
     bulkAddLabel: bulkAddLabel.mutateAsync,
-    bulkDueDate: bulkDueDate.mutateAsync,
+    bulkEstimate: bulkEstimate.mutateAsync,
   };
 }

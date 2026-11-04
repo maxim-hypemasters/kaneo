@@ -9,7 +9,7 @@ type BulkOperationType =
   | "delete"
   | "addLabel"
   | "removeLabel"
-  | "updateDueDate";
+  | "updateEstimate";
 
 async function bulkOperation({
   taskIds,

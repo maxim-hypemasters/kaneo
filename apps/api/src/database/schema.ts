@@ -369,6 +369,11 @@ export const projectTable = pgTable(
     backgroundObjectKey: text("background_object_key"),
     backgroundMimeType: text("background_mime_type"),
     backgroundVersion: text("background_version"),
+    planningTimeZone: text("planning_time_zone"),
+    estimateDayMinutes: integer("estimate_day_minutes").notNull().default(480),
+    scheduleGeneration: integer("schedule_generation").notNull().default(0),
+    scheduleRevision: text("schedule_revision"),
+    scheduleAppliedAt: timestamp("schedule_applied_at", { mode: "date" }),
   },
   (table) => [
     index("project_background_object_key_idx")
@@ -378,6 +383,90 @@ export const projectTable = pgTable(
     index("project_workspaceId_position_idx").on(
       table.workspaceId,
       table.position,
+    ),
+  ],
+);
+
+export const workCalendarTable = pgTable(
+  "work_calendar",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    timeZone: text("time_zone").notNull(),
+    weeklyIntervals: jsonb("weekly_intervals")
+      .$type<
+        Array<{ weekday: number; startMinute: number; endMinute: number }>
+      >()
+      .notNull(),
+    timeOff: jsonb("time_off")
+      .$type<Array<{ start: string; end: string }>>()
+      .notNull()
+      .default([]),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .notNull()
+      .default(utcNow)
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    unique("work_calendar_workspace_user_unique").on(
+      table.workspaceId,
+      table.userId,
+    ),
+  ],
+);
+
+export const projectPlanTable = pgTable(
+  "project_plan",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => createId()),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, { onDelete: "cascade" }),
+    releaseId: text("release_id").references(() => releaseTable.id, {
+      onDelete: "set null",
+    }),
+    generation: integer("generation").notNull(),
+    inputRevision: text("input_revision").notNull(),
+    asOf: timestamp("as_of", { mode: "date" }).notNull(),
+    planFrom: timestamp("plan_from", { mode: "date" }).notNull(),
+    timeZone: text("time_zone").notNull(),
+    appliedBy: text("applied_by").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    appliedAt: timestamp("applied_at", { mode: "date" })
+      .notNull()
+      .default(utcNow),
+    placements: jsonb("placements")
+      .$type<
+        Array<{
+          taskId: string;
+          assigneeId: string | null;
+          start: string | null;
+          end: string | null;
+          segments: Array<{ start: string; end: string }>;
+          reason: string | null;
+        }>
+      >()
+      .notNull(),
+  },
+  (table) => [
+    unique("project_plan_project_generation_unique").on(
+      table.projectId,
+      table.generation,
+    ),
+    index("project_plan_release_generation_idx").on(
+      table.projectId,
+      table.releaseId,
+      table.generation,
     ),
   ],
 );
@@ -653,6 +742,15 @@ export const taskTable = pgTable(
     archivedAt: timestamp("archived_at", { mode: "date" }),
     startDate: timestamp("start_date", { mode: "date" }),
     dueDate: timestamp("due_date", { mode: "date" }),
+    estimateSeconds: integer("estimate_seconds"),
+    legacyStartDate: timestamp("legacy_start_date", { mode: "date" }),
+    legacyDueDate: timestamp("legacy_due_date", { mode: "date" }),
+    scheduleSegments:
+      jsonb("schedule_segments").$type<Array<{ start: string; end: string }>>(),
+    scheduledAssigneeId: text("scheduled_assignee_id").references(
+      () => userTable.id,
+      { onDelete: "set null" },
+    ),
     // A feature groups tasks and bugs of its own project and can't belong to one.
     type: text("type").$type<TaskType>().default("task").notNull(),
     featureId: text("feature_id"),
@@ -692,6 +790,10 @@ export const taskTable = pgTable(
       sql`(${table.type} = 'feature' and ${table.status} is null and ${table.priority} is null and ${table.columnId} is null and ${table.userId} is null and ${table.startDate} is null and ${table.dueDate} is null and ${table.releaseId} is null) or (${table.type} in ('task', 'bug') and ${table.status} is not null and ${table.priority} is not null and ${table.archivedAt} is null)`,
     ),
     index("task_featureId_idx").on(table.featureId),
+    check(
+      "task_estimate_shape_check",
+      sql`${table.estimateSeconds} is null or (${table.type} in ('task', 'bug') and ${table.estimateSeconds} > 0 and ${table.estimateSeconds} % 60 = 0)`,
+    ),
     index("task_milestoneId_idx").on(table.milestoneId),
     // The database keeps a task in its own project's releases. No ON DELETE
     // action (SET NULL of one column needs PostgreSQL 15): deleting a release

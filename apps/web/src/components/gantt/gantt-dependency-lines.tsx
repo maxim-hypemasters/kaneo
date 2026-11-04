@@ -6,6 +6,7 @@ import {
   isDependencyBroken,
 } from "./gantt-dependencies";
 import { dependencyPath } from "./gantt-dependency-path";
+import { lastScheduledInstant, scheduleDayPosition } from "./schedule-geometry";
 import { remToPx } from "./gantt-scroll";
 import type { GanttTimeline } from "./timeline";
 
@@ -18,6 +19,7 @@ type GanttDependencyLinesProps = {
   timeline: GanttTimeline;
   dayColumnWidthRem: number;
   railWidthRem: number;
+  alignToDays?: boolean;
   // Changes whenever rows are added, removed or reordered, so their
   // positions are measured again.
   layoutKey: string;
@@ -55,6 +57,7 @@ export function GanttDependencyLines({
   timeline,
   dayColumnWidthRem,
   railWidthRem,
+  alignToDays = false,
   layoutKey,
   draggingTaskId = null,
 }: GanttDependencyLinesProps) {
@@ -94,11 +97,19 @@ export function GanttDependencyLines({
 
   const dayPx = remToPx(dayColumnWidthRem);
   const railPx = remToPx(railWidthRem);
-  const xOf = (date: Date, edge: "start" | "end") => {
-    const index = differenceInCalendarDays(date, timeline.rangeStart);
+  const xOf = (span: GanttSpan, edge: "start" | "end") => {
+    const date = span[edge];
+    if (span.precise && !alignToDays)
+      return railPx + scheduleDayPosition(date, timeline.rangeStart) * dayPx;
+    const displayDate =
+      alignToDays && span.precise && edge === "end"
+        ? lastScheduledInstant(span.start, date)
+        : date;
+    const index = differenceInCalendarDays(displayDate, timeline.rangeStart);
+    const inset = alignToDays ? 0 : BAR_INSET_PX;
     return edge === "start"
-      ? railPx + index * dayPx + BAR_INSET_PX
-      : railPx + (index + 1) * dayPx - BAR_INSET_PX;
+      ? railPx + index * dayPx + inset
+      : railPx + (index + 1) * dayPx - inset;
   };
 
   const lines = dependencies.flatMap((dependency) => {
@@ -116,8 +127,8 @@ export function GanttDependencyLines({
           (dependency.blockerId === draggingTaskId ||
             dependency.blockedId === draggingTaskId),
         d: dependencyPath(
-          { x: xOf(blocker.end, "end"), y: fromRow.centre },
-          { x: xOf(blocked.start, "start"), y: toRow.centre },
+          { x: xOf(blocker, "end"), y: fromRow.centre },
+          { x: xOf(blocked, "start"), y: toRow.centre },
           toRow.half,
         ),
       },

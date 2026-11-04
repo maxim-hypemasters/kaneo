@@ -90,13 +90,13 @@ export function GanttMilestoneLaneHeader({
 
   return (
     <div
-      className="grid items-stretch border-b border-border/70"
+      className="grid items-stretch"
       style={{ gridTemplateColumns: rowGridTemplateColumns }}
     >
       {showTaskRail ? (
         <div
           data-gantt-rail=""
-          className="sticky left-0 z-[11] flex h-full min-h-11 items-center gap-1 border-r border-border bg-background px-2 sm:px-3"
+          className="sticky left-0 z-[11] flex h-full min-h-11 items-center gap-1 border-r border-b border-border bg-background px-2 sm:px-3"
         >
           {/* The muted token is translucent; tint an opaque base so the
               timeline scrolling underneath the sticky rail stays hidden. */}
@@ -111,7 +111,7 @@ export function GanttMilestoneLaneHeader({
       {/* The bottom padding gives the task-span underline its own room
           below the bar's box, clear of the bracket tips. */}
       <div
-        className="relative flex min-h-11 shrink-0 cursor-grab select-none flex-col justify-center bg-muted/40 pb-2"
+        className="relative flex min-h-11 shrink-0 cursor-grab select-none flex-col justify-center border-b border-border/70 bg-muted/40 pb-2"
         style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}
       >
         <GanttLaneSummaryLine

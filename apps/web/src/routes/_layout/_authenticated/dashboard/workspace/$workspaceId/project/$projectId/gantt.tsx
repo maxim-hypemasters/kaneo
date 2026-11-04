@@ -53,17 +53,13 @@ import {
   blockingDependencies,
   type GanttSpan,
   isDependencyBroken,
-  planDependencyMoves,
 } from "@/components/gantt/gantt-dependencies";
-import { GanttDependencyDialog } from "@/components/gantt/gantt-dependency-dialog";
 import { GanttDependencyLines } from "@/components/gantt/gantt-dependency-lines";
 import { openingReleaseSpans } from "@/components/gantt/opening-release-spans";
-import {
-  applyPendingEdit,
-  classifyEdit,
-} from "@/components/gantt/pending-task-edits";
+import { applyPendingEdit } from "@/components/gantt/pending-task-edits";
 import { releaseMarkerDays } from "@/components/gantt/release-marker-days";
-import { paddedSchedule, parseTaskDate } from "@/components/gantt/timeline";
+import { scheduledWork } from "@/components/gantt/scheduled-work";
+import { paddedSchedule } from "@/components/gantt/timeline";
 import { useDragToPan } from "@/components/gantt/use-drag-to-pan";
 import { useGanttRange } from "@/components/gantt/use-gantt-range";
 import { useWheelScrollsTime } from "@/components/gantt/use-wheel-scrolls-time";
@@ -91,6 +87,7 @@ import { releaseSummaries } from "@/lib/releases/release-summaries";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ReleaseSummary } from "@/types/release";
+import { useGetProjectSchedule } from "@/components/scheduling/use-project-schedule";
 
 type GanttSearchParams = {
   taskId?: string;
@@ -101,13 +98,19 @@ const NO_RELEASES: ReleaseSummary[] = [];
 const NO_MILESTONES: GanttMilestoneRecord[] = [];
 const ALL_ENTITIES = ["milestone", "task", "bug"];
 
-type TaskAssignee = { name: string | null; image: string | null };
-
-const spansOf = (tasks: readonly ScheduledTask[]) =>
+const spansOf = (
+  tasks: readonly ScheduledTask[],
+  completedStatuses: ReadonlySet<string>,
+) =>
   new Map<string, GanttSpan>(
     tasks.map((task) => [
       task.id,
-      { start: task.scheduleStart, end: task.scheduleEnd },
+      {
+        start: task.scheduleStart,
+        end: task.scheduleEnd,
+        precise: task.entityKind !== "milestone" && task.scheduleApplied,
+        completed: completedStatuses.has(task.status),
+      },
     ]),
   );
 
@@ -124,6 +127,7 @@ function RouteComponent() {
   const { t } = useTranslation();
   const { projectId, workspaceId } = Route.useParams();
   const { taskId } = Route.useSearch();
+  const scheduleQuery = useGetProjectSchedule(projectId);
   const navigate = useNavigate();
   // isSuccess stays false while only streamed pages of a large board are
   // in, so the chart waits for all tasks before choosing its opening span.
@@ -136,7 +140,10 @@ function RouteComponent() {
   const milestoneQuery = useGetProjectMilestones(projectId);
   const milestones = milestoneQuery.data ?? NO_MILESTONES;
   const rangeReady =
-    tasksLoaded && !releasesLoading && !milestoneQuery.isPending;
+    tasksLoaded &&
+    !releasesLoading &&
+    !milestoneQuery.isPending &&
+    !scheduleQuery.isPending;
   const releaseToday = useReleaseToday();
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const groupByPreference = useUserPreferencesStore(
@@ -156,7 +163,7 @@ function RouteComponent() {
     useGetProjectMembers({
       workspaceId,
       projectId,
-      enabled: groupByAssignee || milestones.length > 0,
+      enabled: true,
     });
   const { canAssignTasks, canUpdateTasks } = useWorkspacePermission();
   const goToView = useGoToProjectView({
@@ -264,37 +271,10 @@ function RouteComponent() {
     [project],
   );
 
-  const parsedLeafTasks = useMemo(() => {
-    return allTasks
-      .filter(
-        (
-          task,
-        ): task is typeof task & { status: string; type?: "task" | "bug" } =>
-          task.type !== "feature" && task.status !== null,
-      )
-      .map((task) => {
-        const parsedStart =
-          parseTaskDate(task.startDate) ?? parseTaskDate(task.dueDate);
-        const parsedEnd =
-          parseTaskDate(task.dueDate) ?? parseTaskDate(task.startDate);
-
-        if (!parsedStart || !parsedEnd) return null;
-
-        const start = parsedStart <= parsedEnd ? parsedStart : parsedEnd;
-        const end = parsedEnd >= parsedStart ? parsedEnd : parsedStart;
-
-        return {
-          ...task,
-          scheduleStart: start,
-          scheduleEnd: end,
-        };
-      })
-      .filter((task): task is NonNullable<typeof task> => task !== null)
-      .sort(
-        (left, right) =>
-          left.scheduleStart.getTime() - right.scheduleStart.getTime(),
-      );
-  }, [allTasks]);
+  const parsedLeafTasks = useMemo(
+    () => scheduledWork(allTasks, scheduleQuery.data, projectMembers ?? []),
+    [allTasks, scheduleQuery.data, projectMembers],
+  );
 
   const parsedTasks = useMemo<ScheduledTask[]>(
     () =>
@@ -316,97 +296,38 @@ function RouteComponent() {
         leaves.has(relation.blockerId) && leaves.has(relation.blockedId),
     );
   }, [relations, parsedLeafTasks]);
-  // A date change that breaks a dependency waits here (shown in place, not
-  // saved) while the user decides what to do about it. Only the edit itself
-  // is kept, with the dependencies it broke: what still breaks and what would
-  // move is worked out from the live data, which can change while the
-  // question is open.
-  const [heldEdit, setHeldEdit] = useState<{
-    taskId: string;
-    edit: GanttTaskEdit;
-    assignee: TaskAssignee;
-    // A plain move or resize takes whoever is assigned, and whichever
-    // milestone the task is in, when it's saved, so a reassignment or a move
-    // to another milestone made meanwhile isn't undone.
-    changesAssignee: boolean;
-    changesMilestone: boolean;
-    brokenIds: ReadonlySet<string>;
-  } | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
-
-  // Saved drags show right away; rows keep their server-date order until
-  // the refetch lands, as they always have.
-  const savedTasks = useMemo<ScheduledTask[]>(() => {
-    if (pendingEdits.size === 0) return parsedTasks;
-    return parsedTasks.map((task) => {
-      const edit = pendingEdits.get(task.id);
-      return edit ? applyPendingEdit(task, edit) : task;
-    });
-  }, [parsedTasks, pendingEdits]);
-  const savedTasksById = useMemo(
-    () => new Map(savedTasks.map((task) => [task.id, task])),
-    [savedTasks],
-  );
-  const savedSpans = useMemo(() => spansOf(savedTasks), [savedTasks]);
-  const heldTask = heldEdit ? savedTasksById.get(heldEdit.taskId) : undefined;
-  const heldDraft = useMemo(() => {
-    if (!heldEdit || !heldTask) return null;
-    const { edit, changesAssignee, changesMilestone } = heldEdit;
-    return {
-      edit: {
-        ...edit,
-        userId: changesAssignee ? edit.userId : heldTask.userId || null,
-        featureId: heldTask.featureId ?? null,
-        milestoneId: changesMilestone
-          ? edit.milestoneId
-          : (heldTask.milestoneId ?? null),
-      },
-      assignee: changesAssignee
-        ? heldEdit.assignee
-        : {
-            name: heldTask.assigneeName,
-            image: heldTask.assigneeImage ?? null,
-          },
-    };
-  }, [heldEdit, heldTask]);
-  const heldPlan = useMemo(
+  const displayedTasks = useMemo<ScheduledTask[]>(
     () =>
-      heldEdit && heldDraft
-        ? planDependencyMoves(
-            savedSpans,
-            dependencies,
-            heldEdit.taskId,
-            heldDraft.edit,
-            heldEdit.brokenIds,
-          )
-        : null,
-    [heldEdit, heldDraft, savedSpans, dependencies],
+      parsedTasks.map((task) => {
+        const edit = pendingEdits.get(task.id);
+        // Applied Task/Bug placement belongs to the published plan. Reassignment
+        // changes its next planning input without moving its current bar.
+        if (!edit) return task;
+        return task.entityKind === "milestone"
+          ? applyPendingEdit(task, edit)
+          : {
+              ...task,
+              milestoneId:
+                edit.milestoneId === undefined
+                  ? task.milestoneId
+                  : edit.milestoneId,
+            };
+      }),
+    [parsedTasks, pendingEdits],
   );
-  const heldMoves = useMemo(
+  const spans = useMemo(
     () =>
-      (heldPlan?.moves ?? []).map((move) => ({
-        ...move,
-        title: savedTasksById.get(move.taskId)?.title ?? "",
-      })),
-    [heldPlan, savedTasksById],
+      spansOf(
+        displayedTasks,
+        new Set(
+          project?.columns
+            .filter((column) => column.isFinal)
+            .map((column) => column.slug),
+        ),
+      ),
+    [displayedTasks, project?.columns],
   );
-
-  const displayedTasks = useMemo<ScheduledTask[]>(() => {
-    if (!heldEdit || !heldDraft) return savedTasks;
-    return savedTasks.map((task) =>
-      task.id === heldEdit.taskId
-        ? applyPendingEdit(task, {
-            ...heldDraft.edit,
-            seq: -1,
-            assigneeName: heldDraft.assignee.name,
-            assigneeImage: heldDraft.assignee.image,
-            hasStartDate: true,
-            hasDueDate: true,
-          })
-        : task,
-    );
-  }, [savedTasks, heldEdit, heldDraft]);
-  const spans = useMemo(() => spansOf(displayedTasks), [displayedTasks]);
   // The red arrows, in words: for each task starting too early, the tasks
   // that block it and haven't ended yet.
   const earlyStartBlockers = useMemo(() => {
@@ -596,68 +517,12 @@ function RouteComponent() {
         ? (task.assigneeImage ?? null)
         : (targetLane?.image ?? null),
     };
-    const changes = classifyEdit(task, edit);
-    const broken = changes.dates
-      ? planDependencyMoves(savedSpans, dependencies, task.id, edit).broken
-      : [];
-    if (broken.length > 0) {
-      setHeldEdit({
-        taskId: task.id,
-        edit,
-        assignee,
-        changesAssignee: !keepsAssignee,
-        changesMilestone: changes.milestone,
-        brokenIds: new Set(broken.map((dependency) => dependency.id)),
-      });
-      return;
-    }
-    commit(task, edit, assignee);
+    commit(
+      task,
+      { ...edit, start: task.scheduleStart, end: task.scheduleEnd },
+      assignee,
+    );
   };
-
-  const resolveHeldEdit = (moveRelated: boolean) => {
-    setHeldEdit(null);
-    if (!heldTask || !heldDraft) return;
-    const saved = commit(heldTask, heldDraft.edit, heldDraft.assignee);
-    if (!moveRelated) return;
-    for (const move of heldPlan?.moves ?? []) {
-      const related = savedTasksById.get(move.taskId);
-      if (!related) continue;
-      // Only once the moved task's dates have saved (not its milestone move):
-      // if they fail, the tasks moved to make room for it stay where they
-      // were.
-      commit(
-        related,
-        {
-          start: move.to.start,
-          end: move.to.end,
-          userId: related.userId || null,
-          featureId: related.featureId ?? null,
-          milestoneId: related.milestoneId ?? null,
-        },
-        {
-          name: related.assigneeName,
-          image: related.assigneeImage ?? null,
-        },
-        { after: saved, keepDateFields: true },
-      );
-    }
-  };
-
-  // The question only stands while the edit still breaks something: drop it
-  // when its task is gone, and save it as is once a refetch (someone else
-  // moving the other task, or removing the dependency) has made room for
-  // every dependency it broke.
-  useEffect(() => {
-    if (!heldEdit) return;
-    if (!heldTask || !heldDraft) {
-      setHeldEdit(null);
-      return;
-    }
-    if (heldPlan && heldPlan.broken.length === 0) {
-      setHeldEdit(null);
-      commit(heldTask, heldDraft.edit, heldDraft.assignee);
-    }
-  }, [heldEdit, heldTask, heldDraft, heldPlan, commit]);
 
   const trackDrag = (taskId: string, dragging: boolean) =>
     setDraggingTaskId((current) =>
@@ -892,6 +757,38 @@ function RouteComponent() {
         hideAppName
       />
       <div className="flex h-full min-h-0 flex-col bg-background">
+        {scheduleQuery.isPending && (
+          <p
+            role="status"
+            className="border-b border-border px-4 py-2 text-sm text-muted-foreground"
+          >
+            {t("tasks:scheduling.loading")}
+          </p>
+        )}
+        {scheduleQuery.isError && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2 text-sm text-muted-foreground"
+          >
+            <span>{scheduleQuery.error.message}</span>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              onClick={() => void scheduleQuery.refetch()}
+            >
+              {t("tasks:releases.retry")}
+            </Button>
+          </div>
+        )}
+        {scheduleQuery.data?.outdated && (
+          <p
+            role="status"
+            className="border-b border-border px-4 py-2 text-xs text-muted-foreground"
+          >
+            {t("tasks:scheduling.outdated")}
+          </p>
+        )}
         {milestoneQuery.isPending && (
           <p
             role="status"
@@ -1229,16 +1126,6 @@ function RouteComponent() {
             </div>
           </div>
         )}
-
-        <GanttDependencyDialog
-          open={!!heldPlan && heldPlan.broken.length > 0}
-          brokenCount={heldPlan?.broken.length ?? 0}
-          cycle={heldPlan?.cycle ?? false}
-          moves={heldMoves}
-          onMoveRelated={() => resolveHeldEdit(true)}
-          onMoveOnly={() => resolveHeldEdit(false)}
-          onCancel={() => setHeldEdit(null)}
-        />
 
         <TaskDetailsSheet
           taskId={taskId}

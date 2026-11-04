@@ -1,8 +1,10 @@
+import { estimateSecondsSchema } from "./estimate";
 import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
 import { TASK_TYPES } from "./task-type";
 import {
   planningSnapshotSchema,
   transferReleaseSchema,
+  scheduleSnapshotSchema,
   exportedMilestoneSchema,
 } from "./transfers/schema";
 
@@ -55,8 +57,13 @@ const taskBaseSchema = z
       .string()
       .nullable()
       .openapi({ description: priorityDescription }),
-    startDate: nullableResponseTimestamp,
-    dueDate: nullableResponseTimestamp,
+    estimateSeconds: estimateSecondsSchema,
+    scheduleSource: z
+      .enum(["legacy", "applied", "none"])
+      .optional()
+      .openapi({ readOnly: true }),
+    startDate: nullableResponseTimestamp.openapi({ readOnly: true }),
+    dueDate: nullableResponseTimestamp.openapi({ readOnly: true }),
     archivedAt: nullableResponseTimestamp,
     createdAt: responseTimestamp,
     type: taskTypeSchema,
@@ -72,6 +79,7 @@ const taskBaseSchema = z
 export const featureKnowledgeSchema = taskBaseSchema
   .extend({
     type: z.literal("feature"),
+    estimateSeconds: z.null(),
     status: z.null(),
     priority: z.null(),
     columnId: z.null(),
@@ -205,8 +213,13 @@ export const boardTaskSchema = z
     }),
     status: z.string(),
     priority: z.string().openapi({ description: priorityDescription }),
-    startDate: nullableResponseTimestamp,
-    dueDate: nullableResponseTimestamp,
+    estimateSeconds: estimateSecondsSchema,
+    scheduleSource: z
+      .enum(["legacy", "applied", "none"])
+      .optional()
+      .openapi({ readOnly: true }),
+    startDate: nullableResponseTimestamp.openapi({ readOnly: true }),
+    dueDate: nullableResponseTimestamp.openapi({ readOnly: true }),
     position: z.number().nullable(),
     createdAt: responseTimestamp,
     userId: z.string().nullable(),
@@ -305,7 +318,7 @@ export const moveTaskResultSchema = z
 
 export const taskExportSchema = z
   .object({
-    version: z.literal(3),
+    version: z.literal(4),
     releases: z.array(transferReleaseSchema),
     milestones: z.array(exportedMilestoneSchema),
     project: z
@@ -325,6 +338,14 @@ export const taskExportSchema = z
           releaseKey: z.string().nullable(),
           archivedAt: z.string().nullable(),
           planningSnapshots: z.array(planningSnapshotSchema),
+          estimateSeconds: estimateSecondsSchema,
+          scheduleSource: z
+            .enum(["legacy", "applied", "none"])
+            .optional()
+            .openapi({ readOnly: true }),
+          legacyStartDate: z.string().datetime().nullable(),
+          legacyDueDate: z.string().datetime().nullable(),
+          scheduleSnapshots: z.array(scheduleSnapshotSchema),
           title: z.string(),
           type: taskTypeSchema,
           description: z.string(),
@@ -409,6 +430,11 @@ export const assignedTasksSchema = z
           title: z.string(),
           type: taskTypeSchema,
           milestoneId: milestoneIdSchema,
+          estimateSeconds: estimateSecondsSchema,
+          scheduleSource: z
+            .enum(["legacy", "applied", "none"])
+            .optional()
+            .openapi({ readOnly: true }),
           status: z.string().openapi({
             description: "The slug of the column the task sits in.",
           }),
@@ -418,7 +444,7 @@ export const assignedTasksSchema = z
           }),
           statusIcon: z.string().nullable(),
           priority: z.string().openapi({ description: priorityDescription }),
-          dueDate: nullableResponseTimestamp,
+          dueDate: nullableResponseTimestamp.openapi({ readOnly: true }),
           projectName: z.string(),
           projectSlug: z.string(),
           projectIcon: z.string().nullable(),

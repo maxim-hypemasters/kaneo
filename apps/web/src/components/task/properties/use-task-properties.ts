@@ -1,3 +1,4 @@
+import { useCurrentMinute } from "@/hooks/use-current-minute";
 import { useGetMilestones } from "@/hooks/queries/milestone/use-get-milestones";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetLabelsByTask from "@/hooks/queries/label/use-get-labels-by-task";
@@ -18,6 +19,7 @@ export function useTaskProperties(
   workspaceId: string,
 ) {
   const { data: task } = useGetTask(taskId);
+  const now = useCurrentMinute();
   const { data: project } = useGetProject({ id: projectId, workspaceId });
   const { data: columns = [] } = useGetColumns(projectId);
   const { data: workspaceUsers } = useGetActiveWorkspaceUsers(workspaceId);
@@ -55,6 +57,8 @@ export function useTaskProperties(
     dueStatus: getDueDateStatus(
       task?.dueDate ?? null,
       isTaskCompleted(task?.status ?? "", columns),
+      task?.scheduleSource === "applied",
+      new Date(now),
     ),
     canMoveTask:
       Boolean(task) &&

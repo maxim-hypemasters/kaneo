@@ -241,3 +241,5 @@ Bump `version` in `package.json` and merge to `main`. The `Release CLI` workflow
 After a stable release, the workflow also points the `kaneo` formula in [usekaneo/homebrew-tap](https://github.com/usekaneo/homebrew-tap) at the new binaries. It writes the formula with `scripts/homebrew-formula.sh` and pushes with the `HOMEBREW_TAP_TOKEN` secret, a fine-grained token that can write to that repository only.
 
 While the `CLI_NPM_PUBLISH` repository variable is `true`, the same workflow also publishes `@kaneo/cli` to npm with provenance through trusted publishing, skipping versions that are already published.
+
+Task and Bug effort is set with `--estimate-seconds` on `task create`, `task edit`, and `task bulk`. For example, `--estimate-seconds 5400` means 1.5 hours; use `none` to clear an estimate. The former task `--start` and `--due` flags are removed: schedule dates are read-only outputs of project Preview/Apply planning. Native v4 exports retain effort and informational legacy/applied schedule history. Imports accept older v2/v3 files but do not approve imported schedules.

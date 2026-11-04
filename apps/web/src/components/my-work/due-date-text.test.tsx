@@ -20,3 +20,13 @@ it("updates relative due-date text at midnight with unchanged props", () => {
   act(() => vi.advanceTimersByTime(1000));
   expect(screen.getByText("workspace:myWork.due.today")).toBeVisible();
 });
+
+it("refreshes an applied finish within a minute without waiting for midnight", () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2030-01-01T14:59:30Z"));
+  render(<DueDateText applied dueDate="2030-01-01T15:00:00Z" />);
+  const label = screen.getByText("workspace:myWork.due.today");
+  expect(label).not.toHaveClass("text-destructive-foreground");
+  act(() => vi.advanceTimersByTime(60_000));
+  expect(label).toHaveClass("text-destructive-foreground");
+});

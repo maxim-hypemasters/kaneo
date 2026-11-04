@@ -1,3 +1,10 @@
+vi.mock("@/components/scheduling/use-project-schedule", () => ({
+  useGetProjectSchedule: () => ({
+    data: undefined,
+    isPending: false,
+    isError: false,
+  }),
+}));
 vi.mock("@/hooks/queries/milestone/use-get-project-milestones", () => {
   const data: never[] = [];
   return {
@@ -141,6 +148,7 @@ vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canAssignTasks: () => true,
     canUpdateTasks: () => true,
+    canUpdateProjects: () => true,
   }),
 }));
 
@@ -355,6 +363,28 @@ afterEach(() => {
 });
 
 describe("Gantt jump-to-today", () => {
+  it("keeps Gantt read-only without project planning or calendar setup controls", () => {
+    mockProjectWithTask(
+      makeTask({
+        id: "task",
+        title: "Work",
+        startDate: "2026-09-01",
+        dueDate: "2026-09-02",
+      }),
+    );
+    render(<GanttRoute />);
+    expect(
+      screen.queryByRole("button", {
+        name: /Preview plan|Working calendars|Save planning setup/,
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByLabelText(
+        /Plan from|Planning timezone|Hours per estimate day/,
+      ),
+    ).toBeNull();
+  });
+
   it("centers a new project after a search stops hiding its timeline", () => {
     mockProjectWithTask(
       makeTask({

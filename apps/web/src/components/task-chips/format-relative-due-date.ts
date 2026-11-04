@@ -12,6 +12,8 @@ export function formatRelativeDueDate(
       return relative.days >= 14
         ? t("tasks:due.overdueWeeks", { count: relative.weeks })
         : t("tasks:due.overdueDays", { count: relative.days });
+    case "overdue-time":
+      return t("workspace:myWork.due.overdue");
     case "today":
       return t("tasks:due.today");
     case "tomorrow":

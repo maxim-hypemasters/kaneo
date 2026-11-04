@@ -1,3 +1,4 @@
+import { assertEstimateSeconds } from "../estimate";
 import { and, eq, getTableColumns, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
@@ -27,7 +28,13 @@ async function updateTask(
   position: number,
   userId?: string,
   currentUserId?: string,
+  estimateSeconds?: number | null,
 ) {
+  if (startDate !== undefined || dueDate !== undefined)
+    throw new HTTPException(400, {
+      message: "Task dates are read-only; use an estimate and Preview plan",
+    });
+  assertEstimateSeconds(estimateSeconds);
   assertTaskPosition(position);
 
   let [existingTask] = await db
@@ -63,7 +70,7 @@ async function updateTask(
   const feature = existingTask.type === "feature";
   if (
     feature &&
-    [status, priority, userId, startDate, dueDate].some(
+    [status, priority, userId, startDate, dueDate, estimateSeconds].some(
       (value) => value != null,
     )
   )
@@ -137,8 +144,7 @@ async function updateTask(
         title,
         status: feature ? null : status,
         columnId: feature ? null : (column?.id ?? null),
-        startDate: startDate || null,
-        dueDate: dueDate || null,
+        ...(estimateSeconds !== undefined ? { estimateSeconds } : {}),
         projectId,
         description,
         priority: feature ? null : priority,
@@ -152,12 +158,7 @@ async function updateTask(
         descriptionDeferred,
       });
     if (task)
-      await recordTaskMutation(
-        tx,
-        existingTask,
-        { title, dueDate: dueDate ?? null },
-        currentUserId,
-      );
+      await recordTaskMutation(tx, existingTask, { title }, currentUserId);
     return task;
   });
 

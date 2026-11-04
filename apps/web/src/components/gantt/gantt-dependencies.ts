@@ -7,7 +7,12 @@ export type GanttDependency = {
   blockedId: string;
 };
 
-export type GanttSpan = { start: Date; end: Date };
+export type GanttSpan = {
+  start: Date;
+  end: Date;
+  precise?: boolean;
+  completed?: boolean;
+};
 
 export type GanttDependencyMove = {
   taskId: string;
@@ -41,7 +46,10 @@ export function blockingDependencies(
 
 // A blocked task may start on the day its blocker ends, but not before.
 export function isDependencyBroken(blocker: GanttSpan, blocked: GanttSpan) {
-  return differenceInCalendarDays(blocked.start, blocker.end) < 0;
+  if (blocker.completed) return false;
+  return blocker.precise || blocked.precise
+    ? blocked.start.getTime() < blocker.end.getTime()
+    : differenceInCalendarDays(blocked.start, blocker.end) < 0;
 }
 
 function shiftSpan(span: GanttSpan, days: number): GanttSpan {

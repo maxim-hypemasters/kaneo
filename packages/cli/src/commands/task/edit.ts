@@ -12,9 +12,8 @@ import {
 import {
   type Priority,
   updateTaskDescription,
-  updateTaskDueDate,
+  updateTaskEstimate,
   updateTaskPriority,
-  updateTaskStartDate,
   updateTaskTitle,
 } from "../../api/task-mutations.js";
 import { InvalidArgument } from "../../errors/errors.js";
@@ -29,8 +28,7 @@ import { emit } from "../../output/emit.js";
 import { withSpinner } from "../../output/spinner.js";
 import { describeTaskRelease } from "../../releases/describe-task-release.js";
 import { resolveTaskRelease } from "../../releases/resolve-task-release.js";
-import { checkDateRange } from "../../tasks/date-range.js";
-import { parseDateChange } from "../../tasks/parse-date.js";
+import { parseEstimateSeconds } from "../../tasks/parse-estimate.js";
 import { renderTaskChange } from "../../tasks/render-task-change.js";
 import {
   checkFeatureProject,
@@ -43,22 +41,12 @@ import { ApiLayer } from "../api-layer.js";
 
 const PRIORITIES = ["no-priority", "low", "medium", "high", "urgent"] as const;
 
-const dateChange = (input: Option.Option<string>, now: Date, flag: string) =>
-  Option.match(input, {
-    onNone: () => Effect.succeed(Option.none<string | null>()),
-    onSome: (value) =>
-      Effect.fromResult(parseDateChange(value, now, flag)).pipe(
-        Effect.map(Option.some),
-      ),
-  });
-
 export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   readonly task: string;
   readonly title: Option.Option<string>;
   readonly description: Option.Option<string>;
   readonly priority: Option.Option<Priority>;
-  readonly due: Option.Option<string>;
-  readonly start: Option.Option<string>;
+  readonly estimateSeconds?: Option.Option<string>;
   readonly addLabel: ReadonlyArray<string>;
   readonly removeLabel: ReadonlyArray<string>;
   readonly type: Option.Option<TaskType>;
@@ -67,13 +55,13 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   readonly milestone?: Option.Option<string>;
 }) {
   const { title, description, priority, type } = options;
+  const estimate = options.estimateSeconds ?? Option.none();
   if (
     [
       title,
       description,
       priority,
-      options.due,
-      options.start,
+      estimate,
       type,
       options.feature,
       options.release,
@@ -84,7 +72,7 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
   ) {
     return yield* new InvalidArgument({
       message: "Nothing to change.",
-      hint: "Pass at least one of --title, --description, --priority, --due, --start, --add-label, --remove-label, --type, --feature, --release or --milestone.",
+      hint: "Pass at least one of --title, --description, --priority, --estimate-seconds, --add-label, --remove-label, --type, --feature, --release or --milestone.",
     });
   }
   // "none" takes the task out of its feature.
@@ -99,9 +87,9 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
       hint: 'Pass a title, for example --title "Fix login redirect".',
     });
   }
-  const now = new Date();
-  const due = yield* dateChange(options.due, now, "--due");
-  const start = yield* dateChange(options.start, now, "--start");
+  const estimateSeconds = Option.isSome(estimate)
+    ? yield* Effect.fromResult(parseEstimateSeconds(estimate.value))
+    : undefined;
 
   const resolved = yield* withSpinner(`Loading ${options.task.trim()}`)(
     resolveTask(options.task),
@@ -119,8 +107,7 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
     taskTypeOf(resolved.task) === "feature" &&
     [
       options.priority,
-      options.due,
-      options.start,
+      estimate,
       options.feature,
       options.release,
       options.milestone ?? Option.none(),
@@ -129,14 +116,6 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
     return yield* new InvalidArgument({
       message: "Features are knowledge records without planning fields.",
     });
-  if (Option.isSome(due) || Option.isSome(start)) {
-    yield* Effect.fromResult(
-      checkDateRange(
-        Option.getOrElse(start, () => resolved.task.startDate),
-        Option.getOrElse(due, () => resolved.task.dueDate),
-      ),
-    );
-  }
 
   const feature = yield* resolveFeature(featureReference, resolved.workspaceId);
   if (feature) {
@@ -202,13 +181,9 @@ export const runTaskEdit = Effect.fn("command.task.edit")(function* (options: {
         yield* updateTaskPriority(id, priority.value);
         changed.push("priority");
       }
-      if (Option.isSome(due)) {
-        yield* updateTaskDueDate(id, due.value);
-        changed.push("due date");
-      }
-      if (Option.isSome(start)) {
-        yield* updateTaskStartDate(id, start.value);
-        changed.push("start date");
+      if (estimateSeconds !== undefined) {
+        yield* updateTaskEstimate(id, estimateSeconds);
+        changed.push("estimate");
       }
       if (labelChanges) {
         yield* applyTaskLabelEdits(id, labelPlan);
@@ -262,15 +237,9 @@ export const taskEdit = Command.make(
       Flag.withDescription("New priority"),
       Flag.optional,
     ),
-    due: Flag.String("due").pipe(
+    estimateSeconds: Flag.String("estimate-seconds").pipe(
       Flag.withDescription(
-        "Due date: YYYY-MM-DD, today, tomorrow, +3d, or none to clear",
-      ),
-      Flag.optional,
-    ),
-    start: Flag.String("start").pipe(
-      Flag.withDescription(
-        "Start date: YYYY-MM-DD, today, tomorrow, +3d, or none to clear",
+        "Total effort in seconds, in whole minutes; none clears the estimate",
       ),
       Flag.optional,
     ),

@@ -27,8 +27,7 @@ import {
 } from "../../services/selection.js";
 import { Session } from "../../services/session.js";
 import { createStatus, FALLBACK_STATUS } from "../../tasks/create-status.js";
-import { checkDateRange } from "../../tasks/date-range.js";
-import { parseDateInput } from "../../tasks/parse-date.js";
+import { parseEstimateSeconds } from "../../tasks/parse-estimate.js";
 import { resolveTaskRelease } from "../../releases/resolve-task-release.js";
 import { renderTaskChange } from "../../tasks/render-task-change.js";
 import { resolveAssignee } from "../../tasks/resolve-assignee.js";
@@ -43,12 +42,6 @@ import { shellSafeOr } from "../../input/shell-safe.js";
 import { ApiLayer } from "../api-layer.js";
 
 const PRIORITIES = ["no-priority", "low", "medium", "high", "urgent"] as const;
-
-const dateFlag = (input: Option.Option<string>, now: Date, flag: string) =>
-  Option.match(input, {
-    onNone: () => Effect.succeed(undefined),
-    onSome: (value) => Effect.fromResult(parseDateInput(value, now, flag)),
-  });
 
 const promptTitle = Effect.fnUntraced(function* () {
   const output = yield* Output;
@@ -99,8 +92,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     readonly priority: Priority;
     readonly status: Option.Option<string>;
     readonly assignee: Option.Option<string>;
-    readonly due: Option.Option<string>;
-    readonly start: Option.Option<string>;
+    readonly estimateSeconds?: Option.Option<string>;
     readonly label: ReadonlyArray<string>;
     readonly type: TaskType;
     readonly feature: Option.Option<string>;
@@ -108,10 +100,10 @@ export const runTaskCreate = Effect.fn("command.task.create")(
     readonly milestone?: Option.Option<string>;
   }) {
     const session = yield* Session;
-    const now = new Date();
-    const dueDate = yield* dateFlag(options.due, now, "--due");
-    const startDate = yield* dateFlag(options.start, now, "--start");
-    yield* Effect.fromResult(checkDateRange(startDate, dueDate));
+    const estimate = options.estimateSeconds ?? Option.none();
+    const estimateSeconds = Option.isSome(estimate)
+      ? yield* Effect.fromResult(parseEstimateSeconds(estimate.value))
+      : undefined;
 
     if (options.type === "feature" && Option.isSome(options.feature)) {
       return yield* new InvalidArgument({
@@ -129,8 +121,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
       [
         options.status,
         options.assignee,
-        options.due,
-        options.start,
+        estimate,
         options.release,
         options.milestone ?? Option.none(),
       ].some(Option.isSome)
@@ -189,8 +180,7 @@ export const runTaskCreate = Effect.fn("command.task.create")(
             status: column?.slug ?? FALLBACK_STATUS,
           }),
       ...(assignee ? { userId: assignee.id } : {}),
-      ...(dueDate ? { dueDate } : {}),
-      ...(startDate ? { startDate } : {}),
+      ...(estimateSeconds === undefined ? {} : { estimateSeconds }),
       ...(options.type !== "task" ? { type: options.type } : {}),
       ...(feature ? { featureId: feature.task.id } : {}),
       ...(release === undefined ? {} : { releaseId: release?.id ?? null }),
@@ -244,6 +234,9 @@ export const runTaskCreate = Effect.fn("command.task.create")(
         description: created.description,
         status: created.status,
         priority: created.priority,
+        ...(created.estimateSeconds === undefined
+          ? {}
+          : { estimateSeconds: created.estimateSeconds }),
         startDate: created.startDate,
         dueDate: created.dueDate,
         createdAt: created.createdAt,
@@ -340,12 +333,10 @@ export const taskCreate = Command.make(
       Flag.withDescription('Assign to "me", or a member by email, name or id'),
       Flag.optional,
     ),
-    due: Flag.String("due").pipe(
-      Flag.withDescription("Due date: YYYY-MM-DD, today, tomorrow or +3d"),
-      Flag.optional,
-    ),
-    start: Flag.String("start").pipe(
-      Flag.withDescription("Start date: YYYY-MM-DD, today, tomorrow or +3d"),
+    estimateSeconds: Flag.String("estimate-seconds").pipe(
+      Flag.withDescription(
+        "Total effort in seconds, in whole minutes; none clears the estimate",
+      ),
       Flag.optional,
     ),
     label: Flag.String("label").pipe(

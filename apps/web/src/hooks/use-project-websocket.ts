@@ -1,3 +1,4 @@
+import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { applyBoardReorder } from "@/components/kanban-board/apply-reorder";
 import {
@@ -321,6 +322,10 @@ export function useProjectWebSocket(projectId: string) {
 
       ws.onopen = () => {
         if (disposed || activeSocket !== ws) return;
+        void queryClient.invalidateQueries({
+          queryKey: ["project-schedule", projectId],
+        });
+        void queryClient.invalidateQueries({ queryKey: ["work-calendars"] });
         // Release events missed while disconnected are not replayed.
         if (offlineSince !== null) {
           reconcileReleases(offlineSince);
@@ -367,6 +372,34 @@ export function useProjectWebSocket(projectId: string) {
         if (disposed || activeSocket !== ws) return;
         try {
           const message = JSON.parse(event.data);
+          if (message.type === "SCHEDULE_UPDATED") {
+            void queryClient.invalidateQueries({
+              queryKey: ["project-schedule", projectId],
+            });
+            void queryClient.invalidateQueries({
+              queryKey: ["work-calendars"],
+            });
+            if (message.schedulePublished) {
+              refreshMilestones();
+              needsReconcile = true;
+              flushPending();
+              for (const query of queryClient
+                .getQueryCache()
+                .findAll({ queryKey: ["task"] })) {
+                if (
+                  (query.state.data as { projectId?: string } | undefined)
+                    ?.projectId === projectId
+                )
+                  void queryClient.invalidateQueries({
+                    queryKey: query.queryKey,
+                    exact: true,
+                  });
+              }
+              invalidateMyWork(queryClient);
+              void queryClient.invalidateQueries({ queryKey: ["projects"] });
+            }
+            return;
+          }
           if (message.type === "PROJECT_MEMBERS_UPDATED") {
             void queryClient.invalidateQueries({
               predicate: (query) =>
@@ -797,6 +830,12 @@ export function useProjectWebSocket(projectId: string) {
         } else if (fallbackInterval === null) {
           // Refresh only when realtime delivery could not reconnect.
           fallbackInterval = setInterval(() => {
+            void queryClient.invalidateQueries({
+              queryKey: ["project-schedule", projectId],
+            });
+            void queryClient.invalidateQueries({
+              queryKey: ["work-calendars"],
+            });
             reconcileMilestoneDetails();
             invalidateWorkLinkCandidates(queryClient, projectId);
             void queryClient.invalidateQueries({

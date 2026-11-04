@@ -15,6 +15,14 @@ describe("getRelativeDueDate", () => {
     });
   });
 
+  it("marks an exact finish earlier today overdue without inventing a day of lateness", () => {
+    const finish = new Date(2026, 9, 14, 9, 29);
+    expect(getRelativeDueDate(finish, now, true)).toEqual({
+      kind: "overdue-time",
+    });
+    expect(getRelativeDueDate(finish, now)).toEqual({ kind: "today" });
+  });
+
   it("names today and tomorrow", () => {
     expect(getRelativeDueDate(new Date(2026, 9, 14, 18), now)).toEqual({
       kind: "today",

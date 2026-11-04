@@ -1,11 +1,9 @@
-import { eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { releaseTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { pgErrorCode } from "../../utils/pg-error-code";
-import { assertReleaseDateOrder } from "../release-dates";
 import type { UpdateReleaseInput } from "../schema";
+import { updateReleaseInTransaction } from "../write-release-in-transaction";
 
 const UNIQUE_VIOLATION = "23505";
 
@@ -16,38 +14,7 @@ const UNIQUE_VIOLATION = "23505";
 // it locks no task rows, so it can't deadlock with them.
 async function updateRelease(id: string, changes: UpdateReleaseInput) {
   const updated = await db
-    .transaction(async (tx) => {
-      const [current] = await tx
-        .select()
-        .from(releaseTable)
-        .where(eq(releaseTable.id, id))
-        .for("no key update");
-      if (!current) {
-        throw new HTTPException(404, { message: "Release not found" });
-      }
-
-      const next = {
-        name: changes.name ?? current.name,
-        description:
-          changes.description === undefined
-            ? current.description
-            : changes.description,
-        startDate: changes.startDate ?? current.startDate,
-        codeFreezeDate: changes.codeFreezeDate ?? current.codeFreezeDate,
-        submissionDate: changes.submissionDate ?? current.submissionDate,
-      };
-      assertReleaseDateOrder(next);
-
-      const [row] = await tx
-        .update(releaseTable)
-        .set(next)
-        .where(eq(releaseTable.id, id))
-        .returning();
-      if (!row) {
-        throw new HTTPException(500, { message: "Failed to update release" });
-      }
-      return row;
-    })
+    .transaction((tx) => updateReleaseInTransaction(tx, id, changes))
     .catch((error: unknown) => {
       if (pgErrorCode(error) === UNIQUE_VIOLATION) {
         throw new HTTPException(409, {

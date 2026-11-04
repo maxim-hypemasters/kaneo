@@ -8,7 +8,6 @@ import {
   useState,
 } from "react";
 import { remToPx, shiftScrollLeft } from "./gantt-scroll";
-import type { ScheduledTask } from "./gantt-types";
 import { createGanttViewportStore } from "./gantt-viewport";
 import {
   ganttZoomAnchor,
@@ -38,12 +37,13 @@ const SMOOTH_SCROLL_FALLBACK_MS = 1000;
 export type GanttScrollAlign = "start" | "center";
 
 type GanttSpanOfDays = { scheduleStart: Date; scheduleEnd: Date };
+type GanttRangeRecord = GanttSpanOfDays & { projectId: string };
 
 const NO_EXTRA_SPANS: readonly GanttSpanOfDays[] = [];
 
 type UseGanttRangeOptions = {
   projectId: string;
-  tasks: readonly ScheduledTask[];
+  tasks: readonly GanttRangeRecord[];
   // Other spans the opening span should cover along with the tasks (current
   // releases). They widen it, never open a chart without tasks.
   extraSpans?: readonly GanttSpanOfDays[];

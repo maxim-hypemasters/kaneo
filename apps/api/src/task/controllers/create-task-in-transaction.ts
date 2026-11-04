@@ -1,3 +1,4 @@
+import { assertEstimateSeconds } from "../estimate";
 import { lockMilestone } from "../../milestone/membership";
 import { extractAssetIds } from "../../storage/cleanup-assets";
 import { and, eq, inArray, isNull } from "drizzle-orm";
@@ -41,6 +42,7 @@ export type CreateTaskInput = {
   status?: string;
   startDate?: Date;
   dueDate?: Date;
+  estimateSeconds?: number | null;
   description?: string;
   priority?: string;
   customFields?: CustomFieldInput[];
@@ -103,6 +105,7 @@ export async function createTaskInTransaction(
     status,
     startDate,
     dueDate,
+    estimateSeconds,
     description,
     priority,
     customFields,
@@ -114,6 +117,11 @@ export async function createTaskInTransaction(
     releaseId,
   }: CreateTaskInput,
 ) {
+  if (startDate !== undefined || dueDate !== undefined)
+    throw new HTTPException(400, {
+      message: "Task dates are read-only; use an estimate and Preview plan",
+    });
+  assertEstimateSeconds(estimateSeconds);
   await lockTaskCreationProject(tx, projectId, expectedWorkspaceId);
   if (type === "feature" && featureId) {
     throw new HTTPException(400, {
@@ -126,9 +134,15 @@ export async function createTaskInTransaction(
     });
   if (
     type === "feature" &&
-    [status, priority, userId, startDate, dueDate, releaseId].some(
-      (value) => value != null,
-    )
+    [
+      status,
+      priority,
+      userId,
+      startDate,
+      dueDate,
+      releaseId,
+      estimateSeconds,
+    ].some((value) => value != null)
   )
     throw new HTTPException(400, {
       message: "Features do not have planning fields",
@@ -221,8 +235,9 @@ export async function createTaskInTransaction(
       title: title || "",
       status: type === "feature" ? null : resolvedStatus,
       columnId: type === "feature" ? null : (column?.id ?? null),
-      startDate: startDate || null,
-      dueDate: dueDate || null,
+      startDate: null,
+      dueDate: null,
+      estimateSeconds: type === "feature" ? null : (estimateSeconds ?? null),
       description: description || "",
       priority: type === "feature" ? null : resolvedPriority,
       number: taskNumber,

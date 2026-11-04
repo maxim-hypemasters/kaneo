@@ -1,3 +1,4 @@
+import { publishEvent } from "../../events";
 import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
@@ -41,6 +42,7 @@ async function deleteProject(id: string, workspaceId: string) {
     });
   }
 
+  await publishEvent("project-schedule.changed", { workspaceId });
   return existingProject;
 }
 

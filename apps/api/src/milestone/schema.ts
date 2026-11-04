@@ -1,3 +1,4 @@
+import { estimateSecondsSchema } from "../task/estimate";
 import { isoDay } from "../release/release-dates";
 import { pagingNumber, responseTimestamp, z } from "../openapi";
 import { releaseProgressQuery } from "../release/progress/response";
@@ -25,6 +26,7 @@ export const milestoneTaskDraftSchema = z
   .object({
     title: z.string().trim().min(1),
     type: z.enum(["task", "bug"]).default("task"),
+    estimateSeconds: estimateSecondsSchema.optional(),
   })
   .strict();
 export const milestoneTaskDraftsSchema = z

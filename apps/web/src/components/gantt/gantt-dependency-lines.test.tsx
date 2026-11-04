@@ -17,7 +17,11 @@ const boxes: Record<string, { top: number; height: number }> = {
   b: { top: 144, height: 44 },
 };
 
-function draw(spans: Map<string, GanttSpan>, draggingTaskId?: string) {
+function draw(
+  spans: Map<string, GanttSpan>,
+  draggingTaskId?: string,
+  alignToDays = false,
+) {
   render(
     <div data-box="lanes">
       <GanttDependencyLines
@@ -28,6 +32,7 @@ function draw(spans: Map<string, GanttSpan>, draggingTaskId?: string) {
         // 44px days next to a 320px task rail (16px rem).
         dayColumnWidthRem={2.75}
         railWidthRem={20}
+        alignToDays={alignToDays}
         layoutKey="a,b"
         draggingTaskId={draggingTaskId}
       />
@@ -79,6 +84,26 @@ describe("GanttDependencyLines", () => {
 
     expect(line).toHaveAttribute("d", "M 448 22 H 456 V 44 H 360 V 66 H 368");
     expect(line).toHaveAttribute("data-broken");
+  });
+
+  it("connects day-wide cards at the date boundary for an exclusive midnight finish", () => {
+    const [line] = draw(
+      new Map([
+        [
+          "a",
+          { ...span("2026-03-01T09:00", "2026-03-02T00:00"), precise: true },
+        ],
+        [
+          "b",
+          { ...span("2026-03-02T09:00", "2026-03-02T13:00"), precise: true },
+        ],
+      ]),
+      undefined,
+      true,
+    );
+
+    expect(line).toHaveAttribute("d", "M 364 22 H 372 V 44 H 356 V 66 H 364");
+    expect(line).not.toHaveAttribute("data-broken");
   });
 
   it("fades the lines of a bar being dragged", () => {
