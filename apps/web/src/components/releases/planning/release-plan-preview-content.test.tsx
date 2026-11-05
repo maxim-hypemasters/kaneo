@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type TaskDetailsSheet from "@/components/task/task-details-sheet";
@@ -11,6 +17,10 @@ import {
 
 const m = vi.hoisted(() => ({
   sheet: null as ComponentProps<typeof TaskDetailsSheet> | null,
+  allowLeave: true,
+}));
+vi.mock("@/components/editor/document-draft-guard", () => ({
+  requestDocumentDraftLeave: async () => m.allowLeave,
 }));
 vi.mock("react-i18next", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react-i18next")>()),
@@ -51,6 +61,7 @@ vi.mock("./preview/release-plan-timeline", () => ({
 afterEach(() => {
   cleanup();
   m.sheet = null;
+  m.allowLeave = true;
 });
 const task = previewTask("a");
 const preview = releasePreview([task], {
@@ -77,14 +88,14 @@ const props = {
 };
 
 describe("preview conflict navigation", () => {
-  it("opens the existing task sheet over the reviewed chart and restores its own identifier focus target", () => {
+  it("opens the existing task sheet over the reviewed chart and restores its own identifier focus target", async () => {
     render(<ReleasePlanPreviewContent {...props} />);
     const identifier = screen.getByRole("link", { name: task.identifier! });
     expect(identifier).toHaveAttribute(
       "href",
       "/dashboard/workspace/workspace/project/project/task/a?originReleaseId=release",
     );
-    fireEvent.click(identifier);
+    await act(async () => fireEvent.click(identifier));
     expect(
       screen.getByRole("dialog", { name: "Task details" }),
     ).toHaveTextContent("a");
@@ -105,6 +116,21 @@ describe("preview conflict navigation", () => {
     const finalFocus = m.sheet!.finalFocus as () => HTMLElement;
     expect(finalFocus()).toBe(identifier);
     expect(screen.getByLabelText("Reviewed chart")).toHaveTextContent("token");
+  });
+
+  it("retains the current task state when discarding is cancelled and permits a later retry", async () => {
+    m.allowLeave = false;
+    render(<ReleasePlanPreviewContent {...props} />);
+    const identifier = screen.getByRole("link", { name: task.identifier! });
+    await act(async () => fireEvent.click(identifier));
+    expect(
+      screen.queryByRole("dialog", { name: "Task details" }),
+    ).not.toBeInTheDocument();
+    m.allowLeave = true;
+    await act(async () => fireEvent.click(identifier));
+    expect(
+      screen.getByRole("dialog", { name: "Task details" }),
+    ).toHaveTextContent("a");
   });
 
   it("sends fresh focus requests for repeated card activation without opening task details", () => {

@@ -61,6 +61,15 @@ const page = {
   pagination: { total: 1, page: 1, limit: 30, totalPages: 1 },
 };
 describe("Feature library", () => {
+  it("renders escaped editor punctuation as readable preview text", async () => {
+    mocks.read.mockResolvedValue({
+      ...page,
+      data: [{ ...page.data[0], description: "Notes for \\[Client+UI\\]" }],
+    });
+    view();
+    expect(await screen.findByText("Notes for Client+UI")).toBeInTheDocument();
+  });
+
   it("lists knowledge metadata without execution planning", async () => {
     mocks.read.mockResolvedValue(page);
     view();

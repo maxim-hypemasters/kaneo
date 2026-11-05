@@ -3,349 +3,352 @@ import {
   cleanup,
   fireEvent,
   render,
+  screen,
   waitFor,
 } from "@testing-library/react";
-import { Extension } from "@tiptap/core";
-import TaskItem from "@tiptap/extension-task-item";
-import { EditorView } from "@tiptap/pm/view";
-import type { Editor } from "@tiptap/react";
 import {
   afterEach,
-  beforeAll,
   beforeEach,
   describe,
   expect,
   it,
   vi,
 } from "vite-plus/test";
-import { toast } from "@/lib/toast";
-import { uploadTaskImage } from "@/lib/upload-task-image";
+import { HttpError } from "@/lib/http-error";
 import TaskDescription from "./task-description";
 
 const mocks = vi.hoisted(() => ({
-  t: (key: string) => key,
+  save: vi.fn(),
+  refresh: vi.fn(),
+  upload: vi.fn(),
+  canEdit: true,
   tasks: new Map<
     string,
     { id: string; projectId: string; description: string }
   >(),
-  mutateAsync: vi.fn(),
-  editors: [] as unknown[],
 }));
-
-vi.mock("@tiptap/react", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@tiptap/react")>();
-  return {
-    ...actual,
-    useEditor: (...args: Parameters<typeof actual.useEditor>) => {
-      const editor = actual.useEditor(...args);
-      if (editor && !mocks.editors.includes(editor)) mocks.editors.push(editor);
-      return editor;
-    },
-  };
-});
-
-function inert(name: string) {
-  return Extension.create({ name });
-}
-
-vi.mock("./extensions/shiki-code-block", () => ({
-  ShikiCodeBlock: inert("shikiCodeBlockStub"),
-}));
-vi.mock("./extensions/mermaid-block", () => ({
-  MermaidBlock: inert("mermaidBlockStub"),
-}));
-vi.mock("./extensions/embed-block", () => ({
-  EmbedBlock: inert("embedBlockStub"),
-}));
-vi.mock("./extensions/attachment-card", () => ({
-  AttachmentCard: inert("attachmentCardStub"),
-}));
-vi.mock("./extensions/kaneo-issue-link", () => ({
-  KaneoIssueLink: inert("kaneoIssueLinkStub"),
-}));
-vi.mock("./extensions/task-item-with-checkbox", () => ({
-  TaskItemWithCheckbox: TaskItem,
-}));
-
 vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: mocks.t }),
-  initReactI18next: { type: "3rdParty", init: () => {} },
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+vi.mock("@/components/providers/auth-provider", async () => ({
+  AuthContext: (await import("react")).createContext({ user: { id: "owner" } }),
 }));
 vi.mock("@/hooks/queries/task/use-get-task", () => ({
-  default: (taskId: string) => ({ data: mocks.tasks.get(taskId) }),
+  default: (id: string) => ({
+    data: mocks.tasks.get(id),
+    refetch: mocks.refresh,
+  }),
 }));
 vi.mock("@/hooks/mutations/task/use-update-task-description", () => ({
-  useUpdateTaskDescription: () => ({ mutateAsync: mocks.mutateAsync }),
+  useUpdateTaskDescription: () => ({ mutateAsync: mocks.save }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => true }),
+  useWorkspacePermission: () => ({ canUpdateTasks: () => mocks.canEdit }),
 }));
-vi.mock("@/lib/toast", () => ({
-  toast: {
-    error: vi.fn(),
-    success: vi.fn(),
-    loading: vi.fn(),
-    dismiss: vi.fn(),
-  },
+vi.mock("@/lib/upload-draft-asset", () => ({ uploadDraftAsset: mocks.upload }));
+vi.mock("@/components/editor/document-draft-guard", () => ({
+  useDocumentDraftGuard: vi.fn(),
 }));
-vi.mock("@/lib/upload-task-image", () => ({ uploadTaskImage: vi.fn() }));
-vi.mock("@/lib/shiki-highlighter", () => ({
-  getSharedShikiHighlighter: () => new Promise(() => {}),
+vi.mock("@/components/editor/document-editor", () => ({
+  DocumentEditor: ({
+    value,
+    onChange,
+    onRequestEdit,
+    readOnly,
+    disabled,
+    footer,
+    notice,
+    headerActions,
+    uploadAsset,
+    onPendingUploadChange,
+  }: {
+    value: string;
+    onChange?: (value: string) => void;
+    onRequestEdit?: () => void;
+    readOnly?: boolean;
+    disabled?: boolean;
+    footer?: React.ReactNode;
+    notice?: React.ReactNode;
+    headerActions?: React.ReactNode;
+    uploadAsset?: (file: File) => Promise<unknown>;
+    onPendingUploadChange?: (pending: boolean) => void;
+  }) => (
+    <div>
+      {headerActions}
+      {notice}
+      <textarea
+        aria-label="Document"
+        value={value}
+        onChange={(event) => onChange?.(event.target.value)}
+        onClick={() => {
+          if (readOnly && !disabled) onRequestEdit?.();
+        }}
+        readOnly={readOnly}
+        disabled={disabled}
+      />
+      {uploadAsset && (
+        <button
+          type="button"
+          onClick={async () => {
+            onPendingUploadChange?.(true);
+            try {
+              await uploadAsset(
+                new File(["image"], "test.png", { type: "image/png" }),
+              );
+            } finally {
+              onPendingUploadChange?.(false);
+            }
+          }}
+        >
+          Upload image
+        </button>
+      )}
+      {footer}
+    </div>
+  ),
 }));
 
-const DEBOUNCE_MS = 700;
-const uploadMock = vi.mocked(uploadTaskImage);
-const asset = {
-  url: "/api/asset/asset-1",
-  alt: "paste",
-  filename: "paste.png",
-  kind: "image" as const,
-  mimeType: "image/png",
-  size: 18,
-};
-
-function latestEditor() {
-  return mocks.editors[mocks.editors.length - 1] as Editor;
+function edit(value = "draft") {
+  fireEvent.click(screen.getByLabelText("Document"));
+  fireEvent.change(screen.getByLabelText("Document"), { target: { value } });
 }
-
-// Hydration parks the editor behind a flag cleared on a later animation
-// frame. An edit dispatched before that is swallowed, not saved. Waiting on a
-// frame rather than a delay is what makes it deterministic: hydration's
-// callback is already queued, so one queued after it cannot run first.
-async function settle() {
-  await act(async () => {
-    await new Promise((resolve) => {
-      requestAnimationFrame(() => resolve(undefined));
-    });
-  });
-}
-
-function savedTaskIds() {
-  return mocks.mutateAsync.mock.calls.map((call) => call[0].id);
-}
-
-function pasteFile(editor: Editor) {
-  fireEvent.paste(editor.view.dom, {
-    clipboardData: {
-      files: [new File(["image"], "paste.png", { type: "image/png" })],
-      getData: () => "",
-    },
-  });
-}
-
-function deferredUpload() {
-  let resolveUpload!: (value: typeof asset) => void;
-  uploadMock.mockImplementation(
-    () =>
-      new Promise<typeof asset>((resolve) => {
-        resolveUpload = resolve;
-      }),
-  );
-  return () => resolveUpload(asset);
-}
-
-beforeAll(() => {
-  vi.spyOn(EditorView.prototype, "coordsAtPos").mockReturnValue({
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-  });
-});
 
 beforeEach(() => {
-  mocks.mutateAsync.mockReset();
-  mocks.mutateAsync.mockResolvedValue({});
-  mocks.editors.length = 0;
-  mocks.t = (key: string) => key;
-  uploadMock.mockReset();
-  vi.mocked(toast.error).mockClear();
-  vi.mocked(toast.success).mockClear();
-  vi.mocked(toast.dismiss).mockClear();
-  mocks.tasks.set("task-a", {
-    id: "task-a",
-    projectId: "project-1",
-    description: "alpha",
+  mocks.tasks.clear();
+  mocks.tasks.set("a", { id: "a", projectId: "p", description: "original" });
+  mocks.save.mockReset().mockResolvedValue({ description: "saved" });
+  mocks.refresh.mockReset().mockResolvedValue(undefined);
+  mocks.upload.mockReset().mockResolvedValue({
+    id: "asset-1",
+    url: "/api/asset/asset-1",
+    kind: "image",
   });
-  mocks.tasks.set("task-b", {
-    id: "task-b",
-    projectId: "project-1",
-    description: "bravo",
+  mocks.canEdit = true;
+});
+afterEach(cleanup);
+
+describe("explicit description saves", () => {
+  it("clicking the description starts editing without an Edit button", () => {
+    render(<TaskDescription taskId="a" />);
+    expect(
+      screen.queryByText("common:documentEditor.edit"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("Document"));
+
+    expect(screen.getByLabelText("Document")).toHaveProperty("readOnly", false);
+    expect(screen.getByText("common:documentEditor.save")).toBeInTheDocument();
   });
-});
 
-afterEach(() => {
-  cleanup();
-  vi.useRealTimers();
-});
+  it("keeps description clicks read-only without update permission", () => {
+    mocks.canEdit = false;
+    render(<TaskDescription taskId="a" />);
 
-describe("TaskDescription pending saves", () => {
-  it("inserts an uploaded image into a replacement editor and saves it", async () => {
-    const resolveUpload = deferredUpload();
-    const { container, rerender } = render(<TaskDescription taskId="task-a" />);
-    await waitFor(() => expect(container.textContent).toContain("alpha"));
-    await settle();
+    fireEvent.click(screen.getByLabelText("Document"));
 
-    const firstEditor = latestEditor();
-    pasteFile(firstEditor);
-    await act(async () => {});
-    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Document")).toHaveProperty("readOnly", true);
+    expect(
+      screen.queryByText("common:documentEditor.save"),
+    ).not.toBeInTheDocument();
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
 
-    mocks.t = (key: string) => key;
-    rerender(<TaskDescription taskId="task-a" />);
-    const currentEditor = latestEditor();
-    expect(currentEditor).not.toBe(firstEditor);
-    expect(firstEditor.isDestroyed).toBe(true);
-    await settle();
+  it("clicking again while editing retains the draft and original snapshot", () => {
+    render(<TaskDescription taskId="a" />);
+    edit("retained draft");
 
-    await act(async () => resolveUpload());
+    fireEvent.click(screen.getByLabelText("Document"));
+    fireEvent.click(screen.getByLabelText("Document"));
 
-    expect(currentEditor.getHTML()).toContain(asset.url);
-    await vi.waitFor(
-      () =>
-        expect(
-          mocks.mutateAsync.mock.calls.some(([saved]) =>
-            saved.description.includes(asset.url),
-          ),
-        ).toBe(true),
-      { timeout: DEBOUNCE_MS * 4 },
+    expect(screen.getByLabelText("Document")).toHaveProperty(
+      "value",
+      "retained draft",
+    );
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    expect(mocks.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: "retained draft",
+        expectedDescription: "original",
+      }),
     );
   });
 
-  it("reports an error when no live editor remains on the active task", async () => {
-    const resolveUpload = deferredUpload();
-    const { container } = render(<TaskDescription taskId="task-a" />);
-    await waitFor(() => expect(container.textContent).toContain("alpha"));
-    await settle();
-
-    const editor = latestEditor();
-    pasteFile(editor);
-    await waitFor(() => expect(uploadMock).toHaveBeenCalledOnce());
-    act(() => editor.destroy());
-    await act(async () => resolveUpload());
-
-    expect(toast.error).toHaveBeenCalledWith(
-      "tasks:detail.editor.upload.failed",
+  it("keeps a conflict recoverable when loading the saved version fails", async () => {
+    mocks.save.mockRejectedValue(
+      new HttpError(409, "Changed", { code: "DESCRIPTION_CONFLICT" }),
     );
-    expect(toast.dismiss).toHaveBeenCalled();
-    expect(toast.success).not.toHaveBeenCalled();
-    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    mocks.refresh.mockRejectedValueOnce(new Error("offline"));
+    render(<TaskDescription taskId="a" />);
+    edit();
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    await screen.findByText("common:error.tryAgain");
+    expect(
+      screen.getByText("common:documentEditor.reviewLatest"),
+    ).toBeDisabled();
+    expect(screen.getByLabelText("Document")).toHaveProperty("value", "draft");
+    fireEvent.click(screen.getByText("common:error.tryAgain"));
+    await waitFor(() =>
+      expect(
+        screen.getByText("common:documentEditor.reviewLatest"),
+      ).toBeEnabled(),
+    );
+    expect(mocks.refresh).toHaveBeenCalledTimes(2);
   });
 
-  it("quietly cancels an upload after the description unmounts", async () => {
-    const resolveUpload = deferredUpload();
-    const { container, unmount } = render(<TaskDescription taskId="task-a" />);
-    await waitFor(() => expect(container.textContent).toContain("alpha"));
-    await settle();
-    pasteFile(latestEditor());
-    await waitFor(() => expect(uploadMock).toHaveBeenCalledOnce());
-
-    unmount();
-    await act(async () => resolveUpload());
-
-    expect(toast.dismiss).toHaveBeenCalled();
-    expect(toast.error).not.toHaveBeenCalled();
-    expect(toast.success).not.toHaveBeenCalled();
-    expect(mocks.mutateAsync).not.toHaveBeenCalled();
-  });
-
-  it("quietly cancels an upload after navigating to another task", async () => {
-    const resolveUpload = deferredUpload();
-    const { container, rerender } = render(<TaskDescription taskId="task-a" />);
-    await waitFor(() => expect(container.textContent).toContain("alpha"));
-    await settle();
-    pasteFile(latestEditor());
-    await waitFor(() => expect(uploadMock).toHaveBeenCalledOnce());
-
-    rerender(<TaskDescription taskId="task-b" />);
-    await waitFor(() => expect(container.textContent).toContain("bravo"));
-    await settle();
-    await act(async () => resolveUpload());
-
-    expect(latestEditor().getHTML()).not.toContain(asset.url);
-    expect(toast.dismiss).toHaveBeenCalled();
-    expect(toast.error).not.toHaveBeenCalled();
-    expect(toast.success).not.toHaveBeenCalled();
-    expect(mocks.mutateAsync).not.toHaveBeenCalled();
-  });
-
-  it("saves an edit to the task it was typed in, not the one navigated to", async () => {
-    const { container, rerender } = render(<TaskDescription taskId="task-a" />);
-    await waitFor(() => expect(container.textContent).toContain("alpha"));
-
-    await settle();
-    act(() => latestEditor().commands.insertContent(" edited in a"));
-    expect(mocks.mutateAsync).not.toHaveBeenCalled();
-
-    rerender(<TaskDescription taskId="task-b" />);
-    await waitFor(() => expect(container.textContent).toContain("bravo"));
-
-    await vi.waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledTimes(1), {
-      timeout: DEBOUNCE_MS * 4,
+  it("starts read-only and sends the editing snapshot only on Save", async () => {
+    render(<TaskDescription taskId="a" />);
+    expect(screen.getByLabelText("Document")).toHaveProperty("readOnly", true);
+    edit();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 750));
     });
-
-    const [saved] = mocks.mutateAsync.mock.calls[0];
-    expect(saved.id).toBe("task-a");
-    expect(saved.description).toContain("edited in a");
+    expect(mocks.save).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    await waitFor(() =>
+      expect(mocks.save).toHaveBeenCalledWith({
+        id: "a",
+        projectId: "p",
+        description: "draft",
+        expectedDescription: "original",
+        draftAssetIds: [],
+      }),
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText("Document")).toHaveProperty(
+        "readOnly",
+        true,
+      ),
+    );
   });
 
-  it("does not let an edit in one task cancel another task's pending save", async () => {
-    const { container, rerender } = render(<TaskDescription taskId="task-a" />);
-    await waitFor(() => expect(container.textContent).toContain("alpha"));
+  it("Cancel restores saved content and publishes nothing", () => {
+    render(<TaskDescription taskId="a" />);
+    edit();
+    fireEvent.click(screen.getByText("common:actions.cancel"));
+    expect(screen.getByLabelText("Document")).toHaveProperty(
+      "value",
+      "original",
+    );
+    expect(mocks.save).not.toHaveBeenCalled();
+  });
 
-    await settle();
-    act(() => latestEditor().commands.insertContent(" edited in a"));
+  it("keeps the draft after failure and allows retry", async () => {
+    mocks.save.mockRejectedValueOnce(new Error("offline"));
+    render(<TaskDescription taskId="a" />);
+    edit();
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    await screen.findByText("common:documentEditor.saveFailed");
+    expect(screen.getByLabelText("Document")).toHaveProperty("value", "draft");
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledTimes(2));
+  });
 
-    rerender(<TaskDescription taskId="task-b" />);
-    await waitFor(() => expect(container.textContent).toContain("bravo"));
-
-    await settle();
-    act(() => latestEditor().commands.insertContent(" edited in b"));
-
-    await vi.waitFor(() => expect(mocks.mutateAsync).toHaveBeenCalledTimes(2), {
-      timeout: DEBOUNCE_MS * 4,
+  it("retains local edits on remote refresh until the saved version is reviewed", () => {
+    const view = render(<TaskDescription taskId="a" />);
+    edit();
+    mocks.tasks.set("a", {
+      id: "a",
+      projectId: "p",
+      description: "remote update",
     });
+    view.rerender(<TaskDescription taskId="a" />);
+    expect(screen.getByLabelText("Document")).toHaveProperty("value", "draft");
+    expect(screen.getByText("common:documentEditor.save")).toBeDisabled();
+    fireEvent.click(screen.getByText("common:documentEditor.reviewLatest"));
+    expect(
+      screen
+        .getAllByLabelText<HTMLTextAreaElement>("Document")
+        .map((element) => element.value),
+    ).toContain("remote update");
+    fireEvent.click(screen.getByText("common:documentEditor.keepDraft"));
+    expect(screen.getByText("common:documentEditor.save")).toBeEnabled();
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    expect(mocks.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: "draft",
+        expectedDescription: "remote update",
+      }),
+    );
+  });
 
-    expect(savedTaskIds().sort()).toEqual(["task-a", "task-b"]);
+  it("server conflicts refresh the saved version without discarding the draft", async () => {
+    mocks.save.mockRejectedValue(
+      new HttpError(409, "Changed", { code: "DESCRIPTION_CONFLICT" }),
+    );
+    render(<TaskDescription taskId="a" />);
+    edit();
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    await screen.findByText("common:documentEditor.conflict");
+    await waitFor(() => expect(mocks.refresh).toHaveBeenCalled());
+    expect(screen.getByLabelText("Document")).toHaveProperty("value", "draft");
+    expect(screen.getByText("common:documentEditor.save")).toBeDisabled();
   });
-});
 
-it("restores a queued draft before uncached task data arrives", async () => {
-  const { descriptionSaveQueue } = await import("@/lib/description-save-queue");
-  descriptionSaveQueue.schedule("uncached", "retained draft", async () => {
-    throw new Error("offline");
+  it("keeps a draft visible after permission loss and blocks saving", () => {
+    const view = render(<TaskDescription taskId="a" />);
+    edit();
+    mocks.canEdit = false;
+    view.rerender(<TaskDescription taskId="a" />);
+    expect(screen.getByLabelText("Document")).toHaveProperty("value", "draft");
+    expect(screen.getByLabelText("Document")).toHaveProperty("readOnly", true);
+    expect(screen.getByText("common:documentEditor.save")).toBeDisabled();
+    expect(mocks.save).not.toHaveBeenCalled();
   });
-  const view = render(<TaskDescription taskId="uncached" />);
-  await waitFor(() =>
-    expect(view.container.textContent).toContain("retained draft"),
-  );
-  mocks.tasks.set("uncached", {
-    id: "uncached",
-    projectId: "p",
-    description: "server content",
-  });
-  view.rerender(<TaskDescription taskId="uncached" />);
-  expect(view.container.textContent).toContain("retained draft");
-  expect(view.container.textContent).not.toContain("server content");
-  view.unmount();
-  descriptionSaveQueue.clear();
-});
 
-it("disables description editing while sign-out owns the save pause", async () => {
-  const { descriptionSaveQueue } = await import("@/lib/description-save-queue");
-  mocks.tasks.set("paused", {
-    id: "paused",
-    projectId: "p",
-    description: "saved",
+  it("prevents duplicate Save and disables editing while publishing", async () => {
+    let finish!: (value: unknown) => void;
+    mocks.save.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    render(<TaskDescription taskId="a" />);
+    edit();
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    expect(screen.getByText("common:documentEditor.saving")).toBeDisabled();
+    expect(screen.getByLabelText("Document")).toBeDisabled();
+    expect(screen.getByText("common:actions.cancel")).toBeDisabled();
+    await act(async () => finish({ description: "draft" }));
+    expect(mocks.save).toHaveBeenCalledTimes(1);
   });
-  const view = render(<TaskDescription taskId="paused" />);
-  await settle();
-  let resume!: () => void;
-  act(() => {
-    resume = descriptionSaveQueue.pause("");
+
+  it("claims staged assets only with the description save", async () => {
+    render(<TaskDescription taskId="a" />);
+    edit("![image](/api/asset/asset-1)");
+    fireEvent.click(screen.getByText("Upload image"));
+    await waitFor(() =>
+      expect(mocks.upload).toHaveBeenCalledWith("p", expect.any(File), "a"),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("common:documentEditor.save")).toBeEnabled(),
+    );
+    expect(mocks.save).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    await waitFor(() =>
+      expect(mocks.save).toHaveBeenCalledWith(
+        expect.objectContaining({ draftAssetIds: ["asset-1"] }),
+      ),
+    );
   });
-  expect(latestEditor().isEditable).toBe(false);
-  act(() => resume());
-  expect(latestEditor().isEditable).toBe(true);
-  view.unmount();
+
+  it("does not claim uploaded assets removed from the draft", async () => {
+    render(<TaskDescription taskId="a" />);
+    edit("![image](/api/asset/asset-1)");
+    fireEvent.click(screen.getByText("Upload image"));
+    await waitFor(() =>
+      expect(screen.getByText("common:documentEditor.save")).toBeEnabled(),
+    );
+    fireEvent.change(screen.getByLabelText("Document"), {
+      target: { value: "text only" },
+    });
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
+    await waitFor(() =>
+      expect(mocks.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: "text only",
+          draftAssetIds: [],
+        }),
+      ),
+    );
+  });
 });

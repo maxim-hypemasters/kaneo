@@ -1,18 +1,17 @@
-import CommentEditor from "@/components/activity/comment-editor";
+import { useTranslation } from "react-i18next";
+import { DocumentEditor } from "@/components/editor/document-editor";
 
 type MarkdownRendererProps = {
   content: string;
 };
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+  const { t } = useTranslation();
   return (
-    <CommentEditor
+    <DocumentEditor
       value={content}
+      ariaLabel={t("common:documentEditor.description")}
       readOnly
-      showBubbleMenu={false}
-      proseClassName="kaneo-tiptap-prose"
-      contentClassName="kaneo-tiptap-content"
-      className="[&_.kaneo-tiptap-content_.ProseMirror]:max-h-none [&_.kaneo-tiptap-content_.ProseMirror]:overflow-visible [&_.kaneo-tiptap-content_.ProseMirror]:px-0 [&_.kaneo-tiptap-content_.ProseMirror]:py-0"
     />
   );
 }

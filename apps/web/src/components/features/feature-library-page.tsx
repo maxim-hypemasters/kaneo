@@ -123,7 +123,9 @@ export function FeatureLibraryPage({
                     <span className="block font-medium">{feature.title}</span>
                     {feature.description && (
                       <span className="mt-1 block truncate text-sm text-muted-foreground">
-                        {feature.description.replace(/[#*`>[\]]/g, "")}
+                        {feature.description
+                          .replace(/\\([#*`>[\]])/g, "$1")
+                          .replace(/[#*`>[\]]/g, "")}
                       </span>
                     )}
                     <span className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

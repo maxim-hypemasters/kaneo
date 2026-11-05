@@ -1,7 +1,13 @@
-import { fireEvent, render, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  waitFor,
+  screen,
+  cleanup,
+} from "@testing-library/react";
 import { Extension } from "@tiptap/core";
 import TaskItem from "@tiptap/extension-task-item";
-import { describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import TaskDescription from "./task-description";
 
 const mocks = vi.hoisted(() => ({
@@ -64,12 +70,22 @@ vi.mock("@/lib/shiki-highlighter", () => ({
   getSharedShikiHighlighter: () => new Promise(() => {}),
 }));
 
+afterEach(cleanup);
+
 describe("TaskDescription", () => {
   it("preserves bold Markdown when pasting, saving and reopening a checklist (#1779)", async () => {
     mocks.save.mockClear();
     mocks.tasks.set("markdown-task", { id: "markdown-task", description: "" });
     const { container, unmount } = render(
       <TaskDescription taskId="markdown-task" />,
+    );
+    await screen.findByRole("textbox", {
+      name: "common:documentEditor.description",
+    });
+    fireEvent.click(
+      screen.getByRole("textbox", {
+        name: "common:documentEditor.description",
+      }),
     );
     await waitFor(() =>
       expect(
@@ -90,13 +106,15 @@ describe("TaskDescription", () => {
             : "",
       },
     });
+    expect(container.querySelector("strong")?.textContent).toBe(
+      "Provide a staff-only interface.",
+    );
+    expect(mocks.save).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText("common:documentEditor.save"));
     await waitFor(() => expect(mocks.save).toHaveBeenCalled());
     const saved = mocks.save.mock.calls[0][0].description;
     expect(saved).toContain("**Provide a staff-only interface.**");
     expect(saved).not.toContain("\\*");
-    expect(container.querySelector("strong")?.textContent).toBe(
-      "Provide a staff-only interface.",
-    );
     unmount();
     mocks.tasks.set("markdown-task", {
       id: "markdown-task",
@@ -162,10 +180,12 @@ describe("TaskDescription", () => {
       expect(container.textContent).toContain("parent body");
     });
 
-    // The editor now survives the task switch, so its undo stack would still
-    // hold the previous task's document unless hydration is kept out of the
-    // history. Undoing into it would also schedule a save of the child's
-    // markdown against the parent's id.
+    fireEvent.click(
+      screen.getByRole("textbox", {
+        name: "common:documentEditor.description",
+      }),
+    );
+    // A fresh editing session must not undo into another item's content.
     const editable = container.querySelector<HTMLElement>(
       '[contenteditable="true"]',
     );
