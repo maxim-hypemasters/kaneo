@@ -1,3 +1,4 @@
+import { publicTaskFields } from "../task-resource";
 import { assertAuthorizedProjectSnapshot } from "../../milestone/access-scope";
 import {
   and,
@@ -93,11 +94,12 @@ export async function listFeatureLibrary(
       : [];
     return {
       data: rows.map((row) => ({
-        ...row,
+        ...publicTaskFields(row),
         type: "feature" as const,
         status: null,
         priority: null,
         userId: null,
+        estimateSeconds: null,
         startDate: null,
         dueDate: null,
         releaseId: null,

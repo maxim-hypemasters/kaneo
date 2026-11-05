@@ -1,6 +1,11 @@
 import type db from "../../database";
-import { activityTable, taskTable } from "../../database/schema";
+import { activityTable, projectTable, taskTable } from "../../database/schema";
 import { preserveImportedPlanning } from "../../task/transfers/feature-planning";
+import { eq } from "drizzle-orm";
+import {
+  importedTaskDates,
+  preserveImportedSchedule,
+} from "../../task/transfers/task-schedule";
 import { chunk } from "./chunk";
 import type { PlannedImportTask } from "./plan-import-tasks";
 
@@ -13,6 +18,12 @@ export async function writeImportTasks(
   tasks: readonly PlannedImportTask[],
   releases: ReadonlyMap<string, string> = new Map(),
 ) {
+  const [project] = await tx
+    .select({ scheduleGeneration: projectTable.scheduleGeneration })
+    .from(projectTable)
+    .where(eq(projectTable.id, projectId))
+    .for("update");
+  if (!project) throw new Error("Project changed during import");
   for (const batch of chunk(tasks)) {
     await tx.insert(taskTable).values(
       batch.map((task) => ({
@@ -26,8 +37,16 @@ export async function writeImportTasks(
         columnId: task.type === "feature" ? null : task.columnId,
         position: task.position,
         priority: task.type === "feature" ? null : task.priority,
-        startDate: task.type === "feature" ? null : task.startDate,
-        dueDate: task.type === "feature" ? null : task.dueDate,
+        ...(task.type === "feature"
+          ? {}
+          : importedTaskDates(
+              {
+                legacyStartDate: task.legacyStartDate?.toISOString() ?? null,
+                legacyDueDate: task.legacyDueDate?.toISOString() ?? null,
+              },
+              project.scheduleGeneration,
+            )),
+        estimateSeconds: task.type === "feature" ? null : task.estimateSeconds,
         createdAt: task.createdAt,
         userId: task.type === "feature" ? null : task.userId,
         archivedAt:
@@ -51,6 +70,13 @@ export async function writeImportTasks(
         task.planningSnapshots,
         releases,
       );
+
+    for (const task of batch.filter((task) => task.type !== "feature"))
+      await preserveImportedSchedule(tx, projectId, task.id, importedBy, {
+        legacyStartDate: task.legacyStartDate?.toISOString() ?? null,
+        legacyDueDate: task.legacyDueDate?.toISOString() ?? null,
+        scheduleSnapshots: task.scheduleSnapshots,
+      });
 
     await tx.insert(activityTable).values(
       batch.map((task) => ({

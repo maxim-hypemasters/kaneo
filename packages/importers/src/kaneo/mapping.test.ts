@@ -56,6 +56,24 @@ describe("mapPriority", () => {
   });
 });
 
+it("preserves canonical effort and explicit legacy schedule metadata from newer Kaneo", () => {
+  expect(
+    mapTask(
+      task({
+        estimateSeconds: 5400,
+        legacyStartDate: null,
+        legacyDueDate: "2026-10-28T00:00:00Z",
+      }),
+      new Set(["to-do"]),
+      members,
+    ),
+  ).toMatchObject({
+    estimateSeconds: 5400,
+    legacyStartDate: null,
+    legacyDueDate: "2026-10-28T00:00:00Z",
+  });
+});
+
 describe("mapColumns", () => {
   it("uses the slug as key and keeps isFinal", () => {
     expect(

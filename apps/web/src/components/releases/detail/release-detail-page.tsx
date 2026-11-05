@@ -35,6 +35,7 @@ import { ReleaseNotFound } from "./release-not-found";
 import { ReleaseProgressSection } from "./release-progress-section";
 import { ReleaseGroupingFeedback } from "./release-grouping-feedback";
 import { ReleaseLinkDialog } from "./release-link-dialog";
+import { ReleasePlanDialog } from "../planning/release-plan-dialog";
 
 const NO_RELEASES: Release[] = [];
 
@@ -224,13 +225,24 @@ export function ReleaseDetailPage({
       workspaceId={workspaceId}
       activeView="releases"
       toolbar={
-        release && (openCreate || openLink) ? (
-          <NewWorkMenu
-            variant="outline"
-            size="xs"
-            onSelect={openCreate}
-            onLink={openLink}
-          />
+        release ? (
+          <div className="flex items-center gap-2">
+            <ReleasePlanDialog
+              key={release.id}
+              projectId={projectId}
+              workspaceId={workspaceId}
+              release={release}
+              canPlan={permissions.canManage && permissions.canMoveItems}
+            />
+            {(openCreate || openLink) && (
+              <NewWorkMenu
+                variant="outline"
+                size="xs"
+                onSelect={openCreate}
+                onLink={openLink}
+              />
+            )}
+          </div>
         ) : null
       }
     >

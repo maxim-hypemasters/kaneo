@@ -17,6 +17,36 @@ const calendar = (tasks = [task], timeZone = "UTC") =>
   buildCalendar({ name: "Changes", timeZone, tasks });
 
 describe("iCalendar serialization", () => {
+  it("exports applied work as exact timed segments without booking nonworking gaps", () => {
+    const result = calendar(
+      [
+        {
+          ...task,
+          scheduleSegments: [
+            { start: "2026-10-23T15:00:00Z", end: "2026-10-23T17:00:00Z" },
+            { start: "2026-10-26T09:00:00Z", end: "2026-10-26T10:00:00Z" },
+          ],
+        },
+      ],
+      "America/New_York",
+    );
+    expect(result.match(/BEGIN:VEVENT/g)).toHaveLength(2);
+    expect(result).toContain(
+      "DTSTART:20261023T150000Z\r\nDTEND:20261023T170000Z",
+    );
+    expect(result).toContain(
+      "DTSTART:20261026T090000Z\r\nDTEND:20261026T100000Z",
+    );
+    expect(result).toContain("UID:task-1@kaneo");
+    expect(result).toContain("UID:task-1-segment-1@kaneo");
+    expect(result).toContain("TRANSP:OPAQUE");
+    expect(result).not.toContain("VALUE=DATE");
+  });
+  it("does not revive old envelope dates when an applied task is unscheduled", () => {
+    expect(calendar([{ ...task, scheduleSegments: [] }])).not.toContain(
+      "BEGIN:VEVENT",
+    );
+  });
   it("exports an inclusive all-day range with stable identity and revision timestamps", () => {
     const result = calendar([
       { ...task, startDate: new Date("2026-09-21T00:00:00Z") },

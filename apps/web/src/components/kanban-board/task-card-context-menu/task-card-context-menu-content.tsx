@@ -49,7 +49,6 @@ import type { TaskType } from "@/types/task";
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { TASK_TYPE_CONVERSIONS } from "@/lib/task-type";
 import { PriorityGlyph } from "@/components/task-chips/priority-glyph";
-import { DueDateSubmenu } from "./due-date-submenu";
 
 type TaskCardContext = {
   worskpaceId: string;
@@ -263,8 +262,6 @@ export default function TaskCardContextMenuContent({
             </ContextMenuSubContent>
           </ContextMenuSub>
         )}
-
-        {canEdit && !isFeature && <DueDateSubmenu task={task} />}
 
         {canAssign && !isFeature && usersOptions && (
           <ContextMenuSub>

@@ -1,3 +1,4 @@
+import { taskScheduleSource } from "../../task/schedule-source";
 import { and, eq, inArray, or } from "drizzle-orm";
 import db from "../../database";
 import {
@@ -48,6 +49,8 @@ async function getTaskRelations(
       title: string;
       type: TaskType;
       milestoneId: string | null;
+      estimateSeconds: number | null;
+      scheduleSource: "legacy" | "applied" | "none";
       startDate: Date | null;
       dueDate: Date | null;
       status: string | null;
@@ -69,6 +72,8 @@ async function getTaskRelations(
         milestoneId: taskTable.milestoneId,
         startDate: taskTable.startDate,
         dueDate: taskTable.dueDate,
+        estimateSeconds: taskTable.estimateSeconds,
+        scheduleSource: taskScheduleSource,
         status: taskTable.status,
         isCompleted: taskIsCompleted,
         priority: taskTable.priority,

@@ -341,3 +341,21 @@ describe("planDependencyMoves", () => {
     ]);
   });
 });
+
+it("does not mark completed blockers broken because of preserved historical placement", () => {
+  expect(
+    isDependencyBroken(
+      {
+        start: new Date("2026-09-01T09:00:00Z"),
+        end: new Date("2026-09-05T17:00:00Z"),
+        precise: true,
+        completed: true,
+      },
+      {
+        start: new Date("2026-09-02T09:00:00Z"),
+        end: new Date("2026-09-02T17:00:00Z"),
+        precise: true,
+      },
+    ),
+  ).toBe(false);
+});

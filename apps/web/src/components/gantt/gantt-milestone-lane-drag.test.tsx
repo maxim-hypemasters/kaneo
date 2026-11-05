@@ -1,3 +1,10 @@
+vi.mock("@/components/scheduling/use-project-schedule", () => ({
+  useGetProjectSchedule: () => ({
+    data: undefined,
+    isPending: false,
+    isError: false,
+  }),
+}));
 import {
   act,
   cleanup,
@@ -115,6 +122,7 @@ vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canAssignTasks: () => m.canAssign,
+    canUpdateProjects: () => true,
     canUpdateTasks: () => m.canUpdate,
   }),
 }));
@@ -497,29 +505,19 @@ describe("Gantt milestone planning gestures", () => {
     expect(inLane(container, "milestone:gone", "orphan")).toBe(true);
     expect(m.assignment).not.toHaveBeenCalled();
   });
-  it("saves task dates before membership and keeps assignee and Feature", async () => {
+  it("changes only milestone membership during a diagonal drag", async () => {
     const { container } = show();
     drag(taskBar("cart"), {
       dx: 88,
       dy: 60,
       over: lane(container, "milestone:search"),
     });
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "cart",
-        userId: "u1",
-        featureId: "F",
-        startDate: new Date(2026, 8, 3).toISOString(),
-        dueDate: new Date(2026, 8, 5).toISOString(),
-      }),
-    );
+    expect(m.update).not.toHaveBeenCalled();
     await waitFor(() =>
       expect(m.assignment).toHaveBeenCalledWith("cart", "search"),
     );
-    expect(m.update.mock.invocationCallOrder[0]).toBeLessThan(
-      m.assignment.mock.invocationCallOrder[0],
-    );
   });
+
   it("rolls back a failed milestone assignment and keeps the task visible", async () => {
     m.assignment.mockRejectedValue(new Error("offline"));
     const { container } = show();

@@ -21,7 +21,7 @@ import {
 } from "./bulk-action-command";
 import { BulkCountChip } from "./bulk-count-chip";
 import { BulkDeleteConfirm } from "./bulk-delete-confirm";
-import { BulkDueDatePopover } from "./bulk-due-date-popover";
+import { BulkEstimatePopover } from "./bulk-estimate-popover";
 import { useBulkRequestStore } from "./bulk-request-store";
 import { BulkMoreMenu } from "./bulk-more-menu";
 import type { OptionMenuItem } from "@/components/common/option-menu/option-menu-item";
@@ -243,8 +243,8 @@ export function BulkBar({
             />
           )}
           {can.edit && (
-            <BulkDueDatePopover
-              onSelect={(date) => void actions.setDueDate(date ?? undefined)}
+            <BulkEstimatePopover
+              onSelect={(estimate) => void actions.setEstimate(estimate)}
               onDismiss={dismissTemporary}
               returnFocus={focusedTaskElement}
             />

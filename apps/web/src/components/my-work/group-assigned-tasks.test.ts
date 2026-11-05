@@ -20,6 +20,7 @@ function task(
     title: id,
     type: "task",
     milestoneId: null,
+    estimateSeconds: null,
     status: "to-do",
     statusName: "To Do",
     statusIcon: null,
@@ -43,6 +44,12 @@ describe("getDueBucket", () => {
     expect(getDueBucket(new Date(2026, 9, 3, 0, 5).toISOString(), now)).toBe(
       "thisWeek",
     );
+  });
+
+  it("moves applied work to overdue at its exact finish, preserving legacy full-day items", () => {
+    const finish = new Date(2026, 9, 2, 14, 59).toISOString();
+    expect(getDueBucket(finish, now, true)).toBe("overdue");
+    expect(getDueBucket(finish, now)).toBe("today");
   });
 
   it("separates the coming week from later work", () => {

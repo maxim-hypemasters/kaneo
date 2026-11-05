@@ -1,3 +1,4 @@
+import { taskScheduleSource } from "../schedule-source";
 import {
   and,
   asc,
@@ -94,6 +95,8 @@ async function getAssignedTasks(
         statusIcon: statusColumn.icon,
         priority: sql<string>`${taskTable.priority}`,
         dueDate: taskTable.dueDate,
+        estimateSeconds: taskTable.estimateSeconds,
+        scheduleSource: taskScheduleSource,
         projectName: projectTable.name,
         projectSlug: projectTable.slug,
         projectIcon: projectTable.icon,

@@ -1,3 +1,4 @@
+import { TaskEstimate } from "../estimate/task-estimate";
 import { ArrowRight, Calendar, CalendarDays } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import icons from "@/constants/project-icons";
@@ -107,6 +108,9 @@ export function PropertiesRail({
               </TaskPriorityPopover>
             </PropertyRow>
 
+            <PropertyRow label={t("tasks:estimate.label")}>
+              <TaskEstimate task={task} />
+            </PropertyRow>
             <PropertyRow label={t("tasks:assignee.label")}>
               <TaskAssigneePopover task={task} workspaceId={workspaceId}>
                 <PropertyValue

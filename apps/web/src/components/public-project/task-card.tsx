@@ -1,3 +1,4 @@
+import { useCurrentMinute } from "@/hooks/use-current-minute";
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { Calendar, CalendarClock, CalendarX } from "lucide-react";
 import { useRef } from "react";
@@ -41,6 +42,7 @@ export function PublicTaskCard({
   onTaskClick,
 }: PublicTaskCardProps) {
   const { t } = useTranslation();
+  const now = useCurrentMinute();
   const taskIsCompleted = isCompleted ?? isTaskCompleted(task.status);
   const labels = task.labels || [];
   const externalLinks = task.externalLinks || [];
@@ -155,16 +157,32 @@ export function PublicTaskCard({
 
           {task.dueDate && (
             <div
-              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded ${dueDateStatusColors[getDueDateStatus(task.dueDate, taskIsCompleted)]}`}
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 rounded ${dueDateStatusColors[getDueDateStatus(task.dueDate, taskIsCompleted, task.scheduleSource === "applied", new Date(now))]}`}
             >
-              {getDueDateStatus(task.dueDate, taskIsCompleted) ===
-                "overdue" && <CalendarX className="w-3 h-3" />}
-              {getDueDateStatus(task.dueDate, taskIsCompleted) ===
-                "due-soon" && <CalendarClock className="w-3 h-3" />}
-              {(getDueDateStatus(task.dueDate, taskIsCompleted) ===
-                "far-future" ||
-                getDueDateStatus(task.dueDate, taskIsCompleted) ===
-                  "no-due-date") && <Calendar className="w-3 h-3" />}
+              {getDueDateStatus(
+                task.dueDate,
+                taskIsCompleted,
+                task.scheduleSource === "applied",
+                new Date(now),
+              ) === "overdue" && <CalendarX className="w-3 h-3" />}
+              {getDueDateStatus(
+                task.dueDate,
+                taskIsCompleted,
+                task.scheduleSource === "applied",
+                new Date(now),
+              ) === "due-soon" && <CalendarClock className="w-3 h-3" />}
+              {(getDueDateStatus(
+                task.dueDate,
+                taskIsCompleted,
+                task.scheduleSource === "applied",
+                new Date(now),
+              ) === "far-future" ||
+                getDueDateStatus(
+                  task.dueDate,
+                  taskIsCompleted,
+                  task.scheduleSource === "applied",
+                  new Date(now),
+                ) === "no-due-date") && <Calendar className="w-3 h-3" />}
               <span>{formatDateShort(task.dueDate)}</span>
             </div>
           )}

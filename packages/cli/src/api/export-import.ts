@@ -26,6 +26,19 @@ export const ExportedRelease = Schema.Struct({
 });
 export type ExportedRelease = typeof ExportedRelease.Type;
 
+export const ScheduleSnapshot = Schema.Struct({
+  createdAt: Schema.optionalKey(Schema.String),
+  source: Schema.optionalKey(Schema.Literals(["legacy", "applied", "import"])),
+  startDate: NullableString,
+  dueDate: NullableString,
+  assigneeId: Schema.optionalKey(NullableString),
+  segments: Schema.optionalKey(
+    Schema.Array(Schema.Struct({ start: Schema.String, end: Schema.String })),
+  ),
+  sourceRevision: Schema.optionalKey(Schema.String),
+});
+export type ScheduleSnapshot = typeof ScheduleSnapshot.Type;
+
 export const ExportedTask = Schema.Struct({
   key: Schema.optionalKey(Schema.String),
   featureKey: Schema.optionalKey(NullableString),
@@ -33,6 +46,10 @@ export const ExportedTask = Schema.Struct({
   releaseKey: Schema.optionalKey(NullableString),
   archivedAt: Schema.optionalKey(NullableString),
   planningSnapshots: Schema.optionalKey(Schema.Array(PlanningSnapshot)),
+  estimateSeconds: Schema.optionalKey(Schema.NullOr(Schema.Number)),
+  legacyStartDate: Schema.optionalKey(NullableString),
+  legacyDueDate: Schema.optionalKey(NullableString),
+  scheduleSnapshots: Schema.optionalKey(Schema.Array(ScheduleSnapshot)),
   title: Schema.String,
   type: Schema.optionalKey(Schema.String),
   description: Schema.String,
@@ -64,7 +81,7 @@ export type ExportedMilestone = typeof ExportedMilestone.Type;
 
 export const TaskExport = Schema.Struct({
   version: Schema.optionalKey(
-    Schema.Union([Schema.Literal(2), Schema.Literal(3)]),
+    Schema.Union([Schema.Literal(2), Schema.Literal(3), Schema.Literal(4)]),
   ),
   releases: Schema.optionalKey(Schema.Array(ExportedRelease)),
   milestones: Schema.optionalKey(Schema.Array(ExportedMilestone)),
@@ -85,6 +102,10 @@ export type ImportTaskBody = {
   readonly releaseKey?: string | null;
   readonly archivedAt?: string | null;
   readonly planningSnapshots?: ReadonlyArray<PlanningSnapshot>;
+  readonly estimateSeconds?: number | null;
+  readonly legacyStartDate?: string | null;
+  readonly legacyDueDate?: string | null;
+  readonly scheduleSnapshots?: ReadonlyArray<ScheduleSnapshot>;
   readonly labels?: ReadonlyArray<{
     readonly name: string;
     readonly color: string;
@@ -135,7 +156,7 @@ export const importTasks = Effect.fnUntraced(function* (
   projectId: string,
   tasks: ReadonlyArray<ImportTaskBody>,
   hierarchy?: {
-    readonly version: 2 | 3;
+    readonly version: 2 | 3 | 4;
     readonly releases?: ReadonlyArray<ExportedRelease>;
     readonly milestones: ReadonlyArray<ExportedMilestone>;
   },

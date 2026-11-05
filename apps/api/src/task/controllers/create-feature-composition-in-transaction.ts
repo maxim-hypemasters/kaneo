@@ -94,6 +94,7 @@ export async function createFeatureCompositionInTransaction(
         expectedWorkspaceId,
         title: draft.title,
         type: draft.type,
+        estimateSeconds: draft.estimateSeconds,
         status,
       });
       createdTasks.push(task);

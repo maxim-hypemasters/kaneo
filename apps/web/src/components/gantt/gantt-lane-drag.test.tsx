@@ -1,3 +1,10 @@
+vi.mock("@/components/scheduling/use-project-schedule", () => ({
+  useGetProjectSchedule: () => ({
+    data: undefined,
+    isPending: false,
+    isError: false,
+  }),
+}));
 vi.mock("@/hooks/queries/milestone/use-get-project-milestones", () => {
   const data: never[] = [];
   return {
@@ -81,6 +88,7 @@ vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canAssignTasks: () => m.canAssign,
+    canUpdateProjects: () => true,
     canUpdateTasks: () => m.canUpdate,
   }),
 }));
@@ -217,9 +225,6 @@ const flatBar = (title: string) =>
 
 // The timeline opens Mon Aug 24 (a week before the earliest task's week) and
 // each day column measures 44px, so dx: 88 moves a bar by two days.
-const isoDay = (month: number, day: number) =>
-  new Date(2026, month - 1, day).toISOString();
-
 function press(target: HTMLElement, pointerType = "mouse") {
   fireEvent.pointerDown(target, {
     button: 0,
@@ -324,25 +329,17 @@ describe("Gantt drag to reassign", () => {
     expect(screen.queryByText("tasks:gantt.assignTo:Bob")).toBeNull();
   });
 
-  it("saves new dates and the new assignee in one request", () => {
+  it("changes only the assignee during a diagonal lane drag", () => {
     const { container } = show();
-
     drag(groupedBar("A1"), {
       dx: 88,
       dy: 60,
       over: lane(container, "member:u2"),
     });
-
-    expect(m.update).toHaveBeenCalledTimes(1);
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "A1",
-        userId: "u2",
-        startDate: isoDay(9, 3),
-        dueDate: isoDay(9, 5),
-      }),
+    expect(m.update).not.toHaveBeenCalled();
+    expect(m.updateAssignee).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "A1", userId: "u2" }),
     );
-    expect(m.updateAssignee).not.toHaveBeenCalled();
   });
 
   it("keeps the assignee when dropped back on its own lane", () => {
@@ -355,9 +352,7 @@ describe("Gantt drag to reassign", () => {
     expect(m.navigate).not.toHaveBeenCalled();
 
     drag(groupedBar("A1"), { dx: 88, dy: 60, over: aliceLane });
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "A1", userId: "u1" }),
-    );
+    expect(m.update).not.toHaveBeenCalled();
     expect(m.updateAssignee).not.toHaveBeenCalled();
   });
 
@@ -450,7 +445,7 @@ describe("Gantt drag to reassign", () => {
     expect(m.navigate).not.toHaveBeenCalled();
   });
 
-  it("shows the move right away and keeps one row once the refetch lands", () => {
+  it("keeps published placement while reassignment saves and renders one row on refresh", () => {
     m.updateAssignee.mockReturnValue(new Promise(() => {}));
     const { container, rerender } = show();
 
@@ -461,9 +456,9 @@ describe("Gantt drag to reassign", () => {
     });
 
     expect(
-      within(lane(container, "member:u2")).getAllByText("A1").length,
+      within(lane(container, "member:u1")).getAllByText("A1").length,
     ).toBeGreaterThan(0);
-    expect(within(lane(container, "member:u1")).queryAllByText("A1")).toEqual(
+    expect(within(lane(container, "member:u2")).queryAllByText("A1")).toEqual(
       [],
     );
 
@@ -511,35 +506,6 @@ describe("Gantt drag to reassign", () => {
     );
   });
 
-  it("waits for an in-flight save before sending the next drag of the same task", async () => {
-    let finishFirst: (value: unknown) => void = () => {};
-    m.updateAssignee.mockReturnValueOnce(
-      new Promise((resolve) => {
-        finishFirst = resolve;
-      }),
-    );
-    const { container } = show();
-
-    drag(groupedBar("A1"), {
-      dx: 0,
-      dy: 60,
-      over: lane(container, "member:u2"),
-    });
-    // A1 now shows in Bob's lane; drag it straight back to Alice.
-    drag(groupedBar("A1"), {
-      dx: 0,
-      dy: -60,
-      over: lane(container, "member:u1"),
-    });
-    expect(m.updateAssignee).toHaveBeenCalledTimes(1);
-
-    finishFirst({});
-    await waitFor(() => expect(m.updateAssignee).toHaveBeenCalledTimes(2));
-    expect(m.updateAssignee).toHaveBeenLastCalledWith(
-      expect.objectContaining({ id: "A1", userId: "u1" }),
-    );
-  });
-
   it("drops a dependent drag when the save it builds on fails", async () => {
     let failFirst: (error: Error) => void = () => {};
     m.updateAssignee.mockReturnValueOnce(
@@ -571,54 +537,6 @@ describe("Gantt drag to reassign", () => {
     expect(m.update).not.toHaveBeenCalled();
     expect(m.toastError).toHaveBeenCalledTimes(1);
     expect(m.toastError).toHaveBeenCalledWith("Bob can't be assigned");
-  });
-
-  it("keeps a queued edit until its own save has gone out", async () => {
-    let finishFirst: (value: unknown) => void = () => {};
-    m.updateAssignee
-      .mockReturnValueOnce(
-        new Promise((resolve) => {
-          finishFirst = resolve;
-        }),
-      )
-      .mockReturnValueOnce(new Promise(() => {}));
-    const { container, rerender } = show();
-    const Component = m.component;
-
-    drag(groupedBar("A1"), {
-      dx: 0,
-      dy: 60,
-      over: lane(container, "member:u2"),
-    });
-    drag(groupedBar("A1"), {
-      dx: 0,
-      dy: -60,
-      over: lane(container, "member:u1"),
-    });
-
-    // Unrelated refetch while the first save is in flight: the server still
-    // has A1 on Alice, which only coincidentally matches the queued edit.
-    setTasks([
-      task("A1", "2026-09-01", "2026-09-03", alice),
-      task("B1", "2026-09-02", "2026-09-04", bob),
-    ]);
-    rerender(<Component />);
-
-    finishFirst({});
-    await waitFor(() => expect(m.updateAssignee).toHaveBeenCalledTimes(2));
-    // The first save lands (A1 on Bob) before the second one does.
-    setTasks([
-      task("A1", "2026-09-01", "2026-09-03", bob),
-      task("B1", "2026-09-02", "2026-09-04", bob),
-    ]);
-    rerender(<Component />);
-
-    expect(
-      within(lane(container, "member:u1")).getAllByText("A1").length,
-    ).toBeGreaterThan(0);
-    expect(within(lane(container, "member:u2")).queryAllByText("A1")).toEqual(
-      [],
-    );
   });
 
   it("treats a press that only scrolls the timeline as a click", () => {
@@ -686,9 +604,10 @@ describe("Gantt drag to reassign", () => {
       over: lane(container, "member:u2"),
     });
 
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "A1", userId: "u2" }),
+    expect(m.updateAssignee).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "A1", userId: "u2", featureId: "F" }),
     );
+    expect(m.update).not.toHaveBeenCalled();
     expect(m.updateFeature).not.toHaveBeenCalled();
   });
 
@@ -707,21 +626,13 @@ describe("Gantt drag to reassign", () => {
     );
   });
 
-  it("only reschedules when the user can't assign tasks", () => {
+  it("does not change timing or assignee without assignment permission", () => {
     m.canAssign = false;
     const { container } = show();
-
-    drag(flatBar("A1"), { dx: 0, dy: 60, over: lane(container, "member:u2") });
-    expect(m.navigate).toHaveBeenCalledWith(
-      expect.objectContaining({ search: { taskId: "A1" } }),
-    );
-
     drag(flatBar("A1"), { dx: 88, dy: 60, over: lane(container, "member:u2") });
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "A1", userId: "u1" }),
-    );
-    expect(elementFromPoint).not.toHaveBeenCalled();
+    expect(m.update).not.toHaveBeenCalled();
     expect(m.updateAssignee).not.toHaveBeenCalled();
+    expect(elementFromPoint).not.toHaveBeenCalled();
   });
 
   it("never targets lanes from a touch drag", () => {
@@ -738,24 +649,15 @@ describe("Gantt drag to reassign", () => {
     expect(m.updateAssignee).not.toHaveBeenCalled();
   });
 
-  it("leaves the ungrouped timeline as it was", () => {
+  it("opens ungrouped work without exposing date changes", () => {
     m.groupBy = "none";
     const { container } = show();
     expect(container.querySelector("[data-gantt-lane]")).toBeNull();
-
     drag(flatBar("A1"), { dx: 0, dy: 60 });
     expect(m.navigate).toHaveBeenCalledTimes(1);
-
     drag(flatBar("A1"), { dx: 88, dy: 60 });
-    expect(m.update).toHaveBeenCalledTimes(1);
-    expect(m.update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: "A1",
-        userId: "u1",
-        startDate: isoDay(9, 3),
-        dueDate: isoDay(9, 5),
-      }),
-    );
+    expect(m.update).not.toHaveBeenCalled();
+    expect(m.updateAssignee).not.toHaveBeenCalled();
     expect(elementFromPoint).not.toHaveBeenCalled();
   });
 });

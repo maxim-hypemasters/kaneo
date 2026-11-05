@@ -22,8 +22,7 @@ type ReminderType = "configured_before" | "overdue";
 const MINUTE_MS = 60 * 1000;
 
 function buildWindows(now: Date) {
-  // Shift the window to stored day-start timestamps, preserving indexed lookups.
-  const nowMs = now.getTime() - DUE_DATE_DURATION_MS;
+  const nowMs = now.getTime();
   const windowEnd = new Date(nowMs);
 
   return {
@@ -47,6 +46,12 @@ async function getTasksNeedingReminder(
   windowEnd: Date,
   reminderType: ReminderType,
 ) {
+  const legacyStart = new Date(windowStart.getTime() - DUE_DATE_DURATION_MS);
+  const legacyEnd = new Date(windowEnd.getTime() - DUE_DATE_DURATION_MS);
+  const withinWindow = (start: Date, end: Date) =>
+    reminderType === "configured_before"
+      ? sql`${taskTable.dueDate} - (COALESCE(${userNotificationPreferenceTable.dueDateReminderLeadTimeMinutes}, 1440) * interval '1 minute') BETWEEN ${start.toISOString()} AND ${end.toISOString()}`
+      : between(taskTable.dueDate, start, end);
   const results = await db
     .select({
       id: taskTable.id,
@@ -82,9 +87,16 @@ async function getTasksNeedingReminder(
       and(
         isNotNull(taskTable.userId),
         isNotNull(taskTable.dueDate),
-        reminderType === "configured_before"
-          ? sql`${taskTable.dueDate} - (COALESCE(${userNotificationPreferenceTable.dueDateReminderLeadTimeMinutes}, 1440) * interval '1 minute') BETWEEN ${windowStart.toISOString()} AND ${windowEnd.toISOString()}`
-          : between(taskTable.dueDate, windowStart, windowEnd),
+        or(
+          and(
+            isNotNull(taskTable.scheduleSegments),
+            withinWindow(windowStart, windowEnd),
+          ),
+          and(
+            isNull(taskTable.scheduleSegments),
+            withinWindow(legacyStart, legacyEnd),
+          ),
+        ),
         isNull(taskReminderSentTable.id),
         or(
           isNull(userNotificationPreferenceTable.id),
@@ -115,6 +127,30 @@ async function processReminder(
   if (!task.userId) return;
 
   const notification = await db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({
+        dueDate: taskTable.dueDate,
+        userId: taskTable.userId,
+        status: taskTable.status,
+        columnId: taskTable.columnId,
+      })
+      .from(taskTable)
+      .where(eq(taskTable.id, task.id))
+      .for("update");
+    if (
+      !current ||
+      current.status === "archived" ||
+      current.userId !== task.userId ||
+      current.dueDate?.getTime() !== task.dueDate?.getTime()
+    )
+      return null;
+    if (current.columnId) {
+      const column = await tx.query.columnTable.findFirst({
+        columns: { isFinal: true },
+        where: eq(columnTable.id, current.columnId),
+      });
+      if (column?.isFinal) return null;
+    }
     const [claimed] = await tx
       .insert(taskReminderSentTable)
       .values({

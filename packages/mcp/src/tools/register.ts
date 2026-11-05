@@ -31,9 +31,16 @@ const optionalNonEmptyString = nonEmptyString.optional();
 const nullableOptionalNonEmptyString = nonEmptyString.nullable().optional();
 const isoDateTimeSchema = z.string().datetime({ offset: true });
 const optionalIsoDateTimeSchema = isoDateTimeSchema.optional();
-const nullableOptionalIsoDateTimeSchema = isoDateTimeSchema
+const estimateSecondsSchema = z
+  .number()
+  .int()
+  .positive()
+  .max(2_147_483_640)
+  .multipleOf(60)
   .nullable()
-  .optional();
+  .describe(
+    "Total effort in seconds, in whole minutes. Dates come from Preview/Apply planning.",
+  );
 // Feature identity uses the task resource, without execution planning.
 const taskTypeSchema = z.enum(["task", "bug", "feature"]);
 // Release dates are calendar days with no time zone.
@@ -321,8 +328,7 @@ export function registerTools(
           description: z.string(),
           priority: prioritySchema.optional(),
           status: optionalNonEmptyString,
-          startDate: optionalIsoDateTimeSchema,
-          dueDate: optionalIsoDateTimeSchema,
+          estimateSeconds: estimateSecondsSchema.optional(),
           userId: optionalNonEmptyString,
           type: taskTypeSchema
             .optional()
@@ -339,14 +345,14 @@ export function registerTools(
             "A release of the same project (see list_releases), or null for none. Omit it to follow the milestone's release.",
           ),
         })
+        .strict()
         .refine(
           (args) =>
             args.type !== "feature" ||
             [
               args.priority,
               args.status,
-              args.startDate,
-              args.dueDate,
+              args.estimateSeconds,
               args.userId,
               args.featureId,
               args.milestoneId,
@@ -359,17 +365,14 @@ export function registerTools(
         ),
     },
     async (args) => {
-      const body: Record<string, string | null | undefined> = {
+      const body: Record<string, string | number | null | undefined> = {
         title: args.title,
         description: args.description,
         priority: args.priority,
         status: args.status,
       };
-      if (args.startDate !== undefined) {
-        body.startDate = args.startDate;
-      }
-      if (args.dueDate !== undefined) {
-        body.dueDate = args.dueDate;
+      if (args.estimateSeconds !== undefined) {
+        body.estimateSeconds = args.estimateSeconds;
       }
       if (args.userId !== undefined) {
         body.userId = args.userId;
@@ -419,18 +422,19 @@ export function registerTools(
     },
   );
 
-  const updateTaskSchema = z.object({
-    taskId: nonEmptyString,
-    title: optionalNonEmptyString,
-    description: z.string().nullable().optional(),
-    status: optionalNonEmptyString,
-    priority: prioritySchema.optional(),
-    projectId: optionalNonEmptyString,
-    position: z.number().optional(),
-    startDate: nullableOptionalIsoDateTimeSchema,
-    dueDate: nullableOptionalIsoDateTimeSchema,
-    userId: nullableOptionalNonEmptyString,
-  });
+  const updateTaskSchema = z
+    .object({
+      taskId: nonEmptyString,
+      title: optionalNonEmptyString,
+      description: z.string().nullable().optional(),
+      status: optionalNonEmptyString,
+      priority: prioritySchema.optional(),
+      projectId: optionalNonEmptyString,
+      position: z.number().optional(),
+      estimateSeconds: estimateSecondsSchema.optional(),
+      userId: nullableOptionalNonEmptyString,
+    })
+    .strict();
 
   registerTool(
     "update_task",
@@ -1032,23 +1036,29 @@ export function registerTools(
   );
 
   registerTool(
-    "update_task_due_date",
+    "update_task_estimate",
     {
-      description: "Set a task's due date. Omit dueDate to clear it.",
-      inputSchema: z.object({
-        taskId: nonEmptyString,
-        dueDate: optionalIsoDateTimeSchema,
-      }),
+      description:
+        "Set a Task/Bug effort estimate. Pass null to clear it; schedule dates are read-only.",
+      inputSchema: z
+        .object({
+          taskId: nonEmptyString,
+          estimateSeconds: estimateSecondsSchema,
+        })
+        .strict(),
     },
-    async (args) =>
-      run(() =>
-        client.json(`/api/task/due-date/${encodeURIComponent(args.taskId)}`, {
+    async ({ taskId, estimateSeconds }) =>
+      run(async () => {
+        const existing = await client.json<Record<string, unknown>>(
+          `/api/task/${encodeURIComponent(taskId)}`,
+        );
+        return client.json(`/api/task/${encodeURIComponent(taskId)}`, {
           method: "PUT",
           body: JSON.stringify(
-            args.dueDate === undefined ? {} : { dueDate: args.dueDate },
+            buildFullTaskUpdateBody(existing, { estimateSeconds }),
           ),
-        }),
-      ),
+        });
+      }),
   );
 
   registerTool(

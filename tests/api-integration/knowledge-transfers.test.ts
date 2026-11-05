@@ -20,6 +20,103 @@ async function context() {
 }
 
 describe("knowledge and planning transfers", () => {
+  it("round trips v4 effort and schedule history without applying imported timing", async () => {
+    const source = await context();
+    const imported = await importHierarchy(
+      source.project.id,
+      {
+        tasks: [
+          {
+            key: "work",
+            title: "Estimated bug",
+            type: "bug",
+            estimateSeconds: 5400,
+            startDate: "2026-10-01T09:00:00.000Z",
+            dueDate: "2026-10-02T17:00:00.000Z",
+          },
+        ],
+      },
+      source.user.id,
+      source.workspace.id,
+    );
+    const work = imported.results.tasks[0]!.task;
+    const segments = [
+      { start: "2026-10-26T09:00:00.000Z", end: "2026-10-26T10:30:00.000Z" },
+    ];
+    await db
+      .update(schema.taskTable)
+      .set({
+        startDate: new Date(segments[0]!.start),
+        dueDate: new Date(segments[0]!.end),
+        scheduleSegments: segments,
+      })
+      .where(eq(schema.taskTable.id, work.id));
+    await db.insert(schema.projectPlanTable).values({
+      projectId: source.project.id,
+      generation: 1,
+      inputRevision: "source-revision",
+      asOf: new Date(segments[0]!.start),
+      planFrom: new Date(segments[0]!.start),
+      timeZone: "UTC",
+      placements: [
+        {
+          taskId: work.id,
+          assigneeId: null,
+          start: segments[0]!.start,
+          end: segments[0]!.end,
+          segments,
+          reason: null,
+        },
+      ],
+    });
+    await db
+      .update(schema.projectTable)
+      .set({ scheduleGeneration: 1 })
+      .where(eq(schema.projectTable.id, source.project.id));
+    const document = await exportTasks(source.project.id, source.user.id);
+    expect(document.version).toBe(4);
+    expect(document.tasks[0]).toMatchObject({
+      estimateSeconds: 5400,
+      legacyStartDate: "2026-10-01T09:00:00.000Z",
+      scheduleSnapshots: expect.arrayContaining([
+        expect.objectContaining({
+          source: "applied",
+          sourceRevision: "source-revision",
+          segments,
+        }),
+      ]),
+    });
+    const destination = await createProjectFixture({
+      workspaceId: source.workspace.id,
+    });
+    await db
+      .update(schema.projectTable)
+      .set({ scheduleGeneration: 1 })
+      .where(eq(schema.projectTable.id, destination.project.id));
+    const copied = await importHierarchy(
+      destination.project.id,
+      document,
+      source.user.id,
+      source.workspace.id,
+    );
+    expect(copied.results.tasks[0]!.task).toMatchObject({
+      estimateSeconds: 5400,
+      startDate: null,
+      dueDate: null,
+      legacyStartDate: new Date("2026-10-01T09:00:00.000Z"),
+    });
+    const repeated = await exportTasks(destination.project.id, source.user.id);
+    expect(repeated.tasks[0]!.scheduleSnapshots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "applied",
+          sourceRevision: "source-revision",
+          segments,
+        }),
+      ]),
+    );
+  });
+
   it("round trips planning, releases, archived Feature identity and snapshots with new portable IDs", async () => {
     const source = await context();
     const document = {
@@ -82,7 +179,7 @@ describe("knowledge and planning transfers", () => {
       source.workspace.id,
     );
     const exported = await exportTasks(source.project.id, source.user.id);
-    expect(exported.version).toBe(3);
+    expect(exported.version).toBe(4);
     expect(
       exported.tasks.find((task) => task.type === "feature"),
     ).toMatchObject({

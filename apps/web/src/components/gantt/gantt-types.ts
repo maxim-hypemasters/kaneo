@@ -18,11 +18,14 @@ export type GanttMilestoneRecord = {
 };
 
 type ScheduleDates = { scheduleStart: Date; scheduleEnd: Date };
+export type ScheduledWorkSegment = { start: Date; end: Date };
 export type ScheduledLeaf = Omit<Task, "status" | "type"> &
   ScheduleDates & {
     status: string;
     type?: "task" | "bug";
     entityKind?: "task";
+    scheduleSegments?: ScheduledWorkSegment[];
+    scheduleApplied?: boolean;
     milestone?: never;
   };
 export type ScheduledMilestone = Omit<Task, "type" | "status"> &

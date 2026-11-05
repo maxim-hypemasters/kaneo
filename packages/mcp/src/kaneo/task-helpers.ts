@@ -13,8 +13,7 @@ export type TaskUpdatePatch = {
   priority?: TaskPriority;
   projectId?: string;
   position?: number;
-  startDate?: string | null;
-  dueDate?: string | null;
+  estimateSeconds?: number | null;
   userId?: string | null;
 };
 
@@ -24,7 +23,7 @@ export type TaskUpdatePatch = {
 export function buildFullTaskUpdateBody(
   existing: Record<string, unknown>,
   patch: TaskUpdatePatch,
-): Record<string, string | number | undefined> {
+): Record<string, string | number | null | undefined> {
   const positionRaw = patch.position ?? existing.position;
   const position =
     typeof positionRaw === "number"
@@ -55,13 +54,9 @@ export function buildFullTaskUpdateBody(
   if (!projectId) throw new Error("Cannot update task: missing projectId.");
   if (existing.type === "feature") {
     if (
-      [
-        patch.status,
-        patch.priority,
-        patch.startDate,
-        patch.dueDate,
-        patch.userId,
-      ].some((value) => value !== undefined)
+      [patch.status, patch.priority, patch.estimateSeconds, patch.userId].some(
+        (value) => value !== undefined,
+      )
     )
       throw new Error(
         "Features are knowledge records without planning fields.",
@@ -105,14 +100,7 @@ export function buildFullTaskUpdateBody(
         ? existing.userId
         : undefined;
 
-  const startDate = formatOptionalIso(
-    patch.startDate !== undefined ? patch.startDate : existing.startDate,
-  );
-  const dueDate = formatOptionalIso(
-    patch.dueDate !== undefined ? patch.dueDate : existing.dueDate,
-  );
-
-  const body: Record<string, string | number | undefined> = {
+  const body: Record<string, string | number | null | undefined> = {
     title,
     description,
     status,
@@ -121,28 +109,12 @@ export function buildFullTaskUpdateBody(
     position,
   };
 
-  if (startDate !== undefined) {
-    body.startDate = startDate;
-  }
-  if (dueDate !== undefined) {
-    body.dueDate = dueDate;
+  if (patch.estimateSeconds !== undefined) {
+    body.estimateSeconds = patch.estimateSeconds;
   }
   if (userId !== undefined) {
     body.userId = userId;
   }
 
   return body;
-}
-
-function formatOptionalIso(value: unknown): string | undefined {
-  if (value === null || value === undefined) {
-    return undefined;
-  }
-  if (value instanceof Date) {
-    return value.toISOString();
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  return undefined;
 }

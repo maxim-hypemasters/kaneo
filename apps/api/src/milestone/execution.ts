@@ -44,7 +44,7 @@ export async function readMilestoneExecution(
           timestamp,
         ),
       endDate:
-        sql<Date | null>`max(greatest(${taskTable.startDate}, ${taskTable.dueDate}))::text`.mapWith(
+        sql<Date | null>`max(case when ${taskTable.scheduleSegments} is not null and ${taskTable.dueDate} > ${taskTable.startDate} then ${taskTable.dueDate} - interval '1 millisecond' else greatest(${taskTable.startDate}, ${taskTable.dueDate}) end)::text`.mapWith(
           timestamp,
         ),
     })

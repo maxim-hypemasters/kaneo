@@ -18,6 +18,7 @@ export type FeatureExistingTaskDraft = {
 };
 
 export type FeatureNewTaskDraft = {
+  estimateSeconds?: number | null;
   key: string;
   title: string;
   type: "task" | "bug";

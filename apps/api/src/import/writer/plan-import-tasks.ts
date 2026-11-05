@@ -22,6 +22,10 @@ export type PlannedImportTask = {
   priority: string;
   startDate: Date | null;
   dueDate: Date | null;
+  estimateSeconds: number | null;
+  legacyStartDate: Date | null;
+  legacyDueDate: Date | null;
+  scheduleSnapshots?: ImportedTask["scheduleSnapshots"];
   createdAt: Date;
   userId: string | null;
   labelKeys: readonly string[];
@@ -90,6 +94,17 @@ export function planImportTasks({
     if (number === undefined) {
       throw new Error("Every imported task needs a number");
     }
+    if (
+      task.type !== "feature" &&
+      task.estimateSeconds != null &&
+      (!Number.isSafeInteger(task.estimateSeconds) ||
+        task.estimateSeconds <= 0 ||
+        task.estimateSeconds % 60 !== 0 ||
+        task.estimateSeconds > 2_147_483_640)
+    )
+      throw new Error(
+        "Imported task estimateSeconds must contain positive effort in whole minutes",
+      );
     const placement = placeTask(task, columns, fallbackColumn);
     const bucket = placement.columnId ?? `status:${placement.status}`;
     const position = (positions.get(bucket) ?? 0) + 1;
@@ -105,6 +120,18 @@ export function planImportTasks({
       ...placement,
       position,
       priority: importPriority(task.priority),
+      estimateSeconds: task.estimateSeconds ?? null,
+      legacyStartDate: parseImportDate(
+        (task.legacyStartDate === undefined
+          ? task.startDate
+          : task.legacyStartDate) ?? undefined,
+      ),
+      legacyDueDate: parseImportDate(
+        (task.legacyDueDate === undefined
+          ? task.dueDate
+          : task.legacyDueDate) ?? undefined,
+      ),
+      scheduleSnapshots: task.scheduleSnapshots,
       startDate: parseImportDate(task.startDate),
       dueDate: parseImportDate(task.dueDate),
       createdAt: parseImportDate(task.createdAt) ?? now,

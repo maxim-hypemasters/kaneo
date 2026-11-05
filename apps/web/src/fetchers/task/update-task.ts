@@ -20,8 +20,7 @@ async function updateTask(taskId: string, task: Task) {
             userId: task.userId || "",
             status: task.status,
             priority: (task.priority || "no-priority") as UpdateTaskPriority,
-            startDate: task.startDate?.toString(),
-            dueDate: task.dueDate?.toString(),
+            estimateSeconds: task.estimateSeconds,
           }
         : {}),
       // The API validates priority against a picklist that has no empty

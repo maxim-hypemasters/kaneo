@@ -14,6 +14,7 @@ export type MilestoneCreateInput = MilestoneInput & {
   newTasks?: MilestoneTaskDraft[];
 };
 export type MilestoneTaskDraft = {
+  estimateSeconds?: number | null;
   title: string;
   type: "task" | "bug";
 };

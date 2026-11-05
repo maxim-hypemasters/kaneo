@@ -45,14 +45,15 @@ vi.mock("@/fetchers/external-link/get-external-links", () => ({
   default: () => Promise.resolve([]),
 }));
 
-// Board invalidations, excluding release, candidate, milestone, and workflow refreshes, which
-// use-project-websocket-releases.test.tsx covers.
+// Board invalidations; release and planning refreshes have independent focused suites.
 const otherInvalidations = () =>
   mocks.client.invalidateQueries.mock.calls
     .map(([options]) => options)
     .filter(
       (options) =>
         ![
+          "project-schedule",
+          "work-calendars",
           "releases",
           "release-progress",
           "release-link-candidates",

@@ -1,3 +1,10 @@
+vi.mock("@/components/scheduling/use-project-schedule", () => ({
+  useGetProjectSchedule: () => ({
+    data: undefined,
+    isPending: false,
+    isError: false,
+  }),
+}));
 vi.mock("@/hooks/queries/milestone/use-get-project-milestones", () => {
   const data: never[] = [];
   return {
@@ -73,6 +80,7 @@ vi.mock("@/hooks/queries/task-relation/use-get-project-task-relations", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canAssignTasks: () => true,
+    canUpdateProjects: () => true,
     canUpdateTasks: () => true,
   }),
 }));
@@ -177,17 +185,18 @@ describe("Gantt window UI", () => {
       ),
     ).toBe(true);
     expect(
-      screen.getByRole("button", { name: "tasks:gantt.resizeStart" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "tasks:gantt.resizeStart" }),
+    ).toBeNull();
     expect(
-      screen.getByRole("button", { name: "tasks:gantt.resizeDue" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "tasks:gantt.resizeDue" }),
+    ).toBeNull();
     fireEvent.pointerDown(
       screen.getByRole("button", { name: "tasks:gantt.taskAriaLabel" }),
       {
         button: 0,
       },
     );
+    fireEvent.pointerUp(window, { button: 0 });
     expect(m.navigate).toHaveBeenCalledWith(
       expect.objectContaining({ search: { taskId: "Long-lived" } }),
     );

@@ -1,3 +1,4 @@
+import { useCurrentMinute } from "@/hooks/use-current-minute";
 import { Calendar } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import TaskDueDatePopover from "@/components/task/task-due-date-popover";
@@ -16,10 +17,17 @@ type DueDateChipProps = {
 
 export function DueDateChip({ task, isCompleted = false }: DueDateChipProps) {
   const { t } = useTranslation();
+  const now = useCurrentMinute();
   if (!task.dueDate) return null;
 
-  const relative = getRelativeDueDate(task.dueDate);
-  const overdue = relative.kind === "overdue" && !isCompleted;
+  const relative = getRelativeDueDate(
+    task.dueDate,
+    new Date(now),
+    task.scheduleSource === "applied",
+  );
+  const overdue =
+    (relative.kind === "overdue" || relative.kind === "overdue-time") &&
+    !isCompleted;
 
   return (
     <TaskDueDatePopover task={task}>

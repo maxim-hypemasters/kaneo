@@ -53,6 +53,17 @@ const createBody = (
 ) => requests.find(([method]) => method === "POST")?.[2];
 
 describe("runTaskCreate --release", () => {
+  it("creates estimated work without direct schedule inputs", async () => {
+    const run = await runCommand(
+      runTaskCreate({ ...options, estimateSeconds: Option.some("5400") }),
+      routes,
+    );
+    expect(Result.isSuccess(run.result)).toBe(true);
+    expect(createBody(run.requests)).toMatchObject({ estimateSeconds: 5400 });
+    expect(createBody(run.requests)).not.toHaveProperty("startDate");
+    expect(createBody(run.requests)).not.toHaveProperty("dueDate");
+  });
+
   it("creates a knowledge Feature without planning fields or a workflow lookup", async () => {
     const run = await runCommand(
       runTaskCreate({ ...options, type: "feature" }),

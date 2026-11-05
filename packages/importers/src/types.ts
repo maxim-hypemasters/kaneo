@@ -50,10 +50,24 @@ export type ImportedTask = {
   priority: ImportedPriority;
   startDate?: string;
   dueDate?: string;
+  estimateSeconds?: number | null;
+  legacyStartDate?: string | null;
+  legacyDueDate?: string | null;
+  scheduleSnapshots?: ImportedScheduleSnapshot[];
   createdAt?: string;
   assignee?: ImportedPerson;
   labelKeys: string[];
   comments: ImportedComment[];
+};
+
+export type ImportedScheduleSnapshot = {
+  createdAt?: string;
+  source?: "legacy" | "applied" | "import";
+  startDate: string | null;
+  dueDate: string | null;
+  assigneeId?: string | null;
+  segments?: { start: string; end: string }[];
+  sourceRevision?: string;
 };
 
 export type ImportedRelationType = "subtask" | "blocks" | "related";

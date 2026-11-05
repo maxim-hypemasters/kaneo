@@ -1,14 +1,14 @@
 import { Option, Result } from "effect";
 import type { Priority } from "../api/task-mutations.js";
 import { InvalidArgument } from "../errors/errors.js";
-import { parseDateChange } from "../tasks/parse-date.js";
+import { parseEstimateSeconds } from "../tasks/parse-estimate.js";
 
 export type BulkFlags = {
   readonly status: Option.Option<string>;
   readonly priority: Option.Option<Priority>;
   readonly assignee: Option.Option<string>;
   readonly unassign: boolean;
-  readonly due: Option.Option<string>;
+  readonly estimateSeconds?: Option.Option<string>;
   readonly addLabel: Option.Option<string>;
   readonly removeLabel: Option.Option<string>;
   readonly delete: boolean;
@@ -19,13 +19,13 @@ export type BulkChange =
   | { readonly kind: "priority"; readonly priority: Priority }
   | { readonly kind: "assignee"; readonly reference: string }
   | { readonly kind: "unassign" }
-  | { readonly kind: "due"; readonly dueDate: string | null }
+  | { readonly kind: "estimate"; readonly estimateSeconds: number | null }
   | { readonly kind: "addLabel"; readonly name: string }
   | { readonly kind: "removeLabel"; readonly name: string }
   | { readonly kind: "delete" };
 
 const FLAG_LIST =
-  "--status, --priority, --assignee, --unassign, --due, --add-label, --remove-label or --delete";
+  "--status, --priority, --assignee, --unassign, --estimate-seconds, --add-label, --remove-label or --delete";
 
 function given(flags: BulkFlags): string[] {
   const names: string[] = [];
@@ -33,7 +33,8 @@ function given(flags: BulkFlags): string[] {
   if (Option.isSome(flags.priority)) names.push("--priority");
   if (Option.isSome(flags.assignee)) names.push("--assignee");
   if (flags.unassign) names.push("--unassign");
-  if (Option.isSome(flags.due)) names.push("--due");
+  if (Option.isSome(flags.estimateSeconds ?? Option.none()))
+    names.push("--estimate-seconds");
   if (Option.isSome(flags.addLabel)) names.push("--add-label");
   if (Option.isSome(flags.removeLabel)) names.push("--remove-label");
   if (flags.delete) names.push("--delete");
@@ -52,7 +53,7 @@ function nonEmpty(
 
 export function parseBulkChange(
   flags: BulkFlags,
-  now: Date,
+  _now?: Date,
 ): Result.Result<BulkChange, InvalidArgument> {
   const names = given(flags);
   if (names.length === 0) {
@@ -90,12 +91,14 @@ export function parseBulkChange(
     );
   }
   if (flags.unassign) return Result.succeed({ kind: "unassign" });
-  if (Option.isSome(flags.due)) {
+  if (Option.isSome(flags.estimateSeconds ?? Option.none())) {
     return Result.map(
-      parseDateChange(flags.due.value, now, "--due"),
-      (dueDate) => ({
-        kind: "due" as const,
-        dueDate,
+      parseEstimateSeconds(
+        Option.getOrThrow(flags.estimateSeconds ?? Option.none()),
+      ),
+      (estimateSeconds) => ({
+        kind: "estimate" as const,
+        estimateSeconds,
       }),
     );
   }

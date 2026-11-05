@@ -11,6 +11,9 @@ const { mocks, passThrough } = vi.hoisted(() => ({
   passThrough: ({ children }: { children: ReactNode }) => children,
 }));
 
+vi.mock("../estimate/task-estimate", () => ({
+  TaskEstimate: () => <span>Estimate</span>,
+}));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));

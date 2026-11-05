@@ -38,13 +38,12 @@ describe("bulkHeadline", () => {
     expect(bulkHeadline({ kind: "unassign" }, 2, 2).text).toBe(
       "Unassigned 2 tasks",
     );
-    expect(bulkHeadline({ kind: "due", dueDate: null }, 2, 2).text).toBe(
-      "Cleared the due date on 2 tasks",
-    );
     expect(
-      bulkHeadline({ kind: "due", dueDate: "2026-10-20T10:00:00.000Z" }, 2, 2)
-        .text,
-    ).toBe("Set the due date to Oct 20, 2026 on 2 tasks");
+      bulkHeadline({ kind: "estimate", estimateSeconds: null }, 2, 2).text,
+    ).toBe("Cleared the estimate on 2 tasks");
+    expect(
+      bulkHeadline({ kind: "estimate", estimateSeconds: 5400 }, 2, 2).text,
+    ).toBe("Set the estimate to 1.5 hours on 2 tasks");
     expect(bulkHeadline({ kind: "delete" }, 3, 3).text).toBe("Deleted 3 tasks");
   });
 

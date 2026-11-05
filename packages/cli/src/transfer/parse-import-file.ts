@@ -8,8 +8,11 @@ import type {
   ExportedMilestone,
   ExportedRelease,
   PlanningSnapshot,
+  ScheduleSnapshot,
 } from "../api/export-import.js";
-import { Result } from "effect";
+import { Result, Schema } from "effect";
+import { ScheduleSnapshot as ScheduleSnapshotSchema } from "../api/export-import.js";
+import { parseEstimateSeconds } from "../tasks/parse-estimate.js";
 import { InvalidArgument } from "../errors/errors.js";
 import { TASK_TYPES, type TaskType } from "../api/task-features.js";
 
@@ -21,6 +24,10 @@ export type ImportCandidate = {
   readonly releaseKey?: string | null;
   readonly archivedAt?: string | null;
   readonly planningSnapshots?: ReadonlyArray<PlanningSnapshot>;
+  readonly estimateSeconds?: number | null;
+  readonly legacyStartDate?: string | null;
+  readonly legacyDueDate?: string | null;
+  readonly scheduleSnapshots?: ReadonlyArray<ScheduleSnapshot>;
   readonly labelDefinitions?: ReadonlyArray<{
     readonly name: string;
     readonly color: string;
@@ -105,6 +112,31 @@ function date(
   });
 }
 
+function parseScheduleSnapshots(
+  value: unknown,
+): Result.Result<ReadonlyArray<ScheduleSnapshot> | undefined, InvalidArgument> {
+  if (value === undefined) return Result.succeed(undefined);
+  const parsed = Schema.decodeUnknownResult(
+    Schema.Array(ScheduleSnapshotSchema),
+  )(value);
+  if (Result.isFailure(parsed))
+    return Result.fail(invalid("Invalid task schedule history."));
+  for (const snapshot of parsed.success) {
+    const dates = [
+      snapshot.createdAt,
+      snapshot.startDate,
+      snapshot.dueDate,
+      ...(snapshot.segments ?? []).flatMap((segment) => [
+        segment.start,
+        segment.end,
+      ]),
+    ];
+    if (dates.some((value) => value != null && Number.isNaN(Date.parse(value))))
+      return Result.fail(invalid("Invalid task schedule history date."));
+  }
+  return Result.succeed(parsed.success);
+}
+
 function parseTask(
   item: unknown,
   index: number,
@@ -123,6 +155,15 @@ function parseTask(
     description: text(item, "description", named),
     status: text(item, "status", named),
     priority: text(item, "priority", named),
+    estimateSeconds:
+      item.estimateSeconds == null
+        ? Result.succeed(item.estimateSeconds as null | undefined)
+        : typeof item.estimateSeconds === "number"
+          ? parseEstimateSeconds(String(item.estimateSeconds))
+          : Result.fail(invalid(`${named} has an invalid estimateSeconds.`)),
+    legacyStartDate: date(item, "legacyStartDate", named),
+    legacyDueDate: date(item, "legacyDueDate", named),
+    scheduleSnapshots: parseScheduleSnapshots(item.scheduleSnapshots),
     startDate: date(item, "startDate", named),
     dueDate: date(item, "dueDate", named),
     userId: nullableText(item, "userId", named),
@@ -169,7 +210,7 @@ export function parseImportDocument(
 export type ImportDocument = {
   readonly tasks: ReadonlyArray<ImportCandidate>;
   readonly hierarchy?: {
-    readonly version: 2 | 3;
+    readonly version: 2 | 3 | 4;
     readonly releases?: ReadonlyArray<ExportedRelease>;
     readonly milestones: ReadonlyArray<ExportedMilestone>;
   };
@@ -198,7 +239,11 @@ export function parseTransferDocument(
     }
     return Result.succeed({ tasks: parsed.success });
   }
-  if (document.version !== 2 && document.version !== 3)
+  if (
+    document.version !== 2 &&
+    document.version !== 3 &&
+    document.version !== 4
+  )
     return Result.fail(invalid("Unsupported import version."));
   if (!Array.isArray(document.milestones))
     return Result.fail(invalid("Version 2 needs a list of milestones."));
@@ -393,7 +438,7 @@ export function parseTransferDocument(
     hierarchy: {
       version: document.version,
       milestones,
-      ...(document.version === 3 ? { releases } : {}),
+      ...(document.version >= 3 ? { releases } : {}),
     },
   });
 }

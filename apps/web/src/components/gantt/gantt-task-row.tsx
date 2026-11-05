@@ -54,13 +54,13 @@ export function GanttTaskRow({
   return (
     <div
       data-gantt-row={task.id}
-      className="grid items-stretch border-b border-border/70"
+      className="grid items-stretch"
       style={{ gridTemplateColumns: rowGridTemplateColumns }}
     >
       {showTaskRail ? (
         <div
           data-gantt-rail=""
-          className="sticky left-0 z-[11] h-full border-r border-border bg-background"
+          className="sticky left-0 z-[11] h-full border-r border-b border-border bg-background"
         >
           <button
             type="button"
@@ -100,8 +100,19 @@ export function GanttTaskRow({
               </p>
             )}
             <p className="w-full truncate text-[11px] leading-tight text-muted-foreground">
-              {format(task.scheduleStart, "MMM d, yyyy")} -{" "}
-              {format(task.scheduleEnd, "MMM d, yyyy")}
+              {format(
+                task.scheduleStart,
+                task.entityKind !== "milestone" && task.scheduleApplied
+                  ? "MMM d, yyyy HH:mm"
+                  : "MMM d, yyyy",
+              )}{" "}
+              -{" "}
+              {format(
+                task.scheduleEnd,
+                task.entityKind !== "milestone" && task.scheduleApplied
+                  ? "MMM d, yyyy HH:mm"
+                  : "MMM d, yyyy",
+              )}
               {showAssignee && task.assigneeName
                 ? ` • ${task.assigneeName}`
                 : ""}
@@ -128,7 +139,7 @@ export function GanttTaskRow({
 
       <div
         className={cn(
-          "relative shrink-0 cursor-grab select-none",
+          "relative shrink-0 cursor-grab border-b border-border/70 select-none",
           // Without the rail a row would be exactly as tall as its bar,
           // leaving dependency arrows no room to turn between rows.
           showTaskRail ? "min-h-11" : "min-h-12",

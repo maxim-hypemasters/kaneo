@@ -13,6 +13,7 @@ function task(id: string, dueDate: Date | null): AssignedTask {
     title: id,
     type: "task",
     milestoneId: null,
+    estimateSeconds: null,
     status: "to-do",
     statusName: "To Do",
     statusIcon: null,

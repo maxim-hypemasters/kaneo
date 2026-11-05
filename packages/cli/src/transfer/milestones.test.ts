@@ -196,7 +196,7 @@ describe("versioned milestone transfers", () => {
     ).toBe(true);
   });
   it.each([
-    { ...document, version: 4 },
+    { ...document, version: 5 },
     {
       ...document,
       milestones: [{ ...document.milestones[0], startDate: "2026-11-02" }],

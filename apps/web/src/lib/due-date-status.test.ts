@@ -15,6 +15,14 @@ describe("getDueDateStatus", () => {
     expect(getDueDateStatus(null)).toBe("no-due-date");
   });
 
+  it("uses the exact planned finish while retaining legacy full-day behavior", () => {
+    const now = new Date("2026-10-24T16:01:00Z");
+    const finish = "2026-10-24T16:00:00Z";
+    expect(getDueDateStatus(finish, false, true, now)).toBe("overdue");
+    expect(getDueDateStatus(finish, false, false, now)).toBe("due-soon");
+    expect(getDueDateStatus(finish, true, true, now)).toBe("far-future");
+  });
+
   it("never warns about a completed task, however overdue", () => {
     expect(getDueDateStatus(YESTERDAY, true)).toBe("far-future");
     expect(getDueDateStatus(TOMORROW, true)).toBe("far-future");

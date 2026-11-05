@@ -196,6 +196,12 @@ async function moveTask({
         featureId: null,
         milestoneId: null,
         releaseId: null,
+        // A source project's published allocation is not an approved slot in
+        // the destination. Its immutable project-plan history remains intact.
+        startDate: null,
+        dueDate: null,
+        scheduleSegments: null,
+        scheduledAssigneeId: null,
       })
       .where(
         and(

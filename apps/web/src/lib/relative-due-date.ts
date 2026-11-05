@@ -2,6 +2,7 @@ import { differenceInCalendarDays, isSameYear } from "date-fns";
 
 export type RelativeDueDate =
   | { kind: "overdue"; days: number; weeks: number }
+  | { kind: "overdue-time" }
   | { kind: "today" }
   | { kind: "tomorrow" }
   | { kind: "soon"; days: number }
@@ -10,10 +11,13 @@ export type RelativeDueDate =
 export function getRelativeDueDate(
   dueDate: string | Date,
   now: Date = new Date(),
+  applied = false,
 ): RelativeDueDate {
   const due = new Date(dueDate);
   const days = differenceInCalendarDays(due, now);
 
+  if (applied && days === 0 && due.getTime() < now.getTime())
+    return { kind: "overdue-time" };
   if (days < 0) {
     return { kind: "overdue", days: -days, weeks: Math.floor(-days / 7) };
   }

@@ -1,3 +1,4 @@
+import { taskScheduleSource } from "../schedule-source";
 import {
   and,
   asc,
@@ -213,6 +214,8 @@ async function getTasksPage(
     priority: sql<string>`${taskTable.priority}`,
     startDate: taskTable.startDate,
     dueDate: taskTable.dueDate,
+    estimateSeconds: taskTable.estimateSeconds,
+    scheduleSource: taskScheduleSource,
     position: taskTable.position,
     createdAt: taskTable.createdAt,
     userId: taskTable.userId,

@@ -1,3 +1,4 @@
+import { taskScheduleSource } from "../schedule-source";
 import { boundedTaskRead } from "../bounded-read";
 import { boardDescription, descriptionDeferred } from "../description-pages";
 import { getSubtaskCounts } from "../get-subtask-counts";
@@ -23,6 +24,8 @@ async function getTask(taskId: string, board = false, userId?: string) {
       priority: taskTable.priority,
       startDate: taskTable.startDate,
       dueDate: taskTable.dueDate,
+      estimateSeconds: taskTable.estimateSeconds,
+      scheduleSource: taskScheduleSource,
       position: taskTable.position,
       archivedAt: taskTable.archivedAt,
       createdAt: taskTable.createdAt,

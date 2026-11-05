@@ -7,7 +7,7 @@ import {
   groupAssignedTasksByProject,
 } from "@/components/my-work/group-assigned-tasks";
 import type { AssignedTask } from "@/fetchers/task/get-assigned-tasks";
-import { useLocalDay } from "@/hooks/use-local-day";
+import { useCurrentMinute } from "@/hooks/use-current-minute";
 import { cn } from "@/lib/cn";
 import type { MyTasksGroupBy } from "./my-tasks-group-by";
 
@@ -25,7 +25,7 @@ export function MyTasksList({
   workspaceId,
 }: MyTasksListProps) {
   const { t } = useTranslation();
-  const day = useLocalDay();
+  const day = useCurrentMinute();
   const groups = useMemo(
     () =>
       groupBy === "project"

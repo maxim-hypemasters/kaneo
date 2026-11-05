@@ -10,7 +10,6 @@ import {
   projectTable,
   taskTable,
   userTable,
-  taskReminderSentTable,
   workspaceUserTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
@@ -32,7 +31,7 @@ type BulkOperation =
   | "delete"
   | "addLabel"
   | "removeLabel"
-  | "updateDueDate";
+  | "updateEstimate";
 
 async function bulkUpdateTasks({
   taskIds,
@@ -72,7 +71,7 @@ async function bulkUpdateTasks({
       "updateStatus",
       "updatePriority",
       "updateAssignee",
-      "updateDueDate",
+      "updateEstimate",
     ].includes(operation) &&
     tasks.some((task) => task.type === "feature")
   )
@@ -482,70 +481,58 @@ async function bulkUpdateTasks({
       break;
     }
 
-    case "updateDueDate": {
-      let parsedDate: Date | null = null;
-      if (value) {
-        parsedDate = new Date(value);
-        if (Number.isNaN(parsedDate.getTime())) {
-          throw new HTTPException(400, {
-            message: `Invalid date value "${value}"`,
-          });
-        }
-      }
-
-      const { updatedTasks, beforeById } = await retryTransaction(() =>
+    case "updateEstimate": {
+      const estimateSeconds = value == null ? null : Number(value);
+      if (
+        estimateSeconds !== null &&
+        (!Number.isSafeInteger(estimateSeconds) ||
+          estimateSeconds <= 0 ||
+          estimateSeconds % 60 !== 0 ||
+          estimateSeconds > 2_147_483_640)
+      )
+        throw new HTTPException(400, {
+          message: "Estimate must be positive whole minutes",
+        });
+      const updated = await retryTransaction(() =>
         db.transaction(async (tx) => {
-          const before = await tx
+          const locked = await tx
             .select({
               id: taskTable.id,
               projectId: taskTable.projectId,
-              dueDate: taskTable.dueDate,
+              type: taskTable.type,
             })
             .from(taskTable)
             .where(inArray(taskTable.id, foundIds))
             .orderBy(asc(taskTable.id))
             .for("update");
-          const originalProjects = new Map(
+          const projects = new Map(
             tasks.map((task) => [task.id, task.projectId]),
           );
           if (
-            before.length !== foundIds.length ||
-            before.some(
-              (task) => task.projectId !== originalProjects.get(task.id),
+            locked.length !== foundIds.length ||
+            locked.some(
+              (task) =>
+                task.type === "feature" ||
+                task.projectId !== projects.get(task.id),
             )
           )
             throw new HTTPException(409, {
-              message: "Tasks changed projects; retry the operation",
+              message: "Tasks changed; retry the operation",
             });
-          const beforeById = new Map(before.map((task) => [task.id, task]));
-          const changedIds = before
-            .filter((task) => task.dueDate?.getTime() !== parsedDate?.getTime())
-            .map((task) => task.id);
-          if (changedIds.length)
-            await tx
-              .delete(taskReminderSentTable)
-              .where(inArray(taskReminderSentTable.taskId, changedIds));
-          const updatedTasks = await tx
+          return tx
             .update(taskTable)
-            .set({ dueDate: parsedDate })
+            .set({ estimateSeconds })
             .where(inArray(taskTable.id, foundIds))
-            .returning({
-              id: taskTable.id,
-              projectId: taskTable.projectId,
-              title: taskTable.title,
-              dueDate: taskTable.dueDate,
-            });
-          return { updatedTasks, beforeById };
+            .returning({ id: taskTable.id, projectId: taskTable.projectId });
         }),
       );
-      updatedCount = updatedTasks.length;
-      for (const updatedTask of updatedTasks)
-        await publishTaskMutation(
-          beforeById.get(updatedTask.id)!,
-          updatedTask,
+      updatedCount = updated.length;
+      for (const task of updated)
+        await publishEvent("task.updated", {
+          taskId: task.id,
+          projectId: task.projectId,
           userId,
-          { fields: ["dueDate"] },
-        );
+        });
       break;
     }
 

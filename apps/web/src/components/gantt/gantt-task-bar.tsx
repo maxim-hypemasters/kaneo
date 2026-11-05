@@ -1,5 +1,4 @@
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
-import { addDays, differenceInCalendarDays } from "date-fns";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AssigneeAvatar } from "@/components/task/properties/assignee-avatar";
@@ -8,7 +7,6 @@ import { canDropIntoMilestone } from "./group-gantt-tasks-by-milestone";
 import { GanttMilestoneBarLabel } from "./gantt-milestone-bar-label";
 import { GanttLaneHint } from "./gantt-lane-hint";
 import { laneKeyAtPoint } from "./gantt-lane-dom";
-import { GanttResizeHandle } from "./gantt-resize-handle";
 import { GanttSummaryShape } from "./gantt-summary-shape";
 import type {
   GanttLaneDrag,
@@ -16,15 +14,12 @@ import type {
   GanttTaskEdit,
   ScheduledTask,
 } from "./gantt-types";
+import { scheduleSegmentGeometry } from "./schedule-geometry";
 import { type GanttTimeline, getBarGridColumns } from "./timeline";
 
 const CLICK_MOVE_THRESHOLD_PX = 4;
 const MOBILE_MOVE_THRESHOLD_PX = 14;
 const MIN_INLINE_LABEL_PX = 120;
-// Below this width a phone bar can't fit two 24px resize handles plus a
-// usable move/tap area, so it's left as one target; dates stay editable from
-// the task sheet.
-const MIN_TOUCH_RESIZABLE_PX = 120;
 // Vertical travel (half a row) before a drag starts targeting other lanes, so
 // a slightly wobbly reschedule never moves a task to another lane by accident.
 const LANE_ENGAGE_PX = 22;
@@ -85,14 +80,23 @@ export function GanttTaskBar({
   const { t } = useTranslation();
   const isMilestone = task.entityKind === "milestone";
   const isBug = !isMilestone && task.type === "bug";
-  const canMoveDates = !isMilestone;
   const noteId = useId();
   const assigneeId = useId();
   const progressId = useId();
-  const [dragDisplay, setDragDisplay] = useState<{
-    start: Date;
-    end: Date;
-  } | null>(null);
+  const timingId = useId();
+  const exactTiming =
+    !isMilestone && task.scheduleApplied
+      ? (
+          task.scheduleSegments ?? [
+            { start: task.scheduleStart, end: task.scheduleEnd },
+          ]
+        )
+          .map(
+            (segment) =>
+              `${segment.start.toLocaleString()} – ${segment.end.toLocaleString()}`,
+          )
+          .join("; ")
+      : null;
   const [laneView, setLaneView] = useState<LaneView | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
   // Pointer handlers outlive the render that created them (the route
@@ -119,12 +123,8 @@ export function GanttTaskBar({
   const endGestureRef = useRef<(() => void) | null>(null);
   useEffect(() => () => endGestureRef.current?.(), []);
 
-  const displayStart = canMoveDates
-    ? (dragDisplay?.start ?? task.scheduleStart)
-    : task.scheduleStart;
-  const displayEnd = canMoveDates
-    ? (dragDisplay?.end ?? task.scheduleEnd)
-    : task.scheduleEnd;
+  const displayStart = task.scheduleStart;
+  const displayEnd = task.scheduleEnd;
 
   const trackCount = timeline.days.length;
   const { barInView, lineStart, lineEnd, clippedStart, clippedEnd } =
@@ -134,23 +134,6 @@ export function GanttTaskBar({
       timeline.rangeStart,
       trackCount,
     );
-
-  const startIsVisible =
-    differenceInCalendarDays(task.scheduleStart, timeline.rangeStart) >= 0;
-  const endIsVisible =
-    differenceInCalendarDays(task.scheduleEnd, timeline.rangeStart) <
-    trackCount;
-
-  const commitDates = (start: Date, end: Date) => {
-    const { task: current, onCommit: commit } = latestRef.current;
-    commit({
-      start,
-      end,
-      userId: current.userId || null,
-      featureId: current.featureId ?? null,
-      milestoneId: current.milestoneId ?? null,
-    });
-  };
 
   // Reports a gesture's drag to the route once, and its end once.
   const dragReporter = () => {
@@ -173,96 +156,6 @@ export function GanttTaskBar({
   const moveThresholdPx = isMobile
     ? MOBILE_MOVE_THRESHOLD_PX
     : CLICK_MOVE_THRESHOLD_PX;
-
-  const handleResizeLeftPointerDown = (event: React.PointerEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const originX = event.clientX;
-    const initialStart = task.scheduleStart;
-    const initialEnd = task.scheduleEnd;
-    const startIdx = differenceInCalendarDays(
-      initialStart,
-      timeline.rangeStart,
-    );
-    const endIdx = differenceInCalendarDays(initialEnd, timeline.rangeStart);
-    const drag = dragReporter();
-
-    const onMove = (ev: PointerEvent) => {
-      drag.start();
-      const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
-      let nextStartIdx = startIdx + deltaDays;
-      nextStartIdx = Math.max(0, Math.min(nextStartIdx, endIdx));
-      const nextStart = timeline.days[nextStartIdx] ?? initialStart;
-      const nextEnd = initialEnd;
-      setDragDisplay({ start: nextStart, end: nextEnd });
-    };
-
-    const onUp = (ev: PointerEvent) => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onCancel);
-      drag.end();
-      setDragDisplay(null);
-      if (ev.type === "pointercancel") return;
-      const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
-      let nextStartIdx = startIdx + deltaDays;
-      nextStartIdx = Math.max(0, Math.min(nextStartIdx, endIdx));
-      const nextStart = timeline.days[nextStartIdx] ?? initialStart;
-      if (nextStart.getTime() === initialStart.getTime()) return;
-      commitDates(nextStart, initialEnd);
-    };
-
-    const onCancel = onUp;
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onCancel);
-  };
-
-  const handleResizeRightPointerDown = (event: React.PointerEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const originX = event.clientX;
-    const initialStart = task.scheduleStart;
-    const initialEnd = task.scheduleEnd;
-    const startIdx = differenceInCalendarDays(
-      initialStart,
-      timeline.rangeStart,
-    );
-    const endIdx = differenceInCalendarDays(initialEnd, timeline.rangeStart);
-    const drag = dragReporter();
-
-    const onMove = (ev: PointerEvent) => {
-      drag.start();
-      const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
-      let nextEndIdx = endIdx + deltaDays;
-      nextEndIdx = Math.max(startIdx, Math.min(nextEndIdx, trackCount - 1));
-      const nextEnd = timeline.days[nextEndIdx] ?? initialEnd;
-      const nextStart = initialStart;
-      setDragDisplay({ start: nextStart, end: nextEnd });
-    };
-
-    const onUp = (ev: PointerEvent) => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onCancel);
-      drag.end();
-      setDragDisplay(null);
-      if (ev.type === "pointercancel") return;
-      const deltaDays = Math.round((ev.clientX - originX) / pxPerDay);
-      let nextEndIdx = endIdx + deltaDays;
-      nextEndIdx = Math.max(startIdx, Math.min(nextEndIdx, trackCount - 1));
-      const nextEnd = timeline.days[nextEndIdx] ?? initialEnd;
-      if (nextEnd.getTime() === initialEnd.getTime()) return;
-      commitDates(initialStart, nextEnd);
-    };
-
-    const onCancel = onUp;
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onCancel);
-  };
 
   const laneHintLabel = (target: GanttLaneTarget) => {
     if (target.kind === "milestone") {
@@ -288,12 +181,6 @@ export function GanttTaskBar({
     endGestureRef.current?.();
     const originX = event.clientX;
     const originY = event.clientY;
-    const initialStart = task.scheduleStart;
-    const initialEnd = task.scheduleEnd;
-    if (canMoveDates && (!startIsVisible || !endIsVisible)) {
-      onOpenTask();
-      return;
-    }
     // Touch drags pan the timeline instead (the browser cancels the
     // gesture), so lanes are only targeted by mouse and pen.
     const lane =
@@ -301,11 +188,6 @@ export function GanttTaskBar({
       (isMilestone && laneDrag?.kind !== "assignee")
         ? undefined
         : laneDrag;
-    const durationDays = differenceInCalendarDays(initialEnd, initialStart);
-    const startIdx = differenceInCalendarDays(
-      initialStart,
-      timeline.rangeStart,
-    );
     const scrollContainer = lane
       ? (barRef.current?.closest<HTMLElement>(
           "[data-gantt-scroll-container]",
@@ -326,19 +208,9 @@ export function GanttTaskBar({
         ? Math.max(Math.abs(clientX - originX), Math.abs(clientY - originY))
         : Math.abs(clientX - originX);
 
-    const datesFor = (clientX: number) => {
-      if (!canMoveDates) {
-        const current = latestRef.current.task;
-        return { start: current.scheduleStart, end: current.scheduleEnd };
-      }
-      const deltaDays = Math.round((clientX - originX) / pxPerDay);
-      const maxStart = trackCount - 1 - durationDays;
-      const nextStartIdx = Math.max(
-        0,
-        Math.min(startIdx + deltaDays, maxStart),
-      );
-      const start = timeline.days[nextStartIdx] ?? initialStart;
-      return { start, end: addDays(start, durationDays) };
+    const datesFor = () => {
+      const current = latestRef.current.task;
+      return { start: current.scheduleStart, end: current.scheduleEnd };
     };
 
     // Vertical travel in content coordinates, so scrolling the timeline
@@ -407,7 +279,6 @@ export function GanttTaskBar({
       }
       endGestureRef.current = null;
       drag.end();
-      setDragDisplay(null);
       setLaneView(null);
     };
 
@@ -424,7 +295,6 @@ export function GanttTaskBar({
         dragging = true;
         drag.start();
       }
-      if (canMoveDates) setDragDisplay(datesFor(ev.clientX));
       syncLane();
     };
 
@@ -453,9 +323,12 @@ export function GanttTaskBar({
         open();
         return;
       }
-      const { start, end: due } = datesFor(ev.clientX);
+      const { start, end: due } = datesFor();
       const dropLane = target?.droppable ? target : null;
-      if (current.entityKind === "milestone" && dropLane?.kind !== "assignee")
+      if (
+        !dropLane ||
+        (current.entityKind === "milestone" && dropLane.kind !== "assignee")
+      )
         return;
       commit({
         start,
@@ -497,11 +370,33 @@ export function GanttTaskBar({
 
   // Short bars on phones leave no room for the title inside them, so it's
   // drawn just after the bar instead (when the timeline has room for it).
-  const barWidthPx = (lineEnd - lineStart) * pxPerDay;
+  const segmentEnvelope =
+    !isMilestone && task.scheduleApplied
+      ? scheduleSegmentGeometry(
+          displayStart,
+          displayEnd,
+          timeline.rangeStart,
+          trackCount,
+        )
+      : null;
+  const workSegments =
+    !isMilestone && task.scheduleSegments
+      ? task.scheduleSegments.flatMap((segment) => {
+          const geometry = scheduleSegmentGeometry(
+            segment.start,
+            segment.end,
+            timeline.rangeStart,
+            trackCount,
+          );
+          return geometry
+            ? [{ ...geometry, start: segment.start, end: segment.end }]
+            : [];
+        })
+      : null;
+
+  const barWidthPx = (segmentEnvelope?.width ?? lineEnd - lineStart) * pxPerDay;
   const labelOutside =
     isMobile && barWidthPx < MIN_INLINE_LABEL_PX && lineEnd <= trackCount;
-  const showResizeHandles =
-    canMoveDates && (!isMobile || barWidthPx >= MIN_TOUCH_RESIZABLE_PX);
 
   const counts = isMilestone ? task.subtaskCounts : undefined;
   const progress =
@@ -526,10 +421,7 @@ export function GanttTaskBar({
         : t("tasks:assignee.unassigned")
       : null;
   // A one-day bar on a desktop has no room for it beside the handles.
-  const showAvatar =
-    assigneeNote !== null &&
-    barWidthPx >=
-      AVATAR_ROOM_PX + (showResizeHandles ? (isMobile ? 48 : 16) : 0);
+  const showAvatar = assigneeNote !== null && barWidthPx >= AVATAR_ROOM_PX;
   const describedBy =
     // The dependency note goes first: it ends in a full stop, so a screen
     // reader pauses before the assignee or progress note that follows.
@@ -537,6 +429,7 @@ export function GanttTaskBar({
       dependencyNote && noteId,
       assigneeNote && assigneeId,
       progress && progressId,
+      exactTiming && timingId,
     ]
       .filter(Boolean)
       .join(" ") || undefined;
@@ -565,7 +458,17 @@ export function GanttTaskBar({
     >
       <div
         data-gantt-bar={isMilestone ? "milestone" : "task"}
-        style={{ gridColumn: `${lineStart} / ${lineEnd}` }}
+        style={
+          segmentEnvelope
+            ? {
+                gridColumn: `1 / ${trackCount + 1}`,
+                gridRow: 1,
+                marginLeft: `${(segmentEnvelope.left / trackCount) * 100}%`,
+                width: `${(segmentEnvelope.width / trackCount) * 100}%`,
+                marginRight: 0,
+              }
+            : { gridColumn: `${lineStart} / ${lineEnd}`, gridRow: 1 }
+        }
         className={cn(
           "relative mx-1 flex min-h-[44px] min-w-0 items-stretch text-left sm:h-11 sm:min-h-0",
           // A milestone keeps a task bar's hit area but only draws the thinner
@@ -574,7 +477,8 @@ export function GanttTaskBar({
           isMilestone
             ? "group/bar"
             : cn(
-                "group overflow-hidden rounded-md border bg-background text-sm font-medium leading-none text-foreground shadow-sm transition-colors",
+                "group overflow-hidden rounded-md text-sm font-medium leading-none text-foreground transition-colors",
+                !workSegments && "border bg-background shadow-sm",
                 isBug
                   ? "border-destructive/35 hover:border-destructive/55"
                   : "border-primary/25 hover:border-primary/40",
@@ -601,16 +505,25 @@ export function GanttTaskBar({
             )}
           />
         )}
-        {showResizeHandles && (
-          <GanttResizeHandle
-            edge="start"
-            label={t("tasks:gantt.resizeStart")}
-            disabled={!startIsVisible}
-            summary={isMilestone}
-            tone={isBug ? "destructive" : "default"}
-            onPointerDown={handleResizeLeftPointerDown}
-          />
-        )}
+        {workSegments &&
+          segmentEnvelope &&
+          workSegments.map((segment) => (
+            <span
+              key={`${segment.start.toISOString()}:${segment.end.toISOString()}`}
+              data-gantt-work-segment=""
+              title={`${segment.start.toLocaleString()} – ${segment.end.toLocaleString()}`}
+              className={cn(
+                "pointer-events-none absolute inset-y-0 rounded-md border shadow-sm",
+                isBug
+                  ? "border-destructive/35 bg-destructive/12 group-hover:bg-destructive/18"
+                  : "border-primary/25 bg-primary/12 group-hover:bg-primary/18",
+              )}
+              style={{
+                left: `${((segment.left - segmentEnvelope.left) / segmentEnvelope.width) * 100}%`,
+                width: `${(segment.width / segmentEnvelope.width) * 100}%`,
+              }}
+            />
+          ))}
         <button
           type="button"
           aria-label={
@@ -619,11 +532,10 @@ export function GanttTaskBar({
               : ariaLabel
           }
           aria-describedby={describedBy}
+          title={exactTiming ?? undefined}
           className={cn(
             "relative z-10 min-h-[44px] min-w-0 flex-1 touch-manipulation overflow-hidden px-2 text-left sm:min-h-0 sm:px-2.5",
-            canMoveDates || laneDrag?.kind === "assignee"
-              ? "cursor-grab active:cursor-grabbing"
-              : "cursor-pointer",
+            laneDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
             isMilestone && "flex items-center focus-visible:outline-hidden",
           )}
           onPointerDown={handleMovePointerDown}
@@ -645,6 +557,7 @@ export function GanttTaskBar({
               <div
                 className={cn(
                   "absolute inset-0 z-0 transition-colors",
+                  workSegments && "hidden",
                   isBug
                     ? "bg-destructive/12 group-hover:bg-destructive/18"
                     : "bg-primary/12 group-hover:bg-primary/18",
@@ -682,6 +595,11 @@ export function GanttTaskBar({
         </button>
         {/* Hidden, not sr-only: read as the button's description, never a
             second time as loose text after it. */}
+        {exactTiming && (
+          <span id={timingId} hidden>
+            {exactTiming}
+          </span>
+        )}
         {assigneeNote && (
           <span id={assigneeId} hidden>
             {assigneeNote}
@@ -697,21 +615,19 @@ export function GanttTaskBar({
             {dependencyNote}
           </span>
         )}
-        {showResizeHandles && (
-          <GanttResizeHandle
-            edge="end"
-            label={t("tasks:gantt.resizeDue")}
-            disabled={!endIsVisible}
-            summary={isMilestone}
-            tone={isBug ? "destructive" : "default"}
-            onPointerDown={handleResizeRightPointerDown}
-          />
-        )}
       </div>
       {labelOutside && (
         <span
           aria-hidden="true"
-          style={{ gridColumn: `${lineEnd} / ${trackCount + 1}` }}
+          style={
+            segmentEnvelope
+              ? {
+                  gridColumn: `1 / ${trackCount + 1}`,
+                  gridRow: 1,
+                  marginLeft: `${((segmentEnvelope.left + segmentEnvelope.width) / trackCount) * 100}%`,
+                }
+              : { gridColumn: `${lineEnd} / ${trackCount + 1}`, gridRow: 1 }
+          }
           className={cn(
             "min-w-0 truncate pl-1 text-xs text-foreground/80",
             isMilestone ? "font-semibold" : "font-medium",

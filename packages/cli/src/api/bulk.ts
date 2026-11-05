@@ -8,7 +8,7 @@ export type BulkOperation =
   | "delete"
   | "addLabel"
   | "removeLabel"
-  | "updateDueDate";
+  | "updateEstimate";
 
 export const BulkResult = Schema.Struct({
   success: Schema.Boolean,

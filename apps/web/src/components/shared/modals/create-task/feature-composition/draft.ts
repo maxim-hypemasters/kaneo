@@ -60,11 +60,14 @@ export function featureCompositionInput(draft: FeatureCompositionDraft) {
       id,
       milestoneKey,
     })),
-    newTasks: draft.newTasks.map(({ title, type, milestoneKey }) => ({
-      title: title.trim(),
-      type,
-      milestoneKey,
-    })),
+    newTasks: draft.newTasks.map(
+      ({ title, type, milestoneKey, estimateSeconds }) => ({
+        title: title.trim(),
+        type,
+        milestoneKey,
+        ...(estimateSeconds !== undefined ? { estimateSeconds } : {}),
+      }),
+    ),
     ...(draft.newTasks.some((task) => task.milestoneKey === null)
       ? { unassignedReleaseId: draft.unassignedReleaseId }
       : {}),

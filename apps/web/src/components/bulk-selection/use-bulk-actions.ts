@@ -108,16 +108,12 @@ export function useBulkActions(
         TagIcon,
         t("tasks:bulk.addLabelError"),
       ),
-    setDueDate: (date: Date | undefined) =>
+    setEstimate: (estimateSeconds: number | null) =>
       run(
-        () =>
-          operations.bulkDueDate({
-            taskIds: taskIds(),
-            dueDate: date?.toISOString() ?? null,
-          }),
+        () => operations.bulkEstimate({ taskIds: taskIds(), estimateSeconds }),
         t("tasks:bulk.updateSuccess", { count }),
         CalendarDaysIcon,
-        t("tasks:bulk.updateDueDateError"),
+        t("tasks:estimate.updateError"),
       ),
     moveToBacklog: () =>
       run(

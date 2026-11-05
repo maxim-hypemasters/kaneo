@@ -94,15 +94,23 @@ export function NewWork({
           }}
         >
           <MilestoneDraftTaskRow
-            task={{ id: task.key, title: task.title, type: task.type }}
+            task={{
+              id: task.key,
+              title: task.title,
+              type: task.type,
+              estimateSeconds: task.estimateSeconds,
+            }}
+
             index={value.findIndex((item) => item.key === task.key) + 1}
             disabled={disabled}
             autoFocus={focusKey === task.key}
-            onChange={({ title, type }) => {
+            onChange={({ title, type, estimateSeconds }) => {
               if (!disabled)
                 onChange(
                   value.map((item) =>
-                    item.key === task.key ? { ...item, title, type } : item,
+                    item.key === task.key
+                      ? { ...item, title, type, estimateSeconds }
+                      : item,
                   ),
                 );
             }}

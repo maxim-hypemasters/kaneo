@@ -9,14 +9,18 @@ export function isReminderDue({
   dueDate,
   leadTimeMinutes,
   now,
+  applied = false,
 }: {
   dueDate: Date;
   leadTimeMinutes: number;
   now: Date;
+  applied?: boolean;
 }) {
   // Due dates represent a full day; reminders count back from its expiration.
   const targetTime =
-    dueDate.getTime() + DUE_DATE_DURATION_MS - leadTimeMinutes * MINUTE_MS;
+    dueDate.getTime() +
+    (applied ? 0 : DUE_DATE_DURATION_MS) -
+    leadTimeMinutes * MINUTE_MS;
   const elapsedSinceTarget = now.getTime() - targetTime;
 
   return (

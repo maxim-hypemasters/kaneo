@@ -18,7 +18,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
 });
 afterEach(() => vi.restoreAllMocks());
-it("full updates store title history, assignment events and reset reminders together", async () => {
+it("full updates store title history and assignment while preserving published dates and reminders", async () => {
   const { user, workspace } = await createWorkspaceMember();
   const { project } = await createProjectFixture({ workspaceId: workspace.id });
   const due = new Date("2030-01-01");
@@ -41,7 +41,7 @@ it("full updates store title history, assignment events and reset reminders toge
     "new",
     "to-do",
     undefined,
-    new Date("2030-02-01"),
+    undefined,
     project.id,
     undefined,
     "low",
@@ -55,48 +55,44 @@ it("full updates store title history, assignment events and reset reminders toge
       eventData: { oldTitle: "old", newTitle: "new" },
     }),
   ]);
-  expect(await db.query.taskReminderSentTable.findMany()).toHaveLength(0);
+  expect(await db.query.taskReminderSentTable.findMany()).toHaveLength(1);
   expect(publish).toHaveBeenCalledWith(
     "task.assignee_changed",
     expect.objectContaining({ newAssigneeId: user.id }),
   );
 });
-it("bulk due date updates clear claims and preserve claims for unchanged dates", async () => {
+it("bulk estimate edits preserve applied dates and reminder claims", async () => {
   const { user, workspace } = await createWorkspaceMember();
   const { project } = await createProjectFixture({ workspaceId: workspace.id });
+  const due = new Date("2030-01-01");
   const [task] = await db
     .insert(schema.taskTable)
     .values({
       projectId: project.id,
       title: "task",
       status: "to-do",
-      dueDate: new Date("2030-01-01"),
+      dueDate: due,
     })
     .returning();
   await db
     .insert(schema.taskReminderSentTable)
     .values({ taskId: task.id, reminderType: "due_today" });
-  await bulkUpdateTasks({
-    taskIds: [task.id],
-    operation: "updateDueDate",
-    value: "2030-01-01",
-    userId: user.id,
-  });
-  expect(await db.query.taskReminderSentTable.findMany()).toHaveLength(1);
-  await bulkUpdateTasks({
-    taskIds: [task.id],
-    operation: "updateDueDate",
-    value: null,
-    userId: user.id,
-  });
-  expect(await db.query.taskReminderSentTable.findMany()).toHaveLength(0);
-  expect(
-    (
-      await db.query.taskTable.findFirst({
-        where: eq(schema.taskTable.id, task.id),
-      })
-    )?.dueDate,
-  ).toBeNull();
+  for (const value of ["3600", null]) {
+    await bulkUpdateTasks({
+      taskIds: [task.id],
+      operation: "updateEstimate",
+      value,
+      userId: user.id,
+    });
+    expect(await db.query.taskReminderSentTable.findMany()).toHaveLength(1);
+    expect(
+      (
+        await db.query.taskTable.findFirst({
+          where: eq(schema.taskTable.id, task.id),
+        })
+      )?.dueDate,
+    ).toEqual(due);
+  }
 });
 
 it("a single-field write does not attribute another concurrent field change to its actor", async () => {
@@ -125,7 +121,7 @@ it("a single-field write does not attribute another concurrent field change to i
     "task.priority_changed",
   ]);
 });
-it("bulk due dates use locked current dates before clearing reminder claims", async () => {
+it("bulk estimates preserve concurrent schedule dates and reminder claims", async () => {
   const { user, workspace } = await createWorkspaceMember();
   const { project } = await createProjectFixture({ workspaceId: workspace.id });
   const [task] = await db
@@ -151,17 +147,21 @@ it("bulk due dates use locked current dates before clearing reminder claims", as
   );
   await bulkUpdateTasks({
     taskIds: [task.id],
-    operation: "updateDueDate",
-    value: "2030-01-01",
+    operation: "updateEstimate",
+    value: "3600",
     userId: user.id,
   });
-  expect(await db.query.taskReminderSentTable.findMany()).toHaveLength(0);
+  expect(await db.query.taskReminderSentTable.findMany()).toHaveLength(1);
+  expect(
+    (
+      await db.query.taskTable.findFirst({
+        where: eq(schema.taskTable.id, task.id),
+      })
+    )?.dueDate,
+  ).toEqual(new Date("2030-02-01"));
   expect(publish).toHaveBeenCalledWith(
-    "task.due_date_changed",
-    expect.objectContaining({
-      oldDueDate: new Date("2030-02-01"),
-      newDueDate: new Date("2030-01-01"),
-    }),
+    "task.updated",
+    expect.objectContaining({ taskId: task.id }),
   );
 });
 it("bulk assignment resolves the assignee once and bulk status refreshes each project once", async () => {
@@ -345,7 +345,7 @@ it.each(["single", "full"])(
   },
 );
 
-it("rejects a bulk due-date update after a task moves out of the authorized project", async () => {
+it("rejects a bulk estimate update after a task moves out of the authorized project", async () => {
   const { user, workspace } = await createWorkspaceMember();
   const { project } = await createProjectFixture({ workspaceId: workspace.id });
   const other = await createWorkspaceMember();
@@ -373,7 +373,7 @@ it("rejects a bulk due-date update after a task moves out of the authorized proj
   await expect(
     bulkUpdateTasks({
       taskIds: [task.id],
-      operation: "updateDueDate",
+      operation: "updateEstimate",
       value: null,
       userId: user.id,
     }),

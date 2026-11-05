@@ -128,6 +128,10 @@ vi.mock("@/components/shared/modals/create-task-modal", () => ({
   },
 }));
 vi.mock("../dialog/release-dialog", () => ({ ReleaseDialog: () => null }));
+vi.mock("../planning/release-plan-dialog", () => ({
+  ReleasePlanDialog: ({ canPlan }: { canPlan: boolean }) =>
+    canPlan ? <button type="button">Plan release</button> : null,
+}));
 vi.mock("../delete-release-dialog", () => ({
   DeleteReleaseDialog: () => null,
 }));

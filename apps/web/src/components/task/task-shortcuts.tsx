@@ -3,7 +3,6 @@ import { UserRoundIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useAuth from "@/components/providers/auth-provider/hooks/use-auth";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
-import { useUpdateTaskDueDate } from "@/hooks/mutations/task/use-update-task-due-date";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useShortcut } from "@/lib/shortcuts/use-shortcut";
@@ -46,7 +45,6 @@ export function TaskShortcuts({
     task?.projectId ?? projectId,
   );
   const { mutateAsync: updateAssignee } = useUpdateTaskAssignee();
-  const { mutateAsync: updateDueDate } = useUpdateTaskDueDate();
   const openRelationPicker = useRelationPickerStore((state) => state.open);
   const { canUpdateTasks, canAssignTasks } = useWorkspacePermission();
   const active = { enabled: enabled && Boolean(task) };
@@ -69,7 +67,6 @@ export function TaskShortcuts({
   useShortcut("changePriority", () => clickTaskAction("priority"), planning);
   useShortcut("assignTask", () => clickTaskAction("assignee"), assignable);
   useShortcut("changeLabels", () => clickTaskAction("labels"), editable);
-  useShortcut("setDueDate", () => clickTaskAction("dueDate"), planning);
   useShortcut("moveToProject", () => clickTaskAction("move"), editable);
   useShortcut("addLink", () => clickTaskAction("addLink"), editable);
   useShortcut("createSubtask", () => clickTaskAction("addSubtask"), {
@@ -102,23 +99,6 @@ export function TaskShortcuts({
       }
     },
     assignable,
-  );
-
-  useShortcut(
-    "removeDueDate",
-    async () => {
-      if (!task?.dueDate) return;
-      try {
-        await updateDueDate({ ...task, dueDate: null });
-      } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : t("tasks:popover.dueDate.updateError"),
-        );
-      }
-    },
-    editable,
   );
 
   useShortcut(

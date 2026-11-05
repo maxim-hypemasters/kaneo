@@ -17,7 +17,11 @@ export function groupAssignedTasksByDueDate(
 
   for (const task of tasks) {
     if (task.type === "feature") continue;
-    const bucket = getDueBucket(task.dueDate, now);
+    const bucket = getDueBucket(
+      task.dueDate,
+      now,
+      task.scheduleSource === "applied",
+    );
     const group = byBucket.get(bucket) ?? [];
     group.push(task);
     byBucket.set(bucket, group);

@@ -80,14 +80,14 @@ export function GanttLaneHeader({
   return (
     <div
       data-gantt-lane-header=""
-      className="grid items-stretch border-b border-border/70"
+      className="grid items-stretch"
       style={{ gridTemplateColumns: rowGridTemplateColumns }}
     >
       {showTaskRail ? (
         <div
           data-gantt-rail=""
           className={cn(
-            "sticky left-0 z-[11] flex h-full border-r border-border bg-background px-2 sm:px-3",
+            "sticky left-0 z-[11] flex h-full border-r border-b border-border bg-background px-2 sm:px-3",
             hasMilestones ? "items-start" : "items-center",
             heightClassName,
           )}
@@ -108,7 +108,7 @@ export function GanttLaneHeader({
 
       <div
         className={cn(
-          "relative flex shrink-0 cursor-grab flex-col bg-muted/40",
+          "relative flex shrink-0 cursor-grab flex-col border-b border-border/70 bg-muted/40",
           !hasMilestones && "justify-center",
           heightClassName,
         )}

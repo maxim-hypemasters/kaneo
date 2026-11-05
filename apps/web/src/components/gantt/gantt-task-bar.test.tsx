@@ -174,6 +174,36 @@ describe("GanttTaskBar", () => {
     expect(button).not.toHaveAccessibleDescription();
   });
 
+  it("draws only scheduled working segments with exact-time accessible text", () => {
+    const first = {
+      start: parseISO("2026-09-03T09:00:00"),
+      end: parseISO("2026-09-03T17:00:00"),
+    };
+    const second = {
+      start: parseISO("2026-09-04T09:00:00"),
+      end: parseISO("2026-09-04T17:00:00"),
+    };
+    const { bar, onCommit, onOpenTask } = show(
+      task("2026-09-03T09:00:00", "2026-09-04T17:00:00", {
+        scheduleApplied: true,
+        scheduleSegments: [first, second],
+      }),
+    );
+    expect(bar?.querySelectorAll("[data-gantt-work-segment]")).toHaveLength(2);
+    expect(bar?.style.width).not.toBe("");
+    const button = screen.getByRole("button", {
+      name: "tasks:gantt.taskAriaLabel(title=Checkout)",
+    });
+    expect(button).toHaveAccessibleDescription(
+      `${first.start.toLocaleString()} – ${first.end.toLocaleString()}; ${second.start.toLocaleString()} – ${second.end.toLocaleString()}`,
+    );
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    drag(button, DAY_PX);
+    expect(onCommit).not.toHaveBeenCalled();
+    fireEvent.keyDown(button, { key: "Enter" });
+    expect(onOpenTask).toHaveBeenCalledTimes(1);
+  });
+
   it("draws a milestone as a summary bar with its tasks' progress", () => {
     const { bar } = show(milestone("2026-09-03", "2026-09-05"));
 

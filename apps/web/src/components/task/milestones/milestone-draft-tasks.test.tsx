@@ -62,7 +62,9 @@ describe("Milestone draft task limits", () => {
     fireEvent.click(
       screen.getByRole("menuitem", { name: "tasks:createMenu.newBug" }),
     );
-    expect(screen.getAllByRole("textbox")).toHaveLength(100);
+    expect(
+      screen.getAllByRole("textbox", { name: "tasks:milestones.newTaskTitle" }),
+    ).toHaveLength(100);
     expect(
       screen.getByRole("button", { name: "tasks:createMenu.label" }),
     ).toBeDisabled();

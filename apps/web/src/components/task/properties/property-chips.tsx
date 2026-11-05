@@ -1,3 +1,4 @@
+import { TaskEstimate } from "../estimate/task-estimate";
 import { ArrowRight, Calendar } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { propertyChipClass } from "@/components/custom-fields/property-chip-class";
@@ -120,7 +121,8 @@ export function PropertyChips({
                 </span>
               </button>
             </TaskAssigneePopover>
-            <div className={cn(chip, "gap-0.5 px-1 hover:bg-accent/30")}>
+            <TaskEstimate task={task} />
+            <div className={cn(chip, "gap-0.5 px-1")}>
               <TaskStartDatePopover task={task}>
                 <button type="button" className={dateButton}>
                   <Calendar
