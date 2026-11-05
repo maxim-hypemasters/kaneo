@@ -24,6 +24,7 @@ import {
   validateTaskReleaseSearch,
 } from "@/components/task/task-release-origin";
 import { TaskReleaseOriginProvider } from "@/components/task/task-release-origin-context";
+import { DocumentDraftGuardProvider } from "@/components/editor/document-draft-guard";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId_",
@@ -83,111 +84,113 @@ function RouteComponent() {
   };
 
   return (
-    <MilestoneSelectionProvider key={taskId}>
-      <TaskReleaseOriginProvider
-        origin={getTaskReleaseOrigin(
-          projectId,
-          task?.projectId,
-          originReleaseId,
-        )}
-      >
-        <TaskLayout
-          taskId={taskId}
-          projectId={projectId}
-          workspaceId={workspaceId}
-          headerActions={
-            !isLoading && task ? (
-              <TaskHeaderActions
-                taskId={taskId}
-                projectId={projectId}
-                workspaceId={workspaceId}
-                deleteHandle={deleteHandle}
-              />
-            ) : null
-          }
-          rail={
-            isLoading ? (
-              <TaskPropertiesRailSkeleton />
-            ) : isTaskError || !task ? null : (
-              <PropertiesRail
-                taskId={taskId}
-                projectId={projectId}
-                workspaceId={workspaceId}
-                className="w-80 shrink-0"
-              />
-            )
-          }
+    <DocumentDraftGuardProvider key={taskId}>
+      <MilestoneSelectionProvider>
+        <TaskReleaseOriginProvider
+          origin={getTaskReleaseOrigin(
+            projectId,
+            task?.projectId,
+            originReleaseId,
+          )}
         >
-          <PageTitle
-            title={
-              isLoading
-                ? t("tasks:common.loadingTask")
-                : isTaskError || !task
-                  ? t("tasks:common.taskNotFound")
-                  : `${project?.slug}-${task?.number} · ${task?.title}`
-            }
-            hideAppName
-          />
-          {!isLoading && task && (
-            <TaskShortcuts
-              taskId={taskId}
-              projectId={projectId}
-              workspaceId={workspaceId}
-            />
-          )}
-          {!isLoading && task && (
-            <TaskDeleteDialog
-              handle={deleteHandle}
-              taskId={taskId}
-              onDeleted={handleDeleted}
-            />
-          )}
-          {isLoading ? (
-            <TaskDetailsSkeleton />
-          ) : isTaskError || !task ? (
-            <div className="flex h-full flex-col items-center justify-center gap-4 px-4 py-12 text-center">
-              <h1 className="text-2xl font-bold">
-                {t("tasks:common.taskNotFound")}
-              </h1>
-              <p className="text-muted-foreground max-w-md">
-                {t("tasks:common.taskNotFoundDescription", {
-                  defaultValue:
-                    "The task you are looking for does not exist or has been deleted.",
-                })}
-              </p>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  navigate({
-                    to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
-                    params: { workspaceId, projectId },
-                  })
-                }
-              >
-                {t("navigation:sidebar.backToBoard", {
-                  defaultValue: "Back to board",
-                })}
-              </Button>
-            </div>
-          ) : (
-            <TaskDetailsContent
-              taskId={taskId}
-              projectId={projectId}
-              workspaceId={workspaceId}
-              variant="page"
-              className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6 xl:pt-12 xl:pb-20"
-              properties={
-                <PropertyChips
+          <TaskLayout
+            taskId={taskId}
+            projectId={projectId}
+            workspaceId={workspaceId}
+            headerActions={
+              !isLoading && task ? (
+                <TaskHeaderActions
                   taskId={taskId}
                   projectId={projectId}
                   workspaceId={workspaceId}
-                  className="pb-5 lg:hidden"
+                  deleteHandle={deleteHandle}
                 />
+              ) : null
+            }
+            rail={
+              isLoading ? (
+                <TaskPropertiesRailSkeleton />
+              ) : isTaskError || !task ? null : (
+                <PropertiesRail
+                  taskId={taskId}
+                  projectId={projectId}
+                  workspaceId={workspaceId}
+                  className="w-80 shrink-0"
+                />
+              )
+            }
+          >
+            <PageTitle
+              title={
+                isLoading
+                  ? t("tasks:common.loadingTask")
+                  : isTaskError || !task
+                    ? t("tasks:common.taskNotFound")
+                    : `${project?.slug}-${task?.number} · ${task?.title}`
               }
+              hideAppName
             />
-          )}
-        </TaskLayout>
-      </TaskReleaseOriginProvider>
-    </MilestoneSelectionProvider>
+            {!isLoading && task && (
+              <TaskShortcuts
+                taskId={taskId}
+                projectId={projectId}
+                workspaceId={workspaceId}
+              />
+            )}
+            {!isLoading && task && (
+              <TaskDeleteDialog
+                handle={deleteHandle}
+                taskId={taskId}
+                onDeleted={handleDeleted}
+              />
+            )}
+            {isLoading ? (
+              <TaskDetailsSkeleton />
+            ) : isTaskError || !task ? (
+              <div className="flex h-full flex-col items-center justify-center gap-4 px-4 py-12 text-center">
+                <h1 className="text-2xl font-bold">
+                  {t("tasks:common.taskNotFound")}
+                </h1>
+                <p className="text-muted-foreground max-w-md">
+                  {t("tasks:common.taskNotFoundDescription", {
+                    defaultValue:
+                      "The task you are looking for does not exist or has been deleted.",
+                  })}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    navigate({
+                      to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
+                      params: { workspaceId, projectId },
+                    })
+                  }
+                >
+                  {t("navigation:sidebar.backToBoard", {
+                    defaultValue: "Back to board",
+                  })}
+                </Button>
+              </div>
+            ) : (
+              <TaskDetailsContent
+                taskId={taskId}
+                projectId={projectId}
+                workspaceId={workspaceId}
+                variant="page"
+                className="mx-auto w-full max-w-2xl px-4 pt-6 pb-16 sm:px-6 xl:pt-12 xl:pb-20"
+                properties={
+                  <PropertyChips
+                    taskId={taskId}
+                    projectId={projectId}
+                    workspaceId={workspaceId}
+                    className="pb-5 lg:hidden"
+                  />
+                }
+              />
+            )}
+          </TaskLayout>
+        </TaskReleaseOriginProvider>
+      </MilestoneSelectionProvider>
+    </DocumentDraftGuardProvider>
   );
 }

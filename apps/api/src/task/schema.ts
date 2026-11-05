@@ -235,7 +235,14 @@ export const updateTypeBody = z.object({
       "Tasks and bugs keep identity and membership. Features cannot be converted.",
   }),
 });
-export const updateDescriptionBody = z.object({ description: z.string() });
+export const updateDescriptionBody = z.object({
+  description: z.string(),
+  expectedDescription: z.string().optional().openapi({
+    description:
+      "The saved description being edited. A changed value returns 409.",
+  }),
+  draftAssetIds: z.array(z.string().min(1)).max(100).optional(),
+});
 
 const surface = z.enum(["description", "comment"]).openapi({
   description: "Where the image is used, which decides how it is scoped.",

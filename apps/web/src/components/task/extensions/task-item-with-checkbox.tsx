@@ -4,6 +4,7 @@ import {
   NodeViewContent,
   NodeViewWrapper,
   ReactNodeViewRenderer,
+  useEditorState,
 } from "@tiptap/react";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,7 +12,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 function TaskItemNodeView({ editor, node, updateAttributes }: NodeViewProps) {
   const { t } = useTranslation();
   const checked = Boolean(node.attrs.checked);
-  const isEditable = editor.isEditable;
+  const isEditable = useEditorState({
+    editor,
+    selector: ({ editor: active }) => active.isEditable,
+  });
 
   return (
     <NodeViewWrapper
@@ -29,7 +33,7 @@ function TaskItemNodeView({ editor, node, updateAttributes }: NodeViewProps) {
               : t("tasks:detail.editor.checkbox.markComplete")
           }
           onCheckedChange={(value) => {
-            if (!isEditable) return;
+            if (!editor.isEditable) return;
             updateAttributes({ checked: value === true });
           }}
         />

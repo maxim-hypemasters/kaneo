@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
-import { assetTable, projectTable } from "../../database/schema";
+import { assetTable, projectTable, taskTable } from "../../database/schema";
 import {
   createTaskImageUploadUrl,
   InvalidUploadedAssetError,
@@ -11,6 +11,41 @@ import {
 } from "../../storage/s3";
 
 type Upload = { filename: string; contentType: string; size: number };
+type UploadScope = { taskId?: string; expectedWorkspaceId?: string };
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function lockUploadScope(
+  tx: Transaction,
+  projectId: string,
+  scope: UploadScope,
+) {
+  const [project] = await tx
+    .select({ workspaceId: projectTable.workspaceId })
+    .from(projectTable)
+    .where(eq(projectTable.id, projectId))
+    .for("share");
+  if (!project) throw new HTTPException(404, { message: "Project not found" });
+  if (
+    scope.expectedWorkspaceId &&
+    project.workspaceId !== scope.expectedWorkspaceId
+  )
+    throw new HTTPException(409, {
+      message: "Project changed workspaces; retry the request",
+    });
+  if (scope.taskId) {
+    const [task] = await tx
+      .select({ projectId: taskTable.projectId })
+      .from(taskTable)
+      .where(eq(taskTable.id, scope.taskId))
+      .for("share");
+    if (!task) throw new HTTPException(404, { message: "Task not found" });
+    if (task.projectId !== projectId)
+      throw new HTTPException(409, {
+        message: "Task changed projects; retry the request",
+      });
+  }
+  return project;
+}
 async function uploadContext(projectId: string, userId: string) {
   const project = await db.query.projectTable.findFirst({
     where: eq(projectTable.id, projectId),
@@ -33,10 +68,13 @@ function validate(input: Upload) {
   }
 }
 export async function stageTaskAssetUpload(
-  projectId: string,
+  projectId: string | undefined,
   userId: string,
   input: Upload,
+  scope: UploadScope = {},
 ) {
+  if (!projectId)
+    throw new HTTPException(404, { message: "Project not found" });
   validate(input);
   const context = await uploadContext(projectId, userId);
   let upload: Awaited<ReturnType<typeof createTaskImageUploadUrl>>;
@@ -48,13 +86,7 @@ export async function stageTaskAssetUpload(
     });
   }
   await db.transaction(async (tx) => {
-    const [currentProject] = await tx
-      .select({ workspaceId: projectTable.workspaceId })
-      .from(projectTable)
-      .where(eq(projectTable.id, projectId))
-      .for("share");
-    if (!currentProject)
-      throw new HTTPException(404, { message: "Project not found" });
+    const currentProject = await lockUploadScope(tx, projectId, scope);
     await tx.insert(assetTable).values({
       workspaceId: currentProject.workspaceId,
       projectId,
@@ -71,10 +103,13 @@ export async function stageTaskAssetUpload(
   return upload;
 }
 export async function finalizeStagedTaskAsset(
-  projectId: string,
+  projectId: string | undefined,
   userId: string,
   input: Upload & { key: string },
+  scope: UploadScope = {},
 ) {
+  if (!projectId)
+    throw new HTTPException(404, { message: "Project not found" });
   validate(input);
   await uploadContext(projectId, userId);
   const key = input.key.trim();
@@ -105,23 +140,26 @@ export async function finalizeStagedTaskAsset(
       },
     );
   }
-  const [asset] = await db
-    .update(assetTable)
-    .set({
-      mimeType: uploaded.contentType,
-      size: uploaded.size,
-      kind: isImageContentType(uploaded.contentType) ? "image" : "attachment",
-      surface: "draft",
-    })
-    .where(
-      and(
-        eq(assetTable.id, existing.id),
-        isNull(assetTable.taskId),
-        inArray(assetTable.surface, ["draft", "draft-pending"]),
-      ),
-    )
-    .returning({ id: assetTable.id });
-  if (!asset)
-    throw new HTTPException(409, { message: "Upload is already attached" });
-  return asset;
+  return db.transaction(async (tx) => {
+    await lockUploadScope(tx, projectId, scope);
+    const [asset] = await tx
+      .update(assetTable)
+      .set({
+        mimeType: uploaded.contentType,
+        size: uploaded.size,
+        kind: isImageContentType(uploaded.contentType) ? "image" : "attachment",
+        surface: "draft",
+      })
+      .where(
+        and(
+          eq(assetTable.id, existing.id),
+          isNull(assetTable.taskId),
+          inArray(assetTable.surface, ["draft", "draft-pending"]),
+        ),
+      )
+      .returning({ id: assetTable.id });
+    if (!asset)
+      throw new HTTPException(409, { message: "Upload is already attached" });
+    return asset;
+  });
 }

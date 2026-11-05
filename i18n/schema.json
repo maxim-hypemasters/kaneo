@@ -799,6 +799,218 @@
 						}
 					},
 					"required": ["link"]
+				},
+				"documentEditor": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"description": {
+							"type": "string"
+						},
+						"toolbar": {
+							"type": "string"
+						},
+						"paragraph": {
+							"type": "string"
+						},
+						"heading1": {
+							"type": "string"
+						},
+						"heading2": {
+							"type": "string"
+						},
+						"heading3": {
+							"type": "string"
+						},
+						"bold": {
+							"type": "string"
+						},
+						"italic": {
+							"type": "string"
+						},
+						"underline": {
+							"type": "string"
+						},
+						"strike": {
+							"type": "string"
+						},
+						"inlineCode": {
+							"type": "string"
+						},
+						"bulletedList": {
+							"type": "string"
+						},
+						"numberedList": {
+							"type": "string"
+						},
+						"link": {
+							"type": "string"
+						},
+						"insert": {
+							"type": "string"
+						},
+						"checklist": {
+							"type": "string"
+						},
+						"table": {
+							"type": "string"
+						},
+						"quote": {
+							"type": "string"
+						},
+						"codeBlock": {
+							"type": "string"
+						},
+						"image": {
+							"type": "string"
+						},
+						"file": {
+							"type": "string"
+						},
+						"embed": {
+							"type": "string"
+						},
+						"undo": {
+							"type": "string"
+						},
+						"redo": {
+							"type": "string"
+						},
+						"expand": {
+							"type": "string"
+						},
+						"collapse": {
+							"type": "string"
+						},
+						"uploading": {
+							"type": "string"
+						},
+						"uploadFailed": {
+							"type": "string"
+						},
+						"empty": {
+							"type": "string"
+						},
+						"linkTitle": {
+							"type": "string"
+						},
+						"embedTitle": {
+							"type": "string"
+						},
+						"embedPlaceholder": {
+							"type": "string"
+						},
+						"insertEmbed": {
+							"type": "string"
+						},
+						"codeLanguage": {
+							"type": "string"
+						},
+						"copyCode": {
+							"type": "string"
+						},
+						"codeCopied": {
+							"type": "string"
+						},
+						"edit": {
+							"type": "string"
+						},
+						"save": {
+							"type": "string"
+						},
+						"saving": {
+							"type": "string"
+						},
+						"saveFailed": {
+							"type": "string"
+						},
+						"permissionLost": {
+							"type": "string"
+						},
+						"conflict": {
+							"type": "string"
+						},
+						"reviewLatest": {
+							"type": "string"
+						},
+						"latestVersion": {
+							"type": "string"
+						},
+						"useLatest": {
+							"type": "string"
+						},
+						"keepDraft": {
+							"type": "string"
+						},
+						"discardTitle": {
+							"type": "string"
+						},
+						"discardDescription": {
+							"type": "string"
+						},
+						"discard": {
+							"type": "string"
+						},
+						"keepEditing": {
+							"type": "string"
+						},
+						"autoDetect": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"description",
+						"toolbar",
+						"paragraph",
+						"heading1",
+						"heading2",
+						"heading3",
+						"bold",
+						"italic",
+						"underline",
+						"strike",
+						"inlineCode",
+						"bulletedList",
+						"numberedList",
+						"link",
+						"insert",
+						"checklist",
+						"table",
+						"quote",
+						"codeBlock",
+						"image",
+						"file",
+						"embed",
+						"undo",
+						"redo",
+						"expand",
+						"collapse",
+						"uploading",
+						"uploadFailed",
+						"empty",
+						"linkTitle",
+						"embedTitle",
+						"embedPlaceholder",
+						"insertEmbed",
+						"codeLanguage",
+						"copyCode",
+						"codeCopied",
+						"edit",
+						"save",
+						"saving",
+						"saveFailed",
+						"permissionLost",
+						"conflict",
+						"reviewLatest",
+						"latestVersion",
+						"useLatest",
+						"keepDraft",
+						"discardTitle",
+						"discardDescription",
+						"discard",
+						"keepEditing",
+						"autoDetect"
+					]
 				}
 			},
 			"required": [
@@ -813,7 +1025,8 @@
 				"people",
 				"error",
 				"modals",
-				"editor"
+				"editor",
+				"documentEditor"
 			]
 		},
 		"auth": {

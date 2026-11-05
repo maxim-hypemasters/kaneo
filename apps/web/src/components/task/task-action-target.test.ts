@@ -60,6 +60,24 @@ describe("clickTaskAction", () => {
 });
 
 describe("focusTaskAction", () => {
+  it("enters description editing before focusing its field", () => {
+    document.body.innerHTML = `<div data-task-view><section data-task-action="description"><button data-document-edit>Edit</button><textarea readonly>Saved text</textarea></section></div>`;
+    const editButton = document.querySelector("button") as HTMLButtonElement;
+    const field = document.querySelector("textarea") as HTMLTextAreaElement;
+    editButton.addEventListener("click", () => {
+      field.readOnly = false;
+    });
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+
+    focusTaskAction("description");
+
+    expect(field.readOnly).toBe(false);
+    expect(document.activeElement).toBe(field);
+  });
+
   it("focuses and selects a text field action", () => {
     document.body.innerHTML = `<div data-task-view><textarea data-task-action="title">Fix login</textarea></div>`;
     const field = document.querySelector("textarea") as HTMLTextAreaElement;

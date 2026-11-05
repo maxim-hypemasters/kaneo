@@ -1002,7 +1002,6 @@ function CreateTaskModalContent({
                     if (!submittingRef.current) setDescription(next);
                   }}
                   placeholder={copy.descriptionPlaceholder}
-                  projectId={resolvedProjectId || undefined}
                   uploadAsset={stageAsset}
                   disabled={isSubmitting}
                 />

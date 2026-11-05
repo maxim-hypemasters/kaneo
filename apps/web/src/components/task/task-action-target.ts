@@ -47,15 +47,23 @@ export function clickTaskAction(name: TaskActionName) {
 export function focusTaskAction(name: TaskActionName) {
   const element = findTaskAction(name);
   if (!element) return;
-  const target = findField(element);
-  target.focus();
-  if (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement
-  ) {
-    target.select();
-  } else if (target.isContentEditable) {
-    window.getSelection()?.selectAllChildren(target);
-    window.getSelection()?.collapseToEnd();
-  }
+  const focus = () => {
+    if (!element.isConnected) return;
+    const target = findField(element);
+    target.focus();
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement
+    ) {
+      target.select();
+    } else if (target.isContentEditable) {
+      window.getSelection()?.selectAllChildren(target);
+      window.getSelection()?.collapseToEnd();
+    }
+  };
+  const editTarget = element.querySelector<HTMLElement>("[data-document-edit]");
+  if (editTarget) {
+    editTarget.click();
+    requestAnimationFrame(focus);
+  } else focus();
 }

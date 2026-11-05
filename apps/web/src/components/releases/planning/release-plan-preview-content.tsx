@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useRef, useState } from "react";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
+import { requestDocumentDraftLeave } from "@/components/editor/document-draft-guard";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useGetReleases } from "@/hooks/queries/release/use-get-releases";
@@ -97,13 +98,17 @@ export function ReleasePlanPreviewContent({
             }))
           }
           onOpenTask={(taskId) => {
-            taskReturnFocus.current =
+            const returnFocus =
               Array.from(
                 contentRef.current?.querySelectorAll<HTMLElement>(
                   "[data-task-id]",
                 ) ?? [],
               ).find((element) => element.dataset.taskId === taskId) ?? null;
-            setTaskDetails({ taskId });
+            void requestDocumentDraftLeave().then((allowed) => {
+              if (!allowed) return;
+              taskReturnFocus.current = returnFocus;
+              setTaskDetails({ taskId });
+            });
           }}
           taskHref={(taskId) =>
             `/dashboard/workspace/${encodeURIComponent(workspaceId)}/project/${encodeURIComponent(projectId)}/task/${encodeURIComponent(taskId)}?originReleaseId=${encodeURIComponent(release.id)}`

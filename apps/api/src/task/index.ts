@@ -348,6 +348,65 @@ const finalizeStagedUploadRoute = createRoute({
   },
 });
 
+const descriptionStagedUploadRoute = createRoute({
+  method: "post",
+  operationId: "stageDescriptionAssetUpload",
+  path: "/description/{id}/draft-upload",
+  tags: ["Tasks"],
+  summary: "Stage an attachment for a description edit",
+  description:
+    "Stage a private attachment for an existing task, bug, or feature. Saving the description claims referenced assets; unsaved assets expire after 24 hours.",
+  middleware: [
+    workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: taskParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: stagedImageUploadBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("Presigned upload", imageUploadSchema),
+    400: errorResponse("Invalid upload"),
+    403: errorResponse("No project access or missing task:update permission"),
+    404: errorResponse("Task not found"),
+    409: errorResponse("Task or project changed scope"),
+    503: errorResponse("Storage unavailable"),
+  },
+});
+const finalizeDescriptionStagedUploadRoute = createRoute({
+  method: "post",
+  operationId: "finalizeDescriptionAssetUpload",
+  path: "/description/{id}/draft-upload/finalize",
+  tags: ["Tasks"],
+  summary: "Finalize a staged description attachment",
+  middleware: [
+    workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: taskParam,
+    body: {
+      required: true,
+      content: {
+        "application/json": { schema: finalizeStagedImageUploadBody },
+      },
+    },
+  },
+  responses: {
+    200: jsonResponse("Staged attachment", finalizedAssetSchema),
+    400: errorResponse("Invalid upload"),
+    403: errorResponse("No project access or missing task:update permission"),
+    404: errorResponse("Task not found"),
+    409: errorResponse("Upload already attached or task/project changed scope"),
+    503: errorResponse("Storage unavailable"),
+  },
+});
+
 const reorderTasksRoute = createRoute({
   method: "post",
   operationId: "reorderTasks",
@@ -976,7 +1035,8 @@ const updateTaskDescriptionRoute = createRoute({
   path: "/description/{id}",
   tags: ["Tasks"],
   summary: "Update task description",
-  description: "Replace a task's description.",
+  description:
+    "Replace a task description and claim referenced staged uploads atomically. Supply expectedDescription to reject concurrent edits with DESCRIPTION_CONFLICT.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -996,6 +1056,7 @@ const updateTaskDescriptionRoute = createRoute({
       "No access to the project, or missing task:update permission",
     ),
     404: errorResponse("Task not found"),
+    409: errorResponse("Description changed or task/project changed scope"),
   },
 });
 
@@ -1165,6 +1226,35 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       c.req.valid("param").projectId,
       c.get("userId"),
       c.req.valid("json"),
+    );
+    const base = normalizeApiServerUrl(
+      process.env.KANEO_API_URL || new URL(c.req.url).origin,
+    );
+    return c.json({ id: asset.id, url: `${base}/asset/${asset.id}` }, 200);
+  })
+  .openapi(descriptionStagedUploadRoute, async (c) =>
+    c.json(
+      await stageTaskAssetUpload(
+        c.get("authorizedProjectId"),
+        c.get("userId"),
+        c.req.valid("json"),
+        {
+          taskId: c.req.valid("param").id,
+          expectedWorkspaceId: c.get("workspaceId"),
+        },
+      ),
+      200,
+    ),
+  )
+  .openapi(finalizeDescriptionStagedUploadRoute, async (c) => {
+    const asset = await finalizeStagedTaskAsset(
+      c.get("authorizedProjectId"),
+      c.get("userId"),
+      c.req.valid("json"),
+      {
+        taskId: c.req.valid("param").id,
+        expectedWorkspaceId: c.get("workspaceId"),
+      },
     );
     const base = normalizeApiServerUrl(
       process.env.KANEO_API_URL || new URL(c.req.url).origin,
@@ -1638,13 +1728,18 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(updateTaskDescriptionRoute, async (c) => {
     const { id } = c.req.valid("param");
-    const { description } = c.req.valid("json");
+    const { description, expectedDescription, draftAssetIds } =
+      c.req.valid("json");
     const currentUserId = c.get("userId");
 
     const task = await updateTaskDescription({
       id,
       description,
+      expectedDescription,
+      draftAssetIds,
       currentUserId,
+      expectedProjectId: c.get("authorizedProjectId"),
+      expectedWorkspaceId: c.get("workspaceId"),
     });
 
     return c.json(taskResource(task), 200);

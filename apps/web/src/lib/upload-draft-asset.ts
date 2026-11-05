@@ -3,17 +3,26 @@ import { client } from "@kaneo/libs";
 import { HttpError } from "@/lib/http-error";
 import { getImageAltText, isSupportedImageFile } from "@/lib/upload-task-image";
 
-export async function uploadDraftAsset(projectId: string, file: File) {
+export async function uploadDraftAsset(
+  projectId: string,
+  file: File,
+  taskId?: string,
+) {
   const json = {
     filename: file.name || "file",
     contentType: file.type || "application/octet-stream",
     size: file.size,
     surface: "description" as const,
   };
-  const response = await client.task["draft-upload"][":projectId"].$post({
-    param: { projectId },
-    json,
-  });
+  const response = taskId
+    ? await client.task.description[":id"]["draft-upload"].$post({
+        param: { id: taskId },
+        json,
+      })
+    : await client.task["draft-upload"][":projectId"].$post({
+        param: { projectId },
+        json,
+      });
   if (!response.ok) throw await HttpError.fromResponse(response);
   const upload = await response.json();
   const stored = await fetch(upload.uploadUrl, {
@@ -23,12 +32,15 @@ export async function uploadDraftAsset(projectId: string, file: File) {
   });
   if (!stored.ok)
     throw new Error(i18n.t("activity:comment.editor.failedToUploadFile"));
-  const finalized = await client.task["draft-upload"][
-    ":projectId"
-  ].finalize.$post({
-    param: { projectId },
-    json: { ...json, key: upload.key },
-  });
+  const finalized = taskId
+    ? await client.task.description[":id"]["draft-upload"].finalize.$post({
+        param: { id: taskId },
+        json: { ...json, key: upload.key },
+      })
+    : await client.task["draft-upload"][":projectId"].finalize.$post({
+        param: { projectId },
+        json: { ...json, key: upload.key },
+      });
   if (!finalized.ok) throw await HttpError.fromResponse(finalized);
   const asset = await finalized.json();
   return {

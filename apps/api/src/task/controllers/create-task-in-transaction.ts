@@ -1,11 +1,10 @@
 import { assertEstimateSeconds } from "../estimate";
 import { lockMilestone } from "../../milestone/membership";
-import { extractAssetIds } from "../../storage/cleanup-assets";
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { claimDescriptionAssets } from "./claim-description-assets";
+import { and, eq } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
-  assetTable,
   columnTable,
   customFieldDefinitionTable,
   customFieldValueTable,
@@ -250,39 +249,13 @@ export async function createTaskInTransaction(
     .returning();
 
   if (task && draftAssetIds?.length) {
-    const referenced = extractAssetIds(description);
-    const ids = [...new Set(draftAssetIds)].filter((id) => referenced.has(id));
-    if (ids.length) {
-      // claimTaskNumber already holds the project row lock in this transaction.
-      const project = await tx.query.projectTable.findFirst({
-        columns: { workspaceId: true },
-        where: eq(projectTable.id, projectId),
-      });
-      if (!project)
-        throw new HTTPException(404, { message: "Project not found" });
-      const claimed = await tx
-        .update(assetTable)
-        .set({
-          taskId: task.id,
-          surface: "description",
-          workspaceId: project.workspaceId,
-        })
-        .where(
-          and(
-            inArray(assetTable.id, ids),
-            eq(assetTable.projectId, projectId),
-            eq(assetTable.createdBy, currentUserId),
-            eq(assetTable.surface, "draft"),
-            isNull(assetTable.taskId),
-          ),
-        )
-        .returning({ id: assetTable.id });
-      if (claimed.length !== ids.length)
-        throw new HTTPException(400, {
-          message:
-            "Some staged uploads are unavailable or belong to another owner/project",
-        });
-    }
+    await claimDescriptionAssets(tx, {
+      taskId: task.id,
+      projectId,
+      currentUserId,
+      description,
+      draftAssetIds,
+    });
   }
 
   if (task && mergedCustomFields.length) {
