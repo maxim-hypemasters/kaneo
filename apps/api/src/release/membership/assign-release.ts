@@ -12,24 +12,27 @@ type Task = typeof taskTable.$inferSelect;
 export const RELEASE_CHUNK_SIZE = 1000;
 
 // Lock order for every write to a task's release:
-//   1. task rows: the one task (withLockedTask), or a feature and then its
-//      followers ordered by id, or a set of tasks ordered by id;
+//   1. task rows: the one task (withLockedTask); for a milestone's release
+//      change, the feature, then the milestone, then its followers ordered by
+//      id; or a set of tasks ordered by id;
 //   2. the release row last, FOR KEY SHARE.
-// No single order of task rows fits every path: a feature's release change
-// locks the feature before its tasks, joining a feature locks the task
-// before the feature, and deleting a release, moving its unfinished items,
-// reordering or bulk edits lock sets by id. So these can deadlock each
-// other. PostgreSQL then aborts one transaction whole; withLockedTask and the
-// release paths run it again (retry-transaction.ts), and anywhere else the
-// client gets a 409 to try again.
+// No single order of rows fits every path: a milestone's release change
+// locks the feature and milestone before their tasks, joining a feature locks
+// the task before the feature, and deleting a release, moving its unfinished
+// items or bulk edits lock tasks by id before milestones. So these can
+// deadlock each other. PostgreSQL then aborts one transaction whole;
+// withLockedTask and the release paths run it again (retry-transaction.ts),
+// and anywhere else the client gets a 409 to try again. Reordering takes the
+// project row first, as a milestone's release change does, so those two
+// queue instead.
 // Editing a release's fields takes FOR NO KEY UPDATE, which KEY SHARE
 // doesn't block, but a rename changes a unique key, so its UPDATE takes FOR
 // UPDATE and waits for membership writes in flight on that release. It locks
 // no task rows, so it can't deadlock with them. Deleting a release never
-// locks its row first: that would deadlock with creating a task in a feature
-// in it, which holds the feature and then waits on the release. It locks the
-// members instead, and retries when a task joined meanwhile (see
-// delete-release.ts).
+// locks its row first: that would deadlock with creating a task in a
+// milestone that follows it, which holds the feature and milestone and then
+// waits on the release. It locks the member tasks and then the milestones
+// instead, and retries when a task joined meanwhile (see delete-release.ts).
 
 // The release, locked FOR KEY SHARE so it can't be deleted meanwhile, or
 // null when it isn't in the project. A release of another project reads as

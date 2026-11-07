@@ -11,7 +11,6 @@ import updateTaskType from "../../apps/api/src/task/controllers/update-task-type
 import { setTaskType } from "../../apps/api/src/task/feature-hierarchy/assign-feature";
 import { getRelease } from "../../apps/api/src/release/read-releases";
 import { readReleaseProgress } from "../../apps/api/src/release/progress/read-release-progress";
-import { migrateFeatureHierarchy } from "../../apps/api/src/migrations/feature-hierarchy";
 import moveUnfinishedItems from "../../apps/api/src/release/controllers/move-unfinished-items";
 import bulkUpdateTasks from "../../apps/api/src/task/controllers/bulk-update-tasks";
 import updateTaskStatus from "../../apps/api/src/task/controllers/update-task-status";
@@ -285,21 +284,5 @@ describe("Bug progress and schema upgrades", () => {
         throw rollback;
       }),
     ).rejects.toBe(rollback);
-  });
-
-  it("retains Bug classification when converting legacy subtask links to feature membership", async () => {
-    const ctx = await setup();
-    const parent = await insertTask(ctx.project.id, { type: "feature" });
-    const bug = await insertTask(ctx.project.id, { type: "bug" });
-    await db.insert(schema.taskRelationTable).values({
-      sourceTaskId: parent.id,
-      targetTaskId: bug.id,
-      relationType: "subtask",
-    });
-    await migrateFeatureHierarchy();
-    expect(await getTask(bug.id)).toMatchObject({
-      type: "bug",
-      featureId: parent.id,
-    });
   });
 });

@@ -732,15 +732,13 @@ describe("API integration: workspace RBAC enforcement", () => {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          title: "Rescheduled by member",
+          title: "Edited by member",
           description: "edit",
           priority: "high",
           status: "to-do",
           projectId: project.id,
           position: 1,
           userId: "",
-          startDate: "2026-09-01T00:00:00.000Z",
-          dueDate: "2026-09-03T00:00:00.000Z",
         }),
       });
       expect(response.status).toBe(200);
@@ -748,7 +746,7 @@ describe("API integration: workspace RBAC enforcement", () => {
       const persisted = await db.query.taskTable.findFirst({
         where: eq(schema.taskTable.id, task.id),
       });
-      expect(persisted?.title).toBe("Rescheduled by member");
+      expect(persisted?.title).toBe("Edited by member");
       expect(persisted?.userId).toBeNull();
     });
 

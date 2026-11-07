@@ -16,7 +16,6 @@ import { TaskShortcuts } from "./task-shortcuts";
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   updateAssignee: vi.fn(),
-  updateDueDate: vi.fn(),
   writeText: vi.fn(),
   message: vi.fn(),
   error: vi.fn(),
@@ -70,9 +69,6 @@ vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
 }));
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: mocks.updateAssignee }),
-}));
-vi.mock("@/hooks/mutations/task/use-update-task-due-date", () => ({
-  useUpdateTaskDueDate: () => ({ mutateAsync: mocks.updateDueDate }),
 }));
 vi.mock("@/hooks/queries/task/use-get-task", () => ({
   default: () => ({ data: mocks.task }),
@@ -167,7 +163,6 @@ beforeEach(() => {
   mocks.canUpdateTasks.mockReturnValue(true);
   mocks.canAssignTasks.mockReturnValue(true);
   mocks.updateAssignee.mockResolvedValue({});
-  mocks.updateDueDate.mockResolvedValue({});
   mocks.writeText.mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
@@ -207,17 +202,6 @@ describe("TaskShortcuts", () => {
     expect(mocks.message).toHaveBeenCalledWith("tasks:shortcuts.assignedToMe", {
       icon: expect.anything(),
     });
-  });
-
-  it("removes the due date", async () => {
-    renderTaskShortcuts();
-
-    press({ key: "D", code: "KeyD", ctrlKey: true, shiftKey: true });
-    await act(async () => {});
-
-    expect(mocks.updateDueDate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "task-1", dueDate: null }),
-    );
   });
 
   it("copies the task ID, title and Markdown", async () => {

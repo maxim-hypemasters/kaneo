@@ -22,6 +22,18 @@ const dateRangeUpgradeSql = readFileSync(
   "utf8",
 );
 
+// 0070 later gave milestones their planning columns. Replaying just those
+// statements lets the current schema read the rebuilt table.
+const milestonePlanningSql = readFileSync(
+  new URL("../../apps/api/drizzle/0070_easy_vin_gonzales.sql", import.meta.url),
+  "utf8",
+)
+  .split("--> statement-breakpoint")
+  .map((statement) => statement.trim())
+  .filter((statement) =>
+    /^(ALTER TABLE "milestone"|CREATE INDEX "milestone_)/.test(statement),
+  );
+
 describe("milestone migration upgrade", () => {
   it("upgrades existing Feature/Task/Bug data without changing release baselines or history", async () => {
     const member = await createWorkspaceMember({ role: "owner" });
@@ -68,6 +80,8 @@ describe("milestone migration upgrade", () => {
         await tx.execute(sql`drop table milestone`);
         await tx.execute(sql.raw(upgradeSql));
         await tx.execute(sql.raw(dateRangeUpgradeSql));
+        for (const statement of milestonePlanningSql)
+          await tx.execute(sql.raw(statement));
         const upgraded = await tx
           .select()
           .from(schema.taskTable)
