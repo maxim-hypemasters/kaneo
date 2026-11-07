@@ -9,7 +9,7 @@ import {
   updateMilestone,
 } from "../../apps/api/src/milestone/write-milestones";
 import updateTaskMilestone from "../../apps/api/src/task/controllers/update-task-milestone";
-import updateTaskDueDate from "../../apps/api/src/task/controllers/update-task-due-date";
+import moveTaskSchedule from "../../apps/api/src/task/controllers/move-task-schedule";
 import exportTasks from "../../apps/api/src/task/controllers/export-tasks";
 import { mockAnonymousSession, mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
@@ -270,8 +270,9 @@ describe("derived milestone schedules", () => {
     const task = await ctx.leaf({ dueDate: new Date("2026-10-20T00:00:00Z") });
     expect(
       (
-        await ctx.call("PUT", `/task/due-date/${task.id}`, {
-          dueDate: "2026-10-25",
+        await ctx.call("PUT", `/task/schedule/${task.id}`, {
+          start: "2026-10-25T00:00:00.000Z",
+          end: "2026-10-25T00:00:00.000Z",
         })
       ).status,
     ).toBe(200);
@@ -330,9 +331,10 @@ describe("derived milestone schedules", () => {
         milestoneId: second.id,
         currentUserId: ctx.user.id,
       }),
-      updateTaskDueDate({
+      moveTaskSchedule({
         id: leaf.id,
-        dueDate: new Date("2026-10-28T00:00:00Z"),
+        start: new Date("2026-10-28T00:00:00Z"),
+        end: new Date("2026-10-28T00:00:00Z"),
         currentUserId: ctx.user.id,
       }),
     ]);

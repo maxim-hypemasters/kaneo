@@ -174,23 +174,24 @@ describe("GanttTaskBar", () => {
     expect(button).not.toHaveAccessibleDescription();
   });
 
-  it("draws only scheduled working segments with exact-time accessible text", () => {
+  it("fills the days planned work runs on, with exact-time accessible text", () => {
     const first = {
-      start: parseISO("2026-09-03T09:00:00"),
+      start: parseISO("2026-09-03T15:00:00"),
       end: parseISO("2026-09-03T17:00:00"),
     };
     const second = {
       start: parseISO("2026-09-04T09:00:00"),
-      end: parseISO("2026-09-04T17:00:00"),
+      end: parseISO("2026-09-04T11:00:00"),
     };
     const { bar, onCommit, onOpenTask } = show(
-      task("2026-09-03T09:00:00", "2026-09-04T17:00:00", {
+      task("2026-09-03T15:00:00", "2026-09-04T11:00:00", {
         scheduleApplied: true,
         scheduleSegments: [first, second],
       }),
     );
-    expect(bar?.querySelectorAll("[data-gantt-work-segment]")).toHaveLength(2);
-    expect(bar?.style.width).not.toBe("");
+    // Thursday and Friday, whole, as one card.
+    expect(bar?.style.gridColumn).toBe("3 / 5");
+    expect(bar?.querySelectorAll("[data-gantt-work-segment]")).toHaveLength(0);
     const button = screen.getByRole("button", {
       name: "tasks:gantt.taskAriaLabel(title=Checkout)",
     });
@@ -202,6 +203,38 @@ describe("GanttTaskBar", () => {
     expect(onCommit).not.toHaveBeenCalled();
     fireEvent.keyDown(button, { key: "Enter" });
     expect(onOpenTask).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves days without planned work as gaps", () => {
+    const { bar } = show(
+      task("2026-09-04T13:00:00", "2026-09-07T13:00:00", {
+        scheduleApplied: true,
+        scheduleSegments: [
+          {
+            start: parseISO("2026-09-04T13:00:00"),
+            end: parseISO("2026-09-04T17:00:00"),
+          },
+          {
+            start: parseISO("2026-09-07T09:00:00"),
+            end: parseISO("2026-09-07T13:00:00"),
+          },
+        ],
+      }),
+    );
+    // Friday to Monday, drawn as Friday and Monday.
+    expect(bar?.style.gridColumn).toBe("4 / 8");
+    const blocks = bar?.querySelectorAll<HTMLElement>(
+      "[data-gantt-work-segment]",
+    );
+    expect(
+      Array.from(blocks ?? [], (block) => [
+        block.style.left,
+        block.style.width,
+      ]),
+    ).toEqual([
+      ["calc(0% + 4px)", "calc(25% - 8px)"],
+      ["calc(75% + 4px)", "calc(25% - 8px)"],
+    ]);
   });
 
   it("draws a milestone as a summary bar with its tasks' progress", () => {
@@ -325,6 +358,74 @@ describe("GanttTaskBar", () => {
     fireEvent.keyDown(milestoneBar(), { key: " " });
     expect(onOpenTask).toHaveBeenCalledTimes(3);
     expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it("moves planned work with its segments when dragged sideways", () => {
+    const planned = task("2026-09-03T13:00:00", "2026-09-04T13:00:00", {
+      scheduleApplied: true,
+      scheduleSegments: [
+        {
+          start: parseISO("2026-09-03T13:00:00"),
+          end: parseISO("2026-09-03T17:00:00"),
+        },
+        {
+          start: parseISO("2026-09-04T09:00:00"),
+          end: parseISO("2026-09-04T13:00:00"),
+        },
+      ],
+    });
+    const { bar, onCommit } = show(planned, { canMoveDates: true });
+    const button = screen.getByRole("button", {
+      name: "tasks:gantt.taskAriaLabelMovable(title=Checkout)",
+    });
+    expect(button).toHaveClass("cursor-grab");
+    expect(bar?.style.gridColumn).toBe("3 / 5");
+
+    fireEvent.pointerDown(button, { button: 0, clientX: 500, clientY: 300 });
+    fireEvent.pointerMove(window, {
+      clientX: 500 + 2 * DAY_PX,
+      clientY: 300,
+      buttons: 1,
+    });
+    // The preview moves the whole bar.
+    expect(bar?.style.gridColumn).toBe("5 / 7");
+    fireEvent.pointerUp(window, { clientX: 500 + 2 * DAY_PX, clientY: 300 });
+
+    expect(onCommit).toHaveBeenCalledWith({
+      start: parseISO("2026-09-05T13:00:00"),
+      end: parseISO("2026-09-06T13:00:00"),
+      userId: "u1",
+      featureId: null,
+      milestoneId: null,
+    });
+    expect(bar?.style.gridColumn).toBe("3 / 5");
+  });
+
+  it("pans instead of moving work dragged by touch", () => {
+    const { onCommit, onOpenTask } = show(task("2026-09-03", "2026-09-05"), {
+      canMoveDates: true,
+    });
+    const button = screen.getByRole("button", {
+      name: "tasks:gantt.taskAriaLabelMovable(title=Checkout)",
+    });
+    fireEvent.pointerDown(button, {
+      button: 0,
+      clientX: 500,
+      clientY: 300,
+      pointerType: "touch",
+    });
+    fireEvent.pointerMove(window, {
+      clientX: 500 + 2 * DAY_PX,
+      clientY: 300,
+      pointerType: "touch",
+    });
+    fireEvent.pointerUp(window, {
+      clientX: 500 + 2 * DAY_PX,
+      clientY: 300,
+      pointerType: "touch",
+    });
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(onOpenTask).not.toHaveBeenCalled();
   });
 
   it("keeps a milestone's derived dates fixed during a horizontal drag", () => {

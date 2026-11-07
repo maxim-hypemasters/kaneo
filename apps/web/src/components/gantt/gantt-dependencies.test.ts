@@ -359,3 +359,53 @@ it("does not mark completed blockers broken because of preserved historical plac
     ),
   ).toBe(false);
 });
+
+describe("planDependencyMoves for planned and finished work", () => {
+  it("pushes planned work a whole day for a clash of a few hours", () => {
+    const planned = (start: string, end: string): GanttSpan => ({
+      ...span(start, end),
+      precise: true,
+    });
+    const plan = planDependencyMoves(
+      new Map([
+        ["a", planned("2026-03-02T09:00", "2026-03-02T17:00")],
+        ["b", planned("2026-03-03T09:00", "2026-03-03T13:00")],
+      ]),
+      [dep("a", "b")],
+      "a",
+      // a now finishes at 11:00 on the day b starts at 09:00.
+      planned("2026-03-03T09:00", "2026-03-03T11:00"),
+    );
+
+    expect(plan.broken.map((d) => d.id)).toEqual(["a->b"]);
+    expect(plan.moves).toEqual([
+      expect.objectContaining({
+        taskId: "b",
+        to: expect.objectContaining({
+          start: parseISO("2026-03-04T09:00"),
+          end: parseISO("2026-03-04T13:00"),
+          precise: true,
+        }),
+      }),
+    ]);
+  });
+
+  it("never pulls finished blockers earlier", () => {
+    const plan = planDependencyMoves(
+      new Map([
+        ["done", { ...span("2026-03-01", "2026-03-03"), completed: true }],
+        ["b", span("2026-03-03", "2026-03-05")],
+        ["a", span("2026-03-05", "2026-03-06")],
+      ]),
+      [dep("done", "b"), dep("b", "a")],
+      "a",
+      // b is pulled two days earlier, past the end of finished work that
+      // would otherwise be pulled along too.
+      span("2026-03-03", "2026-03-04"),
+    );
+
+    expect(plan.moves.map((move) => [move.taskId, dates(move.to)])).toEqual([
+      ["b", ["2026-03-01", "2026-03-03"]],
+    ]);
+  });
+});

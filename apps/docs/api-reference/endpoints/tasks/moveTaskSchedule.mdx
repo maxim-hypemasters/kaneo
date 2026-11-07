@@ -1,0 +1,6 @@
+---
+title: "Move a task on the schedule"
+openapi: "PUT /task/schedule/{id}"
+---
+
+Moves a scheduled Task or Bug, as dragging it sideways in Gantt does. Planned work keeps its planned assignee and remaining effort and is laid out again through working hours from `start`, so it can finish after `end`. Work without a plan takes `start` and `end` on the date fields it already has. The next Apply of the item's release plans it again.

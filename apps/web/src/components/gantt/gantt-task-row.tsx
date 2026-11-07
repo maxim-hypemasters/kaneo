@@ -25,6 +25,7 @@ type GanttTaskRowProps = {
   // Milestone lanes don't say who does the work, so their bars show it.
   showBarAssignee?: boolean;
   laneDrag?: GanttLaneDrag;
+  canMoveDates?: boolean;
   onOpenTask: () => void;
   onCommit: (edit: GanttTaskEdit) => void;
   onDragChange?: (dragging: boolean) => void;
@@ -42,6 +43,7 @@ export function GanttTaskRow({
   showAssignee,
   showBarAssignee = false,
   laneDrag,
+  canMoveDates,
   onOpenTask,
   onCommit,
   onDragChange,
@@ -142,7 +144,7 @@ export function GanttTaskRow({
           "relative shrink-0 cursor-grab border-b border-border/70 select-none",
           // Without the rail a row would be exactly as tall as its bar,
           // leaving dependency arrows no room to turn between rows.
-          showTaskRail ? "min-h-11" : "min-h-12",
+          showTaskRail ? "min-h-11" : "min-h-13",
         )}
         style={{
           minWidth: `${timeline.timelineMinWidthRem}rem`,
@@ -154,6 +156,7 @@ export function GanttTaskRow({
           pixelsPerDay={pixelsPerDay}
           isMobile={isMobile}
           laneDrag={laneDrag}
+          canMoveDates={canMoveDates}
           onCommit={onCommit}
           onOpenTask={onOpenTask}
           onDragChange={onDragChange}

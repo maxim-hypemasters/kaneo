@@ -1,4 +1,4 @@
-import { differenceInCalendarDays } from "date-fns";
+import { addDays, differenceInCalendarDays } from "date-fns";
 import type { GanttTaskEdit, ScheduledTask } from "./gantt-types";
 import { toIsoDay } from "./timeline";
 
@@ -50,10 +50,20 @@ export function applyPendingEdit(
       milestone: { ...task.milestone, leadId: pending.userId },
     };
   }
+  // Planned work moves as a whole; the server may still lay it out on other
+  // days (e.g. past a weekend), which the refetch then shows.
+  const shift = differenceInCalendarDays(pending.start, task.scheduleStart);
   return {
     ...task,
     scheduleStart: pending.start,
     scheduleEnd: pending.end,
+    scheduleSegments:
+      shift === 0
+        ? task.scheduleSegments
+        : task.scheduleSegments?.map((segment) => ({
+            start: addDays(segment.start, shift),
+            end: addDays(segment.end, shift),
+          })),
     startDate: pending.hasStartDate ? toIsoDay(pending.start) : null,
     dueDate: pending.hasDueDate ? toIsoDay(pending.end) : null,
     userId: pending.userId,

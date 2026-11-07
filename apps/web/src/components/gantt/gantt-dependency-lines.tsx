@@ -6,12 +6,9 @@ import {
   isDependencyBroken,
 } from "./gantt-dependencies";
 import { dependencyPath } from "./gantt-dependency-path";
-import { lastScheduledInstant, scheduleDayPosition } from "./schedule-geometry";
+import { lastScheduledInstant } from "./schedule-geometry";
 import { remToPx } from "./gantt-scroll";
 import type { GanttTimeline } from "./timeline";
-
-// Bars sit 4px (mx-1) inside their day columns.
-const BAR_INSET_PX = 4;
 
 type GanttDependencyLinesProps = {
   dependencies: readonly GanttDependency[];
@@ -19,7 +16,8 @@ type GanttDependencyLinesProps = {
   timeline: GanttTimeline;
   dayColumnWidthRem: number;
   railWidthRem: number;
-  alignToDays?: boolean;
+  // How far bars sit inside their day columns (Gantt bars use mx-1).
+  barInsetPx?: number;
   // Changes whenever rows are added, removed or reordered, so their
   // positions are measured again.
   layoutKey: string;
@@ -57,7 +55,7 @@ export function GanttDependencyLines({
   timeline,
   dayColumnWidthRem,
   railWidthRem,
-  alignToDays = false,
+  barInsetPx = 4,
   layoutKey,
   draggingTaskId = null,
 }: GanttDependencyLinesProps) {
@@ -97,19 +95,16 @@ export function GanttDependencyLines({
 
   const dayPx = remToPx(dayColumnWidthRem);
   const railPx = remToPx(railWidthRem);
+  // Bars fill whole days, planned work included.
   const xOf = (span: GanttSpan, edge: "start" | "end") => {
-    const date = span[edge];
-    if (span.precise && !alignToDays)
-      return railPx + scheduleDayPosition(date, timeline.rangeStart) * dayPx;
-    const displayDate =
-      alignToDays && span.precise && edge === "end"
-        ? lastScheduledInstant(span.start, date)
-        : date;
-    const index = differenceInCalendarDays(displayDate, timeline.rangeStart);
-    const inset = alignToDays ? 0 : BAR_INSET_PX;
+    const date =
+      span.precise && edge === "end"
+        ? lastScheduledInstant(span.start, span.end)
+        : span[edge];
+    const index = differenceInCalendarDays(date, timeline.rangeStart);
     return edge === "start"
-      ? railPx + index * dayPx + inset
-      : railPx + (index + 1) * dayPx - inset;
+      ? railPx + index * dayPx + barInsetPx
+      : railPx + (index + 1) * dayPx - barInsetPx;
   };
 
   const lines = dependencies.flatMap((dependency) => {

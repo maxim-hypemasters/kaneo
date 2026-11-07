@@ -17,7 +17,7 @@ The planner includes assigned, estimated ready work and subtracts logged time ac
 
 Changes to estimates, assignees, priorities, workflow, logged time, dependencies, and release dates mark plans outdated. The published placement stays visible until another plan is applied. Changes during review invalidate the preview; recalculate before applying. Preview tokens expire after 15 minutes.
 
-Start and finish dates are read-only. Existing manual dates remain visible and are preserved in history. Applying a release replaces its unfinished placements, clearing dates for items that cannot be scheduled; other releases and work without a release keep their current placement. Completed placements remain as history. Applied finish times drive overdue indicators and reminders. The preview stays open after applying and shows **Applied**; the main Gantt also refreshes. An expired proposal or changed planning input marks the retained preview outdated and disables Apply; choose **Refresh preview** to review a new proposal.
+Start and finish dates change only when a plan is applied or when you [move work in Gantt](#move-work). Existing manual dates remain visible and are preserved in history. Applying a release replaces its unfinished placements, clearing dates for items that cannot be scheduled; other releases and work without a release keep their current placement. Completed placements remain as history. Applied finish times drive overdue indicators and reminders. The preview stays open after applying and shows **Applied**; the main Gantt also refreshes. An expired proposal or changed planning input marks the retained preview outdated and disables Apply; choose **Refresh preview** to review a new proposal.
 
 ## Calendar
 
@@ -38,7 +38,11 @@ Hold **Shift** while scrolling over the timeline to zoom: scroll up to make days
 
 A Task/Bug appears once it has a published placement. Before the first plan is applied, older single-date work appears as one day and older two-date work spans its range. Archived work is excluded.
 
-Task/Bug bars show working segments with gaps for breaks, nights, weekends, and time off. Hover or keyboard-focus work to inspect exact times. Short segments retain their true duration; the task rail remains available to open them. Horizontal dragging and resizing are unavailable because estimates and planning inputs determine timing.
+Task/Bug cards fill each day they have work on and nearly the full height of their row, so a two-hour task is as easy to read and grab as a full day. Days without work, such as a weekend or time off, show as gaps. Work done back to back on one day shares that day's column; the task rail shows the exact start and finish, and hovering or keyboard-focusing a bar reads out its exact working times.
+
+### Move work
+
+Drag a Task/Bug bar sideways to move it; this needs task-update permission. Planned work keeps its planned assignee and remaining effort and is laid out again through working hours (Monday–Friday, 09:00–17:00 in the planning timezone) from the day you drop it on, at the same time of day, so work dropped on a weekend starts the next Monday morning. Work without a plan keeps its length. A moved item stays where you put it, and other releases' plans work around it, until the next Apply of its own release plans it again. Bars can't be resized, because the estimate sets their length. **Esc** cancels a drag. On touch screens a drag scrolls the timeline instead.
 
 Dates and status answer different questions. Reaching a due date does not finish a task; move it to a done column when the work is complete.
 
@@ -51,6 +55,8 @@ Milestones replace Feature scheduling. Each milestone uses its own lead and a re
 ### Dependencies
 
 When one Task/Bug blocks another (set under **Relations**), Gantt connects the blocker's final segment to its successor's first segment. The successor may begin at the same instant its blocker finishes. Prerequisites inherit the urgency of work they unblock. Completed blockers are satisfied; cycles and unschedulable blockers leave affected work unscheduled. Related and Feature relations do not create execution dependencies.
+
+If moving a bar would break a dependency, Kaneo asks first and lists the work that would move. **Move N related tasks** keeps everything in order: work it blocks is pushed later and work blocking it is pulled earlier, along the whole chain, by whole days. Overlaps that were already there stay as they are, and finished work never moves. **Move only this task** keeps just your change, and **Cancel** puts the bar back. When work blocks itself in a loop that moving would come back around to, only **Move only this task** and **Cancel** are offered.
 
 An accessible blocker in another project uses its applied finish. Without an accessible applied schedule, the dependent item stays unscheduled with generic feedback. Private blocker titles and dates are not exposed.
 
@@ -74,7 +80,7 @@ The lines follow the **Release** filter. Filter by a release to see only its tas
 
 ### Group by assignee / lead
 
-Choose **Assignee / Lead** under **Display → Group by** for a lane per member, plus **Unassigned**. Published Task/Bug placements retain their planned assignee until another Apply; milestones use their current leads. Reassigning a Task/Bug changes the planning input and marks the schedule outdated. Dragging a milestone to another member's lane changes its lead when you have assignment permission. **Esc** cancels a drag. On touch screens, use the details panel.
+Choose **Assignee / Lead** under **Display → Group by** for a lane per member, plus **Unassigned**. Published Task/Bug placements retain their planned assignee until another Apply; milestones use their current leads. Reassigning a Task/Bug changes the planning input and marks the schedule outdated. Dragging a milestone to another member's lane changes its lead when you have assignment permission. Dragging a Task/Bug into another member's lane reassigns it, and dragging it sideways at the same time also moves it. **Esc** cancels a drag. On touch screens, use the details panel.
 
 Milestone bars sit on the lead's header row, with Tasks and Bugs underneath. Milestones with overlapping dates use separate tracks in that header. Collapsing a lead hides the task rows while keeping the milestones visible.
 

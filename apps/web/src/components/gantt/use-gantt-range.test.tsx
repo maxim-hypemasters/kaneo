@@ -9,6 +9,7 @@ import {
   vi,
 } from "vite-plus/test";
 import type { ScheduledTask } from "./gantt-types";
+import { GANTT_MAX_DAY_WIDTH_REM } from "./gantt-zoom";
 import {
   GANTT_CHUNK_DAYS,
   GANTT_FIRST_DAY,
@@ -209,7 +210,7 @@ describe("useGanttRange", () => {
     });
     for (let step = 0; step < 20; step++)
       act(() => hook.result.current.zoomAt(-120, 600));
-    expect(hook.result.current.dayColumnWidthRem).toBe(8);
+    expect(hook.result.current.dayColumnWidthRem).toBe(GANTT_MAX_DAY_WIDTH_REM);
     const maximum = element.scrollLeft;
     act(() => hook.result.current.zoomAt(-120, 600));
     expect(element.scrollLeft).toBe(maximum);

@@ -134,7 +134,7 @@ export function ReleasePlanTimeline({
                 timeline={timeline}
                 dayColumnWidthRem={dayColumnWidthRem}
                 railWidthRem={0}
-                alignToDays
+                barInsetPx={0}
                 layoutKey={model.lanes
                   .map((lane) =>
                     lane.tasks.map((task) => task.taskId).join(","),

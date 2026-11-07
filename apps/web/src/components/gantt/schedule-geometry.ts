@@ -1,36 +1,41 @@
-import { addDays, differenceInCalendarDays, startOfDay } from "date-fns";
+import { differenceInCalendarDays } from "date-fns";
 
 export function lastScheduledInstant(start: Date, end: Date) {
   // Work intervals are end-exclusive, including when they finish at midnight.
   return end > start ? new Date(end.getTime() - 1) : end;
 }
 
-// Each local calendar day has the same visual width, including 23/25-hour
-// DST days. Within a day, elapsed time maps monotonically across repeated hours.
-export function scheduleDayPosition(date: Date, rangeStart: Date) {
-  const day = startOfDay(date);
-  const next = addDays(day, 1);
-  return (
-    differenceInCalendarDays(day, rangeStart) +
-    (date.getTime() - day.getTime()) / (next.getTime() - day.getTime())
-  );
-}
-export function scheduleSegmentGeometry(
-  start: Date,
-  end: Date,
+export type ScheduleDayBlock = { from: number; to: number };
+
+// Planned work fills every local calendar day it has work on, so a two-hour
+// task still reads as a full card; the exact hours stay in its description.
+// Consecutive days merge into one block, while days without work (a weekend,
+// time off) stay gaps. Blocks are 0-based, end-exclusive day indexes from
+// rangeStart, clipped to the rendered days.
+export function scheduleDayBlocks(
+  segments: readonly { start: Date; end: Date }[],
   rangeStart: Date,
   dayCount: number,
 ) {
-  const from = scheduleDayPosition(start, rangeStart);
-  const to = scheduleDayPosition(end, rangeStart);
-  const left = Math.max(0, from);
-  const right = Math.min(dayCount, to);
-  return right > left
-    ? {
-        left,
-        width: right - left,
-        clippedStart: from < 0,
-        clippedEnd: to > dayCount,
-      }
-    : null;
+  const days = segments
+    .map(({ start, end }) => ({
+      from: differenceInCalendarDays(start, rangeStart),
+      to:
+        differenceInCalendarDays(lastScheduledInstant(start, end), rangeStart) +
+        1,
+    }))
+    .sort((left, right) => left.from - right.from);
+  const blocks: ScheduleDayBlock[] = [];
+  for (const day of days) {
+    const last = blocks.at(-1);
+    if (last && day.from <= last.to) last.to = Math.max(last.to, day.to);
+    else blocks.push({ ...day });
+  }
+  return blocks.flatMap(({ from, to }) => {
+    const visibleFrom = Math.max(0, from);
+    const visibleTo = Math.min(dayCount, to);
+    return visibleTo > visibleFrom
+      ? [{ from: visibleFrom, to: visibleTo }]
+      : [];
+  });
 }

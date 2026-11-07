@@ -213,6 +213,21 @@ export const updateAssigneeBody = z.object({
   userId: z.string().nullable().openapi({ description: "Null unassigns." }),
 });
 export const updateDueDateBody = z.object({}).strict();
+export const moveTaskScheduleBody = z
+  .object({
+    start: z.string().datetime({ offset: true }).openapi({
+      description:
+        "Where the moved work starts. Planned work is laid out again through working hours from here.",
+    }),
+    end: z.string().datetime({ offset: true }).openapi({
+      description:
+        "Where the moved span ends. Used as the due date of unplanned work; planned work keeps its effort, so it may finish later.",
+    }),
+  })
+  .refine((body) => Date.parse(body.start) <= Date.parse(body.end), {
+    message: "start must not be after end",
+    path: ["end"],
+  });
 export const updateTitleBody = z.object({ title: z.string() });
 export const updateFeatureBody = z.object({
   featureId: z.string().min(1).nullable().openapi({

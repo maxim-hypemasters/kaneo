@@ -20,7 +20,7 @@ const boxes: Record<string, { top: number; height: number }> = {
 function draw(
   spans: Map<string, GanttSpan>,
   draggingTaskId?: string,
-  alignToDays = false,
+  barInsetPx?: number,
 ) {
   render(
     <div data-box="lanes">
@@ -32,7 +32,7 @@ function draw(
         // 44px days next to a 320px task rail (16px rem).
         dayColumnWidthRem={2.75}
         railWidthRem={20}
-        alignToDays={alignToDays}
+        barInsetPx={barInsetPx}
         layoutKey="a,b"
         draggingTaskId={draggingTaskId}
       />
@@ -99,11 +99,29 @@ describe("GanttDependencyLines", () => {
         ],
       ]),
       undefined,
-      true,
+      0,
     );
 
     expect(line).toHaveAttribute("d", "M 364 22 H 372 V 44 H 356 V 66 H 364");
     expect(line).not.toHaveAttribute("data-broken");
+  });
+
+  it("meets planned work at the edges of the days it fills", () => {
+    const [line] = draw(
+      new Map([
+        [
+          "a",
+          { ...span("2026-03-01T09:00", "2026-03-01T13:00"), precise: true },
+        ],
+        [
+          "b",
+          { ...span("2026-03-03T09:00", "2026-03-03T11:00"), precise: true },
+        ],
+      ]),
+    );
+
+    // a fills March 1 and ends at 320 + 44 - 4; b starts at 320 + 2 * 44 + 4.
+    expect(line).toHaveAttribute("d", "M 360 22 H 368 V 66 H 412");
   });
 
   it("fades the lines of a bar being dragged", () => {

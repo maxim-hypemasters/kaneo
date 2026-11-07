@@ -53,11 +53,24 @@ export function isDependencyBroken(blocker: GanttSpan, blocked: GanttSpan) {
 }
 
 function shiftSpan(span: GanttSpan, days: number): GanttSpan {
-  return { start: addDays(span.start, days), end: addDays(span.end, days) };
+  return {
+    ...span,
+    start: addDays(span.start, days),
+    end: addDays(span.end, days),
+  };
 }
 
+const DAY_MS = 86_400_000;
+
 // How many days `blocked` starts before `blocker` ends (0 or less: in order).
+// Planned work is timed to the minute, so any clash there takes a whole day
+// to clear; finished blockers never hold anything up.
 function overlapDays(blocker: GanttSpan, blocked: GanttSpan) {
+  if (blocker.completed) return 0;
+  if (blocker.precise || blocked.precise) {
+    const overlap = blocker.end.getTime() - blocked.start.getTime();
+    return overlap > 0 ? Math.ceil(overlap / DAY_MS) : 0;
+  }
   return differenceInCalendarDays(blocker.end, blocked.start);
 }
 
@@ -94,7 +107,11 @@ export function planDependencyMoves(
   next: GanttSpan,
   heldBrokenIds: ReadonlySet<string> = new Set(),
 ) {
-  const spanAfter = (id: string) => (id === taskId ? next : spans.get(id));
+  // The edited task keeps what it is (planned, finished), only moved.
+  const spanAfter = (id: string): GanttSpan | undefined =>
+    id === taskId
+      ? { ...spans.get(id), start: next.start, end: next.end }
+      : spans.get(id);
   const broken = dependencies.filter((dependency) => {
     if (dependency.blockerId !== taskId && dependency.blockedId !== taskId) {
       return false;
