@@ -85,11 +85,14 @@ async function insertItems(
   for (const [index, item] of release.items.entries()) {
     const createdDay = item.stages[0]?.date ?? release.trackingDay;
     const updatedDay = item.stages.at(-1)?.date ?? createdDay;
+    const isTask = item.type === "task";
+    // Features carry no planning fields, so they join the release only
+    // through their tasks. Task dates are left to the release planner.
     await client.query(
       `
-      INSERT INTO task (id, project_id, number, position, title, description, status, column_id, priority, type, feature_id, release_id, created_at, updated_at, due_date)
+      INSERT INTO task (id, project_id, number, position, title, description, status, column_id, priority, type, feature_id, release_id, created_at, updated_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-        $13::timestamptz AT TIME ZONE 'UTC', $14::timestamptz AT TIME ZONE 'UTC', $15::timestamptz AT TIME ZONE 'UTC')
+        $13::timestamptz AT TIME ZONE 'UTC', $14::timestamptz AT TIME ZONE 'UTC')
     `,
       [
         item.id,
@@ -99,14 +102,13 @@ async function insertItems(
         item.title,
         DEMO_DESCRIPTION,
         item.status,
-        bySlug.get(item.status)?.id ?? null,
-        ["high", "medium", "low"][index % 3],
+        item.status === null ? null : (bySlug.get(item.status)?.id ?? null),
+        isTask ? ["high", "medium", "low"][index % 3] : null,
         item.type,
         item.featureId,
-        release.id,
+        isTask ? release.id : null,
         `${createdDay}T12:00:00Z`,
         `${updatedDay}T12:00:00Z`,
-        `${release.submissionDate}T12:00:00Z`,
       ],
     );
   }

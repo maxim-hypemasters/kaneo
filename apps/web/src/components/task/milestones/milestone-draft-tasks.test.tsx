@@ -30,6 +30,8 @@ describe("Milestone draft task limits", () => {
     fireEvent.click(bug);
     expect(onChange).not.toHaveBeenCalled();
   });
+  // Renders 100 rows and queries them by role: a few seconds alone, more
+  // while the whole suite runs in parallel.
   it("bounds new work at 100 and restores capacity when a draft is removed", async () => {
     function Drafts() {
       const [tasks, setTasks] = useState<MilestoneDraftTask[]>(
@@ -68,5 +70,5 @@ describe("Milestone draft task limits", () => {
     expect(
       screen.getByRole("button", { name: "tasks:createMenu.label" }),
     ).toBeDisabled();
-  });
+  }, 20_000);
 });

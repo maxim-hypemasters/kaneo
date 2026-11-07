@@ -178,7 +178,7 @@ describe("API integration: task creation", () => {
     expect(persistedTask).toBeUndefined();
   });
 
-  it("creates an unassigned task with parsed dates when optional fields are provided", async () => {
+  it("creates an unassigned, unscheduled task with its estimate when optional fields are provided", async () => {
     const member = await createWorkspaceMember();
     const { project, columns } = await createProjectFixture({
       workspaceId: member.workspace.id,
@@ -197,8 +197,7 @@ describe("API integration: task creation", () => {
         description: "Track optional fields too",
         priority: "medium",
         status: "in-progress",
-        startDate: "2026-04-01T09:00:00.000Z",
-        dueDate: "2026-04-05T17:00:00.000Z",
+        estimateSeconds: 12 * 3600,
       }),
     });
 
@@ -207,6 +206,10 @@ describe("API integration: task creation", () => {
       id: string;
       userId: string | null;
       columnId: string | null;
+      priority: string;
+      status: string;
+      estimateSeconds: number | null;
+      scheduleSource?: string;
       startDate: string | null;
       dueDate: string | null;
       assigneeName?: string;
@@ -215,8 +218,12 @@ describe("API integration: task creation", () => {
     expect(payload).toMatchObject({
       userId: null,
       columnId: columns.inProgress.id,
-      startDate: "2026-04-01T09:00:00.000Z",
-      dueDate: "2026-04-05T17:00:00.000Z",
+      priority: "medium",
+      status: "in-progress",
+      estimateSeconds: 12 * 3600,
+      scheduleSource: "none",
+      startDate: null,
+      dueDate: null,
     });
     expect(payload.assigneeName).toBeUndefined();
 
@@ -228,14 +235,52 @@ describe("API integration: task creation", () => {
       id: payload.id,
       userId: null,
       columnId: columns.inProgress.id,
+      priority: "medium",
       status: "in-progress",
+      estimateSeconds: 12 * 3600,
+      startDate: null,
+      dueDate: null,
     });
-    expect(persistedTask?.startDate?.toISOString()).toBe(
-      "2026-04-01T09:00:00.000Z",
-    );
-    expect(persistedTask?.dueDate?.toISOString()).toBe(
-      "2026-04-05T17:00:00.000Z",
-    );
+  });
+
+  it("rejects start and due dates on creation because the release planner owns them", async () => {
+    const member = await createWorkspaceMember();
+    const { project } = await createProjectFixture({
+      workspaceId: member.workspace.id,
+    });
+
+    mockAuthenticatedSession(member.user);
+    const { app } = createApp();
+
+    const response = await app.request(`/api/task/${project.id}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        title: "Dated task",
+        description: "Dates come from the plan",
+        status: "to-do",
+        startDate: "2026-04-01T09:00:00.000Z",
+        dueDate: "2026-04-05T17:00:00.000Z",
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    const body = await readErrorBody(response);
+    expect(body.code).toBe("VALIDATION_ERROR");
+    expect(body.message).toContain("startDate");
+    expect(body.message).toContain("dueDate");
+
+    const persistedTask = await db.query.taskTable.findFirst({
+      where: eq(schema.taskTable.projectId, project.id),
+    });
+    expect(persistedTask).toBeUndefined();
+
+    const persistedProject = await db.query.projectTable.findFirst({
+      where: eq(schema.projectTable.id, project.id),
+    });
+    expect(persistedProject?.lastTaskNumber).toBe(project.lastTaskNumber);
   });
 
   it("creates tasks without a column when the status has no matching project column", async () => {

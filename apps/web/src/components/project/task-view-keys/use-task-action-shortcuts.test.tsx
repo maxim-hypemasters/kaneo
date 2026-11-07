@@ -17,7 +17,6 @@ import { useTaskActionShortcuts } from "./use-task-action-shortcuts";
 
 const mocks = vi.hoisted(() => ({
   bulkAssign: vi.fn(),
-  bulkDueDate: vi.fn(),
   writeText: vi.fn(),
   message: vi.fn(),
   error: vi.fn(),
@@ -40,7 +39,6 @@ vi.mock("@/hooks/queries/workspace/use-active-workspace", () => ({
 vi.mock("@/hooks/mutations/task/use-bulk-operations", () => ({
   useBulkOperations: () => ({
     bulkAssign: mocks.bulkAssign,
-    bulkDueDate: mocks.bulkDueDate,
   }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
@@ -75,7 +73,6 @@ beforeEach(() => {
   mocks.canUpdateTasks.mockReturnValue(true);
   mocks.canAssignTasks.mockReturnValue(true);
   mocks.bulkAssign.mockResolvedValue(undefined);
-  mocks.bulkDueDate.mockResolvedValue(undefined);
   mocks.writeText.mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
@@ -148,19 +145,6 @@ describe("useTaskActionShortcuts", () => {
     expect(mocks.bulkAssign).toHaveBeenCalledWith({
       taskIds: ["a", "b"],
       userId: "user-1",
-    });
-    expect(selection().selectedTaskIds.size).toBe(0);
-  });
-
-  it("removes the due date of the focused task without selecting it", async () => {
-    act(() => selection().setFocusedTask("c"));
-
-    press({ key: "D", code: "KeyD", ctrlKey: true, shiftKey: true });
-    await act(async () => {});
-
-    expect(mocks.bulkDueDate).toHaveBeenCalledWith({
-      taskIds: ["c"],
-      dueDate: null,
     });
     expect(selection().selectedTaskIds.size).toBe(0);
   });

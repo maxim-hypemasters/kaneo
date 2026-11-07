@@ -6,7 +6,8 @@ export type DemoItem = {
   title: string;
   type: "feature" | "task";
   featureId: string | null;
-  status: string;
+  // Features are knowledge records without a workflow status.
+  status: string | null;
   stages: DemoStage[];
 };
 export type DemoRelease = {
@@ -170,16 +171,7 @@ export function buildDemoPlan(projectId: string, today: string): DemoRelease[] {
         title: `Demo · ${title}`,
         type: "feature",
         featureId: null,
-        status:
-          definition.phase === "past"
-            ? index === 0
-              ? "done"
-              : "in-review"
-            : definition.phase === "active"
-              ? index === 0
-                ? "in-review"
-                : "in-progress"
-              : "planned",
+        status: null,
         stages: [],
       }),
     );

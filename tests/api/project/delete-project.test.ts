@@ -62,9 +62,13 @@ describe("deleteProject", () => {
     expect(mocks.queueStorageCleanup.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.delete.mock.invocationCallOrder[0],
     );
-    // A project's features and their tasks all go with it; no other board
-    // depends on them.
-    expect(mocks.publishEvent).not.toHaveBeenCalled();
+    // A project's features and their tasks all go with it, so no task events
+    // follow. Only the workspace's plans are refreshed, since a deleted
+    // cross-project blocker must not leave another project's plan stale.
+    expect(mocks.publishEvent).toHaveBeenCalledExactlyOnceWith(
+      "project-schedule.changed",
+      { workspaceId: "workspace-1" },
+    );
   });
   it("still succeeds while durable cleanup waits for storage recovery", async () => {
     seed("background");

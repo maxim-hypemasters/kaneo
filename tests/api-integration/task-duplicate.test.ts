@@ -209,8 +209,15 @@ describe("API integration: task duplication", () => {
       userId: member.user.id,
       overrides: {
         status: "in-progress",
+        estimateSeconds: 4 * 60 * 60,
         startDate: new Date("2026-04-01T09:00:00.000Z"),
         dueDate: new Date("2026-04-05T17:00:00.000Z"),
+        scheduleSegments: [
+          {
+            start: "2026-04-01T09:00:00.000Z",
+            end: "2026-04-05T17:00:00.000Z",
+          },
+        ],
       },
     });
 
@@ -267,13 +274,15 @@ describe("API integration: task duplication", () => {
       priority: "high",
       number: 2,
       position: 2,
+      estimateSeconds: 4 * 60 * 60,
     });
-    expect(duplicatedTask?.startDate?.toISOString()).toBe(
-      "2026-04-01T09:00:00.000Z",
-    );
-    expect(duplicatedTask?.dueDate?.toISOString()).toBe(
-      "2026-04-05T17:00:00.000Z",
-    );
+    // The release planner owns Task/Bug dates, so the copy keeps the estimate
+    // but starts unscheduled instead of claiming the source's placement.
+    expect(duplicatedTask).toMatchObject({
+      startDate: null,
+      dueDate: null,
+      scheduleSegments: null,
+    });
 
     const duplicatedLabels = await db
       .select({

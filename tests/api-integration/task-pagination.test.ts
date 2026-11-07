@@ -10,6 +10,7 @@ import {
   createWorkspaceMember,
 } from "./helpers/fixtures";
 import { readErrorBody } from "./helpers/error-body";
+import { insertTask } from "./helpers/release/insert-task";
 
 beforeEach(resetTestDatabase);
 async function fixture(count = 237, publicProject = false) {
@@ -276,9 +277,16 @@ it.each(["label", "link", "assignee", "project", "feature task"])(
   async (change) => {
     const { app, project, tasks, member } = await fixture(2, true);
     const task = tasks[0];
+    // Features are knowledge records kept off the board, so the earlier card
+    // is one of the feature's tasks.
+    const feature = await insertTask(project.id, {
+      type: "feature",
+      title: "Feature",
+      number: 3,
+    });
     await db
       .update(schema.taskTable)
-      .set({ userId: member.user.id })
+      .set({ userId: member.user.id, featureId: feature.id })
       .where(eq(schema.taskTable.id, task.id));
     const [label] = await db
       .insert(schema.labelTable)
@@ -299,24 +307,11 @@ it.each(["label", "link", "assignee", "project", "feature task"])(
         metadata: JSON.stringify({ merged: false }),
       })
       .returning();
-    // The first task is a feature; its progress counts this task.
-    await db
-      .update(schema.taskTable)
-      .set({ type: "feature" })
-      .where(eq(schema.taskTable.id, task.id));
-    const [child] = await db
-      .insert(schema.taskTable)
-      .values({
-        projectId: project.id,
-        title: "Child",
-        status: "to-do",
-        number: 999,
-        featureId: task.id,
-      })
-      .returning();
     mockAnonymousSession();
     const path = `/api/public-project/${project.id}?limit=1`;
-    const before = (await (await app.request(path)).json()).pagination.revision;
+    const first = await (await app.request(path)).json();
+    expect(allTasks(first).map((card) => card.id)).toEqual([task.id]);
+    const before = first.pagination.revision;
     expect(
       (await (await app.request(path + "&page=2")).json()).pagination.revision,
     ).toBe(before);
@@ -344,7 +339,7 @@ it.each(["label", "link", "assignee", "project", "feature task"])(
       await db
         .update(schema.taskTable)
         .set({ status: "done" })
-        .where(eq(schema.taskTable.id, child.id));
+        .where(eq(schema.taskTable.id, task.id));
     expect(
       (await (await app.request(path + "&page=2")).json()).pagination.revision,
     ).not.toBe(before);

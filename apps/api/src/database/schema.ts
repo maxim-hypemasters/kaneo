@@ -1563,9 +1563,10 @@ export const taskRelationTable = pgTable(
   ],
 );
 
-// Every "subtask" relation as it was before features replaced subtasks, with
-// what became of it, so the conversion can be undone by hand. No foreign
-// keys: rows outlive the tasks they mention.
+// Every "subtask" relation an earlier version converted into features, with
+// what became of it. Nothing reads or writes it any more; it stays so
+// existing installations keep that record. No foreign keys: rows outlive the
+// tasks they mention.
 export const legacySubtaskRelationTable = pgTable("legacy_subtask_relation", {
   id: text("id").primaryKey(),
   sourceTaskId: text("source_task_id").notNull(),

@@ -16,10 +16,16 @@ beforeEach(resetTestDatabase);
 
 type RelationType = "blocks" | "related";
 
-async function seedTask(projectId: string, number: number) {
+async function seedTask(projectId: string, number: number, feature = false) {
   const [task] = await db
     .insert(schema.taskTable)
-    .values({ projectId, title: `Task ${number}`, number })
+    .values({
+      projectId,
+      title: `Task ${number}`,
+      number,
+      // A Feature carries no planning, and can't become one later.
+      ...(feature ? { type: "feature", status: null, priority: null } : {}),
+    })
     .returning();
   return task;
 }
@@ -56,7 +62,7 @@ async function projectWithRelations() {
     workspaceId: member.workspace.id,
   });
   const [first, second, third] = await Promise.all(
-    [1, 2, 3].map((number) => seedTask(project.id, number)),
+    [1, 2, 3].map((number) => seedTask(project.id, number, number === 1)),
   );
   const outside = await seedTask(otherProject.id, 1);
 
@@ -64,10 +70,6 @@ async function projectWithRelations() {
   const related = await seedRelation(second.id, third.id, "related");
   // Third is a task of the feature First; old clients read that as a
   // subtask relation with a synthetic id.
-  await db
-    .update(schema.taskTable)
-    .set({ type: "feature" })
-    .where(eq(schema.taskTable.id, first.id));
   await db
     .update(schema.taskTable)
     .set({ featureId: first.id })
