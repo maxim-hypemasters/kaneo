@@ -13156,6 +13156,9 @@
 						"taskAriaLabel": {
 							"type": "string"
 						},
+						"taskAriaLabelMovable": {
+							"type": "string"
+						},
 						"previousPeriod": {
 							"type": "string"
 						},
@@ -13196,6 +13199,9 @@
 							"type": "string"
 						},
 						"taskAriaLabelGrouped": {
+							"type": "string"
+						},
+						"taskAriaLabelGroupedMovable": {
 							"type": "string"
 						},
 						"dependencies": {
@@ -13434,6 +13440,9 @@
 								"taskAriaLabel": {
 									"type": "string"
 								},
+								"taskAriaLabelMovable": {
+									"type": "string"
+								},
 								"bar": {
 									"type": "object",
 									"additionalProperties": false,
@@ -13519,6 +13528,7 @@
 								"remove",
 								"moveError",
 								"taskAriaLabel",
+								"taskAriaLabelMovable",
 								"bar"
 							]
 						}
@@ -13538,6 +13548,7 @@
 						"resizeStart",
 						"resizeDue",
 						"taskAriaLabel",
+						"taskAriaLabelMovable",
 						"previousPeriod",
 						"nextPeriod",
 						"periodStart",
@@ -13546,6 +13557,7 @@
 						"cannotAssign",
 						"reassignError",
 						"taskAriaLabelGrouped",
+						"taskAriaLabelGroupedMovable",
 						"dependencies",
 						"featuresLabel",
 						"featureBar",

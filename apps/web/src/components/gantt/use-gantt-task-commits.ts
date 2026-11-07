@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
+import moveTaskSchedule from "@/fetchers/task/move-task-schedule";
+import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import {
   updateMilestone,
   setTaskMilestone,
@@ -15,11 +17,19 @@ import {
 } from "./pending-task-edits";
 
 type CommitAssignee = { name: string | null; image: string | null };
+type CommitOptions = {
+  // Send only after this settles successfully; if it fails, this edit is
+  // dropped silently (the failure it waited on is the one reported).
+  after?: Promise<unknown>;
+};
 const NO_PENDING_EDITS: ReadonlyMap<string, PendingTaskEdit> = new Map();
 const PREDECESSOR_FAILED = Symbol("gantt-predecessor-failed");
 
-// Lane gestures edit planning inputs only. Published Task/Bug dates and
-// planned assignee stay on the chart until another plan is reviewed/applied.
+// Saves Gantt drags. Moving a Task/Bug sideways moves it on the schedule
+// (planned work keeps its effort until the next Apply); a lane drop changes
+// its assignee, which is a planning input, or its milestone. Requests are
+// serialised per task, and the edit is shown optimistically until the
+// refetched task matches it.
 export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
   const { t } = useTranslation();
   const { mutateAsync: updateTaskAssignee } = useUpdateTaskAssignee();
@@ -33,6 +43,21 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
         ["project-schedule", task.projectId],
         ["task", task.featureId],
         ["activities", task.featureId],
+      ])
+        void client.invalidateQueries({ queryKey });
+    },
+    [client],
+  );
+  // Milestone ranges and the published schedule follow the moved dates.
+  const refreshSchedule = useCallback(
+    (task: ScheduledTask) => {
+      invalidateMyWork(client);
+      for (const queryKey of [
+        ["project-schedule", task.projectId],
+        ["tasks", task.projectId],
+        ["feature-milestones", task.projectId],
+        ["task", task.id],
+        ["activities", task.id],
       ])
         void client.invalidateQueries({ queryKey });
     },
@@ -67,20 +92,24 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
     });
   }, [tasks]);
 
+  // Resolves once the edit's dates and assignee are saved: that is what moves
+  // made on top of it wait for, not its milestone move.
   const commit = useCallback(
     (
       task: ScheduledTask,
       edit: GanttTaskEdit,
       assignee: CommitAssignee,
+      options: CommitOptions = {},
     ): Promise<unknown> => {
       const kind = classifyEdit(task, edit);
-      if (!kind.assignee && !kind.milestone) return Promise.resolve();
+      if (!kind.dates && !kind.assignee && !kind.milestone)
+        return Promise.resolve();
       const seq = ++nextSeqRef.current;
       setPending((current) =>
         new Map(current).set(task.id, {
           ...edit,
-          start: task.scheduleStart,
-          end: task.scheduleEnd,
+          start: kind.dates ? edit.start : task.scheduleStart,
+          end: kind.dates ? edit.end : task.scheduleEnd,
           seq,
           assigneeName: assignee.name,
           assigneeImage: assignee.image,
@@ -88,24 +117,70 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
           hasDueDate: Boolean(task.dueDate),
         }),
       );
-      const send = async () => {
+
+      const sendFields = async () => {
         sentRef.current.add(seq);
         if (task.entityKind === "milestone") {
           await updateMilestone(task.milestone.id, { leadId: edit.userId });
           refreshMilestone(task);
           return;
         }
+        if (kind.dates) {
+          await moveTaskSchedule(task.id, edit.start, edit.end);
+          refreshSchedule(task);
+        }
         if (kind.assignee)
           await updateTaskAssignee({ ...task, userId: edit.userId });
-        if (kind.milestone) {
+      };
+      const sendMilestone = async () => {
+        try {
           await setTaskMilestone(task.id, edit.milestoneId ?? null);
           refreshMilestone(task);
+        } catch (error) {
+          // The dates and assignee did save: keep showing them until the
+          // refetch, back in the milestone the task is still in.
+          setPending((current) => {
+            const shown = current.get(task.id);
+            if (!shown || shown.milestoneId !== edit.milestoneId)
+              return current;
+            return new Map(current).set(task.id, {
+              ...shown,
+              milestoneId: task.milestoneId ?? null,
+            });
+          });
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : t("tasks:gantt.milestones.moveError"),
+          );
         }
       };
-      const previous = queuesRef.current.get(task.id);
-      const queued = previous
-        ? previous.then(send, () => Promise.reject(PREDECESSOR_FAILED))
-        : send();
+
+      // Send right away unless an earlier drag of this task (or the move this
+      // one makes room for) is still in flight; then wait for it, so the
+      // later edit is the one that sticks.
+      const prerequisites = [
+        queuesRef.current.get(task.id),
+        options.after,
+      ].filter((promise): promise is Promise<unknown> => promise !== undefined);
+      const fieldsSaved: Promise<unknown> =
+        prerequisites.length > 0
+          ? Promise.allSettled(prerequisites).then((results) =>
+              results.every((result) => result.status === "fulfilled")
+                ? sendFields()
+                : Promise.reject(PREDECESSOR_FAILED),
+            )
+          : sendFields();
+      // The milestone move goes last, once the dates and assignee have saved;
+      // with nothing to wait for (a lane-only move) it goes out at once. Its
+      // failure doesn't fail the edit, whose dates and assignee stay saved.
+      const membershipWaits =
+        kind.dates || kind.assignee || prerequisites.length > 0;
+      const queued = !kind.milestone
+        ? fieldsSaved
+        : membershipWaits
+          ? fieldsSaved.then(sendMilestone)
+          : sendMilestone();
       queuesRef.current.set(task.id, queued);
       queued
         .then(
@@ -121,9 +196,9 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
               toast.error(
                 error instanceof Error
                   ? error.message
-                  : kind.assignee
-                    ? t("tasks:gantt.reassignError")
-                    : t("tasks:gantt.milestones.moveError"),
+                  : kind.dates
+                    ? t("tasks:gantt.updateDatesError")
+                    : t("tasks:gantt.reassignError"),
               );
           },
         )
@@ -131,9 +206,9 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
           if (queuesRef.current.get(task.id) === queued)
             queuesRef.current.delete(task.id);
         });
-      return queued;
+      return fieldsSaved;
     },
-    [t, updateTaskAssignee, refreshMilestone],
+    [t, updateTaskAssignee, refreshMilestone, refreshSchedule],
   );
   return { pending, commit };
 }

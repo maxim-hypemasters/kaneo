@@ -68,6 +68,7 @@ import updateTask from "./controllers/update-task";
 import updateTaskAssignee from "./controllers/update-task-assignee";
 import updateTaskDescription from "./controllers/update-task-description";
 import updateTaskDueDate from "./controllers/update-task-due-date";
+import moveTaskSchedule from "./controllers/move-task-schedule";
 import updateTaskPriority from "./controllers/update-task-priority";
 import updateTaskStatus from "./controllers/update-task-status";
 import updateTaskTitle from "./controllers/update-task-title";
@@ -118,6 +119,7 @@ import {
   updateAssigneeBody,
   updateDescriptionBody,
   updateDueDateBody,
+  moveTaskScheduleBody,
   updatePriorityBody,
   updateStatusBody,
   updateTaskBody,
@@ -799,6 +801,38 @@ const updateTaskDueDateRoute = createRoute({
   },
   responses: {
     400: errorResponse("Task dates are read-only"),
+    403: errorResponse(
+      "No access to the project, or missing task:update permission",
+    ),
+    404: errorResponse("Task not found"),
+  },
+});
+
+const moveTaskScheduleRoute = createRoute({
+  method: "put",
+  operationId: "moveTaskSchedule",
+  path: "/schedule/{id}",
+  tags: ["Tasks"],
+  summary: "Move a task on the schedule",
+  description:
+    "Moves a scheduled Task or Bug, as dragging it in Gantt does. Planned work keeps its planned assignee and remaining planned effort and is laid out again through working hours (Monday to Friday, 09:00 to 17:00 in the project's planning timezone) from `start`, so it may finish after `end`. Unplanned work takes `start` and `end` on the date fields it already has. The next Apply of the item's release plans it again.",
+  middleware: [
+    workspaceAccess.fromTask(),
+    requireWorkspacePermission({ task: ["update"] }),
+    requireEntitlement,
+  ] as const,
+  request: {
+    params: taskParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: moveTaskScheduleBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("The moved task", taskSchema),
+    400: errorResponse(
+      "Invalid body, a Feature, unscheduled work, or work that no longer fits within the planning horizon",
+    ),
     403: errorResponse(
       "No access to the project, or missing task:update permission",
     ),
@@ -1494,6 +1528,20 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       dueDate: null,
       currentUserId,
     });
+  })
+  .openapi(moveTaskScheduleRoute, async (c) => {
+    const { id } = c.req.valid("param");
+    const { start, end } = c.req.valid("json");
+    const currentUserId = c.get("userId");
+
+    const task = await moveTaskSchedule({
+      id,
+      start: new Date(start),
+      end: new Date(end),
+      currentUserId,
+    });
+
+    return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskTitleRoute, async (c) => {
     const { id } = c.req.valid("param");

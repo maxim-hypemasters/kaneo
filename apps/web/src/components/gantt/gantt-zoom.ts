@@ -2,7 +2,7 @@ import { addDays, differenceInCalendarDays } from "date-fns";
 import { extendGanttRange, type GanttRange } from "./timeline";
 
 export const GANTT_MIN_DAY_WIDTH_REM = 2;
-export const GANTT_MAX_DAY_WIDTH_REM = 8;
+export const GANTT_MAX_DAY_WIDTH_REM = 24;
 
 // Bound a single frame, including page-mode wheels, without quantizing
 // smaller trackpad deltas into fixed zoom levels.

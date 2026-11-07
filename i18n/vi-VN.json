@@ -3208,8 +3208,11 @@
 				"shownCount_other": "{{shown}} of {{count}} items",
 				"taskAriaLabel": "{{title}}: open details or drag to change milestone",
 				"taskFilters": "Task filters",
-				"unknown": "Unknown milestone"
-			}
+				"unknown": "Unknown milestone",
+				"taskAriaLabelMovable": "{{title}}: open details, or drag to move or change milestone"
+			},
+			"taskAriaLabelGroupedMovable": "{{title}}: open details, or drag to move or change assignee",
+			"taskAriaLabelMovable": "{{title}}: open details or drag to move"
 		},
 		"delete": {
 			"title": "Xóa công việc?",

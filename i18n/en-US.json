@@ -3212,6 +3212,7 @@
 			"resizeStart": "Resize start date",
 			"resizeDue": "Resize due date",
 			"taskAriaLabel": "{{title}}: open details",
+			"taskAriaLabelMovable": "{{title}}: open details or drag to move",
 			"previousPeriod": "Previous period",
 			"nextPeriod": "Next period",
 			"periodStart": "Timeline start date",
@@ -3222,6 +3223,7 @@
 			"cannotAssign": "Can't assign to {{name}}",
 			"reassignError": "Failed to reassign task",
 			"taskAriaLabelGrouped": "{{title}}: open details or drag to change assignee",
+			"taskAriaLabelGroupedMovable": "{{title}}: open details, or drag to move or change assignee",
 			"dependencies": {
 				"title_one": "This change breaks {{count}} dependency",
 				"title_other": "This change breaks {{count}} dependencies",
@@ -3268,6 +3270,7 @@
 				"remove": "Remove milestone",
 				"moveError": "Could not move work to milestone",
 				"taskAriaLabel": "{{title}}: open details or drag to change milestone",
+				"taskAriaLabelMovable": "{{title}}: open details, or drag to move or change milestone",
 				"bar": {
 					"progress": "{{completed}}/{{total}}",
 					"progressAria": "{{completed}} of {{count}} completed",

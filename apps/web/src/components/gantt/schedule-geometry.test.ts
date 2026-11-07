@@ -1,65 +1,59 @@
-import { afterEach, describe, expect, it } from "vite-plus/test";
-import {
-  scheduleDayPosition,
-  scheduleSegmentGeometry,
-} from "./schedule-geometry";
+import { describe, expect, it } from "vite-plus/test";
+import { lastScheduledInstant, scheduleDayBlocks } from "./schedule-geometry";
 
-const originalTimeZone = process.env.TZ;
-afterEach(() => {
-  process.env.TZ = originalTimeZone;
-});
+const at = (day: number, hour: number) => new Date(2026, 8, day, hour);
+const rangeStart = new Date(2026, 8, 1);
 
-describe("intraday schedule geometry", () => {
-  it("places exact times within equal-width local calendar days", () => {
-    const start = new Date(2026, 8, 1);
-    expect(scheduleDayPosition(new Date(2026, 8, 2, 6), start)).toBe(1.25);
-    const segment = scheduleSegmentGeometry(
-      new Date(2026, 8, 2, 9),
-      new Date(2026, 8, 2, 17),
-      start,
-      30,
+describe("scheduleDayBlocks", () => {
+  it("fills whole days and merges consecutive ones", () => {
+    expect(
+      scheduleDayBlocks(
+        [
+          { start: at(2, 13), end: at(2, 17) },
+          { start: at(3, 9), end: at(3, 11) },
+        ],
+        rangeStart,
+        30,
+      ),
+    ).toEqual([{ from: 1, to: 3 }]);
+  });
+
+  it("keeps days without work as gaps", () => {
+    // Friday afternoon and Monday morning.
+    expect(
+      scheduleDayBlocks(
+        [
+          { start: at(4, 13), end: at(4, 17) },
+          { start: at(7, 9), end: at(7, 13) },
+        ],
+        rangeStart,
+        30,
+      ),
+    ).toEqual([
+      { from: 3, to: 4 },
+      { from: 6, to: 7 },
+    ]);
+  });
+
+  it("ends work that finishes at midnight on the day before", () => {
+    expect(
+      scheduleDayBlocks([{ start: at(2, 20), end: at(3, 0) }], rangeStart, 30),
+    ).toEqual([{ from: 1, to: 2 }]);
+    expect(lastScheduledInstant(at(2, 20), at(3, 0))).toEqual(
+      new Date(at(3, 0).getTime() - 1),
     );
-    expect(segment?.left).toBe(1.375);
-    expect(segment?.width).toBeCloseTo(1 / 3);
   });
-  it("clips either edge and excludes segments outside the range", () => {
-    const start = new Date(2026, 8, 1);
+
+  it("clips blocks to the rendered days", () => {
     expect(
-      scheduleSegmentGeometry(
-        new Date(2026, 7, 31, 12),
-        new Date(2026, 8, 1, 12),
-        start,
+      scheduleDayBlocks(
+        [
+          { start: at(0, 9), end: at(1, 17) },
+          { start: at(3, 9), end: at(3, 17) },
+        ],
+        rangeStart,
         2,
       ),
-    ).toEqual({ left: 0, width: 0.5, clippedStart: true, clippedEnd: false });
-    expect(
-      scheduleSegmentGeometry(
-        new Date(2026, 8, 2, 12),
-        new Date(2026, 8, 4),
-        start,
-        2,
-      ),
-    ).toEqual({ left: 1.5, width: 0.5, clippedStart: false, clippedEnd: true });
-    expect(
-      scheduleSegmentGeometry(
-        new Date(2026, 8, 3),
-        new Date(2026, 8, 4),
-        start,
-        2,
-      ),
-    ).toBeNull();
-  });
-  it("maps 23-hour and 25-hour days monotonically without moving the next date", () => {
-    process.env.TZ = "America/New_York";
-    const spring = new Date(2026, 2, 8);
-    expect(scheduleDayPosition(new Date(2026, 2, 9), spring)).toBe(1);
-    expect(
-      scheduleDayPosition(new Date("2026-03-08T07:00:00Z"), spring),
-    ).toBeCloseTo(2 / 23);
-    const fall = new Date(2026, 10, 1);
-    expect(
-      scheduleDayPosition(new Date("2026-11-01T05:30:00Z"), fall),
-    ).toBeLessThan(scheduleDayPosition(new Date("2026-11-01T06:30:00Z"), fall));
-    expect(scheduleDayPosition(new Date(2026, 10, 2), fall)).toBe(1);
+    ).toEqual([{ from: 0, to: 1 }]);
   });
 });

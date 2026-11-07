@@ -1,6 +1,7 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import { describe, expect, it } from "vite-plus/test";
 import {
+  GANTT_MAX_DAY_WIDTH_REM,
   ganttZoomAnchor,
   scrollLeftForZoomAnchor,
   zoomedDayWidth,
@@ -13,7 +14,10 @@ describe("Gantt zoom math", () => {
     expect(zoomedDayWidth(2.75, 1000)).toBe(zoomedDayWidth(2.75, 120));
     expect(zoomedDayWidth(2.75, -1000)).toBe(zoomedDayWidth(2.75, -120));
     expect(zoomedDayWidth(2, 120)).toBe(2);
-    expect(zoomedDayWidth(8, -120)).toBe(8);
+    expect(zoomedDayWidth(GANTT_MAX_DAY_WIDTH_REM, -120)).toBe(
+      GANTT_MAX_DAY_WIDTH_REM,
+    );
+    expect(zoomedDayWidth(8, -120)).toBeGreaterThan(8);
     expect(zoomedDayWidth(3, Number.NaN)).toBe(3);
   });
 

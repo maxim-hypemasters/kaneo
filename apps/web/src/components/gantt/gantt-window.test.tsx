@@ -191,7 +191,7 @@ describe("Gantt window UI", () => {
       screen.queryByRole("button", { name: "tasks:gantt.resizeDue" }),
     ).toBeNull();
     fireEvent.pointerDown(
-      screen.getByRole("button", { name: "tasks:gantt.taskAriaLabel" }),
+      screen.getByRole("button", { name: "tasks:gantt.taskAriaLabelMovable" }),
       {
         button: 0,
       },
@@ -211,14 +211,18 @@ describe("Gantt window UI", () => {
     const { container } = show();
     // The span opens around today, far from both tasks.
     expect(
-      screen.queryAllByRole("button", { name: "tasks:gantt.taskAriaLabel" }),
+      screen.queryAllByRole("button", {
+        name: "tasks:gantt.taskAriaLabelMovable",
+      }),
     ).toHaveLength(0);
 
     fireEvent.change(screen.getByLabelText("tasks:gantt.periodStart"), {
       target: { value: "9999-12-23" },
     });
     expect(
-      screen.getAllByRole("button", { name: "tasks:gantt.taskAriaLabel" }),
+      screen.getAllByRole("button", {
+        name: "tasks:gantt.taskAriaLabelMovable",
+      }),
     ).toHaveLength(1);
 
     // The span re-centres on the far task, clamped to the last supported

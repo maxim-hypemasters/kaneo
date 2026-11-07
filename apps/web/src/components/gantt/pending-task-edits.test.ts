@@ -182,6 +182,32 @@ describe("applyPendingEdit", () => {
     ).toBeNull();
   });
 
+  it("moves planned work segments with the bar", () => {
+    const planned = {
+      ...task,
+      scheduleStart: new Date(2026, 8, 1, 13),
+      scheduleEnd: new Date(2026, 8, 2, 13),
+      scheduleApplied: true,
+      scheduleSegments: [
+        { start: new Date(2026, 8, 1, 13), end: new Date(2026, 8, 1, 17) },
+        { start: new Date(2026, 8, 2, 9), end: new Date(2026, 8, 2, 13) },
+      ],
+    };
+    expect(
+      applyPendingEdit(planned, {
+        ...pending,
+        start: new Date(2026, 8, 3, 13),
+        end: new Date(2026, 8, 4, 13),
+      }),
+    ).toMatchObject({
+      scheduleStart: new Date(2026, 8, 3, 13),
+      scheduleSegments: [
+        { start: new Date(2026, 8, 3, 13), end: new Date(2026, 8, 3, 17) },
+        { start: new Date(2026, 8, 4, 9), end: new Date(2026, 8, 4, 13) },
+      ],
+    });
+  });
+
   it("carries which date fields the task will have once saved", () => {
     expect(
       applyPendingEdit(task, { ...pending, hasStartDate: false }),

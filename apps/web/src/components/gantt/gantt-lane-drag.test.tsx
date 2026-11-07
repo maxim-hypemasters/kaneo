@@ -73,9 +73,7 @@ vi.mock("@/components/task/task-details-sheet", () => ({
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
   useGetTasks: () => ({ data: m.project, isSuccess: true }),
 }));
-vi.mock("@/hooks/mutations/task/use-update-task", () => ({
-  useUpdateTask: () => ({ mutateAsync: m.update }),
-}));
+vi.mock("@/fetchers/task/move-task-schedule", () => ({ default: m.update }));
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: m.updateAssignee }),
 }));
@@ -218,10 +216,12 @@ function lane(container: HTMLElement, key: string) {
 
 const groupedBar = (title: string) =>
   screen.getByRole("button", {
-    name: `tasks:gantt.taskAriaLabelGrouped:${title}`,
+    name: new RegExp(`^tasks:gantt.taskAriaLabelGrouped(Movable)?:${title}$`),
   });
 const flatBar = (title: string) =>
-  screen.getByRole("button", { name: `tasks:gantt.taskAriaLabel:${title}` });
+  screen.getByRole("button", {
+    name: new RegExp(`^tasks:gantt.taskAriaLabel(Movable)?:${title}$`),
+  });
 
 // The timeline opens Mon Aug 24 (a week before the earliest task's week) and
 // each day column measures 44px, so dx: 88 moves a bar by two days.
@@ -329,16 +329,23 @@ describe("Gantt drag to reassign", () => {
     expect(screen.queryByText("tasks:gantt.assignTo:Bob")).toBeNull();
   });
 
-  it("changes only the assignee during a diagonal lane drag", () => {
+  it("moves and reassigns in one diagonal lane drag", async () => {
     const { container } = show();
     drag(groupedBar("A1"), {
       dx: 88,
       dy: 60,
       over: lane(container, "member:u2"),
     });
-    expect(m.update).not.toHaveBeenCalled();
-    expect(m.updateAssignee).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "A1", userId: "u2" }),
+    expect(m.update).toHaveBeenCalledWith(
+      "A1",
+      new Date(2026, 8, 3),
+      new Date(2026, 8, 5),
+    );
+    // The reassignment goes out once the move has saved.
+    await waitFor(() =>
+      expect(m.updateAssignee).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "A1", userId: "u2" }),
+      ),
     );
   });
 
@@ -351,8 +358,13 @@ describe("Gantt drag to reassign", () => {
     expect(m.updateAssignee).not.toHaveBeenCalled();
     expect(m.navigate).not.toHaveBeenCalled();
 
+    // Moved two days later, still Alice's.
     drag(groupedBar("A1"), { dx: 88, dy: 60, over: aliceLane });
-    expect(m.update).not.toHaveBeenCalled();
+    expect(m.update).toHaveBeenCalledWith(
+      "A1",
+      new Date(2026, 8, 3),
+      new Date(2026, 8, 5),
+    );
     expect(m.updateAssignee).not.toHaveBeenCalled();
   });
 
@@ -471,7 +483,7 @@ describe("Gantt drag to reassign", () => {
 
     expect(
       screen.getAllByRole("button", {
-        name: "tasks:gantt.taskAriaLabelGrouped:A1",
+        name: /^tasks:gantt.taskAriaLabelGrouped(Movable)?:A1$/,
       }),
     ).toHaveLength(1);
     expect(
@@ -590,7 +602,7 @@ describe("Gantt drag to reassign", () => {
     expect(m.navigate).not.toHaveBeenCalled();
   });
 
-  it("keeps the task's feature when reassigning it", () => {
+  it("keeps the task's feature when reassigning it", async () => {
     setTasks([
       task("A1", "2026-09-01", "2026-09-03", alice, { featureId: "F" }),
       task("F", "2026-09-01", "2026-09-10", null, { type: "feature" }),
@@ -604,10 +616,11 @@ describe("Gantt drag to reassign", () => {
       over: lane(container, "member:u2"),
     });
 
-    expect(m.updateAssignee).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "A1", userId: "u2", featureId: "F" }),
+    await waitFor(() =>
+      expect(m.updateAssignee).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "A1", userId: "u2", featureId: "F" }),
+      ),
     );
-    expect(m.update).not.toHaveBeenCalled();
     expect(m.updateFeature).not.toHaveBeenCalled();
   });
 
@@ -626,13 +639,31 @@ describe("Gantt drag to reassign", () => {
     );
   });
 
-  it("does not change timing or assignee without assignment permission", () => {
+  it("moves work but never reassigns it without assignment permission", () => {
     m.canAssign = false;
     const { container } = show();
+    expect(flatBar("A1")).toHaveAccessibleName(
+      "tasks:gantt.taskAriaLabelMovable:A1",
+    );
+    drag(flatBar("A1"), { dx: 88, dy: 60, over: lane(container, "member:u2") });
+    expect(m.update).toHaveBeenCalledWith(
+      "A1",
+      new Date(2026, 8, 3),
+      new Date(2026, 8, 5),
+    );
+    expect(m.updateAssignee).not.toHaveBeenCalled();
+    expect(elementFromPoint).not.toHaveBeenCalled();
+  });
+
+  it("neither moves nor reassigns work without update or assignment permission", () => {
+    m.canAssign = false;
+    m.canUpdate = false;
+    const { container } = show();
+    expect(flatBar("A1")).toHaveClass("cursor-pointer");
+    expect(flatBar("A1")).toHaveAccessibleName("tasks:gantt.taskAriaLabel:A1");
     drag(flatBar("A1"), { dx: 88, dy: 60, over: lane(container, "member:u2") });
     expect(m.update).not.toHaveBeenCalled();
     expect(m.updateAssignee).not.toHaveBeenCalled();
-    expect(elementFromPoint).not.toHaveBeenCalled();
   });
 
   it("never targets lanes from a touch drag", () => {
@@ -649,14 +680,20 @@ describe("Gantt drag to reassign", () => {
     expect(m.updateAssignee).not.toHaveBeenCalled();
   });
 
-  it("opens ungrouped work without exposing date changes", () => {
+  it("opens ungrouped work on a click and moves it by dragging sideways", () => {
     m.groupBy = "none";
     const { container } = show();
     expect(container.querySelector("[data-gantt-lane]")).toBeNull();
     drag(flatBar("A1"), { dx: 0, dy: 60 });
     expect(m.navigate).toHaveBeenCalledTimes(1);
-    drag(flatBar("A1"), { dx: 88, dy: 60 });
     expect(m.update).not.toHaveBeenCalled();
+    drag(flatBar("A1"), { dx: 88, dy: 60 });
+    expect(m.navigate).toHaveBeenCalledTimes(1);
+    expect(m.update).toHaveBeenCalledWith(
+      "A1",
+      new Date(2026, 8, 3),
+      new Date(2026, 8, 5),
+    );
     expect(m.updateAssignee).not.toHaveBeenCalled();
     expect(elementFromPoint).not.toHaveBeenCalled();
   });

@@ -16,6 +16,7 @@ import {
 } from "../database/schema";
 import { projectAccessCondition } from "../project-access/project-access-condition";
 import type { ScheduleInput } from "./engine/types";
+import { uniformPlanningCalendar } from "./uniform-calendar";
 
 export type PlanningTransaction = Parameters<
   Parameters<typeof db.transaction>[0]
@@ -147,16 +148,9 @@ export async function readScheduleInput(
   const planningTimeZone =
     project.planningTimeZone ?? options.timeZone ?? "UTC";
   const planningCalendars = options.uniformCalendars
-    ? eligibleMembers.map(({ userId }) => ({
-        assigneeId: userId,
-        timeZone: planningTimeZone,
-        weeklyIntervals: [1, 2, 3, 4, 5].map((weekday) => ({
-          weekday,
-          startMinute: 540,
-          endMinute: 1020,
-        })),
-        timeOff: [],
-      }))
+    ? eligibleMembers.map(({ userId }) =>
+        uniformPlanningCalendar(userId, planningTimeZone),
+      )
     : calendars.map((calendar) => ({
         assigneeId: calendar.userId,
         timeZone: calendar.timeZone,

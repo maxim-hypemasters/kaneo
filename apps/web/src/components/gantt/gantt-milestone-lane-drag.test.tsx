@@ -94,9 +94,7 @@ vi.mock("@/components/project/toolbar/use-project-task-view", () => ({
 vi.mock("@/hooks/queries/task/use-get-tasks", () => ({
   useGetTasks: () => ({ data: m.project, isSuccess: true }),
 }));
-vi.mock("@/hooks/mutations/task/use-update-task", () => ({
-  useUpdateTask: () => ({ mutateAsync: m.update }),
-}));
+vi.mock("@/fetchers/task/move-task-schedule", () => ({ default: m.update }));
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: m.updateAssignee }),
 }));
@@ -282,7 +280,9 @@ function lane(container: HTMLElement, key: string) {
 
 const taskBar = (title: string) =>
   screen.getByRole("button", {
-    name: new RegExp(`tasks:gantt.milestones.taskAriaLabel:${title}$`),
+    name: new RegExp(
+      `tasks:gantt.milestones.taskAriaLabel(Movable)?:${title}$`,
+    ),
   });
 function milestoneBar(container: HTMLElement, id: string) {
   const row = container.querySelector<HTMLElement>(
@@ -505,14 +505,19 @@ describe("Gantt milestone planning gestures", () => {
     expect(inLane(container, "milestone:gone", "orphan")).toBe(true);
     expect(m.assignment).not.toHaveBeenCalled();
   });
-  it("changes only milestone membership during a diagonal drag", async () => {
+  it("moves dates first, then milestone membership, in a diagonal drag", async () => {
     const { container } = show();
     drag(taskBar("cart"), {
       dx: 88,
       dy: 60,
       over: lane(container, "milestone:search"),
     });
-    expect(m.update).not.toHaveBeenCalled();
+    expect(m.update).toHaveBeenCalledWith(
+      "cart",
+      expect.any(Date),
+      expect.any(Date),
+    );
+    expect(m.assignment).not.toHaveBeenCalled();
     await waitFor(() =>
       expect(m.assignment).toHaveBeenCalledWith("cart", "search"),
     );
