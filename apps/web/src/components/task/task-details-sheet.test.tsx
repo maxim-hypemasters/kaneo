@@ -14,6 +14,7 @@ import { useTaskReleaseOrigin } from "./task-release-origin-context";
 const mocks = vi.hoisted(() => ({ navigate: vi.fn(), projectId: "p" }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => mocks.navigate,
+  useSearch: () => ({}),
   useBlocker: vi.fn(),
 }));
 vi.mock("@/components/editor/document-draft-discard-dialog", () => ({

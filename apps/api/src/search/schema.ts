@@ -6,7 +6,15 @@ export const searchQuery = z.object({
     .min(1, "Query must be at least 1 character")
     .max(512, "Query must not exceed 512 characters"),
   type: z
-    .enum(["all", "tasks", "projects", "workspaces", "comments", "activities"])
+    .enum([
+      "all",
+      "tasks",
+      "projects",
+      "workspaces",
+      "comments",
+      "activities",
+      "documents",
+    ])
     .optional()
     .default("all"),
   workspaceId: z.string().min(1),

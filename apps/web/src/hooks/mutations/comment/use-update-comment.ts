@@ -7,6 +7,7 @@ function useUpdateComment() {
     mutationFn: updateComment,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["workspace-activity"] });
+      void queryClient.invalidateQueries({ queryKey: ["feature-workspace"] });
     },
   });
 }

@@ -35,8 +35,10 @@ type SearchResultItem = {
   title: string;
   description?: string;
   content?: string;
-  type: "task" | "project" | "workspace" | "comment" | "activity";
+  type: "task" | "project" | "workspace" | "comment" | "activity" | "document";
   taskType?: TaskType;
+  featureId?: string;
+  featureTitle?: string;
   projectId?: string;
   workspaceId?: string;
   taskNumber?: number;
@@ -110,6 +112,22 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
           });
         }
         break;
+      case "document":
+        if (item.projectId && item.featureId && workspace?.id) {
+          navigate({
+            to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+            params: {
+              workspaceId: workspace.id,
+              projectId: item.projectId,
+              taskId: item.featureId,
+            },
+            search: {
+              featureTab: "documents",
+              featureDocumentId: item.id,
+            },
+          });
+        }
+        break;
       case "comment":
       case "activity":
         if (item.projectId && item.id && workspace?.id) {
@@ -138,6 +156,8 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         return MessageSquare;
       case "activity":
         return Zap;
+      case "document":
+        return FileText;
       default:
         return FileText;
     }
@@ -167,6 +187,8 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
           return t("navigation:search.groups.comment");
         case "activity":
           return t("navigation:search.groups.activity");
+        case "document":
+          return t("navigation:search.groups.document");
         default:
           return t("navigation:search.groups.fallback");
       }
@@ -207,6 +229,13 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
                     <CommandCollection>
                       {(item: SearchResultItem) => {
                         const Icon = getItemIcon(item.type);
+                        // A document names the Feature it belongs to.
+                        const detail =
+                          item.type === "document"
+                            ? [item.featureTitle, item.content]
+                                .filter(Boolean)
+                                .join(" · ")
+                            : item.description;
                         return (
                           <CommandItem
                             key={`${item.type}-${item.id}`}
@@ -230,9 +259,9 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
                               <div className="font-medium text-sm truncate">
                                 {item.title}
                               </div>
-                              {item.description && (
+                              {detail && (
                                 <div className="text-xs text-muted-foreground truncate mt-1">
-                                  {item.description}
+                                  {detail}
                                 </div>
                               )}
                             </div>

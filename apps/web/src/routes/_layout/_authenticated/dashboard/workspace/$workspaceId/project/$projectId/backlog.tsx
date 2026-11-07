@@ -1,3 +1,7 @@
+import {
+  validateFeatureWorkspaceSearch,
+  type FeatureWorkspaceSearch,
+} from "@/components/task/features/workspace/feature-workspace-search";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { produce } from "immer";
 import { SquareKanbanIcon } from "lucide-react";
@@ -22,7 +26,7 @@ import { countBacklogTasks } from "@/lib/task-filters/count-tasks";
 import { toast } from "@/lib/toast";
 import useProjectStore from "@/store/project";
 
-type BacklogSearchParams = {
+type BacklogSearchParams = FeatureWorkspaceSearch & {
   taskId?: string;
 };
 
@@ -31,6 +35,7 @@ export const Route = createFileRoute(
 )({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): BacklogSearchParams => ({
+    ...validateFeatureWorkspaceSearch(search),
     taskId: typeof search.taskId === "string" ? search.taskId : undefined,
   }),
 });

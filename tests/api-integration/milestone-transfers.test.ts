@@ -79,7 +79,7 @@ describe("milestone transfers", () => {
       await ctx.app.request(`/api/task/export/${ctx.source.project.id}`)
     ).json();
     expect(exported).toMatchObject({
-      version: 3,
+      version: 5,
       milestones: [
         { title: "First ship", startDate: "2026-10-26", endDate: "2026-11-03" },
       ],

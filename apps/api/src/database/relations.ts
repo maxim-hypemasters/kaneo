@@ -9,6 +9,7 @@ import {
   customFieldDefinitionTable,
   customFieldValueTable,
   externalLinkTable,
+  featureDocumentTable,
   githubIntegrationTable,
   integrationTable,
   invitationTable,
@@ -173,6 +174,7 @@ export const taskTableRelations = relations(taskTable, ({ one, many }) => ({
   }),
   featureTasks: many(taskTable, { relationName: "feature" }),
   milestones: many(milestoneTable, { relationName: "featureMilestones" }),
+  documents: many(featureDocumentTable),
   milestone: one(milestoneTable, {
     fields: [taskTable.milestoneId],
     references: [milestoneTable.id],
@@ -189,6 +191,26 @@ export const taskTableRelations = relations(taskTable, ({ one, many }) => ({
   remindersSent: many(taskReminderSentTable),
   customFieldValues: many(customFieldValueTable),
 }));
+
+export const featureDocumentTableRelations = relations(
+  featureDocumentTable,
+  ({ one }) => ({
+    feature: one(taskTable, {
+      fields: [featureDocumentTable.featureId],
+      references: [taskTable.id],
+    }),
+    creator: one(userTable, {
+      fields: [featureDocumentTable.createdBy],
+      references: [userTable.id],
+      relationName: "documentCreator",
+    }),
+    editor: one(userTable, {
+      fields: [featureDocumentTable.updatedBy],
+      references: [userTable.id],
+      relationName: "documentEditor",
+    }),
+  }),
+);
 
 export const timeEntryTableRelations = relations(timeEntryTable, ({ one }) => ({
   task: one(taskTable, {

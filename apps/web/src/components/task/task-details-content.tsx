@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
-import { ExternalLinksAccordion } from "@/components/external-links/external-links-accordion";
-import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { cn } from "@/lib/cn";
-import type { ExternalLink } from "@/types/external-link";
 import { FeatureBreadcrumb } from "./features/feature-breadcrumb";
 import { TaskActivity } from "./task-activity";
 import TaskDescription from "./task-description";
-import TaskRelations from "./task-relations";
-import { FeatureWork } from "./milestones/feature-work";
+import { TaskRelatedContent } from "./task-related-content";
+import { FeatureWorkspace } from "./features/workspace/feature-workspace";
 import TaskTitle from "./task-title";
+import { TaskDetailsSkeleton } from "./task-page-skeleton";
 
 type TaskDetailsContentProps = {
   taskId: string | undefined;
@@ -28,11 +28,28 @@ export default function TaskDetailsContent({
   variant = "sheet",
   properties,
 }: TaskDetailsContentProps) {
-  const { data: task } = useGetTask(taskId ?? "");
-  const { data: externalLinks = [], isLoading: isLoadingExternalLinks } =
-    useExternalLinks(taskId ?? "");
+  const { t } = useTranslation();
+  const query = useGetTask(taskId ?? "");
+  const { data: task } = query;
 
   if (!taskId) return null;
+  // Wait for the entity type before mounting its content queries. A Feature
+  // opening in a sheet must not briefly request the legacy activity feed.
+  if (!task)
+    return query.isError ? (
+      <div role="alert" className="space-y-3 p-5">
+        <p>{t("tasks:common.taskNotFound")}</p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void query.refetch()}
+        >
+          {t("common:error.tryAgain")}
+        </Button>
+      </div>
+    ) : (
+      <TaskDetailsSkeleton />
+    );
 
   return (
     <div className={cn("flex flex-col", className)}>
@@ -43,37 +60,27 @@ export default function TaskDetailsContent({
 
       {properties}
 
-      <TaskDescription taskId={taskId} />
-
-      <div className="mt-6 flex flex-col gap-6">
-        {task?.type === "feature" && (
-          <FeatureWork
-            key={taskId}
-            featureId={taskId}
-            projectId={task.projectId}
-            workspaceId={workspaceId}
-            featureStatus={task.status}
-            featureReleaseId={task.releaseId}
-          />
-        )}
-        <TaskRelations
-          taskId={taskId}
-          projectId={projectId}
+      {task?.type === "feature" ? (
+        <FeatureWorkspace
+          key={taskId}
+          feature={task}
           workspaceId={workspaceId}
-          task={task}
         />
-        <ExternalLinksAccordion
-          taskId={taskId}
-          externalLinks={externalLinks as ExternalLink[]}
-          isLoading={isLoadingExternalLinks}
-        />
-      </div>
-
-      <TaskActivity
-        taskId={taskId}
-        projectId={projectId}
-        className="mt-8 border-border border-t pt-6"
-      />
+      ) : (
+        <>
+          <TaskDescription taskId={taskId} />
+          {task && (
+            <div className="mt-6">
+              <TaskRelatedContent task={task} workspaceId={workspaceId} />
+            </div>
+          )}
+          <TaskActivity
+            taskId={taskId}
+            projectId={projectId}
+            className="mt-8 border-border border-t pt-6"
+          />
+        </>
+      )}
     </div>
   );
 }

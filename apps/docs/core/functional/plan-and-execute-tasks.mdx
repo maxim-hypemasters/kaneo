@@ -23,7 +23,7 @@ To change an existing item's classification, open **Type** in its properties or 
 
 ## Move work on the board
 
-Use [Feature milestones](/core/functional/milestones) to break a Feature into smaller stages. Select a milestone in the Feature overview to filter its Tasks list, or assign it from the Task/Bug's properties after selecting its Feature.
+Use [Feature milestones](/core/functional/milestones) to break a Feature into smaller stages. Select a milestone in the Feature sidebar to open its filtered Issues tab, or assign it from the Task/Bug's properties after selecting its Feature.
 
 Drag a task to another column when its status changes. You can also change its status inside the task.
 
@@ -45,7 +45,7 @@ Switch the layout to **List** when you want to compare task properties without o
 
 ## Find and filter work
 
-Use the search icon, or press ⌘F (Ctrl+F on Windows and Linux), to find tasks by title, description, or task number.
+Use the search icon, or press ⌘F (Ctrl+F on Windows and Linux), to find tasks by title, description, or task number, and Feature documents by title or text. Choosing a document opens it in its Feature.
 
 Use **Filter** to narrow the view by type, status, assignee, priority, labels, release, due date, or custom fields. Hover a property to pick its values, or type in **Add filter…** to search every value at once. Each filter appears as a chip above the tasks:
 
@@ -109,9 +109,24 @@ Archive a Feature from its actions menu to move it to the library's archived vie
 
 ### Link implementation work
 
-Choose a Feature when creating or editing a Task/Bug, or quick-add work in its Tasks section. A Task/Bug can belong to one Feature in the same project. Choose **No feature** or use **Remove from feature** to unlink it. Changing the Feature clears milestone membership while preserving the task's release. Features cannot own other Features and cannot be converted to or from leaf work.
+Choose a Feature when creating or editing a Task/Bug, or add work in its Issues tab. A Task/Bug can belong to one Feature in the same project. Choose **No feature** or use **Remove from feature** to unlink it. Changing the Feature clears milestone membership while preserving the task's release. Features cannot own other Features and cannot be converted to or from leaf work.
 
-Use [milestones](/core/functional/milestones) to plan stages of implementation. They carry execution metadata and appear in [Gantt](/core/functional/calendar-and-gantt#milestones). Selecting a milestone in the Feature sidebar filters its Tasks list; select it again to clear the filter. Milestone status is read-only and follows the statuses of its nonarchived linked Tasks and Bugs. Child progress follows workflow Done flags and keeps its existing counting rules.
+Use [milestones](/core/functional/milestones) to plan stages of implementation. They carry execution metadata and appear in [Gantt](/core/functional/calendar-and-gantt#milestones). Selecting a milestone in the Feature sidebar opens and filters Issues; select it again to clear the filter. Milestone status is read-only and follows the statuses of its nonarchived linked Tasks and Bugs. Child progress follows workflow Done flags and keeps its existing counting rules.
+
+### Feature workspace
+
+Features have four tabs in both the side panel and full page. **Overview** opens by default. The header, properties, and milestone sidebar stay available while switching tabs.
+
+- **Overview** keeps the description, latest published update, relations, and external resources together. Click the description to edit it with the shared document editor.
+- **Activity** combines official updates, comments, and system history, newest first. Choose **Comment** for conversation or **Update** to publish a note with **On track**, **At risk**, or **Off track** health. Updates capture each milestone's whole progress at publication and compare it with the previous report. Later milestone changes do not rewrite those snapshots.
+- **Documents** holds named pages. Search or page through the list, then open a page: it fills the screen, and **All documents** or Esc returns to the list. Click the page to edit it. Save and Cancel, formatting, and uploads work like descriptions. You can rename a page while editing and confirm its deletion. If another person saves first, your draft remains available while you review the latest revision.
+- **Issues** shows linked Tasks and Bugs grouped in workflow order, including completed work and items without a milestone. Use **Include archived** to show archived items. Creation and linking preserve the current Feature and selected milestone; removing an item from the Feature preserves the work itself.
+
+Select a milestone in the sidebar to open Issues with that filter. Select it again to clear the filter, or choose **No milestone** to see work without a milestone. Filtering and pagination do not change Feature or milestone totals.
+
+The selected tab and open document are included in the URL, so links, reload, and browser back/forward restore them. Opening a Feature from a release and switching to full-page view retains that release as the default for new milestones. Leaving a draft asks before discarding it; pending writes prevent dismissal. Uploaded files remain available while any surviving Feature description, document, update, or comment references them.
+
+Publishing updates and creating or editing pages require task-update permission. Report authors may edit or delete their own reports; document deletion requires task-delete permission. Feature archiving keeps documents and reports. Native version 5 exports preserve pages and report snapshots, and imports continue to accept earlier formats.
 
 ### History and preservation
 

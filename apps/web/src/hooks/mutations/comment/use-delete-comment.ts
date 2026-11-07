@@ -9,6 +9,7 @@ function useDeleteComment(taskId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["activities", taskId] });
       void queryClient.invalidateQueries({ queryKey: ["workspace-activity"] });
+      void queryClient.invalidateQueries({ queryKey: ["feature-workspace"] });
     },
   });
 }

@@ -2,6 +2,7 @@ import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import db from "../../database";
 import {
   activityTable,
+  featureDocumentTable,
   projectTable,
   taskTable,
   userTable,
@@ -11,6 +12,7 @@ import {
 import { redactInaccessibleActivity } from "../../activity/redaction/redact-inaccessible-activity";
 import { canAccessProject } from "../../project-access/can-access-project";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
+import { documentExcerpt } from "../document-excerpt";
 import { escapeLikePattern } from "../like-pattern";
 import { redactedActivityScore } from "../redacted-activity-score";
 import { TASK_SHORT_ID_PATTERN } from "../task-short-id";
@@ -25,7 +27,8 @@ type SearchParams = {
     | "projects"
     | "workspaces"
     | "comments"
-    | "activities";
+    | "activities"
+    | "documents";
   workspaceId?: string;
   projectId?: string;
   limit?: number;
@@ -33,7 +36,7 @@ type SearchParams = {
 
 type SearchResult = {
   id: string;
-  type: "task" | "project" | "workspace" | "comment" | "activity";
+  type: "task" | "project" | "workspace" | "comment" | "activity" | "document";
   title: string;
   description?: string;
   content?: string;
@@ -50,6 +53,8 @@ type SearchResult = {
   priority?: string;
   status?: string;
   taskType?: typeof taskTable.$inferSelect.type;
+  featureId?: string;
+  featureTitle?: string;
 };
 
 function toDisplayCase(value: string) {
@@ -330,6 +335,73 @@ async function globalSearch(params: SearchParams): Promise<{
         priority: task.priority || undefined,
         status: task.status ?? undefined,
         taskType: task.taskType,
+      });
+    }
+  }
+
+  if (type === "all" || type === "documents") {
+    const documentRelevanceScore = sql<number>`
+      CASE
+        WHEN LOWER(${featureDocumentTable.title}) LIKE ${searchPattern} THEN 3
+        ELSE 2
+      END
+    `;
+
+    // Feature documents carry the same project access as their Feature.
+    const documents = await db
+      .select({
+        id: featureDocumentTable.id,
+        title: featureDocumentTable.title,
+        body: featureDocumentTable.body,
+        featureId: featureDocumentTable.featureId,
+        featureTitle: taskTable.title,
+        projectId: taskTable.projectId,
+        projectName: projectTable.name,
+        projectSlug: projectTable.slug,
+        workspaceId: projectTable.workspaceId,
+        workspaceName: workspaceTable.name,
+        userId: featureDocumentTable.updatedBy,
+        userName: featureDocumentTable.updatedByName,
+        createdAt: featureDocumentTable.createdAt,
+        relevanceScore: documentRelevanceScore.as("relevanceScore"),
+      })
+      .from(featureDocumentTable)
+      .innerJoin(taskTable, eq(featureDocumentTable.featureId, taskTable.id))
+      .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+      .leftJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
+      .where(
+        and(
+          workspaceFilter,
+          projectId ? eq(taskTable.projectId, projectId) : undefined,
+          or(
+            ilike(featureDocumentTable.title, searchPattern),
+            ilike(featureDocumentTable.body, searchPattern),
+          ),
+        ),
+      )
+      .orderBy(
+        desc(documentRelevanceScore),
+        desc(featureDocumentTable.updatedAt),
+      )
+      .limit(limit);
+
+    for (const document of documents) {
+      results.push({
+        id: document.id,
+        type: "document",
+        title: document.title,
+        content: documentExcerpt(document.body, query),
+        featureId: document.featureId,
+        featureTitle: document.featureTitle,
+        projectId: document.projectId,
+        projectName: document.projectName,
+        projectSlug: document.projectSlug,
+        workspaceId: document.workspaceId,
+        workspaceName: document.workspaceName || undefined,
+        userId: document.userId || undefined,
+        userName: document.userName || undefined,
+        createdAt: document.createdAt,
+        relevanceScore: document.relevanceScore,
       });
     }
   }

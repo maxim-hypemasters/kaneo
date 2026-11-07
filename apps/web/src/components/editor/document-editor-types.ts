@@ -18,4 +18,6 @@ export type DocumentEditorProps = {
   footer?: ReactNode;
   headerActions?: ReactNode;
   notice?: ReactNode;
+  // False when the editor already fills the screen, so it offers no Expand.
+  expandable?: boolean;
 };

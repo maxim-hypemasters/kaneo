@@ -1,3 +1,7 @@
+import {
+  validateFeatureWorkspaceSearch,
+  type FeatureWorkspaceSearch,
+} from "@/components/task/features/workspace/feature-workspace-search";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   format,
@@ -94,7 +98,7 @@ import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ReleaseSummary } from "@/types/release";
 import { useGetProjectSchedule } from "@/components/scheduling/use-project-schedule";
 
-type GanttSearchParams = {
+type GanttSearchParams = FeatureWorkspaceSearch & {
   taskId?: string;
 };
 
@@ -126,6 +130,7 @@ export const Route = createFileRoute(
 )({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): GanttSearchParams => ({
+    ...validateFeatureWorkspaceSearch(search),
     taskId: typeof search.taskId === "string" ? search.taskId : undefined,
   }),
 });

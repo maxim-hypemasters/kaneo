@@ -4,6 +4,7 @@ import {
   activityTable,
   assetTable,
   commentTable,
+  featureDocumentTable,
   taskTable,
 } from "../database/schema";
 import { deleteS3Object } from "./s3";
@@ -84,7 +85,16 @@ async function isAssetReferencedElsewhere(
     return true;
   }
 
-  return false;
+  const documentRefs = await db
+    .select({ body: featureDocumentTable.body })
+    .from(featureDocumentTable)
+    .where(
+      and(
+        eq(featureDocumentTable.featureId, taskId),
+        like(featureDocumentTable.body, pattern),
+      ),
+    );
+  return documentRefs.some((ref) => contentReferencesAsset(ref.body, assetId));
 }
 
 export async function deleteOrphanedAssets(

@@ -15,6 +15,11 @@ import { ScheduleSnapshot as ScheduleSnapshotSchema } from "../api/export-import
 import { parseEstimateSeconds } from "../tasks/parse-estimate.js";
 import { InvalidArgument } from "../errors/errors.js";
 import { TASK_TYPES, type TaskType } from "../api/task-features.js";
+import type {
+  FeatureDocumentTransfer,
+  FeatureUpdateTransfer,
+} from "../api/feature-content-transfer.js";
+import { parseFeatureContent } from "./feature-content-fields.js";
 
 export type ImportCandidate = {
   readonly title: string;
@@ -210,9 +215,11 @@ export function parseImportDocument(
 export type ImportDocument = {
   readonly tasks: ReadonlyArray<ImportCandidate>;
   readonly hierarchy?: {
-    readonly version: 2 | 3 | 4;
+    readonly version: 2 | 3 | 4 | 5;
     readonly releases?: ReadonlyArray<ExportedRelease>;
     readonly milestones: ReadonlyArray<ExportedMilestone>;
+    readonly featureDocuments?: ReadonlyArray<FeatureDocumentTransfer>;
+    readonly featureUpdates?: ReadonlyArray<FeatureUpdateTransfer>;
   };
 };
 
@@ -226,6 +233,15 @@ export function parseTransferDocument(
   if (Result.isFailure(parsed)) return Result.fail(parsed.failure);
   const document: unknown = JSON.parse(content);
   if (!isRecord(document) || document.version === undefined) {
+    if (
+      isRecord(document) &&
+      (document.featureDocuments !== undefined ||
+        document.featureUpdates !== undefined)
+    ) {
+      return Result.fail(
+        invalid("Feature content requires a version 5 import document."),
+      );
+    }
     if (
       readTasks(document)?.some(
         (item) =>
@@ -242,7 +258,8 @@ export function parseTransferDocument(
   if (
     document.version !== 2 &&
     document.version !== 3 &&
-    document.version !== 4
+    document.version !== 4 &&
+    document.version !== 5
   )
     return Result.fail(invalid("Unsupported import version."));
   if (!Array.isArray(document.milestones))
@@ -418,6 +435,15 @@ export function parseTransferDocument(
         invalid("A milestone reference must belong to the task's Feature."),
       );
   }
+  const contentFields = parseFeatureContent(
+    document,
+    new Set(
+      tasks.filter((task) => task.type === "feature").map((task) => task.key!),
+    ),
+    milestoneKeys,
+  );
+  if (Result.isFailure(contentFields))
+    return Result.fail(contentFields.failure);
   const parsedReleases = parseReleaseDefinitions(document.releases);
   if (Result.isFailure(parsedReleases))
     return Result.fail(parsedReleases.failure);
@@ -439,6 +465,7 @@ export function parseTransferDocument(
       version: document.version,
       milestones,
       ...(document.version >= 3 ? { releases } : {}),
+      ...contentFields.success,
     },
   });
 }

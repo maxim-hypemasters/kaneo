@@ -13,6 +13,9 @@ export function invalidateFeatureChange(
 ) {
   invalidateWorkLinkCandidates(queryClient, projectId);
   void queryClient.invalidateQueries({
+    queryKey: ["feature-workspace", projectId],
+  });
+  void queryClient.invalidateQueries({
     queryKey: ["feature-library", projectId],
   });
   void queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });

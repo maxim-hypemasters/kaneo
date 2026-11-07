@@ -11,3 +11,7 @@ JSON version 3 includes portable item keys, Feature membership, milestone defini
 Version 3 preserves release definitions, milestone lead/priority/release and informational derived status, Feature archive state, and immutable planning-history snapshots. Older hierarchy files remain accepted; former Feature planning values become history rather than active fields. Imported releases require `project:update`, and assigning a nonnull milestone lead requires `task:assign`.
 
 Milestone status and dates are read-only, derived from linked nonarchived Tasks/Bugs after import. Legacy manual milestone status and dates remain accepted in older files but never override the derived values.
+
+Native JSON version 5 additionally includes named Feature documents and official Feature updates. Markdown, document revisions, author names, publication dates, health, and immutable milestone progress snapshots are preserved. Live milestone references remap to imported milestones; deleted milestone snapshots keep their historical names and counts. Inaccessible historical snapshots are excluded using the same access rules as Activity. Asset references retain the existing description-transfer URL behavior.
+
+Version 4 effort and informational schedule history remain included. Imported dates never publish an approved schedule.

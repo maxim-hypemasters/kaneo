@@ -1,5 +1,6 @@
 import { redactInaccessibleActivity } from "../../activity/redaction/redact-inaccessible-activity";
 import { readScheduleSnapshot } from "../transfers/read-schedule-snapshot";
+import { exportFeatureContent } from "../transfers/export-feature-content";
 import {
   planningSnapshotSchema,
   scheduleSnapshotSchema,
@@ -163,8 +164,14 @@ async function exportTasks(projectId: string, viewerId?: string) {
           scheduleHistory.set(activity.taskId, history);
         }
       }
+      const featureContent = await exportFeatureContent(
+        tx,
+        featureIds,
+        snapshots,
+      );
       return {
-        version: 4 as const,
+        version: 5 as const,
+        ...featureContent,
         releases: releases.map(
           ({ id, name, startDate, codeFreezeDate, submissionDate }) => ({
             key: id,

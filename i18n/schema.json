@@ -10298,6 +10298,9 @@
 								"activity": {
 									"type": "string"
 								},
+								"document": {
+									"type": "string"
+								},
 								"fallback": {
 									"type": "string"
 								}
@@ -10308,6 +10311,7 @@
 								"workspace",
 								"comment",
 								"activity",
+								"document",
 								"fallback"
 							]
 						}
@@ -14689,6 +14693,287 @@
 								"activityArchived",
 								"activityRestored"
 							]
+						},
+						"workspace": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"navigation": {
+									"type": "string"
+								},
+								"tabs": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"overview": {
+											"type": "string"
+										},
+										"activity": {
+											"type": "string"
+										},
+										"documents": {
+											"type": "string"
+										},
+										"issues": {
+											"type": "string"
+										}
+									},
+									"required": ["overview", "activity", "documents", "issues"]
+								},
+								"health": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"on-track": {
+											"type": "string"
+										},
+										"at-risk": {
+											"type": "string"
+										},
+										"off-track": {
+											"type": "string"
+										}
+									},
+									"required": ["on-track", "at-risk", "off-track"]
+								},
+								"healthLabel": {
+									"type": "string"
+								},
+								"chooseHealth": {
+									"type": "string"
+								},
+								"comment": {
+									"type": "string"
+								},
+								"update": {
+									"type": "string"
+								},
+								"composer": {
+									"type": "string"
+								},
+								"postComment": {
+									"type": "string"
+								},
+								"publishUpdate": {
+									"type": "string"
+								},
+								"updateNote": {
+									"type": "string"
+								},
+								"updatePlaceholder": {
+									"type": "string"
+								},
+								"publishFailed": {
+									"type": "string"
+								},
+								"updatePermission": {
+									"type": "string"
+								},
+								"latestUpdate": {
+									"type": "string"
+								},
+								"viewUpdate": {
+									"type": "string"
+								},
+								"noUpdates": {
+									"type": "string"
+								},
+								"editUpdate": {
+									"type": "string"
+								},
+								"deleteUpdate": {
+									"type": "string"
+								},
+								"deleteUpdateConfirm": {
+									"type": "string"
+								},
+								"progressChanges": {
+									"type": "string"
+								},
+								"milestoneProgress": {
+									"type": "string"
+								},
+								"moreMilestones_one": {
+									"type": "string"
+								},
+								"moreMilestones_zero": {
+									"type": "string"
+								},
+								"moreMilestones_two": {
+									"type": "string"
+								},
+								"moreMilestones_few": {
+									"type": "string"
+								},
+								"moreMilestones_many": {
+									"type": "string"
+								},
+								"moreMilestones_other": {
+									"type": "string"
+								},
+								"noActivity": {
+									"type": "string"
+								},
+								"allDocuments": {
+									"type": "string"
+								},
+								"newDocument": {
+									"type": "string"
+								},
+								"searchDocuments": {
+									"type": "string"
+								},
+								"noDocuments": {
+									"type": "string"
+								},
+								"noDocumentResults": {
+									"type": "string"
+								},
+								"documentTitle": {
+									"type": "string"
+								},
+								"documentBody": {
+									"type": "string"
+								},
+								"documentPlaceholder": {
+									"type": "string"
+								},
+								"renameDocument": {
+									"type": "string"
+								},
+								"deleteDocument": {
+									"type": "string"
+								},
+								"deleteDocumentConfirm": {
+									"type": "string"
+								},
+								"documentUpdated": {
+									"type": "string"
+								},
+								"documentListUpdated": {
+									"type": "string"
+								},
+								"loadFailed": {
+									"type": "string"
+								},
+								"deleteFailed": {
+									"type": "string"
+								},
+								"page": {
+									"type": "string"
+								},
+								"issues": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"title": {
+											"type": "string"
+										},
+										"search": {
+											"type": "string"
+										},
+										"includeArchived": {
+											"type": "string"
+										},
+										"empty": {
+											"type": "string"
+										},
+										"linkExisting": {
+											"type": "string"
+										},
+										"selectAria": {
+											"type": "string"
+										},
+										"selected": {
+											"type": "string"
+										},
+										"selected_zero": {
+											"type": "string"
+										},
+										"selected_one": {
+											"type": "string"
+										},
+										"selected_two": {
+											"type": "string"
+										},
+										"selected_few": {
+											"type": "string"
+										},
+										"selected_many": {
+											"type": "string"
+										},
+										"selected_other": {
+											"type": "string"
+										},
+										"clearSelection": {
+											"type": "string"
+										},
+										"noCandidates": {
+											"type": "string"
+										},
+										"linkFailed": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"title",
+										"search",
+										"includeArchived",
+										"empty",
+										"linkExisting",
+										"selectAria",
+										"clearSelection",
+										"noCandidates",
+										"linkFailed"
+									]
+								},
+								"updateUnavailable": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"navigation",
+								"tabs",
+								"health",
+								"healthLabel",
+								"chooseHealth",
+								"comment",
+								"update",
+								"composer",
+								"postComment",
+								"publishUpdate",
+								"updateNote",
+								"updatePlaceholder",
+								"publishFailed",
+								"updatePermission",
+								"latestUpdate",
+								"viewUpdate",
+								"noUpdates",
+								"editUpdate",
+								"deleteUpdate",
+								"deleteUpdateConfirm",
+								"progressChanges",
+								"milestoneProgress",
+								"noActivity",
+								"allDocuments",
+								"newDocument",
+								"searchDocuments",
+								"noDocuments",
+								"noDocumentResults",
+								"documentTitle",
+								"documentBody",
+								"documentPlaceholder",
+								"renameDocument",
+								"deleteDocument",
+								"deleteDocumentConfirm",
+								"documentUpdated",
+								"documentListUpdated",
+								"loadFailed",
+								"deleteFailed",
+								"page",
+								"issues",
+								"updateUnavailable"
+							]
 						}
 					},
 					"required": [
@@ -14710,7 +14995,8 @@
 						"inProject",
 						"typeBug",
 						"convertToBug",
-						"library"
+						"library",
+						"workspace"
 					]
 				},
 				"releases": {

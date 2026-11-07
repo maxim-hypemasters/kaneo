@@ -14,3 +14,7 @@ Version 2/3 label definitions and attachments also require `label:create` and `l
 Version 3 preserves release definitions, milestone lead/priority/release and informational derived status, Feature archive state, and immutable planning-history snapshots. Older hierarchy files remain accepted; former Feature planning values become history rather than active fields. Imported releases require `project:update`, and assigning a nonnull milestone lead requires `task:assign`.
 
 Milestone status and dates are read-only, derived from linked nonarchived Tasks/Bugs after import. Legacy manual milestone status and dates remain accepted in older files but never override the derived values.
+
+Version 5 adds optional `featureDocuments` and `featureUpdates` arrays. Each entry references an imported Feature through `featureKey`. Document and report keys must be unique, and update milestone keys must either belong to that Feature or identify a deleted historical milestone. The entire hierarchy, documents, and immutable progress snapshots save in one transaction. Imported authors retain display attribution without receiving local ownership. Existing Markdown asset URLs follow the same conventions as descriptions.
+
+Versions 2, 3, and 4 remain accepted. Version 4 effort and schedule history are informational; imported timing must still go through Preview and Apply.

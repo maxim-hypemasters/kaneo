@@ -62,6 +62,7 @@ const otherInvalidations = () =>
           "columns",
           "project-features",
           "feature-library",
+          "feature-workspace",
         ].includes(options?.queryKey?.[0]) &&
         !(
           options?.predicate &&

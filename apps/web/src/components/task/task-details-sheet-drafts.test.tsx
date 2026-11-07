@@ -21,6 +21,7 @@ import TaskDetailsSheet from "./task-details-sheet";
 const mocks = vi.hoisted(() => ({ saving: false }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
   useBlocker: vi.fn(),
 }));
 vi.mock("@/hooks/queries/task/use-get-task", () => ({

@@ -2,6 +2,10 @@ import { estimateSecondsSchema } from "./estimate";
 import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
 import { TASK_TYPES } from "./task-type";
 import {
+  transferFeatureDocumentSchema,
+  transferFeatureUpdateSchema,
+} from "./transfers/feature-content-schema";
+import {
   planningSnapshotSchema,
   transferReleaseSchema,
   scheduleSnapshotSchema,
@@ -318,7 +322,9 @@ export const moveTaskResultSchema = z
 
 export const taskExportSchema = z
   .object({
-    version: z.literal(4),
+    version: z.literal(5),
+    featureDocuments: z.array(transferFeatureDocumentSchema),
+    featureUpdates: z.array(transferFeatureUpdateSchema),
     releases: z.array(transferReleaseSchema),
     milestones: z.array(exportedMilestoneSchema),
     project: z

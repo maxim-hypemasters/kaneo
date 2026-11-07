@@ -1,3 +1,4 @@
+import { validateFeatureWorkspaceSearch } from "@/components/task/features/workspace/feature-workspace-search";
 import { TaskShortcuts } from "@/components/task/task-shortcuts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -16,7 +17,6 @@ import {
 } from "@/components/task/task-page-skeleton";
 import { AlertDialogCreateHandle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
 import useGetProject from "@/hooks/queries/project/use-get-project";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import {
@@ -30,7 +30,10 @@ export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId_",
 )({
   component: RouteComponent,
-  validateSearch: validateTaskReleaseSearch,
+  validateSearch: (search: Record<string, unknown>) => ({
+    ...validateTaskReleaseSearch(search),
+    ...validateFeatureWorkspaceSearch(search),
+  }),
 });
 
 function RouteComponent() {
@@ -47,7 +50,6 @@ function RouteComponent() {
     id: projectId,
     workspaceId,
   });
-  const { isLoading: isActivitiesLoading } = useGetActivitiesByTaskId(taskId);
   const [isShikiReady, setIsShikiReady] = useState(false);
   const [deleteHandle] = useState(() => AlertDialogCreateHandle());
   useEffect(() => {
@@ -72,8 +74,7 @@ function RouteComponent() {
     };
   }, []);
 
-  const isLoading =
-    isTaskLoading || isProjectLoading || isActivitiesLoading || !isShikiReady;
+  const isLoading = isTaskLoading || isProjectLoading || !isShikiReady;
 
   const handleDeleted = () => {
     navigate({

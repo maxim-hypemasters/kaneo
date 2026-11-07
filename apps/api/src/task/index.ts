@@ -622,7 +622,7 @@ const exportTasksRoute = createRoute({
   tags: ["Tasks"],
   summary: "Export tasks",
   description:
-    "Export a project's work and labels as version 2 JSON with portable Feature and milestone hierarchy.",
+    "Export a project's work as version 5 JSON with portable hierarchy, Feature documents, authored update snapshots, and informational schedule history.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ task: ["read"] }),
@@ -1439,15 +1439,25 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     const currentUserId = c.get("userId");
     const hierarchy =
       Boolean(document.milestones?.length) ||
+      Boolean(document.featureDocuments?.length) ||
+      Boolean(document.featureUpdates?.length) ||
       document.tasks.some((task) => task.featureKey || task.milestoneKey);
+    if (
+      document.version !== 5 &&
+      (document.featureDocuments?.length || document.featureUpdates?.length)
+    )
+      throw new HTTPException(400, {
+        message: "Feature content imports require version 5",
+      });
     if (
       hierarchy &&
       document.version !== 2 &&
       document.version !== 3 &&
-      document.version !== 4
+      document.version !== 4 &&
+      document.version !== 5
     ) {
       throw new HTTPException(400, {
-        message: "Hierarchy imports require version 2, 3 or 4",
+        message: "Hierarchy imports require version 2, 3, 4 or 5",
       });
     }
     if (document.releases?.length)
@@ -1463,7 +1473,8 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     if (
       (document.version === 2 ||
         document.version === 3 ||
-        document.version === 4) &&
+        document.version === 4 ||
+        document.version === 5) &&
       document.tasks.some((task) => task.labels?.length)
     ) {
       await requireWorkspacePermission({ label: ["create", "update"] })(
@@ -1472,7 +1483,10 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       );
     }
     const result =
-      document.version === 2 || document.version === 3 || document.version === 4
+      document.version === 2 ||
+      document.version === 3 ||
+      document.version === 4 ||
+      document.version === 5
         ? await importHierarchy(
             projectId,
             document,

@@ -6,6 +6,10 @@ import { VALID_PRIORITIES } from "./validate-task-fields";
 import { TASK_TYPES } from "./task-type";
 import { featureCompositionSchema } from "./feature-composition-schema";
 import {
+  transferFeatureDocumentSchema,
+  transferFeatureUpdateSchema,
+} from "./transfers/feature-content-schema";
+import {
   planningSnapshotSchema,
   transferReleaseSchema,
   scheduleSnapshotSchema,
@@ -165,14 +169,16 @@ export const moveTaskBody = z.object({
 
 export const importTasksBody = z.object({
   version: z
-    .union([z.literal(2), z.literal(3), z.literal(4)])
+    .union([z.literal(2), z.literal(3), z.literal(4), z.literal(5)])
     .optional()
     .openapi({
       description:
-        "Version 4 preserves effort and informational schedule history; versions 2/3 and legacy per-task imports remain accepted. Imported schedules are never approved plans.",
+        "Version 5 also preserves Feature documents and authored update snapshots. Versions 2/3/4 and legacy per-task imports remain accepted. Imported schedules are never approved plans.",
     }),
   milestones: z.array(transferMilestoneSchema).optional(),
   releases: z.array(transferReleaseSchema).optional(),
+  featureDocuments: z.array(transferFeatureDocumentSchema).optional(),
+  featureUpdates: z.array(transferFeatureUpdateSchema).optional(),
   tasks: z.array(
     z.object({
       key: z.string().min(1).optional(),

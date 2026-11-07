@@ -1027,6 +1027,48 @@ export const activityTable = pgTable(
   ],
 );
 
+export const featureDocumentTable = pgTable(
+  "feature_document",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    featureId: text("feature_id")
+      .notNull()
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    title: text("title").notNull(),
+    body: text("body").notNull().default(""),
+    revision: integer("revision").notNull().default(1),
+    createdBy: text("created_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    updatedBy: text("updated_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdByName: text("created_by_name"),
+    updatedByName: text("updated_by_name"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("feature_document_feature_updated_idx").on(
+      table.featureId,
+      table.updatedAt,
+      table.id,
+    ),
+  ],
+);
+
 export const assetTable = pgTable(
   "asset",
   {

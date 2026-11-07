@@ -189,6 +189,9 @@ export function useProjectWebSocket(projectId: string) {
     }
     function reconcileMilestoneDetails() {
       void queryClient.invalidateQueries({
+        queryKey: ["feature-workspace", projectId],
+      });
+      void queryClient.invalidateQueries({
         queryKey: ["project-features", projectId],
       });
       void queryClient.invalidateQueries({
@@ -372,6 +375,11 @@ export function useProjectWebSocket(projectId: string) {
         if (disposed || activeSocket !== ws) return;
         try {
           const message = JSON.parse(event.data);
+          if (message.type === "FEATURE_CONTENT_UPDATED") {
+            refreshLinkCandidates();
+            return;
+          }
+          if (message.type === "COMMENT_UPDATED") refreshLinkCandidates();
           if (message.type === "SCHEDULE_UPDATED") {
             void queryClient.invalidateQueries({
               queryKey: ["project-schedule", projectId],

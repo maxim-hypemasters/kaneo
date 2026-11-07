@@ -9,6 +9,7 @@ import {
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CommentEditor from "@/components/activity/comment-editor";
+import { useDocumentDraftGuard } from "@/components/editor/document-draft-guard";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { GitlabIcon } from "@/components/icons/gitlab-icon";
 import { useAuth } from "@/components/providers/auth-provider/hooks/use-auth";
@@ -113,6 +114,12 @@ export default function CommentCard({
     setEditedContent(content);
     setIsEditing(false);
   }, [content]);
+
+  useDocumentDraftGuard({
+    dirty: isEditing && editedContent !== content,
+    saving: isPending || isDeleting,
+    onDiscard: handleCancel,
+  });
 
   const handleSave = useCallback(async () => {
     if (!editedContent.trim()) {
