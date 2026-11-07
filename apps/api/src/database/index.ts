@@ -11,6 +11,7 @@ import {
   customFieldDefinitionTableRelations,
   customFieldValueTableRelations,
   externalLinkTableRelations,
+  featureDocumentTableRelations,
   githubIntegrationTableRelations,
   integrationTableRelations,
   invitationTableRelations,
@@ -42,6 +43,7 @@ import {
   storageCleanupTable,
   accountTable,
   activityTable,
+  featureDocumentTable,
   apikeyTable,
   assetTable,
   billingEventTable,
@@ -96,6 +98,7 @@ import {
 config();
 
 export const schema = {
+  featureDocumentTable,
   workCalendarTable,
   projectPlanTable,
   dataMigrationTable,
@@ -154,6 +157,7 @@ export const schema = {
   columnTableRelations,
   commentTableRelations,
   externalLinkTableRelations,
+  featureDocumentTableRelations,
   githubIntegrationTableRelations,
   integrationTableRelations,
   invitationTableRelations,

@@ -101,6 +101,9 @@ const otherProjectMilestoneKeys = [
 const candidateKeys = [
   ["feature-create-candidates", "p", "", 1],
   ["feature-create-candidates", "p", "Core", 2],
+  ["feature-workspace", "p", "feature", "documents", "", 1],
+  ["feature-workspace", "p", "feature", "latest-update"],
+  ["feature-workspace", "p", "feature", "issues", "all", 1],
   ["release-link-candidates", "p", "r", "task", "", 1],
   ["release-link-candidates", "p", "another-release", "milestone", "Launch", 2],
 ];
@@ -165,6 +168,17 @@ afterEach(() => {
 });
 
 describe("release list realtime", () => {
+  it("coalesces Feature documents, reports and comments without reading the board", async () => {
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("FEATURE_CONTENT_UPDATED", { featureId: "feature" });
+    Socket.current.message("FEATURE_CONTENT_UPDATED", { featureId: "feature" });
+    Socket.current.message("COMMENT_UPDATED", { taskId: "feature" });
+    expect(candidateCalls()).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(candidateCalls()).toHaveLength(1);
+    expectCandidatesInvalidated();
+    expect(mocks.client.setQueryData).not.toHaveBeenCalled();
+  });
   it("refetches mounted Masterplanning summaries once for a coalesced remote burst", async () => {
     const key = ["feature-milestones", "p", "project", "UTC"];
     const changed = [
@@ -484,6 +498,7 @@ describe("release list realtime", () => {
     expect(mocks.client.invalidateQueries.mock.calls).toEqual([
       [{ queryKey: ["release-link-candidates", "p"] }],
       [{ queryKey: ["feature-create-candidates", "p"] }],
+      [{ queryKey: ["feature-workspace", "p"] }],
       [{ queryKey: ["releases", "p"] }],
       [{ queryKey: ["release-progress", "p"] }],
     ]);

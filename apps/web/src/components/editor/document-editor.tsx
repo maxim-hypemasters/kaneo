@@ -10,6 +10,7 @@ import {
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { ToolbarButton } from "@/components/ui/toolbar";
 import {
   Dialog,
   DialogHeader,
@@ -66,6 +67,7 @@ export function DocumentEditor(props: DocumentEditorProps) {
   const { editor, upload, uploading, uploadError, languages } =
     useDocumentEditor(props, openLink, setEmbed, chooseFile);
   const editable = !props.readOnly;
+  const expandable = props.expandable ?? true;
   const locked = Boolean(props.disabled || uploading);
   const canActivate = Boolean(props.readOnly && props.onRequestEdit && !locked);
 
@@ -112,6 +114,32 @@ export function DocumentEditor(props: DocumentEditorProps) {
                   onUpload={openFile}
                   onLink={openLink}
                   onEmbed={openEmbed}
+                  endActions={
+                    !fullscreen ? (
+                      <>
+                        {props.headerActions}
+                        {expandable && (
+                          <ToolbarButton
+                            ref={expandButton}
+                            render={
+                              <Button
+                                type="button"
+                                size="icon-sm"
+                                variant="ghost"
+                              />
+                            }
+                            aria-label={t("common:documentEditor.expand")}
+                            title={t("common:documentEditor.expand")}
+                            disabled={locked}
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => setFullscreen(true)}
+                          >
+                            <Maximize2 className="size-4" />
+                          </ToolbarButton>
+                        )}
+                      </>
+                    ) : undefined
+                  }
                 />
               </div>
             )}
@@ -139,6 +167,10 @@ export function DocumentEditor(props: DocumentEditorProps) {
                   fullscreen && "mx-auto w-full max-w-4xl px-5 py-8 sm:px-10",
                   editable && "[&_.ProseMirror]:min-h-44",
                   !editable && "[&_.ProseMirror]:pb-2",
+                  !editable &&
+                    !fullscreen &&
+                    (expandable || props.headerActions) &&
+                    "min-h-8 [&_.ProseMirror]:pe-9",
                   canActivate &&
                     "cursor-text rounded-lg focus-within:ring-2 focus-within:ring-ring",
                 )}
@@ -187,6 +219,28 @@ export function DocumentEditor(props: DocumentEditorProps) {
                   props.onRequestEdit?.();
                 }}
               >
+                {!editable &&
+                  !fullscreen &&
+                  (expandable || props.headerActions) && (
+                    <div className="absolute right-1 top-0 z-10 flex items-center gap-2">
+                      {props.headerActions}
+                      {expandable && (
+                        <Button
+                          ref={expandButton}
+                          type="button"
+                          size="icon-sm"
+                          variant="ghost"
+                          aria-label={t("common:documentEditor.expand")}
+                          title={t("common:documentEditor.expand")}
+                          disabled={locked}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => setFullscreen(true)}
+                        >
+                          <Maximize2 className="size-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 {!props.value && props.readOnly && (
                   <p className="py-3 text-muted-foreground text-sm">
                     {props.placeholder || t("common:documentEditor.empty")}
@@ -248,22 +302,6 @@ export function DocumentEditor(props: DocumentEditorProps) {
       data-document-editor=""
       data-readonly={props.readOnly || undefined}
     >
-      <div className="mb-2 flex min-h-7 flex-wrap items-center justify-end gap-2">
-        {!fullscreen && props.headerActions}
-        <Button
-          ref={expandButton}
-          type="button"
-          size="icon-sm"
-          variant="ghost"
-          aria-label={t("common:documentEditor.expand")}
-          title={t("common:documentEditor.expand")}
-          disabled={locked}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => setFullscreen(true)}
-        >
-          <Maximize2 className="size-4" />
-        </Button>
-      </div>
       <div
         ref={(node) => {
           inlineSlot.current = node;

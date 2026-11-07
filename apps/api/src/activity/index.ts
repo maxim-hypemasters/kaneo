@@ -90,7 +90,7 @@ const createActivityRoute = createRoute({
   responses: {
     200: jsonResponse("The created activity", activitySchema),
     400: errorResponse(
-      "Invalid body, or comment activity submitted through the generic endpoint",
+      "Invalid body, or a reserved comment/Feature-update activity submitted through the generic endpoint",
     ),
     403: errorResponse(
       "No access to the project, or missing task:update permission",
@@ -193,9 +193,10 @@ const activity = apiRouter()
   )
   .openapi(createActivityRoute, async (c) => {
     const { taskId, message, type, eventData } = c.req.valid("json");
-    if (type === "comment") {
+    if (type === "comment" || type === "feature_update") {
       throw new HTTPException(400, {
-        message: "Use the comment endpoint to create comments",
+        message:
+          "Use the dedicated endpoint to create comments or Feature updates",
       });
     }
     return c.json(

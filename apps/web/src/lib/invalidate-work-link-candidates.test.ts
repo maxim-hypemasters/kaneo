@@ -6,6 +6,8 @@ it("refreshes both candidate pickers across search pages without crossing projec
   const client = new QueryClient();
   const keys = [
     ["feature-create-candidates", "p", "", 1],
+    ["feature-workspace", "p", "f", "activity", 1],
+    ["feature-workspace", "p", "f", "issues", "none", 1],
     ["feature-create-candidates", "p", "Core", 2],
     ["release-link-candidates", "p", "r", "task", "", 1],
   ];

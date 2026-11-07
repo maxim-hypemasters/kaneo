@@ -1,4 +1,12 @@
 import { importedTaskDates, preserveImportedSchedule } from "./task-schedule";
+import {
+  importFeatureContent,
+  validateFeatureContent,
+} from "./feature-content";
+import type {
+  TransferFeatureDocument,
+  TransferFeatureUpdate,
+} from "./feature-content-schema";
 import { createId } from "@paralleldrive/cuid2";
 import { eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
@@ -50,6 +58,8 @@ export type HierarchyTransfer = {
   tasks: HierarchyTransferTask[];
   milestones?: TransferMilestone[];
   releases?: TransferRelease[];
+  featureDocuments?: TransferFeatureDocument[];
+  featureUpdates?: TransferFeatureUpdate[];
 };
 
 export async function importHierarchy(
@@ -62,6 +72,7 @@ export async function importHierarchy(
     document.tasks.map((task) => ({ ...task, key: task.key ?? "" })),
     document.milestones ?? [],
   );
+  validateFeatureContent(document, document.tasks, hierarchy.milestones);
   const project = await db.query.projectTable.findFirst({
     where: eq(projectTable.id, projectId),
   });
@@ -251,6 +262,7 @@ export async function importHierarchy(
         .set({ milestoneId: milestoneIds.get(milestoneKey)! })
         .where(eq(taskTable.id, taskIds.get(key)!));
     }
+    await importFeatureContent(tx, projectId, document, taskIds, milestoneIds);
     const labels = new Map(
       prepared.flatMap(({ item }) =>
         (item.labels ?? []).map(

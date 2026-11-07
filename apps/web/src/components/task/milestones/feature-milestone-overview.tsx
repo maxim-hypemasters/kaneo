@@ -11,14 +11,14 @@ export function FeatureMilestoneOverview({
   placement: "rail" | "inline";
 }) {
   const railVisible = useTaskRailVisible();
-  const { filter, setFilter } = useMilestoneSelection();
+  const { filter, selectFilter } = useMilestoneSelection();
   if (railVisible !== (placement === "rail")) return null;
   return (
     <FeatureMilestones
       projectId={projectId}
       featureId={featureId}
       filter={filter}
-      onFilter={setFilter}
+      onFilter={selectFilter}
     />
   );
 }

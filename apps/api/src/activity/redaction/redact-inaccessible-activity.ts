@@ -18,6 +18,7 @@ function projectIdsOf(row: ActivityRow, currentProjects: CurrentProjects) {
   const data = eventDataOf(row.eventData);
   if (!data) return [];
   if (
+    row.type === "feature_update" ||
     row.type === "feature_planning_snapshot" ||
     row.type.startsWith("milestone_")
   )
@@ -42,6 +43,21 @@ function redactRow<T extends ActivityRow>(
   const data = eventDataOf(row.eventData);
   if (!data) return row;
   let redacted = data;
+  if (row.type === "feature_update") {
+    const projectId =
+      typeof data.projectId === "string" ? data.projectId : null;
+    if (!projectId || !isVisible(projectId))
+      return {
+        ...row,
+        content: null,
+        eventData: {
+          projectId: null,
+          health: null,
+          milestones: [],
+          redacted: true,
+        },
+      };
+  }
   if (
     row.type === "feature_planning_snapshot" ||
     (row.type.startsWith("milestone_") && row.type !== "milestone_changed")

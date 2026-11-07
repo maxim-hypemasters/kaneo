@@ -159,6 +159,11 @@ describe("DocumentEditor", () => {
       }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "common:documentEditor.expand" }),
+      ).toHaveFocus(),
+    );
     expect(capture.editor).toBe(editor);
     expect(originalDom.isConnected).toBe(true);
     expect(editor.getText()).toBe("Original draft");
@@ -167,6 +172,71 @@ describe("DocumentEditor", () => {
     });
     expect(editor.getText()).toBe("Original");
   });
+
+  it("places Expand directly after Undo and Redo inside the editing toolbar", async () => {
+    render(<DraftEditor />);
+    await getEditor();
+    const toolbar = screen.getByRole("toolbar", {
+      name: "common:documentEditor.toolbar",
+    });
+    const expand = within(toolbar).getByRole("button", {
+      name: "common:documentEditor.expand",
+    });
+    const redo = within(toolbar).getByRole("button", {
+      name: "common:documentEditor.redo",
+    });
+    expect(
+      redo.compareDocumentPosition(expand) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      screen.getAllByRole("button", { name: "common:documentEditor.expand" }),
+    ).toHaveLength(1);
+  });
+
+  it("keeps reading Expand inside the content without starting click-to-edit", async () => {
+    const edit = vi.fn();
+    render(
+      <DocumentEditor
+        ariaLabel="Page"
+        value="Read this"
+        readOnly
+        onRequestEdit={edit}
+      />,
+    );
+    const editor = await getEditor();
+    const expand = screen.getByRole("button", {
+      name: "common:documentEditor.expand",
+    });
+    expect(expand.closest(".kaneo-tiptap-shell")).toContainElement(
+      editor.view.dom,
+    );
+    expect(screen.queryByRole("toolbar")).toBeNull();
+    fireEvent.click(expand);
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    expect(edit).not.toHaveBeenCalled();
+  });
+
+  it.each([false, true])(
+    "disables the inline Expand control during writes (readOnly=%s)",
+    async (readOnly) => {
+      render(
+        <DocumentEditor
+          ariaLabel="Page"
+          value="Text"
+          readOnly={readOnly}
+          disabled
+        />,
+      );
+      await getEditor();
+      const expand = screen.getByRole("button", {
+        name: "common:documentEditor.expand",
+      });
+      if (readOnly) expect(expand).toBeDisabled();
+      else expect(expand).toHaveAttribute("aria-disabled", "true");
+      fireEvent.click(expand);
+      expect(screen.queryByRole("dialog")).toBeNull();
+    },
+  );
 
   it("preserves bold Markdown pasted into a checklist and allows external draft resets", async () => {
     const change = vi.fn();

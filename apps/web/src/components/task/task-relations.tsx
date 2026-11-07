@@ -103,7 +103,7 @@ export default function TaskRelations({
   const clearRelationRequest = useRelationPickerStore((state) => state.clear);
 
   const { data: relations = [] } = useGetTaskRelations(taskId);
-  const { data: projectData } = useGetTasks(projectId, {
+  const { data: projectData } = useGetTasks(commandOpen ? projectId : "", {
     refetchOnMount: false,
   });
   const { data: project } = useGetProject({ id: projectId, workspaceId });

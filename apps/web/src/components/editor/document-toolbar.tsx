@@ -19,6 +19,7 @@ import {
   Video,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -41,6 +42,7 @@ type DocumentToolbarProps = {
   onUpload: (imagesOnly: boolean) => void;
   onLink: () => void;
   onEmbed: () => void;
+  endActions?: ReactNode;
 };
 
 export function DocumentToolbar({
@@ -50,6 +52,7 @@ export function DocumentToolbar({
   onUpload,
   onLink,
   onEmbed,
+  endActions,
 }: DocumentToolbarProps) {
   const { t } = useTranslation();
   const state = useEditorState({
@@ -297,6 +300,7 @@ export function DocumentToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
       </ToolbarGroup>
+      {endActions && <ToolbarGroup>{endActions}</ToolbarGroup>}
     </Toolbar>
   );
 }

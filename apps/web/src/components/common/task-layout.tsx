@@ -1,4 +1,6 @@
 import { MilestoneDetailsSheet } from "@/components/task/milestones/milestone-details-sheet";
+import { taskReleaseSearch } from "@/components/task/task-release-origin";
+import { useTaskReleaseOrigin } from "@/components/task/task-release-origin-context";
 import { ShortcutKeys } from "@/components/shortcuts/shortcut-keys";
 import { useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -37,6 +39,7 @@ export default function TaskLayout({
 }: TaskLayoutProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const origin = useTaskReleaseOrigin();
   const { data: project, error: projectError } = useGetProject({
     id: projectId,
     workspaceId,
@@ -55,13 +58,14 @@ export default function TaskLayout({
     navigate({
       to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
       params: { workspaceId, projectId, taskId: nextTaskId },
+      search: taskReleaseSearch(origin, projectId),
     });
   };
 
   return (
     <div data-task-view className="contents">
-      <Layout className="flex flex-col lg:flex-row">
-        <div className="flex min-h-0 flex-1 flex-col">
+      <Layout className="flex h-[calc(100svh-1rem)] min-h-0 flex-col overflow-hidden lg:flex-row">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <Layout.Header className="h-11 border-border/80 px-2">
             <div className="flex w-full items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">

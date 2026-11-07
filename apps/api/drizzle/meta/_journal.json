@@ -519,6 +519,13 @@
       "when": 1792859040885,
       "tag": "0073_bent_strong_guy",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1793890848840,
+      "tag": "0074_nosy_calypso",
+      "breakpoints": true
     }
   ]
 }

@@ -951,7 +951,7 @@ export function registerTools(
     "search",
     {
       description:
-        "Search across tasks, projects, workspaces, comments, and activities.",
+        "Search across tasks, projects, workspaces, comments, activities, and Feature documents.",
       inputSchema: z.object({
         q: nonEmptyString.describe("Search query"),
         type: z
@@ -962,6 +962,7 @@ export function registerTools(
             "workspaces",
             "comments",
             "activities",
+            "documents",
           ])
           .optional()
           .describe("Restrict results to one kind. Defaults to all."),

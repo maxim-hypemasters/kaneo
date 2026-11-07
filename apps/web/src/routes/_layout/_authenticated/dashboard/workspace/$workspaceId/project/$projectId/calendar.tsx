@@ -1,3 +1,7 @@
+import {
+  validateFeatureWorkspaceSearch,
+  type FeatureWorkspaceSearch,
+} from "@/components/task/features/workspace/feature-workspace-search";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { addMonths, startOfMonth, subMonths } from "date-fns";
 import { useCallback, useMemo, useState } from "react";
@@ -21,7 +25,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { toScheduledTasks } from "@/lib/task-schedule";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 
-type CalendarSearchParams = {
+type CalendarSearchParams = FeatureWorkspaceSearch & {
   taskId?: string;
 };
 
@@ -30,6 +34,7 @@ export const Route = createFileRoute(
 )({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>): CalendarSearchParams => ({
+    ...validateFeatureWorkspaceSearch(search),
     taskId: typeof search.taskId === "string" ? search.taskId : undefined,
   }),
 });

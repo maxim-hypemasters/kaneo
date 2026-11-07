@@ -864,6 +864,28 @@ subscribeToEvent<{
   },
 );
 
+for (const eventName of [
+  "feature.update.created",
+  "feature.update.updated",
+  "feature.update.deleted",
+  "feature.document.created",
+  "feature.document.updated",
+  "feature.document.deleted",
+]) {
+  subscribeToEvent<{
+    projectId: string;
+    featureId: string;
+    initiatorId?: string;
+  }>(eventName, async ({ projectId, featureId, initiatorId }) => {
+    if (projectId)
+      broadcastToProject(
+        projectId,
+        { type: "FEATURE_CONTENT_UPDATED", projectId, featureId },
+        initiatorId,
+      );
+  });
+}
+
 for (const eventName of taskUpdateEvents) {
   subscribeToEvent<TaskEvent>(eventName, async (data) => {
     const { projectId, initiatorId } = data;

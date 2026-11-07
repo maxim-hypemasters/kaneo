@@ -1,4 +1,5 @@
-import { useNavigate } from "@tanstack/react-router";
+import { validateFeatureWorkspaceSearch } from "./features/workspace/feature-workspace-search";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   useCallback,
   useDeferredValue,
@@ -39,6 +40,9 @@ export function TaskDetailsSheetView({
   finalFocus,
 }: TaskDetailsSheetProps) {
   const navigate = useNavigate();
+  const featureSearch = validateFeatureWorkspaceSearch(
+    useSearch({ strict: false }),
+  );
   const requestLeave = useDocumentDraftNavigation();
   const [sheetOpen, setSheetOpen] = useState(Boolean(taskId));
   const [currentTaskId, setCurrentTaskId] = useState<string | undefined>(
@@ -93,9 +97,9 @@ export function TaskDetailsSheetView({
         projectId,
         taskId: shownTaskId,
       },
-      search: taskReleaseSearch(origin, projectId),
+      search: { ...taskReleaseSearch(origin, projectId), ...featureSearch },
     });
-  }, [navigate, workspaceId, projectId, shownTaskId, origin]);
+  }, [navigate, workspaceId, projectId, shownTaskId, origin, featureSearch]);
 
   return (
     <TaskReleaseOriginProvider origin={origin}>

@@ -74,7 +74,7 @@ describe("knowledge and planning transfers", () => {
       .set({ scheduleGeneration: 1 })
       .where(eq(schema.projectTable.id, source.project.id));
     const document = await exportTasks(source.project.id, source.user.id);
-    expect(document.version).toBe(4);
+    expect(document.version).toBe(5);
     expect(document.tasks[0]).toMatchObject({
       estimateSeconds: 5400,
       legacyStartDate: "2026-10-01T09:00:00.000Z",
@@ -179,7 +179,7 @@ describe("knowledge and planning transfers", () => {
       source.workspace.id,
     );
     const exported = await exportTasks(source.project.id, source.user.id);
-    expect(exported.version).toBe(4);
+    expect(exported.version).toBe(5);
     expect(
       exported.tasks.find((task) => task.type === "feature"),
     ).toMatchObject({

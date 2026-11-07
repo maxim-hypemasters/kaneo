@@ -4,7 +4,14 @@ import { taskTypeSchema } from "../task/response";
 export const searchResultSchema = z
   .object({
     id: z.string(),
-    type: z.enum(["task", "project", "workspace", "comment", "activity"]),
+    type: z.enum([
+      "task",
+      "project",
+      "workspace",
+      "comment",
+      "activity",
+      "document",
+    ]),
     taskType: taskTypeSchema
       .optional()
       .openapi({ description: "The item type for task search results." }),
@@ -12,8 +19,16 @@ export const searchResultSchema = z
     description: z.string().optional(),
     content: z.string().optional().openapi({
       description:
-        "Matched body text, for comment and activity results. Activities get a rendered summary such as `changed status from Todo to In Progress`.",
+        "Matched body text, for comment, activity, and document results. Activities get a rendered summary such as `changed status from Todo to In Progress`; documents get a short plain-text excerpt around the match.",
     }),
+    featureId: z.string().optional().openapi({
+      description:
+        "The Feature a document result belongs to; open it with `featureTab=documents` and `featureDocumentId`.",
+    }),
+    featureTitle: z
+      .string()
+      .optional()
+      .openapi({ description: "The title of a document result's Feature." }),
     projectId: z.string().optional(),
     projectName: z.string().optional(),
     projectSlug: z.string().optional(),

@@ -17,7 +17,8 @@ export const createActivityBody = z.object({
       "Free-text body. Null for events whose meaning is in eventData.",
   }),
   type: z.string().openapi({
-    description: "The event kind, e.g. status_changed or assignee_changed.",
+    description:
+      "The event kind, e.g. status_changed or assignee_changed. comment and feature_update are reserved for their dedicated endpoints.",
   }),
   eventData: z.record(z.string(), z.unknown()).nullable().optional().openapi({
     description: "Type-specific payload stored alongside the event.",

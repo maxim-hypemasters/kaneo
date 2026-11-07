@@ -1,6 +1,10 @@
 import { Effect, Schema } from "effect";
 import { KaneoApi } from "./kaneo-api.js";
 import type { TaskType } from "./task-features.js";
+import {
+  FeatureDocumentTransfer,
+  FeatureUpdateTransfer,
+} from "./feature-content-transfer.js";
 
 const NullableString = Schema.NullOr(Schema.String);
 export const PlanningSnapshot = Schema.Struct({
@@ -81,10 +85,17 @@ export type ExportedMilestone = typeof ExportedMilestone.Type;
 
 export const TaskExport = Schema.Struct({
   version: Schema.optionalKey(
-    Schema.Union([Schema.Literal(2), Schema.Literal(3), Schema.Literal(4)]),
+    Schema.Union([
+      Schema.Literal(2),
+      Schema.Literal(3),
+      Schema.Literal(4),
+      Schema.Literal(5),
+    ]),
   ),
   releases: Schema.optionalKey(Schema.Array(ExportedRelease)),
   milestones: Schema.optionalKey(Schema.Array(ExportedMilestone)),
+  featureDocuments: Schema.optionalKey(Schema.Array(FeatureDocumentTransfer)),
+  featureUpdates: Schema.optionalKey(Schema.Array(FeatureUpdateTransfer)),
   project: Schema.Struct({
     name: Schema.String,
     slug: Schema.String,
@@ -156,9 +167,11 @@ export const importTasks = Effect.fnUntraced(function* (
   projectId: string,
   tasks: ReadonlyArray<ImportTaskBody>,
   hierarchy?: {
-    readonly version: 2 | 3 | 4;
+    readonly version: 2 | 3 | 4 | 5;
     readonly releases?: ReadonlyArray<ExportedRelease>;
     readonly milestones: ReadonlyArray<ExportedMilestone>;
+    readonly featureDocuments?: ReadonlyArray<FeatureDocumentTransfer>;
+    readonly featureUpdates?: ReadonlyArray<FeatureUpdateTransfer>;
   },
 ) {
   const api = yield* KaneoApi;

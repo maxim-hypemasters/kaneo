@@ -1931,8 +1931,227 @@
           "version": {
             "type": "number",
             "enum": [
-              4
+              5
             ]
+          },
+          "featureDocuments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "featureKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "body": {
+                  "type": "string",
+                  "maxLength": 1000000
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2147483647
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "createdBy": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 255
+                    },
+                    "avatar": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 2048
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "updatedBy": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 255
+                    },
+                    "avatar": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 2048
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "featureKey",
+                "title",
+                "body",
+                "revision",
+                "createdAt",
+                "updatedAt",
+                "createdBy",
+                "updatedBy"
+              ]
+            }
+          },
+          "featureUpdates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "featureKey": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "note": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100000
+                },
+                "health": {
+                  "type": "string",
+                  "enum": [
+                    "on-track",
+                    "at-risk",
+                    "off-track"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "author": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 255
+                    },
+                    "avatar": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 2048
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "milestones": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      },
+                      "position": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "total": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "started": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "completed": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "previousTotal": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "previousCompleted": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "key",
+                      "title",
+                      "position",
+                      "total",
+                      "started",
+                      "completed",
+                      "previousTotal",
+                      "previousCompleted"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "key",
+                "featureKey",
+                "note",
+                "health",
+                "createdAt",
+                "updatedAt",
+                "author",
+                "milestones"
+              ]
+            }
           },
           "releases": {
             "type": "array",
@@ -2066,6 +2285,8 @@
         },
         "required": [
           "version",
+          "featureDocuments",
+          "featureUpdates",
           "releases",
           "milestones",
           "project",
@@ -3060,6 +3281,265 @@
           "progress"
         ]
       },
+      "FeatureUpdate": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Activity"
+          },
+          {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "feature_update"
+                ]
+              },
+              "eventData": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "string"
+                      },
+                      "health": {
+                        "type": "string",
+                        "enum": [
+                          "on-track",
+                          "at-risk",
+                          "off-track"
+                        ]
+                      },
+                      "milestones": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "position": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "started": {
+                              "type": "integer"
+                            },
+                            "completed": {
+                              "type": "integer"
+                            },
+                            "previousTotal": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "previousCompleted": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "title",
+                            "position",
+                            "total",
+                            "started",
+                            "completed",
+                            "previousTotal",
+                            "previousCompleted"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "health",
+                      "milestones"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "projectId": {
+                        "type": "null"
+                      },
+                      "health": {
+                        "type": "null"
+                      },
+                      "milestones": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            },
+                            "position": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "integer"
+                            },
+                            "started": {
+                              "type": "integer"
+                            },
+                            "completed": {
+                              "type": "integer"
+                            },
+                            "previousTotal": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "previousCompleted": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "title",
+                            "position",
+                            "total",
+                            "started",
+                            "completed",
+                            "previousTotal",
+                            "previousCompleted"
+                          ]
+                        }
+                      },
+                      "redacted": {
+                        "type": "boolean",
+                        "enum": [
+                          true
+                        ]
+                      }
+                    },
+                    "required": [
+                      "projectId",
+                      "health",
+                      "milestones",
+                      "redacted"
+                    ]
+                  }
+                ]
+              },
+              "userName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "userImage": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "eventData",
+              "userName",
+              "userImage"
+            ]
+          }
+        ]
+      },
+      "Activity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "taskId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "content": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "eventData": {
+            "description": "Type-specific payload, e.g. { oldStatus, newStatus } for status_changed. Null for plain comments."
+          },
+          "externalUserName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Set when the activity was imported from another tool."
+          },
+          "externalUserAvatar": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "externalSource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The tool it was imported from: planka, trello, jira, plane, linear, kaneo, or a connected forge such as github."
+          },
+          "externalUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "taskId",
+          "type",
+          "createdAt",
+          "updatedAt",
+          "userId",
+          "content",
+          "externalUserName",
+          "externalUserAvatar",
+          "externalSource",
+          "externalUrl"
+        ]
+      },
       "WorkspaceActivity": {
         "type": "object",
         "properties": {
@@ -3148,83 +3628,6 @@
           "taskNumber",
           "projectId",
           "projectSlug"
-        ]
-      },
-      "Activity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "taskId": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "userId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "content": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "eventData": {
-            "description": "Type-specific payload, e.g. { oldStatus, newStatus } for status_changed. Null for plain comments."
-          },
-          "externalUserName": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Set when the activity was imported from another tool."
-          },
-          "externalUserAvatar": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "externalSource": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The tool it was imported from: planka, trello, jira, plane, linear, kaneo, or a connected forge such as github."
-          },
-          "externalUrl": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "taskId",
-          "type",
-          "createdAt",
-          "updatedAt",
-          "userId",
-          "content",
-          "externalUserName",
-          "externalUserAvatar",
-          "externalSource",
-          "externalUrl"
         ]
       },
       "Comment": {
@@ -3766,7 +4169,8 @@
               "project",
               "workspace",
               "comment",
-              "activity"
+              "activity",
+              "document"
             ]
           },
           "taskType": {
@@ -3786,7 +4190,15 @@
           },
           "content": {
             "type": "string",
-            "description": "Matched body text, for comment and activity results. Activities get a rendered summary such as `changed status from Todo to In Progress`."
+            "description": "Matched body text, for comment, activity, and document results. Activities get a rendered summary such as `changed status from Todo to In Progress`; documents get a short plain-text excerpt around the match."
+          },
+          "featureId": {
+            "type": "string",
+            "description": "The Feature a document result belongs to; open it with `featureTab=documents` and `featureDocumentId`."
+          },
+          "featureTitle": {
+            "type": "string",
+            "description": "The title of a document result's Feature."
           },
           "projectId": {
             "type": "string"
@@ -17938,7 +18350,7 @@
           "Tasks"
         ],
         "summary": "Export tasks",
-        "description": "Export a project's work and labels as version 2 JSON with portable Feature and milestone hierarchy.",
+        "description": "Export a project's work as version 5 JSON with portable hierarchy, Feature documents, authored update snapshots, and informational schedule history.",
         "parameters": [
           {
             "schema": {
@@ -18040,9 +18452,15 @@
                         "enum": [
                           4
                         ]
+                      },
+                      {
+                        "type": "number",
+                        "enum": [
+                          5
+                        ]
                       }
                     ],
-                    "description": "Version 4 preserves effort and informational schedule history; versions 2/3 and legacy per-task imports remain accepted. Imported schedules are never approved plans."
+                    "description": "Version 5 also preserves Feature documents and authored update snapshots. Versions 2/3/4 and legacy per-task imports remain accepted. Imported schedules are never approved plans."
                   },
                   "milestones": {
                     "type": "array",
@@ -18170,6 +18588,225 @@
                         "startDate",
                         "codeFreezeDate",
                         "submissionDate"
+                      ]
+                    }
+                  },
+                  "featureDocuments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "featureKey": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "body": {
+                          "type": "string",
+                          "maxLength": 1000000
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 2147483647
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "avatar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 2048
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "updatedBy": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "avatar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 2048
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "featureKey",
+                        "title",
+                        "body",
+                        "revision",
+                        "createdAt",
+                        "updatedAt",
+                        "createdBy",
+                        "updatedBy"
+                      ]
+                    }
+                  },
+                  "featureUpdates": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "key": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "featureKey": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "note": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100000
+                        },
+                        "health": {
+                          "type": "string",
+                          "enum": [
+                            "on-track",
+                            "at-risk",
+                            "off-track"
+                          ]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "author": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "avatar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 2048
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        },
+                        "milestones": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "key": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "title": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 255
+                              },
+                              "position": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "total": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "started": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "completed": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "previousTotal": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0
+                              },
+                              "previousCompleted": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "title",
+                              "position",
+                              "total",
+                              "started",
+                              "completed",
+                              "previousTotal",
+                              "previousCompleted"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "featureKey",
+                        "note",
+                        "health",
+                        "createdAt",
+                        "updatedAt",
+                        "author",
+                        "milestones"
                       ]
                     }
                   },
@@ -22406,6 +23043,2078 @@
         }
       }
     },
+    "/feature/{id}/updates/latest": {
+      "get": {
+        "operationId": "getLatestFeatureUpdate",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Get the latest published Feature update",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Latest official report, or null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureUpdate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/updates/{updateId}": {
+      "get": {
+        "operationId": "getFeatureUpdate",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Read a published Feature update",
+        "description": "Resolve an official report directly, even when newer activity puts it outside the current feed page. The Feature owns the lookup and historical access redaction still applies.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "updateId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Official update and immutable progress snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureUpdate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "editFeatureUpdate",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Edit an official update's note and health",
+        "description": "Only the author may edit. Captured milestone names, progress and previous-report totals are immutable.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "updateId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  },
+                  "health": {
+                    "type": "string",
+                    "enum": [
+                      "on-track",
+                      "at-risk",
+                      "off-track"
+                    ]
+                  },
+                  "draftAssetIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "note",
+                  "health"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureUpdate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteFeatureUpdate",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Delete an official update",
+        "description": "Only the author may delete an official update, following comment ownership rules.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "updateId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureUpdate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/activity": {
+      "get": {
+        "operationId": "getFeatureActivity",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Get paginated Feature activity",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comments, official updates and system history, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/Activity"
+                          },
+                          {
+                            "type": "object",
+                            "properties": {
+                              "userName": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "userImage": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "userName",
+                              "userImage"
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/updates": {
+      "post": {
+        "operationId": "publishFeatureUpdate",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Publish a Feature health and milestone progress update",
+        "description": "Snapshots whole-milestone Task/Bug progress on the server, independently of visible Issues filters. Feature publication is serialized; clients cannot supply snapshots.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "note": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100000
+                  },
+                  "health": {
+                    "type": "string",
+                    "enum": [
+                      "on-track",
+                      "at-risk",
+                      "off-track"
+                    ]
+                  },
+                  "draftAssetIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "note",
+                  "health"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Published report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureUpdate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/documents": {
+      "get": {
+        "operationId": "listFeatureDocuments",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Search Feature documents",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded document summaries, most recently updated first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "featureId": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "revision": {
+                            "type": "integer"
+                          },
+                          "createdBy": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "updatedBy": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdByName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "updatedByName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "featureId",
+                          "title",
+                          "revision",
+                          "createdBy",
+                          "updatedBy",
+                          "createdByName",
+                          "updatedByName",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createFeatureDocument",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Create a Feature document",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "body": {
+                    "type": "string",
+                    "maxLength": 1000000,
+                    "default": ""
+                  },
+                  "draftAssetIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "featureId": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "integer"
+                    },
+                    "createdBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "featureId",
+                    "title",
+                    "body",
+                    "revision",
+                    "createdBy",
+                    "updatedBy",
+                    "createdByName",
+                    "updatedByName",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/documents/{documentId}": {
+      "get": {
+        "operationId": "getFeatureDocument",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Read a Feature document",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document and revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "featureId": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "integer"
+                    },
+                    "createdBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "featureId",
+                    "title",
+                    "body",
+                    "revision",
+                    "createdBy",
+                    "updatedBy",
+                    "createdByName",
+                    "updatedByName",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateFeatureDocument",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Save or rename a Feature document",
+        "description": "Compares expectedRevision while locked. A stale revision returns DOCUMENT_CONFLICT and saves nothing. Referenced staged assets are claimed atomically.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "body": {
+                    "type": "string",
+                    "maxLength": 1000000
+                  },
+                  "expectedRevision": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "draftAssetIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 100
+                  }
+                },
+                "required": [
+                  "expectedRevision"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved document and incremented revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "featureId": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "integer"
+                    },
+                    "createdBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "featureId",
+                    "title",
+                    "body",
+                    "revision",
+                    "createdBy",
+                    "updatedBy",
+                    "createdByName",
+                    "updatedByName",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteFeatureDocument",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Delete a Feature document",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "featureId": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "integer"
+                    },
+                    "createdBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedBy": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "updatedByName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "featureId",
+                    "title",
+                    "body",
+                    "revision",
+                    "createdBy",
+                    "updatedBy",
+                    "createdByName",
+                    "updatedByName",
+                    "createdAt",
+                    "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/issues": {
+      "get": {
+        "operationId": "listFeatureIssues",
+        "tags": [
+          "Features"
+        ],
+        "summary": "List a Feature's compact Task/Bug work",
+        "description": "Workflow-ordered, project-scoped and bounded. Includes completed work. milestoneId=none selects work without a milestone; archived defaults to exclude. Group totals use all matching work before pagination.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "milestoneId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "exclude",
+                "include",
+                "only"
+              ],
+              "default": "exclude"
+            },
+            "required": false,
+            "name": "archived",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Compact Issues and whole-query workflow totals",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "projectSlug": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "task",
+                              "bug"
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "descriptionDeferred": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "number": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "position": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "priority": {
+                            "type": "string"
+                          },
+                          "userId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "assignee": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "image": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name",
+                              "image"
+                            ]
+                          },
+                          "featureId": {
+                            "type": "string"
+                          },
+                          "milestoneId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "releaseId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "releaseName": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "estimateSeconds": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "startDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "dueDate": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "archivedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "columnId": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "projectId",
+                          "projectSlug",
+                          "title",
+                          "type",
+                          "createdAt",
+                          "updatedAt",
+                          "descriptionDeferred",
+                          "number",
+                          "position",
+                          "status",
+                          "priority",
+                          "userId",
+                          "assignee",
+                          "featureId",
+                          "milestoneId",
+                          "releaseId",
+                          "releaseName",
+                          "estimateSeconds",
+                          "startDate",
+                          "dueDate",
+                          "archivedAt",
+                          "columnId"
+                        ]
+                      }
+                    },
+                    "groups": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "position": {
+                            "type": "number"
+                          },
+                          "isFinal": {
+                            "type": "boolean"
+                          },
+                          "total": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "slug",
+                          "name",
+                          "position",
+                          "isFinal",
+                          "total"
+                        ]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "limit": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "page",
+                        "limit",
+                        "totalPages"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "groups",
+                    "pagination"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
     "/activity/workspace/{workspaceId}": {
       "get": {
         "operationId": "getWorkspaceActivities",
@@ -22582,7 +25291,7 @@
                   },
                   "type": {
                     "type": "string",
-                    "description": "The event kind, e.g. status_changed or assignee_changed."
+                    "description": "The event kind, e.g. status_changed or assignee_changed. comment and feature_update are reserved for their dedicated endpoints."
                   },
                   "eventData": {
                     "type": [
@@ -22614,7 +25323,7 @@
             }
           },
           "400": {
-            "description": "Invalid body, or comment activity submitted through the generic endpoint",
+            "description": "Invalid body, or a reserved comment/Feature-update activity submitted through the generic endpoint",
             "content": {
               "application/json": {
                 "schema": {
@@ -25043,7 +27752,7 @@
           "Search"
         ],
         "summary": "Global search",
-        "description": "Search across tasks, projects, workspaces, comments, and activities in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`.",
+        "description": "Search across tasks, projects, workspaces, comments, activities, and Feature documents in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`.",
         "parameters": [
           {
             "schema": {
@@ -25064,7 +27773,8 @@
                 "projects",
                 "workspaces",
                 "comments",
-                "activities"
+                "activities",
+                "documents"
               ],
               "default": "all"
             },

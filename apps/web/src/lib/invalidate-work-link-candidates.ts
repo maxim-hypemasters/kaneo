@@ -9,6 +9,7 @@ export function invalidateWorkLinkCandidates(
   for (const prefix of [
     "release-link-candidates",
     "feature-create-candidates",
+    "feature-workspace",
   ]) {
     const filter = { queryKey: projectId ? [prefix, projectId] : [prefix] };
     if (options) void client.invalidateQueries(filter, options);
