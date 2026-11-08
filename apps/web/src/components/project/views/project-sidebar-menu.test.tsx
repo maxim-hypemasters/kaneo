@@ -69,7 +69,7 @@ function menu(
 }
 
 describe("project sidebar destinations", () => {
-  it("renders the four destinations in order with the current destination marked", () => {
+  it("renders the three destinations in order with the current destination marked", () => {
     menu("features");
     const nav = screen.getByRole("navigation", {
       name: "navigation:projectList.navigationLabel: Alpha",
@@ -77,19 +77,16 @@ describe("project sidebar destinations", () => {
     const links = within(nav).getAllByRole("link");
     expect(links.map((link) => link.textContent)).toEqual([
       "tasks:title",
-      "tasks:view.backlog",
       "tasks:features.library.title",
       "tasks:view.releases",
     ]);
     expect(links.map((link) => link.getAttribute("aria-current"))).toEqual([
-      null,
       null,
       "page",
       null,
     ]);
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       "/dashboard/workspace/w/project/p/board",
-      "/dashboard/workspace/w/project/p/backlog",
       "/dashboard/workspace/w/project/p/features",
       "/dashboard/workspace/w/project/p/releases",
     ]);
@@ -152,9 +149,11 @@ describe("project sidebar destinations", () => {
 
   it("navigates to another project even if that project's view matches the current route", () => {
     menu(null, "other");
-    fireEvent.click(screen.getByRole("link", { name: "tasks:view.backlog" }));
+    fireEvent.click(
+      screen.getByRole("link", { name: "tasks:features.library.title" }),
+    );
     expect(mocks.navigate).toHaveBeenCalledWith({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/backlog",
+      to: "/dashboard/workspace/$workspaceId/project/$projectId/features",
       params: { workspaceId: "w", projectId: "other" },
       search: {},
     });

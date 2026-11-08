@@ -10529,9 +10529,6 @@
 								"goToTasks": {
 									"type": "string"
 								},
-								"goToBacklog": {
-									"type": "string"
-								},
 								"goToReleases": {
 									"type": "string"
 								},
@@ -10784,7 +10781,6 @@
 								"goToProjects",
 								"goToSettings",
 								"goToTasks",
-								"goToBacklog",
 								"goToReleases",
 								"goToProject",
 								"openTask",

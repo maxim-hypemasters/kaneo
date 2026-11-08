@@ -1,5 +1,5 @@
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Layers, Rocket, SquareKanban, SquircleDashed } from "lucide-react";
+import { Layers, Rocket, SquareKanban } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   SidebarMenuSub,
@@ -41,12 +41,6 @@ export function ProjectSidebarMenu({
       view: tasksViewFor(taskLayout, viewMode),
       label: "tasks:title",
       icon: SquareKanban,
-    },
-    {
-      scope: "backlog",
-      view: "backlog",
-      label: "tasks:view.backlog",
-      icon: SquircleDashed,
     },
     {
       scope: "features",

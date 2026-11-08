@@ -18,6 +18,5 @@ export function useProjectViewShortcuts(
   useShortcut("goToTasks", () => goToView(tasksViewFor(taskLayout, viewMode)), {
     enabled,
   });
-  useShortcut("goToBacklog", () => goToView("backlog"), { enabled });
   useShortcut("goToReleases", () => goToView("releases"), { enabled });
 }
