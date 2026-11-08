@@ -2475,7 +2475,8 @@
 				"comment": "评论",
 				"activity": "活动",
 				"fallback": "结果",
-				"document": "Documents"
+				"document": "Documents",
+				"feature": "Features"
 			}
 		},
 		"settingsLayout": {
@@ -2560,7 +2561,6 @@
 				"editDescription": "编辑描述",
 				"commentOnTask": "评论",
 				"moveToProject": "移至其他项目",
-				"createSubtask": "向此功能添加任务",
 				"setParent": "设置功能",
 				"openParent": "打开功能",
 				"openSubtask": "打开此功能下的任务",
@@ -2695,7 +2695,10 @@
 			"loadError": "通知加载失败。",
 			"taskLoadError": "该任务加载失败。",
 			"actionError": "无法更新收件箱，请重试。",
-			"readCleared": "已删除已读通知"
+			"readCleared": "已删除已读通知",
+			"featureLoadError": "This feature couldn’t be loaded.",
+			"featureUnavailable": "This feature is no longer available.",
+			"openFeature": "Open feature"
 		}
 	},
 	"activity": {
@@ -2814,14 +2817,16 @@
 		"addedToFeature": "将任务添加到功能 \"{{feature}}\"",
 		"removedFromFeature": "将任务从功能 \"{{feature}}\" 中移除",
 		"changedFeature": "将任务从功能 \"{{from}}\" 移动到 \"{{to}}\"",
-		"madeFeature": "将此任务转换为功能",
-		"madeTask": "将此功能转换为任务",
 		"addedToRelease": "将任务添加到版本 \"{{release}}\"",
 		"removedFromRelease": "将任务从版本 \"{{release}}\" 中移除",
 		"changedRelease": "将任务从版本 \"{{from}}\" 移动到 \"{{to}}\"",
 		"changedTypeToBug": "changed the type to bug",
 		"changedTypeToFeature": "changed the type to feature",
-		"changedTypeToTask": "changed the type to task"
+		"changedTypeToTask": "changed the type to task",
+		"createdFeature": "created this feature",
+		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
+		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
+		"postedFeatureUpdate": "posted an update"
 	},
 	"tasks": {
 		"title": "任务",
@@ -3455,7 +3460,8 @@
 				"activityRestored": "restored this Feature",
 				"archiveDialogDescription": "The Feature will move to Archived. Its milestones, Tasks, and Bugs keep their current state. You can restore it later.",
 				"archiveDialogTitle": "Archive “{{title}}”?",
-				"archiving": "Archiving…"
+				"archiving": "Archiving…",
+				"pageTitle": "{{name}}'s features"
 			},
 			"workspace": {
 				"navigation": "Feature navigation",
@@ -3521,6 +3527,22 @@
 					"linkFailed": "Could not link this work. Try again."
 				},
 				"updateUnavailable": "Feature update unavailable."
+			},
+			"window": {
+				"copyId": "Copy feature ID",
+				"copyLink": "Copy feature link",
+				"copyTitle": "Copy feature title",
+				"delete": "Delete feature",
+				"deleted": "Feature deleted successfully",
+				"deleteDescription": "This permanently deletes the Feature with its milestones, documents, updates, and comments. Its Tasks and Bugs stay in the project without a Feature or milestone. You can't undo this action.",
+				"deleteError": "Failed to delete feature",
+				"deleteTitle": "Delete feature?",
+				"idCopied": "Copied feature ID",
+				"linkCopied": "Copied feature link",
+				"loading": "Loading feature...",
+				"move": "Move feature",
+				"moved": "Feature moved successfully",
+				"titleCopied": "Copied feature title"
 			}
 		},
 		"releases": {
@@ -4063,7 +4085,8 @@
 				"empty": "最近 30 天没有任何动态。",
 				"loadError": "动态加载失败。",
 				"title": "动态",
-				"updated": "更新了任务"
+				"updated": "更新了任务",
+				"updatedFeature": "updated the feature"
 			},
 			"greeting": {
 				"afternoon": "下午好",

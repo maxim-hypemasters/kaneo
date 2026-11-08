@@ -6,6 +6,7 @@ import {
   userTable,
   workspaceTable,
 } from "../../database/schema";
+import { type ChatSubject, chatSubject } from "../chat-subject";
 import type {
   PluginContext,
   TaskCommentCreatedEvent,
@@ -20,6 +21,7 @@ import type { MattermostConfig, MattermostEventKey } from "./config";
 import { normalizeMattermostConfig } from "./config";
 
 type MattermostEventData = {
+  subject: ChatSubject;
   taskTitle: string;
   taskNumber: number | null;
   projectName: string;
@@ -63,6 +65,7 @@ async function getMattermostEventData(
   const [taskRow] = await db
     .select({
       title: taskTable.title,
+      type: taskTable.type,
       number: taskTable.number,
       status: taskTable.status,
       priority: taskTable.priority,
@@ -92,6 +95,7 @@ async function getMattermostEventData(
   const taskUrl = `${clientUrl}/dashboard/workspace/${taskRow.workspaceId}/project/${taskRow.projectId}/task/${taskId}`;
 
   return {
+    subject: chatSubject(taskRow.type),
     taskTitle: taskRow.title,
     taskNumber: taskRow.number,
     projectName: taskRow.projectName,
@@ -108,8 +112,11 @@ async function sendMattermostMessage(
   body: string,
   data: MattermostEventData,
 ): Promise<void> {
+  const { subject } = data;
   const issueKey =
-    data.taskNumber !== null ? `#${data.taskNumber}` : "Task update";
+    data.taskNumber !== null
+      ? `#${data.taskNumber}`
+      : `${subject.label} update`;
   const attachmentTitle = `${escapeText(issueKey)} ${escapeText(data.taskTitle)}`;
 
   await postToMattermost(config.webhookUrl, {
@@ -126,16 +133,20 @@ async function sendMattermostMessage(
             value: escapeText(data.projectName),
             short: true,
           },
-          {
-            title: "Status",
-            value: escapeText(toSentenceCase(data.status)),
-            short: true,
-          },
-          {
-            title: "Priority",
-            value: escapeText(toSentenceCase(data.priority)),
-            short: true,
-          },
+          ...(subject.showsWorkflow
+            ? [
+                {
+                  title: "Status",
+                  value: escapeText(toSentenceCase(data.status)),
+                  short: true,
+                },
+                {
+                  title: "Priority",
+                  value: escapeText(toSentenceCase(data.priority)),
+                  short: true,
+                },
+              ]
+            : []),
           {
             title: "Triggered by",
             value: data.actorName ? escapeText(data.actorName) : "Kaneo",
@@ -163,8 +174,8 @@ export async function handleTaskCreated(
 
   await sendMattermostMessage(
     config,
-    "New task created",
-    `A new task was added: ${event.title}`,
+    `New ${data.subject.noun} created`,
+    `A new ${data.subject.noun} was added: ${event.title}`,
     data,
   );
 }
@@ -185,7 +196,7 @@ export async function handleTaskStatusChanged(
 
   await sendMattermostMessage(
     config,
-    "Task status changed",
+    `${data.subject.label} status changed`,
     `${event.title} moved from ${toSentenceCase(event.oldStatus)} to ${toSentenceCase(event.newStatus)}.`,
     data,
   );
@@ -207,7 +218,7 @@ export async function handleTaskPriorityChanged(
 
   await sendMattermostMessage(
     config,
-    "Task priority changed",
+    `${data.subject.label} priority changed`,
     `${event.title} changed from ${toSentenceCase(event.oldPriority)} to ${toSentenceCase(event.newPriority)}.`,
     data,
   );
@@ -229,8 +240,8 @@ export async function handleTaskTitleChanged(
 
   await sendMattermostMessage(
     config,
-    "Task title changed",
-    `Task renamed from ${truncate(event.oldTitle, 120)} to ${truncate(event.newTitle, 120)}.`,
+    `${data.subject.label} title changed`,
+    `${data.subject.label} renamed from ${truncate(event.oldTitle, 120)} to ${truncate(event.newTitle, 120)}.`,
     data,
   );
 }
@@ -251,8 +262,8 @@ export async function handleTaskDescriptionChanged(
 
   await sendMattermostMessage(
     config,
-    "Task description changed",
-    `The task description was updated${event.newDescription ? `: ${truncate(event.newDescription.replace(/\s+/g, " "), 160)}` : "."}`,
+    `${data.subject.label} description changed`,
+    `The ${data.subject.noun} description was updated${event.newDescription ? `: ${truncate(event.newDescription.replace(/\s+/g, " "), 160)}` : "."}`,
     data,
   );
 }
@@ -273,7 +284,7 @@ export async function handleTaskCommentCreated(
 
   await sendMattermostMessage(
     config,
-    "New task comment",
+    `New ${data.subject.noun} comment`,
     truncate(event.comment.replace(/\s+/g, " "), 200),
     data,
   );

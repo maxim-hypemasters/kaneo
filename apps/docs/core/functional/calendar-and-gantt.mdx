@@ -54,7 +54,7 @@ Milestones replace Feature scheduling. Each milestone uses its own lead and a re
 
 ### Dependencies
 
-When one Task/Bug blocks another (set under **Relations**), Gantt connects the blocker's final segment to its successor's first segment. The successor may begin at the same instant its blocker finishes. Prerequisites inherit the urgency of work they unblock. Completed blockers are satisfied; cycles and unschedulable blockers leave affected work unscheduled. Related and Feature relations do not create execution dependencies.
+When one Task/Bug blocks another (set under **Relations**), Gantt connects the blocker's final segment to its successor's first segment. The successor may begin at the same instant its blocker finishes. Prerequisites inherit the urgency of work they unblock. Completed blockers are satisfied; cycles and unschedulable blockers leave affected work unscheduled. Related relations do not create execution dependencies, and Features have no relations.
 
 If moving a bar would break a dependency, Kaneo asks first and lists the work that would move. **Move N related tasks** keeps everything in order: work it blocks is pushed later and work blocking it is pulled earlier, along the whole chain, by whole days. Overlaps that were already there stay as they are, and finished work never moves. **Move only this task** keeps just your change, and **Cancel** puts the bar back. When work blocks itself in a loop that moving would come back around to, only **Move only this task** and **Cancel** are offered.
 
@@ -90,4 +90,4 @@ Choose **Milestone** for one lane per milestone and **No milestone** for unassig
 
 Task filters apply to Tasks and Bugs; the separate entity controls show or hide milestones, Tasks and Bugs. Milestone planning remains visible independently of task-only filters. Milestone status is read-only and derived from all nonarchived linked Tasks/Bugs; task filters do not change it. Progress keeps its existing counting rules.
 
-Dragging a Task/Bug into a milestone lane assigns it only when that milestone belongs to the task's existing Feature. Dropping into **No milestone** clears membership. A drag never changes the Feature implicitly. Milestone lead changes do not shift child dates. Their date ranges use all nonarchived linked work across releases, regardless of task filters. Dependencies remain between Tasks/Bugs; Feature relations do not produce milestone dependency arrows.
+Dragging a Task/Bug into a milestone lane assigns it only when that milestone belongs to the task's existing Feature. Dropping into **No milestone** clears membership. A drag never changes the Feature implicitly. Milestone lead changes do not shift child dates. Their date ranges use all nonarchived linked work across releases, regardless of task filters. Dependencies remain between Tasks/Bugs; Features have no relations, so milestones get no dependency arrows from them.

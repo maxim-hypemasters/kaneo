@@ -6,6 +6,7 @@ import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import { useTranslation } from "react-i18next";
 import moveTask from "@/fetchers/task/move-task";
 import { toast } from "@/lib/toast";
+import { taskWindowCopy } from "@/components/task/task-window-copy";
 import { findCachedFeatureId } from "./find-cached-feature-id";
 
 export function useMoveTask() {
@@ -42,7 +43,9 @@ export function useMoveTask() {
       void queryClient.invalidateQueries({
         queryKey: ["feature-milestones", result.destinationProjectId],
       });
-      toast.success(t("tasks:move.success"), { icon: FolderInputIcon });
+      toast.success(taskWindowCopy(t, result.task.type === "feature").moved, {
+        icon: FolderInputIcon,
+      });
       queryClient.invalidateQueries({
         queryKey: ["external-links", variables.taskId],
       });

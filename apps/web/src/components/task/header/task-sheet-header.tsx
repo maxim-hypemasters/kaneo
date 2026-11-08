@@ -38,7 +38,11 @@ export function TaskSheetHeader({
   const { t } = useTranslation();
   const { data: task } = useGetTask(taskId);
   const { data: project } = useGetProject({ id: projectId, workspaceId });
-  const { copyId } = useTaskCopyActions({ taskId, projectId, workspaceId });
+  const { copyId, labels } = useTaskCopyActions({
+    taskId,
+    projectId,
+    workspaceId,
+  });
   const ProjectIcon =
     icons[project?.icon as keyof typeof icons] || icons.Layout;
 
@@ -78,7 +82,7 @@ export function TaskSheetHeader({
               </TooltipTrigger>
               <TooltipContent>
                 <ShortcutTooltipLabel
-                  label={t("navigation:shortcuts.items.copyTaskId")}
+                  label={labels.copyId}
                   shortcutId="copyTaskId"
                 />
               </TooltipContent>

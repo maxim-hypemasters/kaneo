@@ -29,7 +29,7 @@ const ALIASES: Readonly<Record<string, RelationType>> = {
 const UNSUPPORTED = new Set(["duplicates", "duplicate-of", "duplicated-by"]);
 
 const TYPE_HINT = `Use one of: ${RELATION_TYPES.join(", ")}.`;
-const FEATURE_HINT =
+export const FEATURE_HINT =
   "To put a task into a feature, run kaneo task edit <task> --feature <feature>.";
 
 export function normalizeRelationWord(input: string): string {

@@ -10286,6 +10286,9 @@
 								"task": {
 									"type": "string"
 								},
+								"feature": {
+									"type": "string"
+								},
 								"project": {
 									"type": "string"
 								},
@@ -10307,6 +10310,7 @@
 							},
 							"required": [
 								"task",
+								"feature",
 								"project",
 								"workspace",
 								"comment",
@@ -10605,9 +10609,6 @@
 								"moveToProject": {
 									"type": "string"
 								},
-								"createSubtask": {
-									"type": "string"
-								},
 								"setParent": {
 									"type": "string"
 								},
@@ -10807,7 +10808,6 @@
 								"editDescription",
 								"commentOnTask",
 								"moveToProject",
-								"createSubtask",
 								"setParent",
 								"openParent",
 								"openSubtask",
@@ -11217,6 +11217,15 @@
 						"taskLoadError": {
 							"type": "string"
 						},
+						"openFeature": {
+							"type": "string"
+						},
+						"featureUnavailable": {
+							"type": "string"
+						},
+						"featureLoadError": {
+							"type": "string"
+						},
 						"actionError": {
 							"type": "string"
 						},
@@ -11238,6 +11247,9 @@
 						"recentActivity",
 						"taskUnavailable",
 						"taskLoadError",
+						"openFeature",
+						"featureUnavailable",
+						"featureLoadError",
 						"actionError",
 						"readCleared"
 					]
@@ -11291,7 +11303,19 @@
 				"movedFromOtherProject": {
 					"type": "string"
 				},
+				"movedFeature": {
+					"type": "string"
+				},
+				"movedFeatureFromOtherProject": {
+					"type": "string"
+				},
 				"created": {
+					"type": "string"
+				},
+				"createdFeature": {
+					"type": "string"
+				},
+				"postedFeatureUpdate": {
 					"type": "string"
 				},
 				"githubUser": {
@@ -11704,12 +11728,6 @@
 				"changedFeature": {
 					"type": "string"
 				},
-				"madeFeature": {
-					"type": "string"
-				},
-				"madeTask": {
-					"type": "string"
-				},
 				"addedToRelease": {
 					"type": "string"
 				},
@@ -11741,14 +11759,16 @@
 				"changedTitle",
 				"moved",
 				"movedFromOtherProject",
+				"movedFeature",
+				"movedFeatureFromOtherProject",
 				"created",
+				"createdFeature",
+				"postedFeatureUpdate",
 				"githubUser",
 				"comment",
 				"addedToFeature",
 				"removedFromFeature",
 				"changedFeature",
-				"madeFeature",
-				"madeTask",
 				"addedToRelease",
 				"removedFromRelease",
 				"changedRelease",
@@ -14616,11 +14636,78 @@
 						"convertToBug": {
 							"type": "string"
 						},
+						"window": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"copyLink": {
+									"type": "string"
+								},
+								"linkCopied": {
+									"type": "string"
+								},
+								"copyId": {
+									"type": "string"
+								},
+								"idCopied": {
+									"type": "string"
+								},
+								"copyTitle": {
+									"type": "string"
+								},
+								"titleCopied": {
+									"type": "string"
+								},
+								"delete": {
+									"type": "string"
+								},
+								"deleteTitle": {
+									"type": "string"
+								},
+								"deleteDescription": {
+									"type": "string"
+								},
+								"deleted": {
+									"type": "string"
+								},
+								"deleteError": {
+									"type": "string"
+								},
+								"move": {
+									"type": "string"
+								},
+								"moved": {
+									"type": "string"
+								},
+								"loading": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"copyLink",
+								"linkCopied",
+								"copyId",
+								"idCopied",
+								"copyTitle",
+								"titleCopied",
+								"delete",
+								"deleteTitle",
+								"deleteDescription",
+								"deleted",
+								"deleteError",
+								"move",
+								"moved",
+								"loading"
+							]
+						},
 						"library": {
 							"type": "object",
 							"additionalProperties": false,
 							"properties": {
 								"title": {
+									"type": "string"
+								},
+								"pageTitle": {
 									"type": "string"
 								},
 								"search": {
@@ -14680,6 +14767,7 @@
 							},
 							"required": [
 								"title",
+								"pageTitle",
 								"search",
 								"active",
 								"archived",
@@ -14995,6 +15083,7 @@
 						"inProject",
 						"typeBug",
 						"convertToBug",
+						"window",
 						"library",
 						"workspace"
 					]
@@ -17649,6 +17738,9 @@
 								"updated": {
 									"type": "string"
 								},
+								"updatedFeature": {
+									"type": "string"
+								},
 								"empty": {
 									"type": "string"
 								},
@@ -17660,6 +17752,7 @@
 								"title",
 								"commented",
 								"updated",
+								"updatedFeature",
 								"empty",
 								"loadError"
 							]

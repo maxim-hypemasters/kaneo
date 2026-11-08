@@ -5,6 +5,7 @@ import { ticketId } from "../render/task-format.js";
 
 export const RESULT_TYPES = [
   "task",
+  "feature",
   "project",
   "comment",
   "activity",
@@ -15,6 +16,7 @@ export type SearchResultType = (typeof RESULT_TYPES)[number];
 export type SearchResultJson = {
   readonly type: SearchResultType;
   readonly taskType?: string | null;
+  readonly archived?: boolean;
   readonly id: string;
   readonly title: string;
   readonly ticketId: string | null;
@@ -42,6 +44,7 @@ export type SearchContext = {
 const ALLOWED: Readonly<Record<SearchType, ReadonlyArray<SearchResultType>>> = {
   all: RESULT_TYPES,
   tasks: ["task"],
+  features: ["feature"],
   projects: ["project"],
   workspaces: ["workspace"],
   comments: ["comment"],
@@ -76,6 +79,7 @@ function resultUrl(
   const { webUrl, workspaceId, workspaceSlug } = context;
   switch (type) {
     case "task":
+    case "feature":
       return hit.projectId
         ? taskUrl(webUrl, { workspaceId, projectId: hit.projectId, id: hit.id })
         : null;
@@ -87,6 +91,13 @@ function resultUrl(
     case "activity":
       if (ticket && workspaceSlug) {
         return `${webUrl}/${encodeURIComponent(workspaceSlug)}/task/${encodeURIComponent(ticket)}`;
+      }
+      if (hit.projectId && hit.taskId) {
+        return taskUrl(webUrl, {
+          workspaceId,
+          projectId: hit.projectId,
+          id: hit.taskId,
+        });
       }
       return hit.projectId
         ? projectUrl(webUrl, { workspaceId, id: hit.projectId })
@@ -129,9 +140,10 @@ export function normalizeSearchResults(
         : ticketId(hit.projectSlug, hit.taskNumber ?? null);
     results.push({
       type,
-      ...(type === "task" && hit.taskType !== undefined
+      ...((type === "task" || type === "feature") && hit.taskType !== undefined
         ? { taskType: hit.taskType }
         : {}),
+      ...(type === "feature" ? { archived: hit.archived ?? false } : {}),
       id: hit.id,
       title: hit.title,
       ticketId: ticket,

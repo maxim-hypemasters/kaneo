@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import WorkspaceLayout from "@/components/common/workspace-layout";
 import PageTitle from "@/components/page-title";
+import { FeatureResults } from "@/components/search-page/feature-results";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
@@ -29,6 +30,12 @@ function SearchComponent() {
     workspaceId,
     type: "tasks",
   });
+  const featureSearch = useGlobalSearch({
+    q: debouncedQuery,
+    workspaceId,
+    type: "features",
+    limit: 5,
+  });
 
   const handleInputChange = useCallback((value: string) => {
     setSearchInput(value);
@@ -51,8 +58,14 @@ function SearchComponent() {
   }, []);
 
   const results = data?.results ?? [];
+  const features = featureSearch.data?.results ?? [];
   const hasQuery = debouncedQuery.length > 0;
-  const showLoading = hasQuery && (isLoading || isFetching);
+  const showLoading =
+    hasQuery &&
+    (isLoading ||
+      isFetching ||
+      featureSearch.isLoading ||
+      featureSearch.isFetching);
 
   const quickSearchSuggestions = useMemo(
     () => [
@@ -107,7 +120,7 @@ function SearchComponent() {
 
           {hasQuery ? (
             <div>
-              {showLoading && results.length === 0 ? (
+              {showLoading && results.length === 0 && features.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="text-center space-y-4">
                     <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mx-auto" />
@@ -116,66 +129,74 @@ function SearchComponent() {
                     </p>
                   </div>
                 </div>
-              ) : results.length > 0 ? (
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground mb-3">
-                    {t("workspace:search.resultsFound", {
-                      count: data?.totalCount ?? results.length,
-                    })}
-                  </p>
-                  {results.map((result) => (
-                    <button
-                      key={result.id}
-                      type="button"
-                      onClick={() => {
-                        if (result.type === "task" && result.projectId) {
-                          navigate({
-                            to: "/dashboard/workspace/$workspaceId/project/$projectId",
-                            params: {
-                              workspaceId,
-                              projectId: result.projectId,
-                            },
-                            search: { taskId: result.id },
-                          });
-                        }
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3 py-3 sm:gap-3 sm:px-4 rounded-lg border border-border bg-background hover:bg-accent/60 transition-colors text-left"
-                    >
-                      <div className="flex-shrink-0 first:[&_svg]:h-4 first:[&_svg]:w-4">
-                        {getPriorityIcon(result.priority ?? "")}
-                      </div>
+              ) : results.length > 0 || features.length > 0 ? (
+                <div className="space-y-6">
+                  <FeatureResults
+                    workspaceId={workspaceId}
+                    results={features}
+                  />
+                  {results.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground mb-3">
+                        {t("workspace:search.resultsFound", {
+                          count: data?.totalCount ?? results.length,
+                        })}
+                      </p>
+                      {results.map((result) => (
+                        <button
+                          key={result.id}
+                          type="button"
+                          onClick={() => {
+                            if (result.type === "task" && result.projectId) {
+                              navigate({
+                                to: "/dashboard/workspace/$workspaceId/project/$projectId",
+                                params: {
+                                  workspaceId,
+                                  projectId: result.projectId,
+                                },
+                                search: { taskId: result.id },
+                              });
+                            }
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-3 sm:gap-3 sm:px-4 rounded-lg border border-border bg-background hover:bg-accent/60 transition-colors text-left"
+                        >
+                          <div className="flex-shrink-0 first:[&_svg]:h-4 first:[&_svg]:w-4">
+                            {getPriorityIcon(result.priority ?? "")}
+                          </div>
 
-                      {result.projectSlug && result.taskNumber && (
-                        <span className="text-xs font-mono text-muted-foreground flex-shrink-0">
-                          {result.projectSlug}-{result.taskNumber}
-                        </span>
-                      )}
+                          {result.projectSlug && result.taskNumber && (
+                            <span className="text-xs font-mono text-muted-foreground flex-shrink-0">
+                              {result.projectSlug}-{result.taskNumber}
+                            </span>
+                          )}
 
-                      <div className="flex min-w-0 flex-1 items-center gap-1.5">
-                        {result.taskType === "bug" && (
-                          <TaskTypeGlyph
-                            type="bug"
-                            className="mr-1 inline-block size-3.5 text-muted-foreground"
-                          />
-                        )}
-                        <span className="text-sm text-foreground truncate block">
-                          {result.title}
-                        </span>
-                      </div>
+                          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                            {result.taskType === "bug" && (
+                              <TaskTypeGlyph
+                                type="bug"
+                                className="mr-1 inline-block size-3.5 text-muted-foreground"
+                              />
+                            )}
+                            <span className="text-sm text-foreground truncate block">
+                              {result.title}
+                            </span>
+                          </div>
 
-                      {result.projectName && (
-                        <span className="hidden text-xs text-muted-foreground flex-shrink-0 sm:inline">
-                          {result.projectName}
-                        </span>
-                      )}
+                          {result.projectName && (
+                            <span className="hidden text-xs text-muted-foreground flex-shrink-0 sm:inline">
+                              {result.projectName}
+                            </span>
+                          )}
 
-                      {result.status && (
-                        <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-muted/55 text-muted-foreground flex-shrink-0">
-                          {result.status}
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                          {result.status && (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded border border-border bg-muted/55 text-muted-foreground flex-shrink-0">
+                              {result.status}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12">

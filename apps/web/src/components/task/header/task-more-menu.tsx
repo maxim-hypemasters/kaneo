@@ -48,22 +48,24 @@ export function TaskMoreMenu({ actions, deleteHandle }: TaskMoreMenuProps) {
       <MenuPopup align="end" className="min-w-56">
         <MenuItem onClick={actions.copyLink} className="sm:hidden">
           <LinkIcon />
-          {t("tasks:properties.copyTaskLink")}
+          {actions.labels.copyLink}
         </MenuItem>
-        <MenuItem onClick={actions.copyBranch} className="sm:hidden">
-          <GitBranchIcon />
-          {t("tasks:properties.copyTaskBranch")}
-        </MenuItem>
+        {actions.canCopyBranch && (
+          <MenuItem onClick={actions.copyBranch} className="sm:hidden">
+            <GitBranchIcon />
+            {t("tasks:properties.copyTaskBranch")}
+          </MenuItem>
+        )}
         <MenuItem onClick={actions.copyId}>
           <HashIcon />
-          {t("navigation:shortcuts.items.copyTaskId")}
+          {actions.labels.copyId}
           <MenuShortcut>
             <ShortcutKeys id="copyTaskId" tone="muted" />
           </MenuShortcut>
         </MenuItem>
         <MenuItem onClick={actions.copyTitle}>
           <CopyIcon />
-          {t("navigation:shortcuts.items.copyTaskTitle")}
+          {actions.labels.copyTitle}
           <MenuShortcut>
             <ShortcutKeys id="copyTaskTitle" tone="muted" />
           </MenuShortcut>
@@ -83,7 +85,7 @@ export function TaskMoreMenu({ actions, deleteHandle }: TaskMoreMenuProps) {
               onClick={() => deleteHandle.open(null)}
             >
               <Trash2Icon />
-              {t("tasks:delete.action")}
+              {actions.labels.delete}
               <MenuShortcut>
                 <ShortcutKeys id="deleteTask" tone="muted" />
               </MenuShortcut>

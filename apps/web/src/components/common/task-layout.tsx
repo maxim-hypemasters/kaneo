@@ -5,6 +5,7 @@ import { ShortcutKeys } from "@/components/shortcuts/shortcut-keys";
 import { useNavigate } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { FeatureCrumbs } from "@/components/common/header/feature-crumbs";
 import TaskCrumbSelect from "@/components/common/header/task-crumb-select";
 import Layout from "@/components/common/layout";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -49,10 +50,11 @@ export default function TaskLayout({
 
   useProjectWebSocket(unavailableReason ? "" : projectId);
 
-  const taskLabel =
+  const displayId =
     project?.slug && task?.number != null
       ? `${project.slug}-${task.number}`
-      : t("tasks:common.selectTask");
+      : undefined;
+  const taskLabel = displayId ?? t("tasks:common.selectTask");
 
   const handleTaskSwitch = (nextTaskId: string) => {
     navigate({
@@ -98,13 +100,26 @@ export default function TaskLayout({
                   >
                     {project?.name || t("navigation:sidebar.projects")}
                   </button>
-                  <span className="text-foreground/70 text-xs">/</span>
-                  <TaskCrumbSelect
-                    projectId={projectId}
-                    taskId={taskId}
-                    taskLabel={taskLabel}
-                    onSelectTask={handleTaskSwitch}
-                  />
+                  <span
+                    aria-hidden="true"
+                    className="text-foreground/70 text-xs"
+                  >
+                    /
+                  </span>
+                  {task?.type === "feature" ? (
+                    <FeatureCrumbs
+                      workspaceId={workspaceId}
+                      projectId={projectId}
+                      label={displayId ?? task.title}
+                    />
+                  ) : (
+                    <TaskCrumbSelect
+                      projectId={projectId}
+                      taskId={taskId}
+                      taskLabel={taskLabel}
+                      onSelectTask={handleTaskSwitch}
+                    />
+                  )}
                 </div>
               </div>
 

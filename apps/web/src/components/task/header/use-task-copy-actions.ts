@@ -17,6 +17,7 @@ import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import { generateLink } from "@/lib/generate-link";
 import { getTaskPath } from "@/lib/task-link";
 import { toast } from "@/lib/toast";
+import { taskWindowCopy } from "../task-window-copy";
 import { generateBranchName } from "./branch-name";
 
 type TaskCopyActionsOptions = {
@@ -38,6 +39,11 @@ export function useTaskCopyActions({
   const { data: github } = useGetGithubIntegration(projectId);
   const { data: gitea } = useGetGiteaIntegration(projectId);
   const { data: gitlab } = useGetGitlabIntegration(projectId);
+  const isFeature = task?.type === "feature";
+  const labels = taskWindowCopy(t, isFeature);
+  // Only once the item is known to be a Task/Bug, so a Feature still
+  // loading never flashes the branch action.
+  const canCopyBranch = task !== undefined && !isFeature;
 
   const copy = async (text: string, message: string, icon: LucideIcon) => {
     if (!text) return;
@@ -50,17 +56,16 @@ export function useTaskCopyActions({
   };
 
   return {
+    isFeature,
+    canCopyBranch,
+    labels,
     copyId: () => {
       if (!project?.slug || !task?.number) return;
-      void copy(
-        `${project.slug}-${task.number}`,
-        t("tasks:shortcuts.idCopied"),
-        HashIcon,
-      );
+      void copy(`${project.slug}-${task.number}`, labels.idCopied, HashIcon);
     },
     copyTitle: () => {
       if (!task) return;
-      void copy(task.title, t("tasks:shortcuts.titleCopied"), CopyIcon);
+      void copy(task.title, labels.titleCopied, CopyIcon);
     },
     copyMarkdown: () => {
       if (!task) return;
@@ -80,11 +85,7 @@ export function useTaskCopyActions({
         taskNumber: task.number,
         title: task.title,
       });
-      void copy(
-        generateLink(path),
-        t("tasks:properties.taskLinkCopied"),
-        LinkIcon,
-      );
+      void copy(generateLink(path), labels.linkCopied, LinkIcon);
     },
     copyBranch: () => {
       const pattern =

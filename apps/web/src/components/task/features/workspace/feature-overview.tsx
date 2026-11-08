@@ -1,15 +1,13 @@
 import type Task from "@/types/task";
 import TaskDescription from "../../task-description";
-import { TaskRelatedContent } from "../../task-related-content";
+import { TaskResources } from "../../task-resources";
 import { FeatureLatestUpdate } from "./feature-latest-update";
 
 export function FeatureOverview({
   feature,
-  workspaceId,
   onOpenActivity,
 }: {
   feature: Task;
-  workspaceId: string;
   onOpenActivity: (updateId?: string) => void;
 }) {
   return (
@@ -20,7 +18,7 @@ export function FeatureOverview({
         projectId={feature.projectId}
         onOpenActivity={onOpenActivity}
       />
-      <TaskRelatedContent task={feature} workspaceId={workspaceId} />
+      <TaskResources taskId={feature.id} />
     </div>
   );
 }

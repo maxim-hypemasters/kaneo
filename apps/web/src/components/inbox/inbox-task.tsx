@@ -1,13 +1,9 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Activity from "@/components/activity";
 import CommentInput from "@/components/activity/comment-input";
 import { DueDateText } from "@/components/my-work/due-date-text";
 import { Button } from "@/components/ui/button";
-import { HttpError } from "@/lib/http-error";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Timeline } from "@/components/ui/timeline";
 import useGetActivitiesByTaskId from "@/hooks/queries/activity/use-get-activities-by-task-id";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import useGetTask from "@/hooks/queries/task/use-get-task";
@@ -16,31 +12,28 @@ import { getColumnIcon } from "@/lib/column";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { useShortcut } from "@/lib/shortcuts/use-shortcut";
+import {
+  INBOX_VISIBLE_ACTIVITIES,
+  InboxRecentActivity,
+} from "./inbox-recent-activity";
+import { InboxResourceState } from "./inbox-resource-state";
 
 type InboxTaskProps = {
   taskId: string;
   workspaceId?: string;
 };
 
-const VISIBLE_ACTIVITIES = 6;
-
 // The task a notification points at, with enough of its thread to answer
 // without leaving the inbox.
 export function InboxTask({ taskId, workspaceId }: InboxTaskProps) {
   const { t } = useTranslation();
-  const {
-    data: task,
-    isLoading,
-    isError,
-    error,
-    isFetching,
-    refetch,
-  } = useGetTask(taskId, true);
-  const {
-    data: activities,
-    isPending: activityPending,
-    isError: activityError,
-  } = useGetActivitiesByTaskId(taskId, true, VISIBLE_ACTIVITIES);
+  const taskQuery = useGetTask(taskId, true);
+  const task = taskQuery.data;
+  const activityQuery = useGetActivitiesByTaskId(
+    taskId,
+    true,
+    INBOX_VISIBLE_ACTIVITIES,
+  );
   const { data: columns = [] } = useGetColumns(task?.projectId ?? "", {
     refreshWhileVisible: true,
   });
@@ -67,44 +60,17 @@ export function InboxTask({ taskId, workspaceId }: InboxTaskProps) {
     { enabled: Boolean(task && openWorkspaceId) },
   );
 
-  if (isLoading) {
+  if (taskQuery.isLoading || !task) {
     return (
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-7 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-    );
-  }
-
-  if (!task) {
-    const unavailable =
-      !isError ||
-      (error instanceof HttpError && [400, 403, 404].includes(error.status));
-    return (
-      <div className="flex flex-col items-start gap-3">
-        <p role="alert" className="text-muted-foreground text-sm">
-          {t(
-            unavailable
-              ? "notifications:inbox.taskUnavailable"
-              : "notifications:inbox.taskLoadError",
-          )}
-        </p>
-        {!unavailable && (
-          <Button
-            variant="outline"
-            disabled={isFetching}
-            onClick={() => void refetch()}
-          >
-            {t("common:error.tryAgain")}
-          </Button>
-        )}
-      </div>
+      <InboxResourceState
+        query={taskQuery}
+        unavailableMessage={t("notifications:inbox.taskUnavailable")}
+        loadErrorMessage={t("notifications:inbox.taskLoadError")}
+      />
     );
   }
 
   const linkWorkspaceId = task.workspaceId || workspaceId;
-  const recent = (activities ?? []).slice(0, VISIBLE_ACTIVITIES);
 
   return (
     <div className="flex flex-col gap-7">
@@ -169,36 +135,11 @@ export function InboxTask({ taskId, workspaceId }: InboxTaskProps) {
         </dl>
       </div>
 
-      <div className="flex flex-col gap-3 border-border/60 border-t pt-5">
-        <h3 className="font-medium text-muted-foreground text-xs">
-          {t("notifications:inbox.recentActivity")}
-        </h3>
-        {activityPending ? (
-          <Skeleton
-            aria-label={t("common:empty.loading")}
-            className="h-24 w-full"
-          />
-        ) : activityError && !activities ? (
-          <p role="alert" className="text-muted-foreground text-sm">
-            {t("workspace:home.activity.loadError")}
-          </p>
-        ) : (
-          recent.length > 0 && (
-            <Timeline>
-              {recent.map((activity, index) => (
-                <Activity
-                  key={activity.id}
-                  activity={activity}
-                  step={recent.length - index}
-                />
-              ))}
-            </Timeline>
-          )
-        )}
+      <InboxRecentActivity query={activityQuery}>
         {canUpdateTasks() && (
           <CommentInput taskId={taskId} projectId={task?.projectId} />
         )}
-      </div>
+      </InboxRecentActivity>
     </div>
   );
 }

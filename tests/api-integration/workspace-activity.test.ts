@@ -8,6 +8,7 @@ import {
   createProjectFixture,
   createWorkspaceMember,
 } from "./helpers/fixtures";
+import { insertTask } from "./helpers/release/insert-task";
 
 type WorkspaceActivityResponse = Array<{
   type: string;
@@ -15,6 +16,7 @@ type WorkspaceActivityResponse = Array<{
   content?: string;
   userName: string | null;
   taskTitle: string;
+  taskType: string;
   projectSlug: string;
   eventData: Record<string, unknown> | null;
 }>;
@@ -126,6 +128,51 @@ describe("API integration: workspace activity", () => {
         newStatusName: "In Progress",
       },
     });
+  });
+
+  it("names the type of the item each event belongs to", async () => {
+    const member = await createWorkspaceMember();
+    const { project } = await createProjectFixture({
+      workspaceId: member.workspace.id,
+    });
+    const feature = await insertTask(project.id, {
+      title: "Checkout",
+      type: "feature",
+    });
+    const bug = await insertTask(project.id, {
+      title: "Double charge",
+      type: "bug",
+    });
+    const now = Date.now();
+    await db.insert(schema.activityTable).values([
+      {
+        taskId: feature.id,
+        type: "created",
+        userId: member.user.id,
+        createdAt: new Date(now - 1000),
+      },
+      {
+        taskId: bug.id,
+        type: "created",
+        userId: member.user.id,
+        createdAt: new Date(now),
+      },
+    ]);
+
+    mockAuthenticatedSession(member.user);
+    const response = await createApp().app.request(
+      `/api/activity/workspace/${member.workspace.id}`,
+    );
+    expect(response.status).toBe(200);
+    expect(
+      ((await response.json()) as WorkspaceActivityResponse).map((event) => [
+        event.taskTitle,
+        event.taskType,
+      ]),
+    ).toEqual([
+      ["Double charge", "bug"],
+      ["Checkout", "feature"],
+    ]);
   });
 
   it("refuses a workspace the caller does not belong to", async () => {

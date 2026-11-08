@@ -24,6 +24,7 @@ import {
   validateTaskReleaseSearch,
 } from "@/components/task/task-release-origin";
 import { TaskReleaseOriginProvider } from "@/components/task/task-release-origin-context";
+import { taskWindowCopy } from "@/components/task/task-window-copy";
 import { DocumentDraftGuardProvider } from "@/components/editor/document-draft-guard";
 
 export const Route = createFileRoute(
@@ -75,10 +76,13 @@ function RouteComponent() {
   }, []);
 
   const isLoading = isTaskLoading || isProjectLoading || !isShikiReady;
+  const isFeature = task?.type === "feature";
 
   const handleDeleted = () => {
     navigate({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId",
+      to: isFeature
+        ? "/dashboard/workspace/$workspaceId/project/$projectId/features"
+        : "/dashboard/workspace/$workspaceId/project/$projectId",
       params: { workspaceId, projectId },
       replace: true,
     });
@@ -124,7 +128,7 @@ function RouteComponent() {
             <PageTitle
               title={
                 isLoading
-                  ? t("tasks:common.loadingTask")
+                  ? taskWindowCopy(t, isFeature).loading
                   : isTaskError || !task
                     ? t("tasks:common.taskNotFound")
                     : `${project?.slug}-${task?.number} · ${task?.title}`

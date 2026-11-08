@@ -182,7 +182,6 @@ export async function readScheduleInput(
     ? await tx
         .select({
           id: taskTable.id,
-          type: taskTable.type,
           projectId: taskTable.projectId,
           workspaceId: projectTable.workspaceId,
           generation: projectTable.scheduleGeneration,
@@ -246,10 +245,6 @@ export async function readScheduleInput(
           : task.status === first?.slug
             ? ("todo" as const)
             : ("active" as const);
-  const eligibleExternal = external.filter((task) => task.type !== "feature");
-  const featureIds = new Set(
-    external.filter((task) => task.type === "feature").map((task) => task.id),
-  );
   const input: ScheduleInput = {
     asOf,
     planFrom,
@@ -271,13 +266,11 @@ export async function readScheduleInput(
       codeFreezeDate: release.codeFreezeDate,
       submissionDate: release.submissionDate,
     })),
-    dependencies: relations
-      .filter((item) => !featureIds.has(item.sourceTaskId))
-      .map((item) => ({
-        blockerId: item.sourceTaskId,
-        blockedId: item.targetTaskId,
-      })),
-    externalBlockers: eligibleExternal.map((task) => {
+    dependencies: relations.map((item) => ({
+      blockerId: item.sourceTaskId,
+      blockedId: item.targetTaskId,
+    })),
+    externalBlockers: external.map((task) => {
       const available =
         task.workspaceId === project.workspaceId && task.hasAccess;
       return {

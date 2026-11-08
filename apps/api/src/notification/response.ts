@@ -1,4 +1,5 @@
 import { responseTimestamp, z } from "../openapi";
+import { taskTypeSchema } from "../task/response";
 
 export const notificationSchema = z
   .object({
@@ -30,7 +31,16 @@ export const notificationSchema = z
   })
   .openapi("Notification");
 
-export const notificationListSchema = z.array(notificationSchema);
+export const notificationListSchema = z.array(
+  notificationSchema
+    .extend({
+      taskType: taskTypeSchema.nullable().openapi({
+        description:
+          "The type of the Feature, Task or Bug a task notification points at. Null for notifications without a task, such as workspace notifications.",
+      }),
+    })
+    .openapi("NotificationListItem"),
+);
 
 export const bulkResultSchema = z
   .object({ success: z.boolean() })

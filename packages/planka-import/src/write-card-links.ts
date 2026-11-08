@@ -13,12 +13,22 @@ const reason = (error: unknown) =>
 export async function writeCardLinks(input: {
   kaneo: KaneoClient;
   plan: FeaturePlan;
+  // Every card imported as a feature, including those whose cards all joined
+  // it on creation.
+  featureCardIds: ReadonlySet<string>;
   taskIdByCardId: ReadonlyMap<string, string>;
   cardNames: ReadonlyMap<string, string>;
   // The server predates features: the cards are linked as related instead.
   withoutFeatures: boolean;
 }): Promise<{ links: number; warnings: string[] }> {
-  const { kaneo, plan, taskIdByCardId, cardNames, withoutFeatures } = input;
+  const {
+    kaneo,
+    plan,
+    featureCardIds,
+    taskIdByCardId,
+    cardNames,
+    withoutFeatures,
+  } = input;
   const warnings: string[] = [];
   let links = 0;
 
@@ -29,13 +39,28 @@ export async function writeCardLinks(input: {
       ? [{ cardId, featureCardId, taskId, featureId }]
       : [];
   });
+  let skipped = 0;
   const related = plan.related.flatMap((link) => {
     const sourceTaskId = taskIdByCardId.get(link.parentCardId);
     const targetTaskId = taskIdByCardId.get(link.childCardId);
-    return sourceTaskId && targetTaskId
-      ? [{ name: link.name, sourceTaskId, targetTaskId }]
-      : [];
+    if (!sourceTaskId || !targetTaskId) return [];
+    // Features have no relations. A server without features made plain tasks
+    // of these cards, so there they keep their links.
+    if (
+      !withoutFeatures &&
+      (featureCardIds.has(link.parentCardId) ||
+        featureCardIds.has(link.childCardId))
+    ) {
+      skipped++;
+      return [];
+    }
+    return [{ name: link.name, sourceTaskId, targetTaskId }];
   });
+  if (skipped > 0) {
+    warnings.push(
+      `${skipped} card link(s) to a feature were not copied: features don't have relations.`,
+    );
+  }
 
   if (withoutFeatures && memberships.length > 0) {
     warnings.push(

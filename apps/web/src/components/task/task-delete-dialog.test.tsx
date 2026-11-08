@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   deleteTask: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
+  task: { id: "task-1", type: "task" } as { id: string; type: string },
 }));
 
 vi.mock("react-i18next", () => ({
@@ -33,6 +34,9 @@ vi.mock("@/hooks/mutations/task/use-delete-task", () => ({
     mutateAsync: mocks.deleteTask,
     isPending: false,
   }),
+}));
+vi.mock("@/hooks/queries/task/use-get-task", () => ({
+  default: () => ({ data: mocks.task }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
@@ -78,6 +82,7 @@ async function confirmDeletion() {
 
 beforeEach(() => {
   mocks.canDeleteTasks.mockReturnValue(true);
+  mocks.task = { id: "task-1", type: "task" };
 });
 
 afterEach(() => {
@@ -113,6 +118,50 @@ describe("TaskDeleteDialog", () => {
       icon: expect.anything(),
     });
     expect(onDeleted).toHaveBeenCalledTimes(1);
+  });
+
+  it("says what deleting a feature removes and keeps", async () => {
+    mocks.task = { id: "task-1", type: "feature" };
+    mocks.deleteTask.mockResolvedValue({ id: "task-1" });
+    const { onDeleted } = renderTaskDelete();
+
+    fireEvent.keyDown(document, { key: "Backspace", ctrlKey: true });
+
+    expect(
+      await screen.findByText("tasks:features.window.deleteTitle"),
+    ).toBeTruthy();
+    expect(
+      screen.getByText("tasks:features.window.deleteDescription"),
+    ).toBeTruthy();
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:features.window.delete" }),
+    );
+
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledTimes(1));
+    expect(mocks.deleteTask).toHaveBeenCalledWith("task-1");
+    expect(mocks.success).toHaveBeenCalledWith(
+      "tasks:features.window.deleted",
+      { icon: expect.anything() },
+    );
+  });
+
+  it("reports a failed feature deletion in feature words", async () => {
+    mocks.task = { id: "task-1", type: "feature" };
+    mocks.deleteTask.mockRejectedValue("offline");
+    renderTaskDelete();
+
+    fireEvent.keyDown(document, { key: "Backspace", ctrlKey: true });
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "tasks:features.window.delete",
+      }),
+    );
+
+    await waitFor(() =>
+      expect(mocks.error).toHaveBeenCalledWith(
+        "tasks:features.window.deleteError",
+      ),
+    );
   });
 
   it("opens the confirmation from the keyboard shortcut", async () => {

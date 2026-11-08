@@ -144,6 +144,7 @@ beforeEach(() => {
           boardTask("Search", { type: "feature", number: 4 }),
           boardTask("Cart", { featureId: "Checkout" }),
           boardTask("Login"),
+          boardTask("Billing", { type: "bug", number: 5 }),
         ],
       },
     ],
@@ -243,24 +244,24 @@ describe("TaskRelations", () => {
     expect(useRelationPickerStore.getState().request).toBeNull();
   });
 
-  it("links related tasks through the relations route", async () => {
+  it("links related tasks through the relations route, never a feature", async () => {
     renderRelations();
     requestPicker("related");
 
+    // Features have no relations; Login is already linked.
     const options = await screen.findAllByRole("option");
     expect(options.map((option) => option.textContent)).toEqual([
-      expect.stringContaining("Checkout"),
-      expect.stringContaining("Search"),
+      expect.stringContaining("Billing"),
     ]);
     expect(screen.getByText("tasks:relations.selectTask")).toBeInTheDocument();
 
     await act(async () => {
-      fireEvent.click(options[1]);
+      fireEvent.click(options[0]);
     });
 
     expect(mocks.createRelation).toHaveBeenCalledWith({
       sourceTaskId: "Cart",
-      targetTaskId: "Search",
+      targetTaskId: "Billing",
       relationType: "related",
     });
     expect(mocks.updateFeature).not.toHaveBeenCalled();

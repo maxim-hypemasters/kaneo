@@ -5,6 +5,7 @@ import { InvalidArgument } from "../../../errors/errors.js";
 import { emit } from "../../../output/emit.js";
 import { withSpinner } from "../../../output/spinner.js";
 import { joinParentFeature } from "../../../relations/join-parent-feature.js";
+import { refuseFeatureLink } from "../../../relations/refuse-feature-link.js";
 import {
   type FeatureWord,
   isFeatureWord,
@@ -72,6 +73,7 @@ export const runRelationAdd = Effect.fn("command.task.relation.add")(
     const type = yield* Effect.fromResult(parseRelationType(options.type));
     const pair = yield* resolvePair(options.task, options.other);
     if (isFeatureWord(type)) return yield* runFeatureLink(type, pair);
+    yield* Effect.fromResult(refuseFeatureLink(pair));
     const task = taskRef(pair.task);
     const other = taskRef(pair.other);
     const label = taskLabel(task);

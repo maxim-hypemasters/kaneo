@@ -176,6 +176,34 @@ function linkedBundle(): BoardBundle {
   return bundle;
 }
 
+// card1 holds card2 and card3 holds card4, each created straight into its
+// feature. card3 also links card2, which already has a feature, so that link
+// would be a related one from a feature.
+function twoFeaturesBundle(): BoardBundle {
+  const bundle = linkedBundle();
+  bundle.included.cards?.push(card("card4", "Pricing", 4));
+  bundle.included.taskLists?.push({ id: "tl3", cardId: "card3", name: "Also" });
+  bundle.included.tasks?.push(
+    {
+      id: "t2",
+      taskListId: "tl3",
+      name: "Pricing",
+      isCompleted: false,
+      position: 1,
+      linkedCardId: "card4",
+    },
+    {
+      id: "t3",
+      taskListId: "tl3",
+      name: "Same dependency",
+      isCompleted: false,
+      position: 2,
+      linkedCardId: "card2",
+    },
+  );
+  return bundle;
+}
+
 describe("migrate (dry run)", () => {
   it("reports counts without calling Kaneo", async () => {
     const calls: Call[] = [];
@@ -552,6 +580,42 @@ describe("migrate (write)", () => {
     expect(report?.relations).toBe(2);
   });
 
+  it("leaves out a link from a feature whose cards all joined it on creation", async () => {
+    const calls: Call[] = [];
+    const [report] = await migrate({
+      planka: fakePlanka(twoFeaturesBundle()),
+      kaneo: fakeKaneo(calls),
+      workspaceId: "ws_1",
+      targets: [target],
+      dryRun: false,
+      skipComments: false,
+    });
+
+    expect(
+      calls
+        .filter((call) => call.method === "createTask")
+        .map((call) => {
+          const input = call.args[0] as { type?: string; featureId?: string };
+          return [input.type, input.featureId];
+        }),
+    ).toEqual([
+      ["feature", undefined],
+      [undefined, "t_1"],
+      ["feature", undefined],
+      [undefined, "t_3"],
+    ]);
+    expect(calls.some((call) => call.method === "setTaskFeature")).toBe(false);
+    expect(calls.some((call) => call.method === "createTaskRelation")).toBe(
+      false,
+    );
+    expect(report?.failed).toBe(false);
+    expect(report?.features).toBe(2);
+    expect(report?.relations).toBe(2);
+    expect(report?.warnings).toEqual([
+      "1 card link(s) to a feature were not copied: features don't have relations.",
+    ]);
+  });
+
   it("puts a card created before its feature into it once every card exists", async () => {
     const calls: Call[] = [];
     // card2, after card1 on the board, links card1.
@@ -644,6 +708,20 @@ describe("migrate (write)", () => {
     expect(calls).toEqual([]);
     expect(report?.features).toBe(1);
     expect(report?.relations).toBe(1);
+  });
+
+  it("does not count links to a feature in a dry run", async () => {
+    const [report] = await migrate({
+      planka: fakePlanka(twoFeaturesBundle()),
+      kaneo: fakeKaneo([]),
+      workspaceId: "ws_1",
+      targets: [target],
+      dryRun: true,
+      skipComments: false,
+    });
+
+    expect(report?.features).toBe(2);
+    expect(report?.relations).toBe(2);
   });
 
   it("attributes imported comments to the original PLANKA author", async () => {

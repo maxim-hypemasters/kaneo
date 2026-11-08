@@ -7,6 +7,7 @@ import type { ImportCounts } from "../import-run-project";
 import { assignImportTaskNumbers } from "./assign-import-task-numbers";
 import { loadAssignableMembers } from "./load-assignable-members";
 import { createAssigneeMatcher } from "./match-assignees";
+import { omitFeatureRelations } from "./omit-feature-relations";
 import { planImportColumns } from "./plan-import-columns";
 import { planImportHierarchy } from "./plan-import-hierarchy";
 import { planImportTasks } from "./plan-import-tasks";
@@ -132,9 +133,15 @@ export async function writeProjectContent(
       assign: assignees.match,
     },
   );
+  const links = omitFeatureRelations(
+    hierarchy.relations,
+    new Set(
+      tasks.filter((task) => task.type === "feature").map((task) => task.id),
+    ),
+  );
   // Feature links count as relations, as the subtask links they came from.
   const relations =
-    (await writeImportRelations(tx, hierarchy.relations)) + memberships;
+    (await writeImportRelations(tx, links.relations)) + memberships;
 
   const unmatched = assignees.warning();
   return {
@@ -150,6 +157,7 @@ export async function writeProjectContent(
       ...project.warnings,
       ...columnPlan.warnings,
       ...(unmatched ? [unmatched] : []),
+      ...links.warnings,
     ],
   };
 }

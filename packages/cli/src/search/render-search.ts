@@ -17,6 +17,7 @@ export type SearchScreen = {
 
 const HEADINGS: Readonly<Record<SearchResultType, string>> = {
   task: "Tasks",
+  feature: "Features",
   project: "Projects",
   comment: "Comments",
   activity: "Activity",
@@ -72,6 +73,19 @@ function columnsFor(
                   text(` ${statusLabel(result.status)}`, theme.muted),
                 ]
               : [],
+        },
+      ];
+    case "feature":
+      return [
+        reference,
+        {
+          header: "Title",
+          flex: true,
+          minWidth: 16,
+          cell: (result) => [
+            text(result.title, undefined, result.url ?? undefined),
+            ...(result.archived ? [text(" [Archived]", theme.muted)] : []),
+          ],
         },
       ];
     case "project":

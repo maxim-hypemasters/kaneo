@@ -1,4 +1,3 @@
-import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { useNavigate } from "@tanstack/react-router";
 import { taskReleaseSearch } from "./task-release-origin";
 import { useTaskReleaseOrigin } from "./task-release-origin-context";
@@ -78,6 +77,7 @@ type TaskItem = {
   title: string;
   number: number | null;
   status: string | null;
+  type?: Task["type"];
 };
 
 type TaskGroup = {
@@ -202,8 +202,9 @@ export default function TaskRelations({
     return icons;
   }, [projectData]);
 
+  // Features have no relations.
   const filteredTasks = allTasks.filter(
-    (t) => !existingRelatedTaskIds.has(t.id),
+    (t) => t.type !== "feature" && !existingRelatedTaskIds.has(t.id),
   );
 
   // The project's features, minus the task and the feature it's in.
@@ -328,24 +329,20 @@ export default function TaskRelations({
                 <ContextMenuTrigger asChild>
                   <TaskReferenceRow
                     status={
-                      taskObj.type === "feature" ? (
-                        <TaskTypeGlyph type="feature" decorative />
-                      ) : (
-                        <SubtaskStatusPopover
-                          tasks={[taskObj]}
-                          projectId={item.task.projectId}
+                      <SubtaskStatusPopover
+                        tasks={[taskObj]}
+                        projectId={item.task.projectId}
+                      >
+                        <ReferenceStatusButton
+                          aria-label={t("tasks:status.label")}
                         >
-                          <ReferenceStatusButton
-                            aria-label={t("tasks:status.label")}
-                          >
-                            {getColumnIcon(
-                              item.task.status,
-                              isFinal,
-                              columnIconBySlug.get(item.task.status ?? ""),
-                            )}
-                          </ReferenceStatusButton>
-                        </SubtaskStatusPopover>
-                      )
+                          {getColumnIcon(
+                            item.task.status,
+                            isFinal,
+                            columnIconBySlug.get(item.task.status ?? ""),
+                          )}
+                        </ReferenceStatusButton>
+                      </SubtaskStatusPopover>
                     }
                     displayId={displayIdOf(
                       item.task.projectId,

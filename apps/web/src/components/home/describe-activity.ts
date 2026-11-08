@@ -1,5 +1,10 @@
 import { describeHierarchyActivity } from "@/components/activity/describe-hierarchy-activity";
+import { describeMilestoneActivity } from "@/components/activity/describe-milestone-activity";
 import { describeReleaseActivity } from "@/components/activity/describe-release-activity";
+import {
+  activitySubjectOf,
+  describeSubjectActivity,
+} from "@/components/activity/describe-subject-activity";
 import type { WorkspaceActivity } from "@/fetchers/activity/get-workspace-activities";
 import { formatDateMedium } from "@/lib/format";
 import { getPriorityLabel, getStatusDisplayLabel } from "@/lib/i18n/domain";
@@ -22,14 +27,11 @@ function formatEventDate(value: unknown) {
 // What the actor did, phrased to follow their name: "Mira <changed status…>".
 export function describeActivity(activity: WorkspaceActivity, t: Translate) {
   const eventData = eventDataOf(activity);
+  const subject = activitySubjectOf(activity.taskType);
 
   switch (activity.type) {
     case "comment":
       return t("workspace:home.activity.commented");
-    case "create":
-    case "created":
-    case "task":
-      return t("activity:created");
     case "unassigned":
       return t("activity:unassigned");
     case "status_changed":
@@ -88,37 +90,22 @@ export function describeActivity(activity: WorkspaceActivity, t: Translate) {
         });
       }
       break;
-    case "moved":
-      if (eventData) {
-        return eventData.fromProjectName
-          ? t("activity:moved", {
-              from: String(eventData.fromProjectName),
-              to: String(eventData.toProjectName ?? ""),
-            })
-          : t("activity:movedFromOtherProject", {
-              to: String(eventData.toProjectName ?? ""),
-            });
-      }
-      break;
-    case "feature_changed":
-    case "type_changed": {
-      const description = describeHierarchyActivity(
-        activity.type,
-        eventData,
-        t,
-      );
+    default: {
+      const description =
+        describeSubjectActivity(activity.type, eventData, subject, t) ??
+        describeHierarchyActivity(activity.type, eventData, t) ??
+        describeMilestoneActivity(activity.type, eventData, t) ??
+        describeReleaseActivity(activity.type, eventData, t);
       if (description) return description;
       break;
     }
-    case "release_changed": {
-      const description = describeReleaseActivity(activity.type, eventData, t);
-      if (description) return description;
-      break;
-    }
-    default:
-      break;
   }
 
   // Events recorded before eventData existed only have their English text.
-  return activity.excerpt || t("workspace:home.activity.updated");
+  return (
+    activity.excerpt ||
+    (subject === "feature"
+      ? t("workspace:home.activity.updatedFeature")
+      : t("workspace:home.activity.updated"))
+  );
 }

@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatDateTime, formatRelativeTime } from "@/lib/format";
 import type { Notification } from "@/types/notification";
+import { InboxFeature } from "./inbox-feature";
 import { InboxTask } from "./inbox-task";
 import { NotificationIcon } from "./notification-icon";
 
@@ -62,9 +63,20 @@ export function InboxDetail({
             </div>
           </div>
 
-          {taskId && (
-            <InboxTask key={taskId} taskId={taskId} workspaceId={workspaceId} />
-          )}
+          {taskId &&
+            (notification.taskType === "feature" ? (
+              <InboxFeature
+                key={taskId}
+                featureId={taskId}
+                workspaceId={workspaceId}
+              />
+            ) : (
+              <InboxTask
+                key={taskId}
+                taskId={taskId}
+                workspaceId={workspaceId}
+              />
+            ))}
         </div>
       </div>
     </div>

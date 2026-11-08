@@ -1,16 +1,20 @@
 import { client } from "@kaneo/libs";
+import type { InferRequestType, InferResponseType } from "hono/client";
 
 import { HttpError } from "@/lib/http-error";
 
+export type SearchType = NonNullable<
+  InferRequestType<(typeof client)["search"]["$get"]>["query"]["type"]
+>;
+
+export type SearchResultItem = InferResponseType<
+  (typeof client)["search"]["$get"],
+  200
+>["results"][number];
+
 type SearchParams = {
   q: string;
-  type?:
-    | "all"
-    | "tasks"
-    | "projects"
-    | "workspaces"
-    | "comments"
-    | "activities";
+  type?: SearchType;
   workspaceId: string;
   projectId?: string;
   limit?: number;

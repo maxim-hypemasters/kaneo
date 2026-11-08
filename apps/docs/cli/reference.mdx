@@ -319,7 +319,7 @@ Shows the feature of a task, the tasks of a feature, and the linked tasks.
 kaneo task relation add <task> <type> <other-task>
 ```
 
-Links two tasks. `<type>` says how the first task relates to the other: `blocks`, `blocked-by` or `relates-to`.
+Links two tasks. `<type>` says how the first task relates to the other: `blocks`, `blocked-by` or `relates-to`. Relations link Tasks and Bugs: features don't have relations, so naming a feature is rejected before anything is sent.
 
 `subtask-of` and `parent-of` still work, but are deprecated. `KAN-3 subtask-of KAN-1` adds `KAN-3` to the feature `KAN-1`, or to the feature `KAN-1` is in. A plain source without a Feature is rejected; it is never promoted automatically. `parent-of` works the other way round. Use `kaneo task create --feature` or `kaneo task edit --feature` instead.
 
@@ -905,7 +905,7 @@ Marks notifications as read. Pass notification IDs or the short IDs from `kaneo 
 kaneo search <query...> [-t <type>] [-L <n>] [-p <project>]
 ```
 
-Searches tasks, projects and comments. The query can be words or a ticket ID such as `KAN-12`. `-t`, `--type` is `all`, `tasks`, `projects`, `workspaces`, `comments` or `activities`. `-L`, `--limit` is 1 to 50, default 20. `-p` searches one project.
+Searches tasks, Features, projects and comments. The query can be words or a ticket ID such as `KAN-12`. `-t`, `--type` is `all`, `tasks`, `features`, `projects`, `workspaces`, `comments` or `activities`. `tasks` covers Tasks and Bugs; Features are listed under their own **Features** heading, marked `[Archived]` when archived. `-L`, `--limit` is 1 to 50, default 20. `-p` searches one project.
 
 ### `kaneo api`
 

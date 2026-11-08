@@ -2601,7 +2601,8 @@
 				"comment": "Коментарі",
 				"activity": "Активність",
 				"fallback": "Результати",
-				"document": "Documents"
+				"document": "Documents",
+				"feature": "Features"
 			}
 		},
 		"settingsLayout": {
@@ -2686,7 +2687,6 @@
 				"editDescription": "Редагувати опис",
 				"commentOnTask": "Коментувати",
 				"moveToProject": "Перемістити до іншого проєкту",
-				"createSubtask": "Додати завдання до цієї функції",
 				"setParent": "Задати функцію",
 				"openParent": "Відкрити функцію",
 				"openSubtask": "Відкрити завдання цієї функції",
@@ -2836,7 +2836,10 @@
 			"loadError": "Notifications couldn't be loaded.",
 			"taskLoadError": "This task couldn’t be loaded.",
 			"actionError": "Не вдалося оновити вхідні. Спробуйте ще раз.",
-			"readCleared": "Прочитані сповіщення видалено"
+			"readCleared": "Прочитані сповіщення видалено",
+			"featureLoadError": "This feature couldn’t be loaded.",
+			"featureUnavailable": "This feature is no longer available.",
+			"openFeature": "Open feature"
 		}
 	},
 	"activity": {
@@ -2955,14 +2958,16 @@
 		"addedToFeature": "додав завдання до функції «{{feature}}»",
 		"removedFromFeature": "вилучив завдання з функції «{{feature}}»",
 		"changedFeature": "перемістив завдання з функції «{{from}}» до «{{to}}»",
-		"madeFeature": "зробив це завдання функцією",
-		"madeTask": "зробив цю функцію завданням",
 		"addedToRelease": "додав завдання до релізу «{{release}}»",
 		"removedFromRelease": "вилучив завдання з релізу «{{release}}»",
 		"changedRelease": "перемістив завдання з релізу «{{from}}» до «{{to}}»",
 		"changedTypeToBug": "changed the type to bug",
 		"changedTypeToFeature": "changed the type to feature",
-		"changedTypeToTask": "changed the type to task"
+		"changedTypeToTask": "changed the type to task",
+		"createdFeature": "created this feature",
+		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
+		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
+		"postedFeatureUpdate": "posted an update"
 	},
 	"tasks": {
 		"title": "Завдання",
@@ -3653,7 +3658,8 @@
 				"activityRestored": "restored this Feature",
 				"archiveDialogDescription": "The Feature will move to Archived. Its milestones, Tasks, and Bugs keep their current state. You can restore it later.",
 				"archiveDialogTitle": "Archive “{{title}}”?",
-				"archiving": "Archiving…"
+				"archiving": "Archiving…",
+				"pageTitle": "{{name}}'s features"
 			},
 			"workspace": {
 				"navigation": "Feature navigation",
@@ -3721,6 +3727,22 @@
 				"moreMilestones_few": "{{count}} more milestones",
 				"moreMilestones_many": "{{count}} more milestones",
 				"updateUnavailable": "Feature update unavailable."
+			},
+			"window": {
+				"copyId": "Copy feature ID",
+				"copyLink": "Copy feature link",
+				"copyTitle": "Copy feature title",
+				"delete": "Delete feature",
+				"deleted": "Feature deleted successfully",
+				"deleteDescription": "This permanently deletes the Feature with its milestones, documents, updates, and comments. Its Tasks and Bugs stay in the project without a Feature or milestone. You can't undo this action.",
+				"deleteError": "Failed to delete feature",
+				"deleteTitle": "Delete feature?",
+				"idCopied": "Copied feature ID",
+				"linkCopied": "Copied feature link",
+				"loading": "Loading feature...",
+				"move": "Move feature",
+				"moved": "Feature moved successfully",
+				"titleCopied": "Copied feature title"
 			}
 		},
 		"releases": {
@@ -4321,7 +4343,8 @@
 				"empty": "Nothing has happened in the last 30 days.",
 				"loadError": "Activity couldn't be loaded.",
 				"title": "Activity",
-				"updated": "updated the task"
+				"updated": "updated the task",
+				"updatedFeature": "updated the feature"
 			},
 			"greeting": {
 				"afternoon": "Good afternoon",

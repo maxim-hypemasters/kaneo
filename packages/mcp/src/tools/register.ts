@@ -847,7 +847,7 @@ export function registerTools(
     "create_task_relation",
     {
       description:
-        "Create a relation between two tasks. relationType: 'blocks' (sourceTaskId blocks targetTaskId) or 'related' (bidirectional). 'subtask' is a deprecated alias that puts targetTaskId into sourceTaskId's feature (sourceTaskId must already be a Feature); prefer set_task_feature.",
+        "Create a relation between two Tasks or Bugs. relationType: 'blocks' (sourceTaskId blocks targetTaskId) or 'related' (bidirectional). Features do not have relations: a Feature on either end is refused with 400. 'subtask' is a deprecated alias that puts targetTaskId into sourceTaskId's feature (sourceTaskId must already be a Feature); prefer set_task_feature.",
       inputSchema: z.object({
         sourceTaskId: nonEmptyString,
         targetTaskId: nonEmptyString,
@@ -871,7 +871,7 @@ export function registerTools(
     "get_task_relations",
     {
       description:
-        "List the blocks and related relations involving a task. A task's feature link is also listed as a deprecated 'subtask' entry (sourceTaskId is the feature, targetTaskId the task); prefer the featureId on get_task.",
+        "List the blocks and related relations of a Task or Bug; Features have none of those. Feature membership also appears as deprecated 'subtask' entries (sourceTaskId is the Feature, targetTaskId the task): one for a task in a Feature, and one per task for a Feature. Prefer featureId on get_task and list_tasks.",
       inputSchema: z.object({ taskId: nonEmptyString }),
     },
     async (args) =>
@@ -951,13 +951,14 @@ export function registerTools(
     "search",
     {
       description:
-        "Search across tasks, projects, workspaces, comments, activities, and Feature documents.",
+        "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, and Feature documents. Features come back as `feature` results, with `archived` and no status or priority. Comment and activity results carry the `taskId` and `taskType` of the item they belong to.",
       inputSchema: z.object({
         q: nonEmptyString.describe("Search query"),
         type: z
           .enum([
             "all",
             "tasks",
+            "features",
             "projects",
             "workspaces",
             "comments",
@@ -965,7 +966,9 @@ export function registerTools(
             "documents",
           ])
           .optional()
-          .describe("Restrict results to one kind. Defaults to all."),
+          .describe(
+            "Restrict results to one kind. `tasks` returns Tasks and Bugs; `features` returns Features. Defaults to all.",
+          ),
         workspaceId: optionalNonEmptyString.describe("Limit to one workspace"),
         projectId: optionalNonEmptyString.describe("Limit to one project"),
         limit: z

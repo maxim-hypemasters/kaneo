@@ -2475,7 +2475,8 @@
 				"comment": "留言",
 				"activity": "活動",
 				"fallback": "結果",
-				"document": "Documents"
+				"document": "Documents",
+				"feature": "Features"
 			}
 		},
 		"settingsLayout": {
@@ -2560,7 +2561,6 @@
 				"editDescription": "編輯描述",
 				"commentOnTask": "留言",
 				"moveToProject": "移至其他專案",
-				"createSubtask": "為此功能新增任務",
 				"setParent": "設定功能",
 				"openParent": "開啟功能",
 				"openSubtask": "開啟此功能的任務",
@@ -2695,7 +2695,10 @@
 			"taskUnavailable": "這個任務已無法存取。",
 			"taskLoadError": "無法載入這個任務。",
 			"actionError": "無法更新收件匣，請再試一次。",
-			"readCleared": "已刪除已讀通知"
+			"readCleared": "已刪除已讀通知",
+			"featureLoadError": "This feature couldn’t be loaded.",
+			"featureUnavailable": "This feature is no longer available.",
+			"openFeature": "Open feature"
 		}
 	},
 	"activity": {
@@ -2814,14 +2817,16 @@
 		"addedToFeature": "將任務加入功能「{{feature}}」",
 		"removedFromFeature": "將任務從功能「{{feature}}」中移除",
 		"changedFeature": "將任務從功能「{{from}}」移動到「{{to}}」",
-		"madeFeature": "將此任務轉換為功能",
-		"madeTask": "將此功能轉換為任務",
 		"addedToRelease": "將任務加入版本「{{release}}」",
 		"removedFromRelease": "將任務從版本「{{release}}」中移除",
 		"changedRelease": "將任務從版本「{{from}}」移動到「{{to}}」",
 		"changedTypeToBug": "changed the type to bug",
 		"changedTypeToFeature": "changed the type to feature",
-		"changedTypeToTask": "changed the type to task"
+		"changedTypeToTask": "changed the type to task",
+		"createdFeature": "created this feature",
+		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
+		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
+		"postedFeatureUpdate": "posted an update"
 	},
 	"tasks": {
 		"title": "任務",
@@ -3455,7 +3460,8 @@
 				"activityRestored": "restored this Feature",
 				"archiveDialogDescription": "The Feature will move to Archived. Its milestones, Tasks, and Bugs keep their current state. You can restore it later.",
 				"archiveDialogTitle": "Archive “{{title}}”?",
-				"archiving": "Archiving…"
+				"archiving": "Archiving…",
+				"pageTitle": "{{name}}'s features"
 			},
 			"workspace": {
 				"navigation": "Feature navigation",
@@ -3521,6 +3527,22 @@
 					"linkFailed": "Could not link this work. Try again."
 				},
 				"updateUnavailable": "Feature update unavailable."
+			},
+			"window": {
+				"copyId": "Copy feature ID",
+				"copyLink": "Copy feature link",
+				"copyTitle": "Copy feature title",
+				"delete": "Delete feature",
+				"deleted": "Feature deleted successfully",
+				"deleteDescription": "This permanently deletes the Feature with its milestones, documents, updates, and comments. Its Tasks and Bugs stay in the project without a Feature or milestone. You can't undo this action.",
+				"deleteError": "Failed to delete feature",
+				"deleteTitle": "Delete feature?",
+				"idCopied": "Copied feature ID",
+				"linkCopied": "Copied feature link",
+				"loading": "Loading feature...",
+				"move": "Move feature",
+				"moved": "Feature moved successfully",
+				"titleCopied": "Copied feature title"
 			}
 		},
 		"releases": {
@@ -4085,7 +4107,8 @@
 				"commented": "已留言",
 				"updated": "更新了任務",
 				"empty": "過去 30 天沒有任何動態。",
-				"loadError": "無法載入動態。"
+				"loadError": "無法載入動態。",
+				"updatedFeature": "updated the feature"
 			},
 			"newFeature": "新增功能"
 		},

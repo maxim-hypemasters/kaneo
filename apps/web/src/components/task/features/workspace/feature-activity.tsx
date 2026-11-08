@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Activity from "@/components/activity";
@@ -151,6 +152,7 @@ export function FeatureActivity({
                       key={activity.id}
                       activity={activity}
                       step={index + 1}
+                      subject="feature"
                     />
                   ),
                 )}
@@ -167,4 +169,3 @@ export function FeatureActivity({
     </section>
   );
 }
-import { useQueryClient } from "@tanstack/react-query";

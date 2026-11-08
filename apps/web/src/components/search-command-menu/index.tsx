@@ -25,27 +25,12 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useOpenProject } from "@/components/project/views/use-open-project";
+import { featureRoute } from "@/components/task/features/feature-route";
+import { Badge } from "@/components/ui/badge";
+import type { SearchResultItem } from "@/fetchers/search/global-search";
 import useGlobalSearch from "@/hooks/queries/search/use-global-search";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import type { TaskType } from "@/types/task";
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
-
-type SearchResultItem = {
-  id: string;
-  title: string;
-  description?: string;
-  content?: string;
-  type: "task" | "project" | "workspace" | "comment" | "activity" | "document";
-  taskType?: TaskType;
-  featureId?: string;
-  featureTitle?: string;
-  projectId?: string;
-  workspaceId?: string;
-  taskNumber?: number;
-  projectSlug?: string;
-  priority?: string;
-  status?: string;
-};
 
 type SearchGroup = {
   value: string;
@@ -97,6 +82,11 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
           });
         }
         break;
+      case "feature":
+        if (item.projectId && item.id && workspace?.id) {
+          navigate(featureRoute(workspace.id, item.projectId, item.id));
+        }
+        break;
       case "project":
         if (item.id && workspace?.id) {
           openProject(workspace.id, item.id);
@@ -114,29 +104,31 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         break;
       case "document":
         if (item.projectId && item.featureId && workspace?.id) {
-          navigate({
-            to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
-            params: {
-              workspaceId: workspace.id,
-              projectId: item.projectId,
-              taskId: item.featureId,
-            },
-            search: {
+          navigate(
+            featureRoute(workspace.id, item.projectId, item.featureId, {
               featureTab: "documents",
               featureDocumentId: item.id,
-            },
-          });
+            }),
+          );
         }
         break;
       case "comment":
       case "activity":
-        if (item.projectId && item.id && workspace?.id) {
+        // Comments and events open the item they belong to.
+        if (!item.projectId || !item.taskId || !workspace?.id) break;
+        if (item.taskType === "feature") {
+          navigate(
+            featureRoute(workspace.id, item.projectId, item.taskId, {
+              featureTab: "activity",
+            }),
+          );
+        } else {
           navigate({
             to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
             params: {
               workspaceId: workspace.id,
               projectId: item.projectId,
-              taskId: item.id,
+              taskId: item.taskId,
             },
           });
         }
@@ -165,7 +157,7 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
 
   const groupedItems = useMemo<SearchGroup[]>(() => {
     if (!searchEnabled) return [];
-    const results = (searchResults?.results ?? []) as SearchResultItem[];
+    const results = searchResults?.results ?? [];
     const grouped = results.reduce(
       (acc: Record<string, SearchResultItem[]>, item: SearchResultItem) => {
         if (!acc[item.type]) acc[item.type] = [];
@@ -179,6 +171,8 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
       switch (type as SearchResultItem["type"]) {
         case "task":
           return t("navigation:search.groups.task");
+        case "feature":
+          return t("navigation:search.groups.feature");
         case "project":
           return t("navigation:search.groups.project");
         case "workspace":
@@ -236,15 +230,37 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
                                 .filter(Boolean)
                                 .join(" · ")
                             : item.description;
+                        const isFeature = item.type === "feature";
+                        // Comments and activity carry the type of the item
+                        // they belong to, so only a task result is a Bug.
+                        const isBug =
+                          item.type === "task" && item.taskType === "bug";
+                        const archived = isFeature && item.archived;
+                        const kind = isFeature
+                          ? t("tasks:features.typeFeature")
+                          : isBug
+                            ? t("tasks:features.typeBug")
+                            : item.type;
                         return (
                           <CommandItem
                             key={`${item.type}-${item.id}`}
                             value={`${item.title} ${item.description || ""} ${item.type} ${item.id}`}
                             onClick={() => handleSelect(item)}
                             className="flex items-start gap-3 py-3"
-                            aria-label={`${item.taskType === "bug" ? t("tasks:features.typeBug") : item.type}: ${item.title}`}
+                            aria-label={[
+                              `${kind}: ${item.title}`,
+                              archived && t("tasks:features.library.archived"),
+                            ]
+                              .filter(Boolean)
+                              .join(", ")}
                           >
-                            {item.taskType === "bug" ? (
+                            {isFeature ? (
+                              <TaskTypeGlyph
+                                type="feature"
+                                decorative
+                                className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0"
+                              />
+                            ) : isBug ? (
                               <TaskTypeGlyph
                                 type="bug"
                                 className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0"
@@ -256,8 +272,15 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
                               />
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm truncate">
-                                {item.title}
+                              <div className="flex min-w-0 items-center gap-2">
+                                <span className="font-medium text-sm truncate">
+                                  {item.title}
+                                </span>
+                                {archived && (
+                                  <Badge variant="outline" className="shrink-0">
+                                    {t("tasks:features.library.archived")}
+                                  </Badge>
+                                )}
                               </div>
                               {detail && (
                                 <div className="text-xs text-muted-foreground truncate mt-1">

@@ -163,7 +163,7 @@ const createTaskRelationRoute = createRoute({
   tags: ["Task Relations"],
   summary: "Create task relation",
   description:
-    "Link two tasks. Authorization is scoped to the source task's workspace.",
+    "Link two Tasks or Bugs with a blocks or related relation. Features do not have relations, so a Feature on either end of one is refused; the deprecated subtask type still puts a task into a Feature. Authorization is scoped to the source task's workspace.",
   middleware: [
     scopeToSourceTask,
     requireWorkspacePermission({ task: ["update"] }),
@@ -176,7 +176,9 @@ const createTaskRelationRoute = createRoute({
   },
   responses: {
     200: jsonResponse("The created relation", taskRelationSchema),
-    400: errorResponse("Invalid body"),
+    400: errorResponse(
+      "Invalid body, a task linked to itself, or a Feature on either end of a blocks or related relation",
+    ),
     403: errorResponse(
       "No access to the project, or missing task:update permission",
     ),

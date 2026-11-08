@@ -3,6 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import moveTask from "@/fetchers/task/move-task";
+import { toast } from "@/lib/toast";
 import { useMoveTask } from "./use-move-task";
 
 vi.mock("@/fetchers/task/move-task", () => ({ default: vi.fn() }));
@@ -30,7 +31,10 @@ beforeEach(() => {
   for (const projectId of ["source", "dest", "other"])
     queryClient.setQueryData(["release-progress", projectId, "r", "UTC"], {});
 });
-afterEach(() => queryClient.clear());
+afterEach(() => {
+  queryClient.clear();
+  vi.clearAllMocks();
+});
 
 it("refreshes the feature the moved task left", async () => {
   queryClient.setQueryData(["task", "a"], { id: "a", featureId: "f" });
@@ -76,5 +80,28 @@ it("refreshes the source board for a task without a feature", async () => {
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["tasks", "source"] });
   expect(invalidate).not.toHaveBeenCalledWith({
     queryKey: ["task-relations"],
+  });
+});
+
+it.each([
+  ["task", "tasks:move.success"],
+  ["feature", "tasks:features.window.moved"],
+])("names the moved %s in its success message", async (type, message) => {
+  vi.mocked(moveTask).mockResolvedValue({
+    task: { id: "a", projectId: "dest", featureId: null, type },
+    sourceProjectId: "source",
+    destinationProjectId: "dest",
+  } as Awaited<ReturnType<typeof moveTask>>);
+  const { result } = renderHook(() => useMoveTask(), { wrapper });
+
+  await act(async () => {
+    await result.current.mutateAsync({
+      taskId: "a",
+      destinationProjectId: "dest",
+    });
+  });
+
+  expect(toast.success).toHaveBeenCalledWith(message, {
+    icon: expect.anything(),
   });
 });

@@ -60,6 +60,7 @@ Kaneo groups work one level deep: a [feature](/core/functional/plan-and-execute-
 - The top item of each tree becomes a feature. Every item below it, at any depth, becomes one of its tasks.
 - The link between two items below the feature, such as a story and its sub-task, is kept as a related relation.
 - An item with several parents joins one feature. Its other parent links are kept as related relations.
+- Features don't have relations, so a link with a feature on either end, such as a second parent that became a feature or an epic that blocks an item, isn't copied. The project's report says how many links were left out.
 - An item without children in the import, even an epic, becomes a plain task.
 
 This is the same conversion an upgrade applies to the subtasks of earlier Kaneo versions.

@@ -44,6 +44,8 @@ A Kaneo task belongs to at most one feature, and a feature can't belong to
 one. So a card linked from several cards joins the feature of the first one and
 gets a related link to the others, and cards linked several levels deep join
 the top card's feature, keeping a related link to the card that links them.
+Features don't have relations, so a related link to or from a card that
+becomes a feature is not created, and the summary counts it.
 Against a Kaneo server from before features, linked cards are imported as
 related tasks, and the summary says so.
 

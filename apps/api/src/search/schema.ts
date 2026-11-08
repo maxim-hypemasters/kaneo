@@ -9,6 +9,7 @@ export const searchQuery = z.object({
     .enum([
       "all",
       "tasks",
+      "features",
       "projects",
       "workspaces",
       "comments",
@@ -16,7 +17,11 @@ export const searchQuery = z.object({
       "documents",
     ])
     .optional()
-    .default("all"),
+    .default("all")
+    .openapi({
+      description:
+        "Restrict results to one kind. `tasks` returns Tasks and Bugs; `features` returns Features.",
+    }),
   workspaceId: z.string().min(1),
   projectId: z.string().optional(),
   limit: z

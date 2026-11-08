@@ -117,6 +117,8 @@ Both the HTTP endpoint and stdio package expose the same tools:
 - Labels: `list_workspace_labels`, `create_label`, `attach_label_to_task`, `detach_label_from_task`, `delete_label`
 - Task relations: `create_task_relation`, `get_task_relations`, `delete_task_relation`
 
+`search` takes an optional `type`. `tasks` returns Tasks and Bugs, and `features` returns Features. Features come back as `feature` results with `archived` and no status or priority. Comment and activity results carry the `taskId` and `taskType` of the item they belong to.
+
 Use `get_task_by_ticket_id` with a key such as `KAN-12` to fetch one task directly. If the same key identifies multiple accessible tasks, pass `workspaceId` or `projectId` to select one.
 
 `list_project_columns` is worth calling first when setting a status: the column
@@ -130,6 +132,8 @@ tools expect. Time entries have no delete endpoint on the API, so there is no
 A [Feature](/core/functional/plan-and-execute-tasks#group-work-into-features) is a knowledge record. `list_features` supports project-scoped search, active/archived selection and pagination. `archive_feature` archives or unarchives a Feature without changing its child work. `create_task` with `type: "feature"` creates knowledge metadata and rejects planning fields. Feature resources return null planning values.
 
 `set_task_feature` links or clears a Task/Bug's Feature within its project; changing it clears the milestone. `set_task_type` supports Task ↔ Bug only. No API or compatibility relation promotes leaf work to a Feature. Feature duplication creates an empty record, and deletion retains its child work. Older `subtask` relations require an existing Feature context.
+
+Features do not have relations. `create_task_relation` links Tasks and Bugs with `blocks` or `related`, and refuses a Feature on either end. `get_task_relations` lists a Feature's tasks only as deprecated `subtask` entries.
 
 ### Milestones
 

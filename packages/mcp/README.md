@@ -169,10 +169,11 @@ release, or out of every release. Creating and updating releases needs
 permission to update the project, and deleting one also needs permission to
 edit tasks. Owners and admins have both by default.
 
-`create_task_relation` still accepts the deprecated `subtask` relation type,
-which puts the target into the source's feature, and `get_task_relations` lists
-feature links as `subtask` entries. Prefer `set_task_feature` and the task's
-`featureId`.
+Relations (`blocks` and `related`) link Tasks and Bugs. Features do not have
+relations, so `create_task_relation` refuses a Feature on either end. It still
+accepts the deprecated `subtask` relation type, which puts the target into the
+source's feature, and `get_task_relations` lists feature links as `subtask`
+entries. Prefer `set_task_feature` and the task's `featureId`.
 
 ## Releasing
 

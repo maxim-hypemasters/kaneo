@@ -103,11 +103,11 @@ Each POST has `Content-Type: application/json`. Top-level fields:
 - `timestamp`: ISO 8601 time when Kaneo sent the request
 - `integration`: `{ "type": "generic-webhook" }`
 - `project`: `id`, `name`, `workspaceId`
-- `task`: `id`, `number`, `title`, `status`, `statusName`, `priority`, `url` (link to the task in the web UI)
+- `task`: `id`, `type`, `number`, `title`, `status`, `statusName`, `priority`, `url` (link to the task in the web UI). `type` is `task`, `bug` or `feature`. Features use the same `task.*` event names, and their `status`, `statusName` and `priority` are null.
 - `actor`: `id` and `name` of the user when available, or nulls for automated actions
 - `data`: event-specific fields (for example `oldStatus` / `newStatus` for status changes, `comment` text for comments)
 
-For `task.deleted`, the `task` object contains only `id` and `title`, and `data` is empty. Do not require the usual task URL or status fields when handling deletion. Move events include source and destination project IDs; reminders include `dueDate` and `leadTimeMinutes`.
+For `task.deleted`, the `task` object contains only `id`, `type` and `title`, and `data` is empty. Do not require the usual task URL or status fields when handling deletion. Move events include source and destination project IDs; reminders include `dueDate` and `leadTimeMinutes`.
 
 ### Signature verification
 

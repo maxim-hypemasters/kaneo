@@ -53,6 +53,10 @@ export function TaskShortcuts({
     enabled: active.enabled && !isFeature && canAssignTasks(),
   };
   const planning = { enabled: editable.enabled && !isFeature };
+  // A Feature has no branch or relations, and its comment composer sits in
+  // the Activity tab, which the comment shortcut doesn't target.
+  const taskOnly = { enabled: active.enabled && !isFeature };
+  const relating = { enabled: editable.enabled && !isFeature };
 
   const openTask = (target: { id: string; projectId: string } | undefined) => {
     if (!target) return;
@@ -69,9 +73,6 @@ export function TaskShortcuts({
   useShortcut("changeLabels", () => clickTaskAction("labels"), editable);
   useShortcut("moveToProject", () => clickTaskAction("move"), editable);
   useShortcut("addLink", () => clickTaskAction("addLink"), editable);
-  useShortcut("createSubtask", () => clickTaskAction("addSubtask"), {
-    enabled: editable.enabled && isFeature,
-  });
   useShortcut("toggleResources", () => clickTaskAction("resources"), active);
   useShortcut("renameTask", () => focusTaskAction("title"), editable);
   useShortcut(
@@ -79,7 +80,7 @@ export function TaskShortcuts({
     () => focusTaskAction("description"),
     editable,
   );
-  useShortcut("commentOnTask", () => focusTaskAction("comment"), active);
+  useShortcut("commentOnTask", () => focusTaskAction("comment"), taskOnly);
 
   useShortcut(
     "assignToMe",
@@ -104,17 +105,17 @@ export function TaskShortcuts({
   useShortcut(
     "markBlockedBy",
     () => openRelationPicker(taskId, "blockedBy"),
-    editable,
+    relating,
   );
   useShortcut(
     "markBlocking",
     () => openRelationPicker(taskId, "blocks"),
-    editable,
+    relating,
   );
   useShortcut(
     "markRelated",
     () => openRelationPicker(taskId, "related"),
-    editable,
+    relating,
   );
   // The Feature property where it's on screen, else the relation picker.
   useShortcut(
@@ -140,7 +141,7 @@ export function TaskShortcuts({
   useShortcut("copyTaskTitle", copyActions.copyTitle, active);
   useShortcut("copyAsMarkdown", copyActions.copyMarkdown, active);
   useShortcut("copyTaskUrl", copyActions.copyLink, active);
-  useShortcut("copyBranchName", copyActions.copyBranch, active);
+  useShortcut("copyBranchName", copyActions.copyBranch, taskOnly);
 
   return null;
 }

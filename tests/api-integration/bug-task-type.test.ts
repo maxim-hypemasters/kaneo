@@ -124,11 +124,12 @@ describe("Bug items", () => {
         content: "Preserved comment",
       })
       .returning();
+    const blocked = await insertTask(ctx.project.id);
     const [relation] = await db
       .insert(schema.taskRelationTable)
       .values({
         sourceTaskId: task.id,
-        targetTaskId: ctx.feature.id,
+        targetTaskId: blocked.id,
         relationType: "blocks",
       })
       .returning();

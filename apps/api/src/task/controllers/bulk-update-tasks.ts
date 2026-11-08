@@ -360,6 +360,7 @@ async function bulkUpdateTasks({
           projectId: task.projectId,
           userId,
           title: task.title,
+          taskType: task.type,
         });
       }
       // Deleting tasks changes their features' progress, and deleting a

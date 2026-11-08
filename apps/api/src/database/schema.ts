@@ -1534,6 +1534,9 @@ export const commentTable = pgTable(
   ],
 );
 
+// Links between Tasks and Bugs. Features have none: the trigger
+// task_relation_without_features (migration 0075) refuses a Feature on either
+// end with 23514.
 export const taskRelationTable = pgTable(
   "task_relation",
   {

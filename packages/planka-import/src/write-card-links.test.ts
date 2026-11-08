@@ -31,6 +31,7 @@ const plan: FeaturePlan = {
     { parentCardId: "d", childCardId: "c", name: "Also c" },
   ],
 };
+const featureCardIds = new Set(["a"]);
 const taskIdByCardId = new Map([
   ["a", "t_a"],
   ["b", "t_b"],
@@ -50,6 +51,7 @@ describe("writeCardLinks", () => {
     const result = await writeCardLinks({
       kaneo: fakeKaneo(calls),
       plan,
+      featureCardIds,
       taskIdByCardId,
       cardNames,
       withoutFeatures: false,
@@ -75,6 +77,7 @@ describe("writeCardLinks", () => {
     await writeCardLinks({
       kaneo: fakeKaneo(calls),
       plan,
+      featureCardIds,
       taskIdByCardId,
       cardNames,
       withoutFeatures: false,
@@ -87,6 +90,7 @@ describe("writeCardLinks", () => {
     const result = await writeCardLinks({
       kaneo: fakeKaneo(calls, new Set(["t_b", "t_c"])),
       plan,
+      featureCardIds,
       taskIdByCardId,
       cardNames,
       withoutFeatures: false,
@@ -107,6 +111,7 @@ describe("writeCardLinks", () => {
     const result = await writeCardLinks({
       kaneo: fakeKaneo(calls),
       plan,
+      featureCardIds,
       taskIdByCardId: new Map([["b", "t_b"]]),
       cardNames,
       withoutFeatures: false,
@@ -115,11 +120,45 @@ describe("writeCardLinks", () => {
     expect(result).toEqual({ links: 0, warnings: [] });
   });
 
+  it("leaves out links to a feature card, with one warning", async () => {
+    const calls: Call[] = [];
+    // a's own tasks all joined it on creation, so only featureCardIds names it.
+    const result = await writeCardLinks({
+      kaneo: fakeKaneo(calls),
+      plan: {
+        featureOf: new Map(),
+        related: [
+          { parentCardId: "a", childCardId: "d", name: "Pricing" },
+          { parentCardId: "d", childCardId: "a", name: "Back to a" },
+          { parentCardId: "b", childCardId: "c", name: "See c" },
+        ],
+      },
+      featureCardIds,
+      taskIdByCardId,
+      cardNames,
+      withoutFeatures: false,
+    });
+
+    expect(calls).toEqual([
+      [
+        "createTaskRelation",
+        { sourceTaskId: "t_b", targetTaskId: "t_c", relationType: "related" },
+      ],
+    ]);
+    expect(result).toEqual({
+      links: 1,
+      warnings: [
+        "2 card link(s) to a feature were not copied: features don't have relations.",
+      ],
+    });
+  });
+
   it("links the cards as related on a server without features", async () => {
     const calls: Call[] = [];
     const result = await writeCardLinks({
       kaneo: fakeKaneo(calls),
       plan,
+      featureCardIds,
       taskIdByCardId,
       cardNames,
       withoutFeatures: true,
@@ -151,6 +190,7 @@ describe("writeCardLinks", () => {
         featureOf: new Map([["c", "a"]]),
         related: [{ parentCardId: "c", childCardId: "a", name: "Back to a" }],
       },
+      featureCardIds,
       taskIdByCardId,
       cardNames,
       withoutFeatures: true,

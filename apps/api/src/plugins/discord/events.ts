@@ -7,6 +7,7 @@ import {
   userTable,
   workspaceTable,
 } from "../../database/schema";
+import { type ChatSubject, chatSubject } from "../chat-subject";
 import type {
   PluginContext,
   TaskCommentCreatedEvent,
@@ -21,6 +22,7 @@ import type { DiscordConfig, DiscordEventKey } from "./config";
 import { normalizeDiscordConfig } from "./config";
 
 type DiscordEventData = {
+  subject: ChatSubject;
   taskTitle: string;
   taskNumber: number | null;
   projectName: string;
@@ -71,6 +73,7 @@ async function getDiscordEventData(
   const taskPromise = db
     .select({
       title: taskTable.title,
+      type: taskTable.type,
       number: taskTable.number,
       status: taskTable.status,
       priority: taskTable.priority,
@@ -110,6 +113,7 @@ async function getDiscordEventData(
   const taskUrl = `${clientUrl}/dashboard/workspace/${taskRow.workspaceId}/project/${taskRow.projectId}/task/${taskId}`;
 
   return {
+    subject: chatSubject(taskRow.type),
     taskTitle: taskRow.title,
     taskNumber: taskRow.number,
     projectName: taskRow.projectName,
@@ -127,8 +131,11 @@ async function sendDiscordMessage(
   body: string,
   data: DiscordEventData,
 ): Promise<void> {
+  const { subject } = data;
   const issueKey =
-    data.taskNumber !== null ? `#${data.taskNumber}` : "Task update";
+    data.taskNumber !== null
+      ? `#${data.taskNumber}`
+      : `${subject.label} update`;
   const taskLabel = `${issueKey} ${data.taskTitle}`;
   const safeTitle = sanitizeDiscordContent(title);
   const safeBody = sanitizeDiscordContent(body);
@@ -153,7 +160,7 @@ async function sendDiscordMessage(
           color: 0x5865f2,
           fields: [
             {
-              name: "Task",
+              name: subject.label,
               value: data.taskUrl
                 ? `[${safeTaskLabel}](${data.taskUrl})`
                 : safeTaskLabel,
@@ -164,16 +171,12 @@ async function sendDiscordMessage(
               value: safeProjectName,
               inline: true,
             },
-            {
-              name: "Status",
-              value: safeStatus,
-              inline: true,
-            },
-            {
-              name: "Priority",
-              value: safePriority,
-              inline: true,
-            },
+            ...(subject.showsWorkflow
+              ? [
+                  { name: "Status", value: safeStatus, inline: true },
+                  { name: "Priority", value: safePriority, inline: true },
+                ]
+              : []),
           ],
           footer: {
             text: safeActor
@@ -206,7 +209,7 @@ async function runDiscordHandler(
     userId: string | null;
   },
   featureKey: DiscordEventKey,
-  buildMessage: () => DiscordMessageContent,
+  buildMessage: (data: DiscordEventData) => DiscordMessageContent,
 ): Promise<void> {
   const config = normalizeDiscordConfig(context.config as DiscordConfig);
   if (!isEnabled(config, featureKey)) return;
@@ -218,7 +221,7 @@ async function runDiscordHandler(
   );
   if (!data) return;
 
-  const { title, body } = buildMessage();
+  const { title, body } = buildMessage(data);
   await sendDiscordMessage(config, title, body, data);
 }
 
@@ -226,9 +229,9 @@ export async function handleTaskCreated(
   event: TaskCreatedEvent,
   context: PluginContext,
 ): Promise<void> {
-  await runDiscordHandler(context, event, "taskCreated", () => ({
-    title: "New task created",
-    body: `A new task was added: **${event.title}**`,
+  await runDiscordHandler(context, event, "taskCreated", ({ subject }) => ({
+    title: `New ${subject.noun} created`,
+    body: `A new ${subject.noun} was added: **${event.title}**`,
   }));
 }
 
@@ -236,48 +239,73 @@ export async function handleTaskStatusChanged(
   event: TaskStatusChangedEvent,
   context: PluginContext,
 ): Promise<void> {
-  await runDiscordHandler(context, event, "taskStatusChanged", () => ({
-    title: "Task status changed",
-    body: `**${event.title}** moved from **${toSentenceCase(event.oldStatus)}** to **${toSentenceCase(event.newStatus)}**.`,
-  }));
+  await runDiscordHandler(
+    context,
+    event,
+    "taskStatusChanged",
+    ({ subject }) => ({
+      title: `${subject.label} status changed`,
+      body: `**${event.title}** moved from **${toSentenceCase(event.oldStatus)}** to **${toSentenceCase(event.newStatus)}**.`,
+    }),
+  );
 }
 
 export async function handleTaskPriorityChanged(
   event: TaskPriorityChangedEvent,
   context: PluginContext,
 ): Promise<void> {
-  await runDiscordHandler(context, event, "taskPriorityChanged", () => ({
-    title: "Task priority changed",
-    body: `**${event.title}** changed from **${toSentenceCase(event.oldPriority)}** to **${toSentenceCase(event.newPriority)}**.`,
-  }));
+  await runDiscordHandler(
+    context,
+    event,
+    "taskPriorityChanged",
+    ({ subject }) => ({
+      title: `${subject.label} priority changed`,
+      body: `**${event.title}** changed from **${toSentenceCase(event.oldPriority)}** to **${toSentenceCase(event.newPriority)}**.`,
+    }),
+  );
 }
 
 export async function handleTaskTitleChanged(
   event: TaskTitleChangedEvent,
   context: PluginContext,
 ): Promise<void> {
-  await runDiscordHandler(context, event, "taskTitleChanged", () => ({
-    title: "Task title changed",
-    body: `Task renamed from **${truncate(event.oldTitle, 120)}** to **${truncate(event.newTitle, 120)}**.`,
-  }));
+  await runDiscordHandler(
+    context,
+    event,
+    "taskTitleChanged",
+    ({ subject }) => ({
+      title: `${subject.label} title changed`,
+      body: `${subject.label} renamed from **${truncate(event.oldTitle, 120)}** to **${truncate(event.newTitle, 120)}**.`,
+    }),
+  );
 }
 
 export async function handleTaskDescriptionChanged(
   event: TaskDescriptionChangedEvent,
   context: PluginContext,
 ): Promise<void> {
-  await runDiscordHandler(context, event, "taskDescriptionChanged", () => ({
-    title: "Task description changed",
-    body: `The task description was updated${event.newDescription ? `: ${truncate(event.newDescription.replace(/\s+/g, " "), 160)}` : "."}`,
-  }));
+  await runDiscordHandler(
+    context,
+    event,
+    "taskDescriptionChanged",
+    ({ subject }) => ({
+      title: `${subject.label} description changed`,
+      body: `The ${subject.noun} description was updated${event.newDescription ? `: ${truncate(event.newDescription.replace(/\s+/g, " "), 160)}` : "."}`,
+    }),
+  );
 }
 
 export async function handleTaskCommentCreated(
   event: TaskCommentCreatedEvent,
   context: PluginContext,
 ): Promise<void> {
-  await runDiscordHandler(context, event, "taskCommentCreated", () => ({
-    title: "New task comment",
-    body: truncate(event.comment.replace(/\s+/g, " "), 200),
-  }));
+  await runDiscordHandler(
+    context,
+    event,
+    "taskCommentCreated",
+    ({ subject }) => ({
+      title: `New ${subject.noun} comment`,
+      body: truncate(event.comment.replace(/\s+/g, " "), 200),
+    }),
+  );
 }

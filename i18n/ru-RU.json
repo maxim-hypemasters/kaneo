@@ -2609,7 +2609,8 @@
 				"comment": "Комментарии",
 				"activity": "Активности",
 				"fallback": "Результаты",
-				"document": "Documents"
+				"document": "Documents",
+				"feature": "Features"
 			}
 		},
 		"settingsLayout": {
@@ -2694,7 +2695,6 @@
 				"editDescription": "Редактировать описание",
 				"commentOnTask": "Комментировать",
 				"moveToProject": "Переместить в другой проект",
-				"createSubtask": "Добавить задачу в эту фичу",
 				"setParent": "Задать фичу",
 				"openParent": "Открыть фичу",
 				"openSubtask": "Открыть задачу этой фичи",
@@ -2844,7 +2844,10 @@
 			"loadError": "Notifications couldn't be loaded.",
 			"taskLoadError": "This task couldn’t be loaded.",
 			"actionError": "Не удалось обновить входящие. Попробуйте ещё раз.",
-			"readCleared": "Прочитанные уведомления удалены"
+			"readCleared": "Прочитанные уведомления удалены",
+			"featureLoadError": "This feature couldn’t be loaded.",
+			"featureUnavailable": "This feature is no longer available.",
+			"openFeature": "Open feature"
 		}
 	},
 	"activity": {
@@ -2963,14 +2966,16 @@
 		"addedToFeature": "добавил задачу в фичу «{{feature}}»",
 		"removedFromFeature": "убрал задачу из фичи «{{feature}}»",
 		"changedFeature": "переместил задачу из фичи «{{from}}» в «{{to}}»",
-		"madeFeature": "сделал эту задачу фичей",
-		"madeTask": "сделал эту фичу задачей",
 		"addedToRelease": "добавил задачу в релиз «{{release}}»",
 		"removedFromRelease": "убрал задачу из релиза «{{release}}»",
 		"changedRelease": "переместил задачу из релиза «{{from}}» в «{{to}}»",
 		"changedTypeToBug": "changed the type to bug",
 		"changedTypeToFeature": "changed the type to feature",
-		"changedTypeToTask": "changed the type to task"
+		"changedTypeToTask": "changed the type to task",
+		"createdFeature": "created this feature",
+		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
+		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
+		"postedFeatureUpdate": "posted an update"
 	},
 	"tasks": {
 		"title": "Задачи",
@@ -3705,7 +3710,8 @@
 				"activityRestored": "restored this Feature",
 				"archiveDialogDescription": "The Feature will move to Archived. Its milestones, Tasks, and Bugs keep their current state. You can restore it later.",
 				"archiveDialogTitle": "Archive “{{title}}”?",
-				"archiving": "Archiving…"
+				"archiving": "Archiving…",
+				"pageTitle": "{{name}}'s features"
 			},
 			"workspace": {
 				"navigation": "Feature navigation",
@@ -3773,6 +3779,22 @@
 				"moreMilestones_few": "{{count}} more milestones",
 				"moreMilestones_many": "{{count}} more milestones",
 				"updateUnavailable": "Feature update unavailable."
+			},
+			"window": {
+				"copyId": "Copy feature ID",
+				"copyLink": "Copy feature link",
+				"copyTitle": "Copy feature title",
+				"delete": "Delete feature",
+				"deleted": "Feature deleted successfully",
+				"deleteDescription": "This permanently deletes the Feature with its milestones, documents, updates, and comments. Its Tasks and Bugs stay in the project without a Feature or milestone. You can't undo this action.",
+				"deleteError": "Failed to delete feature",
+				"deleteTitle": "Delete feature?",
+				"idCopied": "Copied feature ID",
+				"linkCopied": "Copied feature link",
+				"loading": "Loading feature...",
+				"move": "Move feature",
+				"moved": "Feature moved successfully",
+				"titleCopied": "Copied feature title"
 			}
 		},
 		"releases": {
@@ -4373,7 +4395,8 @@
 				"empty": "Nothing has happened in the last 30 days.",
 				"loadError": "Activity couldn't be loaded.",
 				"title": "Activity",
-				"updated": "updated the task"
+				"updated": "updated the task",
+				"updatedFeature": "updated the feature"
 			},
 			"greeting": {
 				"afternoon": "Good afternoon",

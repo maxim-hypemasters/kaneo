@@ -6,6 +6,7 @@ import {
   userTable,
   workspaceTable,
 } from "../../database/schema";
+import { type ChatSubject, chatSubject } from "../chat-subject";
 import type {
   PluginContext,
   TaskCommentCreatedEvent,
@@ -20,6 +21,7 @@ import type { SlackConfig, SlackEventKey } from "./config";
 import { normalizeSlackConfig } from "./config";
 
 type SlackEventData = {
+  subject: ChatSubject;
   taskTitle: string;
   taskNumber: number | null;
   projectName: string;
@@ -63,6 +65,7 @@ async function getSlackEventData(
   const [taskRow] = await db
     .select({
       title: taskTable.title,
+      type: taskTable.type,
       number: taskTable.number,
       status: taskTable.status,
       priority: taskTable.priority,
@@ -92,6 +95,7 @@ async function getSlackEventData(
   const taskUrl = `${clientUrl}/dashboard/workspace/${taskRow.workspaceId}/project/${taskRow.projectId}/task/${taskId}`;
 
   return {
+    subject: chatSubject(taskRow.type),
     taskTitle: taskRow.title,
     taskNumber: taskRow.number,
     projectName: taskRow.projectName,
@@ -108,8 +112,11 @@ async function sendSlackMessage(
   body: string,
   data: SlackEventData,
 ): Promise<void> {
+  const { subject } = data;
   const issueKey =
-    data.taskNumber !== null ? `#${data.taskNumber}` : "Task update";
+    data.taskNumber !== null
+      ? `#${data.taskNumber}`
+      : `${subject.label} update`;
   const escapedIssueKey = escapeSlack(issueKey);
   const escapedTaskTitle = escapeSlack(data.taskTitle);
   const taskLabel = data.taskUrl
@@ -130,20 +137,24 @@ async function sendSlackMessage(
         fields: [
           {
             type: "mrkdwn",
-            text: `*Task*\n${taskLabel}`,
+            text: `*${subject.label}*\n${taskLabel}`,
           },
           {
             type: "mrkdwn",
             text: `*Project*\n${escapeSlack(data.projectName)}`,
           },
-          {
-            type: "mrkdwn",
-            text: `*Status*\n${escapeSlack(toSentenceCase(data.status))}`,
-          },
-          {
-            type: "mrkdwn",
-            text: `*Priority*\n${escapeSlack(toSentenceCase(data.priority))}`,
-          },
+          ...(subject.showsWorkflow
+            ? [
+                {
+                  type: "mrkdwn" as const,
+                  text: `*Status*\n${escapeSlack(toSentenceCase(data.status))}`,
+                },
+                {
+                  type: "mrkdwn" as const,
+                  text: `*Priority*\n${escapeSlack(toSentenceCase(data.priority))}`,
+                },
+              ]
+            : []),
         ],
       },
       {
@@ -177,8 +188,8 @@ export async function handleTaskCreated(
 
   await sendSlackMessage(
     config,
-    "New task created",
-    `A new task was added: *${event.title}*`,
+    `New ${data.subject.noun} created`,
+    `A new ${data.subject.noun} was added: *${event.title}*`,
     data,
   );
 }
@@ -199,7 +210,7 @@ export async function handleTaskStatusChanged(
 
   await sendSlackMessage(
     config,
-    "Task status changed",
+    `${data.subject.label} status changed`,
     `*${event.title}* moved from *${toSentenceCase(event.oldStatus)}* to *${toSentenceCase(event.newStatus)}*.`,
     data,
   );
@@ -221,7 +232,7 @@ export async function handleTaskPriorityChanged(
 
   await sendSlackMessage(
     config,
-    "Task priority changed",
+    `${data.subject.label} priority changed`,
     `*${event.title}* changed from *${toSentenceCase(event.oldPriority)}* to *${toSentenceCase(event.newPriority)}*.`,
     data,
   );
@@ -243,8 +254,8 @@ export async function handleTaskTitleChanged(
 
   await sendSlackMessage(
     config,
-    "Task title changed",
-    `Task renamed from *${truncate(event.oldTitle, 120)}* to *${truncate(event.newTitle, 120)}*.`,
+    `${data.subject.label} title changed`,
+    `${data.subject.label} renamed from *${truncate(event.oldTitle, 120)}* to *${truncate(event.newTitle, 120)}*.`,
     data,
   );
 }
@@ -265,8 +276,8 @@ export async function handleTaskDescriptionChanged(
 
   await sendSlackMessage(
     config,
-    "Task description changed",
-    `The task description was updated${event.newDescription ? `: ${truncate(event.newDescription.replace(/\s+/g, " "), 160)}` : "."}`,
+    `${data.subject.label} description changed`,
+    `The ${data.subject.noun} description was updated${event.newDescription ? `: ${truncate(event.newDescription.replace(/\s+/g, " "), 160)}` : "."}`,
     data,
   );
 }
@@ -287,7 +298,7 @@ export async function handleTaskCommentCreated(
 
   await sendSlackMessage(
     config,
-    "New task comment",
+    `New ${data.subject.noun} comment`,
     truncate(event.comment.replace(/\s+/g, " "), 200),
     data,
   );

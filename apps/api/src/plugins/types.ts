@@ -1,3 +1,5 @@
+import type { TaskType } from "../task/task-type";
+
 export type PluginContext = {
   integrationId: string;
   projectId: string;
@@ -64,6 +66,7 @@ export type TaskDeletedEvent = {
   projectId: string;
   userId: string | null;
   title: string;
+  taskType: TaskType;
 };
 
 export type TaskMovedEvent = {
