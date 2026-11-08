@@ -2,12 +2,14 @@ import { useLayoutEffect, useRef } from "react";
 
 // Grows a one-row textarea to fit its content so long titles wrap instead of
 // scrolling sideways out of view, which on phones hid most of the title.
-export function useAutoGrowTextarea(value: string) {
+// Pass `active` false while the textarea is not rendered (a read-only heading
+// shows instead), so it is fitted once it appears.
+export function useAutoGrowTextarea(value: string, active = true) {
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
   useLayoutEffect(() => {
     const textarea = ref.current;
-    if (!textarea) return;
+    if (!active || !textarea) return;
     const fit = () => {
       textarea.style.height = "auto";
       textarea.style.height = `${textarea.scrollHeight}px`;
@@ -23,7 +25,7 @@ export function useAutoGrowTextarea(value: string) {
     });
     observer.observe(textarea);
     return () => observer.disconnect();
-  }, [value]);
+  }, [value, active]);
 
   return ref;
 }

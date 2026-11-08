@@ -24421,7 +24421,7 @@
           "Features"
         ],
         "summary": "Save or rename a Feature document",
-        "description": "Compares expectedRevision while locked. A stale revision returns DOCUMENT_CONFLICT and saves nothing. Referenced staged assets are claimed atomically.",
+        "description": "Compares expectedRevision while locked. A stale revision returns DOCUMENT_CONFLICT and saves nothing. Referenced staged assets are claimed atomically. Uploads removed from the body are deleted unless keepRemovedAssets is true.",
         "parameters": [
           {
             "schema": {
@@ -24469,6 +24469,10 @@
                       "minLength": 1
                     },
                     "maxItems": 100
+                  },
+                  "keepRemovedAssets": {
+                    "type": "boolean",
+                    "description": "Keep uploads this save removes from the body instead of deleting them right away, so autosaves can survive cut and paste or undo. Release them later with POST /feature/{id}/assets/prune; uploads that are never pruned are deleted with the Feature."
                   }
                 },
                 "required": [
@@ -24711,6 +24715,139 @@
                     "updatedByName",
                     "createdAt",
                     "updatedAt"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid Feature content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Feature or content not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/assets/prune": {
+      "post": {
+        "operationId": "pruneFeatureAssets",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Delete removed Feature uploads",
+        "description": "Deletes the listed uploads of this Feature that its description, comments, activity and documents no longer reference, such as uploads kept by saves with keepRemovedAssets. Other ids are skipped. Storage objects are removed in the background.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "assetIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "description": "Uploads to delete. Ids that are not this Feature's uploads, or that its description, comments, activity or documents still reference, are skipped."
+                  }
+                },
+                "required": [
+                  "assetIds"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ids of the deleted uploads",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deletedAssetIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "deletedAssetIds"
                   ]
                 }
               }

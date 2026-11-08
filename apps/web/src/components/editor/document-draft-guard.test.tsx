@@ -56,8 +56,24 @@ vi.mock("./document-draft-discard-dialog", () => ({
     ) : null,
 }));
 
-function Draft({ dirty = false, saving = false }) {
-  useDocumentDraftGuard({ dirty, saving, onDiscard: mocks.discard });
+function Draft({
+  dirty = false,
+  saving = false,
+  flush,
+  finish,
+}: {
+  dirty?: boolean;
+  saving?: boolean;
+  flush?: () => Promise<boolean>;
+  finish?: () => Promise<void>;
+}) {
+  useDocumentDraftGuard({
+    dirty,
+    saving,
+    onDiscard: mocks.discard,
+    flush,
+    finish,
+  });
   const requestLeave = useDocumentDraftNavigation();
   return (
     <button type="button" onClick={() => void requestLeave(mocks.leave)}>
@@ -174,5 +190,173 @@ describe("document draft navigation", () => {
     unmount();
     expect(await navigation).toBe(true);
     expect(mocks.discard).not.toHaveBeenCalled();
+  });
+
+  describe("with a draft that saves itself", () => {
+    it("saves before leaving and asks nothing when the save succeeds", async () => {
+      const flush = vi.fn().mockResolvedValue(true);
+      render(
+        <DocumentDraftGuardProvider>
+          <Draft dirty flush={flush} />
+        </DocumentDraftGuardProvider>,
+      );
+      await act(async () =>
+        fireEvent.click(screen.getByRole("button", { name: "Close view" })),
+      );
+      expect(flush).toHaveBeenCalledOnce();
+      expect(mocks.leave).toHaveBeenCalledOnce();
+      expect(mocks.discard).not.toHaveBeenCalled();
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+
+    it("asks only when the save fails, then keeps or discards the draft", async () => {
+      const flush = vi.fn().mockResolvedValue(false);
+      render(
+        <DocumentDraftGuardProvider>
+          <Draft dirty flush={flush} />
+        </DocumentDraftGuardProvider>,
+      );
+      await act(async () =>
+        fireEvent.click(screen.getByRole("button", { name: "Close view" })),
+      );
+      await act(async () =>
+        fireEvent.click(screen.getByRole("button", { name: "Keep editing" })),
+      );
+      expect(mocks.leave).not.toHaveBeenCalled();
+      expect(mocks.discard).not.toHaveBeenCalled();
+
+      flush.mockRejectedValueOnce(new Error("offline"));
+      await act(async () =>
+        fireEvent.click(screen.getByRole("button", { name: "Close view" })),
+      );
+      await act(async () =>
+        fireEvent.click(screen.getByRole("button", { name: "Discard" })),
+      );
+      expect(flush).toHaveBeenCalledTimes(2);
+      expect(mocks.discard).toHaveBeenCalledOnce();
+      expect(mocks.leave).toHaveBeenCalledOnce();
+    });
+
+    it("lets a route change through only after the save finishes", async () => {
+      let finish: ((saved: boolean) => void) | undefined;
+      const flush = vi.fn(
+        () =>
+          new Promise<boolean>((resolve) => {
+            finish = resolve;
+          }),
+      );
+      render(
+        <DocumentDraftGuardProvider>
+          <Draft dirty flush={flush} />
+        </DocumentDraftGuardProvider>,
+      );
+      let blocked: boolean | undefined;
+      act(() => {
+        void mocks.blocker?.shouldBlockFn().then((value) => (blocked = value));
+      });
+      await act(async () => {});
+      expect(blocked).toBeUndefined();
+      await act(async () => finish?.(true));
+      expect(blocked).toBe(false);
+    });
+
+    it("refuses a second leave while the first is still saving", async () => {
+      let finish: ((saved: boolean) => void) | undefined;
+      const flush = vi.fn(
+        () =>
+          new Promise<boolean>((resolve) => {
+            finish = resolve;
+          }),
+      );
+      render(
+        <DocumentDraftGuardProvider>
+          <Draft dirty flush={flush} />
+        </DocumentDraftGuardProvider>,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Close view" }));
+      let second: boolean | undefined;
+      await act(async () => {
+        second = await requestDocumentDraftLeave();
+      });
+      expect(second).toBe(false);
+      expect(flush).toHaveBeenCalledOnce();
+      await act(async () => finish?.(true));
+      expect(mocks.leave).toHaveBeenCalledOnce();
+    });
+
+    it("blocks without saving while an upload or delete is running", async () => {
+      const flush = vi.fn().mockResolvedValue(true);
+      render(
+        <DocumentDraftGuardProvider>
+          <Draft dirty saving flush={flush} />
+        </DocumentDraftGuardProvider>,
+      );
+      expect(await mocks.blocker?.shouldBlockFn()).toBe(true);
+      expect(flush).not.toHaveBeenCalled();
+    });
+
+    it("saves before signing out", async () => {
+      const flush = vi.fn().mockResolvedValue(true);
+      render(
+        <DocumentDraftGuardProvider>
+          <Draft dirty flush={flush} />
+        </DocumentDraftGuardProvider>,
+      );
+      let allowed: boolean | undefined;
+      await act(async () => {
+        allowed = await requestDocumentDraftLeave();
+      });
+      expect(allowed).toBe(true);
+      expect(flush).toHaveBeenCalledOnce();
+    });
+  });
+
+  it("finishes every draft, clean or not, before an account action leaves", async () => {
+    let done!: () => void;
+    const finish = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          done = resolve;
+        }),
+    );
+    render(
+      <DocumentDraftGuardProvider>
+        <Draft finish={finish} />
+      </DocumentDraftGuardProvider>,
+    );
+    let allowed: boolean | undefined;
+    let leaving: Promise<void> | undefined;
+    act(() => {
+      leaving = requestDocumentDraftLeave().then((value) => {
+        allowed = value;
+      });
+    });
+    await act(async () => {});
+    expect(finish).toHaveBeenCalledOnce();
+    // Signing out waits, so the cleanup still carries the session.
+    expect(allowed).toBeUndefined();
+    await act(async () => {
+      done();
+      await leaving;
+    });
+    expect(allowed).toBe(true);
+  });
+
+  it("does not finish drafts when leaving is refused", async () => {
+    const finish = vi.fn().mockResolvedValue(undefined);
+    render(
+      <DocumentDraftGuardProvider>
+        <Draft dirty finish={finish} />
+      </DocumentDraftGuardProvider>,
+    );
+    let leaving: Promise<boolean> | undefined;
+    act(() => {
+      leaving = requestDocumentDraftLeave();
+    });
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Keep editing" })),
+    );
+    expect(await leaving).toBe(false);
+    expect(finish).not.toHaveBeenCalled();
   });
 });

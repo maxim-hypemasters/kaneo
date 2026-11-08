@@ -3,6 +3,7 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
@@ -25,12 +26,14 @@ import { DocumentLinkDialog } from "./document-link-dialog";
 import { DocumentSlashMenu } from "./document-slash-menu";
 import { DocumentToolbar } from "./document-toolbar";
 import type { DocumentEditorProps } from "./document-editor-types";
+import { focusDocumentEnd } from "./focus-document-end";
 import {
   type DocumentEmbedRequest,
   useDocumentEditor,
 } from "./use-document-editor";
 
 export type {
+  DocumentEditorHandle,
   DocumentEditorProps,
   UploadedDocumentAsset,
 } from "./document-editor-types";
@@ -67,9 +70,24 @@ export function DocumentEditor(props: DocumentEditorProps) {
   const { editor, upload, uploading, uploadError, languages } =
     useDocumentEditor(props, openLink, setEmbed, chooseFile);
   const editable = !props.readOnly;
+  const page = props.variant === "page";
   const expandable = props.expandable ?? true;
   const locked = Boolean(props.disabled || uploading);
   const canActivate = Boolean(props.readOnly && props.onRequestEdit && !locked);
+
+  useImperativeHandle(
+    props.ref,
+    () => ({
+      focus: (position) => {
+        if (!editor?.isEditable) return;
+        editor.commands.focus(position);
+        // TipTap focuses the DOM a frame later; keys typed right after
+        // (Enter in the title, then typing) would still reach the old field.
+        editor.view.focus();
+      },
+    }),
+    [editor],
+  );
 
   useLayoutEffect(() => {
     if (!editor?.isEditable || editPosition.current === null) return;
@@ -104,8 +122,14 @@ export function DocumentEditor(props: DocumentEditorProps) {
   const content =
     editor && host
       ? createPortal(
-          <div className={cn("flex min-h-0 flex-col", fullscreen && "h-full")}>
-            {editable && (
+          <div
+            className={cn(
+              "flex min-h-0 flex-col",
+              fullscreen && "h-full",
+              page && "flex-1",
+            )}
+          >
+            {editable && !page && (
               <div className="sticky top-0 z-20 shrink-0 border-b bg-background px-2 py-2 sm:px-3">
                 <DocumentToolbar
                   editor={editor}
@@ -147,12 +171,13 @@ export function DocumentEditor(props: DocumentEditorProps) {
               className={cn(
                 "min-h-0",
                 fullscreen && "flex-1 overflow-y-auto overscroll-contain",
+                page && "flex flex-1 flex-col",
               )}
             >
               {props.notice && (
                 <div
                   className={cn(
-                    "px-3 pt-3 sm:px-4",
+                    page ? "pb-4" : "px-3 pt-3 sm:px-4",
                     fullscreen && "mx-auto w-full max-w-4xl",
                   )}
                 >
@@ -162,10 +187,12 @@ export function DocumentEditor(props: DocumentEditorProps) {
               <div
                 ref={shell}
                 role="presentation"
+                data-variant={page ? "page" : undefined}
                 className={cn(
-                  "kaneo-tiptap-shell relative px-3 sm:px-4",
+                  "kaneo-tiptap-shell relative",
+                  page ? "flex flex-1 flex-col" : "px-3 sm:px-4",
                   fullscreen && "mx-auto w-full max-w-4xl px-5 py-8 sm:px-10",
-                  editable && "[&_.ProseMirror]:min-h-44",
+                  editable && !page && "[&_.ProseMirror]:min-h-44",
                   !editable && "[&_.ProseMirror]:pb-2",
                   !editable &&
                     !fullscreen &&
@@ -250,6 +277,20 @@ export function DocumentEditor(props: DocumentEditorProps) {
                   editor={editor}
                   className="kaneo-tiptap-content"
                 />
+                {page && (
+                  // Clicking below the text continues the document; on a
+                  // read-only page this is just bottom space.
+                  <div
+                    aria-hidden
+                    data-slot="document-editor-tail"
+                    className={cn("min-h-32 flex-1", editable && "cursor-text")}
+                    onMouseDown={(event) => {
+                      if (event.button !== 0 || !editor.isEditable) return;
+                      event.preventDefault();
+                      focusDocumentEnd(editor);
+                    }}
+                  />
+                )}
                 {editable && !locked && (
                   <>
                     <DocumentFormattingMenu editor={editor} onLink={openLink} />
@@ -258,6 +299,7 @@ export function DocumentEditor(props: DocumentEditorProps) {
                       shell={shell}
                       canUpload={Boolean(props.uploadAsset)}
                       onUpload={openFile}
+                      onLink={openLink}
                       onEmbed={openEmbed}
                     />
                   </>
@@ -269,14 +311,23 @@ export function DocumentEditor(props: DocumentEditorProps) {
                 />
               </div>
               {uploadError && (
-                <p role="alert" className="px-4 py-2 text-destructive text-sm">
+                <p
+                  role="alert"
+                  className={cn(
+                    "py-2 text-destructive text-sm",
+                    !page && "px-4",
+                  )}
+                >
                   {uploadError}
                 </p>
               )}
               {uploading && (
                 <p
                   role="status"
-                  className="px-4 py-2 text-muted-foreground text-sm"
+                  className={cn(
+                    "py-2 text-muted-foreground text-sm",
+                    !page && "px-4",
+                  )}
                 >
                   {t("common:documentEditor.uploading")}
                 </p>
@@ -298,7 +349,7 @@ export function DocumentEditor(props: DocumentEditorProps) {
   return (
     <section
       aria-label={props.ariaLabel}
-      className={cn("min-w-0", props.className)}
+      className={cn("min-w-0", page && "flex flex-1 flex-col", props.className)}
       data-document-editor=""
       data-readonly={props.readOnly || undefined}
     >
@@ -309,7 +360,9 @@ export function DocumentEditor(props: DocumentEditorProps) {
             node.appendChild(host);
         }}
         className={cn(
-          editable && "rounded-xl border border-border bg-background",
+          editable && !page && "rounded-xl border border-border bg-background",
+          page &&
+            "flex min-h-0 flex-1 flex-col [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1 [&>div]:flex-col",
           fullscreen && "hidden",
         )}
       />

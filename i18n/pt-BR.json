@@ -255,7 +255,8 @@
 			"discardDescription": "Suas alterações não salvas serão descartadas.",
 			"discard": "Discard changes",
 			"keepEditing": "Continuar editando",
-			"autoDetect": "Detectar automaticamente"
+			"autoDetect": "Detectar automaticamente",
+			"slashHint": "Type / for commands…"
 		}
 	},
 	"auth": {
@@ -3637,8 +3638,6 @@
 				"noDocumentResults": "No documents match your search.",
 				"documentTitle": "Document title",
 				"documentBody": "Feature document",
-				"documentPlaceholder": "Start writing…",
-				"renameDocument": "Rename or edit document",
 				"deleteDocument": "Delete document",
 				"deleteDocumentConfirm": "Delete “{{title}}”? This cannot be undone.",
 				"documentUpdated": "Updated by {{name}} · {{date}}",
@@ -3659,7 +3658,12 @@
 					"linkFailed": "Could not link this work. Try again."
 				},
 				"moreMilestones_many": "{{count}} more milestones",
-				"updateUnavailable": "Feature update unavailable."
+				"updateUnavailable": "Feature update unavailable.",
+				"createDocumentFailed": "Could not create the document. Try again.",
+				"documentSaved": "Saved",
+				"documentSaveFailed": "Couldn’t save",
+				"emptyDocument": "This document is empty.",
+				"untitledDocument": "Untitled"
 			},
 			"window": {
 				"copyId": "Copy feature ID",

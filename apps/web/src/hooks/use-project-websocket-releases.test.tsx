@@ -79,6 +79,10 @@ const candidateCalls = () =>
   mocks.client.invalidateQueries.mock.calls.filter(
     ([filters]) => filters?.queryKey?.[0] === "release-link-candidates",
   );
+const featureWorkspaceCalls = () =>
+  mocks.client.invalidateQueries.mock.calls.filter(
+    ([filters]) => filters?.queryKey?.[0] === "feature-workspace",
+  );
 // Release execution totals are authoritative, including derived milestones.
 const releasesRefreshes = () =>
   releaseCalls().filter(([filters]) => filters.refetchType !== "none").length;
@@ -168,16 +172,52 @@ afterEach(() => {
 });
 
 describe("release list realtime", () => {
-  it("coalesces Feature documents, reports and comments without reading the board", async () => {
+  it("refreshes only the changed Feature's content once per burst, without its issues or the board", async () => {
+    const otherFeature = [
+      "feature-workspace",
+      "p",
+      "other",
+      "documents",
+      "",
+      1,
+    ];
+    milestoneCache.setQueryData(otherFeature, []);
     renderHook(() => useProjectWebSocket("p"));
     Socket.current.message("FEATURE_CONTENT_UPDATED", { featureId: "feature" });
     Socket.current.message("FEATURE_CONTENT_UPDATED", { featureId: "feature" });
+    expect(featureWorkspaceCalls()).toHaveLength(0);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(featureWorkspaceCalls()).toHaveLength(1);
+    expect(featureWorkspaceCalls()[0]?.[0].queryKey).toEqual([
+      "feature-workspace",
+      "p",
+      "feature",
+    ]);
+    const invalidated = (key: unknown[]) =>
+      milestoneCache.getQueryState(key)?.isInvalidated;
+    expect(invalidated(candidateKeys[2])).toBe(true);
+    expect(invalidated(candidateKeys[3])).toBe(true);
+    expect(invalidated(candidateKeys[4])).toBe(false);
+    expect(invalidated(otherFeature)).toBe(false);
+    expect(candidateCalls()).toHaveLength(0);
+    expect(mocks.client.setQueryData).not.toHaveBeenCalled();
+  });
+  it("still refreshes linking candidates for comments and unscoped content", async () => {
+    renderHook(() => useProjectWebSocket("p"));
     Socket.current.message("COMMENT_UPDATED", { taskId: "feature" });
+    Socket.current.message("FEATURE_CONTENT_UPDATED");
     expect(candidateCalls()).toHaveLength(0);
     await vi.advanceTimersByTimeAsync(300);
     expect(candidateCalls()).toHaveLength(1);
     expectCandidatesInvalidated();
     expect(mocks.client.setQueryData).not.toHaveBeenCalled();
+  });
+  it("drops a pending Feature content refresh when the project closes", () => {
+    const { unmount } = renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("FEATURE_CONTENT_UPDATED", { featureId: "feature" });
+    unmount();
+    vi.advanceTimersByTime(300);
+    expect(featureWorkspaceCalls()).toHaveLength(0);
   });
   it("refetches mounted Masterplanning summaries once for a coalesced remote burst", async () => {
     const key = ["feature-milestones", "p", "project", "UTC"];

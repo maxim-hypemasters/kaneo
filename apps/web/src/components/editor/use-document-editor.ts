@@ -21,6 +21,7 @@ import {
 import { pasteMarkdown } from "@/lib/paste-markdown";
 import { insertUploadedAsset } from "./insert-uploaded-asset";
 import { createEditorExtensions } from "./extensions";
+import { DOCUMENT_END_LINE_META } from "./focus-document-end";
 import { useEditorHighlighter } from "./use-editor-highlighter";
 import type { DocumentEditorProps } from "./document-editor-types";
 import type { SlashRange } from "./slash-commands";
@@ -111,7 +112,16 @@ export function useDocumentEditor(
       content: props.value,
       contentType: "markdown",
       extensions: createEditorExtensions({
-        placeholder: props.placeholder ?? "",
+        // A page shows its hint on whichever empty line has the caret (see
+        // index.css), so only paragraphs get it, and it is read through the
+        // ref because the editor is created once.
+        placeholder:
+          props.variant === "page"
+            ? ({ node }) =>
+                node.type.name === "paragraph"
+                  ? (current.current.props.placeholder ?? "")
+                  : ""
+            : (props.placeholder ?? ""),
         highlighter: () => highlighterRef.current,
         resolveLanguage: (language) =>
           (
@@ -267,10 +277,11 @@ export function useDocumentEditor(
           return true;
         },
       },
-      onUpdate: ({ editor: active }) => {
+      onUpdate: ({ editor: active, transaction }) => {
         const options = current.current.props;
         if (
           syncing.current ||
+          transaction.getMeta(DOCUMENT_END_LINE_META) ||
           !active.isEditable ||
           options.readOnly ||
           options.disabled

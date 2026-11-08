@@ -255,7 +255,8 @@
 			"discardDescription": "आपके बिना सहेजे बदलाव छोड़ दिए जाएँगे।",
 			"discard": "Discard changes",
 			"keepEditing": "संपादन जारी रखें",
-			"autoDetect": "अपने आप पहचानें"
+			"autoDetect": "अपने आप पहचानें",
+			"slashHint": "Type / for commands…"
 		}
 	},
 	"auth": {
@@ -3571,8 +3572,6 @@
 				"noDocumentResults": "No documents match your search.",
 				"documentTitle": "Document title",
 				"documentBody": "Feature document",
-				"documentPlaceholder": "Start writing…",
-				"renameDocument": "Rename or edit document",
 				"deleteDocument": "Delete document",
 				"deleteDocumentConfirm": "Delete “{{title}}”? This cannot be undone.",
 				"documentUpdated": "Updated by {{name}} · {{date}}",
@@ -3592,7 +3591,12 @@
 					"noCandidates": "No tasks or bugs available to link.",
 					"linkFailed": "Could not link this work. Try again."
 				},
-				"updateUnavailable": "Feature update unavailable."
+				"updateUnavailable": "Feature update unavailable.",
+				"createDocumentFailed": "Could not create the document. Try again.",
+				"documentSaved": "Saved",
+				"documentSaveFailed": "Couldn’t save",
+				"emptyDocument": "This document is empty.",
+				"untitledDocument": "Untitled"
 			},
 			"window": {
 				"copyId": "Copy feature ID",

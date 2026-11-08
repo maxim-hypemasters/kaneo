@@ -1,206 +1,144 @@
-import { Pencil, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DocumentEditor } from "@/components/editor/document-editor";
+import type { DocumentEditorHandle } from "@/components/editor/document-editor-types";
 import { useDocumentDraftGuard } from "@/components/editor/document-draft-guard";
 import { DescriptionConflict } from "@/components/task/description-conflict";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { deleteFeatureDocument } from "@/fetchers/feature/feature-workspace";
 import type { FeatureDocument } from "@/fetchers/feature/types";
 import { useFeatureWorkspaceMutation } from "@/hooks/mutations/feature/use-feature-workspace-mutation";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { cn } from "@/lib/cn";
 import { formatDateTime } from "@/lib/format";
+import { FeatureDocumentSaveStatus } from "./feature-document-save-status";
+import { FeatureDocumentTitle } from "./feature-document-title";
 import { FeatureDocumentWindow } from "./feature-document-window";
-import { useFeatureDocumentDraft } from "./use-feature-document-draft";
+import { useFeatureDocumentAutosave } from "./use-feature-document-autosave";
 import { WorkspaceDeleteDialog } from "./workspace-delete-dialog";
 
 export function FeatureDocumentPage({
   featureId,
   projectId,
   document,
+  focusTitle = false,
   onBack,
-  onSaved,
   refresh,
-  onCancelNew,
 }: {
   featureId: string;
   projectId: string;
-  document?: FeatureDocument;
+  document: FeatureDocument;
+  // Set for a document just created, so its title can be typed over.
+  focusTitle?: boolean;
   onBack: () => void;
-  onSaved: (document: FeatureDocument) => void;
   refresh: () => Promise<unknown>;
-  onCancelNew?: () => void;
 }) {
   const { t } = useTranslation();
   const { canUpdateTasks, canDeleteTasks } = useWorkspacePermission();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleted, setDeleted] = useState(false);
-  const draft = useFeatureDocumentDraft({
+  const editor = useRef<DocumentEditorHandle>(null);
+  const draft = useFeatureDocumentAutosave({
     featureId,
     projectId,
     document,
     canEdit: canUpdateTasks(),
     refresh,
-    onSaved,
   });
   const remove = useFeatureWorkspaceMutation(projectId, featureId, () =>
-    deleteFeatureDocument(featureId, document?.id ?? ""),
+    deleteFeatureDocument(featureId, document.id),
   );
-  const pending = draft.saving || draft.uploading || remove.isPending;
+  const pending = draft.uploading || remove.isPending;
   useDocumentDraftGuard({
-    dirty: draft.dirty,
+    dirty: draft.unsaved,
     saving: pending,
-    onDiscard: draft.cancel,
+    onDiscard: draft.discard,
+    flush: draft.flush,
+    finish: draft.prune,
   });
   useEffect(() => {
     if (deleted && !pending) onBack();
   }, [deleted, pending, onBack]);
+  const title = draft.value.title.trim() || document.title;
+
   return (
     <FeatureDocumentWindow
-      title={
-        draft.value.title ||
-        document?.title ||
-        t("tasks:features.workspace.newDocument")
-      }
+      title={title}
       onClose={onBack}
       closeDisabled={pending}
       actions={
-        document &&
-        !draft.editing && (
-          <>
-            {canUpdateTasks() && (
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                onClick={draft.edit}
-                aria-label={t("tasks:features.workspace.renameDocument")}
-              >
-                <Pencil />
-              </Button>
-            )}
-            {canDeleteTasks() && (
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="ghost"
-                onClick={() => setDeleteOpen(true)}
-                aria-label={t("tasks:features.workspace.deleteDocument")}
-              >
-                <Trash2 />
-              </Button>
-            )}
-          </>
-        )
+        <>
+          {draft.editable && (
+            <FeatureDocumentSaveStatus
+              status={draft.status}
+              onRetry={draft.retry}
+            />
+          )}
+          {canDeleteTasks() && (
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              onClick={() => setDeleteOpen(true)}
+              aria-label={t("tasks:features.workspace.deleteDocument")}
+            >
+              <Trash2 />
+            </Button>
+          )}
+        </>
       }
     >
-      {draft.editing ? (
-        <Input
-          value={draft.value.title}
-          onChange={(event) => draft.change({ title: event.target.value })}
-          aria-label={t("tasks:features.workspace.documentTitle")}
-          placeholder={t("tasks:features.workspace.documentTitle")}
-          disabled={pending || !canUpdateTasks()}
-          maxLength={200}
-          autoFocus={!document}
-          className="font-medium"
-        />
-      ) : (
-        // Indented like the editor's text, so the page reads in one column.
-        <h3 className="break-words px-3 text-2xl font-semibold sm:px-4">
-          {draft.value.title}
-        </h3>
-      )}
-      {document && (
-        <p
-          className={cn(
-            "text-xs text-muted-foreground",
-            !draft.editing && "px-3 sm:px-4",
-          )}
-        >
-          {t("tasks:features.workspace.documentUpdated", {
-            name: document.updatedByName || t("common:people.someone"),
-            date: formatDateTime(document.updatedAt),
-          })}
-        </p>
-      )}
+      <FeatureDocumentTitle
+        value={draft.value.title}
+        readOnly={!draft.editable}
+        focus={focusTitle}
+        onChange={draft.changeTitle}
+        onCommit={draft.commitTitle}
+        onEnterBody={() => editor.current?.focus("start")}
+      />
+      <p className="mt-2 text-xs text-muted-foreground">
+        {t("tasks:features.workspace.documentUpdated", {
+          name: document.updatedByName || t("common:people.someone"),
+          date: formatDateTime(document.updatedAt),
+        })}
+      </p>
       <DocumentEditor
-        documentKey={`${document?.id ?? "new"}:${draft.session}`}
+        ref={editor}
+        variant="page"
+        className="mt-6"
+        documentKey={document.id}
         value={draft.value.body}
-        onChange={(body) => draft.change({ body })}
-        onRequestEdit={
-          !draft.editing && canUpdateTasks() ? draft.edit : undefined
+        onChange={draft.changeBody}
+        ariaLabel={title}
+        placeholder={
+          draft.editable
+            ? t("common:documentEditor.slashHint")
+            : t("tasks:features.workspace.emptyDocument")
         }
-        ariaLabel={
-          draft.value.title || t("tasks:features.workspace.documentBody")
-        }
-        placeholder={t("tasks:features.workspace.documentPlaceholder")}
-        readOnly={!draft.editing || !canUpdateTasks()}
-        disabled={pending}
+        readOnly={!draft.editable}
+        // Only deletion locks the text: a disabled editor drops uploads that
+        // finish while it is locked.
+        disabled={remove.isPending}
         expandable={false}
-        uploadAsset={
-          draft.editing && canUpdateTasks() ? draft.upload : undefined
-        }
+        uploadAsset={draft.editable ? draft.upload : undefined}
         onPendingUploadChange={draft.setUploading}
         notice={
           draft.conflict ? (
             <div className="space-y-2">
-              <p className="text-sm font-medium">{document?.title}</p>
+              <p className="text-sm font-medium">{document.title}</p>
               <DescriptionConflict
-                latest={document?.body ?? ""}
+                latest={document.body}
                 pending={draft.refreshing}
                 available={draft.reviewAvailable}
-                onRefresh={() => void draft.refreshLatest().catch(() => {})}
-                onKeepDraft={draft.keepDraft}
-                onUseLatest={draft.cancel}
+                onRefresh={() => void draft.refreshLatest()}
+                onKeepDraft={draft.keepMine}
+                onUseLatest={draft.acceptLatest}
               />
             </div>
-          ) : undefined
-        }
-        footer={
-          draft.editing ? (
-            <div className="space-y-3">
-              {!canUpdateTasks() && (
-                <p role="alert" className="text-sm text-muted-foreground">
-                  {t("common:documentEditor.permissionLost")}
-                </p>
-              )}
-              {draft.error && !draft.conflict ? (
-                <p role="alert" className="text-sm text-destructive">
-                  {t("common:documentEditor.saveFailed")}
-                </p>
-              ) : null}
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  disabled={pending}
-                  onClick={() => {
-                    draft.cancel();
-                    if (!document) onCancelNew?.();
-                  }}
-                >
-                  {t("common:actions.cancel")}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={
-                    !canUpdateTasks() ||
-                    pending ||
-                    draft.conflict ||
-                    !draft.value.title.trim()
-                  }
-                  onClick={() => void draft.save()}
-                  loading={draft.saving}
-                >
-                  {t("common:documentEditor.save")}
-                </Button>
-              </div>
-            </div>
+          ) : !draft.editable && draft.unsaved ? (
+            <p role="alert" className="text-sm text-muted-foreground">
+              {t("common:documentEditor.permissionLost")}
+            </p>
           ) : undefined
         }
       />
@@ -209,16 +147,20 @@ export function FeatureDocumentPage({
         onOpenChange={setDeleteOpen}
         title={t("tasks:features.workspace.deleteDocument")}
         description={t("tasks:features.workspace.deleteDocumentConfirm", {
-          title: document?.title,
+          title: document.title,
         })}
         pending={remove.isPending}
         failed={remove.isError}
         onConfirm={() => {
-          if (canDeleteTasks())
-            void remove
-              .mutateAsync()
-              .then(() => setDeleted(true))
-              .catch(() => {});
+          if (!canDeleteTasks()) return;
+          void remove
+            .mutateAsync()
+            .then(() => {
+              // Nothing is left to save once the document is gone.
+              draft.discard();
+              setDeleted(true);
+            })
+            .catch(() => {});
         }}
       />
     </FeatureDocumentWindow>
