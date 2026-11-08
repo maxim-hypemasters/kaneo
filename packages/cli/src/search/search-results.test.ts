@@ -208,6 +208,48 @@ describe("normalizeSearchResults", () => {
     ]);
   });
 
+  it("maps a Feature to its own kind, with its archive state and link", () => {
+    const feature: SearchHit = {
+      ...task,
+      id: "f1",
+      type: "feature",
+      taskType: "feature",
+      title: "Checkout",
+      taskNumber: 4,
+      archived: true,
+      priority: undefined,
+      status: undefined,
+      userName: undefined,
+    };
+    const [result] = normalizeSearchResults([feature], {
+      ...context,
+      type: "features",
+    });
+    expect(result).toMatchObject({
+      type: "feature",
+      taskType: "feature",
+      archived: true,
+      ticketId: "KAN-4",
+      status: null,
+      priority: null,
+      assignee: null,
+      url: "https://kaneo.test/dashboard/workspace/ws_acme/project/p_kan/task/f1",
+    });
+    expect(
+      normalizeSearchResults([feature], { ...context, type: "tasks" }),
+    ).toEqual([]);
+  });
+
+  it("links a comment to its item when the workspace slug is unknown", () => {
+    const [result] = normalizeSearchResults([{ ...comment, taskId: "f1" }], {
+      ...context,
+      workspaceSlug: null,
+    });
+    expect(result?.url).toBe(
+      "https://kaneo.test/dashboard/workspace/ws_acme/project/p_kan/task/f1",
+    );
+  });
+
   it("ignores result kinds this CLI does not know yet", () => {
     expect(
       normalizeSearchResults([{ ...task, type: "document" }], context),

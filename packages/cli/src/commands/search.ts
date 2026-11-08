@@ -120,6 +120,6 @@ export const search = Command.make(
   },
   (options) => runSearch(options),
 ).pipe(
-  Command.withDescription("Search tasks, projects and comments"),
+  Command.withDescription("Search tasks, features, projects and comments"),
   Command.provide(ApiLayer),
 );

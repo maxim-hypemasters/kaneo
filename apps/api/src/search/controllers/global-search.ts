@@ -12,10 +12,17 @@ import {
 import { redactInaccessibleActivity } from "../../activity/redaction/redact-inaccessible-activity";
 import { canAccessProject } from "../../project-access/can-access-project";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
+import {
+  activityResultTitle,
+  activitySearchContent,
+  activitySubjectOf,
+} from "../activity-search-text";
 import { documentExcerpt } from "../document-excerpt";
 import { escapeLikePattern } from "../like-pattern";
 import { redactedActivityScore } from "../redacted-activity-score";
+import type { SearchResult } from "../search-result";
 import { TASK_SHORT_ID_PATTERN } from "../task-short-id";
+import { workSearchResult } from "../work-search-result";
 
 type SearchParams = {
   query: string;
@@ -24,6 +31,7 @@ type SearchParams = {
   type?:
     | "all"
     | "tasks"
+    | "features"
     | "projects"
     | "workspaces"
     | "comments"
@@ -33,99 +41,6 @@ type SearchParams = {
   projectId?: string;
   limit?: number;
 };
-
-type SearchResult = {
-  id: string;
-  type: "task" | "project" | "workspace" | "comment" | "activity" | "document";
-  title: string;
-  description?: string;
-  content?: string;
-  projectId?: string;
-  projectName?: string;
-  workspaceId?: string;
-  workspaceName?: string;
-  userId?: string;
-  userName?: string;
-  createdAt: Date;
-  relevanceScore: number;
-  taskNumber?: number;
-  projectSlug?: string;
-  priority?: string;
-  status?: string;
-  taskType?: typeof taskTable.$inferSelect.type;
-  featureId?: string;
-  featureTitle?: string;
-};
-
-function toDisplayCase(value: string) {
-  return value
-    .replace(/[-_]/g, " ")
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function getActivitySearchContent(
-  type: string,
-  content: string | null,
-  eventData: unknown,
-) {
-  if (content) return content;
-  if (!eventData || typeof eventData !== "object" || Array.isArray(eventData)) {
-    return undefined;
-  }
-
-  const data = eventData as Record<string, unknown>;
-
-  switch (type) {
-    case "status_changed":
-      return `changed status from ${toDisplayCase(String(data.oldStatus ?? ""))} to ${toDisplayCase(String(data.newStatus ?? ""))}`;
-    case "priority_changed":
-      return `changed priority from ${toDisplayCase(String(data.oldPriority ?? ""))} to ${toDisplayCase(String(data.newPriority ?? ""))}`;
-    case "unassigned":
-      return "unassigned the task";
-    case "assignee_changed":
-      return data.isSelfAssigned
-        ? "assigned the task to themselves"
-        : `assigned the task to ${String(data.newAssignee ?? "someone")}`;
-    case "due_date_changed":
-      if (!data.newDueDate) {
-        return "cleared the due date";
-      }
-      if (!data.oldDueDate) {
-        return `set due date to ${String(data.newDueDate)}`;
-      }
-      return `changed due date from ${String(data.oldDueDate)} to ${String(data.newDueDate)}`;
-    case "title_changed":
-      return `changed title from "${String(data.oldTitle ?? "")}" to "${String(data.newTitle ?? "")}"`;
-    case "feature_changed":
-      if (!data.newFeatureId) return "removed the task from its feature";
-      // A title from a project the viewer can't see was redacted to null.
-      return data.newFeatureTitle
-        ? `added the task to feature "${String(data.newFeatureTitle)}"`
-        : "added the task to a feature";
-    case "milestone_changed":
-      if (!data.newMilestoneId) return "removed the task from its milestone";
-      return data.newMilestoneTitle
-        ? `added the task to milestone "${String(data.newMilestoneTitle)}"`
-        : "added the task to a milestone";
-    case "release_changed":
-      if (!data.newReleaseId) return "removed the task from its release";
-      // A name from a project the viewer can't see was redacted to null.
-      return data.newReleaseName
-        ? `added the task to release "${String(data.newReleaseName)}"`
-        : "added the task to a release";
-    case "type_changed":
-      return data.newType === "feature"
-        ? "made the task a feature"
-        : "made the feature a task";
-    case "task":
-      return "created the task";
-    default:
-      return undefined;
-  }
-}
 
 async function globalSearch(params: SearchParams): Promise<{
   results: SearchResult[];
@@ -192,8 +107,14 @@ async function globalSearch(params: SearchParams): Promise<{
 
   const shortIdNumber = Number(shortIdMatch?.[2]);
 
-  if (type === "all" || type === "tasks") {
+  if (type === "all" || type === "tasks" || type === "features") {
     const seenTaskIds = new Set<string>();
+    const workTypeFilter =
+      type === "tasks"
+        ? inArray(taskTable.type, ["task", "bug"])
+        : type === "features"
+          ? eq(taskTable.type, "feature")
+          : undefined;
 
     // If query matches short-id pattern, look up by project slug + task number first
     if (
@@ -222,6 +143,7 @@ async function globalSearch(params: SearchParams): Promise<{
           priority: taskTable.priority,
           status: taskTable.status,
           taskType: taskTable.type,
+          archivedAt: taskTable.archivedAt,
         })
         .from(taskTable)
         .leftJoin(projectTable, eq(taskTable.projectId, projectTable.id))
@@ -234,6 +156,7 @@ async function globalSearch(params: SearchParams): Promise<{
           and(
             workspaceFilter,
             projectId ? eq(taskTable.projectId, projectId) : undefined,
+            workTypeFilter,
             // A project key may hold `_`, which `ilike` reads as "any one
             // character", so `DE_-23` would also match a task in `DEP` and the
             // `limit(1)` below would pick whichever came back first. Escaping
@@ -246,25 +169,8 @@ async function globalSearch(params: SearchParams): Promise<{
 
       for (const task of shortIdTasks) {
         seenTaskIds.add(task.id);
-        results.push({
-          id: task.id,
-          type: "task",
-          title: task.title,
-          description: task.description || undefined,
-          projectId: task.projectId,
-          projectName: task.projectName || undefined,
-          projectSlug: task.projectSlug || undefined,
-          workspaceId: task.workspaceId || undefined,
-          workspaceName: task.workspaceName || undefined,
-          userId: task.userId || undefined,
-          userName: task.userName || undefined,
-          createdAt: task.createdAt,
-          relevanceScore: 10, // Highest relevance for exact short-id match
-          taskNumber: task.taskNumber || undefined,
-          priority: task.priority || undefined,
-          status: task.status ?? undefined,
-          taskType: task.taskType,
-        });
+        // Highest relevance for an exact short-id match.
+        results.push(workSearchResult(task, 10));
       }
     }
 
@@ -294,6 +200,7 @@ async function globalSearch(params: SearchParams): Promise<{
         priority: taskTable.priority,
         status: taskTable.status,
         taskType: taskTable.type,
+        archivedAt: taskTable.archivedAt,
         relevanceScore: taskRelevanceScore.as("relevanceScore"),
       })
       .from(taskTable)
@@ -304,6 +211,7 @@ async function globalSearch(params: SearchParams): Promise<{
         and(
           workspaceFilter,
           projectId ? eq(taskTable.projectId, projectId) : undefined,
+          workTypeFilter,
           or(
             ilike(taskTable.title, searchPattern),
             ilike(taskTable.description, searchPattern),
@@ -317,25 +225,7 @@ async function globalSearch(params: SearchParams): Promise<{
 
     for (const task of tasks) {
       if (seenTaskIds.has(task.id)) continue;
-      results.push({
-        id: task.id,
-        type: "task",
-        title: task.title,
-        description: task.description || undefined,
-        projectId: task.projectId,
-        projectName: task.projectName || undefined,
-        projectSlug: task.projectSlug || undefined,
-        workspaceId: task.workspaceId || undefined,
-        workspaceName: task.workspaceName || undefined,
-        userId: task.userId || undefined,
-        userName: task.userName || undefined,
-        createdAt: task.createdAt,
-        relevanceScore: task.relevanceScore,
-        taskNumber: task.taskNumber || undefined,
-        priority: task.priority || undefined,
-        status: task.status ?? undefined,
-        taskType: task.taskType,
-      });
+      results.push(workSearchResult(task, task.relevanceScore));
     }
   }
 
@@ -527,6 +417,7 @@ async function globalSearch(params: SearchParams): Promise<{
         taskId: activityTable.taskId,
         taskTitle: taskTable.title,
         taskNumber: taskTable.number,
+        taskType: taskTable.type,
         projectId: projectTable.id,
         projectName: projectTable.name,
         projectSlug: projectTable.slug,
@@ -565,19 +456,19 @@ async function globalSearch(params: SearchParams): Promise<{
           ? activity.relevanceScore
           : redactedActivityScore(activity, query, activity.relevanceScore);
       if (relevanceScore === null) continue;
-      const isComment = activity.type === "comment";
-      const activityContent = getActivitySearchContent(
-        activity.type,
-        activity.content,
-        activity.eventData,
-      );
+      const subject = activitySubjectOf(activity.taskType);
       results.push({
         id: activity.id,
-        type: isComment ? "comment" : "activity",
-        title: isComment
-          ? `Comment on ${activity.taskTitle || "task"}`
-          : `${activity.type} on ${activity.taskTitle || "task"}`,
-        content: activityContent,
+        type: activity.type === "comment" ? "comment" : "activity",
+        title: activityResultTitle(activity.type, activity.taskTitle, subject),
+        content: activitySearchContent(
+          activity.type,
+          activity.content,
+          activity.eventData,
+          subject,
+        ),
+        taskId: activity.taskId,
+        taskType: activity.taskType ?? undefined,
         projectId: activity.projectId || undefined,
         projectName: activity.projectName || undefined,
         projectSlug: activity.projectSlug || undefined,

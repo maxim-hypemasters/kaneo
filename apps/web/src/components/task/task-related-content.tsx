@@ -1,8 +1,6 @@
-import { ExternalLinksAccordion } from "@/components/external-links/external-links-accordion";
-import useExternalLinks from "@/hooks/queries/external-link/use-external-links";
-import type { ExternalLink } from "@/types/external-link";
 import type Task from "@/types/task";
 import TaskRelations from "./task-relations";
+import { TaskResources } from "./task-resources";
 
 export function TaskRelatedContent({
   task,
@@ -11,7 +9,6 @@ export function TaskRelatedContent({
   task: Task;
   workspaceId: string;
 }) {
-  const { data: externalLinks = [], isLoading } = useExternalLinks(task.id);
   return (
     <div className="flex flex-col gap-6">
       <TaskRelations
@@ -20,11 +17,7 @@ export function TaskRelatedContent({
         workspaceId={workspaceId}
         task={task}
       />
-      <ExternalLinksAccordion
-        taskId={task.id}
-        externalLinks={externalLinks as ExternalLink[]}
-        isLoading={isLoading}
-      />
+      <TaskResources taskId={task.id} />
     </div>
   );
 }

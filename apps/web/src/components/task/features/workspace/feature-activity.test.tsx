@@ -64,9 +64,13 @@ vi.mock("./feature-update-card", () => ({
   ),
 }));
 vi.mock("@/components/activity", () => ({
-  default: ({ activity }: { activity: FeatureActivityItem }) => (
-    <div>{activity.content}</div>
-  ),
+  default: ({
+    activity,
+    subject,
+  }: {
+    activity: FeatureActivityItem;
+    subject?: string;
+  }) => <div data-subject={subject}>{activity.content}</div>,
 }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -151,6 +155,13 @@ describe("Feature Activity selected report", () => {
       "feature",
       "old-report",
       false,
+    );
+  });
+  it("words history events for the Feature", () => {
+    setup();
+    expect(screen.getByText("Recent system event")).toHaveAttribute(
+      "data-subject",
+      "feature",
     );
   });
   it("shows retry feedback for an unavailable direct report without hiding the history", () => {

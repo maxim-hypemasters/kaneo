@@ -24,21 +24,23 @@ export function TaskHeaderActions({
   return (
     <div className="flex items-center gap-1">
       <HeaderIconButton
-        label={t("tasks:properties.copyTaskLink")}
+        label={actions.labels.copyLink}
         shortcutId="copyTaskUrl"
         onClick={actions.copyLink}
         className="max-sm:hidden"
       >
         <Link2 />
       </HeaderIconButton>
-      <HeaderIconButton
-        label={t("tasks:properties.copyTaskBranch")}
-        shortcutId="copyBranchName"
-        onClick={actions.copyBranch}
-        className="max-sm:hidden"
-      >
-        <GitBranch />
-      </HeaderIconButton>
+      {actions.canCopyBranch && (
+        <HeaderIconButton
+          label={t("tasks:properties.copyTaskBranch")}
+          shortcutId="copyBranchName"
+          onClick={actions.copyBranch}
+          className="max-sm:hidden"
+        >
+          <GitBranch />
+        </HeaderIconButton>
+      )}
       <TaskMoreMenu actions={actions} deleteHandle={deleteHandle} />
     </div>
   );

@@ -137,3 +137,28 @@ Stored manual milestone dates remain as unused legacy data and never serve as a 
 No migration is required. Milestone status now derives from all nonarchived linked Tasks/Bugs across releases: Done when every eligible item is Done and at least one exists, In Progress when any item is active or completed, otherwise To Do. Project workflow Done flags and nonfinal-column ordering determine completion/activity. Empty milestones are To Do. Mixed Done/To Do work is In Progress because completed work counts as started. Existing progress counters retain their archived-work rules.
 
 Stored manual status and column values remain ignored legacy data. Existing activity stays readable. Update API, web, CLI and MCP clients together: manual milestone status/column writes now return 400, including null, and native/connected imports do not restore manual status overrides. Release completion totals and Move unfinished use the same derived completion rule.
+
+### Features lose their relations
+
+Features don't have relations any more: **Blocks**, **Blocked by** and **Related** link Tasks and Bugs only. The database migration permanently deletes every relation with a Feature on either end. Nothing is archived, so only a backup brings those links back. A database trigger then refuses any new relation with a Feature on either end.
+
+Feature membership doesn't change: Tasks and Bugs stay in their Feature and milestone, and relations between Tasks and Bugs are kept.
+
+Back up the database before upgrading. To see how many relations the migration will delete, run this read-only count first:
+
+```bash
+docker compose exec -T postgres sh -c \
+  'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' <<'SQL'
+SELECT count(*) FROM task_relation r
+WHERE EXISTS (
+  SELECT 1 FROM task t
+  WHERE t.type = 'feature' AND t.id IN (r.source_task_id, r.target_task_id)
+);
+SQL
+```
+
+With a managed database, run the same `SELECT` with `psql` against it.
+
+Update all API instances together. An older API instance still tries to save a relation with a Feature, and the request fails because the database refuses it. Older CLI, MCP and `@kaneo/planka-import` versions get an error when they link a Feature.
+
+A project whose plan had a Feature in a blocking relation may show its schedule as outdated once after the upgrade, because its dependencies changed. Preview and apply the plan again.

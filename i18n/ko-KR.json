@@ -2475,7 +2475,8 @@
 				"comment": "댓글",
 				"activity": "활동",
 				"fallback": "결과",
-				"document": "Documents"
+				"document": "Documents",
+				"feature": "Features"
 			}
 		},
 		"settingsLayout": {
@@ -2560,7 +2561,6 @@
 				"editDescription": "설명 편집",
 				"commentOnTask": "댓글 달기",
 				"moveToProject": "다른 프로젝트로 이동",
-				"createSubtask": "이 기능에 작업 추가",
 				"setParent": "기능 설정",
 				"openParent": "기능 열기",
 				"openSubtask": "이 기능의 작업 열기",
@@ -2695,7 +2695,10 @@
 			"loadError": "Notifications couldn't be loaded.",
 			"taskLoadError": "This task couldn’t be loaded.",
 			"actionError": "받은 편지함을 업데이트하지 못했습니다. 다시 시도해 주세요.",
-			"readCleared": "읽은 알림을 삭제했습니다"
+			"readCleared": "읽은 알림을 삭제했습니다",
+			"featureLoadError": "This feature couldn’t be loaded.",
+			"featureUnavailable": "This feature is no longer available.",
+			"openFeature": "Open feature"
 		}
 	},
 	"activity": {
@@ -2814,14 +2817,16 @@
 		"addedToFeature": "작업을 기능 \"{{feature}}\"에 추가함",
 		"removedFromFeature": "작업을 기능 \"{{feature}}\"에서 제거함",
 		"changedFeature": "작업을 기능 \"{{from}}\"에서 \"{{to}}\"(으)로 이동함",
-		"madeFeature": "이 작업을 기능으로 전환함",
-		"madeTask": "이 기능을 작업으로 전환함",
 		"addedToRelease": "작업을 릴리스 \"{{release}}\"에 추가함",
 		"removedFromRelease": "작업을 릴리스 \"{{release}}\"에서 제거함",
 		"changedRelease": "작업을 릴리스 \"{{from}}\"에서 \"{{to}}\"(으)로 이동함",
 		"changedTypeToBug": "changed the type to bug",
 		"changedTypeToFeature": "changed the type to feature",
-		"changedTypeToTask": "changed the type to task"
+		"changedTypeToTask": "changed the type to task",
+		"createdFeature": "created this feature",
+		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
+		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
+		"postedFeatureUpdate": "posted an update"
 	},
 	"tasks": {
 		"title": "작업",
@@ -3455,7 +3460,8 @@
 				"activityRestored": "restored this Feature",
 				"archiveDialogDescription": "The Feature will move to Archived. Its milestones, Tasks, and Bugs keep their current state. You can restore it later.",
 				"archiveDialogTitle": "Archive “{{title}}”?",
-				"archiving": "Archiving…"
+				"archiving": "Archiving…",
+				"pageTitle": "{{name}}'s features"
 			},
 			"workspace": {
 				"navigation": "Feature navigation",
@@ -3521,6 +3527,22 @@
 					"linkFailed": "Could not link this work. Try again."
 				},
 				"updateUnavailable": "Feature update unavailable."
+			},
+			"window": {
+				"copyId": "Copy feature ID",
+				"copyLink": "Copy feature link",
+				"copyTitle": "Copy feature title",
+				"delete": "Delete feature",
+				"deleted": "Feature deleted successfully",
+				"deleteDescription": "This permanently deletes the Feature with its milestones, documents, updates, and comments. Its Tasks and Bugs stay in the project without a Feature or milestone. You can't undo this action.",
+				"deleteError": "Failed to delete feature",
+				"deleteTitle": "Delete feature?",
+				"idCopied": "Copied feature ID",
+				"linkCopied": "Copied feature link",
+				"loading": "Loading feature...",
+				"move": "Move feature",
+				"moved": "Feature moved successfully",
+				"titleCopied": "Copied feature title"
 			}
 		},
 		"releases": {
@@ -4063,7 +4085,8 @@
 				"empty": "Nothing has happened in the last 30 days.",
 				"loadError": "Activity couldn't be loaded.",
 				"title": "Activity",
-				"updated": "updated the task"
+				"updated": "updated the task",
+				"updatedFeature": "updated the feature"
 			},
 			"greeting": {
 				"afternoon": "Good afternoon",

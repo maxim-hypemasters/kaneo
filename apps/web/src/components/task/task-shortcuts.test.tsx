@@ -117,7 +117,6 @@ vi.mock("@/lib/toast", () => ({
 }));
 
 const onStatus = vi.fn();
-const onAddSubtask = vi.fn();
 const onFeature = vi.fn();
 const onRelease = vi.fn();
 
@@ -129,11 +128,7 @@ function renderTaskShortcuts(
     <ShortcutTestWrapper>
       <div data-task-view>
         <button type="button" data-task-action="status" onClick={onStatus} />
-        <button
-          type="button"
-          data-task-action="addSubtask"
-          onClick={onAddSubtask}
-        />
+        <textarea aria-label="Comment" data-task-action="comment" />
         {withFeatureProperty && (
           <button
             type="button"
@@ -280,17 +275,36 @@ describe("TaskShortcuts", () => {
     });
   });
 
-  it("adds tasks only to a feature", () => {
-    const { unmount } = renderTaskShortcuts();
-    press({ key: "O", code: "KeyO", ctrlKey: true, shiftKey: true });
-    expect(onAddSubtask).not.toHaveBeenCalled();
-    unmount();
-    shortcutRegistry.reset();
+  it("copies a task's branch and focuses its comment box", async () => {
+    const { getByRole } = renderTaskShortcuts();
 
+    press({ key: ">", code: "Period", ctrlKey: true, shiftKey: true });
+    await act(async () => {});
+    expect(mocks.writeText).toHaveBeenCalledWith("kan-42-fix-login");
+
+    press({ key: "m", code: "KeyM", ctrlKey: true });
+    expect(getByRole("textbox", { name: "Comment" })).toHaveFocus();
+  });
+
+  it("keeps branch, comment and relation shortcuts off on a feature", async () => {
     mocks.task = { ...plainTask, type: "feature" };
-    renderTaskShortcuts();
-    press({ key: "O", code: "KeyO", ctrlKey: true, shiftKey: true });
-    expect(onAddSubtask).toHaveBeenCalledTimes(1);
+    const { getByRole } = renderTaskShortcuts();
+
+    press({ key: ">", code: "Period", ctrlKey: true, shiftKey: true });
+    press({ key: "m", code: "KeyM", ctrlKey: true });
+    for (const key of ["b", "x", "r"]) {
+      press({ key: "m", code: "KeyM" });
+      press({ key, code: `Key${key.toUpperCase()}` });
+    }
+    await act(async () => {});
+
+    expect(mocks.writeText).not.toHaveBeenCalled();
+    expect(getByRole("textbox", { name: "Comment" })).not.toHaveFocus();
+    expect(useRelationPickerStore.getState().request).toBeNull();
+
+    press({ key: ".", code: "Period", ctrlKey: true });
+    await act(async () => {});
+    expect(mocks.writeText).toHaveBeenCalledWith("KAN-42");
   });
 
   it("picks a feature for a task, but not for a feature", () => {

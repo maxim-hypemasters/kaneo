@@ -8,6 +8,7 @@ import {
 } from "vite-plus/test";
 import { postToGenericWebhook } from "../../../../apps/api/src/plugins/generic-webhook/client";
 import {
+  handleTaskCreated,
   handleTaskDeleted,
   handleTaskUnassigned,
 } from "../../../../apps/api/src/plugins/generic-webhook/events";
@@ -63,7 +64,19 @@ const deletedEvent = {
   projectId: "project-1",
   userId: "user-1",
   title: "Ship the release",
+  taskType: "task" as const,
 };
+
+function joinedSelectChain(rows: unknown[]) {
+  const chain = {
+    from: () => chain,
+    innerJoin: () => chain,
+    leftJoin: () => chain,
+    where: () => chain,
+    limit: () => Promise.resolve(rows),
+  };
+  return chain;
+}
 
 describe("generic webhook event handlers", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -114,9 +127,78 @@ describe("generic webhook event handlers", () => {
       event: "task.deleted",
       integration: { type: "generic-webhook" },
       project: { id: "project-1", name: "Roadmap", workspaceId: "workspace-1" },
-      task: { id: "task-1", title: "Ship the release" },
+      task: { id: "task-1", type: "task", title: "Ship the release" },
       actor: { id: "user-1", name: "Andrej" },
       data: {},
+    });
+  });
+
+  it("names a deleted Feature in task.deleted", async () => {
+    selectMock
+      .mockImplementationOnce(() =>
+        selectChain([
+          { id: "project-1", name: "Roadmap", workspaceId: "workspace-1" },
+        ]),
+      )
+      .mockImplementationOnce(() =>
+        selectChain([{ id: "user-1", name: "Andrej" }]),
+      );
+
+    await handleTaskDeleted(
+      { ...deletedEvent, taskType: "feature" },
+      enabledContext,
+    );
+
+    const [, payload] = vi.mocked(postToGenericWebhook).mock.calls[0] ?? [];
+    expect(payload).toMatchObject({
+      event: "task.deleted",
+      task: { id: "task-1", type: "feature" },
+    });
+  });
+
+  it("adds the item type to task payloads and keeps the task.* event names", async () => {
+    selectMock
+      .mockImplementationOnce(() =>
+        joinedSelectChain([
+          {
+            id: "feature-1",
+            type: "feature",
+            title: "Checkout",
+            number: 12,
+            status: null,
+            priority: null,
+            columnName: null,
+            projectId: "project-1",
+            projectName: "Roadmap",
+            workspaceId: "workspace-1",
+          },
+        ]),
+      )
+      .mockImplementationOnce(() =>
+        selectChain([{ id: "user-1", name: "Andrej" }]),
+      );
+
+    await handleTaskCreated(
+      {
+        taskId: "feature-1",
+        projectId: "project-1",
+        userId: "user-1",
+        title: "Checkout",
+        description: null,
+        priority: null,
+        status: "",
+        number: 12,
+      },
+      {
+        ...context,
+        config: { ...context.config, events: { taskCreated: true } },
+      },
+    );
+
+    const [, payload] = vi.mocked(postToGenericWebhook).mock.calls[0] ?? [];
+    expect(payload).toMatchObject({
+      event: "task.created",
+      task: { id: "feature-1", type: "feature", number: 12, status: null },
     });
   });
 

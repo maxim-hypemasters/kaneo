@@ -16,7 +16,7 @@ const globalSearchRoute = createRoute({
   tags: ["Search"],
   summary: "Global search",
   description:
-    "Search across tasks, projects, workspaces, comments, activities, and Feature documents in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`.",
+    "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, and Feature documents in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`. Comment and activity results carry the `taskId` and `taskType` of the item they belong to.",
   middleware: [workspaceAccess.fromQuery()] as const,
   request: { query: searchQuery },
   responses: {

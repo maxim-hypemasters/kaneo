@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useDeleteTask } from "@/hooks/mutations/task/use-delete-task";
+import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useShortcut } from "@/lib/shortcuts/use-shortcut";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { toast } from "@/lib/toast";
+import { taskWindowCopy } from "./task-window-copy";
 
 type TaskDeleteDialogProps = {
   handle: AlertDialogPrimitive.Handle<unknown>;
@@ -33,6 +35,8 @@ export default function TaskDeleteDialog({
   const { t } = useTranslation();
   const { canDeleteTasks, isCheckingPermissions } = useWorkspacePermission();
   const { mutateAsync: deleteTask, isPending } = useDeleteTask();
+  const { data: task } = useGetTask(taskId);
+  const copy = taskWindowCopy(t, task?.type === "feature");
   const canDelete = !isCheckingPermissions && canDeleteTasks();
 
   useShortcut("deleteTask", () => handle.open(null), {
@@ -50,13 +54,11 @@ export default function TaskDeleteDialog({
   const handleDelete = async () => {
     try {
       await deleteTask(taskId);
-      toast.success(t("tasks:delete.success"), { icon: Trash2Icon });
+      toast.success(copy.deleted, { icon: Trash2Icon });
       handle.close();
       onDeleted();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("tasks:delete.error"),
-      );
+      toast.error(error instanceof Error ? error.message : copy.deleteError);
     }
   };
 
@@ -64,9 +66,9 @@ export default function TaskDeleteDialog({
     <AlertDialog handle={handle}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{t("tasks:delete.title")}</AlertDialogTitle>
+          <AlertDialogTitle>{copy.deleteTitle}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t("tasks:delete.description")}
+            {copy.deleteDescription}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -81,9 +83,7 @@ export default function TaskDeleteDialog({
             disabled={isPending}
             onClick={() => void handleDelete()}
           >
-            {isPending
-              ? t("common:actions.deleting")
-              : t("tasks:delete.action")}
+            {isPending ? t("common:actions.deleting") : copy.delete}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

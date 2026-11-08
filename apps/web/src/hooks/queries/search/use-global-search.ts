@@ -1,15 +1,9 @@
 import { skipToken, useQuery } from "@tanstack/react-query";
-import globalSearch from "@/fetchers/search/global-search";
+import globalSearch, { type SearchType } from "@/fetchers/search/global-search";
 
 type SearchParams = {
   q: string;
-  type?:
-    | "all"
-    | "tasks"
-    | "projects"
-    | "workspaces"
-    | "comments"
-    | "activities";
+  type?: SearchType;
   workspaceId: string | undefined;
   projectId?: string;
   limit?: number;

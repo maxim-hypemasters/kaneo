@@ -3606,6 +3606,15 @@
               "null"
             ]
           },
+          "taskType": {
+            "type": "string",
+            "enum": [
+              "task",
+              "bug",
+              "feature"
+            ],
+            "description": "The type of the Feature, Task or Bug the activity belongs to."
+          },
           "projectId": {
             "type": "string"
           },
@@ -3626,6 +3635,7 @@
           "taskId",
           "taskTitle",
           "taskNumber",
+          "taskType",
           "projectId",
           "projectSlug"
         ]
@@ -3832,6 +3842,34 @@
             },
             "required": [
               "pendingDeletion"
+            ]
+          }
+        ]
+      },
+      "NotificationListItem": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Notification"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "taskType": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "task",
+                  "bug",
+                  "feature",
+                  null
+                ],
+                "description": "The type of the Feature, Task or Bug a task notification points at. Null for notifications without a task, such as workspace notifications."
+              }
+            },
+            "required": [
+              "taskType"
             ]
           }
         ]
@@ -4166,12 +4204,14 @@
             "type": "string",
             "enum": [
               "task",
+              "feature",
               "project",
               "workspace",
               "comment",
               "activity",
               "document"
-            ]
+            ],
+            "description": "`task` covers Tasks and Bugs; `feature` is a Feature, which has no status or priority."
           },
           "taskType": {
             "type": "string",
@@ -4180,7 +4220,15 @@
               "bug",
               "feature"
             ],
-            "description": "The item type for task search results."
+            "description": "For task and feature results, the item's type. For comment and activity results, the type of the item they belong to."
+          },
+          "taskId": {
+            "type": "string",
+            "description": "The Feature, Task or Bug a comment or activity result belongs to."
+          },
+          "archived": {
+            "type": "boolean",
+            "description": "Whether a feature result is archived."
           },
           "title": {
             "type": "string"
@@ -5830,7 +5878,7 @@
           },
           "relationType": {
             "type": "string",
-            "description": "How the two tasks relate: `blocks` or `related`. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead."
+            "description": "How the two tasks relate: `blocks` or `related`, always between Tasks and Bugs. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead."
           }
         },
         "required": [
@@ -5992,7 +6040,7 @@
           },
           "relationType": {
             "type": "string",
-            "description": "How the two tasks relate: `blocks` or `related`. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead."
+            "description": "How the two tasks relate: `blocks` or `related`, always between Tasks and Bugs. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead."
           },
           "createdAt": {
             "type": "string",
@@ -26976,7 +27024,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Notification"
+                    "$ref": "#/components/schemas/NotificationListItem"
                   }
                 }
               }
@@ -27752,7 +27800,7 @@
           "Search"
         ],
         "summary": "Global search",
-        "description": "Search across tasks, projects, workspaces, comments, activities, and Feature documents in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`.",
+        "description": "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, and Feature documents in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`. Comment and activity results carry the `taskId` and `taskType` of the item they belong to.",
         "parameters": [
           {
             "schema": {
@@ -27770,15 +27818,18 @@
               "enum": [
                 "all",
                 "tasks",
+                "features",
                 "projects",
                 "workspaces",
                 "comments",
                 "activities",
                 "documents"
               ],
-              "default": "all"
+              "default": "all",
+              "description": "Restrict results to one kind. `tasks` returns Tasks and Bugs; `features` returns Features."
             },
             "required": false,
+            "description": "Restrict results to one kind. `tasks` returns Tasks and Bugs; `features` returns Features.",
             "name": "type",
             "in": "query"
           },
@@ -32766,7 +32817,7 @@
           "Task Relations"
         ],
         "summary": "Create task relation",
-        "description": "Link two tasks. Authorization is scoped to the source task's workspace.",
+        "description": "Link two Tasks or Bugs with a blocks or related relation. Features do not have relations, so a Feature on either end of one is refused; the deprecated subtask type still puts a task into a Feature. Authorization is scoped to the source task's workspace.",
         "requestBody": {
           "required": true,
           "content": {
@@ -32787,7 +32838,7 @@
                       "blocks",
                       "related"
                     ],
-                    "description": "`subtask` is deprecated: creating one puts the target into the source's feature (the source must already be a Feature or belong to one). Use PUT /task/feature/{id} instead."
+                    "description": "`blocks` and `related` link two Tasks or Bugs; Features do not have relations. `subtask` is deprecated: creating one puts the target into the source's feature (the source must already be a Feature or belong to one). Use PUT /task/feature/{id} instead."
                   }
                 },
                 "required": [
@@ -32811,7 +32862,7 @@
             }
           },
           "400": {
-            "description": "Invalid body",
+            "description": "Invalid body, a task linked to itself, or a Feature on either end of a blocks or related relation",
             "content": {
               "application/json": {
                 "schema": {

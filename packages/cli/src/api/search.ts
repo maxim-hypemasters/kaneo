@@ -7,6 +7,8 @@ export const SearchHit = Schema.Struct({
   id: Schema.String,
   type: Schema.String,
   taskType: Schema.optionalKey(Schema.NullOr(Schema.String)),
+  taskId: OptionalString,
+  archived: Schema.optionalKey(Schema.Boolean),
   title: Schema.String,
   description: OptionalString,
   content: OptionalString,
@@ -32,6 +34,7 @@ export type SearchResponse = typeof SearchResponse.Type;
 export const SEARCH_TYPES = [
   "all",
   "tasks",
+  "features",
   "projects",
   "workspaces",
   "comments",

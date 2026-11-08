@@ -8,6 +8,7 @@ import {
 } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { assertProjectAccess } from "../../project-access/assert-project-access";
+import { assertNoFeatureRelation } from "../assert-no-feature-relation";
 import { linkSubtaskAsFeature } from "../feature-links";
 
 async function createTaskRelation({
@@ -57,6 +58,7 @@ async function createTaskRelation({
     const [sourceTask] = await tx
       .select({
         id: taskTable.id,
+        type: taskTable.type,
         projectId: taskTable.projectId,
         workspaceId: projectTable.workspaceId,
       })
@@ -77,6 +79,7 @@ async function createTaskRelation({
     const [targetTask] = await tx
       .select({
         id: taskTable.id,
+        type: taskTable.type,
         projectId: taskTable.projectId,
         workspaceId: projectTable.workspaceId,
       })
@@ -95,6 +98,8 @@ async function createTaskRelation({
     }
 
     await assertProjectAccess(userId, targetTask.projectId);
+    // After the access check, so a hidden target never reveals its type.
+    assertNoFeatureRelation(sourceTask, targetTask);
 
     const existing = await tx
       .select({ id: taskRelationTable.id })

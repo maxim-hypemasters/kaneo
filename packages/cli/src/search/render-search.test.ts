@@ -84,6 +84,34 @@ describe("renderSearch", () => {
     for (const line of lines) expect(stringWidth(line)).toBeLessThanOrEqual(80);
   });
 
+  it("lists Features under their own heading and marks archived ones", () => {
+    const lines = renderSearch(ui(80), {
+      query: "checkout",
+      results: [
+        result({
+          type: "feature",
+          id: "f1",
+          ticketId: "KAN-4",
+          title: "Checkout",
+          status: null,
+          archived: true,
+        }),
+        result({}),
+      ],
+      more: false,
+      limit: 20,
+    });
+    expect(lines).toEqual([
+      "",
+      "  Tasks 1",
+      "    KAN-1  Fix login redirect after device approval  ● In Progress",
+      "",
+      "  Features 1",
+      "    KAN-4  Checkout [Archived]",
+      "",
+    ]);
+  });
+
   it("groups results by kind at 80 columns", () => {
     const lines = renderSearch(ui(80), {
       query: "login",

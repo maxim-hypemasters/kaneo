@@ -42,14 +42,14 @@ async function importProject(
     milestones,
     warnings: [],
   };
-  const projectId = await createImportProject(
+  const { id: projectId, warnings } = await createImportProject(
     {
       workspaceId: context.workspace.id,
       userId: context.user.id,
       name: project.name,
     },
     async (tx, created) => {
-      await writeProjectContent(tx, {
+      const { warnings } = await writeProjectContent(tx, {
         projectId: created.id,
         workspaceId: context.workspace.id,
         userId: context.user.id,
@@ -57,7 +57,7 @@ async function importProject(
         project,
         includeComments: false,
       });
-      return created.id;
+      return { id: created.id, warnings };
     },
   );
   const rows = await db
@@ -66,7 +66,7 @@ async function importProject(
     .where(eq(schema.taskTable.projectId, projectId));
   const byTitle = new Map(rows.map((row) => [row.title, row]));
   const links = await db.select().from(schema.taskRelationTable);
-  return { projectId, byTitle, links };
+  return { projectId, byTitle, links, warnings };
 }
 
 describe("connected milestone import membership precedence", () => {
@@ -130,6 +130,36 @@ describe("connected milestone import membership precedence", () => {
       targetTaskId: result.byTitle.get("child")!.id,
       relationType: "related",
     });
+  });
+  it("leaves out links with a Feature on either end, with a warning", async () => {
+    const result = await importProject(
+      [
+        task("first", { type: "feature", featureKey: null }),
+        task("second", { type: "feature", featureKey: null }),
+        task("child", { featureKey: "second" }),
+        task("other", { featureKey: null }),
+      ],
+      [
+        // Another Feature's member: kept as a related link before Features
+        // lost their relations.
+        edge("first", "child"),
+        { sourceKey: "child", targetKey: "second", type: "blocks" },
+        { sourceKey: "other", targetKey: "child", type: "related" },
+      ],
+    );
+    expect(result.byTitle.get("child")).toMatchObject({
+      featureId: result.byTitle.get("second")!.id,
+    });
+    expect(result.links).toMatchObject([
+      {
+        sourceTaskId: result.byTitle.get("other")!.id,
+        targetTaskId: result.byTitle.get("child")!.id,
+        relationType: "related",
+      },
+    ]);
+    expect(result.warnings).toEqual([
+      "2 task links to features were not copied: features don't have relations.",
+    ]);
   });
   it("keeps legacy promotion and tree flattening when older sources omit membership fields", async () => {
     const result = await importProject(

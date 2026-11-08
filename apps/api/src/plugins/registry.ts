@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import db from "../database";
 import { integrationTable } from "../database/schema";
 import { subscribeToEvent } from "../events";
+import type { TaskType } from "../task/task-type";
 import type {
   IntegrationPlugin,
   PluginContext,
@@ -142,12 +143,14 @@ export function initializeEventSubscriptions(): void {
     userId: string | null;
     title: string;
     projectId: string;
+    taskType: TaskType;
   }>("task.deleted", async (data) => {
     await broadcastTaskDeleted({
       taskId: data.taskId,
       projectId: data.projectId,
       userId: data.userId,
       title: data.title,
+      taskType: data.taskType,
     });
   });
 

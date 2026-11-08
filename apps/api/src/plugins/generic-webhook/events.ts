@@ -8,6 +8,7 @@ import {
   userTable,
   workspaceTable,
 } from "../../database/schema";
+import type { TaskType } from "../../task/task-type";
 import { safeOutboundError } from "../../utils/outbound-request";
 import type {
   PluginContext,
@@ -29,6 +30,7 @@ import { normalizeGenericWebhookConfig } from "./config";
 
 type GenericWebhookTaskData = {
   id: string;
+  type: TaskType;
   title: string;
   number: number | null;
   status: string | null;
@@ -54,6 +56,7 @@ async function getTaskData(
   const [taskRow] = await db
     .select({
       id: taskTable.id,
+      type: taskTable.type,
       title: taskTable.title,
       number: taskTable.number,
       status: taskTable.status,
@@ -226,6 +229,7 @@ async function sendEvent(
     },
     task: {
       id: task.id,
+      type: task.type,
       number: task.number,
       title: task.title,
       status: task.status,
@@ -433,6 +437,7 @@ async function sendTaskDeletedEvent(
       },
       task: {
         id: event.taskId,
+        type: event.taskType,
         title: event.title,
       },
       actor,

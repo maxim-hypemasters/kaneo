@@ -1,6 +1,7 @@
 // Turns legacy "subtask" relations into the two-level Feature / Task
-// hierarchy, one project at a time. Shared by the startup migration and the
-// import writer, so both flatten the same way.
+// hierarchy, one project at a time, for the import writer. A "related"
+// outcome that touches a Feature is dropped there, since Features have no
+// relations (see import/writer/omit-feature-relations.ts).
 
 export type HierarchyTask = {
   id: string;

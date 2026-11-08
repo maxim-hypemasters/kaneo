@@ -45,7 +45,7 @@ Switch the layout to **List** when you want to compare task properties without o
 
 ## Find and filter work
 
-Use the search icon, or press ⌘F (Ctrl+F on Windows and Linux), to find tasks by title, description, or task number, and Feature documents by title or text. Choosing a document opens it in its Feature.
+Use the search icon, or press ⌘F (Ctrl+F on Windows and Linux), to find Tasks, Bugs and Features by title, description, or number, and Feature documents by title or text. Features have their own **Features** group, with archived ones marked **Archived**. Choosing a document opens it in its Feature. Choosing a comment or activity opens the item it belongs to; for a Feature, that is its **Activity** tab. The full search page lists matching Features above Tasks and Bugs.
 
 Use **Filter** to narrow the view by type, status, assignee, priority, labels, release, due date, or custom fields. Hover a property to pick its values, or type in **Add filter…** to search every value at once. Each filter appears as a chip above the tasks:
 
@@ -91,7 +91,7 @@ A Feature is a durable knowledge record for a part of your product. Keep its doc
 
 ### Find and create Features
 
-Open the project's **Features** library to search its active or archived Features. Rows show a description preview, labels and milestone count. Use **New → New feature**, the library's creation action, or **New feature** in the command menu. Features stay discoverable in search, relation pickers and task links, while execution boards, backlog, lists, Calendar and My Work show Tasks and Bugs.
+Open the project's **Features** library to search its active or archived Features. Rows show a description preview, labels and milestone count. Use **New → New feature**, the library's creation action, or **New feature** in the command menu. Features stay discoverable in search (in their own **Features** group), the Feature picker and task links, while execution boards, backlog, lists, Calendar and My Work show Tasks and Bugs.
 
 The **New Feature** popup keeps its title, description, labels, custom fields and attachments. Its **Milestones** section adds ordered drafts with a title, Milestone Lead, priority and release. Status and dates come from linked work after saving. Each milestone card has a **Work** area: use its **New** menu to add title-only Task or Bug drafts directly to that milestone. To move a new draft, remove it and add it in the destination card.
 
@@ -117,7 +117,7 @@ Use [milestones](/core/functional/milestones) to plan stages of implementation. 
 
 Features have four tabs in both the side panel and full page. **Overview** opens by default. The header, properties, and milestone sidebar stay available while switching tabs.
 
-- **Overview** keeps the description, latest published update, relations, and external resources together. Click the description to edit it with the shared document editor.
+- **Overview** keeps the description, latest published update, and resources together. Click the description to edit it with the shared document editor. Features have no Relations section.
 - **Activity** combines official updates, comments, and system history, newest first. Choose **Comment** for conversation or **Update** to publish a note with **On track**, **At risk**, or **Off track** health. Updates capture each milestone's whole progress at publication and compare it with the previous report. Later milestone changes do not rewrite those snapshots.
 - **Documents** holds named pages. Search or page through the list, then open a page: it fills the screen, and **All documents** or Esc returns to the list. Click the page to edit it. Save and Cancel, formatting, and uploads work like descriptions. You can rename a page while editing and confirm its deletion. If another person saves first, your draft remains available while you review the latest revision.
 - **Issues** shows linked Tasks and Bugs grouped in workflow order, including completed work and items without a milestone. Use **Include archived** to show archived items. Creation and linking preserve the current Feature and selected milestone; removing an item from the Feature preserves the work itself.
@@ -132,7 +132,7 @@ Publishing updates and creating or editing pages require task-update permission.
 
 Feature history contains its comments and activity plus milestone lifecycle and planning changes. On upgrade, former Feature planning values are preserved in one immutable history snapshot before the fields are cleared. No milestones are created automatically. Existing task releases, milestone dates/order, and historical release progress remain intact.
 
-Deleting a Feature unlinks its Tasks/Bugs and removes its milestones, while retaining the child work and its planning fields. Duplicating creates an empty Feature without milestones. An empty Feature may move projects with its milestones. Task/Bug duplication preserves its existing Feature, milestone, release and estimate; the copy has no dates until a plan is applied or it is moved in Gantt.
+**Delete feature** in the Feature's actions menu permanently removes the Feature with its milestones, documents, updates, and comments. Its Tasks and Bugs stay in the project with their planning fields, but without a Feature or milestone. Deleting from the full page returns you to the **Features** library. Duplicating creates an empty Feature without milestones. An empty Feature may move projects with its milestones. Task/Bug duplication preserves its existing Feature, milestone, release and estimate; the copy has no dates until a plan is applied or it is moved in Gantt.
 
 ### Subtasks from earlier versions
 
@@ -140,13 +140,15 @@ Earlier versions of Kaneo had subtasks. When your instance is upgraded, they are
 
 - A top-level task that had subtasks becomes a feature, and its subtasks become its tasks.
 - Deeper levels are flattened. A subtask of a subtask becomes a task of the top feature too, and its link to the subtask above it is kept as a **Related** relation.
-- Other links that don't fit, such as a second parent or a link to a task in another project, are also kept as **Related** relations.
+- Other links that don't fit, such as a second parent or a link to a task in another project, are also kept as **Related** relations, unless a Feature is on either end: Features don't have relations, so those links were [removed](/core/operations/upgrades#features-lose-their-relations).
 
 No task is deleted. Operators can find the details in [Upgrade Kaneo](/core/operations/upgrades#subtasks-become-features).
 
 ## Link related work
 
 Open **Relations** and use the add button to find another task. Choose **Related** for a connection or **Blocks** when the current task must be resolved before the other one. The other task shows the inverse **blocked by** relationship.
+
+Relations link Tasks and Bugs. Features don't have relations, so the picker doesn't offer them. To group work under a Feature, [link it](#link-implementation-work) instead.
 
 Use **Remove relation** to unlink the tasks without deleting either task.
 

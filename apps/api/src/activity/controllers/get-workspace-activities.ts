@@ -50,6 +50,7 @@ async function getWorkspaceActivities(workspaceId: string, userId: string) {
       taskId: taskTable.id,
       taskTitle: taskTable.title,
       taskNumber: taskTable.number,
+      taskType: taskTable.type,
       projectId: projectTable.id,
       projectSlug: projectTable.slug,
     })

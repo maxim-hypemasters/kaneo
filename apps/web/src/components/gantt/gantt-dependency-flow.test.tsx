@@ -159,14 +159,8 @@ class TestPointerEvent extends MouseEvent {
   }
 }
 
-function task(
-  id: string,
-  startDate: string | null,
-  dueDate: string,
-  hierarchy: { type?: "task" | "feature"; featureId?: string | null } = {},
-) {
+function task(id: string, startDate: string | null, dueDate: string) {
   return {
-    ...hierarchy,
     id,
     projectId: "project",
     title: id,
@@ -321,23 +315,6 @@ describe("Gantt dependencies", () => {
       "tasks:gantt.dependencies.startsBeforeBlocker:Design",
     );
     expect(bar("Design")).not.toHaveAccessibleDescription();
-  });
-
-  it("ignores knowledge Feature relations while retaining leaf dependencies", () => {
-    setTasks(
-      task("Knowledge", "2026-09-01", "2026-09-06", { type: "feature" }),
-      task("Design", "2026-09-01", "2026-09-03"),
-      task("Build", "2026-09-03", "2026-09-05"),
-    );
-    m.relations = [blocks("Knowledge", "Build"), blocks("Design", "Build")];
-    const { container } = show();
-    expect(container.querySelector('[data-gantt-row="Knowledge"]')).toBeNull();
-    expect(screen.queryByRole("button", { name: /featureBar/ })).toBeNull();
-    // Build may start once Design ends, so moving Build later asks nothing.
-    dragBy(bar("Build"), 88);
-    expect(screen.queryByRole("alertdialog")).toBeNull();
-    expect(m.update).toHaveBeenCalledWith("Build", day(9, 5), day(9, 7));
-    expect(linePaths()).toHaveLength(1);
   });
 
   it("moves bars sideways but never resizes them", () => {

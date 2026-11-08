@@ -2475,7 +2475,8 @@
 				"comment": "Bình luận",
 				"activity": "Hoạt động",
 				"fallback": "Kết quả",
-				"document": "Documents"
+				"document": "Documents",
+				"feature": "Features"
 			}
 		},
 		"settingsLayout": {
@@ -2560,7 +2561,6 @@
 				"editDescription": "Sửa mô tả",
 				"commentOnTask": "Bình luận",
 				"moveToProject": "Chuyển sang dự án khác",
-				"createSubtask": "Thêm công việc vào tính năng này",
 				"setParent": "Đặt tính năng",
 				"openParent": "Mở tính năng",
 				"openSubtask": "Mở một công việc của tính năng này",
@@ -2695,7 +2695,10 @@
 			"loadError": "Notifications couldn't be loaded.",
 			"taskLoadError": "This task couldn’t be loaded.",
 			"actionError": "Không thể cập nhật hộp thư đến. Hãy thử lại.",
-			"readCleared": "Đã xóa các thông báo đã đọc"
+			"readCleared": "Đã xóa các thông báo đã đọc",
+			"featureLoadError": "This feature couldn’t be loaded.",
+			"featureUnavailable": "This feature is no longer available.",
+			"openFeature": "Open feature"
 		}
 	},
 	"activity": {
@@ -2814,14 +2817,16 @@
 		"addedToFeature": "đã thêm công việc vào tính năng \"{{feature}}\"",
 		"removedFromFeature": "đã gỡ công việc khỏi tính năng \"{{feature}}\"",
 		"changedFeature": "đã chuyển công việc từ tính năng \"{{from}}\" sang \"{{to}}\"",
-		"madeFeature": "đã chuyển công việc này thành tính năng",
-		"madeTask": "đã chuyển tính năng này thành công việc",
 		"addedToRelease": "đã thêm công việc vào bản phát hành \"{{release}}\"",
 		"removedFromRelease": "đã gỡ công việc khỏi bản phát hành \"{{release}}\"",
 		"changedRelease": "đã chuyển công việc từ bản phát hành \"{{from}}\" sang \"{{to}}\"",
 		"changedTypeToBug": "changed the type to bug",
 		"changedTypeToFeature": "changed the type to feature",
-		"changedTypeToTask": "changed the type to task"
+		"changedTypeToTask": "changed the type to task",
+		"createdFeature": "created this feature",
+		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
+		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
+		"postedFeatureUpdate": "posted an update"
 	},
 	"tasks": {
 		"title": "Nhiệm vụ",
@@ -3455,7 +3460,8 @@
 				"activityRestored": "restored this Feature",
 				"archiveDialogDescription": "The Feature will move to Archived. Its milestones, Tasks, and Bugs keep their current state. You can restore it later.",
 				"archiveDialogTitle": "Archive “{{title}}”?",
-				"archiving": "Archiving…"
+				"archiving": "Archiving…",
+				"pageTitle": "{{name}}'s features"
 			},
 			"workspace": {
 				"navigation": "Feature navigation",
@@ -3521,6 +3527,22 @@
 					"linkFailed": "Could not link this work. Try again."
 				},
 				"updateUnavailable": "Feature update unavailable."
+			},
+			"window": {
+				"copyId": "Copy feature ID",
+				"copyLink": "Copy feature link",
+				"copyTitle": "Copy feature title",
+				"delete": "Delete feature",
+				"deleted": "Feature deleted successfully",
+				"deleteDescription": "This permanently deletes the Feature with its milestones, documents, updates, and comments. Its Tasks and Bugs stay in the project without a Feature or milestone. You can't undo this action.",
+				"deleteError": "Failed to delete feature",
+				"deleteTitle": "Delete feature?",
+				"idCopied": "Copied feature ID",
+				"linkCopied": "Copied feature link",
+				"loading": "Loading feature...",
+				"move": "Move feature",
+				"moved": "Feature moved successfully",
+				"titleCopied": "Copied feature title"
 			}
 		},
 		"releases": {
@@ -4063,7 +4085,8 @@
 				"empty": "Nothing has happened in the last 30 days.",
 				"loadError": "Activity couldn't be loaded.",
 				"title": "Activity",
-				"updated": "updated the task"
+				"updated": "updated the task",
+				"updatedFeature": "updated the feature"
 			},
 			"greeting": {
 				"afternoon": "Good afternoon",

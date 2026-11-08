@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { featureRoute } from "@/components/task/features/feature-route";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { WorkspaceActivity } from "@/fetchers/activity/get-workspace-activities";
 import { formatDateTime, formatRelativeTime } from "@/lib/format";
@@ -20,6 +21,26 @@ export function ActivityFeedItem({
     activity.userName ||
     activity.externalUserName ||
     t("common:people.someone");
+  const isUpdate = activity.type === "feature_update";
+  const target =
+    activity.taskType === "feature"
+      ? featureRoute(
+          workspaceId,
+          activity.projectId,
+          activity.taskId,
+          isUpdate
+            ? { featureTab: "activity", featureUpdateId: activity.id }
+            : // Comments and history live in the Activity tab, not Overview.
+              { featureTab: "activity" },
+        )
+      : ({
+          to: "/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId",
+          params: {
+            workspaceId,
+            projectId: activity.projectId,
+            taskId: activity.taskId,
+          },
+        } as const);
 
   return (
     <li className="flex gap-2.5">
@@ -37,21 +58,13 @@ export function ActivityFeedItem({
           <span className="font-medium text-foreground">{actorName}</span>{" "}
           {describeActivity(activity, t)}
         </p>
-        {activity.type === "comment" && activity.excerpt && (
+        {(activity.type === "comment" || isUpdate) && activity.excerpt && (
           <p className="line-clamp-3 wrap-break-word rounded-lg bg-muted/70 px-2.5 py-2 text-[13px] text-foreground/85 leading-[18px]">
             {activity.excerpt}
           </p>
         )}
         <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
-          <Link
-            to="/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId"
-            params={{
-              workspaceId,
-              projectId: activity.projectId,
-              taskId: activity.taskId,
-            }}
-            className="min-w-0 truncate hover:text-foreground"
-          >
+          <Link {...target} className="min-w-0 truncate hover:text-foreground">
             <span className="font-medium">
               {activity.taskNumber == null
                 ? activity.projectSlug

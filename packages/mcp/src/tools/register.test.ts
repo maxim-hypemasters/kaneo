@@ -232,6 +232,22 @@ describe("registerTools", () => {
     });
   });
 
+  it("searches Features on their own", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ results: [] }) };
+
+    registerTools(server as never, { client: client as never });
+
+    const tool = tools.get("search");
+    expect(() =>
+      tool?.config.inputSchema?.parse({ q: "checkout", type: "features" }),
+    ).not.toThrow();
+    await tool?.handler({ q: "checkout", type: "features" });
+    expect(client.json).toHaveBeenCalledWith(
+      "/api/search?q=checkout&type=features",
+    );
+  });
+
   it("gets one task by ticket ID with an optional workspace", async () => {
     const { server, tools } = createServerMock();
     const client = {

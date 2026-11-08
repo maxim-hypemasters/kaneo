@@ -473,13 +473,14 @@ describe("API integration: import from other tools", () => {
         labels: 2,
         comments: 2,
         assignees: 1,
-        relations: 2,
+        relations: 1,
       },
     });
     expect(imported?.warnings).toEqual([
       "2 attachments were skipped.",
       'Renamed a column to avoid conflicts: "Planned" to "Planned list".',
       "1 task was assigned to someone who is not a member of this workspace (Stranger). Invite them, then assign the task.",
+      "1 task link to a feature was not copied: features don't have relations.",
     ]);
 
     const projectId = imported?.projectId ?? "";
@@ -583,7 +584,7 @@ describe("API integration: import from other tools", () => {
         userId: null,
       },
     ]);
-    const [first, , someday, , shipIt] = tasks;
+    const [first, , , , shipIt] = tasks;
     expect(first?.description).toBe("Draft **all** pages");
     expect(first?.createdAt.toISOString()).toBe("2023-05-06T07:08:09.000Z");
     expect(first?.dueDate).toBeNull();
@@ -702,13 +703,8 @@ describe("API integration: import from other tools", () => {
           tasks.map((task) => task.id),
         ),
       );
-    expect(relations).toEqual([
-      {
-        sourceTaskId: first?.id,
-        targetTaskId: someday?.id,
-        relationType: "blocks",
-      },
-    ]);
+    // First became a feature, so its blocks link to Someday was not copied.
+    expect(relations).toEqual([]);
     // The subtask link became a feature: Ship it is a task of First.
     const hierarchy = await db
       .select({

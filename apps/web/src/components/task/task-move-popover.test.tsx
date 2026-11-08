@@ -61,19 +61,51 @@ const task = {
   projectId: "project-1",
 } as Task;
 
-async function pickMobileApp() {
+function openMove(item: Task = task) {
   render(
-    <TaskMovePopover task={task} workspaceId="workspace-1">
+    <TaskMovePopover task={item} workspaceId="workspace-1">
       <button type="button">Move</button>
     </TaskMovePopover>,
   );
   fireEvent.click(screen.getByRole("button", { name: "Move" }));
+}
+
+async function pickMobileApp(item: Task = task) {
+  openMove(item);
   await act(async () => {
     fireEvent.click(await screen.findByRole("option", { name: /Mobile app/ }));
   });
 }
 
 describe("TaskMovePopover", () => {
+  it("names what it moves", async () => {
+    openMove();
+    expect(
+      await screen.findByRole("combobox", { name: "tasks:move.title" }),
+    ).toBeTruthy();
+    cleanup();
+
+    openMove({ ...task, type: "feature", status: null } as Task);
+    expect(
+      await screen.findByRole("combobox", {
+        name: "tasks:features.window.move",
+      }),
+    ).toBeTruthy();
+  });
+
+  it("moves a feature without asking for a status", async () => {
+    mocks.moveTask.mockResolvedValue({ task: { projectId: "project-2" } });
+
+    await pickMobileApp({ ...task, type: "feature", status: null } as Task);
+
+    expect(mocks.fetchQuery).not.toHaveBeenCalled();
+    expect(mocks.moveTask).toHaveBeenCalledWith({
+      taskId: "task-1",
+      destinationProjectId: "project-2",
+      destinationStatus: undefined,
+    });
+  });
+
   it("moves right away when the destination has the same status", async () => {
     mocks.fetchQuery.mockResolvedValue([
       { slug: "in-review", name: "In Review", isFinal: false },

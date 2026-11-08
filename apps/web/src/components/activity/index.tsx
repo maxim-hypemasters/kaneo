@@ -23,6 +23,10 @@ import CommentCard from "./comment-card";
 import { describeHierarchyActivity } from "./describe-hierarchy-activity";
 import { describeMilestoneActivity } from "./describe-milestone-activity";
 import { describeReleaseActivity } from "./describe-release-activity";
+import {
+  type ActivitySubject,
+  describeSubjectActivity,
+} from "./describe-subject-activity";
 import { isCommentActivity } from "./utils";
 
 type ActivityItem = {
@@ -179,10 +183,12 @@ function ActorAvatar({
 
 function renderActivityContent({
   activity,
+  subject,
   workspaceUsers,
   t,
 }: {
   activity: ActivityItem;
+  subject: ActivitySubject;
   workspaceUsers: WorkspaceUser[] | undefined;
   t: (key: string, options?: Record<string, unknown>) => string;
 }) {
@@ -396,21 +402,14 @@ function renderActivityContent({
     }
   }
 
-  if (activity.type === "moved") {
-    if (eventData) {
-      return (
-        <span className="text-muted-foreground">
-          {eventData.fromProjectName
-            ? t("activity:moved", {
-                from: String(eventData.fromProjectName),
-                to: String(eventData.toProjectName ?? ""),
-              })
-            : t("activity:movedFromOtherProject", {
-                to: String(eventData.toProjectName ?? ""),
-              })}
-        </span>
-      );
-    }
+  const subjectChange = describeSubjectActivity(
+    activity.type,
+    eventData,
+    subject,
+    t,
+  );
+  if (subjectChange) {
+    return <span className="text-muted-foreground">{subjectChange}</span>;
   }
 
   const hierarchyChange = describeHierarchyActivity(
@@ -435,12 +434,6 @@ function renderActivityContent({
     return <span className="text-muted-foreground">{releaseChange}</span>;
   }
 
-  if (["create", "created", "task"].includes(activity.type)) {
-    return (
-      <span className="text-muted-foreground">{t("activity:created")}</span>
-    );
-  }
-
   return (
     <span className="text-muted-foreground">
       {content || toDisplayCase(activity.type)}
@@ -451,9 +444,11 @@ function renderActivityContent({
 function Activity({
   activity,
   step,
+  subject = "task",
 }: {
   activity: ActivityItem;
   step: number;
+  subject?: ActivitySubject;
 }) {
   const { t } = useTranslation();
   const { data: workspace } = useActiveWorkspace();
@@ -525,6 +520,7 @@ function Activity({
         <UserHoverName user={user || null} fallbackName={actorName} />{" "}
         {renderActivityContent({
           activity,
+          subject,
           workspaceUsers: workspaceUsers as WorkspaceUser[] | undefined,
           t,
         })}{" "}

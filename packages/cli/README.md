@@ -101,7 +101,7 @@ Credentials are resolved in this order: `--token`, then `KANEO_API_KEY`, then th
 | `kaneo member list`, `invite`, `role`, `remove` | Manage workspace members |
 | `kaneo invitation list`, `pending`, `accept`, `decline`, `cancel` | Manage invitations you sent or received |
 | `kaneo notification list`, `read` | Read your notifications (also `kaneo inbox`) |
-| `kaneo search` | Search tasks, projects and comments |
+| `kaneo search` | Search tasks, features, projects and comments |
 | `kaneo link`, `unlink` | Save or remove the workspace and project for a repository |
 | `kaneo context` | Show the settings in use and where each came from |
 | `kaneo doctor` | Check the server, your login and API compatibility |
@@ -130,7 +130,7 @@ kaneo task list -p KAN --type bug                      # exact type filter; --ty
 
 `--type` accepts `task`, `bug`, or `feature` on creation. Editing converts only Task ↔ Bug; Features cannot be converted. Task listing accepts Task/Bug filters; use `feature list` for knowledge Features. Task list and detail JSON include the item type. Creating or converting Bugs requires a server that supports them.
 
-Search JSON keeps `type: "task"` as the resource kind and preserves the server's optional `taskType` classification. Relation listings preserve each linked item's optional `type` separately from the relation's type and direction. Older servers that omit this metadata keep the previous output shape.
+Search JSON reports Tasks and Bugs as `type: "task"` and Features as `type: "feature"` (use `--type features` to search only Features), and preserves the server's optional `taskType` classification. Relation listings preserve each linked item's optional `type` separately from the relation's type and direction. Older servers that omit this metadata keep the previous output shape.
 
 `kaneo task export` and `kaneo task import` preserve explicit Task, Bug, and Feature types in native JSON files. Files without a type remain compatible and import as Tasks. Version 3 exports retain Feature membership, archive state and previous planning snapshots, milestone planning fields and ordering, release definitions, and Task/Bug links using portable keys. Import creates new IDs and restores the complete hierarchy atomically. Version 2 hierarchy and legacy flat files remain supported.
 

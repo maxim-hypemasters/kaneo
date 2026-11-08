@@ -20,6 +20,7 @@ function activity(overrides: Partial<WorkspaceActivity>): WorkspaceActivity {
     taskId: "task-1",
     taskTitle: "Fix reconnect loop",
     taskNumber: 135,
+    taskType: "task",
     projectId: "project-1",
     projectSlug: "WEB",
     ...overrides,
@@ -147,6 +148,54 @@ describe("describeActivity", () => {
     expect(describeActivity(activity({ type: "release_changed" }), t)).toBe(
       "workspace:home.activity.updated",
     );
+  });
+
+  it("words creation, moves and updates for Features", () => {
+    const feature = (overrides: Partial<WorkspaceActivity>) =>
+      activity({ taskType: "feature", ...overrides });
+    expect(describeActivity(feature({ type: "created" }), t)).toBe(
+      "activity:createdFeature",
+    );
+    expect(describeActivity(activity({ type: "created" }), t)).toBe(
+      "activity:created",
+    );
+    expect(
+      describeActivity(
+        feature({
+          type: "moved",
+          eventData: { fromProjectName: "Web", toProjectName: "Mobile" },
+        }),
+        t,
+      ),
+    ).toBe('activity:movedFeature {"from":"Web","to":"Mobile"}');
+    expect(
+      describeActivity(
+        feature({ type: "feature_update", excerpt: "Shipped the beta" }),
+        t,
+      ),
+    ).toBe("activity:postedFeatureUpdate");
+    expect(describeActivity(feature({ type: "label_added" }), t)).toBe(
+      "workspace:home.activity.updatedFeature",
+    );
+  });
+
+  it("describes milestone and archive events", () => {
+    expect(
+      describeActivity(
+        activity({ type: "feature_archived", taskType: "feature" }),
+        t,
+      ),
+    ).toBe("tasks:features.library.activityArchived");
+    expect(
+      describeActivity(
+        activity({
+          type: "milestone_created",
+          taskType: "feature",
+          eventData: { title: "Beta" },
+        }),
+        t,
+      ),
+    ).toBe('tasks:milestones.activityCreated {"title":"Beta"}');
   });
 
   it("falls back to the stored text for events without event data", () => {

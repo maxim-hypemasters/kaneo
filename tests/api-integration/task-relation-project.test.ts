@@ -61,22 +61,22 @@ async function projectWithRelations() {
   const { project: otherProject } = await createProjectFixture({
     workspaceId: member.workspace.id,
   });
-  const [first, second, third] = await Promise.all(
-    [1, 2, 3].map((number) => seedTask(project.id, number, number === 1)),
+  const [first, second, third, feature] = await Promise.all(
+    [1, 2, 3, 4].map((number) => seedTask(project.id, number, number === 4)),
   );
   const outside = await seedTask(otherProject.id, 1);
 
   const blocks = await seedRelation(first.id, second.id, "blocks");
   const related = await seedRelation(second.id, third.id, "related");
-  // Third is a task of the feature First; old clients read that as a
-  // subtask relation with a synthetic id.
+  // Third is a task of the Feature; old clients read that as a subtask
+  // relation with a synthetic id. The Feature itself has no relations.
   await db
     .update(schema.taskTable)
-    .set({ featureId: first.id })
+    .set({ featureId: feature.id })
     .where(eq(schema.taskTable.id, third.id));
   const subtask = {
-    id: `feature:${third.id}:${first.id}`,
-    sourceTaskId: first.id,
+    id: `feature:${third.id}:${feature.id}`,
+    sourceTaskId: feature.id,
     targetTaskId: third.id,
     relationType: "subtask",
   };

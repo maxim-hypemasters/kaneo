@@ -236,7 +236,15 @@ async function migrateBoard(context: {
     report.comments = skipComments
       ? 0
       : cards.reduce((total, card) => total + (card.commentsTotal ?? 0), 0);
-    report.relations = plan.featureOf.size + plan.related.length;
+    // A dry run can't tell whether the server has features, so it assumes it
+    // does: links that touch a feature card aren't copied.
+    report.relations =
+      plan.featureOf.size +
+      plan.related.filter(
+        (link) =>
+          !featureCardIds.has(link.parentCardId) &&
+          !featureCardIds.has(link.childCardId),
+      ).length;
     report.projectKey = toProjectKey(projectName);
     return;
   }
@@ -376,6 +384,7 @@ async function migrateBoard(context: {
         [...plan.featureOf].filter(([cardId]) => !joinedCardIds.has(cardId)),
       ),
     },
+    featureCardIds,
     taskIdByCardId,
     cardNames: new Map(cards.map((card) => [card.id, card.name])),
     withoutFeatures,

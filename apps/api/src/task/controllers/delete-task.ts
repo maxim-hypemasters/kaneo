@@ -73,6 +73,7 @@ async function deleteTask(taskId: string, currentUserId: string) {
     projectId: task.projectId,
     userId: currentUserId,
     title: task.title,
+    taskType: deletedTask.type,
   });
 
   if (deletedTask.featureId) {

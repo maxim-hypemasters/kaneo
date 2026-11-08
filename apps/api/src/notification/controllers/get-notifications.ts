@@ -14,6 +14,7 @@ async function getNotifications(userId: string, workspaceId?: string) {
   const rows = await db
     .select({
       notification: notificationTable,
+      taskType: taskTable.type,
       projectId: projectTable.id,
       workspaceId: workspaceTable.id,
     })
@@ -41,9 +42,9 @@ async function getNotifications(userId: string, workspaceId?: string) {
     .orderBy(desc(notificationTable.createdAt))
     .limit(50);
 
-  return rows.map(({ notification, projectId, workspaceId }) => {
+  return rows.map(({ notification, taskType, projectId, workspaceId }) => {
     if (!projectId && !workspaceId) {
-      return notification;
+      return { ...notification, taskType };
     }
 
     const existing =
@@ -55,6 +56,7 @@ async function getNotifications(userId: string, workspaceId?: string) {
 
     return {
       ...notification,
+      taskType,
       eventData: {
         ...existing,
         projectId: projectId ?? existing.projectId ?? null,

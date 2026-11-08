@@ -4,17 +4,31 @@ import { taskTypeSchema } from "../task/response";
 export const searchResultSchema = z
   .object({
     id: z.string(),
-    type: z.enum([
-      "task",
-      "project",
-      "workspace",
-      "comment",
-      "activity",
-      "document",
-    ]),
-    taskType: taskTypeSchema
-      .optional()
-      .openapi({ description: "The item type for task search results." }),
+    type: z
+      .enum([
+        "task",
+        "feature",
+        "project",
+        "workspace",
+        "comment",
+        "activity",
+        "document",
+      ])
+      .openapi({
+        description:
+          "`task` covers Tasks and Bugs; `feature` is a Feature, which has no status or priority.",
+      }),
+    taskType: taskTypeSchema.optional().openapi({
+      description:
+        "For task and feature results, the item's type. For comment and activity results, the type of the item they belong to.",
+    }),
+    taskId: z.string().optional().openapi({
+      description:
+        "The Feature, Task or Bug a comment or activity result belongs to.",
+    }),
+    archived: z.boolean().optional().openapi({
+      description: "Whether a feature result is archived.",
+    }),
     title: z.string(),
     description: z.string().optional(),
     content: z.string().optional().openapi({

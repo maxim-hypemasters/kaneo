@@ -56,7 +56,6 @@ export function FeatureWorkspace({
           <TabsPanel value="overview">
             <FeatureOverview
               feature={feature}
-              workspaceId={workspaceId}
               onOpenActivity={(id) => open("activity", id)}
             />
           </TabsPanel>

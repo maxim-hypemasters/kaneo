@@ -15,6 +15,7 @@ import useGetProjects from "@/hooks/queries/project/use-get-projects";
 import queryClient from "@/query-client";
 import type Task from "@/types/task";
 import { statusMenuOptions } from "./menus/status-menu-options";
+import { taskWindowCopy } from "./task-window-copy";
 
 type TaskMovePopoverProps = {
   task: Task;
@@ -39,6 +40,7 @@ export default function TaskMovePopover({
     isError,
   } = useGetColumns(projectId ?? "");
   const { mutateAsync: moveTask } = useMoveTask();
+  const isFeature = task.type === "feature";
 
   const destinations = projects.filter(
     (project) => project.id !== task.projectId,
@@ -67,7 +69,7 @@ export default function TaskMovePopover({
   };
 
   const pickProject = async (id: string) => {
-    if (task.type === "feature") {
+    if (isFeature) {
       void moveTo(id);
       return;
     }
@@ -98,7 +100,7 @@ export default function TaskMovePopover({
         {projectId === null ? (
           <OptionMenu
             key="projects"
-            label={t("tasks:move.title")}
+            label={taskWindowCopy(t, isFeature).move}
             placeholder={t("tasks:move.projectPlaceholder")}
             options={destinations.map((project) => {
               const ProjectIcon =

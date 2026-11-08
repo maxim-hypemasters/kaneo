@@ -2559,7 +2559,8 @@
 				"comment": "Comentários",
 				"activity": "Atividades",
 				"fallback": "Resultados",
-				"document": "Documents"
+				"document": "Documents",
+				"feature": "Features"
 			}
 		},
 		"settingsLayout": {
@@ -2644,7 +2645,6 @@
 				"editDescription": "Editar descrição",
 				"commentOnTask": "Comentar",
 				"moveToProject": "Mover para outro projeto",
-				"createSubtask": "Adicionar uma tarefa a esta funcionalidade",
 				"setParent": "Definir funcionalidade",
 				"openParent": "Abrir funcionalidade",
 				"openSubtask": "Abrir uma tarefa desta funcionalidade",
@@ -2789,7 +2789,10 @@
 			"loadError": "Notifications couldn't be loaded.",
 			"taskLoadError": "This task couldn’t be loaded.",
 			"actionError": "Não foi possível atualizar sua caixa de entrada. Tente novamente.",
-			"readCleared": "Notificações lidas excluídas"
+			"readCleared": "Notificações lidas excluídas",
+			"featureLoadError": "This feature couldn’t be loaded.",
+			"featureUnavailable": "This feature is no longer available.",
+			"openFeature": "Open feature"
 		}
 	},
 	"activity": {
@@ -2908,14 +2911,16 @@
 		"addedToFeature": "adicionou a tarefa à funcionalidade \"{{feature}}\"",
 		"removedFromFeature": "removeu a tarefa da funcionalidade \"{{feature}}\"",
 		"changedFeature": "moveu a tarefa da funcionalidade \"{{from}}\" para \"{{to}}\"",
-		"madeFeature": "transformou esta tarefa em uma funcionalidade",
-		"madeTask": "transformou esta funcionalidade em uma tarefa",
 		"addedToRelease": "adicionou a tarefa à versão \"{{release}}\"",
 		"removedFromRelease": "removeu a tarefa da versão \"{{release}}\"",
 		"changedRelease": "moveu a tarefa da versão \"{{from}}\" para \"{{to}}\"",
 		"changedTypeToBug": "changed the type to bug",
 		"changedTypeToFeature": "changed the type to feature",
-		"changedTypeToTask": "changed the type to task"
+		"changedTypeToTask": "changed the type to task",
+		"createdFeature": "created this feature",
+		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
+		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
+		"postedFeatureUpdate": "posted an update"
 	},
 	"tasks": {
 		"title": "Tarefas",
@@ -3587,7 +3592,8 @@
 				"activityRestored": "restored this Feature",
 				"archiveDialogDescription": "The Feature will move to Archived. Its milestones, Tasks, and Bugs keep their current state. You can restore it later.",
 				"archiveDialogTitle": "Archive “{{title}}”?",
-				"archiving": "Archiving…"
+				"archiving": "Archiving…",
+				"pageTitle": "{{name}}'s features"
 			},
 			"workspace": {
 				"navigation": "Feature navigation",
@@ -3654,6 +3660,22 @@
 				},
 				"moreMilestones_many": "{{count}} more milestones",
 				"updateUnavailable": "Feature update unavailable."
+			},
+			"window": {
+				"copyId": "Copy feature ID",
+				"copyLink": "Copy feature link",
+				"copyTitle": "Copy feature title",
+				"delete": "Delete feature",
+				"deleted": "Feature deleted successfully",
+				"deleteDescription": "This permanently deletes the Feature with its milestones, documents, updates, and comments. Its Tasks and Bugs stay in the project without a Feature or milestone. You can't undo this action.",
+				"deleteError": "Failed to delete feature",
+				"deleteTitle": "Delete feature?",
+				"idCopied": "Copied feature ID",
+				"linkCopied": "Copied feature link",
+				"loading": "Loading feature...",
+				"move": "Move feature",
+				"moved": "Feature moved successfully",
+				"titleCopied": "Copied feature title"
 			}
 		},
 		"releases": {
@@ -4234,7 +4256,8 @@
 				"empty": "Nothing has happened in the last 30 days.",
 				"loadError": "Activity couldn't be loaded.",
 				"title": "Activity",
-				"updated": "updated the task"
+				"updated": "updated the task",
+				"updatedFeature": "updated the feature"
 			},
 			"greeting": {
 				"afternoon": "Good afternoon",

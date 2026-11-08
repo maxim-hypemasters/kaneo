@@ -3,7 +3,7 @@ import { nullableResponseTimestamp, responseTimestamp, z } from "../openapi";
 import { taskTypeSchema } from "../task/response";
 
 const relationTypeDescription =
-  "How the two tasks relate: `blocks` or `related`. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead.";
+  "How the two tasks relate: `blocks` or `related`, always between Tasks and Bugs. `subtask` (deprecated) is a task's link to its feature: the source is the feature, and the id is synthetic (`feature:<taskId>:<featureId>`). Use the task feature routes instead.";
 
 const relatedTaskSchema = z
   .object({
