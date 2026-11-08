@@ -1,4 +1,4 @@
-import { and, eq, inArray, like } from "drizzle-orm";
+import { and, asc, eq, inArray, like } from "drizzle-orm";
 import db from "../database";
 import {
   activityTable,
@@ -47,10 +47,11 @@ export interface AssetCleanupScope {
 async function isAssetReferencedElsewhere(
   assetId: string,
   taskId: string,
+  executor: Pick<typeof db, "select"> = db,
 ): Promise<boolean> {
   const pattern = `%/api/asset/${assetId}%`;
 
-  const [taskRef] = await db
+  const [taskRef] = await executor
     .select({ description: taskTable.description })
     .from(taskTable)
     .where(and(eq(taskTable.id, taskId), like(taskTable.description, pattern)))
@@ -58,7 +59,7 @@ async function isAssetReferencedElsewhere(
 
   if (contentReferencesAsset(taskRef?.description, assetId)) return true;
 
-  const commentRefs = await db
+  const commentRefs = await executor
     .select({ content: commentTable.content })
     .from(commentTable)
     .where(
@@ -69,7 +70,7 @@ async function isAssetReferencedElsewhere(
     return true;
   }
 
-  const activityRefs = await db
+  const activityRefs = await executor
     .select({ content: activityTable.content })
     .from(activityTable)
     .where(
@@ -85,7 +86,7 @@ async function isAssetReferencedElsewhere(
     return true;
   }
 
-  const documentRefs = await db
+  const documentRefs = await executor
     .select({ body: featureDocumentTable.body })
     .from(featureDocumentTable)
     .where(
@@ -142,6 +143,39 @@ export async function deleteOrphanedAssets(
   if (deletedAssetIds.length === 0) return;
 
   await db.delete(assetTable).where(inArray(assetTable.id, deletedAssetIds));
+}
+
+/**
+ * Delete the task's assets among `assetIds` that no content of the task still
+ * references. Callers lock the task row first; rows are then locked by id like
+ * claimDescriptionAssets does. The asset_storage_cleanup trigger queues each
+ * deleted object key, and retryStorageCleanup removes it from storage once the
+ * transaction has committed.
+ */
+export async function deleteUnreferencedAssets(
+  tx: Pick<typeof db, "select" | "delete">,
+  taskId: string,
+  assetIds: string[],
+): Promise<string[]> {
+  const ids = [...new Set(assetIds)];
+  if (ids.length === 0) return [];
+
+  const assets = await tx
+    .select({ id: assetTable.id })
+    .from(assetTable)
+    .where(and(inArray(assetTable.id, ids), eq(assetTable.taskId, taskId)))
+    .orderBy(asc(assetTable.id))
+    .for("update");
+
+  const deletable: string[] = [];
+  for (const asset of assets) {
+    if (!(await isAssetReferencedElsewhere(asset.id, taskId, tx)))
+      deletable.push(asset.id);
+  }
+  if (deletable.length === 0) return [];
+
+  await tx.delete(assetTable).where(inArray(assetTable.id, deletable));
+  return deletable;
 }
 
 export async function getTaskAssetKeys(taskId: string): Promise<string[]> {

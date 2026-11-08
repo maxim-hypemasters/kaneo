@@ -88,8 +88,23 @@ export const updateDocumentBody = z
     body: documentFields.body.optional(),
     expectedRevision: z.number().int().min(1),
     draftAssetIds: z.array(z.string().min(1)).max(100).optional(),
+    keepRemovedAssets: z.boolean().optional().openapi({
+      description:
+        "Keep uploads this save removes from the body instead of deleting them right away, so autosaves can survive cut and paste or undo. Release them later with POST /feature/{id}/assets/prune; uploads that are never pruned are deleted with the Feature.",
+    }),
   })
   .strict();
+export const pruneAssetsBody = z
+  .object({
+    assetIds: z.array(z.string().min(1)).min(1).max(100).openapi({
+      description:
+        "Uploads to delete. Ids that are not this Feature's uploads, or that its description, comments, activity or documents still reference, are skipped.",
+    }),
+  })
+  .strict();
+export const pruneAssetsResultSchema = z.object({
+  deletedAssetIds: z.array(z.string()),
+});
 export const documentSchema = z.object({
   id: z.string(),
   featureId: z.string(),

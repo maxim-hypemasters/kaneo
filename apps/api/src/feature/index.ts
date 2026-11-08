@@ -7,6 +7,7 @@ import {
 } from "../openapi";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { pruneFeatureAssets } from "./assets";
 import {
   createFeatureDocument,
   deleteFeatureDocument,
@@ -26,6 +27,8 @@ import {
   issuePageSchema,
   issuesQuery,
   pageQuery,
+  pruneAssetsBody,
+  pruneAssetsResultSchema,
   searchQuery,
   updateBody,
   updateDocumentBody,
@@ -286,7 +289,7 @@ const feature = apiRouter()
       tags,
       summary: "Save or rename a Feature document",
       description:
-        "Compares expectedRevision while locked. A stale revision returns DOCUMENT_CONFLICT and saves nothing. Referenced staged assets are claimed atomically.",
+        "Compares expectedRevision while locked. A stale revision returns DOCUMENT_CONFLICT and saves nothing. Referenced staged assets are claimed atomically. Uploads removed from the body are deleted unless keepRemovedAssets is true.",
       middleware: [...write],
       request: {
         params: documentParams,
@@ -330,6 +333,37 @@ const feature = apiRouter()
     async (c) =>
       c.json(
         await deleteFeatureDocument(scope(c), c.req.valid("param").documentId),
+        200,
+      ),
+  )
+  .openapi(
+    createRoute({
+      method: "post",
+      operationId: "pruneFeatureAssets",
+      path: "/{id}/assets/prune",
+      tags,
+      summary: "Delete removed Feature uploads",
+      description:
+        "Deletes the listed uploads of this Feature that its description, comments, activity and documents no longer reference, such as uploads kept by saves with keepRemovedAssets. Other ids are skipped. Storage objects are removed in the background.",
+      middleware: [...write],
+      request: {
+        params: featureParams,
+        body: {
+          required: true,
+          content: { "application/json": { schema: pruneAssetsBody } },
+        },
+      },
+      responses: {
+        200: jsonResponse(
+          "Ids of the deleted uploads",
+          pruneAssetsResultSchema,
+        ),
+        ...errors,
+      },
+    }),
+    async (c) =>
+      c.json(
+        await pruneFeatureAssets(scope(c), c.req.valid("json").assetIds),
         200,
       ),
   )

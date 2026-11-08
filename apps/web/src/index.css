@@ -948,6 +948,36 @@ input:-webkit-autofill:active {
     color: color-mix(in srgb, var(--foreground) 40%, transparent);
   }
 
+  /* A page also shows its hint on the focused empty top-level line, not only
+     in an empty document. */
+  .kaneo-tiptap-shell[data-variant="page"]
+    .kaneo-tiptap-content
+    .ProseMirror-focused
+    > p.is-empty::before {
+    pointer-events: none;
+    content: attr(data-placeholder);
+    height: 0;
+    float: left;
+    color: color-mix(in srgb, var(--foreground) 40%, transparent);
+  }
+
+  .kaneo-tiptap-shell[data-variant="page"] .kaneo-tiptap-content .ProseMirror {
+    font-size: 1rem;
+    padding-bottom: 0;
+  }
+
+  .kaneo-tiptap-shell[data-variant="page"] .kaneo-tiptap-content .ProseMirror h1 {
+    font-size: 1.6rem;
+  }
+
+  .kaneo-tiptap-shell[data-variant="page"] .kaneo-tiptap-content .ProseMirror h2 {
+    font-size: 1.3rem;
+  }
+
+  .kaneo-tiptap-shell[data-variant="page"] .kaneo-tiptap-content .ProseMirror h3 {
+    font-size: 1.1rem;
+  }
+
   .kaneo-tiptap-content .ProseMirror table {
     border-collapse: collapse;
     margin: 0.7rem 0;

@@ -46,11 +46,17 @@ export function FeatureDocumentWindow({
             <ArrowLeft className="size-3.5" />
             {t("tasks:features.workspace.allDocuments")}
           </Button>
-          {actions && <div className="ml-auto flex gap-1">{actions}</div>}
+          {actions && (
+            <div className="ml-auto flex items-center gap-1">{actions}</div>
+          )}
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          <div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-6 sm:px-10 sm:py-8">
-            {children}
+          {/* A ~900px reading column that fills the height, so the page
+              continues below the text. */}
+          <div className="flex min-h-full flex-col px-4 pt-8 sm:px-12 sm:pt-14">
+            <div className="mx-auto flex w-full min-w-0 max-w-225 flex-1 flex-col">
+              {children}
+            </div>
           </div>
         </div>
       </DialogPopup>

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDocumentDraftNavigation } from "@/components/editor/document-draft-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { FeatureDocument } from "@/fetchers/feature/types";
+import { useCreateFeatureDocument } from "@/hooks/mutations/feature/use-create-feature-document";
 import {
   useFeatureDocument,
   useFeatureDocuments,
@@ -32,29 +32,24 @@ export function FeatureDocuments({
   const requestLeave = useDocumentDraftNavigation();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [creating, setCreating] = useState(false);
+  // The document just created opens with its title selected.
+  const [createdId, setCreatedId] = useState<string>();
+  const create = useCreateFeatureDocument(projectId, featureId);
   // Not read while a page is open over it.
   const list = useFeatureDocuments(
     projectId,
     featureId,
     search,
     page,
-    !creating && !selectedDocumentId,
+    !selectedDocumentId,
   );
   const document = useFeatureDocument(projectId, featureId, selectedDocumentId);
   const back = useCallback(() => {
     void requestLeave(() => {
-      setCreating(false);
+      setCreatedId(undefined);
       onDocumentChange(undefined);
     });
   }, [requestLeave, onDocumentChange]);
-  const onSaved = useCallback(
-    (value: FeatureDocument) => {
-      setCreating(false);
-      onDocumentChange(value.id);
-    },
-    [onDocumentChange],
-  );
   // The open page covers the screen; the list stays underneath it.
   const openPage = selectedDocumentId ? (
     document.data ? (
@@ -63,8 +58,8 @@ export function FeatureDocuments({
         featureId={featureId}
         projectId={projectId}
         document={document.data}
+        focusTitle={createdId === selectedDocumentId}
         onBack={back}
-        onSaved={onSaved}
         refresh={() => document.refetch({ throwOnError: true })}
       />
     ) : (
@@ -78,16 +73,6 @@ export function FeatureDocuments({
         />
       </FeatureDocumentWindow>
     )
-  ) : creating ? (
-    <FeatureDocumentPage
-      key="new"
-      featureId={featureId}
-      projectId={projectId}
-      onBack={back}
-      onSaved={onSaved}
-      onCancelNew={() => setCreating(false)}
-      refresh={async () => {}}
-    />
   ) : null;
   return (
     <section className="space-y-4">
@@ -104,12 +89,29 @@ export function FeatureDocuments({
           className="min-w-0 flex-1"
         />
         {canUpdateTasks() && (
-          <Button type="button" size="sm" onClick={() => setCreating(true)}>
+          <Button
+            type="button"
+            size="sm"
+            loading={create.isPending}
+            onClick={() =>
+              create.mutate(t("tasks:features.workspace.untitledDocument"), {
+                onSuccess: (value) => {
+                  setCreatedId(value.id);
+                  onDocumentChange(value.id);
+                },
+              })
+            }
+          >
             <Plus className="size-3.5" />
             {t("tasks:features.workspace.newDocument")}
           </Button>
         )}
       </div>
+      {create.isError && (
+        <p role="alert" className="text-sm text-destructive">
+          {t("tasks:features.workspace.createDocumentFailed")}
+        </p>
+      )}
       {list.isPending || (list.isError && !list.data) ? (
         <WorkspaceQueryState
           error={list.isError}

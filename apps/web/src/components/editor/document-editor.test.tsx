@@ -8,7 +8,7 @@ import {
   within,
 } from "@testing-library/react";
 import type { Editor } from "@tiptap/core";
-import { useState } from "react";
+import { createRef, useState } from "react";
 import {
   afterEach,
   beforeEach,
@@ -18,7 +18,10 @@ import {
   vi,
 } from "vite-plus/test";
 import { DocumentEditor } from "./document-editor";
-import type { UploadedDocumentAsset } from "./document-editor-types";
+import type {
+  DocumentEditorHandle,
+  UploadedDocumentAsset,
+} from "./document-editor-types";
 
 const capture = vi.hoisted(() => ({ editor: null as Editor | null }));
 
@@ -458,6 +461,197 @@ describe("DocumentEditor", () => {
     const count = changed.mock.calls.length;
     fireEvent.click(checkbox);
     expect(changed).toHaveBeenCalledTimes(count);
+  });
+
+  describe("page variant", () => {
+    function tail() {
+      const element = document.querySelector(
+        "[data-slot='document-editor-tail']",
+      );
+      if (!element) throw new Error("Missing page tail");
+      return element;
+    }
+
+    it("has no toolbar, border box or Expand, and fills its container", async () => {
+      const { container } = render(
+        <DocumentEditor
+          variant="page"
+          ariaLabel="Document"
+          value="Text"
+          onChange={vi.fn()}
+          expandable={false}
+        />,
+      );
+      const editor = await getEditor();
+      expect(screen.queryByRole("toolbar")).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "common:documentEditor.expand" }),
+      ).toBeNull();
+      const section = container.querySelector("section");
+      expect(section).toHaveClass("flex-1");
+      expect(container.querySelector(".rounded-xl")).toBeNull();
+      const shell = editor.view.dom.closest(".kaneo-tiptap-shell");
+      expect(shell).toHaveAttribute("data-variant", "page");
+      expect(shell?.className).not.toContain("min-h-44");
+      expect(shell).toContainElement(tail() as HTMLElement);
+    });
+
+    it("keeps the inline layout for other callers", async () => {
+      const { container } = render(
+        <DocumentEditor ariaLabel="Document" value="Text" onChange={vi.fn()} />,
+      );
+      const editor = await getEditor();
+      const shell = editor.view.dom.closest(".kaneo-tiptap-shell");
+      expect(shell).not.toHaveAttribute("data-variant");
+      expect(shell?.className).toContain("min-h-44");
+      expect(container.querySelector(".rounded-xl")).not.toBeNull();
+      expect(
+        document.querySelector("[data-slot='document-editor-tail']"),
+      ).toBeNull();
+    });
+
+    it("moves the caret to the end when the space below the text is pressed", async () => {
+      render(
+        <DocumentEditor
+          variant="page"
+          ariaLabel="Document"
+          value={"First\n\nLast"}
+          onChange={vi.fn()}
+        />,
+      );
+      const editor = await getEditor();
+      const event = fireEvent.mouseDown(tail(), { button: 0 });
+      expect(event).toBe(false);
+      await waitFor(() => expect(document.activeElement).toBe(editor.view.dom));
+      expect(editor.state.selection.from).toBe(
+        editor.state.doc.content.size - 1,
+      );
+      expect(editor.state.doc.childCount).toBe(2);
+    });
+
+    it("adds a line to type on after a trailing code block", async () => {
+      render(
+        <DocumentEditor
+          variant="page"
+          ariaLabel="Document"
+          value={"```ts\nconst a = 1;\n```"}
+          onChange={vi.fn()}
+        />,
+      );
+      const editor = await getEditor();
+      fireEvent.mouseDown(tail(), { button: 0 });
+      expect(editor.state.doc.lastChild?.type.name).toBe("paragraph");
+      expect(editor.state.selection.$from.parent).toBe(
+        editor.state.doc.lastChild,
+      );
+    });
+
+    it("does not report the line added below a trailing block as an edit", async () => {
+      const changed = vi.fn();
+      render(
+        <DocumentEditor
+          variant="page"
+          ariaLabel="Document"
+          value="- item"
+          onChange={changed}
+        />,
+      );
+      const editor = await getEditor();
+      fireEvent.mouseDown(tail(), { button: 0 });
+      expect(editor.state.doc.lastChild?.type.name).toBe("paragraph");
+      expect(changed).not.toHaveBeenCalled();
+      // Typing on the new line is an edit.
+      act(() => {
+        editor.commands.insertContent("next");
+      });
+      expect(changed).toHaveBeenCalledOnce();
+      expect(changed.mock.lastCall?.[0]).toContain("next");
+    });
+
+    it("ignores other buttons and read-only pages", async () => {
+      const view = render(
+        <DocumentEditor
+          variant="page"
+          ariaLabel="Document"
+          value="Text"
+          onChange={vi.fn()}
+        />,
+      );
+      const editor = await getEditor();
+      expect(fireEvent.mouseDown(tail(), { button: 2 })).toBe(true);
+      view.rerender(
+        <DocumentEditor
+          variant="page"
+          ariaLabel="Document"
+          value="Text"
+          readOnly
+          placeholder="Nothing here"
+        />,
+      );
+      expect(fireEvent.mouseDown(tail(), { button: 0 })).toBe(true);
+      expect(tail()).not.toHaveClass("cursor-text");
+      expect(document.activeElement).not.toBe(editor.view.dom);
+    });
+
+    it("puts the hint on the focused empty paragraph only", async () => {
+      render(
+        <DocumentEditor
+          variant="page"
+          ariaLabel="Document"
+          value="Intro"
+          placeholder="Type / for commands"
+          onChange={vi.fn()}
+        />,
+      );
+      const editor = await getEditor();
+      act(() => {
+        editor.chain().focus("end").splitBlock().run();
+      });
+      const empty = editor.view.dom.querySelector("p.is-empty");
+      expect(empty).toHaveAttribute("data-placeholder", "Type / for commands");
+      expect(empty?.parentElement).toBe(editor.view.dom);
+      act(() => {
+        editor.commands.setHeading({ level: 2 });
+      });
+      expect(editor.view.dom.querySelector("h2.is-empty")).toHaveAttribute(
+        "data-placeholder",
+        "",
+      );
+    });
+
+    it("focuses through its ref handle while editable", async () => {
+      const ref = createRef<DocumentEditorHandle>();
+      const view = render(
+        <DocumentEditor
+          ref={ref}
+          variant="page"
+          ariaLabel="Document"
+          value="Hello"
+          onChange={vi.fn()}
+        />,
+      );
+      const editor = await getEditor();
+      act(() => ref.current?.focus("start"));
+      // Synchronous, so keys typed straight after Enter in a title land here.
+      expect(document.activeElement).toBe(editor.view.dom);
+      expect(editor.state.selection.from).toBe(1);
+
+      act(() => {
+        editor.view.dom.blur();
+      });
+      view.rerender(
+        <DocumentEditor
+          ref={ref}
+          variant="page"
+          ariaLabel="Document"
+          value="Hello"
+          readOnly
+        />,
+      );
+      act(() => ref.current?.focus("end"));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      expect(document.activeElement).not.toBe(editor.view.dom);
+    });
   });
 
   it.each(["javascript:alert(1)", "data:text/html,<script>alert(1)</script>"])(

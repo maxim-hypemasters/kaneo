@@ -99,10 +99,12 @@ export async function updateFeatureDocument(
   id: string,
   documentId: string,
   input: {
-    title: string;
-    body: string;
+    title?: string;
+    body?: string;
     expectedRevision: number;
     draftAssetIds?: string[];
+    // Autosaves keep uploads they removed; pruneFeatureAssets releases them.
+    keepRemovedAssets?: boolean;
   },
 ) {
   return result<FeatureDocument>(
@@ -120,4 +122,14 @@ export async function deleteFeatureDocument(id: string, documentId: string) {
     },
   );
   if (!response.ok) throw await HttpError.fromResponse(response);
+}
+
+export async function pruneFeatureAssets(id: string, assetIds: string[]) {
+  return result<{ deletedAssetIds: string[] }>(
+    await client.feature[":id"].assets.prune.$post(
+      { param: { id }, json: { assetIds } },
+      // Sent as a page closes, so it should outlive the page.
+      { init: { keepalive: true } },
+    ),
+  );
 }

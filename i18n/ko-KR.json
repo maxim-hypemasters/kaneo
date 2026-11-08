@@ -255,7 +255,8 @@
 			"discardDescription": "저장하지 않은 변경 사항이 삭제됩니다.",
 			"discard": "Discard changes",
 			"keepEditing": "계속 편집",
-			"autoDetect": "자동 감지"
+			"autoDetect": "자동 감지",
+			"slashHint": "Type / for commands…"
 		}
 	},
 	"auth": {
@@ -3505,8 +3506,6 @@
 				"noDocumentResults": "No documents match your search.",
 				"documentTitle": "Document title",
 				"documentBody": "Feature document",
-				"documentPlaceholder": "Start writing…",
-				"renameDocument": "Rename or edit document",
 				"deleteDocument": "Delete document",
 				"deleteDocumentConfirm": "Delete “{{title}}”? This cannot be undone.",
 				"documentUpdated": "Updated by {{name}} · {{date}}",
@@ -3526,7 +3525,12 @@
 					"noCandidates": "No tasks or bugs available to link.",
 					"linkFailed": "Could not link this work. Try again."
 				},
-				"updateUnavailable": "Feature update unavailable."
+				"updateUnavailable": "Feature update unavailable.",
+				"createDocumentFailed": "Could not create the document. Try again.",
+				"documentSaved": "Saved",
+				"documentSaveFailed": "Couldn’t save",
+				"emptyDocument": "This document is empty.",
+				"untitledDocument": "Untitled"
 			},
 			"window": {
 				"copyId": "Copy feature ID",

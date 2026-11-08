@@ -18,6 +18,7 @@ import getExternalLinks from "@/fetchers/external-link/get-external-links";
 import type { ResumePreview } from "@/fetchers/integration-sync/types";
 import { patchBoardTask } from "@/lib/patch-board-task";
 import { releasesKey } from "@/hooks/queries/release/use-get-releases";
+import { featureWorkspaceKey } from "@/hooks/queries/feature/use-feature-workspace";
 import type { ProjectWithTasks } from "@/types/project";
 import {
   hasSyncTaskSample,
@@ -100,6 +101,24 @@ export function useProjectWebSocket(projectId: string) {
       linkCandidatesRefreshTimer = setTimeout(() => {
         linkCandidatesRefreshTimer = null;
         if (!disposed) invalidateWorkLinkCandidates(queryClient, projectId);
+      }, RELEASES_REFRESH_DELAY_MS);
+    }
+    // Autosaving documents publish about once a second while someone types,
+    // so only that Feature's content refreshes; its issues are unaffected.
+    const changedFeatureContent = new Set<string>();
+    let featureContentRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    function refreshFeatureContent(featureId: string) {
+      changedFeatureContent.add(featureId);
+      if (featureContentRefreshTimer !== null) return;
+      featureContentRefreshTimer = setTimeout(() => {
+        featureContentRefreshTimer = null;
+        if (disposed) return;
+        for (const id of changedFeatureContent)
+          void queryClient.invalidateQueries({
+            queryKey: featureWorkspaceKey(projectId, id),
+            predicate: (query) => query.queryKey[3] !== "issues",
+          });
+        changedFeatureContent.clear();
       }, RELEASES_REFRESH_DELAY_MS);
     }
     let workflowDirty = false;
@@ -376,7 +395,8 @@ export function useProjectWebSocket(projectId: string) {
         try {
           const message = JSON.parse(event.data);
           if (message.type === "FEATURE_CONTENT_UPDATED") {
-            refreshLinkCandidates();
+            if (message.featureId) refreshFeatureContent(message.featureId);
+            else refreshLinkCandidates();
             return;
           }
           if (message.type === "COMMENT_UPDATED") refreshLinkCandidates();
@@ -938,6 +958,8 @@ export function useProjectWebSocket(projectId: string) {
       if (milestonesRefreshTimer !== null) clearTimeout(milestonesRefreshTimer);
       if (linkCandidatesRefreshTimer !== null)
         clearTimeout(linkCandidatesRefreshTimer);
+      if (featureContentRefreshTimer !== null)
+        clearTimeout(featureContentRefreshTimer);
       if (retryTimeout !== null) {
         clearTimeout(retryTimeout);
       }

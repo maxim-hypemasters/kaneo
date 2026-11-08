@@ -160,9 +160,10 @@ export async function updateFeatureDocument(
     }),
   );
   await publishFeatureContent(scope, "feature.document.updated", id);
-  void deleteOrphanedAssets(oldContent, row.body, {
-    taskId: scope.featureId,
-  }).catch(() => {});
+  if (!body.keepRemovedAssets)
+    void deleteOrphanedAssets(oldContent, row.body, {
+      taskId: scope.featureId,
+    }).catch(() => {});
   return row;
 }
 export async function deleteFeatureDocument(scope: FeatureScope, id: string) {

@@ -891,6 +891,9 @@
 						"empty": {
 							"type": "string"
 						},
+						"slashHint": {
+							"type": "string"
+						},
 						"linkTitle": {
 							"type": "string"
 						},
@@ -988,6 +991,7 @@
 						"uploading",
 						"uploadFailed",
 						"empty",
+						"slashHint",
 						"linkTitle",
 						"embedTitle",
 						"embedPlaceholder",
@@ -14908,6 +14912,12 @@
 								"newDocument": {
 									"type": "string"
 								},
+								"untitledDocument": {
+									"type": "string"
+								},
+								"createDocumentFailed": {
+									"type": "string"
+								},
 								"searchDocuments": {
 									"type": "string"
 								},
@@ -14923,10 +14933,7 @@
 								"documentBody": {
 									"type": "string"
 								},
-								"documentPlaceholder": {
-									"type": "string"
-								},
-								"renameDocument": {
+								"emptyDocument": {
 									"type": "string"
 								},
 								"deleteDocument": {
@@ -14936,6 +14943,12 @@
 									"type": "string"
 								},
 								"documentUpdated": {
+									"type": "string"
+								},
+								"documentSaved": {
+									"type": "string"
+								},
+								"documentSaveFailed": {
 									"type": "string"
 								},
 								"documentListUpdated": {
@@ -15045,16 +15058,19 @@
 								"noActivity",
 								"allDocuments",
 								"newDocument",
+								"untitledDocument",
+								"createDocumentFailed",
 								"searchDocuments",
 								"noDocuments",
 								"noDocumentResults",
 								"documentTitle",
 								"documentBody",
-								"documentPlaceholder",
-								"renameDocument",
+								"emptyDocument",
 								"deleteDocument",
 								"deleteDocumentConfirm",
 								"documentUpdated",
+								"documentSaved",
+								"documentSaveFailed",
 								"documentListUpdated",
 								"loadFailed",
 								"deleteFailed",

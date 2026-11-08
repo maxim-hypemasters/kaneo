@@ -17,6 +17,12 @@ type DocumentDraft = {
   dirty: boolean;
   saving: boolean;
   onDiscard: () => void;
+  // Saves the draft now. Resolves true once nothing is left unsaved; leaving
+  // asks to discard only when it resolves false.
+  flush?: () => Promise<boolean>;
+  // Cleanup that needs the session. It runs once an account action, such as
+  // signing out, is allowed to leave, and the action waits for it.
+  finish?: () => Promise<void>;
 };
 
 type DocumentDraftGuard = {
@@ -25,14 +31,21 @@ type DocumentDraftGuard = {
   requestLeave: (action: () => void) => Promise<boolean>;
 };
 
+type ActiveGuard = {
+  confirmLeave: () => Promise<boolean>;
+  finish: () => Promise<void>;
+};
+
 const DocumentDraftContext = createContext<DocumentDraftGuard | null>(null);
-const activeGuards = new Set<() => Promise<boolean>>();
+const activeGuards = new Set<ActiveGuard>();
 
 /** Used by account actions rendered outside the current document's view. */
 export async function requestDocumentDraftLeave() {
-  for (const confirmLeave of activeGuards) {
-    if (!(await confirmLeave())) return false;
+  const guards = [...activeGuards];
+  for (const guard of guards) {
+    if (!(await guard.confirmLeave())) return false;
   }
+  await Promise.all(guards.map((guard) => guard.finish()));
   return true;
 }
 
@@ -43,6 +56,7 @@ export function DocumentDraftGuardProvider({
 }) {
   const drafts = useRef(new Map<string, DocumentDraft>());
   const pending = useRef<((allowed: boolean) => void) | null>(null);
+  const flushing = useRef(false);
   const [requiresProtection, setRequiresProtection] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -67,11 +81,30 @@ export function DocumentDraftGuardProvider({
     [updateProtection],
   );
 
-  const confirmLeave = useCallback((): Promise<boolean> => {
+  const confirmLeave = useCallback(async (): Promise<boolean> => {
     const entries = [...drafts.current.values()];
-    if (entries.some((draft) => draft.saving)) return Promise.resolve(false);
-    if (!entries.some((draft) => draft.dirty)) return Promise.resolve(true);
-    if (pending.current) return Promise.resolve(false);
+    if (entries.some((draft) => draft.saving)) return false;
+    const dirty = entries.filter((draft) => draft.dirty);
+    if (!dirty.length) return true;
+    if (pending.current || flushing.current) return false;
+
+    if (dirty.some((draft) => draft.flush)) {
+      // Registered snapshots can be a render behind, so the flush results
+      // decide whether anything is left to lose.
+      flushing.current = true;
+      let saved: boolean[];
+      try {
+        saved = await Promise.all(
+          dirty.map((draft) =>
+            draft.flush ? draft.flush().catch(() => false) : false,
+          ),
+        );
+      } finally {
+        // Cleared before the leave action runs, which can ask again.
+        flushing.current = false;
+      }
+      if (saved.every(Boolean)) return true;
+    }
 
     setConfirmOpen(true);
     return new Promise((resolve) => {
@@ -108,9 +141,19 @@ export function DocumentDraftGuardProvider({
   );
 
   useEffect(() => {
-    activeGuards.add(confirmLeave);
+    const guard: ActiveGuard = {
+      confirmLeave,
+      finish: async () => {
+        await Promise.all(
+          [...drafts.current.values()].map((draft) =>
+            draft.finish?.().catch(() => {}),
+          ),
+        );
+      },
+    };
+    activeGuards.add(guard);
     return () => {
-      activeGuards.delete(confirmLeave);
+      activeGuards.delete(guard);
     };
   }, [confirmLeave]);
 

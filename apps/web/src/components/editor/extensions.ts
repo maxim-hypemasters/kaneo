@@ -1,5 +1,7 @@
 import type { AnyExtension } from "@tiptap/core";
-import Placeholder from "@tiptap/extension-placeholder";
+import Placeholder, {
+  type PlaceholderOptions,
+} from "@tiptap/extension-placeholder";
 import { Table } from "@tiptap/extension-table";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
@@ -26,7 +28,7 @@ export function createEditorExtensions({
   extra = [],
   mermaidErrorKey,
 }: {
-  placeholder: string;
+  placeholder: PlaceholderOptions["placeholder"];
   highlighter: () => Highlighter | null;
   resolveLanguage: (language: string) => string;
   image: AnyExtension;
