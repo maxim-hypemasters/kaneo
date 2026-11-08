@@ -55,7 +55,6 @@ export const SHORTCUTS = {
   goToProjects: { keys: ["g p"], category: "navigation" },
   goToSettings: { keys: ["g s"], category: "navigation" },
   goToTasks: { keys: ["g a"], category: "navigation", scope: "view" },
-  goToBacklog: { keys: ["g b"], category: "navigation", scope: "view" },
   goToReleases: { keys: ["g r"], category: "navigation", scope: "view" },
   goToProject: {
     keys: projectDigits,
