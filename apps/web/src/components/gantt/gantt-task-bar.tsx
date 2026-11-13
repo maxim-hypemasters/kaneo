@@ -696,7 +696,10 @@ export function GanttTaskBar({
           aria-describedby={describedBy}
           title={exactTiming ?? undefined}
           className={cn(
-            "relative z-10 min-h-[44px] min-w-0 flex-1 touch-manipulation overflow-hidden px-2 text-left sm:min-h-0 sm:px-2.5",
+            "relative z-10 min-h-[44px] min-w-0 flex-1 touch-manipulation px-2 text-left sm:min-h-0 sm:px-2.5",
+            // Clipped without becoming a scroll box, which would hold a
+            // milestone's sticky label in place.
+            isMilestone ? "overflow-clip" : "overflow-hidden",
             laneDrag || canMoveDates
               ? "cursor-grab active:cursor-grabbing"
               : "cursor-pointer",
@@ -713,6 +716,11 @@ export function GanttTaskBar({
           {isMilestone ? (
             <GanttMilestoneBarLabel
               title={task.title}
+              counts={
+                task.entityKind === "milestone"
+                  ? task.milestone.progress
+                  : undefined
+              }
               progress={progress?.text ?? null}
               textOutside={labelOutside}
             />

@@ -109,6 +109,8 @@ export type GanttMilestoneLane = {
   featureId: string | null;
   name: string;
   milestone: ScheduledMilestone | null;
+  // Null when the milestone's definition isn't loaded.
+  progress: GanttMilestoneRecord["progress"] | null;
   tasks: ScheduledLeaf[];
   start: Date | null;
   end: Date | null;

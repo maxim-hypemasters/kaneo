@@ -17,6 +17,7 @@ import {
   SquareKanban,
 } from "lucide-react";
 import {
+  type CSSProperties,
   useCallback,
   useEffect,
   useId,
@@ -39,7 +40,6 @@ import { GanttPeriodControls } from "@/components/gantt/gantt-period-controls";
 import { GanttReleaseMarkerLabels } from "@/components/gantt/gantt-release-marker-labels";
 import { GanttReleaseMarkers } from "@/components/gantt/gantt-release-markers";
 import { ganttReleases } from "@/components/gantt/gantt-releases";
-import { compactTaskTracks } from "@/components/gantt/compact-task-tracks";
 import { GanttCompactRows } from "@/components/gantt/gantt-compact-rows";
 import { ganttStatusPhase } from "@/components/gantt/gantt-status-phase";
 import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
@@ -76,6 +76,7 @@ import { useDragToPan } from "@/components/gantt/use-drag-to-pan";
 import { useGanttRange } from "@/components/gantt/use-gantt-range";
 import { useWheelZoomsTime } from "@/components/gantt/use-wheel-zooms-time";
 import { useGanttTaskCommits } from "@/components/gantt/use-gantt-task-commits";
+import { useHeldRowOrder } from "@/components/gantt/use-held-row-order";
 import PageTitle from "@/components/page-title";
 import { DisplaySection } from "@/components/project/display/display-section";
 import { GanttCompactRowsSwitch } from "@/components/project/display/gantt-compact-rows-switch";
@@ -313,7 +314,7 @@ function RouteComponent() {
     [allTasks, scheduleQuery.data, projectMembers, project?.columns],
   );
 
-  const parsedTasks = useMemo<ScheduledTask[]>(
+  const datedTasks = useMemo<ScheduledTask[]>(
     () =>
       [
         ...parsedLeafTasks,
@@ -321,6 +322,9 @@ function RouteComponent() {
       ].sort((a, b) => a.scheduleStart.getTime() - b.scheduleStart.getTime()),
     [parsedLeafTasks, milestones, projectMembers],
   );
+  // Rows hold the order the chart opened in while bars are moved or
+  // resized, here or by anyone else, until the page is reloaded.
+  const parsedTasks = useHeldRowOrder(datedTasks, rangeReady);
   const { pending: pendingEdits, commit } = useGanttTaskCommits(
     parsedTasks,
     // Bars are placed by the applied schedule, or by the tasks before one.
@@ -370,9 +374,9 @@ function RouteComponent() {
     [project?.columns],
   );
 
-  // Saved drags show right away; rows keep their server-date order until
-  // the refetch lands. A Task/Bug stays in its lane until a reassignment
-  // lands: a planned bar keeps its planned assignee until the next Apply.
+  // Saved drags show right away, in the row they were dragged in. A Task/Bug
+  // stays in its lane until a reassignment lands: a planned bar keeps its
+  // planned assignee until the next Apply.
   const savedTasks = useMemo<ScheduledTask[]>(() => {
     if (pendingEdits.size === 0) return parsedTasks;
     return parsedTasks.map((task) => {
@@ -838,7 +842,8 @@ function RouteComponent() {
   ) =>
     compactRows && timeline ? (
       <GanttCompactRows
-        tracks={compactTaskTracks(tasks, isMobile)}
+        tasks={tasks}
+        ready={rangeReady}
         timeline={timeline}
         pixelsPerDay={pixelsPerDay}
         isMobile={isMobile}
@@ -1152,7 +1157,13 @@ function RouteComponent() {
               "min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] data-panning:cursor-grabbing data-panning:[&_*]:cursor-grabbing",
               laneDragState && "cursor-grabbing [&_*]:cursor-grabbing",
             )}
-            style={{ scrollPaddingLeft: `${scrollPaddingLeftRem}rem` }}
+            style={
+              {
+                scrollPaddingLeft: `${scrollPaddingLeftRem}rem`,
+                // Milestone labels stick just past the rail.
+                "--gantt-rail-width": `${railWidthRem}rem`,
+              } as CSSProperties
+            }
           >
             <div className="relative min-w-max touch-pan-x touch-pan-y">
               <div className="sticky top-0 z-20 flex border-b border-border bg-background/95 backdrop-blur">

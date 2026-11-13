@@ -779,6 +779,80 @@ describe("Gantt group by assignee", () => {
   });
 });
 
+describe("Gantt rows after a date change", () => {
+  // Three overlapping tasks: first and third share a compact track.
+  const opened = [
+    makeTask({
+      id: "first",
+      title: "First",
+      startDate: "2026-08-28",
+      dueDate: "2026-09-03",
+    }),
+    makeTask({
+      id: "second",
+      title: "Second",
+      startDate: "2026-09-02",
+      dueDate: "2026-09-06",
+    }),
+    makeTask({
+      id: "third",
+      title: "Third",
+      startDate: "2026-09-05",
+      dueDate: "2026-09-08",
+    }),
+  ];
+  // First is shortened and moved, here or by someone else, and refetched.
+  const withFirst = (startDate: string, dueDate: string) =>
+    opened.map((task) =>
+      task.id === "first" ? { ...task, startDate, dueDate } : task,
+    );
+  const rowIds = (scope: ParentNode) =>
+    [...scope.querySelectorAll<HTMLElement>("[data-gantt-row]")].map(
+      (row) => row.dataset.ganttRow,
+    );
+  const tracksOf = (scope: ParentNode) => {
+    const tracks: (string | undefined)[][] = [];
+    for (const row of scope.querySelectorAll<HTMLElement>("[data-gantt-track]"))
+      (tracks[Number(row.dataset.ganttTrack)] ??= []).push(
+        row.dataset.ganttRow,
+      );
+    return tracks;
+  };
+
+  it("keeps every row where it was until the chart is reopened", () => {
+    mockProjectWithTasks(opened);
+    const { container, rerender, unmount } = render(<GanttRoute />);
+    expect(rowIds(container)).toEqual(["first", "second", "third"]);
+
+    mockProjectWithTasks(withFirst("2026-09-10", "2026-09-12"));
+    rerender(<GanttRoute />);
+    expect(rowIds(container)).toEqual(["first", "second", "third"]);
+
+    unmount();
+    const reopened = render(<GanttRoute />);
+    expect(rowIds(reopened.container)).toEqual(["second", "third", "first"]);
+  });
+
+  it("keeps compact tracks where they were until the chart is reopened", () => {
+    preferences.ganttCompactRows = true;
+    mockProjectWithTasks(opened);
+    const { container, rerender, unmount } = render(<GanttRoute />);
+    expect(tracksOf(container)).toEqual([["first", "third"], ["second"]]);
+
+    // Packed afresh, second would now share the first track.
+    mockProjectWithTasks(withFirst("2026-08-28", "2026-08-29"));
+    rerender(<GanttRoute />);
+    expect(tracksOf(container)).toEqual([["first", "third"], ["second"]]);
+
+    unmount();
+    const reopened = render(<GanttRoute />);
+    expect(tracksOf(reopened.container)).toEqual([
+      ["first", "second"],
+      ["third"],
+    ]);
+  });
+});
+
 describe("Features are knowledge records", () => {
   it("excludes Features and their relations from the schedule", () => {
     mockProjectWithTasks([

@@ -252,6 +252,32 @@ describe("GanttTaskBar", () => {
     expect(milestoneBar()).toHaveTextContent(progress);
     // The visible count is a bare "3/5"; screen readers get it in words.
     expect(milestoneBar()).toHaveAccessibleDescription(progressAria);
+    // As on release pages, the diamond fills with the share that's done.
+    const diamond = milestoneBar().querySelector("svg.lucide-diamond");
+    expect(diamond?.querySelector("clipPath path")).not.toBeNull();
+    expect(diamond).toHaveClass("text-amber-300");
+  });
+
+  it("keeps a milestone's label in view while its bar scrolls under the rail", () => {
+    show(milestone("2026-09-03", "2026-09-05"));
+    // A scroll box would hold the sticky label in place; a clip doesn't.
+    expect(milestoneBar()).toHaveClass("overflow-clip");
+    expect(milestoneBar()).not.toHaveClass("overflow-hidden");
+    expect(milestoneBar().firstElementChild).toHaveClass("sticky");
+  });
+
+  it("fills a finished milestone's diamond", () => {
+    show(
+      milestone("2026-09-03", "2026-09-05", {
+        milestone: {
+          ...milestone("2026-09-03", "2026-09-05").milestone,
+          progress: { total: 5, started: 5, completed: 5 },
+        },
+      }),
+    );
+    const diamond = milestoneBar().querySelector("svg.lucide-diamond");
+    expect(diamond).toHaveAttribute("fill", "currentColor");
+    expect(diamond).not.toHaveClass("text-amber-300");
   });
 
   it("reads out a dependency note before the progress, so the two don't run together", () => {

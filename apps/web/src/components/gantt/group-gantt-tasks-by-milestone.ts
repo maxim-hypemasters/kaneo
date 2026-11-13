@@ -33,6 +33,7 @@ export function groupGanttTasksByMilestone(
           ? unknownLabel
           : noMilestoneLabel,
       milestone: null,
+      progress: definition?.progress ?? null,
       tasks: [],
       start: null,
       end: null,
