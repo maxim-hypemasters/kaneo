@@ -3224,7 +3224,8 @@
 				"movesLabel": "Εργασίες που θα μετακινηθούν",
 				"startsBeforeBlocker": "Ξεκινά πριν ολοκληρωθεί η εργασία {{title}}.",
 				"title_one": "Αυτή η αλλαγή παραβιάζει {{count}} εξάρτηση",
-				"title_other": "Αυτή η αλλαγή παραβιάζει {{count}} εξαρτήσεις"
+				"title_other": "Αυτή η αλλαγή παραβιάζει {{count}} εξαρτήσεις",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Δυνατότητες",
 			"featureOverflow": "+{{count}}",

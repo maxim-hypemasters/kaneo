@@ -439,6 +439,7 @@ describe("GanttTaskBar", () => {
         userId: "u1",
         featureId: null,
         milestoneId: null,
+        exact: true,
       });
       expect(onOpenTask).not.toHaveBeenCalled();
       expect(bar?.style.gridColumn).toBe("3 / 6");
@@ -457,6 +458,42 @@ describe("GanttTaskBar", () => {
           end: parseISO("2026-09-05"),
         }),
       );
+    });
+
+    it("saves when the browser reports the release as a buttonless move first", () => {
+      const { bar, onCommit } = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+      });
+      drag(handle(bar, "end")!, -1);
+      // Same spot, no button: sent just before the pointerup when the
+      // element under the pointer changed during the drag.
+      fireEvent.pointerMove(window, {
+        clientX: 500 - DAY_PX,
+        clientY: 300,
+        buttons: 0,
+      });
+      release(-1);
+
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-03"),
+          end: parseISO("2026-09-04"),
+        }),
+      );
+    });
+
+    it("drops a resize whose release went unseen", () => {
+      const { bar, onCommit } = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+      });
+      drag(handle(bar, "end")!, 2);
+      // No button, and the pointer is somewhere else by now.
+      fireEvent.pointerMove(window, { clientX: 900, clientY: 300, buttons: 0 });
+      expect(bar?.style.gridColumn).toBe("3 / 6");
+      fireEvent.pointerUp(window, { clientX: 900, clientY: 300 });
+
+      expect(onCommit).not.toHaveBeenCalled();
     });
 
     it("cancels with Escape, and moves an end by a day with the arrow keys", () => {
@@ -478,27 +515,19 @@ describe("GanttTaskBar", () => {
       );
     });
 
-    it("offers a handle only for a date the work can save", () => {
+    it("offers handles on any work the viewer may move, but not on phones", () => {
       // Read-only.
       expect(
         handle(show(task("2026-09-03", "2026-09-05")).bar, "end"),
       ).toBeNull();
       cleanup();
-      // Planned work takes its length from its estimate.
+      // Planned work too: resizing takes it off its estimate.
       const planned = show(
         task("2026-09-03", "2026-09-05", { scheduleApplied: true }),
         { canMoveDates: true },
       ).bar;
-      expect(handle(planned, "start")).toBeNull();
-      expect(handle(planned, "end")).toBeNull();
-      cleanup();
-      // Only a due date: there is no start date to save.
-      const dueOnly = show(
-        task("2026-09-05", "2026-09-05", { startDate: null }),
-        { canMoveDates: true },
-      ).bar;
-      expect(handle(dueOnly, "start")).toBeNull();
-      expect(handle(dueOnly, "end")).not.toBeNull();
+      expect(handle(planned, "start")).not.toBeNull();
+      expect(handle(planned, "end")).not.toBeNull();
       cleanup();
       // Phones pan the timeline instead.
       const phone = show(task("2026-09-03", "2026-09-05"), {

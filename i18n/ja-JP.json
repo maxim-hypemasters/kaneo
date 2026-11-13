@@ -3188,7 +3188,8 @@
 				"moveRelated_other": "関連タスク {{count}} 件も移動",
 				"movesLabel": "移動されるタスク",
 				"startsBeforeBlocker": "{{title}} が終わる前に開始します。",
-				"title_other": "この変更で {{count}} 件の依存関係が崩れます"
+				"title_other": "この変更で {{count}} 件の依存関係が崩れます",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "機能",
 			"featureOverflow": "+{{count}}",

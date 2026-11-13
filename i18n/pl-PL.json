@@ -3572,7 +3572,8 @@
 				"title_few": "Ta zmiana narusza {{count}} zależności",
 				"title_many": "Ta zmiana narusza {{count}} zależności",
 				"title_one": "Ta zmiana narusza {{count}} zależność",
-				"title_other": "Ta zmiana narusza {{count}} zależności"
+				"title_other": "Ta zmiana narusza {{count}} zależności",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Funkcje",
 			"featureOverflow": "+{{count}}",

@@ -2,9 +2,6 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { EstimateInput } from "./estimate-input";
-import TaskStartDatePopover from "../task-start-date-popover";
-import TaskDueDatePopover from "../task-due-date-popover";
-import type Task from "@/types/task";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -96,23 +93,5 @@ describe("estimate controls", () => {
     render(<EstimateInput value={3600} onChange={vi.fn()} disabled />);
     expect(screen.getByRole("textbox")).toBeDisabled();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
-  });
-  it("keeps effective schedule dates visible but removes date editing", () => {
-    const task = { id: "task" } as Task;
-    render(
-      <>
-        <TaskStartDatePopover task={task}>
-          <button type="button">Start</button>
-        </TaskStartDatePopover>
-        <TaskDueDatePopover task={task}>
-          <button type="button">Finish</button>
-        </TaskDueDatePopover>
-      </>,
-    );
-    for (const button of screen.getAllByRole("button")) {
-      expect(button).toBeDisabled();
-      expect(button).toHaveAttribute("tabindex", "-1");
-      expect(button).toHaveAttribute("title", "tasks:estimate.readOnlyDates");
-    }
   });
 });

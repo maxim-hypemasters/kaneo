@@ -3188,7 +3188,8 @@
 				"moveRelated_other": "一併移動 {{count}} 個關聯任務",
 				"movesLabel": "將被移動的任務",
 				"startsBeforeBlocker": "在「{{title}}」結束前開始。",
-				"title_other": "此變更會破壞 {{count}} 個相依關係"
+				"title_other": "此變更會破壞 {{count}} 個相依關係",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "功能",
 			"featureOverflow": "+{{count}}",

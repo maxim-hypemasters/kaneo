@@ -16684,7 +16684,8 @@
                       "delete",
                       "addLabel",
                       "removeLabel",
-                      "updateEstimate"
+                      "updateEstimate",
+                      "updateDueDate"
                     ]
                   },
                   "value": {
@@ -18112,6 +18113,20 @@
                     "maximum": 2147483640,
                     "description": "Total effort in seconds, in whole-minute increments. Null clears the estimate; independent of the displayed hours/days unit."
                   },
+                  "startDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "An ISO date or date-time; null clears it. Omit to keep the current start date. Changing it by hand takes planned work off its estimate until the next Apply."
+                  },
+                  "dueDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "An ISO date or date-time; null clears it. Omit to keep the current due date. Changing it by hand takes planned work off its estimate until the next Apply."
+                  },
                   "priority": {
                     "type": [
                       "string",
@@ -19490,9 +19505,8 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Task dates are read-only",
-        "deprecated": true,
-        "description": "Direct date writes are no longer supported. Update the estimate, preview a project plan, then apply it. Always returns HTTP 400 for authorized callers.",
+        "summary": "Update task due date",
+        "description": "Set or clear a Task or Bug's due date by hand. Planned work stops following its estimate until the next Apply of its release plans it again.",
         "parameters": [
           {
             "schema": {
@@ -19509,15 +19523,32 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "properties": {},
-                "additionalProperties": false
+                "properties": {
+                  "dueDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "An ISO date or date-time. Null, empty or omitted clears it."
+                  }
+                }
               }
             }
           }
         },
         "responses": {
+          "200": {
+            "description": "The updated task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResource"
+                }
+              }
+            }
+          },
           "400": {
-            "description": "Task dates are read-only",
+            "description": "Invalid date, a Feature, or a due date before the start date",
             "content": {
               "application/json": {
                 "schema": {
@@ -19596,6 +19627,10 @@
                     "type": "string",
                     "format": "date-time",
                     "description": "Where the moved span ends. Used as the due date of unplanned work; planned work keeps its effort, so it may finish later."
+                  },
+                  "exact": {
+                    "type": "boolean",
+                    "description": "Set the span by hand, as resizing a bar in Gantt does: the work takes `start` and `end` exactly as its start and due dates, and planned work stops following its estimate until the next Apply."
                   }
                 },
                 "required": [

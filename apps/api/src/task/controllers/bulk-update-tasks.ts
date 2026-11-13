@@ -9,6 +9,7 @@ import {
   labelTable,
   projectTable,
   taskTable,
+  taskReminderSentTable,
   userTable,
   workspaceUserTable,
 } from "../../database/schema";
@@ -31,7 +32,8 @@ type BulkOperation =
   | "delete"
   | "addLabel"
   | "removeLabel"
-  | "updateEstimate";
+  | "updateEstimate"
+  | "updateDueDate";
 
 async function bulkUpdateTasks({
   taskIds,
@@ -72,6 +74,7 @@ async function bulkUpdateTasks({
       "updatePriority",
       "updateAssignee",
       "updateEstimate",
+      "updateDueDate",
     ].includes(operation) &&
     tasks.some((task) => task.type === "feature")
   )
@@ -479,6 +482,95 @@ async function bulkUpdateTasks({
           type: "label_unassigned",
         });
       }
+      break;
+    }
+
+    case "updateDueDate": {
+      let parsedDate: Date | null = null;
+      if (value) {
+        parsedDate = new Date(value);
+        if (Number.isNaN(parsedDate.getTime())) {
+          throw new HTTPException(400, {
+            message: `Invalid date value "${value}"`,
+          });
+        }
+      }
+
+      const { updatedTasks, beforeById } = await retryTransaction(() =>
+        db.transaction(async (tx) => {
+          const before = await tx
+            .select({
+              id: taskTable.id,
+              projectId: taskTable.projectId,
+              type: taskTable.type,
+              startDate: taskTable.startDate,
+              dueDate: taskTable.dueDate,
+            })
+            .from(taskTable)
+            .where(inArray(taskTable.id, foundIds))
+            .orderBy(asc(taskTable.id))
+            .for("update");
+          const originalProjects = new Map(
+            tasks.map((task) => [task.id, task.projectId]),
+          );
+          if (
+            before.length !== foundIds.length ||
+            before.some(
+              (task) =>
+                task.type === "feature" ||
+                task.projectId !== originalProjects.get(task.id),
+            )
+          )
+            throw new HTTPException(409, {
+              message: "Tasks changed; retry the operation",
+            });
+          const beforeById = new Map(before.map((task) => [task.id, task]));
+          const changed = before.filter(
+            (task) => task.dueDate?.getTime() !== parsedDate?.getTime(),
+          );
+          if (
+            parsedDate &&
+            changed.some(
+              (task) =>
+                task.startDate &&
+                task.startDate.getTime() > parsedDate.getTime(),
+            )
+          )
+            throw new HTTPException(400, {
+              message: "Due date cannot be before a selected task's start date",
+            });
+          const changedIds = changed.map((task) => task.id);
+          if (!changedIds.length) return { updatedTasks: [], beforeById };
+          await tx
+            .delete(taskReminderSentTable)
+            .where(inArray(taskReminderSentTable.taskId, changedIds));
+          // Set by hand: planned work stops following its estimate until
+          // the next Apply plans it again.
+          const updatedTasks = await tx
+            .update(taskTable)
+            .set({ dueDate: parsedDate, scheduleSegments: null })
+            .where(inArray(taskTable.id, changedIds))
+            .returning({
+              id: taskTable.id,
+              projectId: taskTable.projectId,
+              title: taskTable.title,
+              dueDate: taskTable.dueDate,
+            });
+          return { updatedTasks, beforeById };
+        }),
+      );
+      updatedCount = foundIds.length;
+      for (const updatedTask of updatedTasks)
+        await publishTaskMutation(
+          beforeById.get(updatedTask.id)!,
+          updatedTask,
+          userId,
+          { fields: ["dueDate"] },
+        );
+      for (const projectId of new Set(
+        updatedTasks.map((task) => task.projectId),
+      ))
+        await publishEvent("project-schedule.changed", { projectId, userId });
       break;
     }
 

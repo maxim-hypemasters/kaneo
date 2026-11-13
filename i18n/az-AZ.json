@@ -3238,7 +3238,8 @@
 				"movesLabel": "Köçürüləcək tapşırıqlar",
 				"startsBeforeBlocker": "{{title}} bitməzdən əvvəl başlayır.",
 				"title_one": "Bu dəyişiklik {{count}} asılılığı pozur",
-				"title_other": "Bu dəyişiklik {{count}} asılılığı pozur"
+				"title_other": "Bu dəyişiklik {{count}} asılılığı pozur",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "İmkanlar",
 			"featureOverflow": "+{{count}}",

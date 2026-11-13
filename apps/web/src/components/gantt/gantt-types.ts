@@ -49,6 +49,9 @@ export type GanttTaskEdit = {
   userId: string | null;
   featureId: string | null;
   milestoneId?: string | null;
+  // The span was set by hand (a resize), so the work takes both dates as
+  // given instead of being laid out again from its estimate.
+  exact?: boolean;
 };
 
 export type GanttLane = {

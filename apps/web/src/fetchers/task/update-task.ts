@@ -7,7 +7,13 @@ type UpdateTaskPriority = InferRequestType<
   (typeof client)["task"][":id"]["$put"]
 >["json"]["priority"];
 
-async function updateTask(taskId: string, task: Task) {
+// Dates are only sent when a caller sets one by hand: echoing the cached
+// dates back could undo a plan applied since the task was loaded.
+async function updateTask(
+  taskId: string,
+  task: Task,
+  dates: { startDate?: string | null } = {},
+) {
   const response = await client.task[":id"].$put({
     param: { id: taskId },
     json: {
@@ -29,6 +35,7 @@ async function updateTask(taskId: string, task: Task) {
       // update, which is what broke dragging every imported task.
       position: task.position ?? 0,
       projectId: task.projectId,
+      ...dates,
     },
   });
 

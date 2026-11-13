@@ -3224,7 +3224,8 @@
 				"movesLabel": "ले जाए जाने वाले कार्य",
 				"startsBeforeBlocker": "{{title}} के समाप्त होने से पहले शुरू होता है।",
 				"title_one": "इस बदलाव से {{count}} निर्भरता टूटती है",
-				"title_other": "इस बदलाव से {{count}} निर्भरताएँ टूटती हैं"
+				"title_other": "इस बदलाव से {{count}} निर्भरताएँ टूटती हैं",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "फ़ीचर",
 			"featureOverflow": "+{{count}}",

@@ -13,7 +13,8 @@ type BulkTaskOperation =
   | "delete"
   | "addLabel"
   | "removeLabel"
-  | "updateEstimate";
+  | "updateEstimate"
+  | "updateDueDate";
 
 const BULK_OPERATIONS: readonly BulkTaskOperation[] = [
   "updateStatus",
@@ -23,6 +24,7 @@ const BULK_OPERATIONS: readonly BulkTaskOperation[] = [
   "addLabel",
   "removeLabel",
   "updateEstimate",
+  "updateDueDate",
 ];
 
 // Route middleware runs before the validators, so c.req.valid() is unavailable.

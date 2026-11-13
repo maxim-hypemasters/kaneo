@@ -3340,7 +3340,8 @@
 				"title_few": "Это изменение нарушает {{count}} зависимости",
 				"title_many": "Это изменение нарушает {{count}} зависимостей",
 				"title_one": "Это изменение нарушает {{count}} зависимость",
-				"title_other": "Это изменение нарушает {{count}} зависимости"
+				"title_other": "Это изменение нарушает {{count}} зависимости",
+				"leaveRelated": "Оставить связанные задачи"
 			},
 			"featuresLabel": "Фичи",
 			"featureOverflow": "+{{count}}",
@@ -3627,7 +3628,7 @@
 				"none": "Без группировки",
 				"feature": "Фича"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Компактные строки"
 		},
 		"filterBar": {
 			"label": "Активные фильтры",

@@ -3224,7 +3224,8 @@
 				"movesLabel": "Aufgaben, die verschoben würden",
 				"startsBeforeBlocker": "Beginnt, bevor {{title}} endet.",
 				"title_one": "Diese Änderung verletzt {{count}} Abhängigkeit",
-				"title_other": "Diese Änderung verletzt {{count}} Abhängigkeiten"
+				"title_other": "Diese Änderung verletzt {{count}} Abhängigkeiten",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Features",
 			"featureOverflow": "+{{count}}",

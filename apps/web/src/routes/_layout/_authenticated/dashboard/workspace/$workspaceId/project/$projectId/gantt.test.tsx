@@ -730,12 +730,17 @@ describe("Gantt group by assignee", () => {
     preferences.ganttCompactRows = true;
     preferences.ganttGroupBy = "assignee";
     mockTeamProject();
-    const rowsOf = (scope: ParentNode) =>
-      [...scope.querySelectorAll("[data-gantt-compact-track]")].map((track) =>
-        [...track.querySelectorAll<HTMLElement>("[data-gantt-row]")].map(
-          (row) => row.dataset.ganttRow,
-        ),
-      );
+    // The task ids on each compact track, in order.
+    const rowsOf = (scope: ParentNode) => {
+      const tracks: (string | undefined)[][] = [];
+      for (const row of scope.querySelectorAll<HTMLElement>(
+        "[data-gantt-track]",
+      ))
+        (tracks[Number(row.dataset.ganttTrack)] ??= []).push(
+          row.dataset.ganttRow,
+        );
+      return tracks;
+    };
 
     const { container, rerender } = render(<GanttRoute />);
     const lane = container.querySelector<HTMLElement>(
@@ -750,7 +755,7 @@ describe("Gantt group by assignee", () => {
     expect(railText).not.toContain("Alpha");
     expect(lane.classList.contains("border-b")).toBe(true);
     expect(
-      [...lane.querySelectorAll("[data-gantt-compact-track] *")].some(
+      [...lane.querySelectorAll("[data-gantt-compact-rows] *")].some(
         (element) => element.classList.contains("border-b"),
       ),
     ).toBe(false);

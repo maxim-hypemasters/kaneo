@@ -24,6 +24,13 @@ import { type GanttTimeline, getBarGridColumns } from "./timeline";
 
 const CLICK_MOVE_THRESHOLD_PX = 4;
 const MOBILE_MOVE_THRESHOLD_PX = 14;
+// Browsers report a release as a move with no button held, at the spot the
+// drag last reached, just before the pointerup itself (seen whenever the
+// element under the pointer changed during the drag). Such a move is the
+// release. One anywhere else means the release happened out of sight (a
+// menu swallowed it), and the gesture is dropped rather than committed by
+// the next unrelated click.
+const RELEASE_SLOP_PX = 1;
 const MIN_INLINE_LABEL_PX = 120;
 // Narrower bars keep one truncated line, so words never break letter by letter.
 const MIN_TWO_LINE_TITLE_PX = 96;
@@ -156,12 +163,8 @@ export function GanttTaskBar({
     ? addDays(task.scheduleEnd, endShift)
     : task.scheduleEnd;
   const plannedWork = !isMilestone && task.scheduleApplied;
-  // Planned work takes its length from its estimate, and unplanned work
-  // only saves the date fields it already has, so only those ends resize.
   // Touch drags pan the timeline, so phones get no handles.
-  const resizable = canMoveDates && !plannedWork && !isMobile;
-  const canResizeStart = resizable && Boolean(task.startDate);
-  const canResizeEnd = resizable && Boolean(task.dueDate);
+  const resizable = canMoveDates && !isMobile;
   const segments = isMilestone ? undefined : task.scheduleSegments;
   const displaySegments =
     dragShift && segments
@@ -336,11 +339,14 @@ export function GanttTaskBar({
     };
 
     const onMove = (ev: PointerEvent) => {
-      // The release happened somewhere we never heard about (e.g. a context
-      // menu swallowed it): drop the gesture instead of letting the next
-      // unrelated click commit it.
       if (ev.pointerType === "mouse" && (ev.buttons & 1) === 0) {
-        end();
+        // See RELEASE_SLOP_PX.
+        if (
+          Math.hypot(ev.clientX - pointer.x, ev.clientY - pointer.y) <=
+          RELEASE_SLOP_PX
+        )
+          release(pointer.x, pointer.y);
+        else end();
         return;
       }
       pointer = { x: ev.clientX, y: ev.clientY };
@@ -352,21 +358,14 @@ export function GanttTaskBar({
       syncLane();
     };
 
-    const onUp = (ev: PointerEvent) => {
-      if (ev.type === "pointercancel") {
-        end();
-        return;
-      }
-      const travelled =
-        pointerTravel(ev.clientX, ev.clientY) >= moveThresholdPx;
+    const release = (clientX: number, clientY: number) => {
+      const travelled = pointerTravel(clientX, clientY) >= moveThresholdPx;
       const isDrag = cancellable ? dragging || travelled : travelled;
-      const dy = lane && isDrag ? verticalOffset(ev.clientY) : 0;
+      const dy = lane && isDrag ? verticalOffset(clientY) : 0;
       // Hit-test before end(): the dragged bar is still click-through, so it
       // can't hide the lane underneath the pointer.
       const target =
-        Math.abs(dy) >= LANE_ENGAGE_PX
-          ? laneTargetAt(ev.clientX, ev.clientY)
-          : null;
+        Math.abs(dy) >= LANE_ENGAGE_PX ? laneTargetAt(clientX, clientY) : null;
       end();
       const {
         task: current,
@@ -377,7 +376,7 @@ export function GanttTaskBar({
         open();
         return;
       }
-      const shift = shiftFor(ev.clientX);
+      const shift = shiftFor(clientX);
       const dropLane = target?.droppable ? target : null;
       if (current.entityKind === "milestone" && dropLane?.kind !== "assignee")
         return;
@@ -395,6 +394,11 @@ export function GanttTaskBar({
             ? dropLane.milestoneId
             : (current.milestoneId ?? null),
       });
+    };
+
+    const onUp = (ev: PointerEvent) => {
+      if (ev.type === "pointercancel") end();
+      else release(ev.clientX, ev.clientY);
     };
 
     const onKeyDown = (ev: KeyboardEvent) => {
@@ -431,18 +435,34 @@ export function GanttTaskBar({
     const { task: current, onCommit: commit } = latestRef.current;
     const shift = clampResize(edge, days);
     if (shift === 0) return;
+    // Planned work keeps its time of day, so a bar shrunk to one day could
+    // otherwise start a few hours after it ends; the moved end stops at the
+    // other one.
+    const start =
+      edge === "start"
+        ? new Date(
+            Math.min(
+              addDays(current.scheduleStart, shift).getTime(),
+              current.scheduleEnd.getTime(),
+            ),
+          )
+        : current.scheduleStart;
+    const end =
+      edge === "end"
+        ? new Date(
+            Math.max(
+              addDays(current.scheduleEnd, shift).getTime(),
+              current.scheduleStart.getTime(),
+            ),
+          )
+        : current.scheduleEnd;
     commit({
-      start:
-        edge === "start"
-          ? addDays(current.scheduleStart, shift)
-          : current.scheduleStart,
-      end:
-        edge === "end"
-          ? addDays(current.scheduleEnd, shift)
-          : current.scheduleEnd,
+      start,
+      end,
       userId: current.userId || null,
       featureId: current.featureId ?? null,
       milestoneId: current.milestoneId ?? null,
+      exact: true,
     });
   };
 
@@ -468,20 +488,24 @@ export function GanttTaskBar({
         drag.end();
         setResize(null);
       };
-      const onMove = (ev: PointerEvent) => {
-        // The release was swallowed somewhere: drop the gesture.
-        if (ev.pointerType === "mouse" && (ev.buttons & 1) === 0) {
-          end();
-          return;
-        }
-        drag.start();
-        setResize({ edge, days: daysFor(ev.clientX) });
-      };
-      const onUp = (ev: PointerEvent) => {
-        const days = daysFor(ev.clientX);
+      let lastX = originX;
+      const finish = (clientX: number) => {
+        const days = daysFor(clientX);
         end();
         commitResize(edge, days);
       };
+      const onMove = (ev: PointerEvent) => {
+        if (ev.pointerType === "mouse" && (ev.buttons & 1) === 0) {
+          // See RELEASE_SLOP_PX.
+          if (Math.abs(ev.clientX - lastX) <= RELEASE_SLOP_PX) finish(lastX);
+          else end();
+          return;
+        }
+        lastX = ev.clientX;
+        drag.start();
+        setResize({ edge, days: daysFor(ev.clientX) });
+      };
+      const onUp = (ev: PointerEvent) => finish(ev.clientX);
       const onKeyDown = (ev: KeyboardEvent) => {
         if (ev.key !== "Escape") return;
         ev.preventDefault();
@@ -644,7 +668,7 @@ export function GanttTaskBar({
           </span>
         ))}
         {/* A clipped end isn't the real date, so it can't be dragged. */}
-        {canResizeStart && !clippedStart && !laneView && (
+        {resizable && !clippedStart && !laneView && (
           <GanttResizeHandle
             edge="start"
             label={t("tasks:gantt.resizeStart")}
@@ -653,7 +677,7 @@ export function GanttTaskBar({
             onNudge={(days) => commitResize("start", days)}
           />
         )}
-        {canResizeEnd && !clippedEnd && !laneView && (
+        {resizable && !clippedEnd && !laneView && (
           <GanttResizeHandle
             edge="end"
             label={t("tasks:gantt.resizeDue")}

@@ -1,38 +1,63 @@
-import {
-  Children,
-  cloneElement,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DatePickerMenu } from "@/components/common/date-picker/date-picker-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { useUpdateTaskStartDate } from "@/hooks/mutations/task/use-update-task-start-date";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
 
-export default function TaskStartDatePopover({
-  children,
-}: {
+type TaskStartDatePopoverProps = {
   task: Task;
-  children: ReactNode;
-}) {
+  children: React.ReactNode;
+};
+
+export default function TaskStartDatePopover({
+  task,
+  children,
+}: TaskStartDatePopoverProps) {
   const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const { mutateAsync: updateTask } = useUpdateTaskStartDate();
+  const { canUpdateTasks } = useWorkspacePermission();
+  const canEdit = canUpdateTasks();
+
+  const handleDateChange = async (date: Date | null) => {
+    try {
+      await updateTask({
+        ...task,
+        startDate: date?.toISOString() ?? null,
+      });
+      setOpen(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("tasks:popover.startDate.updateError"),
+      );
+    }
+  };
+
+  if (!canEdit) return <>{children}</>;
+
   return (
-    <>
-      {Children.map(children, (child) =>
-        isValidElement(child)
-          ? cloneElement(
-              child as ReactElement<{
-                disabled?: boolean;
-                tabIndex?: number;
-                title?: string;
-              }>,
-              {
-                disabled: true,
-                tabIndex: -1,
-                title: t("tasks:estimate.readOnlyDates"),
-              },
-            )
-          : child,
-      )}
-    </>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent className="w-65 p-0" align="start">
+        <DatePickerMenu
+          label={t("tasks:properties.startDate")}
+          placeholder={t("tasks:datePicker.startDatePlaceholder")}
+          clearLabel={t("tasks:popover.startDate.clear")}
+          value={task.startDate ? new Date(task.startDate) : null}
+          onChange={handleDateChange}
+          bounds={task.dueDate ? { after: new Date(task.dueDate) } : undefined}
+          formatLimit={(date) => t("tasks:due.fullDate", { date })}
+        />
+      </PopoverContent>
+    </Popover>
   );
 }

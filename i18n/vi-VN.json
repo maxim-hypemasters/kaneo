@@ -3174,7 +3174,8 @@
 				"moveRelated_other": "Di chuyển {{count}} công việc liên quan",
 				"movesLabel": "Các công việc sẽ được di chuyển",
 				"startsBeforeBlocker": "Bắt đầu trước khi {{title}} kết thúc.",
-				"title_other": "Thay đổi này phá vỡ {{count}} quan hệ phụ thuộc"
+				"title_other": "Thay đổi này phá vỡ {{count}} quan hệ phụ thuộc",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Tính năng",
 			"featureOverflow": "+{{count}}",

@@ -39,6 +39,7 @@ import {
 } from "../storage/s3";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import { validateAndParseDate } from "../utils/validate-dates";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import bulkUpdateTasks from "./controllers/bulk-update-tasks";
 import createTask from "./controllers/create-task";
@@ -783,10 +784,9 @@ const updateTaskDueDateRoute = createRoute({
   operationId: "updateTaskDueDate",
   path: "/due-date/{id}",
   tags: ["Tasks"],
-  summary: "Task dates are read-only",
-  deprecated: true,
+  summary: "Update task due date",
   description:
-    "Direct date writes are no longer supported. Update the estimate, preview a project plan, then apply it. Always returns HTTP 400 for authorized callers.",
+    "Set or clear a Task or Bug's due date by hand. Planned work stops following its estimate until the next Apply of its release plans it again.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["update"] }),
@@ -800,7 +800,10 @@ const updateTaskDueDateRoute = createRoute({
     },
   },
   responses: {
-    400: errorResponse("Task dates are read-only"),
+    200: jsonResponse("The updated task", taskSchema),
+    400: errorResponse(
+      "Invalid date, a Feature, or a due date before the start date",
+    ),
     403: errorResponse(
       "No access to the project, or missing task:update permission",
     ),
@@ -1229,6 +1232,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     if (
       operation !== "delete" &&
       operation !== "updateEstimate" &&
+      operation !== "updateDueDate" &&
       value === undefined
     ) {
       throw new HTTPException(400, {
@@ -1405,16 +1409,20 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       position,
       userId,
       estimateSeconds,
+      startDate,
+      dueDate,
     } = c.req.valid("json");
 
     const currentUserId = c.get("userId");
+    const parseDate = (value: string | null | undefined, field: string) =>
+      value == null ? value : validateAndParseDate(value, field);
 
     const task = await updateTask(
       id,
       title,
       status,
-      undefined,
-      undefined,
+      parseDate(startDate, "startDate"),
+      parseDate(dueDate, "dueDate"),
       projectId,
       description,
       priority,
@@ -1534,24 +1542,27 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(updateTaskDueDateRoute, async (c) => {
     const { id } = c.req.valid("param");
-    c.req.valid("json");
+    const { dueDate } = c.req.valid("json");
     const currentUserId = c.get("userId");
 
-    return updateTaskDueDate({
+    const task = await updateTaskDueDate({
       id,
-      dueDate: null,
+      dueDate: dueDate ? validateAndParseDate(dueDate, "dueDate") : null,
       currentUserId,
     });
+
+    return c.json(taskResource(task), 200);
   })
   .openapi(moveTaskScheduleRoute, async (c) => {
     const { id } = c.req.valid("param");
-    const { start, end } = c.req.valid("json");
+    const { start, end, exact } = c.req.valid("json");
     const currentUserId = c.get("userId");
 
     const task = await moveTaskSchedule({
       id,
       start: new Date(start),
       end: new Date(end),
+      exact,
       currentUserId,
     });
 

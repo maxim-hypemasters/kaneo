@@ -24,6 +24,9 @@ export function useUpdateTaskDueDate() {
       void queryClient.invalidateQueries({
         queryKey: ["feature-milestones", variables.projectId],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["project-schedule", variables.projectId],
+      });
       queryClient.invalidateQueries({
         queryKey: ["task", variables.id],
       });

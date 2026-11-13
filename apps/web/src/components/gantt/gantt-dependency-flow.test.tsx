@@ -46,6 +46,7 @@ const m = vi.hoisted(() => ({
   toastError: vi.fn(),
   project: null as unknown,
   groupBy: "none",
+  compactRows: false,
   relations: [] as {
     id: string;
     sourceTaskId: string;
@@ -101,8 +102,14 @@ vi.mock("@/store/user-preferences", async (importOriginal) => ({
     selector: (state: {
       weekStartsOn: number;
       ganttGroupBy: string;
+      ganttCompactRows: boolean;
     }) => unknown,
-  ) => selector({ weekStartsOn: 1, ganttGroupBy: m.groupBy }),
+  ) =>
+    selector({
+      weekStartsOn: 1,
+      ganttGroupBy: m.groupBy,
+      ganttCompactRows: m.compactRows,
+    }),
 }));
 vi.mock("@/lib/i18n/domain", () => ({
   getStatusLabel: (status: string) => status,
@@ -232,6 +239,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 7, 31));
   m.groupBy = "none";
+  m.compactRows = false;
   m.update.mockResolvedValue({});
   // Design blocks Build: Build may start on Sep 3, the day Design ends.
   setTasks(
@@ -327,7 +335,127 @@ describe("Gantt dependencies", () => {
     dragBy(handle, -44);
 
     expect(m.update).toHaveBeenCalledTimes(1);
-    expect(m.update).toHaveBeenCalledWith("Design", day(9, 1), day(9, 2));
+    // Exact: the span is taken as given, not laid out again from an estimate.
+    expect(m.update).toHaveBeenCalledWith("Design", day(9, 1), day(9, 2), true);
+  });
+
+  describe("resizing into a dependency", () => {
+    const endHandle = (title: string) =>
+      bar(title).parentElement!.querySelector<HTMLElement>(
+        '[data-gantt-resize="end"]',
+      )!;
+
+    it("saves the resize at once, then advises moving the related tasks", async () => {
+      show();
+
+      // Design now ends Sep 5, two days after Build starts.
+      dragBy(endHandle("Design"), 88);
+
+      expect(m.update).toHaveBeenCalledTimes(1);
+      expect(m.update).toHaveBeenCalledWith(
+        "Design",
+        day(9, 1),
+        day(9, 5),
+        true,
+      );
+      const dialog = screen.getByRole("alertdialog");
+      expect(within(dialog).getByText("Build")).toBeInTheDocument();
+      // Nothing is waiting, so there is nothing to cancel.
+      expect(
+        within(dialog).queryByRole("button", { name: "common:actions.cancel" }),
+      ).toBeNull();
+
+      fireEvent.click(
+        within(dialog).getByRole("button", {
+          name: "tasks:gantt.dependencies.moveRelated:1",
+        }),
+      );
+
+      await waitFor(() => expect(m.update).toHaveBeenCalledTimes(2));
+      // Build keeps its length and starts the day Design now ends; it is a
+      // plain move, so planned work would be laid out again.
+      expect(m.update).toHaveBeenNthCalledWith(
+        2,
+        "Build",
+        day(9, 5),
+        day(9, 7),
+      );
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+
+    it.each([
+      ["leaving the related tasks", "button"],
+      ["pressing Escape", "escape"],
+    ])(
+      "keeps the resize when the advice is dismissed by %s",
+      async (_, how) => {
+        show();
+
+        dragBy(endHandle("Design"), 88);
+        const dialog = screen.getByRole("alertdialog");
+        if (how === "button")
+          fireEvent.click(
+            within(dialog).getByRole("button", {
+              name: "tasks:gantt.dependencies.leaveRelated",
+            }),
+          );
+        else fireEvent.keyDown(dialog, { key: "Escape" });
+
+        await waitFor(() =>
+          expect(screen.queryByRole("alertdialog")).toBeNull(),
+        );
+        // Saved once, never undone, and Build stays where it was.
+        expect(m.update).toHaveBeenCalledTimes(1);
+        expect(
+          screen.getAllByText("Sep 1, 2026 - Sep 5, 2026", { exact: false }),
+        ).toHaveLength(1);
+      },
+    );
+
+    it("keeps a drag alive when compact rows are packed again under it", () => {
+      m.compactRows = true;
+      // Kickoff leads the row that Design shares with it.
+      setTasks(
+        task("Kickoff", "2026-08-28", "2026-08-29"),
+        task("Design", "2026-09-01", "2026-09-03"),
+        task("Build", "2026-09-03", "2026-09-05"),
+      );
+      const view = show();
+      const handle = endHandle("Design");
+      expect(
+        handle.closest("[data-gantt-track]")?.getAttribute("data-gantt-track"),
+      ).toBe("0");
+
+      startDrag(handle, 88);
+      // A reload lands mid-drag and the row's first task is gone.
+      setTasks(
+        task("Design", "2026-09-01", "2026-09-03"),
+        task("Build", "2026-09-03", "2026-09-05"),
+      );
+      const Component = m.component;
+      view.rerender(<Component />);
+      expect(handle.isConnected).toBe(true);
+      fireEvent.pointerUp(window, { clientX: 588, clientY: 300 });
+
+      expect(m.update).toHaveBeenCalledWith(
+        "Design",
+        day(9, 1),
+        day(9, 5),
+        true,
+      );
+      expect(screen.getByRole("alertdialog")).toBeInTheDocument();
+    });
+
+    it("drops the advice when the resize fails to save", async () => {
+      m.update.mockRejectedValueOnce(new Error("nope"));
+      show();
+
+      dragBy(endHandle("Design"), 88);
+
+      await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+      expect(m.update).toHaveBeenCalledTimes(1);
+      expect(m.toastError).toHaveBeenCalledWith("nope");
+    });
   });
 
   it("asks before breaking a dependency and can move the related tasks", async () => {

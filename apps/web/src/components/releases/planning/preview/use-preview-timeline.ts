@@ -2,7 +2,7 @@ import { subDays } from "date-fns";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useGanttRange } from "@/components/gantt/use-gantt-range";
 import { useDragToPan } from "@/components/gantt/use-drag-to-pan";
-import { useWheelScrollsTime } from "@/components/gantt/use-wheel-scrolls-time";
+import { useWheelZoomsTime } from "@/components/gantt/use-wheel-zooms-time";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { parseReleaseDate } from "@/lib/releases/release-date";
 import type { Release } from "@/types/release";
@@ -66,9 +66,8 @@ export function usePreviewTimeline(
     ready: Boolean(timeline),
     scrollToDate,
   });
-  useWheelScrollsTime(scrollElement, {
+  useWheelZoomsTime(scrollElement, {
     onZoom: range.zoomAt,
-    scrollRows: true,
   });
   const pan = useDragToPan();
   return {
