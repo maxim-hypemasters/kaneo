@@ -3,54 +3,40 @@ import { cn } from "@/lib/cn";
 type GanttResizeHandleProps = {
   edge: "start" | "end";
   label: string;
-  disabled: boolean;
-  // On a feature's summary bar the handle is a lighter strip over the end of
-  // the dark band, shown on hover and focus (always on touch screens).
-  summary: boolean;
-  tone?: "default" | "destructive";
+  // Hover and focus tint, in the bar's own colour.
+  className: string;
   onPointerDown: (event: React.PointerEvent) => void;
+  // Moves the edge by whole days, for the arrow keys.
+  onNudge: (days: number) => void;
 };
 
+// A thin strip over one end of a task bar: drag it, or use the arrow keys,
+// to change that date. It lies over the bar's padding, so it takes no room
+// from the title.
 export function GanttResizeHandle({
   edge,
   label,
-  disabled,
-  summary,
-  tone = "default",
+  className,
   onPointerDown,
+  onNudge,
 }: GanttResizeHandleProps) {
   return (
     <button
       type="button"
       aria-label={label}
-      disabled={disabled}
+      data-gantt-resize={edge}
       onPointerDown={onPointerDown}
+      onKeyDown={(event) => {
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        onNudge(event.key === "ArrowLeft" ? -1 : 1);
+      }}
       className={cn(
-        "relative z-20 shrink-0 cursor-ew-resize touch-none",
-        "min-h-[44px] w-6 sm:min-h-0 sm:w-2",
-        summary
-          ? "group/handle focus-visible:outline-hidden"
-          : cn(
-              tone === "destructive"
-                ? "border-destructive/15 bg-destructive/8 hover:bg-destructive/18"
-                : "border-primary/15 bg-primary/8 hover:bg-primary/18",
-              edge === "start" ? "border-r" : "border-l",
-              "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-            ),
+        "absolute inset-y-0 z-20 w-2 cursor-ew-resize touch-none transition-colors motion-reduce:transition-none",
+        "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+        edge === "start" ? "left-0" : "right-0",
+        className,
       )}
-    >
-      {summary && !disabled ? (
-        // As tall as the summary band (h-6) and centred like it; lit while
-        // the pointer is anywhere on the bar (its `group/bar`).
-        <span
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute inset-x-0 top-1/2 h-6 -translate-y-1/2 transition-colors motion-reduce:transition-none",
-            "group-hover/bar:bg-primary-foreground/20 group-hover/handle:bg-primary-foreground/35 group-focus-visible/handle:bg-primary-foreground/40 pointer-coarse:bg-primary-foreground/20",
-            edge === "start" ? "rounded-tl-[3px]" : "rounded-tr-[3px]",
-          )}
-        />
-      ) : null}
-    </button>
+    />
   );
 }

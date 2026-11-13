@@ -317,14 +317,17 @@ describe("Gantt dependencies", () => {
     expect(bar("Design")).not.toHaveAccessibleDescription();
   });
 
-  it("moves bars sideways but never resizes them", () => {
+  it("shortens a task from its end handle, leaving its start alone", () => {
     show();
-    expect(
-      screen.queryByRole("button", { name: "tasks:gantt.resizeStart" }),
-    ).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: "tasks:gantt.resizeDue" }),
-    ).toBeNull();
+    const handle = bar("Design").parentElement!.querySelector<HTMLElement>(
+      '[data-gantt-resize="end"]',
+    )!;
+    expect(handle).toHaveAccessibleName("tasks:gantt.resizeDue");
+
+    dragBy(handle, -44);
+
+    expect(m.update).toHaveBeenCalledTimes(1);
+    expect(m.update).toHaveBeenCalledWith("Design", day(9, 1), day(9, 2));
   });
 
   it("asks before breaking a dependency and can move the related tasks", async () => {

@@ -24,7 +24,7 @@ export function GanttSummaryShape({
       aria-hidden="true"
       data-gantt-summary-shape=""
       className={cn(
-        "pointer-events-none absolute bg-primary transition-[background-color,box-shadow] motion-reduce:transition-none forced-colors:border forced-colors:border-[CanvasText]",
+        "pointer-events-none absolute bg-milestone transition-[background-color,box-shadow] motion-reduce:transition-none forced-colors:border forced-colors:border-[CanvasText]",
         !clippedStart && "rounded-tl-[3px]",
         !clippedEnd && "rounded-tr-[3px]",
         className,

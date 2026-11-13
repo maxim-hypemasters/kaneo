@@ -34,6 +34,10 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+vi.mock("@/lib/i18n/domain", () => ({
+  getStatusLabel: (status: string) => `status:${status}`,
+}));
+
 // jsdom has no PointerEvent; this one carries pointerType like the real one.
 class TestPointerEvent extends MouseEvent {
   pointerType: string;
@@ -399,6 +403,146 @@ describe("GanttTaskBar", () => {
       milestoneId: null,
     });
     expect(bar?.style.gridColumn).toBe("3 / 5");
+  });
+
+  describe("resize handles", () => {
+    const handle = (bar: HTMLElement | null, edge: "start" | "end") =>
+      bar!.querySelector<HTMLElement>(`[data-gantt-resize="${edge}"]`);
+    const drag = (target: HTMLElement, days: number) => {
+      fireEvent.pointerDown(target, { button: 0, clientX: 500, clientY: 300 });
+      fireEvent.pointerMove(window, {
+        clientX: 500 + days * DAY_PX,
+        clientY: 300,
+        buttons: 1,
+      });
+    };
+    const release = (days: number) =>
+      fireEvent.pointerUp(window, {
+        clientX: 500 + days * DAY_PX,
+        clientY: 300,
+      });
+
+    it("extends the end by whole days without moving the start or opening the task", () => {
+      const { bar, onCommit, onOpenTask } = show(
+        task("2026-09-03", "2026-09-05"),
+        { canMoveDates: true },
+      );
+      expect(handle(bar, "end")).toHaveAccessibleName("tasks:gantt.resizeDue");
+
+      drag(handle(bar, "end")!, 2);
+      expect(bar?.style.gridColumn).toBe("3 / 8");
+      release(2);
+
+      expect(onCommit).toHaveBeenCalledWith({
+        start: parseISO("2026-09-03"),
+        end: parseISO("2026-09-07"),
+        userId: "u1",
+        featureId: null,
+        milestoneId: null,
+      });
+      expect(onOpenTask).not.toHaveBeenCalled();
+      expect(bar?.style.gridColumn).toBe("3 / 6");
+    });
+
+    it("never drags the start past the end: the bar keeps a day", () => {
+      const { bar, onCommit } = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+      });
+      drag(handle(bar, "start")!, 6);
+      expect(bar?.style.gridColumn).toBe("5 / 6");
+      release(6);
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-05"),
+          end: parseISO("2026-09-05"),
+        }),
+      );
+    });
+
+    it("cancels with Escape, and moves an end by a day with the arrow keys", () => {
+      const { bar, onCommit } = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+      });
+      drag(handle(bar, "end")!, 2);
+      fireEvent.keyDown(window, { key: "Escape" });
+      release(2);
+      expect(onCommit).not.toHaveBeenCalled();
+      expect(bar?.style.gridColumn).toBe("3 / 6");
+
+      fireEvent.keyDown(handle(bar, "start")!, { key: "ArrowLeft" });
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-02"),
+          end: parseISO("2026-09-05"),
+        }),
+      );
+    });
+
+    it("offers a handle only for a date the work can save", () => {
+      // Read-only.
+      expect(
+        handle(show(task("2026-09-03", "2026-09-05")).bar, "end"),
+      ).toBeNull();
+      cleanup();
+      // Planned work takes its length from its estimate.
+      const planned = show(
+        task("2026-09-03", "2026-09-05", { scheduleApplied: true }),
+        { canMoveDates: true },
+      ).bar;
+      expect(handle(planned, "start")).toBeNull();
+      expect(handle(planned, "end")).toBeNull();
+      cleanup();
+      // Only a due date: there is no start date to save.
+      const dueOnly = show(
+        task("2026-09-05", "2026-09-05", { startDate: null }),
+        { canMoveDates: true },
+      ).bar;
+      expect(handle(dueOnly, "start")).toBeNull();
+      expect(handle(dueOnly, "end")).not.toBeNull();
+      cleanup();
+      // Phones pan the timeline instead.
+      const phone = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+        isMobile: true,
+      }).bar;
+      expect(handle(phone, "end")).toBeNull();
+    });
+  });
+
+  describe("status", () => {
+    it("draws to do strong, in progress light and done faded, dashed and checked", () => {
+      const todo = show(
+        task("2026-09-03", "2026-09-05", { statusPhase: "todo" }),
+      ).bar!;
+      expect(todo).toHaveAttribute("data-gantt-phase", "todo");
+      expect(todo.className).not.toContain("border-dashed");
+      expect(todo.className).not.toContain("opacity-50");
+      expect(todo.className).toContain("border-info");
+      cleanup();
+
+      const active = show(task("2026-09-03", "2026-09-05")).bar!;
+      expect(active).toHaveAttribute("data-gantt-phase", "active");
+      expect(active.className).not.toContain("border-dashed");
+      expect(active.querySelector("[data-gantt-bar-done]")).toBeNull();
+      cleanup();
+
+      const done = show(
+        task("2026-09-03", "2026-09-05", { statusPhase: "done", type: "bug" }),
+      ).bar!;
+      expect(done.className).toContain("border-destructive");
+      expect(done.className).toContain("border-dashed");
+      expect(done.className).toContain("opacity-50");
+      expect(done.querySelector("[data-gantt-bar-done]")).not.toBeNull();
+    });
+
+    it("reads the status out only where asked to", () => {
+      show(task("2026-09-03", "2026-09-05"), { describeStatus: true });
+      expect(
+        screen.getByRole("button", {
+          name: "tasks:gantt.taskAriaLabel(title=Checkout)",
+        }),
+      ).toHaveAccessibleDescription("status:to-do");
+    });
   });
 
   it("pans instead of moving work dragged by touch", () => {

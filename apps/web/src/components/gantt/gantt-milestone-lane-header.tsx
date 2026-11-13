@@ -21,6 +21,8 @@ type GanttMilestoneLaneHeaderProps = {
   pixelsPerDay: number;
   isMobile: boolean;
   showTaskRail: boolean;
+  // Compact rows: no line or band sets the header apart from its rows.
+  compact?: boolean;
   rowGridTemplateColumns: string;
   onOpenMilestone: (milestoneId: string) => void;
   // Dates are derived; this callback cannot reschedule the milestone.
@@ -39,6 +41,7 @@ export function GanttMilestoneLaneHeader({
   pixelsPerDay,
   isMobile,
   showTaskRail,
+  compact = false,
   rowGridTemplateColumns,
   onOpenMilestone,
   onCommitMilestone,
@@ -96,7 +99,10 @@ export function GanttMilestoneLaneHeader({
       {showTaskRail ? (
         <div
           data-gantt-rail=""
-          className="sticky left-0 z-[11] flex h-full min-h-11 items-center gap-1 border-r border-b border-border bg-background px-2 sm:px-3"
+          className={cn(
+            "sticky left-0 z-[11] flex h-full min-h-11 items-center gap-1 border-r border-border bg-background px-2 sm:px-3",
+            !compact && "border-b",
+          )}
         >
           {/* The muted token is translucent; tint an opaque base so the
               timeline scrolling underneath the sticky rail stays hidden. */}
@@ -111,7 +117,10 @@ export function GanttMilestoneLaneHeader({
       {/* The bottom padding gives the task-span underline its own room
           below the bar's box, clear of the bracket tips. */}
       <div
-        className="relative flex min-h-11 shrink-0 cursor-grab select-none flex-col justify-center border-b border-border/70 bg-muted/40 pb-2"
+        className={cn(
+          "relative flex min-h-11 shrink-0 cursor-grab select-none flex-col justify-center pb-2",
+          !compact && "border-b border-border/70 bg-muted/40",
+        )}
         style={{ minWidth: `${timeline.timelineMinWidthRem}rem` }}
       >
         <GanttLaneSummaryLine

@@ -726,7 +726,7 @@ describe("Gantt group by assignee", () => {
     expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
   });
 
-  it("shares rows between tasks that don't overlap in compact mode, without the task list", () => {
+  it("shares rows between tasks that don't overlap in compact mode, naming only the lane", () => {
     preferences.ganttCompactRows = true;
     preferences.ganttGroupBy = "assignee";
     mockTeamProject();
@@ -738,14 +738,27 @@ describe("Gantt group by assignee", () => {
       );
 
     const { container, rerender } = render(<GanttRoute />);
-    expect(container.querySelector("[data-gantt-rail]")).toBeNull();
+    const lane = container.querySelector<HTMLElement>(
+      '[data-gantt-lane="member:u-al"]',
+    )!;
+    expect(rowsOf(lane)).toEqual([["alpha", "beta"]]);
+    // The rail names the lane's person and no task; only lanes are divided.
+    const railText = [...lane.querySelectorAll("[data-gantt-rail]")]
+      .map((cell) => cell.textContent)
+      .join("");
+    expect(railText).toContain("alice");
+    expect(railText).not.toContain("Alpha");
+    expect(lane.classList.contains("border-b")).toBe(true);
     expect(
-      rowsOf(container.querySelector('[data-gantt-lane="member:u-al"]')!),
-    ).toEqual([["alpha", "beta"]]);
+      [...lane.querySelectorAll("[data-gantt-compact-track] *")].some(
+        (element) => element.classList.contains("border-b"),
+      ),
+    ).toBe(false);
 
-    // Ungrouped, the whole chart packs as one lane.
+    // Ungrouped, the whole chart packs as one lane, with no rail at all.
     preferences.ganttGroupBy = "none";
     rerender(<GanttRoute />);
+    expect(container.querySelector("[data-gantt-rail]")).toBeNull();
     expect(rowsOf(container)).toEqual([
       ["alpha", "beta"],
       ["zoe-task"],

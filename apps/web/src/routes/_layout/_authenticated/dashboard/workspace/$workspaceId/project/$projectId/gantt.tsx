@@ -41,6 +41,7 @@ import { GanttReleaseMarkers } from "@/components/gantt/gantt-release-markers";
 import { ganttReleases } from "@/components/gantt/gantt-releases";
 import { compactTaskTracks } from "@/components/gantt/compact-task-tracks";
 import { GanttCompactTrack } from "@/components/gantt/gantt-compact-track";
+import { ganttStatusPhase } from "@/components/gantt/gantt-status-phase";
 import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
 import type {
   GanttLaneDrag,
@@ -239,9 +240,16 @@ function RouteComponent() {
   // Wider day columns on small screens so dragging and reading dates is easier.
   const defaultDayColumnWidthRem = isMobile ? 3.125 : 2.75;
   const taskColumnWidthRem = isMobile ? 12 : 14;
-  // A compact row holds several tasks, so it has no task to name in the rail.
-  const showTaskRail = !compactRows && (!isMobile || isTaskRailOpen);
-  const railWidthRem = showTaskRail ? (isMobile ? taskColumnWidthRem : 20) : 0;
+  // A compact row holds several tasks, so the rail has no task to name: it
+  // stays only to name the lanes, and goes when there are none.
+  const showTaskRail =
+    (!isMobile || isTaskRailOpen) &&
+    (!compactRows || groupByAssignee || groupByMilestone);
+  const railWidthRem = showTaskRail
+    ? isMobile || compactRows
+      ? taskColumnWidthRem
+      : 20
+    : 0;
   const taskRailWidth = `${railWidthRem}rem`;
   const rowGridTemplateColumns = showTaskRail
     ? `${taskRailWidth} max-content`
@@ -291,8 +299,14 @@ function RouteComponent() {
   );
 
   const parsedLeafTasks = useMemo(
-    () => scheduledWork(allTasks, scheduleQuery.data, projectMembers ?? []),
-    [allTasks, scheduleQuery.data, projectMembers],
+    () =>
+      scheduledWork(allTasks, scheduleQuery.data, projectMembers ?? []).map(
+        (task) => ({
+          ...task,
+          statusPhase: ganttStatusPhase(task.status, project?.columns),
+        }),
+      ),
+    [allTasks, scheduleQuery.data, projectMembers, project?.columns],
   );
 
   const parsedTasks = useMemo<ScheduledTask[]>(
@@ -801,8 +815,10 @@ function RouteComponent() {
             timeline={timeline}
             pixelsPerDay={pixelsPerDay}
             isMobile={isMobile}
-            // With no rail, the bar is the only place left to name the
-            // assignee.
+            showTaskRail={showTaskRail}
+            rowGridTemplateColumns={rowGridTemplateColumns}
+            // The rail names no task, so the bar is the only place left to
+            // name the assignee.
             showBarAssignee={options.showAssignee}
             laneDrag={options.laneDrag}
             canMoveDates={canMoveDates}
@@ -1042,7 +1058,7 @@ function RouteComponent() {
               </span>
             </Button>
 
-            {compactRows ? null : (
+            {compactRows && !groupByAssignee && !groupByMilestone ? null : (
               <Button
                 variant="outline"
                 size="xs"
@@ -1247,8 +1263,10 @@ function RouteComponent() {
                             laneKey={lane.key}
                             labelId={labelId}
                             dropTarget={dropTargetLaneKey === lane.key}
+                            divided={compactRows}
                           >
                             <GanttLaneHeader
+                              compact={compactRows}
                               lane={lane}
                               labelId={labelId}
                               collapsed={collapsed}
@@ -1289,8 +1307,10 @@ function RouteComponent() {
                               laneKey={lane.key}
                               labelId={labelId}
                               dropTarget={dropTargetLaneKey === lane.key}
+                              divided={compactRows}
                             >
                               <GanttMilestoneLaneHeader
+                                compact={compactRows}
                                 lane={lane}
                                 labelId={labelId}
                                 collapsed={collapsed}
