@@ -3388,7 +3388,8 @@
 				"assignee": "담당자",
 				"none": "없음",
 				"feature": "기능"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "적용된 필터",

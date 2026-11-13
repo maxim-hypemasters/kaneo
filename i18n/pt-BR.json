@@ -3512,7 +3512,8 @@
 				"assignee": "Responsável",
 				"none": "Nenhum",
 				"feature": "Funcionalidade"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Filtros ativos",

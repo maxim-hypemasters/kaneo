@@ -3388,7 +3388,8 @@
 				"assignee": "负责人",
 				"none": "无",
 				"feature": "功能"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "已应用的筛选",

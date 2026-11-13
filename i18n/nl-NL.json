@@ -3450,7 +3450,8 @@
 				"assignee": "Toegewezen persoon",
 				"none": "Geen",
 				"feature": "Feature"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Actieve filters",

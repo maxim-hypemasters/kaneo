@@ -3388,7 +3388,8 @@
 				"assignee": "Penanggung jawab",
 				"none": "Tidak ada",
 				"feature": "Fitur"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Filter aktif",

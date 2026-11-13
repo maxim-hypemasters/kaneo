@@ -3450,7 +3450,8 @@
 				"assignee": "सौंपा गया",
 				"none": "कोई नहीं",
 				"feature": "फ़ीचर"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "सक्रिय फ़िल्टर",

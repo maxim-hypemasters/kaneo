@@ -3450,7 +3450,8 @@
 				"assignee": "İcraçı",
 				"none": "Heç biri",
 				"feature": "İmkan"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Aktiv süzgəclər",

@@ -3388,7 +3388,8 @@
 				"assignee": "Người được giao",
 				"none": "Không có",
 				"feature": "Tính năng"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Bộ lọc đang áp dụng",

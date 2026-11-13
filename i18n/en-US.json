@@ -3443,6 +3443,7 @@
 			"showOnRows": "Show on rows",
 			"checklistProgress": "Checklist progress",
 			"projectBackground": "Project background",
+			"ganttCompactRows": "Compact rows",
 			"layout": "Layout",
 			"groupBy": "Group by",
 			"groupByOptions": {

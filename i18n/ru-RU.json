@@ -3626,7 +3626,8 @@
 				"assignee": "Исполнитель",
 				"none": "Без группировки",
 				"feature": "Фича"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Активные фильтры",

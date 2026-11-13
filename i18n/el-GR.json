@@ -3450,7 +3450,8 @@
 				"assignee": "Ανατεθειμένος",
 				"none": "Χωρίς ομαδοποίηση",
 				"feature": "Δυνατότητα"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Ενεργά φίλτρα",

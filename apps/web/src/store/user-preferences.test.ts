@@ -16,6 +16,7 @@ afterEach(() => {
   localStorage.removeItem("user-preferences");
   useUserPreferencesStore.setState({
     ganttGroupBy: "none",
+    ganttCompactRows: false,
     weekStartsOn: 0,
     releaseViews: {},
   });
@@ -97,6 +98,23 @@ describe("user preferences", () => {
       JSON.parse(localStorage.getItem("user-preferences") ?? "{}").state
         .ganttGroupBy,
     ).toBe("assignee");
+  });
+});
+
+describe("Gantt compact rows", () => {
+  it("is off by default and persists once turned on", () => {
+    expect(useUserPreferencesStore.getState().ganttCompactRows).toBe(false);
+    useUserPreferencesStore.getState().setGanttCompactRows(true);
+    expect(
+      JSON.parse(localStorage.getItem("user-preferences") ?? "{}").state
+        .ganttCompactRows,
+    ).toBe(true);
+  });
+
+  it("turns off when the stored value is not a boolean", async () => {
+    storePreferences({ ganttCompactRows: "yes" });
+    await useUserPreferencesStore.persist.rehydrate();
+    expect(useUserPreferencesStore.getState().ganttCompactRows).toBe(false);
   });
 });
 

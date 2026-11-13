@@ -3450,7 +3450,8 @@
 				"assignee": "Доделен",
 				"none": "Без групирање",
 				"feature": "Функционалност"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Активни филтри",

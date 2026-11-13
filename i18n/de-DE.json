@@ -3450,7 +3450,8 @@
 				"assignee": "Zugewiesen an",
 				"none": "Keine",
 				"feature": "Feature"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Aktive Filter",

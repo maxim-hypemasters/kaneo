@@ -3450,7 +3450,8 @@
 				"assignee": "Atanan",
 				"none": "Yok",
 				"feature": "Epik"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Etkin filtreler",

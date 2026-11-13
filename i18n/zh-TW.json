@@ -3388,7 +3388,8 @@
 				"assignee": "負責人",
 				"none": "無",
 				"feature": "功能"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "已套用的篩選",

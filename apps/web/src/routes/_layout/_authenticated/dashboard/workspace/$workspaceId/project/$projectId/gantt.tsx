@@ -39,6 +39,8 @@ import { GanttPeriodControls } from "@/components/gantt/gantt-period-controls";
 import { GanttReleaseMarkerLabels } from "@/components/gantt/gantt-release-marker-labels";
 import { GanttReleaseMarkers } from "@/components/gantt/gantt-release-markers";
 import { ganttReleases } from "@/components/gantt/gantt-releases";
+import { compactTaskTracks } from "@/components/gantt/compact-task-tracks";
+import { GanttCompactTrack } from "@/components/gantt/gantt-compact-track";
 import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
 import type {
   GanttLaneDrag,
@@ -75,6 +77,7 @@ import { useWheelScrollsTime } from "@/components/gantt/use-wheel-scrolls-time";
 import { useGanttTaskCommits } from "@/components/gantt/use-gantt-task-commits";
 import PageTitle from "@/components/page-title";
 import { DisplaySection } from "@/components/project/display/display-section";
+import { GanttCompactRowsSwitch } from "@/components/project/display/gantt-compact-rows-switch";
 import { GanttGroupByControl } from "@/components/project/display/gantt-group-by-control";
 import { WeekStartControl } from "@/components/project/display/week-start-control";
 import { ActiveFiltersBar } from "@/components/project/task-filters/active-filters-bar";
@@ -165,6 +168,9 @@ function RouteComponent() {
   // renders the flat timeline.
   const groupByAssignee = groupByPreference === "assignee";
   const groupByMilestone = groupByPreference === "milestone";
+  // Only an explicit true packs rows, as with a stale stored grouping above.
+  const compactRows =
+    useUserPreferencesStore((state) => state.ganttCompactRows) === true;
   const entityPreference = useUserPreferencesStore(
     (state) => state.ganttEntities,
   );
@@ -233,7 +239,8 @@ function RouteComponent() {
   // Wider day columns on small screens so dragging and reading dates is easier.
   const defaultDayColumnWidthRem = isMobile ? 3.125 : 2.75;
   const taskColumnWidthRem = isMobile ? 12 : 14;
-  const showTaskRail = !isMobile || isTaskRailOpen;
+  // A compact row holds several tasks, so it has no task to name in the rail.
+  const showTaskRail = !compactRows && (!isMobile || isTaskRailOpen);
   const railWidthRem = showTaskRail ? (isMobile ? taskColumnWidthRem : 20) : 0;
   const taskRailWidth = `${railWidthRem}rem`;
   const rowGridTemplateColumns = showTaskRail
@@ -733,7 +740,16 @@ function RouteComponent() {
                 `${lane.key}:${lane.milestone ? "bar" : ""}:${visibleRowIds(lane.key, lane.tasks)}`,
             )
             .join("|")
-        : scheduledTasks.map((task) => task.id).join(","));
+        : scheduledTasks.map((task) => task.id).join(",")) +
+    // Compact rows follow the dates: moving a task can change its row.
+    (compactRows
+      ? `:compact:${scheduledTasks
+          .map(
+            (task) =>
+              `${task.id}:${task.scheduleStart.getTime()}:${task.scheduleEnd.getTime()}`,
+          )
+          .join(",")}`
+      : "");
 
   const renderTaskRow = (
     task: ScheduledTask,
@@ -771,6 +787,36 @@ function RouteComponent() {
         dependencyNote={dependencyNote(task.id)}
       />
     );
+
+  type TaskRowOptions = Parameters<typeof renderTaskRow>[1];
+  const renderTaskRows = (
+    tasks: readonly ScheduledTask[],
+    options: TaskRowOptions,
+  ) =>
+    compactRows && timeline
+      ? compactTaskTracks(tasks, isMobile).map((track) => (
+          <GanttCompactTrack
+            key={track[0]!.id}
+            tasks={track}
+            timeline={timeline}
+            pixelsPerDay={pixelsPerDay}
+            isMobile={isMobile}
+            // With no rail, the bar is the only place left to name the
+            // assignee.
+            showBarAssignee={options.showAssignee}
+            laneDrag={options.laneDrag}
+            canMoveDates={canMoveDates}
+            onOpenTask={(task) =>
+              task.entityKind === "milestone"
+                ? openMilestoneDetails(projectId, task.milestone.id)
+                : openTask(task.id)
+            }
+            onCommit={commitTaskEdit}
+            onDragChange={dragChangeFor}
+            dependencyNote={dependencyNote}
+          />
+        ))
+      : tasks.map((task) => renderTaskRow(task, options));
 
   // Whether today's column is rendered; "Jump to today" re-centres the span
   // first when it isn't.
@@ -888,6 +934,7 @@ function RouteComponent() {
               </DisplaySection>
               <DisplaySection>
                 <GanttGroupByControl />
+                <GanttCompactRowsSwitch />
                 <WeekStartControl />
                 <GanttEntityFilterControl />
               </DisplaySection>
@@ -995,22 +1042,24 @@ function RouteComponent() {
               </span>
             </Button>
 
-            <Button
-              variant="outline"
-              size="xs"
-              className="h-9 touch-manipulation sm:hidden"
-              aria-pressed={showTaskRail}
-              onClick={() => setIsTaskRailOpen((current) => !current)}
-            >
-              {showTaskRail ? (
-                <ChevronLeft className="size-3.5" />
-              ) : (
-                <ChevronRight className="size-3.5" />
-              )}
-              {showTaskRail
-                ? t("tasks:gantt.hideTasks")
-                : t("tasks:gantt.showTasks")}
-            </Button>
+            {compactRows ? null : (
+              <Button
+                variant="outline"
+                size="xs"
+                className="h-9 touch-manipulation sm:hidden"
+                aria-pressed={showTaskRail}
+                onClick={() => setIsTaskRailOpen((current) => !current)}
+              >
+                {showTaskRail ? (
+                  <ChevronLeft className="size-3.5" />
+                ) : (
+                  <ChevronRight className="size-3.5" />
+                )}
+                {showTaskRail
+                  ? t("tasks:gantt.hideTasks")
+                  : t("tasks:gantt.showTasks")}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1217,16 +1266,12 @@ function RouteComponent() {
                             />
                             {collapsed
                               ? null
-                              : lane.tasks
-                                  .filter(
+                              : renderTaskRows(
+                                  lane.tasks.filter(
                                     (task) => task.entityKind !== "milestone",
-                                  )
-                                  .map((task) =>
-                                    renderTaskRow(task, {
-                                      showAssignee: false,
-                                      laneDrag,
-                                    }),
-                                  )}
+                                  ),
+                                  { showAssignee: false, laneDrag },
+                                )}
                           </GanttLaneGroup>
                         );
                       })
@@ -1265,19 +1310,17 @@ function RouteComponent() {
                               />
                               {collapsed
                                 ? null
-                                : lane.tasks.map((task) =>
-                                    renderTaskRow(task, {
-                                      showAssignee: true,
-                                      showBarAssignee: true,
-                                      laneDrag,
-                                    }),
-                                  )}
+                                : renderTaskRows(lane.tasks, {
+                                    showAssignee: true,
+                                    showBarAssignee: true,
+                                    laneDrag,
+                                  })}
                             </GanttLaneGroup>
                           );
                         })
-                      : scheduledTasks.map((task) =>
-                          renderTaskRow(task, { showAssignee: true }),
-                        )}
+                      : renderTaskRows(scheduledTasks, {
+                          showAssignee: true,
+                        })}
                 </div>
               </div>
             </div>

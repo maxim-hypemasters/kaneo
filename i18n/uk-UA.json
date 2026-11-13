@@ -3574,7 +3574,8 @@
 				"assignee": "Виконавець",
 				"none": "Без групування",
 				"feature": "Функція"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Активні фільтри",

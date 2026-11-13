@@ -3512,7 +3512,8 @@
 				"assignee": "Assegnatario",
 				"none": "Nessuno",
 				"feature": "Funzionalità"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Filtri attivi",

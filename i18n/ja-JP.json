@@ -3388,7 +3388,8 @@
 				"assignee": "担当者",
 				"none": "なし",
 				"feature": "機能"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "適用中のフィルター",

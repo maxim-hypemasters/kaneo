@@ -117,6 +117,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 const preferences = {
   weekStartsOn: 0,
   ganttGroupBy: "none",
+  ganttCompactRows: false,
   setViewMode: vi.fn(),
   setTaskLayout: vi.fn(),
 };
@@ -355,6 +356,7 @@ afterEach(() => {
   releasesQuery.isPending = false;
   window.localStorage.clear();
   preferences.ganttGroupBy = "none";
+  preferences.ganttCompactRows = false;
   projectMembers.length = 0;
   projectRelations.length = 0;
   updateTask.mockClear();
@@ -722,6 +724,40 @@ describe("Gantt group by assignee", () => {
 
     expect(container.querySelector("[data-gantt-lane]")).toBeNull();
     expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
+  });
+
+  it("shares rows between tasks that don't overlap in compact mode, without the task list", () => {
+    preferences.ganttCompactRows = true;
+    preferences.ganttGroupBy = "assignee";
+    mockTeamProject();
+    const rowsOf = (scope: ParentNode) =>
+      [...scope.querySelectorAll("[data-gantt-compact-track]")].map((track) =>
+        [...track.querySelectorAll<HTMLElement>("[data-gantt-row]")].map(
+          (row) => row.dataset.ganttRow,
+        ),
+      );
+
+    const { container, rerender } = render(<GanttRoute />);
+    expect(container.querySelector("[data-gantt-rail]")).toBeNull();
+    expect(
+      rowsOf(container.querySelector('[data-gantt-lane="member:u-al"]')!),
+    ).toEqual([["alpha", "beta"]]);
+
+    // Ungrouped, the whole chart packs as one lane.
+    preferences.ganttGroupBy = "none";
+    rerender(<GanttRoute />);
+    expect(rowsOf(container)).toEqual([
+      ["alpha", "beta"],
+      ["zoe-task"],
+      ["loose"],
+    ]);
+
+    preferences.ganttCompactRows = false;
+    rerender(<GanttRoute />);
+    expect(rowsOf(container)).toEqual([]);
+    expect(
+      container.querySelectorAll("[data-gantt-row] [data-gantt-rail]"),
+    ).toHaveLength(4);
   });
 });
 
