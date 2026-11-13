@@ -1,16 +1,19 @@
-import { ArrowUpRight, Diamond } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ReleaseMilestoneProgressIcon } from "@/components/releases/detail/release-milestone-progress-icon";
 import { cn } from "@/lib/cn";
 import { GanttLaneSummaryLine } from "./gantt-lane-summary-line";
 import { GanttLaneToggle } from "./gantt-lane-toggle";
 import { GanttTaskBar } from "./gantt-task-bar";
 import type { GanttMilestoneLane, GanttTaskEdit } from "./gantt-types";
 import type { GanttTimeline } from "./timeline";
+
+const NO_PROGRESS = { total: 0, started: 0, completed: 0 };
 
 type GanttMilestoneLaneHeaderProps = {
   lane: GanttMilestoneLane;
@@ -60,9 +63,10 @@ export function GanttMilestoneLaneHeader({
         count={lane.tasks.length}
         icon={
           milestoneId === null ? undefined : (
-            <Diamond
-              aria-hidden="true"
-              className="size-3.5 shrink-0 text-muted-foreground"
+            <ReleaseMilestoneProgressIcon
+              progress={lane.progress ?? NO_PROGRESS}
+              ready={lane.progress !== null}
+              unassigned={false}
             />
           )
         }

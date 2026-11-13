@@ -17,6 +17,7 @@ import {
   SquareKanban,
 } from "lucide-react";
 import {
+  type CSSProperties,
   useCallback,
   useEffect,
   useId,
@@ -1156,7 +1157,13 @@ function RouteComponent() {
               "min-h-0 flex-1 overflow-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] data-panning:cursor-grabbing data-panning:[&_*]:cursor-grabbing",
               laneDragState && "cursor-grabbing [&_*]:cursor-grabbing",
             )}
-            style={{ scrollPaddingLeft: `${scrollPaddingLeftRem}rem` }}
+            style={
+              {
+                scrollPaddingLeft: `${scrollPaddingLeftRem}rem`,
+                // Milestone labels stick just past the rail.
+                "--gantt-rail-width": `${railWidthRem}rem`,
+              } as CSSProperties
+            }
           >
             <div className="relative min-w-max touch-pan-x touch-pan-y">
               <div className="sticky top-0 z-20 flex border-b border-border bg-background/95 backdrop-blur">

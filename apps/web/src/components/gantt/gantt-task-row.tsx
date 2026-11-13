@@ -1,7 +1,7 @@
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { format } from "date-fns";
-import { Diamond } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ReleaseMilestoneProgressIcon } from "@/components/releases/detail/release-milestone-progress-icon";
 import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
 import { GanttTaskBar } from "./gantt-task-bar";
@@ -83,9 +83,11 @@ export function GanttTaskRow({
               // The icon is no taller than the line, so the row keeps its
               // height.
               <p className="flex w-full min-w-0 items-center gap-1 text-xs font-semibold leading-tight text-foreground">
-                <Diamond
-                  aria-hidden="true"
-                  className="size-3 shrink-0 text-muted-foreground"
+                <ReleaseMilestoneProgressIcon
+                  progress={task.milestone.progress}
+                  ready
+                  unassigned={false}
+                  className="size-3"
                 />
                 <span className="sr-only">{t("tasks:milestones.title")}</span>{" "}
                 <span className="min-w-0 truncate">{task.title}</span>
