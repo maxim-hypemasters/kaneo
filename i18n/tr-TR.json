@@ -3224,7 +3224,8 @@
 				"movesLabel": "Taşınacak talepler",
 				"startsBeforeBlocker": "{{title}} bitmeden başlıyor.",
 				"title_one": "Bu değişiklik {{count}} bağımlılığı bozuyor",
-				"title_other": "Bu değişiklik {{count}} bağımlılığı bozuyor"
+				"title_other": "Bu değişiklik {{count}} bağımlılığı bozuyor",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Epikler",
 			"featureOverflow": "+{{count}}",
@@ -3450,7 +3451,8 @@
 				"assignee": "Atanan",
 				"none": "Yok",
 				"feature": "Epik"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Etkin filtreler",

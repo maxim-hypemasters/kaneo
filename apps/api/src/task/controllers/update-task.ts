@@ -13,6 +13,7 @@ import {
   getProjectWorkspaceId,
 } from "../../utils/assert-assignable-user";
 import { boardDescription, descriptionDeferred } from "../description-pages";
+import { validateDateRange } from "../../utils/validate-dates";
 import { assertValidTaskStatus } from "../validate-task-fields";
 import { assertTaskPosition } from "./next-task-position";
 
@@ -20,8 +21,9 @@ async function updateTask(
   id: string,
   title: string,
   status: string | null | undefined,
-  startDate: Date | undefined,
-  dueDate: Date | undefined,
+  // undefined keeps the current date; null clears it.
+  startDate: Date | null | undefined,
+  dueDate: Date | null | undefined,
   projectId: string,
   description: string | undefined,
   priority: string | null | undefined,
@@ -30,10 +32,6 @@ async function updateTask(
   currentUserId?: string,
   estimateSeconds?: number | null,
 ) {
-  if (startDate !== undefined || dueDate !== undefined)
-    throw new HTTPException(400, {
-      message: "Task dates are read-only; use an estimate and Preview plan",
-    });
   assertEstimateSeconds(estimateSeconds);
   assertTaskPosition(position);
 
@@ -44,6 +42,7 @@ async function updateTask(
       title: taskTable.title,
       priority: taskTable.priority,
       userId: taskTable.userId,
+      startDate: taskTable.startDate,
       dueDate: taskTable.dueDate,
       description:
         description === undefined ? sql<null>`null` : taskTable.description,
@@ -100,6 +99,7 @@ async function updateTask(
     ),
   });
 
+  let datesChanged = false;
   const initialPosition = existingTask.position;
   const initialStatus = existingTask.status;
   const updatedTask = await db.transaction(async (tx) => {
@@ -117,6 +117,7 @@ async function updateTask(
         title: taskTable.title,
         priority: taskTable.priority,
         userId: taskTable.userId,
+        startDate: taskTable.startDate,
         dueDate: taskTable.dueDate,
         description:
           description === undefined ? sql<null>`null` : taskTable.description,
@@ -138,6 +139,20 @@ async function updateTask(
       });
     existingTask = locked;
 
+    // Dates set by hand: planned work stops following its estimate (its
+    // planned segments go) until the next Apply plans it again.
+    const startChanged =
+      startDate !== undefined &&
+      startDate?.getTime() !== locked.startDate?.getTime();
+    const dueChanged =
+      dueDate !== undefined && dueDate?.getTime() !== locked.dueDate?.getTime();
+    datesChanged = startChanged || dueChanged;
+    if (datesChanged)
+      validateDateRange(
+        startChanged ? startDate : locked.startDate,
+        dueChanged ? dueDate : locked.dueDate,
+      );
+
     const [task] = await tx
       .update(taskTable)
       .set({
@@ -145,6 +160,9 @@ async function updateTask(
         status: feature ? null : status,
         columnId: feature ? null : (column?.id ?? null),
         ...(estimateSeconds !== undefined ? { estimateSeconds } : {}),
+        ...(startChanged ? { startDate } : {}),
+        ...(dueChanged ? { dueDate } : {}),
+        ...(datesChanged ? { scheduleSegments: null } : {}),
         projectId,
         description,
         priority: feature ? null : priority,
@@ -158,7 +176,12 @@ async function updateTask(
         descriptionDeferred,
       });
     if (task)
-      await recordTaskMutation(tx, existingTask, { title }, currentUserId);
+      await recordTaskMutation(
+        tx,
+        existingTask,
+        { title, ...(dueChanged ? { dueDate } : {}) },
+        currentUserId,
+      );
     return task;
   });
 
@@ -185,6 +208,12 @@ async function updateTask(
     status: updatedTask.status,
     userId: currentUserId,
   });
+
+  if (datesChanged)
+    await publishEvent("project-schedule.changed", {
+      projectId: updatedTask.projectId,
+      userId: currentUserId,
+    });
 
   return updatedTask;
 }

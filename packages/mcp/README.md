@@ -118,7 +118,7 @@ For headless or sandboxed environments where opening a browser is impractical, s
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
 - Search: `search`
 - Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `list_project_columns`
-- Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_estimate`, `list_task_activity`
+- Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_estimate`, `update_task_due_date`, `list_task_activity`
 - Features: `list_features`, `archive_feature`, `set_task_feature`; Task/Bug conversion: `set_task_type`
 - Milestones: `list_project_milestones`, `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`, `set_task_milestone`
 - Releases: `list_releases`, `get_release`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
@@ -181,4 +181,4 @@ Bump `version` in `packages/mcp/package.json` and merge to `main`. The [publish 
 
 Publishing a GitHub release manually also works: tag it `mcp-v<version>` with the tag version matching `packages/mcp/package.json` on the tagged commit.
 
-Tasks and Bugs accept `estimateSeconds` as total effort in whole minutes (for example, 5400 seconds for 1.5 hours). Start and due dates are read-only outputs of project Preview/Apply planning; task tools cannot set them. `update_task_estimate` accepts null to clear an estimate.
+Tasks and Bugs accept `estimateSeconds` as total effort in whole minutes (for example, 5400 seconds for 1.5 hours). Start and due dates come from project Preview/Apply planning; `update_task_due_date` sets or clears a due date by hand, which takes planned work off its estimate until the next Apply. `update_task_estimate` accepts null to clear an estimate.

@@ -3188,7 +3188,8 @@
 				"moveRelated_other": "同时移动 {{count}} 个关联任务",
 				"movesLabel": "将被移动的任务",
 				"startsBeforeBlocker": "在“{{title}}”结束前开始。",
-				"title_other": "此更改会破坏 {{count}} 个依赖关系"
+				"title_other": "此更改会破坏 {{count}} 个依赖关系",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "功能",
 			"featureOverflow": "+{{count}}",
@@ -3388,7 +3389,8 @@
 				"assignee": "负责人",
 				"none": "无",
 				"feature": "功能"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "已应用的筛选",

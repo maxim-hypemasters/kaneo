@@ -3263,7 +3263,8 @@
 				"startsBeforeBlocker": "Empieza antes de que termine {{title}}.",
 				"title_many": "Este cambio rompe {{count}} dependencias",
 				"title_one": "Este cambio rompe {{count}} dependencia",
-				"title_other": "Este cambio rompe {{count}} dependencias"
+				"title_other": "Este cambio rompe {{count}} dependencias",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Funcionalidades",
 			"featureOverflow": "+{{count}}",
@@ -3512,7 +3513,8 @@
 				"assignee": "Asignado",
 				"none": "Ninguno",
 				"feature": "Funcionalidad"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Filtros activos",

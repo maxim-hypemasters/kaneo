@@ -96,6 +96,7 @@ export const bulkUpdateBody = z.object({
     "addLabel",
     "removeLabel",
     "updateEstimate",
+    "updateDueDate",
   ]),
   value: z.string().nullable().optional().openapi({
     description:
@@ -152,6 +153,14 @@ export const updateTaskBody = z
         "Omit to preserve the existing description when updating a list summary.",
     }),
     estimateSeconds: estimateSecondsSchema.optional(),
+    startDate: z.string().nullable().optional().openapi({
+      description:
+        "An ISO date or date-time; null clears it. Omit to keep the current start date. Changing it by hand takes planned work off its estimate until the next Apply.",
+    }),
+    dueDate: z.string().nullable().optional().openapi({
+      description:
+        "An ISO date or date-time; null clears it. Omit to keep the current due date. Changing it by hand takes planned work off its estimate until the next Apply.",
+    }),
     priority: priority.nullable().optional(),
     status: z.string().nullable().optional(),
     projectId: z.string(),
@@ -218,7 +227,11 @@ export const updatePriorityBody = z.object({ priority });
 export const updateAssigneeBody = z.object({
   userId: z.string().nullable().openapi({ description: "Null unassigns." }),
 });
-export const updateDueDateBody = z.object({}).strict();
+export const updateDueDateBody = z.object({
+  dueDate: z.string().nullable().optional().openapi({
+    description: "An ISO date or date-time. Null, empty or omitted clears it.",
+  }),
+});
 export const moveTaskScheduleBody = z
   .object({
     start: z.string().datetime({ offset: true }).openapi({
@@ -228,6 +241,10 @@ export const moveTaskScheduleBody = z
     end: z.string().datetime({ offset: true }).openapi({
       description:
         "Where the moved span ends. Used as the due date of unplanned work; planned work keeps its effort, so it may finish later.",
+    }),
+    exact: z.boolean().optional().openapi({
+      description:
+        "Set the span by hand, as resizing a bar in Gantt does: the work takes `start` and `end` exactly as its start and due dates, and planned work stops following its estimate until the next Apply.",
     }),
   })
   .refine((body) => Date.parse(body.start) <= Date.parse(body.end), {

@@ -143,6 +143,27 @@ export function useBulkOperations() {
     },
   });
 
+  const bulkDueDate = useMutation({
+    mutationFn: async ({
+      taskIds,
+      dueDate,
+    }: {
+      taskIds: string[];
+      dueDate: string | null;
+    }) => {
+      await bulkOperation({
+        taskIds,
+        operation: "updateDueDate",
+        value: dueDate,
+      });
+    },
+    onSuccess: () => {
+      invalidateCommon();
+      for (const queryKey of [["feature-milestones"], ["project-schedule"]])
+        void queryClientRef.invalidateQueries({ queryKey });
+    },
+  });
+
   const bulkEstimate = useMutation({
     mutationFn: async ({
       taskIds,
@@ -175,6 +196,7 @@ export function useBulkOperations() {
     bulkMoveToBoard: bulkMoveToBoard.mutateAsync,
     bulkPriority: bulkPriority.mutateAsync,
     bulkAddLabel: bulkAddLabel.mutateAsync,
+    bulkDueDate: bulkDueDate.mutateAsync,
     bulkEstimate: bulkEstimate.mutateAsync,
   };
 }

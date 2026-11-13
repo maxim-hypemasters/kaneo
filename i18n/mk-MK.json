@@ -3224,7 +3224,8 @@
 				"movesLabel": "Задачи што би се преместиле",
 				"startsBeforeBlocker": "Започнува пред да заврши {{title}}.",
 				"title_one": "Оваа промена нарушува {{count}} зависност",
-				"title_other": "Оваа промена нарушува {{count}} зависности"
+				"title_other": "Оваа промена нарушува {{count}} зависности",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Функционалности",
 			"featureOverflow": "+{{count}}",
@@ -3450,7 +3451,8 @@
 				"assignee": "Доделен",
 				"none": "Без групирање",
 				"feature": "Функционалност"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Активни филтри",

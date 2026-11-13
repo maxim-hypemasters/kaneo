@@ -94,6 +94,10 @@ type UserPreferencesStore = {
   setGanttEntities: (entities: ("milestone" | "task" | "bug")[]) => void;
   ganttGroupBy: GanttGroupBy;
   setGanttGroupBy: (ganttGroupBy: GanttGroupBy) => void;
+  // Gantt-only: tasks that don't overlap share a row. Unrelated to
+  // `compactMode`, the app-wide density setting.
+  ganttCompactRows: boolean;
+  setGanttCompactRows: (ganttCompactRows: boolean) => void;
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -205,6 +209,8 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       setGanttEntities: (ganttEntities) => set({ ganttEntities }),
       ganttGroupBy: "none",
       setGanttGroupBy: (ganttGroupBy) => set({ ganttGroupBy }),
+      ganttCompactRows: false,
+      setGanttCompactRows: (ganttCompactRows) => set({ ganttCompactRows }),
     }),
     {
       name: "user-preferences",
@@ -221,6 +227,9 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
           state.setGanttGroupBy("milestone");
         } else if (!isGanttGroupBy(state.ganttGroupBy)) {
           state.setGanttGroupBy("none");
+        }
+        if (typeof state.ganttCompactRows !== "boolean") {
+          state.setGanttCompactRows(false);
         }
         if (!isDefaultProjectView(state.defaultProjectView)) {
           state.setDefaultProjectView("gantt");

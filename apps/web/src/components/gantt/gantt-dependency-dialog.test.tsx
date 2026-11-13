@@ -52,12 +52,13 @@ const handlers = {
   onCancel: vi.fn(),
 };
 
-function setup(list = moves, cycle = false) {
+function setup(list = moves, cycle = false, saved = false) {
   const view = render(
     <GanttDependencyDialog
       open
       brokenCount={1}
       cycle={cycle}
+      saved={saved}
       moves={list}
       {...handlers}
     />,
@@ -107,6 +108,27 @@ describe("GanttDependencyDialog", () => {
         screen.getByRole("button", { name: "common:actions.cancel" }),
       ).toHaveFocus(),
     );
+  });
+
+  it("only advises on a change that is already saved: no Cancel, and it starts on moving the related tasks", async () => {
+    const { onMoveOnly } = setup(moves, false, true);
+
+    expect(
+      screen.queryByRole("button", { name: "common:actions.cancel" }),
+    ).toBeNull();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: "tasks:gantt.dependencies.moveRelated:2",
+        }),
+      ).toHaveFocus(),
+    );
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "tasks:gantt.dependencies.leaveRelated",
+      }),
+    );
+    expect(onMoveOnly).toHaveBeenCalledOnce();
   });
 
   it("only offers keeping or cancelling the change for a loop", () => {

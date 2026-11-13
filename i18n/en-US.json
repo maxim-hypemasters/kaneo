@@ -3238,6 +3238,7 @@
 				"moveRelated_one": "Move {{count}} related task",
 				"moveRelated_other": "Move {{count}} related tasks",
 				"moveOnly": "Move only this task",
+				"leaveRelated": "Leave related tasks",
 				"moveDates": "Current dates: {{from}}. New dates: {{to}}.",
 				"movesLabel": "Tasks that would move",
 				"startsBeforeBlocker": "Starts before {{title}} ends."
@@ -3443,6 +3444,7 @@
 			"showOnRows": "Show on rows",
 			"checklistProgress": "Checklist progress",
 			"projectBackground": "Project background",
+			"ganttCompactRows": "Compact rows",
 			"layout": "Layout",
 			"groupBy": "Group by",
 			"groupByOptions": {

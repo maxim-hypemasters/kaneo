@@ -3213,7 +3213,8 @@
 				"movesLabel": "Taken die verplaatst zouden worden",
 				"startsBeforeBlocker": "Begint voordat {{title}} eindigt.",
 				"title_one": "Deze wijziging verbreekt {{count}} afhankelijkheid",
-				"title_other": "Deze wijziging verbreekt {{count}} afhankelijkheden"
+				"title_other": "Deze wijziging verbreekt {{count}} afhankelijkheden",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Features",
 			"featureOverflow": "+{{count}}",
@@ -3450,7 +3451,8 @@
 				"assignee": "Toegewezen persoon",
 				"none": "Geen",
 				"feature": "Feature"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Actieve filters",

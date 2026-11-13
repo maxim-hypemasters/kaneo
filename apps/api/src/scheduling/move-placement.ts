@@ -15,11 +15,21 @@ export type TaskPlacement = {
 // finish later than `end` (nights and weekends are skipped). Unplanned work
 // takes the requested span on the date fields it already has. Returns null
 // when the work no longer fits within the planning horizon.
+//
+// `exact` is a span set by hand (resizing a bar): the work takes both dates
+// as given and stops following its estimate, so its planned segments go.
 export function movePlacement(
   task: TaskPlacement,
   target: { start: Date; end: Date },
   timeZone: string,
+  exact = false,
 ): TaskPlacement | null {
+  if (exact)
+    return {
+      startDate: target.start,
+      dueDate: target.end,
+      scheduleSegments: null,
+    };
   const segments = task.scheduleSegments;
   if (!segments?.length)
     return {

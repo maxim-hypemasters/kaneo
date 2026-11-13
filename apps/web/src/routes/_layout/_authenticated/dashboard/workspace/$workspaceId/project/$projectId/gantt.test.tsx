@@ -117,6 +117,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 const preferences = {
   weekStartsOn: 0,
   ganttGroupBy: "none",
+  ganttCompactRows: false,
   setViewMode: vi.fn(),
   setTaskLayout: vi.fn(),
 };
@@ -355,6 +356,7 @@ afterEach(() => {
   releasesQuery.isPending = false;
   window.localStorage.clear();
   preferences.ganttGroupBy = "none";
+  preferences.ganttCompactRows = false;
   projectMembers.length = 0;
   projectRelations.length = 0;
   updateTask.mockClear();
@@ -722,6 +724,58 @@ describe("Gantt group by assignee", () => {
 
     expect(container.querySelector("[data-gantt-lane]")).toBeNull();
     expect(screen.getAllByText("Alpha").length).toBeGreaterThan(0);
+  });
+
+  it("shares rows between tasks that don't overlap in compact mode, naming only the lane", () => {
+    preferences.ganttCompactRows = true;
+    preferences.ganttGroupBy = "assignee";
+    mockTeamProject();
+    // The task ids on each compact track, in order.
+    const rowsOf = (scope: ParentNode) => {
+      const tracks: (string | undefined)[][] = [];
+      for (const row of scope.querySelectorAll<HTMLElement>(
+        "[data-gantt-track]",
+      ))
+        (tracks[Number(row.dataset.ganttTrack)] ??= []).push(
+          row.dataset.ganttRow,
+        );
+      return tracks;
+    };
+
+    const { container, rerender } = render(<GanttRoute />);
+    const lane = container.querySelector<HTMLElement>(
+      '[data-gantt-lane="member:u-al"]',
+    )!;
+    expect(rowsOf(lane)).toEqual([["alpha", "beta"]]);
+    // The rail names the lane's person and no task; only lanes are divided.
+    const railText = [...lane.querySelectorAll("[data-gantt-rail]")]
+      .map((cell) => cell.textContent)
+      .join("");
+    expect(railText).toContain("alice");
+    expect(railText).not.toContain("Alpha");
+    expect(lane.classList.contains("border-b")).toBe(true);
+    expect(
+      [...lane.querySelectorAll("[data-gantt-compact-rows] *")].some(
+        (element) => element.classList.contains("border-b"),
+      ),
+    ).toBe(false);
+
+    // Ungrouped, the whole chart packs as one lane, with no rail at all.
+    preferences.ganttGroupBy = "none";
+    rerender(<GanttRoute />);
+    expect(container.querySelector("[data-gantt-rail]")).toBeNull();
+    expect(rowsOf(container)).toEqual([
+      ["alpha", "beta"],
+      ["zoe-task"],
+      ["loose"],
+    ]);
+
+    preferences.ganttCompactRows = false;
+    rerender(<GanttRoute />);
+    expect(rowsOf(container)).toEqual([]);
+    expect(
+      container.querySelectorAll("[data-gantt-row] [data-gantt-rail]"),
+    ).toHaveLength(4);
   });
 });
 

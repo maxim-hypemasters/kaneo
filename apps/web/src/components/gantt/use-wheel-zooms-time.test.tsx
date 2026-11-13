@@ -14,13 +14,13 @@ import {
   it,
   vi,
 } from "vite-plus/test";
-import { useWheelScrollsTime } from "./use-wheel-scrolls-time";
+import { useWheelZoomsTime } from "./use-wheel-zooms-time";
 
-type Options = NonNullable<Parameters<typeof useWheelScrollsTime>[1]>;
+type Options = NonNullable<Parameters<typeof useWheelZoomsTime>[1]>;
 
 function Harness({ options }: { options?: Options }) {
   const [element, setElement] = useState<HTMLDivElement | null>(null);
-  useWheelScrollsTime(element, options);
+  useWheelZoomsTime(element, options);
   return (
     <div ref={setElement} data-testid="scroller">
       <div data-gantt-rail="">
@@ -90,49 +90,25 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("useWheelScrollsTime", () => {
-  it("turns a vertical wheel over the timeline into scrolling through time", () => {
-    const scroller = setup();
-
-    const event = wheel(screen.getByText("Timeline"), { deltaY: 120 });
-
-    expect(event.defaultPrevented).toBe(true);
-    expect(scroller.scrollLeft).toBe(1120);
-    wheel(screen.getByText("Timeline"), { deltaY: -200 });
-    expect(scroller.scrollLeft).toBe(920);
-  });
-
-  it("scales wheels that report lines or pages", () => {
-    const scroller = setup();
-
-    wheel(screen.getByText("Timeline"), { deltaY: 3, deltaMode: 1 });
-    expect(scroller.scrollLeft).toBe(1120);
-
-    wheel(screen.getByText("Timeline"), { deltaY: -1, deltaMode: 2 });
-    expect(scroller.scrollLeft).toBe(320);
-  });
-
-  it("keeps the wheel scrolling rows over the task list", () => {
-    const scroller = setup();
-
-    const event = wheel(screen.getByText("Task list"), { deltaY: 120 });
-
-    expect(event.defaultPrevented).toBe(false);
-    expect(scroller.scrollLeft).toBe(1000);
-  });
-
-  it("leaves sideways gestures, unconfigured Shift and browser zoom unchanged", () => {
+describe("useWheelZoomsTime", () => {
+  it("leaves plain wheels to the browser, so the chart scrolls any way the wheel moves", () => {
     const scroller = setup();
     const timeline = screen.getByText("Timeline");
 
     for (const init of [
-      { deltaX: 80, deltaY: 10 },
+      { deltaY: 120 },
+      { deltaX: 80 },
+      { deltaX: 60, deltaY: -90 },
+      { deltaY: 3, deltaMode: 1 },
       { deltaY: 120, shiftKey: true },
       { deltaY: 120, ctrlKey: true },
       { deltaY: 120, metaKey: true },
     ]) {
       expect(wheel(timeline, init).defaultPrevented).toBe(false);
     }
+    expect(
+      wheel(screen.getByText("Task list"), { deltaY: 120 }).defaultPrevented,
+    ).toBe(false);
     expect(scroller.scrollLeft).toBe(1000);
   });
 
@@ -319,7 +295,7 @@ describe("useWheelScrollsTime", () => {
     const first = vi.fn();
     const second = vi.fn();
     const { rerender } = renderHook(
-      ({ onZoom }) => useWheelScrollsTime(element, { onZoom }),
+      ({ onZoom }) => useWheelZoomsTime(element, { onZoom }),
       { initialProps: { onZoom: first } },
     );
     wheel(element, { shiftKey: true, deltaY: -120, clientX: 400 });
@@ -334,7 +310,7 @@ describe("useWheelScrollsTime", () => {
     const second = document.createElement("div");
     const onZoom = vi.fn();
     const { rerender, unmount } = renderHook(
-      ({ element }) => useWheelScrollsTime(element, { onZoom }),
+      ({ element }) => useWheelZoomsTime(element, { onZoom }),
       { initialProps: { element: first } },
     );
     wheel(first, { shiftKey: true, deltaY: -120 });

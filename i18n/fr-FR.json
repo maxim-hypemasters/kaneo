@@ -3274,7 +3274,8 @@
 				"startsBeforeBlocker": "Commence avant la fin de {{title}}.",
 				"title_many": "Cette modification ne respecte pas {{count}} dépendances",
 				"title_one": "Cette modification ne respecte pas {{count}} dépendance",
-				"title_other": "Cette modification ne respecte pas {{count}} dépendances"
+				"title_other": "Cette modification ne respecte pas {{count}} dépendances",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Fonctionnalités",
 			"featureOverflow": "+{{count}}",
@@ -3512,7 +3513,8 @@
 				"assignee": "Assigné",
 				"none": "Aucun",
 				"feature": "Fonctionnalité"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Filtres actifs",

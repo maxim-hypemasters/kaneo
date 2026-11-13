@@ -34,6 +34,10 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+vi.mock("@/lib/i18n/domain", () => ({
+  getStatusLabel: (status: string) => `status:${status}`,
+}));
+
 // jsdom has no PointerEvent; this one carries pointerType like the real one.
 class TestPointerEvent extends MouseEvent {
   pointerType: string;
@@ -399,6 +403,175 @@ describe("GanttTaskBar", () => {
       milestoneId: null,
     });
     expect(bar?.style.gridColumn).toBe("3 / 5");
+  });
+
+  describe("resize handles", () => {
+    const handle = (bar: HTMLElement | null, edge: "start" | "end") =>
+      bar!.querySelector<HTMLElement>(`[data-gantt-resize="${edge}"]`);
+    const drag = (target: HTMLElement, days: number) => {
+      fireEvent.pointerDown(target, { button: 0, clientX: 500, clientY: 300 });
+      fireEvent.pointerMove(window, {
+        clientX: 500 + days * DAY_PX,
+        clientY: 300,
+        buttons: 1,
+      });
+    };
+    const release = (days: number) =>
+      fireEvent.pointerUp(window, {
+        clientX: 500 + days * DAY_PX,
+        clientY: 300,
+      });
+
+    it("extends the end by whole days without moving the start or opening the task", () => {
+      const { bar, onCommit, onOpenTask } = show(
+        task("2026-09-03", "2026-09-05"),
+        { canMoveDates: true },
+      );
+      expect(handle(bar, "end")).toHaveAccessibleName("tasks:gantt.resizeDue");
+
+      drag(handle(bar, "end")!, 2);
+      expect(bar?.style.gridColumn).toBe("3 / 8");
+      release(2);
+
+      expect(onCommit).toHaveBeenCalledWith({
+        start: parseISO("2026-09-03"),
+        end: parseISO("2026-09-07"),
+        userId: "u1",
+        featureId: null,
+        milestoneId: null,
+        exact: true,
+      });
+      expect(onOpenTask).not.toHaveBeenCalled();
+      expect(bar?.style.gridColumn).toBe("3 / 6");
+    });
+
+    it("never drags the start past the end: the bar keeps a day", () => {
+      const { bar, onCommit } = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+      });
+      drag(handle(bar, "start")!, 6);
+      expect(bar?.style.gridColumn).toBe("5 / 6");
+      release(6);
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-05"),
+          end: parseISO("2026-09-05"),
+        }),
+      );
+    });
+
+    it("saves when the browser reports the release as a buttonless move first", () => {
+      const { bar, onCommit } = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+      });
+      drag(handle(bar, "end")!, -1);
+      // Same spot, no button: sent just before the pointerup when the
+      // element under the pointer changed during the drag.
+      fireEvent.pointerMove(window, {
+        clientX: 500 - DAY_PX,
+        clientY: 300,
+        buttons: 0,
+      });
+      release(-1);
+
+      expect(onCommit).toHaveBeenCalledTimes(1);
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-03"),
+          end: parseISO("2026-09-04"),
+        }),
+      );
+    });
+
+    it("drops a resize whose release went unseen", () => {
+      const { bar, onCommit } = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+      });
+      drag(handle(bar, "end")!, 2);
+      // No button, and the pointer is somewhere else by now.
+      fireEvent.pointerMove(window, { clientX: 900, clientY: 300, buttons: 0 });
+      expect(bar?.style.gridColumn).toBe("3 / 6");
+      fireEvent.pointerUp(window, { clientX: 900, clientY: 300 });
+
+      expect(onCommit).not.toHaveBeenCalled();
+    });
+
+    it("cancels with Escape, and moves an end by a day with the arrow keys", () => {
+      const { bar, onCommit } = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+      });
+      drag(handle(bar, "end")!, 2);
+      fireEvent.keyDown(window, { key: "Escape" });
+      release(2);
+      expect(onCommit).not.toHaveBeenCalled();
+      expect(bar?.style.gridColumn).toBe("3 / 6");
+
+      fireEvent.keyDown(handle(bar, "start")!, { key: "ArrowLeft" });
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-02"),
+          end: parseISO("2026-09-05"),
+        }),
+      );
+    });
+
+    it("offers handles on any work the viewer may move, but not on phones", () => {
+      // Read-only.
+      expect(
+        handle(show(task("2026-09-03", "2026-09-05")).bar, "end"),
+      ).toBeNull();
+      cleanup();
+      // Planned work too: resizing takes it off its estimate.
+      const planned = show(
+        task("2026-09-03", "2026-09-05", { scheduleApplied: true }),
+        { canMoveDates: true },
+      ).bar;
+      expect(handle(planned, "start")).not.toBeNull();
+      expect(handle(planned, "end")).not.toBeNull();
+      cleanup();
+      // Phones pan the timeline instead.
+      const phone = show(task("2026-09-03", "2026-09-05"), {
+        canMoveDates: true,
+        isMobile: true,
+      }).bar;
+      expect(handle(phone, "end")).toBeNull();
+    });
+  });
+
+  describe("status", () => {
+    it("draws to do strong, in progress light and done faded, dashed and checked", () => {
+      const todo = show(
+        task("2026-09-03", "2026-09-05", { statusPhase: "todo" }),
+      ).bar!;
+      expect(todo).toHaveAttribute("data-gantt-phase", "todo");
+      expect(todo.className).not.toContain("border-dashed");
+      expect(todo.className).not.toContain("opacity-50");
+      expect(todo.className).toContain("border-info");
+      cleanup();
+
+      const active = show(task("2026-09-03", "2026-09-05")).bar!;
+      expect(active).toHaveAttribute("data-gantt-phase", "active");
+      expect(active.className).not.toContain("border-dashed");
+      expect(active.querySelector("[data-gantt-bar-done]")).toBeNull();
+      cleanup();
+
+      const done = show(
+        task("2026-09-03", "2026-09-05", { statusPhase: "done", type: "bug" }),
+      ).bar!;
+      expect(done.className).toContain("border-destructive");
+      expect(done.className).toContain("border-dashed");
+      expect(done.className).toContain("opacity-50");
+      expect(done.querySelector("[data-gantt-bar-done]")).not.toBeNull();
+    });
+
+    it("reads the status out only where asked to", () => {
+      show(task("2026-09-03", "2026-09-05"), { describeStatus: true });
+      expect(
+        screen.getByRole("button", {
+          name: "tasks:gantt.taskAriaLabel(title=Checkout)",
+        }),
+      ).toHaveAccessibleDescription("status:to-do");
+    });
   });
 
   it("pans instead of moving work dragged by touch", () => {

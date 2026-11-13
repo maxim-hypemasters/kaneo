@@ -11,7 +11,7 @@ type GanttMilestoneBarLabelProps = {
   textOutside: boolean;
 };
 
-// What a milestone's summary bar shows on its dark band. The bar's button is
+// What a milestone's summary bar shows on its violet band. The bar's button is
 // named by its aria-label, so the count here is visual only.
 export function GanttMilestoneBarLabel({
   title,
@@ -19,7 +19,7 @@ export function GanttMilestoneBarLabel({
   textOutside,
 }: GanttMilestoneBarLabelProps) {
   return (
-    <span className="relative z-10 flex min-w-0 items-center gap-1.5 text-xs leading-none text-primary-foreground">
+    <span className="relative z-10 flex min-w-0 items-center gap-1.5 text-xs leading-none text-milestone-foreground">
       <Diamond aria-hidden="true" className="size-3.5 shrink-0" />
       <span
         className={cn(
@@ -32,7 +32,7 @@ export function GanttMilestoneBarLabel({
       {progress && !textOutside ? (
         <span
           aria-hidden="true"
-          className="shrink-0 font-medium tabular-nums text-primary-foreground/70"
+          className="shrink-0 font-medium tabular-nums text-milestone-foreground/75"
         >
           {progress}
         </span>

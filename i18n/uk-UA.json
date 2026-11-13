@@ -3324,7 +3324,8 @@
 				"title_few": "Ця зміна порушує {{count}} залежності",
 				"title_many": "Ця зміна порушує {{count}} залежностей",
 				"title_one": "Ця зміна порушує {{count}} залежність",
-				"title_other": "Ця зміна порушує {{count}} залежності"
+				"title_other": "Ця зміна порушує {{count}} залежності",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Функції",
 			"featureOverflow": "+{{count}}",
@@ -3574,7 +3575,8 @@
 				"assignee": "Виконавець",
 				"none": "Без групування",
 				"feature": "Функція"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Активні фільтри",

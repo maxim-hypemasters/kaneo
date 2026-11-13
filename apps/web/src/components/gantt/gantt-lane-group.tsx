@@ -7,6 +7,8 @@ type GanttLaneGroupProps = {
   labelId: string;
   // A bar dragged from another lane would land here.
   dropTarget: boolean;
+  // Compact rows: the only horizontal line is the one between lanes.
+  divided?: boolean;
   children: ReactNode;
 };
 
@@ -16,6 +18,7 @@ export function GanttLaneGroup({
   laneKey,
   labelId,
   dropTarget,
+  divided = false,
   children,
 }: GanttLaneGroupProps) {
   return (
@@ -28,6 +31,7 @@ export function GanttLaneGroup({
       data-drop-target={dropTarget ? "" : undefined}
       className={cn(
         "relative",
+        divided && "border-b border-border",
         dropTarget &&
           "after:pointer-events-none after:absolute after:inset-0 after:z-[12] after:bg-primary/5 after:ring-2 after:ring-inset after:ring-primary/50",
       )}

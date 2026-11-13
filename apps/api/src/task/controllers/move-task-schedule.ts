@@ -16,11 +16,14 @@ export default async function moveTaskSchedule({
   id,
   start,
   end,
+  exact = false,
   currentUserId,
 }: {
   id: string;
   start: Date;
   end: Date;
+  // The span was set by hand, e.g. by resizing the bar.
+  exact?: boolean;
   currentUserId: string;
 }) {
   const { before, after } = await withLockedTask(id, async (tx, task) => {
@@ -37,6 +40,7 @@ export default async function moveTaskSchedule({
       task,
       { start, end },
       project?.timeZone ?? "UTC",
+      exact,
     );
     if (!placement)
       throw new HTTPException(400, {

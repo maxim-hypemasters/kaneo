@@ -166,7 +166,17 @@ describe("MCP tool catalog", () => {
     expect(lastRequest().body).not.toHaveProperty("dueDate");
     await call("update_task_estimate", { taskId: "t1", estimateSeconds: null });
     expect(lastRequest().body.estimateSeconds).toBeNull();
-    expect(tools.has("update_task_due_date")).toBe(false);
+    await call("update_task_due_date", {
+      taskId: "t1",
+      dueDate: "2026-12-01T00:00:00Z",
+    });
+    expect(lastRequest()).toMatchObject({
+      url: "http://api.test/api/task/due-date/t1",
+      method: "PUT",
+      body: { dueDate: "2026-12-01T00:00:00Z" },
+    });
+    await call("update_task_due_date", { taskId: "t1" });
+    expect(lastRequest().body.dueDate).toBeNull();
   });
 
   it("rejects non-minute estimates and direct schedule writes", async () => {

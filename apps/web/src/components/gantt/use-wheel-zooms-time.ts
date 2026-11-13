@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { shiftScrollLeft } from "./gantt-scroll";
 
 // Pixels per wheel "line" for mice that report in lines (deltaMode 1).
 const LINE_PX = 40;
@@ -7,12 +6,12 @@ const LINE_PX = 40;
 type WheelScrollOptions = {
   onZoom?: (deltaPx: number, clientX: number) => void;
   isZoomBlocked?: () => boolean;
-  scrollRows?: boolean;
 };
 
-// A vertical wheel pans time, while Shift+wheel zooms around the pointer.
-// The task rail still scrolls rows; Ctrl/⌘+wheel belongs to the browser.
-export function useWheelScrollsTime(
+// Shift+wheel zooms time around the pointer. Every other wheel is left to
+// the browser, so the chart scrolls whichever way the wheel or trackpad
+// moves (a Magic Mouse moves both ways at once); Ctrl/⌘+wheel is its zoom.
+export function useWheelZoomsTime(
   element: HTMLElement | null,
   options: WheelScrollOptions = {},
 ) {
@@ -76,10 +75,6 @@ export function useWheelScrollsTime(
         return;
       }
       cancelZoom();
-      if (event.shiftKey || latest.current.scrollRows) return;
-      if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
-      event.preventDefault();
-      shiftScrollLeft(element, event.deltaY * unit);
     };
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.key === "Shift") cancelZoom();
@@ -95,7 +90,7 @@ export function useWheelScrollsTime(
       activePointers.clear();
       cancelZoom();
     };
-    // Not passive: handled gestures must not also scroll the page/chart.
+    // Not passive: a zoom gesture must not also scroll the page/chart.
     element.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("pointerdown", onPointerDown, true);

@@ -39,6 +39,9 @@ import { GanttPeriodControls } from "@/components/gantt/gantt-period-controls";
 import { GanttReleaseMarkerLabels } from "@/components/gantt/gantt-release-marker-labels";
 import { GanttReleaseMarkers } from "@/components/gantt/gantt-release-markers";
 import { ganttReleases } from "@/components/gantt/gantt-releases";
+import { compactTaskTracks } from "@/components/gantt/compact-task-tracks";
+import { GanttCompactRows } from "@/components/gantt/gantt-compact-rows";
+import { ganttStatusPhase } from "@/components/gantt/gantt-status-phase";
 import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
 import type {
   GanttLaneDrag,
@@ -71,10 +74,11 @@ import { scheduledWork } from "@/components/gantt/scheduled-work";
 import { paddedSchedule } from "@/components/gantt/timeline";
 import { useDragToPan } from "@/components/gantt/use-drag-to-pan";
 import { useGanttRange } from "@/components/gantt/use-gantt-range";
-import { useWheelScrollsTime } from "@/components/gantt/use-wheel-scrolls-time";
+import { useWheelZoomsTime } from "@/components/gantt/use-wheel-zooms-time";
 import { useGanttTaskCommits } from "@/components/gantt/use-gantt-task-commits";
 import PageTitle from "@/components/page-title";
 import { DisplaySection } from "@/components/project/display/display-section";
+import { GanttCompactRowsSwitch } from "@/components/project/display/gantt-compact-rows-switch";
 import { GanttGroupByControl } from "@/components/project/display/gantt-group-by-control";
 import { WeekStartControl } from "@/components/project/display/week-start-control";
 import { ActiveFiltersBar } from "@/components/project/task-filters/active-filters-bar";
@@ -143,7 +147,11 @@ function RouteComponent() {
   const navigate = useNavigate();
   // isSuccess stays false while only streamed pages of a large board are
   // in, so the chart waits for all tasks before choosing its opening span.
-  const { data: project, isSuccess: tasksLoaded } = useGetTasks(projectId);
+  const {
+    data: project,
+    isSuccess: tasksLoaded,
+    dataUpdatedAt: tasksUpdatedAt,
+  } = useGetTasks(projectId);
   // Without progress, so a completion elsewhere doesn't redraw every row.
   const { data: releases = NO_RELEASES, isPending: releasesLoading } =
     useGetReleases(projectId, { select: releaseSummaries });
@@ -165,6 +173,9 @@ function RouteComponent() {
   // renders the flat timeline.
   const groupByAssignee = groupByPreference === "assignee";
   const groupByMilestone = groupByPreference === "milestone";
+  // Only an explicit true packs rows, as with a stale stored grouping above.
+  const compactRows =
+    useUserPreferencesStore((state) => state.ganttCompactRows) === true;
   const entityPreference = useUserPreferencesStore(
     (state) => state.ganttEntities,
   );
@@ -233,8 +244,16 @@ function RouteComponent() {
   // Wider day columns on small screens so dragging and reading dates is easier.
   const defaultDayColumnWidthRem = isMobile ? 3.125 : 2.75;
   const taskColumnWidthRem = isMobile ? 12 : 14;
-  const showTaskRail = !isMobile || isTaskRailOpen;
-  const railWidthRem = showTaskRail ? (isMobile ? taskColumnWidthRem : 20) : 0;
+  // A compact row holds several tasks, so the rail has no task to name: it
+  // stays only to name the lanes, and goes when there are none.
+  const showTaskRail =
+    (!isMobile || isTaskRailOpen) &&
+    (!compactRows || groupByAssignee || groupByMilestone);
+  const railWidthRem = showTaskRail
+    ? isMobile || compactRows
+      ? taskColumnWidthRem
+      : 20
+    : 0;
   const taskRailWidth = `${railWidthRem}rem`;
   const rowGridTemplateColumns = showTaskRail
     ? `${taskRailWidth} max-content`
@@ -284,8 +303,14 @@ function RouteComponent() {
   );
 
   const parsedLeafTasks = useMemo(
-    () => scheduledWork(allTasks, scheduleQuery.data, projectMembers ?? []),
-    [allTasks, scheduleQuery.data, projectMembers],
+    () =>
+      scheduledWork(allTasks, scheduleQuery.data, projectMembers ?? []).map(
+        (task) => ({
+          ...task,
+          statusPhase: ganttStatusPhase(task.status, project?.columns),
+        }),
+      ),
+    [allTasks, scheduleQuery.data, projectMembers, project?.columns],
   );
 
   const parsedTasks = useMemo<ScheduledTask[]>(
@@ -296,7 +321,13 @@ function RouteComponent() {
       ].sort((a, b) => a.scheduleStart.getTime() - b.scheduleStart.getTime()),
     [parsedLeafTasks, milestones, projectMembers],
   );
-  const { pending: pendingEdits, commit } = useGanttTaskCommits(parsedTasks);
+  const { pending: pendingEdits, commit } = useGanttTaskCommits(
+    parsedTasks,
+    // Bars are placed by the applied schedule, or by the tasks before one.
+    scheduleQuery.data && !scheduleQuery.data.legacy
+      ? scheduleQuery.dataUpdatedAt
+      : tasksUpdatedAt,
+  );
   const { data: relations } = useGetProjectTaskRelations({
     projectId,
     relationType: "blocks",
@@ -308,11 +339,13 @@ function RouteComponent() {
         leaves.has(relation.blockerId) && leaves.has(relation.blockedId),
     );
   }, [relations, parsedLeafTasks]);
-  // A date change that breaks a dependency waits here (shown in place, not
-  // saved) while the user decides what to do about it. Only the edit itself
-  // is kept, with the dependencies it broke: what still breaks and what would
-  // move is worked out from the live data, which can change while the
-  // question is open.
+  // A date change that breaks a dependency waits here while the user decides
+  // what to do about it. A move is shown in place but not saved until then;
+  // a resize is saved at once (`saved`), so dates can always be changed
+  // freely, and the question is only whether the related tasks follow. Only
+  // the edit itself is kept, with the dependencies it broke: what still
+  // breaks and what would move is worked out from the live data, which can
+  // change while the question is open.
   const [heldEdit, setHeldEdit] = useState<{
     taskId: string;
     edit: GanttTaskEdit;
@@ -323,6 +356,8 @@ function RouteComponent() {
     changesAssignee: boolean;
     changesMilestone: boolean;
     brokenIds: ReadonlySet<string>;
+    // Settles when an already-sent resize has saved.
+    saved?: Promise<unknown>;
   } | null>(null);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const completedStatuses = useMemo(
@@ -408,7 +443,8 @@ function RouteComponent() {
   );
 
   const displayedTasks = useMemo<ScheduledTask[]>(() => {
-    if (!heldEdit || !heldDraft) return savedTasks;
+    // A saved resize is already shown as a pending edit.
+    if (!heldEdit || !heldDraft || heldEdit.saved) return savedTasks;
     return savedTasks.map((task) =>
       task.id === heldEdit.taskId
         ? applyPendingEdit(task, {
@@ -618,27 +654,41 @@ function RouteComponent() {
         : (targetLane?.image ?? null),
     };
     const changes = classifyEdit(task, edit);
+    // A resized span is no longer planned to the minute, so its dependencies
+    // are judged by the day, as they will be once it is saved.
+    const span = savedSpans.get(task.id);
+    const spans =
+      edit.exact && span
+        ? new Map(savedSpans).set(task.id, { ...span, precise: false })
+        : savedSpans;
     const broken = changes.dates
-      ? planDependencyMoves(savedSpans, dependencies, task.id, edit).broken
+      ? planDependencyMoves(spans, dependencies, task.id, edit).broken
       : [];
-    if (broken.length > 0) {
-      setHeldEdit({
-        taskId: task.id,
-        edit,
-        assignee,
-        changesAssignee: !keepsAssignee,
-        changesMilestone: changes.milestone,
-        brokenIds: new Set(broken.map((dependency) => dependency.id)),
-      });
+    if (broken.length === 0) {
+      commit(task, edit, assignee);
       return;
     }
-    commit(task, edit, assignee);
+    const saved = edit.exact ? commit(task, edit, assignee) : undefined;
+    setHeldEdit({
+      taskId: task.id,
+      edit,
+      assignee,
+      changesAssignee: !keepsAssignee,
+      changesMilestone: changes.milestone,
+      brokenIds: new Set(broken.map((dependency) => dependency.id)),
+      saved,
+    });
+    // Nothing to advise on if the resize didn't save (commit reports why).
+    saved?.catch(() =>
+      setHeldEdit((current) => (current?.saved === saved ? null : current)),
+    );
   };
 
   const resolveHeldEdit = (moveRelated: boolean) => {
     setHeldEdit(null);
     if (!heldTask || !heldDraft) return;
-    const saved = commit(heldTask, heldDraft.edit, heldDraft.assignee);
+    const saved =
+      heldEdit?.saved ?? commit(heldTask, heldDraft.edit, heldDraft.assignee);
     if (!moveRelated) return;
     for (const move of heldPlan?.moves ?? []) {
       const related = savedTasksById.get(move.taskId);
@@ -676,7 +726,7 @@ function RouteComponent() {
     }
     if (heldPlan && heldPlan.broken.length === 0) {
       setHeldEdit(null);
-      commit(heldTask, heldDraft.edit, heldDraft.assignee);
+      if (!heldEdit.saved) commit(heldTask, heldDraft.edit, heldDraft.assignee);
     }
   }, [heldEdit, heldTask, heldDraft, heldPlan, commit]);
 
@@ -714,7 +764,7 @@ function RouteComponent() {
     railWidthRem,
     scrollElement,
   });
-  useWheelScrollsTime(scrollElement, {
+  useWheelZoomsTime(scrollElement, {
     onZoom: zoomAt,
     isZoomBlocked: () => Boolean(draggingTaskId || laneDragState),
   });
@@ -733,7 +783,16 @@ function RouteComponent() {
                 `${lane.key}:${lane.milestone ? "bar" : ""}:${visibleRowIds(lane.key, lane.tasks)}`,
             )
             .join("|")
-        : scheduledTasks.map((task) => task.id).join(","));
+        : scheduledTasks.map((task) => task.id).join(",")) +
+    // Compact rows follow the dates: moving a task can change its row.
+    (compactRows
+      ? `:compact:${scheduledTasks
+          .map(
+            (task) =>
+              `${task.id}:${task.scheduleStart.getTime()}:${task.scheduleEnd.getTime()}`,
+          )
+          .join(",")}`
+      : "");
 
   const renderTaskRow = (
     task: ScheduledTask,
@@ -770,6 +829,37 @@ function RouteComponent() {
         onDragChange={dragChangeFor(task.id)}
         dependencyNote={dependencyNote(task.id)}
       />
+    );
+
+  type TaskRowOptions = Parameters<typeof renderTaskRow>[1];
+  const renderTaskRows = (
+    tasks: readonly ScheduledTask[],
+    options: TaskRowOptions,
+  ) =>
+    compactRows && timeline ? (
+      <GanttCompactRows
+        tracks={compactTaskTracks(tasks, isMobile)}
+        timeline={timeline}
+        pixelsPerDay={pixelsPerDay}
+        isMobile={isMobile}
+        showTaskRail={showTaskRail}
+        rowGridTemplateColumns={rowGridTemplateColumns}
+        // The rail names no task, so the bar is the only place left to
+        // name the assignee.
+        showBarAssignee={options.showAssignee}
+        laneDrag={options.laneDrag}
+        canMoveDates={canMoveDates}
+        onOpenTask={(task) =>
+          task.entityKind === "milestone"
+            ? openMilestoneDetails(projectId, task.milestone.id)
+            : openTask(task.id)
+        }
+        onCommit={commitTaskEdit}
+        onDragChange={dragChangeFor}
+        dependencyNote={dependencyNote}
+      />
+    ) : (
+      tasks.map((task) => renderTaskRow(task, options))
     );
 
   // Whether today's column is rendered; "Jump to today" re-centres the span
@@ -888,6 +978,7 @@ function RouteComponent() {
               </DisplaySection>
               <DisplaySection>
                 <GanttGroupByControl />
+                <GanttCompactRowsSwitch />
                 <WeekStartControl />
                 <GanttEntityFilterControl />
               </DisplaySection>
@@ -995,22 +1086,24 @@ function RouteComponent() {
               </span>
             </Button>
 
-            <Button
-              variant="outline"
-              size="xs"
-              className="h-9 touch-manipulation sm:hidden"
-              aria-pressed={showTaskRail}
-              onClick={() => setIsTaskRailOpen((current) => !current)}
-            >
-              {showTaskRail ? (
-                <ChevronLeft className="size-3.5" />
-              ) : (
-                <ChevronRight className="size-3.5" />
-              )}
-              {showTaskRail
-                ? t("tasks:gantt.hideTasks")
-                : t("tasks:gantt.showTasks")}
-            </Button>
+            {compactRows && !groupByAssignee && !groupByMilestone ? null : (
+              <Button
+                variant="outline"
+                size="xs"
+                className="h-9 touch-manipulation sm:hidden"
+                aria-pressed={showTaskRail}
+                onClick={() => setIsTaskRailOpen((current) => !current)}
+              >
+                {showTaskRail ? (
+                  <ChevronLeft className="size-3.5" />
+                ) : (
+                  <ChevronRight className="size-3.5" />
+                )}
+                {showTaskRail
+                  ? t("tasks:gantt.hideTasks")
+                  : t("tasks:gantt.showTasks")}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -1066,10 +1159,10 @@ function RouteComponent() {
                 {showTaskRail ? (
                   <div
                     data-gantt-rail=""
-                    className="sticky left-0 z-30 flex shrink-0 flex-col border-r border-border bg-background sm:w-80"
-                    style={{
-                      width: isMobile ? `${taskColumnWidthRem}rem` : undefined,
-                    }}
+                    className="sticky left-0 z-30 flex shrink-0 flex-col border-r border-border bg-background"
+                    // The same width as every row's rail, or the day
+                    // labels drift off the bars (compact rows narrow it).
+                    style={{ width: taskRailWidth }}
                   >
                     <p className="flex-1 px-2 py-2.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:px-4 sm:py-3">
                       {t("tasks:gantt.taskHeader")}
@@ -1198,8 +1291,10 @@ function RouteComponent() {
                             laneKey={lane.key}
                             labelId={labelId}
                             dropTarget={dropTargetLaneKey === lane.key}
+                            divided={compactRows}
                           >
                             <GanttLaneHeader
+                              compact={compactRows}
                               lane={lane}
                               labelId={labelId}
                               collapsed={collapsed}
@@ -1217,16 +1312,12 @@ function RouteComponent() {
                             />
                             {collapsed
                               ? null
-                              : lane.tasks
-                                  .filter(
+                              : renderTaskRows(
+                                  lane.tasks.filter(
                                     (task) => task.entityKind !== "milestone",
-                                  )
-                                  .map((task) =>
-                                    renderTaskRow(task, {
-                                      showAssignee: false,
-                                      laneDrag,
-                                    }),
-                                  )}
+                                  ),
+                                  { showAssignee: false, laneDrag },
+                                )}
                           </GanttLaneGroup>
                         );
                       })
@@ -1244,8 +1335,10 @@ function RouteComponent() {
                               laneKey={lane.key}
                               labelId={labelId}
                               dropTarget={dropTargetLaneKey === lane.key}
+                              divided={compactRows}
                             >
                               <GanttMilestoneLaneHeader
+                                compact={compactRows}
                                 lane={lane}
                                 labelId={labelId}
                                 collapsed={collapsed}
@@ -1265,19 +1358,17 @@ function RouteComponent() {
                               />
                               {collapsed
                                 ? null
-                                : lane.tasks.map((task) =>
-                                    renderTaskRow(task, {
-                                      showAssignee: true,
-                                      showBarAssignee: true,
-                                      laneDrag,
-                                    }),
-                                  )}
+                                : renderTaskRows(lane.tasks, {
+                                    showAssignee: true,
+                                    showBarAssignee: true,
+                                    laneDrag,
+                                  })}
                             </GanttLaneGroup>
                           );
                         })
-                      : scheduledTasks.map((task) =>
-                          renderTaskRow(task, { showAssignee: true }),
-                        )}
+                      : renderTaskRows(scheduledTasks, {
+                          showAssignee: true,
+                        })}
                 </div>
               </div>
             </div>
@@ -1288,6 +1379,7 @@ function RouteComponent() {
           open={!!heldPlan && heldPlan.broken.length > 0}
           brokenCount={heldPlan?.broken.length ?? 0}
           cycle={heldPlan?.cycle ?? false}
+          saved={Boolean(heldEdit?.saved)}
           moves={heldMoves}
           onMoveRelated={() => resolveHeldEdit(true)}
           onMoveOnly={() => resolveHeldEdit(false)}

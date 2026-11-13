@@ -580,13 +580,29 @@ describe("Gantt drag to reassign", () => {
     press(groupedBar("A1"));
     moveTo(0, 60, bobLane);
     expect(bobLane).toHaveAttribute("data-drop-target");
-    // The button is no longer held: the release went somewhere else.
-    fireEvent.pointerMove(window, { clientX: 500, clientY: 360, buttons: 0 });
+    // The button is no longer held, and the pointer is somewhere else: the
+    // release went unseen.
+    fireEvent.pointerMove(window, { clientX: 720, clientY: 520, buttons: 0 });
     expect(bobLane).not.toHaveAttribute("data-drop-target");
     release(0, 60);
 
     expect(m.updateAssignee).not.toHaveBeenCalled();
     expect(m.navigate).not.toHaveBeenCalled();
+  });
+
+  it("takes a buttonless move where the drag stands as the release itself", () => {
+    const { container } = show();
+    const bobLane = lane(container, "member:u2");
+
+    press(groupedBar("A1"));
+    moveTo(0, 60, bobLane);
+    // Browsers send this just before the pointerup when the element under
+    // the pointer changed during the drag.
+    fireEvent.pointerMove(window, { clientX: 500, clientY: 360, buttons: 0 });
+    release(0, 60);
+
+    expect(m.updateAssignee).toHaveBeenCalledTimes(1);
+    expect(bobLane).not.toHaveAttribute("data-drop-target");
   });
 
   it("cancels the drag when a context menu opens", () => {

@@ -1,3 +1,4 @@
+import type { GanttStatusPhase } from "./gantt-status-phase";
 import type Task from "@/types/task";
 
 export type GanttMilestoneRecord = {
@@ -26,6 +27,8 @@ export type ScheduledLeaf = Omit<Task, "status" | "type"> &
     entityKind?: "task";
     scheduleSegments?: ScheduledWorkSegment[];
     scheduleApplied?: boolean;
+    // Set by the route from the project's columns; see ganttStatusPhase.
+    statusPhase?: GanttStatusPhase;
     milestone?: never;
   };
 export type ScheduledMilestone = Omit<Task, "type" | "status"> &
@@ -46,6 +49,9 @@ export type GanttTaskEdit = {
   userId: string | null;
   featureId: string | null;
   milestoneId?: string | null;
+  // The span was set by hand (a resize), so the work takes both dates as
+  // given instead of being laid out again from its estimate.
+  exact?: boolean;
 };
 
 export type GanttLane = {

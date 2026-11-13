@@ -70,6 +70,9 @@ vi.mock("@/components/providers/auth-provider/hooks/use-auth", () => ({
 vi.mock("@/hooks/mutations/task/use-update-task-assignee", () => ({
   useUpdateTaskAssignee: () => ({ mutateAsync: mocks.updateAssignee }),
 }));
+vi.mock("@/hooks/mutations/task/use-update-task-due-date", () => ({
+  useUpdateTaskDueDate: () => ({ mutateAsync: vi.fn() }),
+}));
 vi.mock("@/hooks/queries/task/use-get-task", () => ({
   default: () => ({ data: mocks.task }),
 }));

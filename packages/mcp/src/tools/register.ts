@@ -1043,7 +1043,7 @@ export function registerTools(
     "update_task_estimate",
     {
       description:
-        "Set a Task/Bug effort estimate. Pass null to clear it; schedule dates are read-only.",
+        "Set a Task/Bug effort estimate. Pass null to clear it. Planning sets dates from it on Apply.",
       inputSchema: z
         .object({
           taskId: nonEmptyString,
@@ -1063,6 +1063,27 @@ export function registerTools(
           ),
         });
       }),
+  );
+
+  registerTool(
+    "update_task_due_date",
+    {
+      description:
+        "Set a Task/Bug due date by hand. Omit dueDate to clear it. Planned work stops following its estimate until the next Apply of its release.",
+      inputSchema: z
+        .object({
+          taskId: nonEmptyString,
+          dueDate: optionalIsoDateTimeSchema,
+        })
+        .strict(),
+    },
+    async ({ taskId, dueDate }) =>
+      run(() =>
+        client.json(`/api/task/due-date/${encodeURIComponent(taskId)}`, {
+          method: "PUT",
+          body: JSON.stringify({ dueDate: dueDate ?? null }),
+        }),
+      ),
   );
 
   registerTool(

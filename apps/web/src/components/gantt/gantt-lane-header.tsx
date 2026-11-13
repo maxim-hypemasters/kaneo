@@ -19,6 +19,8 @@ type GanttLaneHeaderProps = {
   onToggle: () => void;
   timeline: GanttTimeline;
   showTaskRail: boolean;
+  // Compact rows: no line or band sets the header apart from its rows.
+  compact?: boolean;
   rowGridTemplateColumns: string;
   pixelsPerDay: number;
   isMobile: boolean;
@@ -37,6 +39,7 @@ export function GanttLaneHeader({
   onToggle,
   timeline,
   showTaskRail,
+  compact = false,
   rowGridTemplateColumns,
   pixelsPerDay,
   isMobile,
@@ -87,7 +90,8 @@ export function GanttLaneHeader({
         <div
           data-gantt-rail=""
           className={cn(
-            "sticky left-0 z-[11] flex h-full border-r border-b border-border bg-background px-2 sm:px-3",
+            "sticky left-0 z-[11] flex h-full border-r border-border bg-background px-2 sm:px-3",
+            !compact && "border-b",
             hasMilestones ? "items-start" : "items-center",
             heightClassName,
           )}
@@ -108,7 +112,8 @@ export function GanttLaneHeader({
 
       <div
         className={cn(
-          "relative flex shrink-0 cursor-grab flex-col border-b border-border/70 bg-muted/40",
+          "relative flex shrink-0 cursor-grab flex-col",
+          !compact && "border-b border-border/70 bg-muted/40",
           !hasMilestones && "justify-center",
           heightClassName,
         )}

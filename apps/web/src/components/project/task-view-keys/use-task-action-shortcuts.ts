@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import {
+  CalendarDaysIcon,
   CopyIcon,
   HashIcon,
   LinkIcon,
@@ -107,6 +108,7 @@ export function useTaskActionShortcuts(selection: TaskSelectionStore) {
   useShortcut("changePriority", () => request("priority"), edit);
   useShortcut("assignTask", () => request("assignee"), assign);
   useShortcut("changeLabels", () => request("labels"), labels);
+  useShortcut("setDueDate", () => request("dueDate"), edit);
   useShortcut("deleteTask", () => request("delete"), remove);
 
   useShortcut(
@@ -122,6 +124,18 @@ export function useTaskActionShortcuts(selection: TaskSelectionStore) {
     },
     assign,
   );
+  useShortcut(
+    "removeDueDate",
+    () =>
+      void run(
+        (taskIds) => operations.bulkDueDate({ taskIds, dueDate: null }),
+        (count) => t("tasks:bulk.updateSuccess", { count }),
+        CalendarDaysIcon,
+        t("tasks:bulk.updateDueDateError"),
+      ),
+    edit,
+  );
+
   useShortcut(
     "copyTaskId",
     () =>

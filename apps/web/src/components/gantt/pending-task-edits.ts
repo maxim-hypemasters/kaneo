@@ -57,8 +57,11 @@ export function applyPendingEdit(
     ...task,
     scheduleStart: pending.start,
     scheduleEnd: pending.end,
-    scheduleSegments:
-      shift === 0
+    // A span set by hand no longer follows the planned segments.
+    scheduleApplied: pending.exact ? false : task.scheduleApplied,
+    scheduleSegments: pending.exact
+      ? undefined
+      : shift === 0
         ? task.scheduleSegments
         : task.scheduleSegments?.map((segment) => ({
             start: addDays(segment.start, shift),

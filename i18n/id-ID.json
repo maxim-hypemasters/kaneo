@@ -3174,7 +3174,8 @@
 				"moveRelated_other": "Pindahkan {{count}} tugas terkait",
 				"movesLabel": "Tugas yang akan dipindahkan",
 				"startsBeforeBlocker": "Dimulai sebelum {{title}} selesai.",
-				"title_other": "Perubahan ini melanggar {{count}} dependensi"
+				"title_other": "Perubahan ini melanggar {{count}} dependensi",
+				"leaveRelated": "Leave related tasks"
 			},
 			"featuresLabel": "Fitur",
 			"featureOverflow": "+{{count}}",
@@ -3388,7 +3389,8 @@
 				"assignee": "Penanggung jawab",
 				"none": "Tidak ada",
 				"feature": "Fitur"
-			}
+			},
+			"ganttCompactRows": "Compact rows"
 		},
 		"filterBar": {
 			"label": "Filter aktif",

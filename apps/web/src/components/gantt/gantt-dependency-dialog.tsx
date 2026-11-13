@@ -25,13 +25,22 @@ type GanttDependencyDialogContent = {
   // The tasks block each other in a loop, so there is no order to move them
   // into.
   cycle: boolean;
+  // The change is already saved (a resized bar): the dialog only advises
+  // moving the related tasks, so there is nothing to cancel.
+  saved: boolean;
   moves: readonly GanttDependencyDialogMove[];
 };
 
-type GanttDependencyDialogProps = GanttDependencyDialogContent & {
+type GanttDependencyDialogProps = Omit<
+  GanttDependencyDialogContent,
+  "saved"
+> & {
+  saved?: boolean;
   open: boolean;
   onMoveRelated: () => void;
+  // Keeps this change and leaves the related tasks where they are.
   onMoveOnly: () => void;
+  // Undoes a change that is waiting; one already saved just stays.
   onCancel: () => void;
 };
 
@@ -40,11 +49,13 @@ const range = (span: GanttSpan) =>
 
 // Asks what to do when moving or resizing a bar breaks a "blocks"
 // dependency: move the related tasks along (keeping them in order), keep
-// only this change, or undo it.
+// only this change, or undo it. A resize is saved before asking, so there
+// the question is only whether the related tasks follow.
 export function GanttDependencyDialog({
   open,
   brokenCount,
   cycle,
+  saved = false,
   moves,
   onMoveRelated,
   onMoveOnly,
@@ -54,22 +65,32 @@ export function GanttDependencyDialog({
   // The list below is focusable (so it scrolls by keyboard), which would
   // otherwise take the initial focus from the safe choice.
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const moveRelatedRef = useRef<HTMLButtonElement>(null);
+  const leaveRef = useRef<HTMLButtonElement>(null);
   // Once the question is answered the route has nothing left to show, so
   // the dialog keeps what it last showed while it animates closed.
   const [shown, setShown] = useState<GanttDependencyDialogContent>({
     brokenCount,
     cycle,
+    saved,
     moves,
   });
   if (
     open &&
     (shown.brokenCount !== brokenCount ||
       shown.cycle !== cycle ||
+      shown.saved !== saved ||
       shown.moves !== moves)
   ) {
-    setShown({ brokenCount, cycle, moves });
+    setShown({ brokenCount, cycle, saved, moves });
   }
-  const content = open ? { brokenCount, cycle, moves } : shown;
+  const content = open ? { brokenCount, cycle, saved, moves } : shown;
+  // With nothing left to undo, the advice itself is the default answer.
+  const initialFocus = !content.saved
+    ? cancelRef
+    : content.moves.length > 0
+      ? moveRelatedRef
+      : leaveRef;
 
   return (
     <AlertDialog
@@ -78,7 +99,7 @@ export function GanttDependencyDialog({
         if (!next) onCancel();
       }}
     >
-      <AlertDialogContent initialFocus={cancelRef}>
+      <AlertDialogContent initialFocus={initialFocus}>
         <AlertDialogHeader>
           <AlertDialogTitle>
             {t("tasks:gantt.dependencies.title", {
@@ -125,26 +146,37 @@ export function GanttDependencyDialog({
             </ul>
           </div>
         )}
-        <AlertDialogFooter>
+        {/* Long labels (other languages) wrap instead of leaving the box. */}
+        <AlertDialogFooter className="sm:flex-wrap">
+          {content.saved ? null : (
+            <Button
+              ref={cancelRef}
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+            >
+              {t("common:actions.cancel")}
+            </Button>
+          )}
           <Button
-            ref={cancelRef}
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onCancel}
-          >
-            {t("common:actions.cancel")}
-          </Button>
-          <Button
+            ref={leaveRef}
             type="button"
             variant="outline"
             size="sm"
             onClick={onMoveOnly}
           >
-            {t("tasks:gantt.dependencies.moveOnly")}
+            {content.saved
+              ? t("tasks:gantt.dependencies.leaveRelated")
+              : t("tasks:gantt.dependencies.moveOnly")}
           </Button>
           {content.moves.length > 0 && (
-            <Button type="button" size="sm" onClick={onMoveRelated}>
+            <Button
+              ref={moveRelatedRef}
+              type="button"
+              size="sm"
+              onClick={onMoveRelated}
+            >
               {t("tasks:gantt.dependencies.moveRelated", {
                 count: content.moves.length,
               })}

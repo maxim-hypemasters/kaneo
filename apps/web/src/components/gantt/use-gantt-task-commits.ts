@@ -30,7 +30,15 @@ const PREDECESSOR_FAILED = Symbol("gantt-predecessor-failed");
 // its assignee, which is a planning input, or its milestone. Requests are
 // serialised per task, and the edit is shown optimistically until the
 // refetched task matches it.
-export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
+//
+// `positionsUpdatedAt` is when the data that places the bars (the applied
+// schedule, or the tasks before any Apply) was last loaded. A saved edit the
+// server answered differently is only given up once that data is newer than
+// the save: an unrelated refetch in between must not snap the bar back.
+export function useGanttTaskCommits(
+  tasks: readonly ScheduledTask[],
+  positionsUpdatedAt?: number,
+) {
   const { t } = useTranslation();
   const { mutateAsync: updateTaskAssignee } = useUpdateTaskAssignee();
   const client = useQueryClient();
@@ -69,9 +77,17 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
   const settledRef = useRef(new Map<number, number>());
   const sentRef = useRef(new Set<number>());
   const generationRef = useRef(0);
+  const positionsRef = useRef(positionsUpdatedAt);
 
   useEffect(() => {
-    generationRef.current += 1;
+    // Without a load time to go by, any change of the tasks counts.
+    if (
+      positionsUpdatedAt === undefined ||
+      positionsUpdatedAt !== positionsRef.current
+    ) {
+      positionsRef.current = positionsUpdatedAt;
+      generationRef.current += 1;
+    }
     const generation = generationRef.current;
     const tasksById = new Map(tasks.map((task) => [task.id, task]));
     setPending((current) => {
@@ -90,7 +106,7 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
       }
       return next ?? current;
     });
-  }, [tasks]);
+  }, [tasks, positionsUpdatedAt]);
 
   // Resolves once the edit's dates and assignee are saved: that is what moves
   // made on top of it wait for, not its milestone move.
@@ -113,8 +129,8 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
           seq,
           assigneeName: assignee.name,
           assigneeImage: assignee.image,
-          hasStartDate: Boolean(task.startDate),
-          hasDueDate: Boolean(task.dueDate),
+          hasStartDate: Boolean(task.startDate) || Boolean(edit.exact),
+          hasDueDate: Boolean(task.dueDate) || Boolean(edit.exact),
         }),
       );
 
@@ -126,7 +142,9 @@ export function useGanttTaskCommits(tasks: readonly ScheduledTask[]) {
           return;
         }
         if (kind.dates) {
-          await moveTaskSchedule(task.id, edit.start, edit.end);
+          await (edit.exact
+            ? moveTaskSchedule(task.id, edit.start, edit.end, true)
+            : moveTaskSchedule(task.id, edit.start, edit.end));
           refreshSchedule(task);
         }
         if (kind.assignee)

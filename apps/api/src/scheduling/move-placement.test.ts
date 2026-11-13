@@ -103,6 +103,31 @@ describe("movePlacement", () => {
     });
   });
 
+  it("takes a span set by hand exactly, dropping the planned segments", () => {
+    const target = {
+      start: at("2026-11-10T12:00:00Z"),
+      end: at("2026-11-14T12:00:00Z"),
+    };
+    expect(movePlacement(planned, target, "Europe/Berlin", true)).toEqual({
+      startDate: target.start,
+      dueDate: target.end,
+      scheduleSegments: null,
+    });
+    // Work with only a due date gains its start date.
+    expect(
+      movePlacement(
+        { startDate: null, dueDate: target.end, scheduleSegments: null },
+        target,
+        "UTC",
+        true,
+      ),
+    ).toEqual({
+      startDate: target.start,
+      dueDate: target.end,
+      scheduleSegments: null,
+    });
+  });
+
   it("refuses work that no longer fits within the planning horizon", () => {
     expect(
       movePlacement(
