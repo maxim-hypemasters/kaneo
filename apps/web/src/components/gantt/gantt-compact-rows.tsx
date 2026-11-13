@@ -1,4 +1,5 @@
 import { GanttTaskBar } from "./gantt-task-bar";
+import { useHeldCompactTracks } from "./use-held-compact-tracks";
 import type {
   GanttLaneDrag,
   GanttTaskEdit,
@@ -10,9 +11,12 @@ import type { GanttTimeline } from "./timeline";
 const TRACK_REM = 3.25;
 
 type GanttCompactRowsProps = {
-  // Each track holds tasks whose bars cover no common day; see
+  // Packed into tracks of tasks whose bars cover no common day; see
   // compactTaskTracks.
-  tracks: readonly (readonly ScheduledTask[])[];
+  tasks: readonly ScheduledTask[];
+  // Whether everything that places the bars has loaded, so the tracks can
+  // hold still from here on.
+  ready: boolean;
   timeline: GanttTimeline;
   pixelsPerDay: number;
   isMobile: boolean;
@@ -29,11 +33,12 @@ type GanttCompactRowsProps = {
 };
 
 // A lane's compact rows. Every bar is a direct child keyed by its task and
-// placed on its track by offset: when the tracks are packed again (a
-// reload, a saved edit) a bar only moves, it is never remounted, so a drag
-// in progress on it survives.
+// placed on its track by offset: when a bar changes track (a saved edit that
+// no longer fits its own) it only moves, it is never remounted, so a drag in
+// progress on it survives.
 export function GanttCompactRows({
-  tracks,
+  tasks,
+  ready,
   timeline,
   pixelsPerDay,
   isMobile,
@@ -47,6 +52,7 @@ export function GanttCompactRows({
   onDragChange,
   dependencyNote,
 }: GanttCompactRowsProps) {
+  const tracks = useHeldCompactTracks(tasks, isMobile, ready);
   if (tracks.length === 0) return null;
   return (
     // No lines between rows: compact lanes are divided only from each other.
@@ -73,8 +79,8 @@ export function GanttCompactRows({
           height: `${tracks.length * TRACK_REM}rem`,
         }}
       >
-        {tracks.flatMap((tasks, track) =>
-          tasks.map((task) => (
+        {tracks.flatMap((trackTasks, track) =>
+          trackTasks.map((task) => (
             // One per task: dependency arrows find a bar's row by this
             // attribute.
             <div
