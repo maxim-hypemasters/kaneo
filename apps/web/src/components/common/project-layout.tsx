@@ -89,12 +89,12 @@ export default function ProjectLayout({
   const isHome = page === "home";
   const resolvedRoute: ProjectRoute = isHome ? "board" : page;
   const currentView = resolveProjectView(resolvedRoute, viewMode);
-  const createTypes =
-    !isHome && isTaskLayoutView(currentView)
-      ? TASK_VIEW_CREATE_TYPES
-      : undefined;
+  // The header menu belongs to the task views and the backlog; the project
+  // page, Features, and Releases bring their own actions.
+  const isTaskView = !isHome && isTaskLayoutView(currentView);
+  const createTypes = isTaskView ? TASK_VIEW_CREATE_TYPES : undefined;
   const showCreate =
-    resolvedRoute !== "releases" &&
+    (isTaskView || page === "backlog") &&
     Boolean(project) &&
     (createTypes
       ? createTypes.some((type) => canWorkItem(type, "create"))

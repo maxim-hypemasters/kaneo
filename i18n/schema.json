@@ -16366,7 +16366,16 @@
 								"chooseFeature": {
 									"type": "string"
 								},
+								"chooseOrCreateFeature": {
+									"type": "string"
+								},
 								"noFeatures": {
+									"type": "string"
+								},
+								"noFeaturesCreate": {
+									"type": "string"
+								},
+								"creatingFeature": {
 									"type": "string"
 								}
 							},
@@ -16389,7 +16398,10 @@
 								"dragHelp",
 								"membersError",
 								"chooseFeature",
-								"noFeatures"
+								"chooseOrCreateFeature",
+								"noFeatures",
+								"noFeaturesCreate",
+								"creatingFeature"
 							]
 						},
 						"planning": {
