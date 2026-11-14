@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import type { DocumentSaveStatus } from "./use-feature-document-autosave";
+import type { DocumentSaveStatus } from "./use-document-autosave";
 
 // Routine saves are plain text, not a live region, so screen readers are not
 // interrupted while someone types. Only a failure is announced.
-export function FeatureDocumentSaveStatus({
+export function DocumentSaveIndicator({
   status,
   onRetry,
 }: {

@@ -886,6 +886,26 @@ for (const eventName of [
   });
 }
 
+for (const eventName of [
+  "project.document.created",
+  "project.document.updated",
+  "project.document.moved",
+  "project.document.deleted",
+]) {
+  subscribeToEvent<{
+    projectId: string;
+    documentId: string;
+    initiatorId?: string;
+  }>(eventName, async ({ projectId, documentId, initiatorId }) => {
+    if (projectId)
+      broadcastToProject(
+        projectId,
+        { type: "PROJECT_DOCUMENTS_UPDATED", projectId, documentId },
+        initiatorId,
+      );
+  });
+}
+
 for (const eventName of taskUpdateEvents) {
   subscribeToEvent<TaskEvent>(eventName, async (data) => {
     const { projectId, initiatorId } = data;

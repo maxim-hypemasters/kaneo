@@ -4039,6 +4039,46 @@
 				"afterSubmission": "Finishes after submission.",
 				"unknown": "Review the planning inputs."
 			}
+		},
+		"projectHome": {
+			"documents": {
+				"addSubPage": "Add sub-page",
+				"collapse": "Collapse {{title}}",
+				"createFailed": "Could not create the page. Try again.",
+				"delete": "Delete page",
+				"deleteConfirm": "Delete “{{title}}”? This cannot be undone.",
+				"deleteConfirmWithSubPages_other": "Delete “{{title}}” and its {{count}} sub-pages? This cannot be undone.",
+				"dragPage": "Drag {{title}}",
+				"empty": "No pages yet. Create one to keep this project’s knowledge together.",
+				"emptyReadOnly": "No pages yet.",
+				"expand": "Expand {{title}}",
+				"featureDocuments": "Feature documents",
+				"label": "Project documents",
+				"move": "Move",
+				"moveDestination": "New location",
+				"moveDialogDescription": "Choose where this page and its sub-pages go. It is added after the pages already there.",
+				"moveDialogTitle": "Move “{{title}}”",
+				"moveFailed": "Could not move the page. Try again.",
+				"moveTo": "Move to…",
+				"newPage": "New page",
+				"openFeature": "Open {{title}}",
+				"pageActions": "Actions for {{title}}",
+				"pages": "Pages",
+				"topLevel": "Top level",
+				"untitled": "Untitled"
+			},
+			"overview": {
+				"description": "Description",
+				"descriptionPlaceholder": "Add a description…",
+				"name": "Project name",
+				"nameRequired": "A project needs a name.",
+				"noDescription": "No description yet."
+			},
+			"tabs": {
+				"documents": "Documents",
+				"label": "Project home",
+				"overview": "Overview"
+			}
 		}
 	},
 	"invitations": {

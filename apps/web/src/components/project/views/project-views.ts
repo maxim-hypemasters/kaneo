@@ -34,6 +34,17 @@ export const PROJECT_ROUTE_PATHS = {
   gantt: "/dashboard/workspace/$workspaceId/project/$projectId/gantt",
 } as const;
 
+// The project's own page (Overview and Documents) sits next to its views.
+export type ProjectPage = ProjectRoute | "home";
+
+export const PROJECT_HOME_PATH =
+  "/dashboard/workspace/$workspaceId/project/$projectId" as const;
+
+export const PROJECT_PAGE_PATHS = {
+  home: PROJECT_HOME_PATH,
+  ...PROJECT_ROUTE_PATHS,
+} as const;
+
 export const PROJECT_VIEWS: ReadonlyArray<{
   id: ProjectView;
   labelKey: string;

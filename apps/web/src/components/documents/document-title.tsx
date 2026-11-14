@@ -9,7 +9,7 @@ const typography =
 
 // The page's title: a wrapping single-line field for editors, a heading for
 // everyone else.
-export function FeatureDocumentTitle({
+export function DocumentTitle({
   value,
   readOnly = false,
   focus = false,

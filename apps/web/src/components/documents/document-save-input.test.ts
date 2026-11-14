@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vite-plus/test";
-import { documentSaveInput } from "./feature-document-save-input";
+import { documentSaveInput } from "./document-save-input";
 
 const saved = { title: "Design", body: "Original", revision: 4 };
 const none = new Set<string>();

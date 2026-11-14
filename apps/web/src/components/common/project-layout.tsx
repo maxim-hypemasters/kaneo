@@ -9,7 +9,8 @@ import WorkspaceCrumbSelect from "@/components/common/header/workspace-crumb-sel
 import Layout from "@/components/common/layout";
 import {
   isTaskLayoutView,
-  PROJECT_ROUTE_PATHS,
+  PROJECT_PAGE_PATHS,
+  type ProjectPage,
   type ProjectRoute,
   resolveProjectView,
 } from "@/components/project/views/project-views";
@@ -42,7 +43,7 @@ type ProjectLayoutProps = {
   summary?: ReactNode;
   filterBar?: ReactNode;
   children: ReactNode;
-  activeView?: ProjectRoute;
+  activeView?: ProjectPage;
 };
 
 export default function ProjectLayout({
@@ -71,7 +72,7 @@ export default function ProjectLayout({
 
   useProjectWebSocket(unavailableReason ? "" : projectId);
 
-  const resolvedRoute: ProjectRoute =
+  const page: ProjectPage =
     activeView ??
     (location.pathname.includes("/backlog")
       ? "backlog"
@@ -84,6 +85,8 @@ export default function ProjectLayout({
             : location.pathname.includes("/gantt")
               ? "gantt"
               : "board");
+  const isHome = page === "home";
+  const resolvedRoute: ProjectRoute = isHome ? "board" : page;
   const currentView = resolveProjectView(resolvedRoute, viewMode);
   const showCreate =
     resolvedRoute !== "releases" && Boolean(project) && canCreateWorkItems();
@@ -93,21 +96,21 @@ export default function ProjectLayout({
   // however it was reached: a deep link, the default project view, or the
   // layout switch.
   useEffect(() => {
-    if (!isTaskLayoutView(currentView)) return;
+    if (isHome || !isTaskLayoutView(currentView)) return;
     const { taskLayout, setTaskLayout } = useUserPreferencesStore.getState();
     if (taskLayout !== currentView) setTaskLayout(currentView);
-  }, [currentView]);
+  }, [currentView, isHome]);
 
   const goToView = useGoToProjectView({
     workspaceId,
     projectId,
-    currentRoute: resolvedRoute,
+    currentRoute: page,
   });
   useProjectViewShortcuts(goToView, currentView, !unavailableReason);
 
   const handleProjectSwitch = (nextProjectId: string) => {
     navigate({
-      to: PROJECT_ROUTE_PATHS[resolvedRoute],
+      to: PROJECT_PAGE_PATHS[page],
       params: {
         workspaceId,
         projectId: nextProjectId,

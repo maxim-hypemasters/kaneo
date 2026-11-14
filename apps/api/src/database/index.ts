@@ -17,6 +17,7 @@ import {
   invitationTableRelations,
   labelTableRelations,
   notificationTableRelations,
+  projectDocumentTableRelations,
   projectTableRelations,
   releaseTableRelations,
   sessionTableRelations,
@@ -44,6 +45,7 @@ import {
   accountTable,
   activityTable,
   featureDocumentTable,
+  projectDocumentTable,
   apikeyTable,
   assetTable,
   billingEventTable,
@@ -99,6 +101,7 @@ config();
 
 export const schema = {
   featureDocumentTable,
+  projectDocumentTable,
   workCalendarTable,
   projectPlanTable,
   dataMigrationTable,
@@ -163,6 +166,7 @@ export const schema = {
   invitationTableRelations,
   labelTableRelations,
   notificationTableRelations,
+  projectDocumentTableRelations,
   projectTableRelations,
   releaseTableRelations,
   sessionTableRelations,

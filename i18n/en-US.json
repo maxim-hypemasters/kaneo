@@ -4121,6 +4121,47 @@
 				"afterSubmission": "Finishes after submission.",
 				"unknown": "Review the planning inputs."
 			}
+		},
+		"projectHome": {
+			"tabs": {
+				"label": "Project home",
+				"overview": "Overview",
+				"documents": "Documents"
+			},
+			"overview": {
+				"name": "Project name",
+				"nameRequired": "A project needs a name.",
+				"description": "Description",
+				"descriptionPlaceholder": "Add a description…",
+				"noDescription": "No description yet."
+			},
+			"documents": {
+				"label": "Project documents",
+				"pages": "Pages",
+				"featureDocuments": "Feature documents",
+				"newPage": "New page",
+				"untitled": "Untitled",
+				"empty": "No pages yet. Create one to keep this project’s knowledge together.",
+				"emptyReadOnly": "No pages yet.",
+				"createFailed": "Could not create the page. Try again.",
+				"moveFailed": "Could not move the page. Try again.",
+				"addSubPage": "Add sub-page",
+				"moveTo": "Move to…",
+				"move": "Move",
+				"delete": "Delete page",
+				"deleteConfirm": "Delete “{{title}}”? This cannot be undone.",
+				"deleteConfirmWithSubPages_one": "Delete “{{title}}” and its {{count}} sub-page? This cannot be undone.",
+				"deleteConfirmWithSubPages_other": "Delete “{{title}}” and its {{count}} sub-pages? This cannot be undone.",
+				"pageActions": "Actions for {{title}}",
+				"dragPage": "Drag {{title}}",
+				"expand": "Expand {{title}}",
+				"collapse": "Collapse {{title}}",
+				"moveDialogTitle": "Move “{{title}}”",
+				"moveDialogDescription": "Choose where this page and its sub-pages go. It is added after the pages already there.",
+				"moveDestination": "New location",
+				"topLevel": "Top level",
+				"openFeature": "Open {{title}}"
+			}
 		}
 	},
 	"invitations": {

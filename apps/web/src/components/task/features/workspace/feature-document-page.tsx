@@ -1,6 +1,9 @@
 import { Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DocumentSaveIndicator } from "@/components/documents/document-save-indicator";
+import { DocumentTitle } from "@/components/documents/document-title";
+import { DocumentWindow } from "@/components/documents/document-window";
 import { DocumentEditor } from "@/components/editor/document-editor";
 import type { DocumentEditorHandle } from "@/components/editor/document-editor-types";
 import { useDocumentDraftGuard } from "@/components/editor/document-draft-guard";
@@ -11,9 +14,6 @@ import type { FeatureDocument } from "@/fetchers/feature/types";
 import { useFeatureWorkspaceMutation } from "@/hooks/mutations/feature/use-feature-workspace-mutation";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { formatDateTime } from "@/lib/format";
-import { FeatureDocumentSaveStatus } from "./feature-document-save-status";
-import { FeatureDocumentTitle } from "./feature-document-title";
-import { FeatureDocumentWindow } from "./feature-document-window";
 import { useFeatureDocumentAutosave } from "./use-feature-document-autosave";
 import { WorkspaceDeleteDialog } from "./workspace-delete-dialog";
 
@@ -62,14 +62,14 @@ export function FeatureDocumentPage({
   const title = draft.value.title.trim() || document.title;
 
   return (
-    <FeatureDocumentWindow
+    <DocumentWindow
       title={title}
       onClose={onBack}
       closeDisabled={pending}
       actions={
         <>
           {draft.editable && (
-            <FeatureDocumentSaveStatus
+            <DocumentSaveIndicator
               status={draft.status}
               onRetry={draft.retry}
             />
@@ -88,7 +88,7 @@ export function FeatureDocumentPage({
         </>
       }
     >
-      <FeatureDocumentTitle
+      <DocumentTitle
         value={draft.value.title}
         readOnly={!draft.editable}
         focus={focusTitle}
@@ -163,6 +163,6 @@ export function FeatureDocumentPage({
             .catch(() => {});
         }}
       />
-    </FeatureDocumentWindow>
+    </DocumentWindow>
   );
 }

@@ -54,6 +54,7 @@ import gitlabIntegration, {
 import importRoutes from "./import";
 import milestone from "./milestone";
 import feature from "./feature";
+import projectDocument from "./project-document";
 import { stopActiveImports } from "./import/runs/stop-active-imports";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
@@ -831,6 +832,7 @@ export function createApp() {
   const releaseApi = api.route("/release", release);
   const milestoneApi = api.route("/milestone", milestone);
   const featureApi = api.route("/feature", feature);
+  const projectDocumentApi = api.route("/project-document", projectDocument);
   const activityApi = api.route("/activity", activity);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
@@ -999,6 +1001,7 @@ export function createApp() {
     releaseApi,
     milestoneApi,
     featureApi,
+    projectDocumentApi,
     searchApi,
     mattermostIntegrationApi,
     slackIntegrationApi,
@@ -1139,6 +1142,7 @@ const {
   releaseApi,
   milestoneApi,
   featureApi,
+  projectDocumentApi,
   searchApi,
   slackIntegrationApi,
   taskApi,
@@ -1176,6 +1180,7 @@ export type AppType =
   | typeof releaseApi
   | typeof milestoneApi
   | typeof featureApi
+  | typeof projectDocumentApi
   | typeof activityApi
   | typeof commentApi
   | typeof timeEntryApi

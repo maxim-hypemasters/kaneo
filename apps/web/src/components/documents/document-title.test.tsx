@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import { FeatureDocumentTitle } from "./feature-document-title";
+import { DocumentTitle } from "./document-title";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -9,17 +9,13 @@ vi.mock("react-i18next", () => ({
 
 const label = "tasks:features.workspace.documentTitle";
 
-function renderTitle(
-  props: Partial<Parameters<typeof FeatureDocumentTitle>[0]> = {},
-) {
+function renderTitle(props: Partial<Parameters<typeof DocumentTitle>[0]> = {}) {
   const handlers = {
     onChange: vi.fn(),
     onCommit: vi.fn(),
     onEnterBody: vi.fn(),
   };
-  render(
-    <FeatureDocumentTitle value="Design notes" {...handlers} {...props} />,
-  );
+  render(<DocumentTitle value="Design notes" {...handlers} {...props} />);
   return { ...handlers, title: screen.getByRole("textbox", { name: label }) };
 }
 
@@ -63,8 +59,8 @@ describe("Feature document title", () => {
       "scrollHeight",
       "get",
     ).mockReturnValue(96);
-    const view = render(<FeatureDocumentTitle value="A long title" readOnly />);
-    view.rerender(<FeatureDocumentTitle value="A long title" />);
+    const view = render(<DocumentTitle value="A long title" readOnly />);
+    view.rerender(<DocumentTitle value="A long title" />);
     expect(screen.getByRole("textbox", { name: label })).toHaveStyle({
       height: "96px",
     });
@@ -84,7 +80,7 @@ describe("Feature document title", () => {
   });
 
   it("is a heading for people who cannot edit", () => {
-    render(<FeatureDocumentTitle value="Design notes" readOnly />);
+    render(<DocumentTitle value="Design notes" readOnly />);
     expect(
       screen.getByRole("heading", { level: 1, name: "Design notes" }),
     ).toBeInTheDocument();

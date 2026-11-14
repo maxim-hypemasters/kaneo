@@ -85,6 +85,17 @@ Choose **Expand document** for fullscreen reading or writing. Returning to the d
 
 Use the attachment button, paste, or drag a file into the editor to add supporting material. Images appear inline; other files appear as attachments. On self-hosted instances, an operator must [configure file storage](/core/installation/object-storage-and-image-uploads) first.
 
+## Project home
+
+Clicking a project's name in the sidebar, in search, or with a project shortcut opens its home page. **Tasks**, **Features**, and **Releases** in the sidebar still open those views, and **Tasks** returns to the layout you used last. The home page has two tabs, and the selected tab and open document are part of the URL.
+
+- **Overview** shows the project's name and description. People with project-update permission edit them in place, and changes save as they type, as in the project's general settings.
+- **Documents** lists the project's own pages and, below them, the documents of every active Feature grouped under that Feature. Feature documents keep their place and order; open one to edit it as you would on the Feature, or use the arrow next to the Feature to open it.
+
+Project pages nest: any page can have sub-pages. **New page** adds a page at the top level, and **Add sub-page** in a page's menu adds one inside it. Drag a page by its handle to reorder it; drag it right to nest it under the page above, or left to move it out. **Move to…** in the menu does the same without dragging: choose **Top level** or a parent page, and the page moves there with its sub-pages, after the pages already in place. Pages open full screen and save automatically, like Feature documents, including uploads and the review when someone else saves first. Deleting a page also deletes its sub-pages and their uploads; the confirmation says how many sub-pages will go.
+
+Project pages follow the same permissions as Feature documents: reading needs task-read permission, creating, editing, and moving pages needs task-update permission, and deleting needs task-delete permission. Changes appear for everyone viewing the project without a reload.
+
 ## Group work into features
 
 A Feature is a durable knowledge record for a part of your product. Keep its documentation, labels, custom fields, resources, comments, implementation history, milestones, and linked Tasks/Bugs together. Features retain their identifiers and links but have no workflow status, priority, assignee, start/end dates, or release.

@@ -13,10 +13,17 @@ import {
 } from "@/components/settings/project-general/project-form-values";
 import useUpdateProject from "@/hooks/mutations/project/use-update-project";
 import { toast } from "@/lib/toast";
-import type { ProjectWithTasks } from "@/types/project";
+import type { Project } from "@/types/project";
 
 type UseProjectAutosaveOptions = {
-  project: ProjectWithTasks | undefined;
+  // The settings page passes the project with its tasks; the home page passes
+  // the plain project. Both carry these fields.
+  project:
+    | Pick<
+        Project,
+        "id" | "name" | "slug" | "description" | "icon" | "isPublic"
+      >
+    | undefined;
   workspaceId: string | undefined;
   canEdit: boolean;
 };

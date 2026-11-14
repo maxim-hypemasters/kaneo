@@ -6,18 +6,27 @@ vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: unknown) => options,
   redirect: (options: unknown) => options,
 }));
+vi.mock("@/components/project/home/project-home-page", () => ({
+  ProjectHomePage: () => null,
+}));
 
 type IndexRoute = {
+  validateSearch: (search: Record<string, unknown>) => unknown;
   beforeLoad: (context: {
     params: { workspaceId: string; projectId: string };
-    search: { taskId?: string };
+    search: { taskId?: string; featureTab?: string };
     preload: boolean;
   }) => void;
 };
 
-function redirectFor(search: { taskId?: string } = {}, preload = false) {
+const route = Route as unknown as IndexRoute;
+
+function redirectFor(
+  search: { taskId?: string; featureTab?: string } = {},
+  preload = false,
+) {
   try {
-    (Route as unknown as IndexRoute).beforeLoad({
+    route.beforeLoad({
       params: { workspaceId: "w", projectId: "p" },
       search,
       preload,
@@ -25,7 +34,7 @@ function redirectFor(search: { taskId?: string } = {}, preload = false) {
   } catch (redirect) {
     return redirect;
   }
-  throw new Error("expected a redirect");
+  return null;
 }
 
 afterEach(() => {
@@ -37,16 +46,23 @@ afterEach(() => {
   });
 });
 
-it("opens the Gantt chart by default", () => {
-  expect(redirectFor()).toEqual({
+it("shows the project's home page", () => {
+  expect(redirectFor()).toBeNull();
+  expect(
+    route.validateSearch({ tab: "documents", documentId: "d" }),
+  ).toMatchObject({ tab: "documents", documentId: "d" });
+});
+
+it("opens a linked task on the default Gantt chart", () => {
+  expect(redirectFor({ taskId: "t" })).toEqual({
     to: "/dashboard/workspace/$workspaceId/project/$projectId/gantt",
     params: { workspaceId: "w", projectId: "p" },
-    search: {},
+    search: { taskId: "t" },
     replace: true,
   });
 });
 
-it("opens the list on the board route and keeps an opened task", () => {
+it("opens a linked task on the board route in list mode", () => {
   useUserPreferencesStore.setState({ defaultProjectView: "list" });
 
   expect(redirectFor({ taskId: "t" })).toMatchObject({
@@ -56,6 +72,12 @@ it("opens the list on the board route and keeps an opened task", () => {
   expect(useUserPreferencesStore.getState().viewMode).toBe("list");
 });
 
+it("keeps old Feature tab links working", () => {
+  expect(redirectFor({ featureTab: "documents" })).toMatchObject({
+    to: "/dashboard/workspace/$workspaceId/project/$projectId/gantt",
+  });
+});
+
 it("resolves the route without switching views on a hover preload", () => {
   useUserPreferencesStore.setState({
     defaultProjectView: "list",
@@ -63,7 +85,7 @@ it("resolves the route without switching views on a hover preload", () => {
     taskLayout: "calendar",
   });
 
-  expect(redirectFor({}, true)).toMatchObject({
+  expect(redirectFor({ taskId: "t" }, true)).toMatchObject({
     to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
   });
   expect(useUserPreferencesStore.getState()).toMatchObject({
