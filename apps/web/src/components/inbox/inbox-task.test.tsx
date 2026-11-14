@@ -74,7 +74,7 @@ vi.mock("@/hooks/queries/activity/use-get-activities-by-task-id", () => ({
   default: queries.activity,
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => false }),
+  useWorkspacePermission: () => ({ canWorkItem: () => false }),
 }));
 vi.mock("@/components/activity", () => ({ default: () => null }));
 vi.mock("@/components/activity/comment-input", () => ({ default: () => null }));

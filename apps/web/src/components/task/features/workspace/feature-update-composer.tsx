@@ -20,7 +20,7 @@ export function FeatureUpdateComposer({
   header?: ReactNode;
 }) {
   const { t } = useTranslation();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canUpdateFeatures } = useWorkspacePermission();
   const [note, setNote] = useState("");
   const [health, setHealth] = useState<FeatureHealth>("on-track");
   const [uploading, setUploading] = useState(false);
@@ -49,7 +49,7 @@ export function FeatureUpdateComposer({
     if (
       !note.trim() ||
       !health ||
-      !canUpdateTasks() ||
+      !canUpdateFeatures() ||
       uploading ||
       writeInFlight.current
     )
@@ -81,7 +81,7 @@ export function FeatureUpdateComposer({
           <FeatureHealthSelect
             value={health}
             onChange={setHealth}
-            disabled={mutation.isPending || uploading || !canUpdateTasks()}
+            disabled={mutation.isPending || uploading || !canUpdateFeatures()}
           />
         </div>
       </div>
@@ -91,11 +91,11 @@ export function FeatureUpdateComposer({
         onChange={setNote}
         ariaLabel={t("tasks:features.workspace.updateNote")}
         placeholder={t("tasks:features.workspace.updatePlaceholder")}
-        readOnly={!canUpdateTasks()}
+        readOnly={!canUpdateFeatures()}
         disabled={mutation.isPending}
         onPendingUploadChange={setUploading}
         uploadAsset={
-          canUpdateTasks()
+          canUpdateFeatures()
             ? async (file) => {
                 const asset = await uploadDraftAsset(
                   projectId,
@@ -114,7 +114,7 @@ export function FeatureUpdateComposer({
                 {t("tasks:features.workspace.publishFailed")}
               </p>
             )}
-            {!canUpdateTasks() && (
+            {!canUpdateFeatures() && (
               <p role="alert" className="mr-auto text-sm text-muted-foreground">
                 {t("common:documentEditor.permissionLost")}
               </p>
@@ -123,7 +123,7 @@ export function FeatureUpdateComposer({
               type="button"
               size="sm"
               disabled={
-                !canUpdateTasks() ||
+                !canUpdateFeatures() ||
                 !note.trim() ||
                 !health ||
                 mutation.isPending ||

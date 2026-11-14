@@ -35,7 +35,8 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canUpdateTasks: () => true,
-    canCreateTasks: () => m.canCreate,
+    canCreateWorkItems: () => m.canCreate,
+    canWorkItem: () => m.canCreate,
   }),
 }));
 vi.mock("@/store/project", () => ({

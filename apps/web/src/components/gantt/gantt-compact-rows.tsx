@@ -25,7 +25,9 @@ type GanttCompactRowsProps = {
   rowGridTemplateColumns: string;
   showBarAssignee: boolean;
   laneDrag?: GanttLaneDrag;
-  canMoveDates?: boolean;
+  // Whether this task's dates may be moved; tasks and bugs have separate
+  // permissions.
+  canMoveDates?: (task: ScheduledTask) => boolean;
   onOpenTask: (task: ScheduledTask) => void;
   onCommit: (task: ScheduledTask, edit: GanttTaskEdit) => void;
   onDragChange: (taskId: string) => (dragging: boolean) => void;
@@ -99,7 +101,7 @@ export function GanttCompactRows({
                 pixelsPerDay={pixelsPerDay}
                 isMobile={isMobile}
                 laneDrag={laneDrag}
-                canMoveDates={canMoveDates}
+                canMoveDates={canMoveDates?.(task)}
                 onCommit={(edit) => onCommit(task, edit)}
                 onOpenTask={() => onOpenTask(task)}
                 onDragChange={onDragChange(task.id)}

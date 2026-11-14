@@ -43,7 +43,7 @@ vi.mock("@/hooks/mutations/task/use-update-task-description", () => ({
   useUpdateTaskDescription: () => ({ mutateAsync: mocks.save }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => mocks.canEdit }),
+  useWorkspacePermission: () => ({ canWorkItem: () => mocks.canEdit }),
 }));
 vi.mock("@/lib/upload-draft-asset", () => ({ uploadDraftAsset: mocks.upload }));
 vi.mock("@/components/editor/document-draft-guard", () => ({

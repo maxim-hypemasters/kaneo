@@ -24,15 +24,11 @@ import { toast } from "@/lib/toast";
 import useProjectStore from "@/store/project";
 import type { ProjectWithTasks } from "@/types/project";
 import type Task from "@/types/task";
+import { projectTasks } from "./project-tasks";
 import type { TaskSelectionStore } from "./task-selection";
 
 const findTask = (project: ProjectWithTasks | undefined, taskId: string) =>
-  project &&
-  [
-    ...project.columns.flatMap((column) => column.tasks),
-    ...project.plannedTasks,
-    ...project.archivedTasks,
-  ].find((task) => task.id === taskId);
+  projectTasks(project).find((task) => task.id === taskId);
 
 export function useTaskActionShortcuts(selection: TaskSelectionStore) {
   const { t } = useTranslation();
@@ -40,8 +36,14 @@ export function useTaskActionShortcuts(selection: TaskSelectionStore) {
   const queryClient = useQueryClient();
   const { data: workspace } = useActiveWorkspace();
   const operations = useBulkOperations();
-  const { canUpdateTasks, canAssignTasks, canDeleteTasks, canUpdateLabels } =
-    useWorkspacePermission();
+  const {
+    canUpdateTasks,
+    canUpdateBugs,
+    canAssignTasks,
+    canDeleteTasks,
+    canDeleteBugs,
+    canUpdateLabels,
+  } = useWorkspacePermission();
 
   const targets = () => {
     const { selectedTaskIds, focusedTaskId } = selection.getState();
@@ -99,10 +101,11 @@ export function useTaskActionShortcuts(selection: TaskSelectionStore) {
   };
 
   const view = { scope: "view" as const };
-  const edit = { ...view, enabled: canUpdateTasks() };
+  // The bulk actions check each selected row's type before acting.
+  const edit = { ...view, enabled: canUpdateTasks() || canUpdateBugs() };
   const assign = { ...view, enabled: canAssignTasks() };
   const labels = { ...view, enabled: canUpdateLabels() };
-  const remove = { ...view, enabled: canDeleteTasks() };
+  const remove = { ...view, enabled: canDeleteTasks() || canDeleteBugs() };
 
   useShortcut("changeStatus", () => request("status"), edit);
   useShortcut("changePriority", () => request("priority"), edit);

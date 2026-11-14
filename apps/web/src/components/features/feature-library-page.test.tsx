@@ -30,7 +30,7 @@ vi.mock("@/fetchers/task/feature-library", () => ({
   archiveFeature: mocks.archive,
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => true }),
+  useWorkspacePermission: () => ({ canUpdateFeatures: () => true }),
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: vi.fn() } }));
 afterEach(() => {

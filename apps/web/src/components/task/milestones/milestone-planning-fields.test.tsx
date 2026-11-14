@@ -22,7 +22,7 @@ vi.mock("@/lib/i18n/domain", () => ({
 vi.mock("@/lib/i18n", () => ({ i18n: { t: (key: string) => key } }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canUpdateTasks: () => mocks.update,
+    canUpdateMilestones: () => mocks.update,
     canAssignTasks: () => mocks.assign,
   }),
 }));

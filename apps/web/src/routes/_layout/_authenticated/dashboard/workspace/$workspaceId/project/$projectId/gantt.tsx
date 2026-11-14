@@ -189,7 +189,13 @@ function RouteComponent() {
       projectId,
       enabled: true,
     });
-  const { canAssignTasks, canUpdateTasks } = useWorkspacePermission();
+  const {
+    canAssignTasks,
+    canUpdateTasks,
+    canUpdateBugs,
+    canUpdateMilestones,
+    canWorkItem,
+  } = useWorkspacePermission();
   const goToView = useGoToProjectView({
     workspaceId,
     projectId,
@@ -626,7 +632,7 @@ function RouteComponent() {
   const laneDragKind: GanttLaneDrag["kind"] | null =
     groupByAssignee && canAssignTasks()
       ? "assignee"
-      : groupByMilestone && canUpdateTasks()
+      : groupByMilestone && (canUpdateTasks() || canUpdateBugs())
         ? "milestone"
         : null;
   const laneDragFor = (laneKey: string): GanttLaneDrag | undefined =>
@@ -640,7 +646,10 @@ function RouteComponent() {
       : undefined;
   const dropTargetLaneKey = laneDragState?.targetLaneKey ?? null;
   // Moving a Task/Bug sideways moves it on the schedule.
-  const canMoveDates = canUpdateTasks();
+  const canMoveDates = (task: ScheduledTask) =>
+    task.entityKind === "milestone"
+      ? canUpdateMilestones()
+      : canWorkItem(task.type, "update");
 
   const commitTaskEdit = (task: ScheduledTask, edit: GanttTaskEdit) => {
     const keepsAssignee = edit.userId === (task.userId || null);
@@ -823,7 +832,7 @@ function RouteComponent() {
         showAssignee={showAssignee}
         showBarAssignee={showBarAssignee}
         laneDrag={laneDrag}
-        canMoveDates={canMoveDates}
+        canMoveDates={canMoveDates(task)}
         onOpenTask={() =>
           task.entityKind === "milestone"
             ? openMilestoneDetails(projectId, task.milestone.id)

@@ -48,9 +48,11 @@ export function TaskShortcuts({
   const { mutateAsync: updateAssignee } = useUpdateTaskAssignee();
   const { mutateAsync: updateDueDate } = useUpdateTaskDueDate();
   const openRelationPicker = useRelationPickerStore((state) => state.open);
-  const { canUpdateTasks, canAssignTasks } = useWorkspacePermission();
+  const { canWorkItem, canAssignTasks } = useWorkspacePermission();
   const active = { enabled: enabled && Boolean(task) };
-  const editable = { enabled: active.enabled && canUpdateTasks() };
+  const editable = {
+    enabled: active.enabled && canWorkItem(task?.type, "update"),
+  };
   const assignable = {
     enabled: active.enabled && !isFeature && canAssignTasks(),
   };

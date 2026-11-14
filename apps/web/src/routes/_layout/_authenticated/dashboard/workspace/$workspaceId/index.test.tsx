@@ -74,7 +74,8 @@ vi.mock("@/hooks/use-local-day", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canCreateTasks: () => m.canCreateTasks,
+    canCreateWorkItems: () => m.canCreateTasks,
+    canWorkItem: () => m.canCreateTasks,
     canCreateProjects: () => m.canCreateProjects,
   }),
 }));

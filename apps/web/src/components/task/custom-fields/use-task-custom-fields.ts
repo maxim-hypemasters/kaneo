@@ -4,6 +4,7 @@ import type { CustomFieldDefinition } from "@/components/project/custom-fields/t
 import useSetCustomFieldValue from "@/hooks/mutations/custom-field/use-set-custom-field-value";
 import useGetCustomFieldValuesByTask from "@/hooks/queries/custom-field/use-get-custom-field-values-by-task";
 import useGetCustomFieldsByProject from "@/hooks/queries/custom-field/use-get-custom-fields-by-project";
+import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { toast } from "@/lib/toast";
 
@@ -25,7 +26,8 @@ export function useTaskCustomFields(taskId: string, projectId: string) {
     data: StoredValue[] | undefined;
   };
   const { mutateAsync: setCustomFieldValue } = useSetCustomFieldValue();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
+  const { data: task } = useGetTask(taskId);
   const [pending, setPending] = useState<Record<string, string>>({});
   const [seenStored, setSeenStored] = useState(stored);
 
@@ -73,5 +75,5 @@ export function useTaskCustomFields(taskId: string, projectId: string) {
     }
   };
 
-  return { fields, values, save, canEdit: canUpdateTasks() };
+  return { fields, values, save, canEdit: canWorkItem(task?.type, "update") };
 }

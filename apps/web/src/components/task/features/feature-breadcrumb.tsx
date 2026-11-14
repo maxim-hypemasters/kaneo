@@ -12,7 +12,7 @@ import { taskReleaseSearch } from "../task-release-origin";
 import { useTaskReleaseOrigin } from "../task-release-origin-context";
 
 type FeatureBreadcrumbProps = {
-  task: Pick<Task, "id" | "projectId" | "featureId">;
+  task: Pick<Task, "id" | "projectId" | "featureId" | "type">;
   workspaceId: string;
 };
 
@@ -25,7 +25,7 @@ export function FeatureBreadcrumb({
   const origin = useTaskReleaseOrigin();
   const feature = useTaskFeature(task);
   const displayIdOf = useProjectSlugs(workspaceId);
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
   const { mutateAsync: updateFeature, isPending } = useUpdateTaskFeature();
 
   if (!feature) return null;
@@ -70,7 +70,7 @@ export function FeatureBreadcrumb({
         {displayId && <span className="shrink-0 font-mono">{displayId}</span>}
         <span className="truncate font-medium text-foreground/80">{title}</span>
       </button>
-      {canUpdateTasks() && (
+      {canWorkItem(task.type, "update") && (
         <RemoveFromFeatureButton
           disabled={isPending}
           onClick={() => void removeFromFeature()}

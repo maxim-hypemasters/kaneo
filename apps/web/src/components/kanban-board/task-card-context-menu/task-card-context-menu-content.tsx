@@ -99,11 +99,10 @@ export default function TaskCardContextMenuContent({
   const { mutate: duplicateTask } = useDuplicateTask();
   const { mutateAsync: updateTaskType } = useUpdateTaskType();
   const { mutateAsync: updateTaskFeature } = useUpdateTaskFeature();
-  const { canCreateTasks, canUpdateTasks, canDeleteTasks, canAssignTasks } =
-    useWorkspacePermission();
-  const canCreate = canCreateTasks();
-  const canEdit = canUpdateTasks();
-  const canDelete = canDeleteTasks();
+  const { canWorkItem, canAssignTasks } = useWorkspacePermission();
+  const canCreate = canWorkItem(task.type, "create");
+  const canEdit = canWorkItem(task.type, "update");
+  const canDelete = canWorkItem(task.type, "delete");
   const canAssign = canAssignTasks();
 
   const isFeature = task.type === "feature";
@@ -315,7 +314,12 @@ export default function TaskCardContextMenuContent({
           <>
             <ContextMenuSeparator />
             {(["task", "bug"] as const)
-              .filter((type) => !isFeature && type !== (task.type ?? "task"))
+              .filter(
+                (type) =>
+                  !isFeature &&
+                  type !== (task.type ?? "task") &&
+                  canWorkItem(type, "create"),
+              )
               .map((type) => (
                 <ContextMenuItem
                   key={type}

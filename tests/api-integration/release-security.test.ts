@@ -132,10 +132,25 @@ describe("release permissions", () => {
         { project: ["read"], task: ["read"] },
         [200, 200, 403, 403, 403, 403, 403],
       ],
-      [{ task: ["create", "update"] }, [200, 200, 403, 403, 200, 200, 403]],
+      // Moving unfinished work and deleting a release touch tasks, bugs and
+      // milestones, so task permissions alone no longer cover them.
+      [{ task: ["create", "update"] }, [200, 200, 403, 403, 200, 403, 403]],
+      [
+        { task: ["update"], bug: ["update"], milestone: ["update"] },
+        [200, 200, 403, 403, 200, 200, 403],
+      ],
       [{ project: ["update"] }, [200, 200, 200, 200, 403, 403, 403]],
       [
         { project: ["update"], task: ["update"] },
+        [200, 200, 200, 200, 200, 403, 403],
+      ],
+      [
+        {
+          project: ["update"],
+          task: ["update"],
+          bug: ["update"],
+          milestone: ["update"],
+        },
         [200, 200, 200, 200, 200, 200, 200],
       ],
     ] as [Record<string, string[]>, number[]][])(

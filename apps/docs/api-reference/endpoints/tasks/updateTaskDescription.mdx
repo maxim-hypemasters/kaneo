@@ -5,4 +5,4 @@ openapi: "PUT /task/description/{id}"
 
 Send `description` as Markdown. Include `expectedDescription` with the content read when editing began to detect concurrent saves. A mismatch returns HTTP 409 with `DESCRIPTION_CONFLICT` and retains the currently saved description.
 
-Optional `draftAssetIds` claims referenced uploads in the same transaction as the description update. Existing-item editors can stage files through `POST /task/description/{id}/draft-upload` and its `/finalize` endpoint with task-update permission. Claims require finalized uploads owned by the current user in the task's project.
+Optional `draftAssetIds` claims referenced uploads in the same transaction as the description update. Existing-item editors can stage files through `POST /task/description/{id}/draft-upload` and its `/finalize` endpoint with update permission for the item's type. Claims require finalized uploads owned by the current user in the task's project.

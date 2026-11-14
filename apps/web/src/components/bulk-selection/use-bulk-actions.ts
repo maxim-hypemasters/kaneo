@@ -14,6 +14,7 @@ import { useBulkOperations } from "@/hooks/mutations/task/use-bulk-operations";
 import useGetLabelsByWorkspace from "@/hooks/queries/label/use-get-labels-by-workspace";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
+import { projectTasks } from "@/components/project/task-view-keys/project-tasks";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { PriorityGlyph } from "@/components/task-chips/priority-glyph";
 import { type ToastIcon, toast } from "@/lib/toast";
@@ -34,8 +35,16 @@ export function useBulkActions(
   const { data: workspaceLabels = [] } = useGetLabelsByWorkspace(
     workspace?.id ?? "",
   );
-  const { canUpdateTasks, canDeleteTasks, canAssignTasks, canUpdateLabels } =
+  const { canWorkItem, canAssignTasks, canUpdateLabels } =
     useWorkspacePermission();
+  // Tasks and bugs have separate permissions, so every selected row's type
+  // must allow the action.
+  const selectedTypes = useMemo(() => {
+    const types = new Map(
+      projectTasks(project).map((task) => [task.id, task.type]),
+    );
+    return [...new Set([...selectedTaskIds].map((id) => types.get(id)))];
+  }, [project, selectedTaskIds]);
   const [deleteCount, setDeleteCount] = useState<number | null>(null);
   const [lastDeleteCount, setLastDeleteCount] = useState(0);
 
@@ -74,8 +83,8 @@ export function useBulkActions(
     members,
     labels,
     permissions: {
-      edit: canUpdateTasks(),
-      delete: canDeleteTasks(),
+      edit: selectedTypes.every((type) => canWorkItem(type, "update")),
+      delete: selectedTypes.every((type) => canWorkItem(type, "delete")),
       assign: canAssignTasks(),
       labels: canUpdateLabels(),
     },

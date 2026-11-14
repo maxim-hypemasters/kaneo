@@ -36,8 +36,9 @@ export function FeatureMilestones({
   onFilter: (filter: MilestoneFilter) => void;
 }) {
   const { t } = useTranslation();
-  const { canUpdateTasks } = useWorkspacePermission();
-  const canEdit = canUpdateTasks();
+  const { canCreateMilestones, canUpdateMilestones, canDeleteMilestones } =
+    useWorkspacePermission();
+  const canEdit = canUpdateMilestones();
   const { data: releases = [] } = useGetReleases(projectId);
   const {
     data = [],
@@ -66,7 +67,7 @@ export function FeatureMilestones({
       <SectionHeader
         title={t("tasks:milestones.title")}
         action={
-          canEdit && (
+          canCreateMilestones() && (
             <SectionAddButton
               aria-label={t("tasks:milestones.add")}
               onClick={() => setEditing("new")}
@@ -102,6 +103,7 @@ export function FeatureMilestones({
           }
           selected={typeof filter === "object" && filter.id === m.id}
           canEdit={canEdit}
+          canDelete={canDeleteMilestones()}
           first={index === 0}
           last={index === data.length - 1}
           pending={mutations.reorder.isPending}

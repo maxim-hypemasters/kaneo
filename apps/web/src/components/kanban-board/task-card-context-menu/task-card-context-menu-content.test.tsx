@@ -154,9 +154,8 @@ vi.mock("@/hooks/mutations/task/use-update-task-title", () => ({
 
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canCreateTasks,
-    canUpdateTasks: () => true,
-    canDeleteTasks: () => true,
+    canWorkItem: (_type: unknown, action: string) =>
+      action === "create" ? canCreateTasks() : true,
     canAssignTasks: () => true,
   }),
 }));

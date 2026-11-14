@@ -4836,6 +4836,15 @@
 								"task": {
 									"type": "string"
 								},
+								"bug": {
+									"type": "string"
+								},
+								"feature": {
+									"type": "string"
+								},
+								"milestone": {
+									"type": "string"
+								},
 								"label": {
 									"type": "string"
 								},
@@ -4861,6 +4870,9 @@
 							"required": [
 								"project",
 								"task",
+								"bug",
+								"feature",
+								"milestone",
 								"label",
 								"workspace",
 								"organization",
@@ -5017,6 +5029,183 @@
 										}
 									},
 									"required": ["create", "read", "update", "delete", "assign"]
+								},
+								"bug": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"create": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"read": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"update": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"delete": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										}
+									},
+									"required": ["create", "read", "update", "delete"]
+								},
+								"feature": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"create": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"read": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"update": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"delete": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										}
+									},
+									"required": ["create", "read", "update", "delete"]
+								},
+								"milestone": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"create": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"read": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"update": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"delete": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										}
+									},
+									"required": ["create", "read", "update", "delete"]
 								},
 								"label": {
 									"type": "object",
@@ -5357,6 +5546,9 @@
 							"required": [
 								"project",
 								"task",
+								"bug",
+								"feature",
+								"milestone",
 								"label",
 								"workspace",
 								"organization",
@@ -13265,6 +13457,9 @@
 								"moveOnly": {
 									"type": "string"
 								},
+								"leaveRelated": {
+									"type": "string"
+								},
 								"moveDates": {
 									"type": "string"
 								},
@@ -13279,6 +13474,7 @@
 								"description",
 								"cycleDescription",
 								"moveOnly",
+								"leaveRelated",
 								"moveDates",
 								"movesLabel",
 								"startsBeforeBlocker"
@@ -14353,6 +14549,9 @@
 						"projectBackground": {
 							"type": "string"
 						},
+						"ganttCompactRows": {
+							"type": "string"
+						},
 						"layout": {
 							"type": "string"
 						},
@@ -14383,6 +14582,7 @@
 						"showOnRows",
 						"checklistProgress",
 						"projectBackground",
+						"ganttCompactRows",
 						"layout",
 						"groupBy",
 						"groupByOptions"

@@ -89,10 +89,10 @@ export default function TaskSubtasks({
   const { mutateAsync: deleteTask } = useDeleteTask();
   const { data: columns = [], isLoading: isLoadingColumns } =
     useGetColumns(projectId);
-  const { canCreateTasks, canUpdateTasks } = useWorkspacePermission();
+  const { canCreateTasks, canCreateBugs, canWorkItem } =
+    useWorkspacePermission();
   const displayIdOf = useProjectSlugs(workspaceId);
-  const canEdit = canUpdateTasks();
-  const canCreate = canCreateTasks();
+  const canCreate = canCreateTasks() || canCreateBugs();
 
   const todoSlug = columns.find((c) => !c.isFinal)?.slug;
   const canCreateSubtask = !isLoadingColumns && Boolean(todoSlug);
@@ -261,7 +261,11 @@ export default function TaskSubtasks({
   };
 
   const handleAddSubtask = async () => {
-    if (!canCreate || !canEdit || !newTitle.trim() || createTask.isPending) {
+    if (
+      !canWorkItem(newType, "create") ||
+      !newTitle.trim() ||
+      createTask.isPending
+    ) {
       return;
     }
     const initialStatus = todoSlug ?? "planned";
@@ -356,7 +360,6 @@ export default function TaskSubtasks({
             )
           }
           action={
-            canEdit &&
             canCreate && (
               <NewWorkMenu
                 onSelect={handleSelectType}
@@ -401,7 +404,7 @@ export default function TaskSubtasks({
                   isSelected={isSelected}
                   isFocused={focusedIndex === index}
                   isCompleted={subtask.isCompleted}
-                  canEdit={canEdit}
+                  canEdit={canWorkItem(subtask.task.type, "update")}
                   selectionRadius={getSelectionRadius(index, isSelected)}
                   assignee={getAssignee(subtask.task.userId)}
                   onToggleComplete={() => handleToggleComplete(taskObj)}
@@ -426,7 +429,7 @@ export default function TaskSubtasks({
           </AnimatePresence>
         </div>
 
-        {isAdding && canEdit && canCreate && (
+        {isAdding && canWorkItem(newType, "create") && (
           <div className="flex items-center gap-2 px-1 pt-1">
             <Input
               size="sm"

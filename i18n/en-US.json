@@ -1210,6 +1210,9 @@
 			"resources": {
 				"project": "Projects",
 				"task": "Tasks",
+				"bug": "Bugs",
+				"feature": "Features",
+				"milestone": "Milestones",
 				"label": "Labels",
 				"workspace": "Workspace",
 				"organization": "Workspace administration",
@@ -1261,6 +1264,60 @@
 					"assign": {
 						"label": "Assign",
 						"description": "Can assign tasks to members"
+					}
+				},
+				"bug": {
+					"create": {
+						"label": "Create",
+						"description": "Can report bugs"
+					},
+					"read": {
+						"label": "Read",
+						"description": "Can view bugs"
+					},
+					"update": {
+						"label": "Update",
+						"description": "Can edit bugs"
+					},
+					"delete": {
+						"label": "Delete",
+						"description": "Can delete bugs"
+					}
+				},
+				"feature": {
+					"create": {
+						"label": "Create",
+						"description": "Can create features"
+					},
+					"read": {
+						"label": "Read",
+						"description": "Can view feature pages and the feature library"
+					},
+					"update": {
+						"label": "Update",
+						"description": "Can edit features, their documents and updates"
+					},
+					"delete": {
+						"label": "Delete",
+						"description": "Can delete features and their documents"
+					}
+				},
+				"milestone": {
+					"create": {
+						"label": "Create",
+						"description": "Can create milestones"
+					},
+					"read": {
+						"label": "Read",
+						"description": "Can view milestones"
+					},
+					"update": {
+						"label": "Update",
+						"description": "Can edit, reorder and schedule milestones"
+					},
+					"delete": {
+						"label": "Delete",
+						"description": "Can delete milestones"
 					}
 				},
 				"label": {

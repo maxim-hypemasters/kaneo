@@ -137,7 +137,7 @@ Features do not have relations. `create_task_relation` links Tasks and Bugs with
 
 ### Milestones
 
-Milestone tools manage Feature-owned planning units with lead, workflow status, priority, release and dates. `list_project_milestones` returns paginated project summaries for scheduling without one request per Feature. `set_task_milestone` changes membership within the Task/Bug's existing Feature. Lead changes require assignment permission; management requires task update permission. Milestone status and dates are read-only and derived from nonarchived linked Tasks/Bugs. All eligible work Done means Done; any active or completed work means In Progress; otherwise To Do, including empty milestones. Status ignores filters and release boundaries; progress keeps its existing counting rules.
+Milestone tools manage Feature-owned planning units with lead, workflow status, priority, release and dates. `list_project_milestones` returns paginated project summaries for scheduling without one request per Feature. `set_task_milestone` changes membership within the Task/Bug's existing Feature. Lead changes require assignment permission; management requires the milestone permissions (`milestone:create`, `milestone:update`, `milestone:delete`). Milestone status and dates are read-only and derived from nonarchived linked Tasks/Bugs. All eligible work Done means Done; any active or completed work means In Progress; otherwise To Do, including empty milestones. Status ignores filters and release boundaries; progress keeps its existing counting rules.
 
 ### Releases
 
@@ -145,7 +145,7 @@ Releases hold milestones and Tasks/Bugs. Their summaries count Task/Bug executio
 
 `set_task_release` changes a Task/Bug's release. New work inherits its milestone's release only when omitted; an explicit release or null wins. Assigning existing unassigned work inherits the milestone release, while existing release choices remain. Updating a milestone's release moves only followers matching its old release, including null. Clearing/deleting membership preserves releases.
 
-`move_unfinished_release_items` handles unfinished milestones and leaf work independently, leaving completed work in its original release. Release creation/edit requires project update permission; deletion also requires task update permission.
+`move_unfinished_release_items` handles unfinished milestones and leaf work independently, leaving completed work in its original release. Release creation/edit requires project update permission; deletion and moving unfinished items also require update permission on tasks, bugs and milestones.
 
 ## Debugging
 

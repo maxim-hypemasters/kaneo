@@ -33,7 +33,9 @@ vi.mock("@/hooks/mutations/task/use-update-task-type", () => ({
   }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: mocks.canUpdateTasks }),
+  useWorkspacePermission: () => ({
+    canWorkItem: () => mocks.canUpdateTasks(),
+  }),
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: mocks.toastError } }));
 

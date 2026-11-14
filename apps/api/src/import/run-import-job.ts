@@ -105,7 +105,7 @@ async function importProject(
     ) {
       throw new HTTPException(403, {
         message:
-          "Milestone hierarchy requires task:create and task:update permission",
+          "Milestone hierarchy requires milestone:create and milestone:update permission",
       });
     }
     if (

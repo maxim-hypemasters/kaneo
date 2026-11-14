@@ -14,10 +14,13 @@ export function MilestoneDraftTasks({
   value,
   onChange,
   disabled,
+  types = ["task", "bug"],
 }: {
   value: MilestoneDraftTask[];
   onChange: (tasks: MilestoneDraftTask[]) => void;
   disabled?: boolean;
+  // Kinds of work the role may create; defaults to both.
+  types?: readonly ("task" | "bug")[];
 }) {
   const { t } = useTranslation();
   return (
@@ -43,7 +46,7 @@ export function MilestoneDraftTasks({
               <ChevronDown className="size-3" aria-hidden="true" />
             </MenuTrigger>
             <MenuPopup align="end" className="w-44" finalFocus={false}>
-              {(["task", "bug"] as const).map((type) => (
+              {types.map((type) => (
                 <MenuItem
                   key={type}
                   onClick={() => {

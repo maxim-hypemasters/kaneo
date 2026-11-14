@@ -5,6 +5,7 @@ import {
   jsonResponse,
 } from "../openapi";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import { requireWorkItemPermission } from "../utils/require-work-item-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import createCustomField from "./controllers/create-custom-field";
 import deleteCustomField from "./controllers/delete-custom-field";
@@ -191,7 +192,7 @@ const setCustomFieldValueRoute = createRoute({
   description: "Create or update a custom field value for a task.",
   middleware: [
     workspaceAccess.fromTaskId("taskId"),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
   ] as const,
   request: {
     body: {
@@ -206,7 +207,7 @@ const setCustomFieldValueRoute = createRoute({
     ),
     400: errorResponse("Invalid body, or unknown custom field"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for the task's type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },

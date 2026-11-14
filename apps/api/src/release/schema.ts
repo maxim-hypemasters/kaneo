@@ -32,7 +32,7 @@ export const createReleaseBody = z.object({
     .optional()
     .openapi({
       description:
-        "Up to 100 unique milestones with No release in this project. Creating the release and linking them is atomic and additionally requires task:update.",
+        "Up to 100 unique milestones with No release in this project. Creating the release and linking them is atomic and additionally requires milestone:update.",
     }),
 });
 

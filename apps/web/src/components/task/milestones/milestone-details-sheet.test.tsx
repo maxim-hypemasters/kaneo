@@ -33,8 +33,9 @@ vi.mock("@/hooks/queries/task/use-feature-index", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canUpdateTasks: () => true,
+    canUpdateMilestones: () => true,
     canCreateTasks: () => true,
+    canCreateBugs: () => true,
   }),
 }));
 vi.mock("@/hooks/mutations/milestone/use-milestone-mutations", () => ({

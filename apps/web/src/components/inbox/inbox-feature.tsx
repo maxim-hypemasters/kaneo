@@ -38,7 +38,7 @@ export function InboxFeature({ featureId, workspaceId }: InboxFeatureProps) {
     id: feature?.projectId ?? "",
     workspaceId: openWorkspaceId ?? "",
   });
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canUpdateFeatures } = useWorkspacePermission();
   const navigate = useNavigate();
   useShortcut(
     "openFocusedTask",
@@ -115,7 +115,7 @@ export function InboxFeature({ featureId, workspaceId }: InboxFeatureProps) {
       </div>
 
       <InboxRecentActivity query={activityQuery} subject="feature">
-        {canUpdateTasks() && (
+        {canUpdateFeatures() && (
           <FeatureCommentComposer
             featureId={feature.id}
             projectId={feature.projectId}

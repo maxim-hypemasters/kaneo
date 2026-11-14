@@ -16,16 +16,20 @@ export function useReleasePermissions(): ReleasePermissions {
   const {
     canUpdateProjects,
     canUpdateTasks,
-    canCreateTasks,
+    canUpdateBugs,
+    canUpdateMilestones,
+    canCreateWorkItems,
     isCheckingPermissions,
   } = useWorkspacePermission();
   const ready = !isCheckingPermissions;
   const canManage = ready && canUpdateProjects();
-  const canMoveItems = ready && canUpdateTasks();
+  // Releases move tasks, bugs and milestones together.
+  const canMoveItems =
+    ready && canUpdateTasks() && canUpdateBugs() && canUpdateMilestones();
   return {
     canManage,
     canMoveItems,
     canDelete: canManage && canMoveItems,
-    canCreateTasks: ready && canCreateTasks(),
+    canCreateTasks: ready && canCreateWorkItems(),
   };
 }

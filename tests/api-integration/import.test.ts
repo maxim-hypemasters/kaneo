@@ -275,7 +275,7 @@ describe("API integration: import from other tools", () => {
   });
 
   it.each([false, true])(
-    "checks task update permission before importing connected milestone hierarchy (allowed=%s)",
+    "checks milestone permissions before importing connected milestone hierarchy (allowed=%s)",
     async (canUpdate) => {
       const member = await createWorkspaceMember({
         role: "milestone-importer",
@@ -286,7 +286,8 @@ describe("API integration: import from other tools", () => {
         permission: JSON.stringify({
           workspace: ["manage_settings"],
           project: ["create"],
-          task: canUpdate ? ["create", "update"] : ["create"],
+          task: ["create", "update"],
+          ...(canUpdate ? { milestone: ["create", "update"] } : {}),
         }),
       });
       const project: ImportedProject = {
@@ -345,7 +346,7 @@ describe("API integration: import from other tools", () => {
         canUpdate ? "completed" : "failed",
       );
       if (!canUpdate)
-        expect(polled.run.projects[0]?.error).toContain("task:update");
+        expect(polled.run.projects[0]?.error).toContain("milestone:create");
       expect(
         await db
           .select()

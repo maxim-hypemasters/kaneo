@@ -39,7 +39,7 @@ export function FeatureUpdateCard({
 }) {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canUpdateFeatures } = useWorkspacePermission();
   const data = featureUpdateData(activity.eventData);
   const [draft, setDraft] = useState<{
     note: string;
@@ -60,7 +60,7 @@ export function FeatureUpdateCard({
     deleteFeatureUpdate(activity.taskId, activity.id),
   );
   const canEdit = Boolean(
-    !compact && user?.id === activity.userId && canUpdateTasks(),
+    !compact && user?.id === activity.userId && canUpdateFeatures(),
   );
   const pending = save.isPending || remove.isPending || uploading;
   const cancel = () => {

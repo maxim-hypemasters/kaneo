@@ -6519,6 +6519,36 @@
           "assignTasks": {
             "type": "boolean"
           },
+          "createBugs": {
+            "type": "boolean"
+          },
+          "updateBugs": {
+            "type": "boolean"
+          },
+          "deleteBugs": {
+            "type": "boolean"
+          },
+          "createFeatures": {
+            "type": "boolean"
+          },
+          "updateFeatures": {
+            "type": "boolean"
+          },
+          "deleteFeatures": {
+            "type": "boolean"
+          },
+          "readMilestones": {
+            "type": "boolean"
+          },
+          "createMilestones": {
+            "type": "boolean"
+          },
+          "updateMilestones": {
+            "type": "boolean"
+          },
+          "deleteMilestones": {
+            "type": "boolean"
+          },
           "createLabels": {
             "type": "boolean"
           },
@@ -6560,6 +6590,16 @@
           "createTasks",
           "deleteTasks",
           "assignTasks",
+          "createBugs",
+          "updateBugs",
+          "deleteBugs",
+          "createFeatures",
+          "updateFeatures",
+          "deleteFeatures",
+          "readMilestones",
+          "createMilestones",
+          "updateMilestones",
+          "deleteMilestones",
           "createLabels",
           "updateLabels",
           "deleteLabels",
@@ -15595,7 +15635,7 @@
             }
           },
           "403": {
-            "description": "Missing task:read permission",
+            "description": "Missing feature:read permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -15940,7 +15980,7 @@
             }
           },
           "403": {
-            "description": "Missing task:update permission",
+            "description": "Missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16407,7 +16447,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:read permission",
+            "description": "No access to the project, or missing feature:read permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -16854,7 +16894,7 @@
             }
           },
           "403": {
-            "description": "Missing task:create permission",
+            "description": "Missing create permission for tasks, bugs and features",
             "content": {
               "application/json": {
                 "schema": {
@@ -16976,7 +17016,7 @@
             }
           },
           "403": {
-            "description": "Missing task:create permission",
+            "description": "Missing create permission for tasks, bugs and features",
             "content": {
               "application/json": {
                 "schema": {
@@ -17104,7 +17144,7 @@
             }
           },
           "403": {
-            "description": "No project access or missing task:update permission",
+            "description": "No project access or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17236,7 +17276,7 @@
             }
           },
           "403": {
-            "description": "No project access or missing task:update permission",
+            "description": "No project access or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17411,7 +17451,7 @@
             }
           },
           "403": {
-            "description": "Missing task:update permission",
+            "description": "Missing update permission for the moved items' types (task or bug)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17686,7 +17726,7 @@
                       }
                     },
                     "additionalProperties": false,
-                    "description": "Feature-only milestone and Task/Bug drafts, saved atomically with the new Feature. Existing work must have no Feature. Milestones or existing links additionally require task:update; non-null milestone leads require task:assign."
+                    "description": "Feature-only milestone and Task/Bug drafts, saved atomically with the new Feature. Existing work must have no Feature. Milestones additionally require milestone:create, existing links update permission for their type, and drafts create permission for their type; non-null milestone leads require task:assign."
                   }
                 },
                 "required": [
@@ -17740,7 +17780,7 @@
             }
           },
           "403": {
-            "description": "No project access, or missing task:create, task:update or task:assign permission required by the request",
+            "description": "No project access, or missing create permission for the requested type, or milestone:create, task:assign, or create/update permission for linked and new work required by the request",
             "content": {
               "application/json": {
                 "schema": {
@@ -17840,7 +17880,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:create permission",
+            "description": "No access to the project, or missing create permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18201,7 +18241,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update or task:assign permission",
+            "description": "No access to the project, or missing task:assign or update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18264,7 +18304,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:delete permission",
+            "description": "No access to the project, or missing delete permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18371,7 +18411,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18478,7 +18518,7 @@
           "Tasks"
         ],
         "summary": "Import tasks",
-        "description": "Import version 2 Feature/milestone hierarchy atomically, or legacy tasks with individual outcomes. Milestone hierarchy also requires task:update permission.",
+        "description": "Import version 2 Feature/milestone hierarchy atomically, or legacy tasks with individual outcomes. Each imported type requires its own create permission; milestones also require milestone:create.",
         "parameters": [
           {
             "schema": {
@@ -19184,7 +19224,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:create permission",
+            "description": "No access to the project, or missing create permission for an imported type",
             "content": {
               "application/json": {
                 "schema": {
@@ -19277,7 +19317,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19377,7 +19417,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19568,7 +19608,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19673,7 +19713,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19766,7 +19806,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19864,7 +19904,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19982,7 +20022,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20090,7 +20130,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for the current type or create permission for the new type",
             "content": {
               "application/json": {
                 "schema": {
@@ -20210,7 +20250,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20335,7 +20375,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20440,7 +20480,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21026,7 +21066,7 @@
           "Releases"
         ],
         "summary": "Create release",
-        "description": "Add a release to a project, optionally linking up to 100 milestones currently set to No release in one atomic transaction. Linked work with No release follows its milestone; explicit task releases remain. Selected milestones additionally require task:update. The name must be unique in the project, and dates must run start ≤ code freeze ≤ submission.",
+        "description": "Add a release to a project, optionally linking up to 100 milestones currently set to No release in one atomic transaction. Linked work with No release follows its milestone; explicit task releases remain. Selected milestones additionally require milestone:update. The name must be unique in the project, and dates must run start ≤ code freeze ≤ submission.",
         "parameters": [
           {
             "schema": {
@@ -21085,7 +21125,7 @@
                       "minLength": 1
                     },
                     "maxItems": 100,
-                    "description": "Up to 100 unique milestones with No release in this project. Creating the release and linking them is atomic and additionally requires task:update."
+                    "description": "Up to 100 unique milestones with No release in this project. Creating the release and linking them is atomic and additionally requires milestone:update."
                   }
                 },
                 "required": [
@@ -21140,7 +21180,7 @@
             }
           },
           "403": {
-            "description": "No project access, missing project:update, or selected milestones without task:update permission",
+            "description": "No project access, missing project:update, or selected milestones without milestone:update permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -21315,7 +21355,7 @@
             }
           },
           "403": {
-            "description": "No project access or missing task:read permission",
+            "description": "No project access or missing milestone:read permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -21613,7 +21653,7 @@
             }
           },
           "403": {
-            "description": "No access to the release's project, or missing project:update or task:update permission",
+            "description": "No access to the release's project, or missing project:update, or task:update, bug:update or milestone:update permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -21814,7 +21854,7 @@
             }
           },
           "403": {
-            "description": "No access to the release's project or missing task:read permission",
+            "description": "No access to the release's project or missing milestone:read permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -21993,7 +22033,7 @@
             }
           },
           "403": {
-            "description": "No project access or missing task:read permission",
+            "description": "No project access or missing task:read, bug:read or milestone:read permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -22121,7 +22161,7 @@
             }
           },
           "403": {
-            "description": "No access to the release's project, or missing task:update permission",
+            "description": "No access to the release's project, or missing task:update, bug:update or milestone:update permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -22294,7 +22334,7 @@
             }
           },
           "403": {
-            "description": "No access or missing task permission",
+            "description": "No access or missing milestone permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -22396,7 +22436,7 @@
             }
           },
           "403": {
-            "description": "No access or missing task permission",
+            "description": "No access or missing milestone permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -22436,7 +22476,7 @@
           "Milestones"
         ],
         "summary": "Create a feature milestone",
-        "description": "Atomically create a milestone, link existing Tasks/Bugs from its Feature, and optionally create up to 100 title-only Tasks/Bugs. New work requires task:create and inherits the selected release. Required custom fields must have valid defaults. Validation or insertion failure rolls back all work and number allocation. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409.",
+        "description": "Atomically create a milestone, link existing Tasks/Bugs from its Feature, and optionally create up to 100 title-only Tasks/Bugs. Requires milestone:create; new work requires create, and linked work update, permission for its type (task or bug). New work inherits the selected release. Required custom fields must have valid defaults. Validation or insertion failure rolls back all work and number allocation. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409.",
         "parameters": [
           {
             "schema": {
@@ -22538,7 +22578,7 @@
                       "additionalProperties": false
                     },
                     "maxItems": 100,
-                    "description": "Title-only Task/Bug drafts to create atomically with the milestone and existing links. Requires task:create permission. Defaults and required custom fields follow normal task creation."
+                    "description": "Title-only Task/Bug drafts to create atomically with the milestone and existing links. Requires create permission for each draft's type (task or bug). Defaults and required custom fields follow normal task creation."
                   },
                   "taskIds": {
                     "type": "array",
@@ -22599,7 +22639,7 @@
             }
           },
           "403": {
-            "description": "No access or missing task permission",
+            "description": "No access or missing milestone permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -22734,7 +22774,7 @@
             }
           },
           "403": {
-            "description": "No access or missing task permission",
+            "description": "No access or missing milestone permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -22833,7 +22873,7 @@
             }
           },
           "403": {
-            "description": "No access or missing task permission",
+            "description": "No access or missing milestone permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -22989,7 +23029,7 @@
             }
           },
           "403": {
-            "description": "No access or missing task permission",
+            "description": "No access or missing milestone permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -23091,7 +23131,7 @@
             }
           },
           "403": {
-            "description": "No access or missing task permission",
+            "description": "No access or missing milestone permission",
             "content": {
               "application/json": {
                 "schema": {
@@ -25563,7 +25603,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25651,7 +25691,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25996,7 +26036,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, missing task:update permission, or external attribution without workspace:manage_settings",
+            "description": "No access to the project, missing update permission for the task's type (task, bug or feature), or external attribution without workspace:manage_settings",
             "content": {
               "application/json": {
                 "schema": {
@@ -26091,7 +26131,7 @@
             }
           },
           "403": {
-            "description": "Not the author, or missing task:update permission",
+            "description": "Not the author, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26154,7 +26194,7 @@
             }
           },
           "403": {
-            "description": "Not the author, or missing task:update permission",
+            "description": "Not the author, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26388,7 +26428,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26486,7 +26526,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33054,7 +33094,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33129,7 +33169,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34759,7 +34799,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing task:update permission",
+            "description": "No access to the project, or missing update permission for the task's type (task, bug or feature)",
             "content": {
               "application/json": {
                 "schema": {

@@ -381,7 +381,10 @@ describe("atomic milestone Task/Bug drafts", () => {
     await db.insert(schema.workspaceRoleTable).values({
       workspaceId: ctx.workspace.id,
       role: "planner",
-      permission: JSON.stringify({ task: ["read", "update"] }),
+      permission: JSON.stringify({
+        task: ["read", "update"],
+        milestone: ["create"],
+      }),
     });
     expect(
       (await ctx.create({ newTasks: [{ title: "Unauthorized" }] })).status,
@@ -392,7 +395,7 @@ describe("atomic milestone Task/Bug drafts", () => {
     ).toBe(200);
   });
 
-  it("requires task:update even when task:create is allowed", async () => {
+  it("requires milestone:create even when task:create is allowed", async () => {
     const ctx = await setup("creator");
     await db.insert(schema.workspaceRoleTable).values({
       workspaceId: ctx.workspace.id,
@@ -412,14 +415,18 @@ describe("atomic milestone Task/Bug drafts", () => {
       body: {
         userId: ctx.user.id,
         name: "Manage",
-        permissions: { task: ["read", "update"] },
+        permissions: { task: ["read", "update"], milestone: ["create"] },
       },
     });
     const create = await auth.api.createApiKey({
       body: {
         userId: ctx.user.id,
         name: "Create",
-        permissions: { task: ["read", "update", "create"] },
+        permissions: {
+          task: ["read", "update", "create"],
+          bug: ["create"],
+          milestone: ["create"],
+        },
       },
     });
     const request = (key: string, newTasks: unknown[]) => {
@@ -443,7 +450,10 @@ describe("atomic milestone Task/Bug drafts", () => {
     await db.insert(schema.workspaceRoleTable).values({
       workspaceId: ctx.workspace.id,
       role: "planner",
-      permission: JSON.stringify({ task: ["read", "update", "create"] }),
+      permission: JSON.stringify({
+        task: ["read", "update", "create"],
+        milestone: ["create"],
+      }),
     });
     expect(
       (

@@ -16,9 +16,15 @@ type TaskTypeMenuProps = {
 export function TaskTypeMenu({ task, children }: TaskTypeMenuProps) {
   const { t } = useTranslation();
   const { mutateAsync: updateType, isPending } = useUpdateTaskType();
-  const { canUpdateTasks } = useWorkspacePermission();
-  if (!canUpdateTasks() || task.type === "feature") return <>{children}</>;
+  const { canWorkItem } = useWorkspacePermission();
   const type = task.type === "bug" ? "task" : "bug";
+  // Turning a task into a bug edits the task and creates a bug.
+  if (
+    task.type === "feature" ||
+    !canWorkItem(task.type, "update") ||
+    !canWorkItem(type, "create")
+  )
+    return <>{children}</>;
   return (
     <Menu>
       <MenuTrigger asChild>{children}</MenuTrigger>

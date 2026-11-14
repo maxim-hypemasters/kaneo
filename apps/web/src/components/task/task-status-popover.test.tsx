@@ -20,7 +20,7 @@ vi.mock("@/hooks/mutations/task/use-update-task-status", () => ({
 }));
 
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => true }),
+  useWorkspacePermission: () => ({ canWorkItem: () => true }),
 }));
 
 vi.mock("react-i18next", () => ({

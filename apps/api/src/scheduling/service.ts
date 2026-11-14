@@ -14,6 +14,7 @@ import {
 import { publishEvent } from "../events";
 import { findInaccessibleProjectIds } from "../project-access/find-inaccessible-project-ids";
 import { roleHasWorkspacePermission } from "../utils/require-workspace-permission";
+import { PLANNING_READ, PLANNING_WRITE } from "./planning-permissions";
 import { retryTransaction } from "../utils/retry-transaction";
 import { hasInstanceAdminRole } from "../utils/instance-admin-role";
 import { buildSchedule } from "./engine/build-schedule";
@@ -255,9 +256,7 @@ export async function recheckApplyAccess(
         !(await roleHasWorkspacePermission(
           workspaceId,
           member.role,
-          manage
-            ? { project: ["update"], task: ["read", "update"] }
-            : { task: ["read"] },
+          manage ? PLANNING_WRITE : PLANNING_READ,
           tx,
         )))) ||
     (await findInaccessibleProjectIds(userId, [projectId], tx)).length

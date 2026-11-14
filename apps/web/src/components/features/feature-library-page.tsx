@@ -34,7 +34,7 @@ export function FeatureLibraryPage({
     title: string;
     projectId: string;
   } | null>(null);
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canUpdateFeatures } = useWorkspacePermission();
   const result = useQuery({
     queryKey: ["feature-library", projectId, query, archived, page],
     queryFn: () => getFeatureLibrary(projectId, query, archived, page),
@@ -143,7 +143,7 @@ export function FeatureLibraryPage({
                       ))}
                     </span>
                   </Link>
-                  {canUpdateTasks() && (
+                  {canUpdateFeatures() && (
                     <Button
                       variant="ghost"
                       size="icon-sm"

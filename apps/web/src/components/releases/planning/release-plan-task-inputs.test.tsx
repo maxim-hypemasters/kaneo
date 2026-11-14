@@ -39,7 +39,7 @@ vi.mock("@/fetchers/task/update-task-assignee", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canUpdateTasks: () => m.canEstimate,
+    canWorkItem: () => m.canEstimate,
     canAssignTasks: () => m.canAssign,
   }),
 }));
@@ -60,6 +60,7 @@ vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
 
 const task = {
   taskId: "task",
+  type: "task" as const,
   currentAssigneeId: "max",
   currentAssigneeName: "Max",
   estimateSeconds: 28_800,

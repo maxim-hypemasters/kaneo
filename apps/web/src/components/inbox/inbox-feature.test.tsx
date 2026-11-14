@@ -67,7 +67,7 @@ vi.mock("@/hooks/queries/activity/use-get-activities-by-task-id", () => ({
   default: m.activity,
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => m.canUpdate }),
+  useWorkspacePermission: () => ({ canUpdateFeatures: () => m.canUpdate }),
 }));
 vi.mock("@/components/activity", () => ({
   default: ({ subject }: { subject?: string }) => (

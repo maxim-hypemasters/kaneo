@@ -45,16 +45,16 @@ import {
 
 const read = [
   workspaceAccess.fromTask("id"),
-  requireWorkspacePermission({ task: ["read"] }),
+  requireWorkspacePermission({ feature: ["read"] }),
 ] as const;
 const write = [
   workspaceAccess.fromTask("id"),
-  requireWorkspacePermission({ task: ["update"] }),
+  requireWorkspacePermission({ feature: ["update"] }),
   requireEntitlement,
 ] as const;
 const removeDocument = [
   workspaceAccess.fromTask("id"),
-  requireWorkspacePermission({ task: ["delete"] }),
+  requireWorkspacePermission({ feature: ["delete"] }),
   requireEntitlement,
 ] as const;
 const errors = {

@@ -8,7 +8,7 @@ import {
   errorResponse,
   jsonResponse,
 } from "../openapi";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import { requireWorkItemPermission } from "../utils/require-work-item-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import createExternalLink from "./controllers/create-external-link";
 import deleteExternalLink from "./controllers/delete-external-link";
@@ -32,7 +32,7 @@ const createExternalLinkRoute = createRoute({
   description: "Add a resource link to a task",
   middleware: [
     workspaceAccess.fromTaskId("taskId"),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
   ] as const,
   request: {
     params: taskIdParam,
@@ -67,7 +67,7 @@ const deleteExternalLinkRoute = createRoute({
     "Remove a manually added link from a task. Integration-managed links cannot be removed through this endpoint.",
   middleware: [
     workspaceAccess.fromTaskId("taskId"),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
   ] as const,
   request: { params: deleteExternalLinkParam },
   responses: {

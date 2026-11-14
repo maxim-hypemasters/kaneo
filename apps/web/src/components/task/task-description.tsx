@@ -10,7 +10,7 @@ type TaskDescriptionProps = {
 
 export default function TaskDescription({ taskId }: TaskDescriptionProps) {
   const { data: task, refetch } = useGetTask(taskId);
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
   const ownerId = useContext(AuthContext).user?.id ?? "";
 
   if (!task) return null;
@@ -21,7 +21,7 @@ export default function TaskDescription({ taskId }: TaskDescriptionProps) {
       taskId={taskId}
       projectId={task.projectId}
       description={task.description ?? ""}
-      canEdit={canUpdateTasks()}
+      canEdit={canWorkItem(task.type, "update")}
       refresh={() => refetch({ throwOnError: true })}
     />
   );

@@ -44,7 +44,10 @@ export function MilestoneDialog({
   const { t } = useTranslation();
   const [title, setTitle] = useState(milestone?.title ?? "");
   const { data: workspace } = useActiveWorkspace();
-  const { canCreateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
+  const draftTypes = (["task", "bug"] as const).filter((type) =>
+    canWorkItem(type, "create"),
+  );
   const [planning, setPlanning] = useState<MilestoneInput>({
     leadId: milestone?.leadId ?? null,
     priority: milestone?.priority ?? "no-priority",
@@ -64,7 +67,7 @@ export function MilestoneDialog({
     title.trim().length <= 255 &&
     !hasUnavailableTasks &&
     newTasks.length <= MAX_MILESTONE_DRAFT_TASKS &&
-    (newTasks.length === 0 || canCreateTasks()) &&
+    newTasks.every((task) => canWorkItem(task.type, "create")) &&
     newTasks.every((task) => task.title.trim().length > 0);
   return (
     <Dialog
@@ -181,11 +184,12 @@ export function MilestoneDialog({
                 onUnavailableChange={setHasUnavailableTasks}
               />
             )}
-            {!milestone && canCreateTasks() && (
+            {!milestone && draftTypes.length > 0 && (
               <MilestoneDraftTasks
                 value={newTasks}
                 onChange={setNewTasks}
                 disabled={pending}
+                types={draftTypes}
               />
             )}
             {error && (

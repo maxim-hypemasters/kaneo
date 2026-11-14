@@ -25,7 +25,7 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => mocks.canEdit }),
+  useWorkspacePermission: () => ({ canWorkItem: () => mocks.canEdit }),
 }));
 vi.mock("@/hooks/mutations/task/use-update-task", () => ({
   useUpdateTask: () => ({ isPending: false, mutateAsync: mocks.save }),

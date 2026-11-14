@@ -47,7 +47,9 @@ vi.mock("@/hooks/queries/milestone/use-get-milestones", () => ({
   useGetMilestones: () => ({ data: [{ id: "m", releaseId: "2.5" }] }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: mocks.canUpdateTasks }),
+  useWorkspacePermission: () => ({
+    canWorkItem: () => mocks.canUpdateTasks(),
+  }),
 }));
 vi.mock("@/lib/releases/use-release-today", () => ({
   useReleaseToday: () => "2026-10-17",

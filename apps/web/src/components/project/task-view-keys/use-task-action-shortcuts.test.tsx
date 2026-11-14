@@ -45,7 +45,9 @@ vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canUpdateTasks: mocks.canUpdateTasks,
     canAssignTasks: mocks.canAssignTasks,
+    canUpdateBugs: () => false,
     canDeleteTasks: () => true,
+    canDeleteBugs: () => false,
     canUpdateLabels: () => true,
   }),
 }));

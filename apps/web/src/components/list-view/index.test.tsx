@@ -43,7 +43,10 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canCreateTasks: () => true }),
+  useWorkspacePermission: () => ({
+    canCreateWorkItems: () => true,
+    canWorkItem: () => true,
+  }),
 }));
 vi.mock("@dnd-kit/core", async (original) => ({
   ...(await original<typeof import("@dnd-kit/core")>()),

@@ -510,12 +510,15 @@ describe("atomic Feature composition", () => {
     ).toMatchObject({ status: "planned", columnId: null });
   });
 
-  it("allows create-only Features and draft work but requires update for milestones and existing links", async () => {
+  it("allows create-only Features and draft work but requires milestone:create for milestones and update for existing links", async () => {
     const ctx = await setup("creator");
     await db.insert(schema.workspaceRoleTable).values({
       workspaceId: ctx.workspace.id,
       role: "creator",
-      permission: JSON.stringify({ task: ["read", "create"] }),
+      permission: JSON.stringify({
+        task: ["read", "create"],
+        feature: ["create"],
+      }),
     });
     const before = await snapshot();
     expect(
@@ -539,21 +542,29 @@ describe("atomic Feature composition", () => {
         body: {
           userId: ctx.user.id,
           name: "Create",
-          permissions: { task: ["create"] },
+          permissions: { task: ["create"], feature: ["create"] },
         },
       }),
       auth.api.createApiKey({
         body: {
           userId: ctx.user.id,
           name: "Plan",
-          permissions: { task: ["create", "update"] },
+          permissions: {
+            task: ["create", "update"],
+            feature: ["create"],
+            milestone: ["create"],
+          },
         },
       }),
       auth.api.createApiKey({
         body: {
           userId: ctx.user.id,
           name: "Assign",
-          permissions: { task: ["create", "update", "assign"] },
+          permissions: {
+            task: ["create", "update", "assign"],
+            feature: ["create"],
+            milestone: ["create"],
+          },
         },
       }),
     ]);

@@ -32,7 +32,7 @@ vi.mock("@/fetchers/feature/feature-workspace", () => ({
   getFeatureDocument: m.get,
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => m.canEdit }),
+  useWorkspacePermission: () => ({ canUpdateFeatures: () => m.canEdit }),
 }));
 vi.mock("@/components/editor/document-draft-guard", () => ({
   useDocumentDraftNavigation: () => async (action: () => void) => {

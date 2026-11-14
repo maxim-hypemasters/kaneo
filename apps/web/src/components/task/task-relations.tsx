@@ -115,8 +115,8 @@ export default function TaskRelations({
   const createRelation = useCreateTaskRelation();
   const deleteRelation = useDeleteTaskRelation(taskId);
   const { mutateAsync: updateFeature } = useUpdateTaskFeature();
-  const { canUpdateTasks } = useWorkspacePermission();
-  const canEdit = canUpdateTasks();
+  const { canWorkItem } = useWorkspacePermission();
+  const canEdit = canWorkItem(task?.type, "update");
   const displayIdOf = useProjectSlugs(workspaceId);
 
   // Only a task can join a feature.

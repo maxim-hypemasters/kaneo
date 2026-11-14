@@ -61,6 +61,7 @@ function view(overrides: Partial<ComponentProps<typeof MilestoneRow>> = {}) {
     releaseName: "Autumn release",
     selected: false,
     canEdit: true,
+    canDelete: true,
     first: false,
     last: false,
     pending: false,
@@ -175,8 +176,21 @@ describe("Milestone row", () => {
     expect(props.onSelect).not.toHaveBeenCalled();
   });
 
+  it("offers only deletion to roles that can delete but not edit", async () => {
+    view({ canEdit: false, canDelete: true });
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:milestones.actions" }),
+    );
+    expect(
+      await screen.findByRole("menuitem", { name: "tasks:milestones.delete" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "tasks:milestones.edit" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("keeps read-only users able to select and open without management actions", () => {
-    const props = view({ canEdit: false });
+    const props = view({ canEdit: false, canDelete: false });
     expect(
       screen.queryByRole("button", { name: "tasks:milestones.actions" }),
     ).not.toBeInTheDocument();

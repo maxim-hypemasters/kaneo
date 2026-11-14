@@ -34,8 +34,11 @@ vi.mock(
 vi.mock("@/hooks/mutations/custom-field/use-set-custom-field-value", () => ({
   default: () => ({ mutateAsync }),
 }));
+vi.mock("@/hooks/queries/task/use-get-task", () => ({
+  default: () => ({ data: { type: "task" } }),
+}));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => true }),
+  useWorkspacePermission: () => ({ canWorkItem: () => true }),
 }));
 vi.mock("@/lib/toast", () => ({
   toast: { error: (...args: unknown[]) => toastError(...args) },

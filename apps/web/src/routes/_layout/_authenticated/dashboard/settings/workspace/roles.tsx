@@ -68,6 +68,9 @@ const RESOURCE_LABELS: Record<string, string> = {
   ac: "Roles and permissions",
   project: "Projects",
   task: "Tasks",
+  bug: "Bugs",
+  feature: "Features",
+  milestone: "Milestones",
   label: "Labels",
   workspace: "Workspace",
 };
@@ -173,6 +176,48 @@ const PERMISSION_LABELS: Record<
     label: "Assign tasks",
     description: "Assign tasks to other workspace members.",
   },
+  "bug:create": { label: "Report bugs", description: "Report new bugs." },
+  "bug:read": { label: "View bugs", description: "View bugs across projects." },
+  "bug:update": {
+    label: "Edit bugs",
+    description: "Edit bug content, status, priority and dates.",
+  },
+  "bug:delete": {
+    label: "Delete bugs",
+    description: "Permanently delete bugs.",
+  },
+  "feature:create": {
+    label: "Create features",
+    description: "Create new features.",
+  },
+  "feature:read": {
+    label: "View features",
+    description: "View feature pages and the feature library.",
+  },
+  "feature:update": {
+    label: "Edit features",
+    description: "Edit features, their documents and updates.",
+  },
+  "feature:delete": {
+    label: "Delete features",
+    description: "Permanently delete features and their documents.",
+  },
+  "milestone:create": {
+    label: "Create milestones",
+    description: "Add milestones to features.",
+  },
+  "milestone:read": {
+    label: "View milestones",
+    description: "View milestones and their progress.",
+  },
+  "milestone:update": {
+    label: "Edit milestones",
+    description: "Edit, reorder and schedule milestones.",
+  },
+  "milestone:delete": {
+    label: "Delete milestones",
+    description: "Permanently delete milestones.",
+  },
   "label:create": {
     label: "Create labels",
     description: "Add new labels to tasks in this workspace.",
@@ -218,9 +263,10 @@ const DEFAULT_ROLE_NAME_SET = new Set<string>(DEFAULT_ROLE_NAMES);
 const RESERVED_ROLE_NAMES = [...DEFAULT_ROLE_NAMES, "owner"];
 
 const DEFAULT_ROLE_DESCRIPTIONS: Record<string, string> = {
-  viewer: "Read-only access to projects, tasks, and workspace.",
-  member: "Can create and update projects and tasks.",
-  admin: "Full project and task management plus workspace settings.",
+  viewer: "Read-only access to projects, work items, and workspace.",
+  member:
+    "Can create and update projects, tasks, bugs, features and milestones.",
+  admin: "Full project and work management plus workspace settings.",
 };
 
 function isDefaultRole(name: string) {

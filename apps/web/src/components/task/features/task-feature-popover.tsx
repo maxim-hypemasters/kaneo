@@ -17,7 +17,7 @@ import { useProjectSlugs } from "../sections/use-project-slugs";
 import { type FeatureSummary, pickableFeatures } from "./feature-lookup";
 
 type TaskFeaturePopoverProps = {
-  task: Pick<Task, "id" | "projectId" | "featureId">;
+  task: Pick<Task, "id" | "projectId" | "featureId" | "type">;
   // The task's current feature, as useTaskFeature resolves it.
   feature: FeatureSummary | null | undefined;
   workspaceId: string;
@@ -42,9 +42,9 @@ export function TaskFeaturePopover({
   } = useGetProjectFeatures(task.projectId);
   const displayIdOf = useProjectSlugs(workspaceId);
   const { mutateAsync: updateFeature } = useUpdateTaskFeature();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
 
-  if (!canUpdateTasks()) return <>{children}</>;
+  if (!canWorkItem(task.type, "update")) return <>{children}</>;
 
   const features: FeatureSummary[] = pickableFeatures(index, [task.id]);
   if (feature && !features.some(({ id }) => id === feature.id)) {

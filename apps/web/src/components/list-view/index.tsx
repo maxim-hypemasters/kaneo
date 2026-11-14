@@ -51,7 +51,7 @@ function ListView({
   );
   const clearFocus = useBulkSelectionStore((state) => state.clearFocus);
   const { mutate: updateTask } = useUpdateTask();
-  const { canCreateTasks } = useWorkspacePermission();
+  const { canCreateWorkItems } = useWorkspacePermission();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<
@@ -323,7 +323,7 @@ function ListView({
               }
               disableCollectionActions={disableCollectionActions}
               onToggle={toggleSection}
-              onAddTask={canCreateTasks() ? handleAddTask : undefined}
+              onAddTask={canCreateWorkItems() ? handleAddTask : undefined}
               onArchive={handleArchiveClick}
             />
           ))}
