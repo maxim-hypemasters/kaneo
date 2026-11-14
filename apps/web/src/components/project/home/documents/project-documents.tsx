@@ -54,9 +54,11 @@ export function ProjectDocuments({
 }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { canUpdateTasks, canDeleteTasks } = useWorkspacePermission();
-  const canEdit = canUpdateTasks();
-  const canDelete = canDeleteTasks();
+  const { canCreateDocuments, canUpdateDocuments, canDeleteDocuments } =
+    useWorkspacePermission();
+  const canCreate = canCreateDocuments();
+  const canEdit = canUpdateDocuments();
+  const canDelete = canDeleteDocuments();
   const requestLeave = useDocumentDraftNavigation();
   const tree = useProjectDocuments(projectId);
   const pages = tree.data?.pages ?? NO_PAGES;
@@ -150,7 +152,7 @@ export function ProjectDocuments({
           >
             {t("tasks:projectHome.documents.pages")}
           </h2>
-          {canEdit && (
+          {canCreate && (
             <Button
               type="button"
               size="xs"
@@ -184,6 +186,7 @@ export function ProjectDocuments({
             pages={pages}
             expanded={expandedPages}
             selectedId={openFeatureId ? undefined : openId}
+            canCreate={canCreate}
             canEdit={canEdit}
             canDelete={canDelete}
             onToggle={(id) =>
@@ -206,7 +209,7 @@ export function ProjectDocuments({
         ) : (
           <p className="rounded-lg border border-dashed p-6 text-center text-muted-foreground text-sm">
             {t(
-              canEdit
+              canCreate
                 ? "tasks:projectHome.documents.empty"
                 : "tasks:projectHome.documents.emptyReadOnly",
             )}

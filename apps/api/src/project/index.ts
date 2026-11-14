@@ -37,6 +37,7 @@ import moveProjectCtrl from "./controllers/move-project";
 import reorderProjectsCtrl from "./controllers/reorder-projects";
 import unarchiveProjectCtrl from "./controllers/unarchive-project";
 import updateProjectCtrl from "./controllers/update-project";
+import updateProjectDetailsCtrl from "./controllers/update-project-details";
 import {
   movedProjectSchema,
   projectBackgroundFinalizeSchema,
@@ -53,6 +54,7 @@ import {
   projectParam,
   reorderProjectsBody,
   updateProjectBody,
+  updateProjectDetailsBody,
   uploadProjectBackgroundBody,
   workspaceIdQuery,
 } from "./schema";
@@ -180,6 +182,35 @@ const reorderProjectsRoute = createRoute({
       "Missing project:update permission, or no access to a listed project",
     ),
     404: errorResponse("Workspace not found"),
+  },
+});
+
+const updateProjectDetailsRoute = createRoute({
+  method: "patch",
+  operationId: "updateProjectDetails",
+  path: "/{id}/details",
+  tags: ["Projects"],
+  summary: "Update project name and description",
+  description:
+    "Change a project's name, description, or both. Needs project:edit_details, which covers nothing else about the project.",
+  middleware: [
+    workspaceAccess.fromProject(),
+    requireWorkspacePermission({ project: ["edit_details"] }),
+  ] as const,
+  request: {
+    params: projectParam,
+    body: {
+      required: true,
+      content: { "application/json": { schema: updateProjectDetailsBody } },
+    },
+  },
+  responses: {
+    200: jsonResponse("The updated project", projectSchema),
+    400: errorResponse("Invalid body"),
+    403: errorResponse(
+      "No access to the project or missing project:edit_details",
+    ),
+    404: errorResponse("Project not found"),
   },
 });
 
@@ -524,6 +555,16 @@ const project = apiRouter<BaseVariables & { workspaceId: string }>()
       projects,
     );
     return c.json(reordered.map(toPublicProject), 200);
+  })
+  .openapi(updateProjectDetailsRoute, async (c) => {
+    const { id } = c.req.valid("param");
+    const project = await updateProjectDetailsCtrl(
+      id,
+      c.get("workspaceId"),
+      c.req.valid("json"),
+    );
+    await publishEvent("project.updated", { projectId: id });
+    return c.json(toPublicProject(project), 200);
   })
   .openapi(updateProjectRoute, async (c) => {
     const { id } = c.req.valid("param");

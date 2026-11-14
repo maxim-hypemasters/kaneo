@@ -16,6 +16,7 @@ export function DocumentTreeRow({
   hasChildren,
   expanded,
   selected,
+  canCreate,
   canEdit,
   canDelete,
   onToggle,
@@ -30,6 +31,8 @@ export function DocumentTreeRow({
   hasChildren: boolean;
   expanded: boolean;
   selected: boolean;
+  canCreate: boolean;
+  // Moving: dragging the row or "Move to…".
   canEdit: boolean;
   canDelete: boolean;
   onToggle: () => void;
@@ -121,7 +124,8 @@ export function DocumentTreeRow({
         </button>
         <PageActionsMenu
           title={title}
-          canEdit={canEdit}
+          canCreate={canCreate}
+          canMove={canEdit}
           canDelete={canDelete}
           onAddChild={onAddChild}
           onMove={onMove}

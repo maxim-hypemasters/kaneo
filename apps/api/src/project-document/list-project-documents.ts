@@ -16,8 +16,12 @@ type FeatureGroup = {
 };
 
 // The project's page tree plus every active Feature's documents, without
-// bodies. Feature documents are listed newest first, as on the Feature.
-export async function listProjectDocuments(scope: ProjectDocumentScope) {
+// bodies. Feature documents are listed newest first, as on the Feature, and
+// only for callers who may read Features.
+export async function listProjectDocuments(
+  scope: ProjectDocumentScope,
+  { features: includeFeatures }: { features: boolean },
+) {
   return boundedTaskRead(async (tx) => {
     await assertAuthorizedProjectSnapshot(
       tx,
@@ -39,6 +43,7 @@ export async function listProjectDocuments(scope: ProjectDocumentScope) {
         asc(projectDocumentTable.position),
         asc(projectDocumentTable.id),
       );
+    if (!includeFeatures) return { pages, features: [] };
     const featureDocuments = await tx
       .select({
         id: featureDocumentTable.id,

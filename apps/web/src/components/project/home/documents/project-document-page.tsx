@@ -33,14 +33,14 @@ export function ProjectDocumentPage({
   refresh: () => Promise<unknown>;
 }) {
   const { t } = useTranslation();
-  const { canUpdateTasks, canDeleteTasks } = useWorkspacePermission();
+  const { canUpdateDocuments, canDeleteDocuments } = useWorkspacePermission();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const editor = useRef<DocumentEditorHandle>(null);
   const draft = useProjectDocumentAutosave({
     projectId,
     document,
-    canEdit: canUpdateTasks(),
+    canEdit: canUpdateDocuments(),
     refresh,
   });
   const remove = useDeleteProjectDocument(projectId);
@@ -73,7 +73,7 @@ export function ProjectDocumentPage({
               onRetry={draft.retry}
             />
           )}
-          {canDeleteTasks() && (
+          {canDeleteDocuments() && (
             <Button
               type="button"
               size="icon-sm"
@@ -149,7 +149,7 @@ export function ProjectDocumentPage({
         pending={remove.isPending}
         failed={remove.isError}
         onConfirm={() => {
-          if (!canDeleteTasks()) return;
+          if (!canDeleteDocuments()) return;
           void remove
             .mutateAsync(document.id)
             .then(() => {

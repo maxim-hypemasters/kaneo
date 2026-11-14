@@ -4323,7 +4323,8 @@
 				"pageActions": "Actions for {{title}}",
 				"pages": "Pages",
 				"topLevel": "Top level",
-				"untitled": "Untitled"
+				"untitled": "Untitled",
+				"noAccess": "You don’t have access to this project’s pages."
 			},
 			"overview": {
 				"description": "Description",

@@ -21,6 +21,7 @@ import { documentExcerpt } from "../document-excerpt";
 import { escapeLikePattern } from "../like-pattern";
 import { redactedActivityScore } from "../redacted-activity-score";
 import type { SearchResult } from "../search-result";
+import { searchProjectPages } from "./search-project-pages";
 import { TASK_SHORT_ID_PATTERN } from "../task-short-id";
 import { workSearchResult } from "../work-search-result";
 
@@ -40,6 +41,8 @@ type SearchParams = {
   workspaceId?: string;
   projectId?: string;
   limit?: number;
+  // Whether the caller holds document:read in the searched workspace.
+  includeProjectPages?: boolean;
 };
 
 async function globalSearch(params: SearchParams): Promise<{
@@ -55,6 +58,7 @@ async function globalSearch(params: SearchParams): Promise<{
     workspaceId,
     projectId,
     limit = 20,
+    includeProjectPages = false,
   } = params;
 
   let resolvedUserId = userId;
@@ -294,6 +298,18 @@ async function globalSearch(params: SearchParams): Promise<{
         relevanceScore: document.relevanceScore,
       });
     }
+  }
+
+  if ((type === "all" || type === "documents") && includeProjectPages) {
+    results.push(
+      ...(await searchProjectPages({
+        query,
+        searchPattern,
+        workspaceFilter,
+        projectId,
+        limit,
+      })),
+    );
   }
 
   if (type === "all" || type === "projects") {

@@ -10,21 +10,23 @@ import {
 
 export function PageActionsMenu({
   title,
-  canEdit,
+  canCreate,
+  canMove,
   canDelete,
   onAddChild,
   onMove,
   onDelete,
 }: {
   title: string;
-  canEdit: boolean;
+  canCreate: boolean;
+  canMove: boolean;
   canDelete: boolean;
   onAddChild: () => void;
   onMove: () => void;
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
-  if (!canEdit && !canDelete) return null;
+  if (!canCreate && !canMove && !canDelete) return null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -39,19 +41,19 @@ export function PageActionsMenu({
         <MoreHorizontal className="size-3.5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
-        {canEdit && (
-          <>
-            <DropdownMenuItem onClick={onAddChild}>
-              <Plus className="text-muted-foreground" />
-              {t("tasks:projectHome.documents.addSubPage")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onMove}>
-              <FolderInput className="text-muted-foreground" />
-              {t("tasks:projectHome.documents.moveTo")}
-            </DropdownMenuItem>
-          </>
+        {canCreate && (
+          <DropdownMenuItem onClick={onAddChild}>
+            <Plus className="text-muted-foreground" />
+            {t("tasks:projectHome.documents.addSubPage")}
+          </DropdownMenuItem>
         )}
-        {canEdit && canDelete && <DropdownMenuSeparator />}
+        {canMove && (
+          <DropdownMenuItem onClick={onMove}>
+            <FolderInput className="text-muted-foreground" />
+            {t("tasks:projectHome.documents.moveTo")}
+          </DropdownMenuItem>
+        )}
+        {(canCreate || canMove) && canDelete && <DropdownMenuSeparator />}
         {canDelete && (
           <DropdownMenuItem variant="destructive" onClick={onDelete}>
             <Trash2 />

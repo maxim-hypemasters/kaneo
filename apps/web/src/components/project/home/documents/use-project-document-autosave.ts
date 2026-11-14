@@ -7,10 +7,10 @@ import {
   projectDocumentKey,
   projectDocumentsKey,
 } from "@/hooks/queries/project-document/project-document-keys";
-import { uploadDraftAsset } from "@/lib/upload-draft-asset";
+import { uploadProjectDocumentAsset } from "@/lib/upload-draft-asset";
 
-// Uploads are staged on the project and claimed by the save that first
-// references them, like Feature documents.
+// Uploads are staged on the project under document permissions and claimed
+// by the save that first references them, like Feature documents.
 export function useProjectDocumentAutosave({
   projectId,
   document,
@@ -30,7 +30,7 @@ export function useProjectDocumentAutosave({
     source: {
       save: (input) => updateProjectDocument(document.id, input),
       prune: (assetIds) => pruneProjectDocumentAssets(document.id, assetIds),
-      upload: (file) => uploadDraftAsset(projectId, file),
+      upload: (file) => uploadProjectDocumentAsset(projectId, file),
       onSaved: (value) =>
         queryClient.setQueryData<ProjectDocument>(
           projectDocumentKey(projectId, value.id),

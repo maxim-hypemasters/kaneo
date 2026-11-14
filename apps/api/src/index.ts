@@ -63,6 +63,7 @@ import mattermostIntegration from "./mattermost-integration";
 import mcpRoutes, { mcpWellKnownRoutes } from "./mcp";
 import { migrateColumns } from "./migrations/column-migration";
 import { migrateWorkItemPermissions } from "./migrations/work-item-permissions";
+import { migrateProjectDocumentPermissions } from "./migrations/project-document-permissions";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
@@ -1050,6 +1051,7 @@ export async function runStartupTasks() {
   await migrateGitHubIntegration();
   await migrateColumns();
   await migrateWorkItemPermissions();
+  await migrateProjectDocumentPermissions();
   await seedDefaultWorkspaceRoles();
 
   initializePlugins();

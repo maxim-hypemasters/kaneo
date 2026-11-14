@@ -4160,7 +4160,8 @@
 				"moveDialogDescription": "Choose where this page and its sub-pages go. It is added after the pages already there.",
 				"moveDestination": "New location",
 				"topLevel": "Top level",
-				"openFeature": "Open {{title}}"
+				"openFeature": "Open {{title}}",
+				"noAccess": "You don’t have access to this project’s pages."
 			}
 		}
 	},

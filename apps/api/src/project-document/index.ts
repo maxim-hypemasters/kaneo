@@ -5,7 +5,20 @@ import {
   errorResponse,
   jsonResponse,
 } from "../openapi";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import {
+  finalizeStagedTaskAsset,
+  stageTaskAssetUpload,
+} from "../task/controllers/stage-task-asset";
+import { finalizedAssetSchema, imageUploadSchema } from "../task/response";
+import {
+  finalizeStagedImageUploadBody,
+  stagedImageUploadBody,
+} from "../task/schema";
+import { normalizeApiServerUrl } from "../utils/openapi-spec";
+import {
+  hasWorkspacePermission,
+  requireWorkspacePermission,
+} from "../utils/require-workspace-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import { createProjectDocument } from "./create-project-document";
 import { deleteProjectDocument } from "./delete-project-document";
@@ -28,28 +41,35 @@ import {
 } from "./schema";
 import { updateProjectDocument } from "./update-project-document";
 
-// Project pages follow the same permissions as Feature documents.
+// Project pages have their own `document` permissions; the Feature documents
+// listed beside them follow `feature`.
 const projectRead = [
   workspaceAccess.fromProject("projectId"),
-  requireWorkspacePermission({ task: ["read"] }),
+  requireWorkspacePermission({ document: ["read"] }),
 ] as const;
-const projectWrite = [
+const projectCreate = [
   workspaceAccess.fromProject("projectId"),
-  requireWorkspacePermission({ task: ["update"] }),
+  requireWorkspacePermission({ document: ["create"] }),
+  requireEntitlement,
+] as const;
+// Uploads are staged before the save that claims them.
+const projectUpload = [
+  workspaceAccess.fromProject("projectId"),
+  requireWorkspacePermission({ document: ["update"] }),
   requireEntitlement,
 ] as const;
 const read = [
   workspaceAccess.fromProjectDocument("id"),
-  requireWorkspacePermission({ task: ["read"] }),
+  requireWorkspacePermission({ document: ["read"] }),
 ] as const;
 const write = [
   workspaceAccess.fromProjectDocument("id"),
-  requireWorkspacePermission({ task: ["update"] }),
+  requireWorkspacePermission({ document: ["update"] }),
   requireEntitlement,
 ] as const;
 const remove = [
   workspaceAccess.fromProjectDocument("id"),
-  requireWorkspacePermission({ task: ["delete"] }),
+  requireWorkspacePermission({ document: ["delete"] }),
   requireEntitlement,
 ] as const;
 const errors = {
@@ -81,7 +101,7 @@ const projectDocument = apiRouter()
       tags,
       summary: "List a project's documents",
       description:
-        "Returns the project's page tree and the documents of every active Feature in the project, without bodies. Pages are ordered by position within their parent; Feature documents are newest first.",
+        "Returns the project's page tree and the documents of every active Feature in the project, without bodies. Pages are ordered by position within their parent; Feature documents are newest first. Needs document:read; Feature documents are listed only with feature:read.",
       middleware: [...projectRead],
       request: { params: projectParams },
       responses: {
@@ -92,7 +112,70 @@ const projectDocument = apiRouter()
         ...errors,
       },
     }),
-    async (c) => c.json(await listProjectDocuments(scope(c)), 200),
+    async (c) =>
+      c.json(
+        await listProjectDocuments(scope(c), {
+          features: await hasWorkspacePermission(c, { feature: ["read"] }),
+        }),
+        200,
+      ),
+  )
+  .openapi(
+    createRoute({
+      method: "post",
+      operationId: "stageProjectDocumentAsset",
+      path: "/project/{projectId}/draft-upload",
+      tags,
+      summary: "Stage an upload for a project page",
+      description:
+        "Upload an attachment before the page save that references it. Staged assets are private to the uploader and expire after 24 hours unless a save claims them.",
+      middleware: [...projectUpload],
+      request: { params: projectParams, body: json(stagedImageUploadBody) },
+      responses: {
+        200: jsonResponse("Presigned upload", imageUploadSchema),
+        503: errorResponse("Storage unavailable"),
+        ...errors,
+      },
+    }),
+    async (c) =>
+      c.json(
+        await stageTaskAssetUpload(
+          c.get("authorizedProjectId"),
+          c.get("userId"),
+          c.req.valid("json"),
+        ),
+        200,
+      ),
+  )
+  .openapi(
+    createRoute({
+      method: "post",
+      operationId: "finalizeProjectDocumentAsset",
+      path: "/project/{projectId}/draft-upload/finalize",
+      tags,
+      summary: "Finalize a staged upload for a project page",
+      middleware: [...projectUpload],
+      request: {
+        params: projectParams,
+        body: json(finalizeStagedImageUploadBody),
+      },
+      responses: {
+        200: jsonResponse("Staged attachment", finalizedAssetSchema),
+        503: errorResponse("Storage unavailable"),
+        ...errors,
+      },
+    }),
+    async (c) => {
+      const asset = await finalizeStagedTaskAsset(
+        c.get("authorizedProjectId"),
+        c.get("userId"),
+        c.req.valid("json"),
+      );
+      const base = normalizeApiServerUrl(
+        process.env.KANEO_API_URL || new URL(c.req.url).origin,
+      );
+      return c.json({ id: asset.id, url: `${base}/asset/${asset.id}` }, 200);
+    },
   )
   .openapi(
     createRoute({
@@ -101,7 +184,7 @@ const projectDocument = apiRouter()
       path: "/project/{projectId}",
       tags,
       summary: "Create a project page",
-      middleware: [...projectWrite],
+      middleware: [...projectCreate],
       request: {
         params: projectParams,
         body: json(createProjectDocumentBody),

@@ -4417,7 +4417,7 @@
           },
           "featureId": {
             "type": "string",
-            "description": "The Feature a document result belongs to; open it with `featureTab=documents` and `featureDocumentId`."
+            "description": "The Feature a Feature document result belongs to; open it with `featureTab=documents` and `featureDocumentId`. Absent for project pages, which open on the project's home page with `tab=documents` and `documentId`."
           },
           "featureTitle": {
             "type": "string",
@@ -6682,6 +6682,9 @@
           "deleteProjects": {
             "type": "boolean"
           },
+          "editProjectDetails": {
+            "type": "boolean"
+          },
           "updateTasks": {
             "type": "boolean"
           },
@@ -6724,6 +6727,18 @@
           "deleteMilestones": {
             "type": "boolean"
           },
+          "readDocuments": {
+            "type": "boolean"
+          },
+          "createDocuments": {
+            "type": "boolean"
+          },
+          "updateDocuments": {
+            "type": "boolean"
+          },
+          "deleteDocuments": {
+            "type": "boolean"
+          },
           "createLabels": {
             "type": "boolean"
           },
@@ -6761,6 +6776,7 @@
           "updateProjects",
           "shareProjects",
           "deleteProjects",
+          "editProjectDetails",
           "updateTasks",
           "createTasks",
           "deleteTasks",
@@ -6775,6 +6791,10 @@
           "createMilestones",
           "updateMilestones",
           "deleteMilestones",
+          "readDocuments",
+          "createDocuments",
+          "updateDocuments",
+          "deleteDocuments",
           "createLabels",
           "updateLabels",
           "deleteLabels",
@@ -11844,6 +11864,103 @@
           },
           "404": {
             "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project/{id}/details": {
+      "patch": {
+        "operationId": "updateProjectDetails",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Update project name and description",
+        "description": "Change a project's name, description, or both. Needs project:edit_details, which covers nothing else about the project.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 10000
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project or missing project:edit_details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -25557,7 +25674,7 @@
           "Project documents"
         ],
         "summary": "List a project's documents",
-        "description": "Returns the project's page tree and the documents of every active Feature in the project, without bodies. Pages are ordered by position within their parent; Feature documents are newest first.",
+        "description": "Returns the project's page tree and the documents of every active Feature in the project, without bodies. Pages are ordered by position within their parent; Feature documents are newest first. Needs document:read; Feature documents are listed only with feature:read.",
         "parameters": [
           {
             "schema": {
@@ -25777,6 +25894,288 @@
           },
           "429": {
             "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-document/project/{projectId}/draft-upload": {
+      "post": {
+        "operationId": "stageProjectDocumentAsset",
+        "tags": [
+          "Project documents"
+        ],
+        "summary": "Stage an upload for a project page",
+        "description": "Upload an attachment before the page save that references it. Staged assets are private to the uploader and expire after 24 hours unless a save claims them.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string"
+                  },
+                  "contentType": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "number"
+                  },
+                  "surface": {
+                    "type": "string",
+                    "enum": [
+                      "description"
+                    ]
+                  }
+                },
+                "required": [
+                  "filename",
+                  "contentType",
+                  "size",
+                  "surface"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned upload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskImageUpload"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or page not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/project-document/project/{projectId}/draft-upload/finalize": {
+      "post": {
+        "operationId": "finalizeProjectDocumentAsset",
+        "tags": [
+          "Project documents"
+        ],
+        "summary": "Finalize a staged upload for a project page",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "The key returned when the URL was issued."
+                  },
+                  "filename": {
+                    "type": "string"
+                  },
+                  "contentType": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "number"
+                  },
+                  "surface": {
+                    "type": "string",
+                    "enum": [
+                      "description"
+                    ]
+                  }
+                },
+                "required": [
+                  "key",
+                  "filename",
+                  "contentType",
+                  "size",
+                  "surface"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Staged attachment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskImageAsset"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project or page not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           }
         }
       }
@@ -29015,7 +29414,7 @@
           "Search"
         ],
         "summary": "Global search",
-        "description": "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, and Feature documents in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`. Comment and activity results carry the `taskId` and `taskType` of the item they belong to.",
+        "description": "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, Feature documents and project pages in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`. Comment and activity results carry the `taskId` and `taskType` of the item they belong to. Project pages are `document` results without a `featureId`, included only with document:read.",
         "parameters": [
           {
             "schema": {

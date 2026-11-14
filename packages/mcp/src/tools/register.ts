@@ -951,7 +951,7 @@ export function registerTools(
     "search",
     {
       description:
-        "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, and Feature documents. Features come back as `feature` results, with `archived` and no status or priority. Comment and activity results carry the `taskId` and `taskType` of the item they belong to.",
+        "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, Feature documents and project pages. Features come back as `feature` results, with `archived` and no status or priority. Comment and activity results carry the `taskId` and `taskType` of the item they belong to. Documents with a `featureId` belong to that Feature; documents without one are project pages.",
       inputSchema: z.object({
         q: nonEmptyString.describe("Search query"),
         type: z

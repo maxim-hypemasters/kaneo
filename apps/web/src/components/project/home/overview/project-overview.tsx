@@ -15,9 +15,14 @@ export function ProjectOverview({
   workspaceId: string;
 }) {
   const { t } = useTranslation();
-  const { canUpdateProjects } = useWorkspacePermission();
-  const canEdit = canUpdateProjects();
-  const { form } = useProjectAutosave({ project, workspaceId, canEdit });
+  const { canEditProjectDetails } = useWorkspacePermission();
+  const canEdit = canEditProjectDetails();
+  const { form } = useProjectAutosave({
+    project,
+    workspaceId,
+    canEdit,
+    detailsOnly: true,
+  });
   const name = useWatch({ control: form.control, name: "name" });
   const description = useWatch({ control: form.control, name: "description" });
   const nameError = form.formState.errors.name?.message;

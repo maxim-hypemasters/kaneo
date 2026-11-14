@@ -26,6 +26,13 @@ export const updateProjectBody = z.object({
   isPublic: z.boolean(),
 });
 
+export const updateProjectDetailsBody = z
+  .object({
+    name: z.string().trim().min(1).max(255).optional(),
+    description: z.string().max(10_000).optional(),
+  })
+  .strict();
+
 export const reorderProjectsBody = z.object({
   // Positions express a relative order only; the controller renumbers the
   // workspace to 0..n-1, so the values just have to be sane.

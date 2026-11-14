@@ -29,6 +29,7 @@ export function DocumentTree({
   pages,
   expanded,
   selectedId,
+  canCreate,
   canEdit,
   canDelete,
   onToggle,
@@ -41,6 +42,7 @@ export function DocumentTree({
   pages: readonly TreePage[];
   expanded: ReadonlySet<string>;
   selectedId?: string;
+  canCreate: boolean;
   canEdit: boolean;
   canDelete: boolean;
   onToggle: (id: string) => void;
@@ -131,6 +133,7 @@ export function DocumentTree({
               hasChildren={row.hasChildren}
               expanded={expanded.has(row.page.id)}
               selected={row.page.id === selectedId}
+              canCreate={canCreate}
               canEdit={canEdit}
               canDelete={canDelete}
               onToggle={() => onToggle(row.page.id)}

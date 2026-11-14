@@ -11,6 +11,7 @@ import {
   normalizeProjectValues,
   type ProjectFormValues,
 } from "@/components/settings/project-general/project-form-values";
+import updateProjectDetails from "@/fetchers/project/update-project-details";
 import useUpdateProject from "@/hooks/mutations/project/use-update-project";
 import { toast } from "@/lib/toast";
 import type { Project } from "@/types/project";
@@ -26,12 +27,16 @@ type UseProjectAutosaveOptions = {
     | undefined;
   workspaceId: string | undefined;
   canEdit: boolean;
+  // Saves only the name and description, which project:edit_details allows,
+  // instead of replacing the whole project.
+  detailsOnly?: boolean;
 };
 
 export function useProjectAutosave({
   project,
   workspaceId,
   canEdit,
+  detailsOnly = false,
 }: UseProjectAutosaveOptions) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -97,18 +102,27 @@ export function useProjectAutosave({
         let succeeded = false;
 
         try {
-          await updateProject({
-            id: project.id,
-            name: changes.name ? normalizedData.name : project.name,
-            slug: changes.slug ? normalizedData.slug : project.slug,
-            description: changes.description
-              ? normalizedData.description
-              : (project.description ?? ""),
-            icon: changes.icon
-              ? normalizedData.icon
-              : (project.icon ?? "Layout"),
-            isPublic: !!project.isPublic,
-          });
+          if (detailsOnly)
+            await updateProjectDetails({
+              id: project.id,
+              ...(changes.name ? { name: normalizedData.name } : {}),
+              ...(changes.description
+                ? { description: normalizedData.description }
+                : {}),
+            });
+          else
+            await updateProject({
+              id: project.id,
+              name: changes.name ? normalizedData.name : project.name,
+              slug: changes.slug ? normalizedData.slug : project.slug,
+              description: changes.description
+                ? normalizedData.description
+                : (project.description ?? ""),
+              icon: changes.icon
+                ? normalizedData.icon
+                : (project.icon ?? "Layout"),
+              isPublic: !!project.isPublic,
+            });
 
           form.reset(normalizedData, { keepDirty: false });
           lastSavedRef.current = normalizedData;
@@ -161,6 +175,7 @@ export function useProjectAutosave({
       project?.slug,
       project?.description,
       project?.icon,
+      detailsOnly,
       updateProject,
       queryClient,
       workspaceId,

@@ -5,6 +5,7 @@ import PageTitle from "@/components/page-title";
 import { WorkspaceQueryState } from "@/components/task/features/workspace/workspace-query-state";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import useGetProject from "@/hooks/queries/project/use-get-project";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import {
   type OpenDocument,
   ProjectDocuments,
@@ -31,6 +32,8 @@ export function ProjectHomePage({
 }) {
   const { t } = useTranslation();
   const project = useGetProject({ id: projectId, workspaceId });
+  const { canReadDocuments, isCheckingPermissions } = useWorkspacePermission();
+  const showDocuments = canReadDocuments() || isCheckingPermissions;
 
   return (
     <DocumentDraftGuardProvider key={projectId}>
@@ -53,9 +56,11 @@ export function ProjectHomePage({
               <TabsTab value="overview" className={TAB_CLASS}>
                 {t("tasks:projectHome.tabs.overview")}
               </TabsTab>
-              <TabsTab value="documents" className={TAB_CLASS}>
-                {t("tasks:projectHome.tabs.documents")}
-              </TabsTab>
+              {showDocuments && (
+                <TabsTab value="documents" className={TAB_CLASS}>
+                  {t("tasks:projectHome.tabs.documents")}
+                </TabsTab>
+              )}
             </TabsList>
           }
         >
@@ -86,14 +91,19 @@ export function ProjectHomePage({
             value="documents"
             className="h-full min-h-0 overflow-y-auto bg-card"
           >
-            {tab === "documents" && (
-              <ProjectDocuments
-                workspaceId={workspaceId}
-                projectId={projectId}
-                openDocument={openDocument}
-                onOpenDocument={onOpenDocument}
-              />
-            )}
+            {tab === "documents" &&
+              (canReadDocuments() ? (
+                <ProjectDocuments
+                  workspaceId={workspaceId}
+                  projectId={projectId}
+                  openDocument={openDocument}
+                  onOpenDocument={onOpenDocument}
+                />
+              ) : isCheckingPermissions ? null : (
+                <p className="mx-auto w-full max-w-225 px-4 pt-8 text-muted-foreground text-sm sm:px-12 sm:pt-14">
+                  {t("tasks:projectHome.documents.noAccess")}
+                </p>
+              ))}
           </TabsPanel>
         </ProjectLayout>
       </Tabs>

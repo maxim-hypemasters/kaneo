@@ -8,11 +8,14 @@ import {
 
 export const statement = {
   ...defaultStatements,
-  project: ["create", "read", "update", "delete", "share"],
+  // edit_details: rename a project and edit its description, nothing else.
+  project: ["create", "read", "update", "delete", "share", "edit_details"],
   task: ["create", "read", "update", "delete", "assign"],
   bug: ["create", "read", "update", "delete"],
   feature: ["create", "read", "update", "delete"],
   milestone: ["create", "read", "update", "delete"],
+  // A project's own pages; Feature documents follow `feature`.
+  document: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "delete", "manage_settings"],
 } as const;
@@ -26,6 +29,7 @@ export const viewer = ac.newRole({
   bug: ["read"],
   feature: ["read"],
   milestone: ["read"],
+  document: ["read"],
   label: ["read"],
   workspace: ["read"],
 });
@@ -37,28 +41,31 @@ export const member = ac.newRole({
   bug: ["create", "read", "update"],
   feature: ["create", "read", "update"],
   milestone: ["create", "read", "update"],
+  document: ["create", "read", "update"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read"],
 });
 
 export const admin = ac.newRole({
   ...adminAc.statements,
-  project: ["create", "read", "update", "delete", "share"],
+  project: ["create", "read", "update", "delete", "share", "edit_details"],
   task: ["create", "read", "update", "delete", "assign"],
   bug: ["create", "read", "update", "delete"],
   feature: ["create", "read", "update", "delete"],
   milestone: ["create", "read", "update", "delete"],
+  document: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "manage_settings"],
 });
 
 export const owner = ac.newRole({
   ...ownerAc.statements,
-  project: ["create", "read", "update", "delete", "share"],
+  project: ["create", "read", "update", "delete", "share", "edit_details"],
   task: ["create", "read", "update", "delete", "assign"],
   bug: ["create", "read", "update", "delete"],
   feature: ["create", "read", "update", "delete"],
   milestone: ["create", "read", "update", "delete"],
+  document: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "delete", "manage_settings"],
 });

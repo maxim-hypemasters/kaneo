@@ -71,6 +71,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   bug: "Bugs",
   feature: "Features",
   milestone: "Milestones",
+  document: "Project documents",
   label: "Labels",
   workspace: "Workspace",
 };
@@ -156,6 +157,11 @@ const PERMISSION_LABELS: Record<
     label: "Share projects",
     description: "Make projects publicly accessible via share links.",
   },
+  "project:edit_details": {
+    label: "Edit project name and description",
+    description:
+      "Rename projects and edit their descriptions from the project home page.",
+  },
   "task:create": {
     label: "Create tasks",
     description: "Create new tasks in any project.",
@@ -217,6 +223,22 @@ const PERMISSION_LABELS: Record<
   "milestone:delete": {
     label: "Delete milestones",
     description: "Permanently delete milestones.",
+  },
+  "document:create": {
+    label: "Create project pages",
+    description: "Add pages and sub-pages to a project's Documents.",
+  },
+  "document:read": {
+    label: "View project pages",
+    description: "Open a project's pages and find them in search.",
+  },
+  "document:update": {
+    label: "Edit project pages",
+    description: "Edit, rename, upload to and move project pages.",
+  },
+  "document:delete": {
+    label: "Delete project pages",
+    description: "Delete project pages together with their sub-pages.",
   },
   "label:create": {
     label: "Create labels",

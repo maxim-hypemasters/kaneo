@@ -17493,6 +17493,9 @@
 								},
 								"openFeature": {
 									"type": "string"
+								},
+								"noAccess": {
+									"type": "string"
 								}
 							},
 							"required": [
@@ -17518,7 +17521,8 @@
 								"moveDialogDescription",
 								"moveDestination",
 								"topLevel",
-								"openFeature"
+								"openFeature",
+								"noAccess"
 							]
 						}
 					},
