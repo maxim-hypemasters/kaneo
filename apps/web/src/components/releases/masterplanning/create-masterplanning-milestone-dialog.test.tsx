@@ -35,9 +35,23 @@ const m = vi.hoisted(() => ({
   refetch: vi.fn(),
   query: vi.fn(),
   dialog: vi.fn(),
+  canCreate: false,
+  creating: false,
+  create: vi.fn(),
+  toastError: vi.fn(),
 }));
 
 vi.mock("@/lib/i18n", () => ({ i18n: { t: (key: string) => key } }));
+vi.mock("@/lib/toast", () => ({ toast: { error: m.toastError } }));
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({
+    canWorkItem: (type: string, action: string) =>
+      m.canCreate && type === "feature" && action === "create",
+  }),
+}));
+vi.mock("@/hooks/mutations/task/use-create-task", () => ({
+  default: () => ({ mutate: m.create, isPending: m.creating }),
+}));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -104,8 +118,22 @@ beforeEach(() => {
   m.error = false;
   m.failure = null;
   m.fetching = false;
+  m.canCreate = false;
+  m.creating = false;
 });
 afterEach(cleanup);
+
+function search(value: string) {
+  fireEvent.change(
+    screen.getByPlaceholderText("common:modals.createTask.searchFeatures"),
+    { target: { value } },
+  );
+}
+
+const createOption = () =>
+  screen.queryByRole("option", {
+    name: "common:modals.createTask.createFeature",
+  });
 
 function view(
   initialReleaseId: string | null = "r1",
@@ -254,6 +282,113 @@ describe("Masterplanning milestone creation", () => {
     fireEvent.click(screen.getByRole("option", { name: "Feature one" }));
     expect(m.dialog).toHaveBeenCalledWith(
       expect.objectContaining({ initialReleaseId: null }),
+    );
+  });
+
+  describe("creating a Feature from the search", () => {
+    beforeEach(() => {
+      m.canCreate = true;
+    });
+
+    it("creates the typed Feature and continues to the milestone form", () => {
+      m.create.mockImplementation(
+        (_: unknown, callbacks: { onSuccess: (created: unknown) => void }) =>
+          callbacks.onSuccess({ id: "new", title: "Brand new" }),
+      );
+      render(view("r1"));
+      expect(
+        screen.getByText("tasks:releases.masterplanning.chooseOrCreateFeature"),
+      ).toBeInTheDocument();
+      search("  Brand new ");
+      fireEvent.click(createOption() as HTMLElement);
+      expect(m.create).toHaveBeenCalledWith(
+        {
+          title: "Brand new",
+          description: "",
+          projectId: "p",
+          type: "feature",
+        },
+        expect.anything(),
+      );
+      expect(m.dialog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: "p",
+          featureId: "new",
+          featureName: "Brand new",
+          initialReleaseId: "r1",
+        }),
+      );
+    });
+
+    it("offers creation next to partial matches but not for a taken title", async () => {
+      render(view());
+      search("Feature");
+      await waitFor(() => expect(createOption()).toBeInTheDocument());
+      expect(
+        screen.getAllByRole("option").map((option) => option.textContent),
+      ).toEqual([
+        "Feature one",
+        "Other Feature",
+        "common:modals.createTask.createFeature",
+      ]);
+      search("feature ONE");
+      await waitFor(() => expect(createOption()).not.toBeInTheDocument());
+      expect(screen.getByRole("option")).toHaveTextContent("Feature one");
+    });
+
+    it("lets the project's first Feature be created", async () => {
+      m.data = [];
+      render(view());
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "tasks:releases.masterplanning.noFeaturesCreate",
+      );
+      search("First");
+      await waitFor(() => expect(createOption()).toBeInTheDocument());
+      expect(
+        screen.queryByText("tasks:releases.masterplanning.noFeaturesCreate"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows progress while creating", () => {
+      m.creating = true;
+      render(view());
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "tasks:releases.masterplanning.creatingFeature",
+      );
+      expect(screen.queryByRole("option")).not.toBeInTheDocument();
+    });
+
+    it("keeps the search open when creation fails", () => {
+      m.create.mockImplementation(
+        (_: unknown, callbacks: { onError: () => void }) => callbacks.onError(),
+      );
+      render(view());
+      search("Brand new");
+      fireEvent.click(createOption() as HTMLElement);
+      expect(m.toastError).toHaveBeenCalledWith(
+        "common:modals.createTask.createFeatureError",
+      );
+      expect(m.dialog).not.toHaveBeenCalled();
+      expect(createOption()).toBeInTheDocument();
+    });
+
+    it("isn't offered while Features can't be loaded", () => {
+      m.data = undefined;
+      m.error = true;
+      render(view());
+      search("Brand new");
+      expect(createOption()).not.toBeInTheDocument();
+      expect(screen.getByRole("alert")).toBeInTheDocument();
+    });
+  });
+
+  it("doesn't offer creation without permission to create Features", () => {
+    m.data = [];
+    render(view());
+    search("Brand new");
+    expect(createOption()).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "tasks:releases.masterplanning.noFeatures",
     );
   });
 
