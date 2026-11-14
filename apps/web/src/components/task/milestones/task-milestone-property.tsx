@@ -12,7 +12,7 @@ export function TaskMilestoneProperty({
   className?: string;
 }) {
   const { t } = useTranslation();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
   const mutation = useSetTaskMilestone(task.projectId, task.featureId ?? "");
   if (task.type === "feature" || !task.featureId) return null;
   return (
@@ -21,7 +21,7 @@ export function TaskMilestoneProperty({
       featureId={task.featureId}
       value={task.milestoneId ?? null}
       className={className}
-      disabled={!canUpdateTasks() || mutation.isPending}
+      disabled={!canWorkItem(task.type, "update") || mutation.isPending}
       onChange={(id) => {
         void mutation
           .mutateAsync({ id: task.id, milestoneId: id })

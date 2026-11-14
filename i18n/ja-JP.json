@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "説明",
-			"toolbar": "ドキュメントの書式設定",
 			"paragraph": "Text",
 			"heading1": "見出し 1",
 			"heading2": "見出し 2",
@@ -227,8 +226,6 @@
 			"image": "画像",
 			"file": "ファイル",
 			"embed": "埋め込む",
-			"undo": "元に戻す",
-			"redo": "やり直す",
 			"expand": "ドキュメントを拡大",
 			"collapse": "説明に戻る",
 			"uploading": "ファイルをアップロード中…",
@@ -988,7 +985,10 @@
 				"member": "Members",
 				"invitation": "Invitations",
 				"team": "Teams",
-				"ac": "Roles and permissions"
+				"ac": "Roles and permissions",
+				"bug": "Bugs",
+				"feature": "Features",
+				"milestone": "Milestones"
 			},
 			"permissions": {
 				"project": {
@@ -1135,6 +1135,60 @@
 					"delete": {
 						"label": "Delete roles",
 						"description": "Delete custom workspace roles."
+					}
+				},
+				"bug": {
+					"create": {
+						"description": "Can report bugs",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete bugs",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view bugs",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit bugs",
+						"label": "Update"
+					}
+				},
+				"feature": {
+					"create": {
+						"description": "Can create features",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete features and their documents",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view feature pages and the feature library",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit features, their documents and updates",
+						"label": "Update"
+					}
+				},
+				"milestone": {
+					"create": {
+						"description": "Can create milestones",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete milestones",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view milestones",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit, reorder and schedule milestones",
+						"label": "Update"
 					}
 				}
 			},

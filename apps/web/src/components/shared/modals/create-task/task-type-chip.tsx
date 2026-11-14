@@ -16,9 +16,16 @@ type TaskTypeChipProps = {
   value: TaskType;
   onChange: (type: TaskType) => void;
   disabled?: boolean;
+  // Kinds the role may create; defaults to all.
+  types?: readonly TaskType[];
 };
 
-export function TaskTypeChip({ value, onChange, disabled }: TaskTypeChipProps) {
+export function TaskTypeChip({
+  value,
+  onChange,
+  disabled,
+  types = TASK_TYPES,
+}: TaskTypeChipProps) {
   const { t } = useTranslation();
   const labels = {
     task: "common:modals.createTask.typeTask",
@@ -50,7 +57,7 @@ export function TaskTypeChip({ value, onChange, disabled }: TaskTypeChipProps) {
               if (!disabled) onChange(next as TaskType);
             }}
           >
-            {TASK_TYPES.map((type) => (
+            {types.map((type) => (
               <MenuRadioItem
                 key={type}
                 value={type}

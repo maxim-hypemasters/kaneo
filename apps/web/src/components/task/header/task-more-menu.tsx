@@ -25,11 +25,16 @@ import type { useTaskCopyActions } from "./use-task-copy-actions";
 type TaskMoreMenuProps = {
   actions: ReturnType<typeof useTaskCopyActions>;
   deleteHandle: AlertDialogPrimitive.Handle<unknown>;
+  taskType?: string;
 };
 
-export function TaskMoreMenu({ actions, deleteHandle }: TaskMoreMenuProps) {
+export function TaskMoreMenu({
+  actions,
+  deleteHandle,
+  taskType,
+}: TaskMoreMenuProps) {
   const { t } = useTranslation();
-  const { canDeleteTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
 
   return (
     <Menu>
@@ -77,7 +82,7 @@ export function TaskMoreMenu({ actions, deleteHandle }: TaskMoreMenuProps) {
             <ShortcutKeys id="copyAsMarkdown" tone="muted" />
           </MenuShortcut>
         </MenuItem>
-        {canDeleteTasks() && (
+        {canWorkItem(taskType, "delete") && (
           <>
             <MenuSeparator />
             <MenuItem

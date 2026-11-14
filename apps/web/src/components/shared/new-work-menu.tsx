@@ -2,6 +2,7 @@ import { ChevronDown, Diamond, Link, Plus } from "lucide-react";
 import { type ReactElement, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import {
   Menu,
@@ -40,7 +41,9 @@ export function NewWorkMenu({
   align = "end",
 }: NewWorkMenuProps) {
   const { t } = useTranslation();
+  const { canWorkItem } = useWorkspacePermission();
   const selected = useRef(false);
+  const options = OPTIONS.filter(({ type }) => canWorkItem(type, "create"));
 
   return (
     <Menu
@@ -72,7 +75,7 @@ export function NewWorkMenu({
         finalFocus={() => !selected.current}
       >
         {onSelect &&
-          OPTIONS.map(({ type, label }) => (
+          options.map(({ type, label }) => (
             <MenuItem
               key={type}
               onClick={() => {
@@ -84,7 +87,7 @@ export function NewWorkMenu({
               {t(label)}
             </MenuItem>
           ))}
-        {onSelect && onLink && <MenuSeparator />}
+        {onSelect && options.length > 0 && onLink && <MenuSeparator />}
         {onLink && (
           <>
             <MenuItem

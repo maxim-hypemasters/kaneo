@@ -35,7 +35,7 @@ export function MilestonePlanningFields({
   const permission = useWorkspacePermission();
   const releases = useGetReleases(projectId);
   const members = useGetProjectMembers({ projectId, workspaceId });
-  const canEdit = permission.canUpdateTasks() && !pending;
+  const canEdit = permission.canUpdateMilestones() && !pending;
   const lead = members.data?.find((m) => m.id === milestone.leadId);
   const release = releases.data?.find((r) => r.id === milestone.releaseId);
   return (

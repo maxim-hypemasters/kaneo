@@ -44,7 +44,10 @@ vi.mock("@/hooks/use-project-websocket", () => ({
   useProjectWebSocket: () => undefined,
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canCreateTasks: () => project.canCreate }),
+  useWorkspacePermission: () => ({
+    canCreateWorkItems: () => project.canCreate,
+    canWorkItem: () => project.canCreate,
+  }),
 }));
 vi.mock("@/components/common/layout", () => {
   const Layout = ({ children }: { children: ReactNode }) => <>{children}</>;

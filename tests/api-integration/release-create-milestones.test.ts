@@ -491,11 +491,12 @@ describe("release milestone creation permissions", () => {
   for (const authentication of ["custom-role", "api-key"] as const) {
     it.each([
       [{ project: ["update"] }, 403],
-      [{ project: ["update"], task: ["read"] }, 403],
-      [{ project: ["update"], task: ["update"] }, 200],
-      [{ task: ["update"] }, 403],
+      [{ project: ["update"], milestone: ["read"] }, 403],
+      [{ project: ["update"], task: ["update"] }, 403],
+      [{ project: ["update"], milestone: ["update"] }, 200],
+      [{ milestone: ["update"] }, 403],
     ] as [Record<string, string[]>, number][])(
-      `${authentication} requires project:update and task:update %j`,
+      `${authentication} requires project:update and milestone:update %j`,
       async (permissions, status) => {
         const ctx = await setup(
           authentication === "custom-role" ? "release_composer" : "owner",
@@ -534,7 +535,7 @@ describe("release milestone creation permissions", () => {
     );
   }
 
-  it("does not require task:update for omitted or empty selections", async () => {
+  it("does not require milestone:update for omitted or empty selections", async () => {
     const ctx = await setup("release_only");
     await db.insert(schema.workspaceRoleTable).values({
       workspaceId: ctx.workspace.id,

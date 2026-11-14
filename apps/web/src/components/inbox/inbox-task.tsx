@@ -41,7 +41,7 @@ export function InboxTask({ taskId, workspaceId }: InboxTaskProps) {
   const statusColumn =
     columns.find((column) => column.id === task?.columnId) ??
     (slugColumns.length === 1 ? slugColumns[0] : undefined);
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
   const navigate = useNavigate();
   const openWorkspaceId = task?.workspaceId || workspaceId;
   useShortcut(
@@ -136,7 +136,7 @@ export function InboxTask({ taskId, workspaceId }: InboxTaskProps) {
       </div>
 
       <InboxRecentActivity query={activityQuery}>
-        {canUpdateTasks() && (
+        {canWorkItem(task?.type, "update") && (
           <CommentInput taskId={taskId} projectId={task?.projectId} />
         )}
       </InboxRecentActivity>

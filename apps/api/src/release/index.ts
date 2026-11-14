@@ -101,6 +101,13 @@ const getReleaseProgressRoute = createRoute({
   },
 });
 
+// Moving work in or out of a release touches tasks, bugs and milestones.
+const RELEASE_WORK_UPDATE = {
+  task: ["update"],
+  bug: ["update"],
+  milestone: ["update"],
+};
+
 const getReleaseMilestonesRoute = createRoute({
   method: "get",
   operationId: "getReleaseMilestones",
@@ -111,7 +118,7 @@ const getReleaseMilestonesRoute = createRoute({
     "Ordered metadata for explicitly assigned milestones and Features referenced by the release's nonarchived Tasks/Bugs. Includes empty milestones. Dates cover all linked nonarchived scheduled work in the requested timezone; displayed release progress remains release-scoped.",
   middleware: [
     workspaceAccess.fromRelease("id"),
-    requireWorkspacePermission({ task: ["read"] }),
+    requireWorkspacePermission({ milestone: ["read"] }),
   ] as const,
   request: { params: releaseParam, query: milestoneScheduleQuery },
   responses: {
@@ -121,7 +128,7 @@ const getReleaseMilestonesRoute = createRoute({
     ),
     400: errorResponse("Invalid timezone"),
     403: errorResponse(
-      "No access to the release's project or missing task:read permission",
+      "No access to the release's project or missing milestone:read permission",
     ),
     404: errorResponse("Release not found"),
     409: errorResponse(
@@ -141,7 +148,11 @@ const getReleaseLinkCandidatesRoute = createRoute({
     "Paginated same-project candidates not explicitly assigned to this release. Task candidates include nonarchived Tasks and Bugs, including completed work. Milestone candidates include empty milestones and milestones owned by archived Features. Search matches task titles or identifiers, or milestone titles and owning Feature titles. Linking through the existing assignment endpoints moves membership from the current release; milestone follower rules remain in effect.",
   middleware: [
     workspaceAccess.fromRelease("id"),
-    requireWorkspacePermission({ task: ["read"] }),
+    requireWorkspacePermission({
+      task: ["read"],
+      bug: ["read"],
+      milestone: ["read"],
+    }),
   ] as const,
   request: { params: releaseParam, query: releaseLinkCandidatesQuery },
   responses: {
@@ -150,7 +161,9 @@ const getReleaseLinkCandidatesRoute = createRoute({
       releaseLinkCandidatesSchema,
     ),
     400: errorResponse("Invalid candidate kind, search or pagination"),
-    403: errorResponse("No project access or missing task:read permission"),
+    403: errorResponse(
+      "No project access or missing task:read, bug:read or milestone:read permission",
+    ),
     404: errorResponse("Release not found"),
     409: errorResponse(
       "Release project or workspace changed; retry the request",
@@ -169,7 +182,7 @@ const getReleaseMilestoneLinkCandidatesRoute = createRoute({
     "Paginated milestones with No release in this project, including empty and completed milestones and those owned by archived Features. Search matches milestone and owning Feature titles. Returns compact identity metadata without progress or schedule calculations.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["read"] }),
+    requireWorkspacePermission({ milestone: ["read"] }),
   ] as const,
   request: {
     params: projectIdParam,
@@ -181,7 +194,9 @@ const getReleaseMilestoneLinkCandidatesRoute = createRoute({
       releaseMilestoneLinkCandidatesSchema,
     ),
     400: errorResponse("Invalid search or pagination"),
-    403: errorResponse("No project access or missing task:read permission"),
+    403: errorResponse(
+      "No project access or missing milestone:read permission",
+    ),
     404: errorResponse("Project not found"),
     409: errorResponse("Project workspace changed; retry the request"),
     503: errorResponse("Candidate request timed out"),
@@ -196,7 +211,7 @@ const requireReleaseMilestoneUpdatePermission = async (
   if (body && typeof body === "object" && !Array.isArray(body)) {
     const ids = (body as { milestoneIds?: unknown }).milestoneIds;
     if (Array.isArray(ids) && ids.length > 0)
-      return requireWorkspacePermission({ task: ["update"] })(c, next);
+      return requireWorkspacePermission({ milestone: ["update"] })(c, next);
   }
   return next();
 };
@@ -208,7 +223,7 @@ const createReleaseRoute = createRoute({
   tags: ["Releases"],
   summary: "Create release",
   description:
-    "Add a release to a project, optionally linking up to 100 milestones currently set to No release in one atomic transaction. Linked work with No release follows its milestone; explicit task releases remain. Selected milestones additionally require task:update. The name must be unique in the project, and dates must run start ≤ code freeze ≤ submission.",
+    "Add a release to a project, optionally linking up to 100 milestones currently set to No release in one atomic transaction. Linked work with No release follows its milestone; explicit task releases remain. Selected milestones additionally require milestone:update. The name must be unique in the project, and dates must run start ≤ code freeze ≤ submission.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
     requireWorkspacePermission({ project: ["update"] }),
@@ -227,7 +242,7 @@ const createReleaseRoute = createRoute({
     400: errorResponse("Invalid body, or dates out of order"),
     402: errorResponse("Workspace plan has expired"),
     403: errorResponse(
-      "No project access, missing project:update, or selected milestones without task:update permission",
+      "No project access, missing project:update, or selected milestones without milestone:update permission",
     ),
     404: errorResponse("Project not found"),
     409: errorResponse(
@@ -278,13 +293,16 @@ const deleteReleaseRoute = createRoute({
     "Delete a release. Its features and tasks stay in the project, out of every release, and each records the change in its activity.",
   middleware: [
     workspaceAccess.fromRelease("id"),
-    requireWorkspacePermission({ project: ["update"], task: ["update"] }),
+    requireWorkspacePermission({
+      project: ["update"],
+      ...RELEASE_WORK_UPDATE,
+    }),
   ] as const,
   request: { params: releaseParam },
   responses: {
     200: jsonResponse("The deleted release's id", deletedReleaseSchema),
     403: errorResponse(
-      "No access to the release's project, or missing project:update or task:update permission",
+      "No access to the release's project, or missing project:update, or task:update, bug:update or milestone:update permission",
     ),
     404: errorResponse("Release not found"),
     409: errorResponse(
@@ -303,7 +321,7 @@ const moveUnfinishedRoute = createRoute({
     "Move the release's unfinished tasks and features (neither archived nor in a final column; planned ones count) to another release of the project, or out of every release with null. Each item moves on its own: a feature's tasks don't follow it, and finished items stay.",
   middleware: [
     workspaceAccess.fromRelease("id"),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkspacePermission(RELEASE_WORK_UPDATE),
     requireEntitlement,
   ] as const,
   request: {
@@ -318,7 +336,7 @@ const moveUnfinishedRoute = createRoute({
     400: errorResponse("Invalid body, or the target is this release"),
     402: errorResponse("Workspace plan has expired"),
     403: errorResponse(
-      "No access to the release's project, or missing task:update permission",
+      "No access to the release's project, or missing task:update, bug:update or milestone:update permission",
     ),
     404: errorResponse(
       "Release not found, or the target isn't a release of its project",

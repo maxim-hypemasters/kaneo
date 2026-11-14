@@ -60,7 +60,10 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
   useUpdateTask: () => ({ mutate: vi.fn() }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canCreateTasks: () => true }),
+  useWorkspacePermission: () => ({
+    canCreateWorkItems: () => true,
+    canWorkItem: () => true,
+  }),
 }));
 vi.mock("../shared/modals/create-task-modal", () => ({
   default: ({

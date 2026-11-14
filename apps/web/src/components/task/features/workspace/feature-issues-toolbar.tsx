@@ -17,7 +17,7 @@ export function FeatureIssuesToolbar({
   search,
   archived,
   selectedCount,
-  canCreate,
+  createTypes,
   canEdit,
   onSearch,
   onArchived,
@@ -28,7 +28,8 @@ export function FeatureIssuesToolbar({
   search: string;
   archived: boolean;
   selectedCount: number;
-  canCreate: boolean;
+  // Kinds of work the role may create here.
+  createTypes: readonly ("task" | "bug")[];
   canEdit: boolean;
   onSearch: (search: string) => void;
   onArchived: (include: boolean) => void;
@@ -38,6 +39,7 @@ export function FeatureIssuesToolbar({
 }) {
   const { t } = useTranslation();
   const selectedAction = useRef(false);
+  const canCreate = createTypes.length > 0;
   return (
     <>
       <div className="flex flex-wrap items-center gap-2">
@@ -66,28 +68,22 @@ export function FeatureIssuesToolbar({
               className="w-64"
               finalFocus={() => !selectedAction.current}
             >
-              {canCreate && (
-                <>
-                  <MenuItem
-                    onClick={() => {
-                      selectedAction.current = true;
-                      onCreate("task");
-                    }}
-                  >
-                    <TaskTypeGlyph type="task" decorative />
-                    {t("tasks:createMenu.newTask")}
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      selectedAction.current = true;
-                      onCreate("bug");
-                    }}
-                  >
-                    <TaskTypeGlyph type="bug" decorative />
-                    {t("tasks:createMenu.newBug")}
-                  </MenuItem>
-                </>
-              )}
+              {createTypes.map((type) => (
+                <MenuItem
+                  key={type}
+                  onClick={() => {
+                    selectedAction.current = true;
+                    onCreate(type);
+                  }}
+                >
+                  <TaskTypeGlyph type={type} decorative />
+                  {t(
+                    type === "task"
+                      ? "tasks:createMenu.newTask"
+                      : "tasks:createMenu.newBug",
+                  )}
+                </MenuItem>
+              ))}
               {canCreate && canEdit && <MenuSeparator />}
               {canEdit && (
                 <MenuItem

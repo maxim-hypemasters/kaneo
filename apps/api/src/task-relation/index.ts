@@ -11,6 +11,7 @@ import {
   jsonResponse,
 } from "../openapi";
 import { assertProjectAccess } from "../project-access/assert-project-access";
+import { requireWorkItemPermission } from "../utils/require-work-item-permission";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
 import { validateWorkspaceAccess } from "../utils/validate-workspace-access";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
@@ -37,6 +38,7 @@ async function scopeOfTask(taskId: string) {
     .select({
       workspaceId: projectTable.workspaceId,
       projectId: projectTable.id,
+      taskType: taskTable.type,
     })
     .from(taskTable)
     .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))
@@ -77,6 +79,7 @@ async function scopeToSourceTask(c: Context, next: Next) {
   });
   await assertProjectAccess(userId, scope.projectId);
   c.set("workspaceId", scope.workspaceId);
+  c.set("taskTypes", [scope.taskType]);
   return next();
 }
 
@@ -107,6 +110,7 @@ async function scopeToRelation(c: Context, next: Next) {
   });
   await assertProjectAccess(userId, scope.projectId);
   c.set("workspaceId", scope.workspaceId);
+  c.set("taskTypes", [scope.taskType]);
   return next();
 }
 
@@ -164,10 +168,7 @@ const createTaskRelationRoute = createRoute({
   summary: "Create task relation",
   description:
     "Link two Tasks or Bugs with a blocks or related relation. Features do not have relations, so a Feature on either end of one is refused; the deprecated subtask type still puts a task into a Feature. Authorization is scoped to the source task's workspace.",
-  middleware: [
-    scopeToSourceTask,
-    requireWorkspacePermission({ task: ["update"] }),
-  ] as const,
+  middleware: [scopeToSourceTask, requireWorkItemPermission("update")] as const,
   request: {
     body: {
       required: true,
@@ -180,7 +181,7 @@ const createTaskRelationRoute = createRoute({
       "Invalid body, a task linked to itself, or a Feature on either end of a blocks or related relation",
     ),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for the task's type (task, bug or feature)",
     ),
     404: errorResponse("Source or target task not found"),
     409: errorResponse("This relation already exists"),
@@ -194,15 +195,12 @@ const deleteTaskRelationRoute = createRoute({
   tags: ["Task Relations"],
   summary: "Delete task relation",
   description: "Remove a link between two tasks. Returns the deleted relation.",
-  middleware: [
-    scopeToRelation,
-    requireWorkspacePermission({ task: ["update"] }),
-  ] as const,
+  middleware: [scopeToRelation, requireWorkItemPermission("update")] as const,
   request: { params: taskRelationParam },
   responses: {
     200: jsonResponse("The deleted relation", taskRelationSchema),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for the task's type (task, bug or feature)",
     ),
     404: errorResponse("Task relation not found, or its source task is gone"),
   },

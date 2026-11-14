@@ -28,7 +28,7 @@ it.each([
         search=""
         archived={false}
         selectedCount={0}
-        canCreate={canCreate}
+        createTypes={canCreate ? ["task", "bug"] : []}
         canEdit={canEdit}
         {...callbacks}
       />,
@@ -60,6 +60,27 @@ it.each([
   },
 );
 
+it("offers only the kinds of work the role can create", async () => {
+  render(
+    <FeatureIssuesToolbar
+      search=""
+      archived={false}
+      selectedCount={0}
+      createTypes={["bug"]}
+      canEdit={false}
+      {...actions()}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "tasks:createMenu.new" }));
+  await screen.findByRole("menu");
+  expect(
+    screen.queryByRole("menuitem", { name: "tasks:createMenu.newTask" }),
+  ).toBeNull();
+  expect(
+    screen.getByRole("menuitem", { name: "tasks:createMenu.newBug" }),
+  ).toBeTruthy();
+});
+
 it("keeps browse filters available without mutation permission and supports clearing selection", async () => {
   const callbacks = actions();
   render(
@@ -67,7 +88,7 @@ it("keeps browse filters available without mutation permission and supports clea
       search=""
       archived={false}
       selectedCount={2}
-      canCreate={false}
+      createTypes={[]}
       canEdit={false}
       {...callbacks}
     />,

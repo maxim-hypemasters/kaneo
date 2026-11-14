@@ -133,7 +133,7 @@ export const createTaskBody = z
     }),
     featureComposition: featureCompositionSchema.optional().openapi({
       description:
-        "Feature-only milestone and Task/Bug drafts, saved atomically with the new Feature. Existing work must have no Feature. Milestones or existing links additionally require task:update; non-null milestone leads require task:assign.",
+        "Feature-only milestone and Task/Bug drafts, saved atomically with the new Feature. Existing work must have no Feature. Milestones additionally require milestone:create, existing links update permission for their type, and drafts create permission for their type; non-null milestone leads require task:assign.",
     }),
   })
   .strict()

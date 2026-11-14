@@ -193,6 +193,9 @@ vi.mock("@/hooks/queries/column/use-get-columns", () => ({
 vi.mock("@/lib/releases/use-release-today", () => ({
   useReleaseToday: () => m.today,
 }));
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({ canWorkItem: () => true }),
+}));
 vi.mock("../use-release-permissions", () => ({
   useReleasePermissions: () => ({
     canManage: true,

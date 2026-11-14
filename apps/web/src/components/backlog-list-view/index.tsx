@@ -42,7 +42,7 @@ function BacklogListView({
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
   const { mutate: updateTask } = useUpdateTask();
-  const { canCreateTasks } = useWorkspacePermission();
+  const { canCreateWorkItems } = useWorkspacePermission();
   const setProject = useProjectStore((state) => state.setProject);
   const setAvailableTasks = useBacklogBulkSelectionStore(
     (state) => state.setAvailableTasks,
@@ -311,7 +311,7 @@ function BacklogListView({
             isExpanded={expandedSections.planned}
             showDropIndicator={activeId !== null && overColumnId === "planned"}
             onToggle={toggleSection}
-            onAddTask={canCreateTasks() ? setCreateType : undefined}
+            onAddTask={canCreateWorkItems() ? setCreateType : undefined}
           />
 
           <BacklogSection

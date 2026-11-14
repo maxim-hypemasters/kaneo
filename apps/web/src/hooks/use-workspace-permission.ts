@@ -8,6 +8,10 @@ import getMyCapabilities from "@/fetchers/workspace/get-my-capabilities";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
 import { useGetActiveWorkspaceUser } from "@/hooks/queries/workspace-users/use-active-workspace-user";
 import { authClient } from "@/lib/auth-client";
+import {
+  type WorkItemCapabilityAction,
+  workItemCapability,
+} from "./work-item-capability";
 
 export type PermissionLevel = "owner" | "admin" | "member";
 
@@ -61,6 +65,24 @@ export function useWorkspacePermission() {
       canCreateTasks: () => can.createTasks,
       canDeleteTasks: () => can.deleteTasks,
       canAssignTasks: () => can.assignTasks,
+      canCreateBugs: () => can.createBugs,
+      canUpdateBugs: () => can.updateBugs,
+      canDeleteBugs: () => can.deleteBugs,
+      canCreateFeatures: () => can.createFeatures,
+      canUpdateFeatures: () => can.updateFeatures,
+      canDeleteFeatures: () => can.deleteFeatures,
+      canReadMilestones: () => can.readMilestones,
+      canCreateMilestones: () => can.createMilestones,
+      canUpdateMilestones: () => can.updateMilestones,
+      canDeleteMilestones: () => can.deleteMilestones,
+      // Tasks, bugs and features each have their own permissions; pass the
+      // row's `type`.
+      canWorkItem: (
+        type: string | null | undefined,
+        action: WorkItemCapabilityAction,
+      ) => can[workItemCapability(type, action)],
+      canCreateWorkItems: () =>
+        can.createTasks || can.createBugs || can.createFeatures,
       canCreateLabels: () => can.createLabels,
       canUpdateLabels: () => can.updateLabels,
       canDeleteLabels: () => can.deleteLabels,

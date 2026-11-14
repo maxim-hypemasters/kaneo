@@ -111,7 +111,7 @@ vi.mock("@/hooks/queries/column/use-get-columns", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canUpdateTasks: mocks.canUpdateTasks,
+    canWorkItem: () => mocks.canUpdateTasks(),
     canAssignTasks: mocks.canAssignTasks,
   }),
 }));

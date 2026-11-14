@@ -11,6 +11,7 @@ import {
   jsonResponse,
 } from "../openapi";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import { PLANNING_READ, PLANNING_WRITE } from "./planning-permissions";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import releaseScheduling from "./release-routes";
 import {
@@ -31,11 +32,11 @@ import {
 
 const read = [
   workspaceAccess.fromProject("projectId"),
-  requireWorkspacePermission({ task: ["read"] }),
+  requireWorkspacePermission(PLANNING_READ),
 ] as const;
 const write = [
   workspaceAccess.fromProject("projectId"),
-  requireWorkspacePermission({ task: ["read", "update"], project: ["update"] }),
+  requireWorkspacePermission(PLANNING_WRITE),
   requireEntitlement,
 ] as const;
 const errors = {

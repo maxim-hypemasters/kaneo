@@ -541,7 +541,7 @@ describe("Feature workspace", () => {
       }),
     ).toMatchObject({ taskId: null, surface: "draft" });
   });
-  it("enforces task read/update/delete scopes for API keys and workspace visibility", async () => {
+  it("enforces feature read/update/delete scopes for API keys and workspace visibility", async () => {
     const ctx = await setup();
     const doc = await (
       await ctx.request("/documents", "POST", { title: "Protected" })
@@ -551,7 +551,7 @@ describe("Feature workspace", () => {
       body: {
         userId: ctx.user.id,
         name: "Read only",
-        permissions: { task: ["read"] },
+        permissions: { feature: ["read"] },
       },
     });
     const headers = { "x-api-key": key };

@@ -20,6 +20,8 @@ export type BaseVariables = {
   session: Session | null;
   apiKey?: ApiKey;
   authorizedProjectId?: string;
+  // Types of the task rows the workspace access middleware resolved.
+  taskTypes?: string[];
 };
 
 // createRoute({ middleware }) registers middleware BEFORE the request

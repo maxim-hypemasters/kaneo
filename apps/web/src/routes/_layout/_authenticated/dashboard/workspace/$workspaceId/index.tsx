@@ -35,7 +35,7 @@ function RouteComponent() {
     isError,
   } = useGetAssignedTasks(workspaceId);
   const { data: projects } = useGetProjects({ workspaceId }, true);
-  const { canCreateTasks, canCreateProjects } = useWorkspacePermission();
+  const { canCreateWorkItems, canCreateProjects } = useWorkspacePermission();
   // What the open create dialog creates; null while it's closed.
   const [createType, setCreateType] = useState<TaskType | null>(null);
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
@@ -72,7 +72,7 @@ function RouteComponent() {
                   {greetings[getDayPart()]}
                 </h1>
               </div>
-              {canCreateTasks() && (
+              {canCreateWorkItems() && (
                 <NewWorkMenu
                   size="sm"
                   className="shrink-0"

@@ -75,7 +75,7 @@ import { useAutoGrowTextarea } from "@/hooks/use-auto-grow-textarea";
 import { stripLineBreaks } from "@/lib/strip-line-breaks";
 import useProjectStore from "@/store/project";
 import type Task from "@/types/task";
-import type { TaskType } from "@/types/task";
+import { TASK_TYPES, type TaskType } from "@/types/task";
 import { createDialogCopy } from "./create-task/create-dialog-copy";
 import { MilestonePicker } from "@/components/task/milestones/milestone-picker";
 import { FeaturePickerChip } from "./create-task/feature-picker-chip";
@@ -271,11 +271,29 @@ function CreateTaskModalContent({
   const { data: workspaceLabels = [] } = useGetLabelsByWorkspace(
     workspace?.id || "",
   );
-  const { canCreateTasks, canCreateLabels, canUpdateTasks } =
-    useWorkspacePermission();
-  const canCreateTaskCapability = canCreateTasks();
+  const {
+    canWorkItem,
+    canCreateLabels,
+    canCreateMilestones,
+    canUpdateTasks,
+    canUpdateBugs,
+    isCheckingPermissions,
+  } = useWorkspacePermission();
+  // Tasks, bugs and features each have their own create permission.
+  const creatableTypes = TASK_TYPES.filter((type) =>
+    canWorkItem(type, "create"),
+  );
+  const canCreateTaskCapability = canWorkItem(taskType, "create");
   const canCreateLabelCapability = canCreateLabels();
-  const canManageComposition = canUpdateTasks();
+  // Composing a feature creates milestones and links existing tasks or bugs.
+  const canManageComposition =
+    canCreateMilestones() && (canUpdateTasks() || canUpdateBugs());
+  const fallbackType = creatableTypes[0];
+  // A shortcut or button may open the dialog on a kind the role can't create.
+  useEffect(() => {
+    if (!isCheckingPermissions && !canCreateTaskCapability && fallbackType)
+      setTaskType(fallbackType);
+  }, [isCheckingPermissions, canCreateTaskCapability, fallbackType]);
 
   const [title, setTitle] = useState("");
   const titleRef = useAutoGrowTextarea(title);
@@ -930,10 +948,10 @@ function CreateTaskModalContent({
     setLabels(labels.filter((l) => l.name !== labelName));
   };
 
-  // Defense-in-depth: if the user lacks task-create permission, don't render
+  // Defense-in-depth: if the user can't create any kind of work, don't render
   // the modal even if a stale trigger somehow opens it (e.g., keyboard
   // shortcut after the capability has changed).
-  if (!canCreateTaskCapability) return null;
+  if (creatableTypes.length === 0) return null;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -1032,6 +1050,7 @@ function CreateTaskModalContent({
               <div className="flex flex-wrap items-center gap-2 py-2">
                 <TaskTypeChip
                   value={taskType}
+                  types={creatableTypes}
                   onChange={(nextType) => {
                     requestContextChange({ kind: "type", type: nextType });
                   }}

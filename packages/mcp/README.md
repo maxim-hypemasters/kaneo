@@ -153,7 +153,7 @@ server that supports them; ordinary `update_task` calls preserve the type.
 
 A milestone belongs to one Feature and has a title, optional description, read-only start/end dates, Milestone Lead (`leadId`), read-only derived `status`, `priority`, nullable `releaseId`, manual ordering, and automatic `{total, started, completed}` progress. Status is Done when all nonarchived linked work is Done and at least one item exists, In Progress when any work is active or completed, and To Do otherwise. Activity follows the project workflow’s nonfinal-column order and Done flags. Mixed Done/To Do work is In Progress because completed work counts as started. Progress keeps its existing inclusion of archived work. `list_project_milestones` provides bounded paginated summaries including Feature titles. `list_milestones` takes `featureId`. `create_milestone` appends to that Feature and optionally accepts unique `taskIds` to atomically link existing Tasks/Bugs already in it, reassigning previous milestones. Invalid selections create nothing; `update_milestone` changes only provided fields, with null clearing optional fields. The `YYYY-MM-DD` dates are derived from nonarchived linked Tasks/Bugs, using one day for work with only one date and null for no dated work. They span releases and ignore display filters; progress still includes archived work. Milestone tools returning metadata accept optional `timeZone`, defaulting to UTC. Create/update tools do not accept status, column or date inputs. `reorder_milestones` takes the complete ordered `milestoneIds` array; duplicate and stale lists are rejected.
 
-`create_task` accepts `milestoneId` with `featureId`, and `set_task_milestone` assigns a Task/Bug to a milestone of its existing Feature or clears it with null. Assignment never moves Feature membership. `list_tasks` accepts `featureId` and `milestoneId` filters before pagination, with `none` selecting unassigned items. Deleting a milestone keeps linked work in its Feature and Release. Management and assignment use task update permission; progress reads use task read permission and include archived items independently of filters.
+`create_task` accepts `milestoneId` with `featureId`, and `set_task_milestone` assigns a Task/Bug to a milestone of its existing Feature or clears it with null. Assignment never moves Feature membership. `list_tasks` accepts `featureId` and `milestoneId` filters before pagination, with `none` selecting unassigned items. Deleting a milestone keeps linked work in its Feature and Release. Milestone management uses the milestone permissions, lead assignment uses `task:assign`, and moving a Task/Bug into a milestone uses update permission for its type; progress reads use milestone read permission and include archived items independently of filters.
 
 A release is a planned delivery in one project, with a start, a code freeze and
 a submission date (`YYYY-MM-DD`, in that order) and progress counts. Its phase
@@ -167,7 +167,7 @@ child releases. `list_tasks` filters by `releaseId`, or `none`.
 `move_unfinished_release_items` moves the items that aren't done to another
 release, or out of every release. Creating and updating releases needs
 permission to update the project, and deleting one also needs permission to
-edit tasks. Owners and admins have both by default.
+edit tasks, bugs and milestones. Owners and admins have all of these by default.
 
 Relations (`blocks` and `related`) link Tasks and Bugs. Features do not have
 relations, so `create_task_relation` refuses a Feature on either end. It still

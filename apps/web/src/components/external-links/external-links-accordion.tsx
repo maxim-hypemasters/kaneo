@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import useCreateExternalLink from "@/hooks/mutations/external-link/use-create-external-link";
 import useDeleteExternalLink from "@/hooks/mutations/external-link/use-delete-external-link";
+import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 import type { ExternalLink } from "@/types/external-link";
@@ -64,8 +65,9 @@ export function ExternalLinksAccordion({
   isLoading,
 }: ExternalLinksAccordionProps) {
   const { t } = useTranslation();
-  const { canUpdateTasks } = useWorkspacePermission();
-  const canAddResource = canUpdateTasks();
+  const { canWorkItem } = useWorkspacePermission();
+  const { data: task } = useGetTask(taskId);
+  const canAddResource = canWorkItem(task?.type, "update");
   const [isOpen, setIsOpen] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [url, setUrl] = useState("");

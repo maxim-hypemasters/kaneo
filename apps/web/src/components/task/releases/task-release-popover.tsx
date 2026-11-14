@@ -26,9 +26,10 @@ export function TaskReleasePopover({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const { mutateAsync: updateRelease } = useUpdateTaskRelease();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
 
-  if (!canUpdateTasks() || task.type === "feature") return <>{children}</>;
+  if (!canWorkItem(task.type, "update") || task.type === "feature")
+    return <>{children}</>;
 
   const changeRelease = async (releaseId: string | null) => {
     setOpen(false);

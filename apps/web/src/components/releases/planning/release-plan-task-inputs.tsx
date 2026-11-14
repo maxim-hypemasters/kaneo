@@ -30,6 +30,7 @@ export function ReleasePlanTaskInputs({
   task: Pick<
     ReleasePlanTask,
     | "taskId"
+    | "type"
     | "currentAssigneeId"
     | "currentAssigneeName"
     | "estimateSeconds"
@@ -43,7 +44,8 @@ export function ReleasePlanTaskInputs({
 }) {
   const { t } = useTranslation();
   const client = useQueryClient();
-  const { canUpdateTasks, canAssignTasks } = useWorkspacePermission();
+  const { canWorkItem, canAssignTasks } = useWorkspacePermission();
+  const canEdit = canWorkItem(task.type, "update");
   const [errors, setErrors] = useState<{
     assignee: string | null;
     estimate: string | null;
@@ -73,7 +75,7 @@ export function ReleasePlanTaskInputs({
     if (
       saving.current ||
       disabled ||
-      (change.field === "assignee" ? !canAssignTasks() : !canUpdateTasks())
+      (change.field === "assignee" ? !canAssignTasks() : !canEdit)
     )
       return false;
     const unchanged =
@@ -149,7 +151,7 @@ export function ReleasePlanTaskInputs({
       />
       <ReleasePlanEstimateInput
         value={task.estimateSeconds}
-        editable={canUpdateTasks()}
+        editable={canEdit}
         disabled={disabled}
         saving={pending}
         error={errors.estimate}
@@ -157,7 +159,7 @@ export function ReleasePlanTaskInputs({
       />
       <ReleasePlanPriorityInput
         value={task.priority}
-        editable={canUpdateTasks()}
+        editable={canEdit}
         disabled={disabled}
         saving={pending}
         error={errors.priority}

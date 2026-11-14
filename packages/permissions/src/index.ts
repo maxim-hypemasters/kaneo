@@ -10,6 +10,9 @@ export const statement = {
   ...defaultStatements,
   project: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
+  bug: ["create", "read", "update", "delete"],
+  feature: ["create", "read", "update", "delete"],
+  milestone: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "delete", "manage_settings"],
 } as const;
@@ -20,6 +23,9 @@ export const viewer = ac.newRole({
   ...memberAc.statements,
   project: ["read"],
   task: ["read"],
+  bug: ["read"],
+  feature: ["read"],
+  milestone: ["read"],
   label: ["read"],
   workspace: ["read"],
 });
@@ -28,6 +34,9 @@ export const member = ac.newRole({
   ...memberAc.statements,
   project: ["create", "read"],
   task: ["create", "read", "update"],
+  bug: ["create", "read", "update"],
+  feature: ["create", "read", "update"],
+  milestone: ["create", "read", "update"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read"],
 });
@@ -36,6 +45,9 @@ export const admin = ac.newRole({
   ...adminAc.statements,
   project: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
+  bug: ["create", "read", "update", "delete"],
+  feature: ["create", "read", "update", "delete"],
+  milestone: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "manage_settings"],
 });
@@ -44,6 +56,9 @@ export const owner = ac.newRole({
   ...ownerAc.statements,
   project: ["create", "read", "update", "delete", "share"],
   task: ["create", "read", "update", "delete", "assign"],
+  bug: ["create", "read", "update", "delete"],
+  feature: ["create", "read", "update", "delete"],
+  milestone: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "delete", "manage_settings"],
 });
@@ -88,3 +103,9 @@ export {
   type WorkspaceCapability,
   workspaceCapabilities,
 } from "./capabilities.js";
+export {
+  isWorkItemType,
+  WORK_ITEM_TYPES,
+  type WorkItemAction,
+  type WorkItemType,
+} from "./work-items.js";

@@ -233,11 +233,12 @@ describe("release milestone metadata", () => {
 
 describe("release milestone access", () => {
   it.each([
-    [{ task: ["read"] }, 200],
-    [{ task: ["update"] }, 403],
+    [{ milestone: ["read"] }, 200],
+    [{ task: ["read"] }, 403],
+    [{ milestone: ["update"] }, 403],
     [{ project: ["read"] }, 403],
   ] as const)(
-    "requires task:read for custom role %j",
+    "requires milestone:read for custom role %j",
     async (permissions, status) => {
       const ctx = await setup("release_milestone_reader");
       await db.insert(schema.workspaceRoleTable).values({
@@ -253,11 +254,12 @@ describe("release milestone access", () => {
   );
 
   it.each([
-    [{ task: ["read"] }, 200],
-    [{ task: ["update"] }, 403],
+    [{ milestone: ["read"] }, 200],
+    [{ task: ["read"] }, 403],
+    [{ milestone: ["update"] }, 403],
     [{ project: ["read"] }, 403],
   ] as const)(
-    "requires API-key task:read scope %j",
+    "requires API-key milestone:read scope %j",
     async (permissions, status) => {
       const ctx = await setup();
       const key = await auth.api.createApiKey({

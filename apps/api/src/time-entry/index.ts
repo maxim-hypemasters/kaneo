@@ -4,7 +4,7 @@ import {
   errorResponse,
   jsonResponse,
 } from "../openapi";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import { requireWorkItemPermission } from "../utils/require-work-item-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import createTimeEntry from "./controllers/create-time-entry";
 import getTimeEntriesByTaskId from "./controllers/get-time-entries";
@@ -60,7 +60,7 @@ const createTimeEntryRoute = createRoute({
     "Log time against a task. Omit endTime to start a running entry that can be closed later with an update.",
   middleware: [
     workspaceAccess.fromTaskId(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
   ] as const,
   request: {
     body: {
@@ -72,7 +72,7 @@ const createTimeEntryRoute = createRoute({
     200: jsonResponse("The created time entry", timeEntrySchema),
     400: errorResponse("Invalid body or timestamps"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for the task's type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -88,7 +88,7 @@ const updateTimeEntryRoute = createRoute({
     "Replace a time entry's start, end, and description. Setting endTime closes a running entry and fills in its duration.",
   middleware: [
     workspaceAccess.fromTimeEntry(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
   ] as const,
   request: {
     params: timeEntryParam,
@@ -101,7 +101,7 @@ const updateTimeEntryRoute = createRoute({
     200: jsonResponse("The updated time entry", timeEntrySchema),
     400: errorResponse("Invalid timestamps"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for the task's type (task, bug or feature)",
     ),
     404: errorResponse("Time entry not found"),
   },

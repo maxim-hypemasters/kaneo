@@ -65,8 +65,12 @@ function FeatureIssueList({
   const origin = useTaskReleaseOrigin();
   const client = useQueryClient();
   const permission = useWorkspacePermission();
-  const canEdit = permission.canUpdateTasks();
-  const canCreate = permission.canCreateTasks();
+  // Linking and completing work edits tasks or bugs; the API checks each
+  // row's own type.
+  const canEdit = permission.canUpdateTasks() || permission.canUpdateBugs();
+  const createTypes = (["task", "bug"] as const).filter((type) =>
+    permission.canWorkItem(type, "create"),
+  );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [archived, setArchived] = useState(false);
@@ -117,7 +121,7 @@ function FeatureIssueList({
         search={search}
         archived={archived}
         selectedCount={selected.size}
-        canCreate={canCreate}
+        createTypes={createTypes}
         canEdit={canEdit}
         onSearch={(value) => {
           setSearch(value);

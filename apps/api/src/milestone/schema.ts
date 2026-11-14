@@ -40,7 +40,7 @@ export const createMilestoneBody = z
     description: description.optional(),
     newTasks: milestoneTaskDraftsSchema.optional().openapi({
       description:
-        "Title-only Task/Bug drafts to create atomically with the milestone and existing links. Requires task:create permission. Defaults and required custom fields follow normal task creation.",
+        "Title-only Task/Bug drafts to create atomically with the milestone and existing links. Requires create permission for each draft's type (task or bug). Defaults and required custom fields follow normal task creation.",
     }),
     taskIds: z.array(z.string().min(1)).optional().openapi({
       description:

@@ -26,7 +26,8 @@ export function MilestoneDetails({
   const [title, setTitle] = useState(milestone.title);
   const [creating, setCreating] = useState(false);
   const { close } = useMilestoneDetailsStore();
-  const { canUpdateTasks, canCreateTasks } = useWorkspacePermission();
+  const { canUpdateMilestones, canCreateTasks, canCreateBugs } =
+    useWorkspacePermission();
   const feature = useFeatureIndex(projectId).features.get(milestone.featureId);
   const tasks = useFeatureTasks(milestone.featureId, projectId);
   const linked = tasks.tasks.filter(
@@ -52,7 +53,7 @@ export function MilestoneDetails({
         <Input
           aria-label={t("tasks:milestones.titleLabel")}
           value={title}
-          disabled={!canUpdateTasks() || mutations.update.isPending}
+          disabled={!canUpdateMilestones() || mutations.update.isPending}
           maxLength={255}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={() => {
@@ -107,7 +108,7 @@ export function MilestoneDetails({
       <section className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="font-medium">{t("tasks:title")}</h2>
-          {canCreateTasks() && canUpdateTasks() && (
+          {(canCreateTasks() || canCreateBugs()) && (
             <Button
               variant="ghost"
               size="icon-sm"

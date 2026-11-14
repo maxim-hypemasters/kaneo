@@ -283,11 +283,12 @@ describe("milestones available while creating a release", () => {
 describe("new-release milestone candidate access", () => {
   for (const authentication of ["custom-role", "api-key"] as const) {
     it.each([
-      [{ task: ["read"] }, 200],
-      [{ task: ["update"] }, 403],
+      [{ milestone: ["read"] }, 200],
+      [{ task: ["read"] }, 403],
+      [{ milestone: ["update"] }, 403],
       [{ project: ["update"] }, 403],
     ] as [Record<string, string[]>, number][])(
-      `${authentication} requires task:read %j`,
+      `${authentication} requires milestone:read %j`,
       async (permissions, status) => {
         const ctx = await setup(
           authentication === "custom-role" ? "candidate_reader" : "owner",

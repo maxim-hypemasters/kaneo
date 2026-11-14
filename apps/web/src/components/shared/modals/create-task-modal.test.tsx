@@ -216,9 +216,12 @@ vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
 
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canCreateTasks: () => true,
+    canWorkItem: () => true,
     canCreateLabels: () => true,
+    canCreateMilestones: () => canManageFeature,
     canUpdateTasks: () => canManageFeature,
+    canUpdateBugs: () => canManageFeature,
+    isCheckingPermissions: false,
   }),
 }));
 

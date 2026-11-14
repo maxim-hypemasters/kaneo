@@ -38,6 +38,7 @@ import {
   verifyTaskAssetUpload,
 } from "../storage/s3";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
+import { requireWorkItemPermission } from "../utils/require-work-item-permission";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
 import { validateAndParseDate } from "../utils/validate-dates";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
@@ -60,10 +61,16 @@ import {
   finalizeStagedTaskAsset,
 } from "./controllers/stage-task-asset";
 import {
+  requireAnyWorkItemCreatePermission,
   requireBulkTaskEntitlement,
   requireBulkTaskPermission,
   requireTaskAssigneePermission,
   requireFeatureCompositionPermission,
+  requireReorderTaskPermission,
+  requireTaskCreatePermission,
+  requireTaskExportPermission,
+  requireTaskImportPermission,
+  requireTaskTypeChangePermission,
 } from "./controllers/require-task-permission";
 import updateTask from "./controllers/update-task";
 import updateTaskAssignee from "./controllers/update-task-assignee";
@@ -162,13 +169,13 @@ const listProjectFeaturesRoute = createRoute({
     "Get the project's Feature knowledge summaries, including archived records for existing references, by title. Planning fields are null. Lighter than the board for picking a feature.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["read"] }),
+    requireWorkspacePermission({ feature: ["read"] }),
   ] as const,
   request: { params: projectIdParam },
   responses: {
     200: jsonResponse("The project's features", projectFeatureListSchema),
     403: errorResponse(
-      "No access to the project, or missing task:read permission",
+      "No access to the project, or missing feature:read permission",
     ),
     404: errorResponse("Project not found"),
   },
@@ -182,7 +189,7 @@ const featureLibraryRoute = createRoute({
   summary: "Search active or archived knowledge Features",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["read"] }),
+    requireWorkspacePermission({ feature: ["read"] }),
   ] as const,
   request: { params: projectIdParam, query: featureLibraryQuery },
   responses: {
@@ -202,13 +209,13 @@ const featureLinkCandidatesRoute = createRoute({
     "Search nonarchived Tasks and Bugs without a Feature in this project, including Done work. Eligibility and title/identifier search are applied before pagination. Returns compact identity and current release metadata.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["read"] }),
+    requireWorkspacePermission({ feature: ["read"] }),
   ] as const,
   request: { params: projectIdParam, query: featureLinkCandidatesQuery },
   responses: {
     200: jsonResponse("Eligible Tasks and Bugs", featureLinkCandidatesSchema),
     400: errorResponse("Invalid search or pagination"),
-    403: errorResponse("Missing task:read permission"),
+    403: errorResponse("Missing feature:read permission"),
     404: errorResponse("Project not found"),
     409: errorResponse("Project changed workspaces; retry"),
     503: errorResponse("Candidate read timed out"),
@@ -222,7 +229,7 @@ const archiveFeatureRoute = createRoute({
   summary: "Archive or unarchive a knowledge Feature independently of its work",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -303,7 +310,7 @@ const stagedUploadRoute = createRoute({
     "Upload an attachment before submitting a task. Staged assets are private to the uploader and expire after 24 hours.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["create"] }),
+    requireAnyWorkItemCreatePermission,
     requireEntitlement,
   ] as const,
   request: {
@@ -316,7 +323,9 @@ const stagedUploadRoute = createRoute({
   responses: {
     200: jsonResponse("Presigned upload", imageUploadSchema),
     400: errorResponse("Invalid upload"),
-    403: errorResponse("Missing task:create permission"),
+    403: errorResponse(
+      "Missing create permission for tasks, bugs and features",
+    ),
     404: errorResponse("Project not found"),
     503: errorResponse("Storage unavailable"),
   },
@@ -329,7 +338,7 @@ const finalizeStagedUploadRoute = createRoute({
   summary: "Finalize a staged task attachment",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["create"] }),
+    requireAnyWorkItemCreatePermission,
     requireEntitlement,
   ] as const,
   request: {
@@ -344,7 +353,9 @@ const finalizeStagedUploadRoute = createRoute({
   responses: {
     200: jsonResponse("Staged attachment", finalizedAssetSchema),
     400: errorResponse("Invalid upload"),
-    403: errorResponse("Missing task:create permission"),
+    403: errorResponse(
+      "Missing create permission for tasks, bugs and features",
+    ),
     404: errorResponse("Project not found"),
     409: errorResponse("Upload already attached"),
     503: errorResponse("Storage unavailable"),
@@ -361,7 +372,7 @@ const descriptionStagedUploadRoute = createRoute({
     "Stage a private attachment for an existing task, bug, or feature. Saving the description claims referenced assets; unsaved assets expire after 24 hours.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -374,7 +385,9 @@ const descriptionStagedUploadRoute = createRoute({
   responses: {
     200: jsonResponse("Presigned upload", imageUploadSchema),
     400: errorResponse("Invalid upload"),
-    403: errorResponse("No project access or missing task:update permission"),
+    403: errorResponse(
+      "No project access or missing update permission for its type (task, bug or feature)",
+    ),
     404: errorResponse("Task not found"),
     409: errorResponse("Task or project changed scope"),
     503: errorResponse("Storage unavailable"),
@@ -388,7 +401,7 @@ const finalizeDescriptionStagedUploadRoute = createRoute({
   summary: "Finalize a staged description attachment",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -403,7 +416,9 @@ const finalizeDescriptionStagedUploadRoute = createRoute({
   responses: {
     200: jsonResponse("Staged attachment", finalizedAssetSchema),
     400: errorResponse("Invalid upload"),
-    403: errorResponse("No project access or missing task:update permission"),
+    403: errorResponse(
+      "No project access or missing update permission for its type (task, bug or feature)",
+    ),
     404: errorResponse("Task not found"),
     409: errorResponse("Upload already attached or task/project changed scope"),
     503: errorResponse("Storage unavailable"),
@@ -420,7 +435,7 @@ const reorderTasksRoute = createRoute({
     "Atomically update positions and optional column status for cards in one project. Other task fields are preserved.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireReorderTaskPermission,
     requireEntitlement,
   ] as const,
   request: {
@@ -437,7 +452,9 @@ const reorderTasksRoute = createRoute({
         .array(),
     ),
     400: errorResponse("Invalid positions or column"),
-    403: errorResponse("Missing task:update permission"),
+    403: errorResponse(
+      "Missing update permission for the moved items' types (task or bug)",
+    ),
     404: errorResponse(
       "Project not found, or tasks do not belong to the project",
     ),
@@ -456,7 +473,7 @@ const createTaskRoute = createRoute({
     "Add a task, bug or feature to a project, defaulting to task. Tasks and Bugs use the column named by status; Features omit planning fields. Tasks and bugs may belong to a feature. Without releaseId they inherit their milestone's release; an explicit releaseId, or null for none, wins. Feature-only featureComposition creates milestones, links unowned nonarchived Tasks/Bugs and creates title-only work in the same transaction. Failures roll back every record and number allocation. Existing work preserves non-null releases; new work follows its draft milestone, or unassignedReleaseId when no milestone is selected.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["create"] }),
+    requireTaskCreatePermission,
     requireEntitlement,
     requireFeatureCompositionPermission,
   ] as const,
@@ -472,7 +489,7 @@ const createTaskRoute = createRoute({
     400: errorResponse("Invalid body"),
     402: errorResponse("Workspace plan has expired"),
     403: errorResponse(
-      "No project access, or missing task:create, task:update or task:assign permission required by the request",
+      "No project access, or missing create permission for the requested type, or milestone:create, task:assign, or create/update permission for linked and new work required by the request",
     ),
     404: errorResponse("Project, feature or release not found"),
     409: errorResponse(
@@ -491,7 +508,7 @@ const duplicateTaskRoute = createRoute({
     "Copy a task into the same project and column, including custom fields, labels, description assets, its type, its feature and its release (none if that release was deleted meanwhile). Comments, time entries and a feature's tasks are not copied.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["create"] }),
+    requireWorkItemPermission("create"),
     requireEntitlement,
   ] as const,
   request: {
@@ -506,7 +523,7 @@ const duplicateTaskRoute = createRoute({
     400: errorResponse("Invalid task fields or request"),
     401: errorResponse("Unauthorized"),
     403: errorResponse(
-      "No access to the project, or missing task:create permission",
+      "No access to the project, or missing create permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task or project not found"),
     409: errorResponse("Task column has reached its capacity"),
@@ -561,7 +578,7 @@ const moveTaskRoute = createRoute({
     "Move a task to another project, optionally into a named column. Both projects must be in the same workspace. Features and releases belong to one project, so the task leaves its feature and its release, recording each change in its activity.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -578,7 +595,7 @@ const moveTaskRoute = createRoute({
     ),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task or destination project not found"),
     409: errorResponse("Task or project moved concurrently; retry the move"),
@@ -595,7 +612,7 @@ const updateTaskRoute = createRoute({
     "Replace every field of a task. Its type, feature and release aren't part of this body and stay as they are: change them with PUT /task/type/{id}, /task/feature/{id} and /task/release/{id}. Use the single-field routes for narrower edits.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireTaskAssigneePermission,
     requireEntitlement,
   ] as const,
@@ -610,7 +627,7 @@ const updateTaskRoute = createRoute({
     200: jsonResponse("The updated task", taskSchema),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:update or task:assign permission",
+      "No access to the project, or missing task:assign or update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -626,7 +643,7 @@ const exportTasksRoute = createRoute({
     "Export a project's work as version 5 JSON with portable hierarchy, Feature documents, authored update snapshots, and informational schedule history.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["read"] }),
+    requireTaskExportPermission,
   ] as const,
   request: { params: projectIdParam },
   responses: {
@@ -643,10 +660,10 @@ const importTasksRoute = createRoute({
   tags: ["Tasks"],
   summary: "Import tasks",
   description:
-    "Import version 2 Feature/milestone hierarchy atomically, or legacy tasks with individual outcomes. Milestone hierarchy also requires task:update permission.",
+    "Import version 2 Feature/milestone hierarchy atomically, or legacy tasks with individual outcomes. Each imported type requires its own create permission; milestones also require milestone:create.",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["create"] }),
+    requireTaskImportPermission,
     requireEntitlement,
   ] as const,
   request: {
@@ -660,7 +677,7 @@ const importTasksRoute = createRoute({
     200: jsonResponse("Per-task import outcome", taskImportResultSchema),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:create permission",
+      "No access to the project, or missing create permission for an imported type",
     ),
     404: errorResponse("Project not found"),
   },
@@ -676,14 +693,14 @@ const deleteTaskRoute = createRoute({
     "Permanently delete a task and its comments, labels, and time entries.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["delete"] }),
+    requireWorkItemPermission("delete"),
   ] as const,
   request: { params: taskParam },
   responses: {
     200: jsonResponse("The deleted task", taskSchema),
     409: errorResponse("Task changed projects; retry the operation"),
     403: errorResponse(
-      "No access to the project, or missing task:delete permission",
+      "No access to the project, or missing delete permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -698,7 +715,7 @@ const updateTaskStatusRoute = createRoute({
   description: "Move a task to another column in the same project.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -712,7 +729,7 @@ const updateTaskStatusRoute = createRoute({
     200: jsonResponse("The updated task", taskSchema),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -727,7 +744,7 @@ const updateTaskPriorityRoute = createRoute({
   description: "Set a task's priority.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -741,7 +758,7 @@ const updateTaskPriorityRoute = createRoute({
     200: jsonResponse("The updated task", taskSchema),
     400: errorResponse("Invalid priority"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -789,7 +806,7 @@ const updateTaskDueDateRoute = createRoute({
     "Set or clear a Task or Bug's due date by hand. Planned work stops following its estimate until the next Apply of its release plans it again.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -805,7 +822,7 @@ const updateTaskDueDateRoute = createRoute({
       "Invalid date, a Feature, or a due date before the start date",
     ),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -821,7 +838,7 @@ const moveTaskScheduleRoute = createRoute({
     "Moves a scheduled Task or Bug, as dragging it in Gantt does. Planned work keeps its planned assignee and remaining planned effort and is laid out again through working hours (Monday to Friday, 09:00 to 17:00 in the project's planning timezone) from `start`, so it may finish after `end`. Unplanned work takes `start` and `end` on the date fields it already has. The next Apply of the item's release plans it again.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -837,7 +854,7 @@ const moveTaskScheduleRoute = createRoute({
       "Invalid body, a Feature, unscheduled work, or work that no longer fits within the planning horizon",
     ),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -852,7 +869,7 @@ const updateTaskTitleRoute = createRoute({
   description: "Rename a task.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -866,7 +883,7 @@ const updateTaskTitleRoute = createRoute({
     200: jsonResponse("The updated task", taskSchema),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -882,7 +899,7 @@ const updateTaskMilestoneRoute = createRoute({
     "Only tasks and bugs already in the milestone’s Feature can join it. Null clears membership without changing Feature or Release.",
   middleware: [
     workspaceAccess.fromTask("id"),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -896,7 +913,9 @@ const updateTaskMilestoneRoute = createRoute({
     200: jsonResponse("The updated task", taskSchema),
     400: errorResponse("Invalid body"),
     402: errorResponse("Workspace plan has expired"),
-    403: errorResponse("Missing task:update permission"),
+    403: errorResponse(
+      "Missing update permission for its type (task, bug or feature)",
+    ),
     404: errorResponse("Task or milestone not found"),
     409: errorResponse("The task is a Feature or has no Feature"),
   },
@@ -912,7 +931,7 @@ const updateTaskFeatureRoute = createRoute({
     "Put a task or bug into a feature of its project, or remove its membership. Either belongs to at most one feature; a feature can't belong to one. Feature membership does not change a Task/Bug release. Changing the Feature clears milestone membership.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -926,7 +945,7 @@ const updateTaskFeatureRoute = createRoute({
     200: jsonResponse("The updated task", taskSchema),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task or feature not found"),
     409: errorResponse(
@@ -945,7 +964,7 @@ const updateTaskReleaseRoute = createRoute({
     "Put a Task or Bug into a release of its project, or take it out with null. Features have no release. Milestone release updates move matching followers.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -963,7 +982,7 @@ const updateTaskReleaseRoute = createRoute({
     400: errorResponse("Invalid body"),
     402: errorResponse("Workspace plan has expired"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task or release not found"),
     409: errorResponse(
@@ -982,7 +1001,7 @@ const updateTaskTypeRoute = createRoute({
     "Switch between Task and Bug while preserving identity, fields, Feature, milestone and Release. Features cannot be converted.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireTaskTypeChangePermission,
     requireEntitlement,
   ] as const,
   request: {
@@ -996,7 +1015,7 @@ const updateTaskTypeRoute = createRoute({
     200: jsonResponse("The updated task", taskSchema),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for the current type or create permission for the new type",
     ),
     404: errorResponse("Task not found"),
     409: errorResponse("Features cannot be converted to execution work"),
@@ -1013,7 +1032,7 @@ const createTaskImageUploadRoute = createRoute({
     "Get a presigned URL for uploading an image used in a task description or comment. PUT the bytes to it, then call the finalize route.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -1027,7 +1046,7 @@ const createTaskImageUploadRoute = createRoute({
     200: jsonResponse("The presigned upload", imageUploadSchema),
     400: errorResponse("Unsupported content type, or the file is too large"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
     503: errorResponse("Image uploads are not configured on this instance"),
@@ -1044,7 +1063,7 @@ const finalizeTaskImageUploadRoute = createRoute({
     "Record an uploaded image as a private asset and return the URL to reference it by.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -1060,7 +1079,7 @@ const finalizeTaskImageUploadRoute = createRoute({
       "Invalid upload, or the key does not belong to this task",
     ),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -1076,7 +1095,7 @@ const updateTaskDescriptionRoute = createRoute({
     "Replace a task description and claim referenced staged uploads atomically. Supply expectedDescription to reject concurrent edits with DESCRIPTION_CONFLICT.",
   middleware: [
     workspaceAccess.fromTask(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
     requireEntitlement,
   ] as const,
   request: {
@@ -1090,7 +1109,7 @@ const updateTaskDescriptionRoute = createRoute({
     200: jsonResponse("The updated task", taskSchema),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
     409: errorResponse("Description changed or task/project changed scope"),
@@ -1475,9 +1494,16 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       );
     if (document.milestones?.some((milestone) => milestone.leadId))
       await requireWorkspacePermission({ task: ["assign"] })(c, async () => {});
-    if (hierarchy) {
-      await requireWorkspacePermission({ task: ["update"] })(c, async () => {});
-    }
+    if (document.milestones?.length)
+      await requireWorkspacePermission({ milestone: ["create"] })(
+        c,
+        async () => {},
+      );
+    if (document.featureDocuments?.length || document.featureUpdates?.length)
+      await requireWorkspacePermission({ feature: ["create"] })(
+        c,
+        async () => {},
+      );
     if (
       (document.version === 2 ||
         document.version === 3 ||

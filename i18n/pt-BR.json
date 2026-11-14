@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Descrição",
-			"toolbar": "Formatação do documento",
 			"paragraph": "Text",
 			"heading1": "Título 1",
 			"heading2": "Título 2",
@@ -227,8 +226,6 @@
 			"image": "Imagem",
 			"file": "Arquivo",
 			"embed": "Incorporar",
-			"undo": "Desfazer",
-			"redo": "Refazer",
 			"expand": "Expandir documento",
 			"collapse": "Voltar à descrição",
 			"uploading": "Enviando arquivo…",
@@ -1005,7 +1002,10 @@
 				"member": "Members",
 				"invitation": "Invitations",
 				"team": "Teams",
-				"ac": "Roles and permissions"
+				"ac": "Roles and permissions",
+				"bug": "Bugs",
+				"feature": "Features",
+				"milestone": "Milestones"
 			},
 			"permissions": {
 				"project": {
@@ -1152,6 +1152,60 @@
 					"delete": {
 						"label": "Delete roles",
 						"description": "Delete custom workspace roles."
+					}
+				},
+				"bug": {
+					"create": {
+						"description": "Can report bugs",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete bugs",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view bugs",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit bugs",
+						"label": "Update"
+					}
+				},
+				"feature": {
+					"create": {
+						"description": "Can create features",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete features and their documents",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view feature pages and the feature library",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit features, their documents and updates",
+						"label": "Update"
+					}
+				},
+				"milestone": {
+					"create": {
+						"description": "Can create milestones",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete milestones",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view milestones",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit, reorder and schedule milestones",
+						"label": "Update"
 					}
 				}
 			},

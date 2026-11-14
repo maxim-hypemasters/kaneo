@@ -100,7 +100,9 @@ vi.mock("@/hooks/queries/project/use-get-projects", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canCreateTasks: mocks.canCreateTasks,
-    canUpdateTasks: mocks.canUpdateTasks,
+    canCreateBugs: mocks.canCreateTasks,
+    canWorkItem: (_type: unknown, action: string) =>
+      action === "create" ? mocks.canCreateTasks() : mocks.canUpdateTasks(),
   }),
 }));
 vi.mock("@/lib/toast", () => ({
@@ -439,8 +441,8 @@ describe("TaskSubtasks", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("hides creation without task-update permission", () => {
-    mocks.canUpdateTasks.mockReturnValue(false);
+  it("hides creation without permission to create tasks or bugs", () => {
+    mocks.canCreateTasks.mockReturnValue(false);
     renderSection("planned");
 
     expect(

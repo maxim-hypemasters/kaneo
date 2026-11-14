@@ -11,7 +11,17 @@ import {
   jsonResponse,
   z,
 } from "../openapi";
+import { draftWorkItemTypes } from "../task/controllers/require-task-permission";
+import { readJsonObjectBody } from "../utils/read-json-object-body";
+import {
+  stringIds,
+  workItemPermissionsForIds,
+} from "../utils/require-work-item-permission";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import {
+  mergePermissions,
+  workItemPermissions,
+} from "../utils/work-item-permissions";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import { readMilestone, readMilestones } from "./read-milestones";
 import {
@@ -34,25 +44,27 @@ import {
 
 const readFeature = [
   workspaceAccess.fromTask("featureId"),
-  requireWorkspacePermission({ task: ["read"] }),
+  requireWorkspacePermission({ milestone: ["read"] }),
 ] as const;
-const writeFeature = [
-  workspaceAccess.fromTask("featureId"),
-  requireWorkspacePermission({ task: ["update"] }),
-  requireEntitlement,
-] as const;
+const featureMilestones = (action: "create" | "update") =>
+  [
+    workspaceAccess.fromTask("featureId"),
+    requireWorkspacePermission({ milestone: [action] }),
+    requireEntitlement,
+  ] as const;
 const readItem = [
   workspaceAccess.fromMilestone("id"),
-  requireWorkspacePermission({ task: ["read"] }),
+  requireWorkspacePermission({ milestone: ["read"] }),
 ] as const;
-const writeItem = [
-  workspaceAccess.fromMilestone("id"),
-  requireWorkspacePermission({ task: ["update"] }),
-  requireEntitlement,
-] as const;
+const writeItem = (action: "update" | "delete") =>
+  [
+    workspaceAccess.fromMilestone("id"),
+    requireWorkspacePermission({ milestone: [action] }),
+    requireEntitlement,
+  ] as const;
 const errors = {
   400: errorResponse("Invalid milestone data"),
-  403: errorResponse("No access or missing task permission"),
+  403: errorResponse("No access or missing milestone permission"),
   404: errorResponse("Feature or milestone not found"),
   409: errorResponse(
     "The owner is not a feature, or the milestone list changed",
@@ -66,7 +78,7 @@ const projectRoute = createRoute({
   summary: "List project milestone planning summaries",
   middleware: [
     workspaceAccess.fromProject("projectId"),
-    requireWorkspacePermission({ task: ["read"] }),
+    requireWorkspacePermission({ milestone: ["read"] }),
   ] as const,
   request: {
     params: z.object({ projectId: z.string().min(1) }),
@@ -105,17 +117,19 @@ const requireMilestoneLeadPermission = async (
   }
   return next();
 };
-const requireMilestoneTaskCreatePermission = async (
+// New drafts need create, and linked work needs update, on their own types.
+const requireMilestoneWorkPermission = async (
   c: import("hono").Context,
   next: import("hono").Next,
 ) => {
-  const body: unknown = await c.req.json().catch(() => ({}));
-  if (body && typeof body === "object" && !Array.isArray(body)) {
-    const newTasks = (body as { newTasks?: unknown }).newTasks;
-    if (Array.isArray(newTasks) && newTasks.length > 0)
-      return requireWorkspacePermission({ task: ["create"] })(c, next);
-  }
-  return next();
+  const { newTasks, taskIds } = await readJsonObjectBody(c);
+  const drafts = draftWorkItemTypes(newTasks);
+  const required = mergePermissions(
+    drafts.length > 0 ? workItemPermissions(drafts, "create") : undefined,
+    await workItemPermissionsForIds(stringIds(taskIds), "update"),
+  );
+  if (Object.keys(required).length === 0) return next();
+  return requireWorkspacePermission(required)(c, next);
 };
 const listRoute = createRoute({
   method: "get",
@@ -140,11 +154,11 @@ const createMilestoneRoute = createRoute({
   tags: ["Milestones"],
   summary: "Create a feature milestone",
   description:
-    "Atomically create a milestone, link existing Tasks/Bugs from its Feature, and optionally create up to 100 title-only Tasks/Bugs. New work requires task:create and inherits the selected release. Required custom fields must have valid defaults. Validation or insertion failure rolls back all work and number allocation. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409.",
+    "Atomically create a milestone, link existing Tasks/Bugs from its Feature, and optionally create up to 100 title-only Tasks/Bugs. Requires milestone:create; new work requires create, and linked work update, permission for its type (task or bug). New work inherits the selected release. Required custom fields must have valid defaults. Validation or insertion failure rolls back all work and number allocation. Duplicate ids return 400; missing, moved, deleted, nonleaf or outside-Feature selections return 409.",
   middleware: [
-    ...writeFeature,
+    ...featureMilestones("create"),
     requireMilestoneLeadPermission,
-    requireMilestoneTaskCreatePermission,
+    requireMilestoneWorkPermission,
   ],
   request: {
     params: featureParam,
@@ -168,7 +182,7 @@ const reorderRoute = createRoute({
   summary: "Reorder all milestones in a feature",
   description:
     "Accepts the complete ordered id list. Duplicate ids return 400; a list that is no longer the exact current set returns 409.",
-  middleware: [...writeFeature],
+  middleware: [...featureMilestones("update")],
   request: {
     params: featureParam,
     query: milestoneScheduleQuery,
@@ -199,7 +213,7 @@ const updateRoute = createRoute({
   path: "/{id}",
   tags: ["Milestones"],
   summary: "Update milestone metadata",
-  middleware: [...writeItem, requireMilestoneLeadPermission],
+  middleware: [...writeItem("update"), requireMilestoneLeadPermission],
   request: {
     params: milestoneParam,
     query: milestoneScheduleQuery,
@@ -222,7 +236,7 @@ const deleteRoute = createRoute({
   summary: "Delete milestone",
   description:
     "Unlinks its tasks and bugs while keeping their feature, release and other fields.",
-  middleware: [...writeItem],
+  middleware: [...writeItem("delete")],
   request: { params: milestoneParam },
   responses: {
     200: jsonResponse("Deleted milestone id", z.object({ id: z.string() })),

@@ -33,11 +33,11 @@ export default function TaskDeleteDialog({
   shortcutEnabled = true,
 }: TaskDeleteDialogProps) {
   const { t } = useTranslation();
-  const { canDeleteTasks, isCheckingPermissions } = useWorkspacePermission();
+  const { canWorkItem, isCheckingPermissions } = useWorkspacePermission();
   const { mutateAsync: deleteTask, isPending } = useDeleteTask();
   const { data: task } = useGetTask(taskId);
   const copy = taskWindowCopy(t, task?.type === "feature");
-  const canDelete = !isCheckingPermissions && canDeleteTasks();
+  const canDelete = !isCheckingPermissions && canWorkItem(task?.type, "delete");
 
   useShortcut("deleteTask", () => handle.open(null), {
     enabled: canDelete && shortcutEnabled,

@@ -14,6 +14,7 @@ export function MilestoneRow({
   releaseName,
   selected,
   canEdit,
+  canDelete,
   first,
   last,
   pending,
@@ -27,6 +28,7 @@ export function MilestoneRow({
   releaseName?: string;
   selected: boolean;
   canEdit: boolean;
+  canDelete: boolean;
   first: boolean;
   last: boolean;
   pending: boolean;
@@ -116,7 +118,7 @@ export function MilestoneRow({
       >
         <ArrowUpRight className="size-3.5" />
       </Button>
-      {canEdit && (
+      {(canEdit || canDelete) && (
         <Menu
           onOpenChange={(open) => {
             if (open) selectingDialog.current = false;
@@ -134,29 +136,38 @@ export function MilestoneRow({
             <Ellipsis className="size-3.5" />
           </MenuTrigger>
           <MenuPopup align="end" finalFocus={() => !selectingDialog.current}>
-            <MenuItem
-              onClick={() => {
-                selectingDialog.current = true;
-                onEdit();
-              }}
-            >
-              {t("tasks:milestones.edit")}
-            </MenuItem>
-            <MenuItem disabled={first || pending} onClick={() => onMove(-1)}>
-              {t("tasks:milestones.moveUp")}
-            </MenuItem>
-            <MenuItem disabled={last || pending} onClick={() => onMove(1)}>
-              {t("tasks:milestones.moveDown")}
-            </MenuItem>
-            <MenuItem
-              variant="destructive"
-              onClick={() => {
-                selectingDialog.current = true;
-                onDelete();
-              }}
-            >
-              {t("tasks:milestones.delete")}
-            </MenuItem>
+            {canEdit && (
+              <>
+                <MenuItem
+                  onClick={() => {
+                    selectingDialog.current = true;
+                    onEdit();
+                  }}
+                >
+                  {t("tasks:milestones.edit")}
+                </MenuItem>
+                <MenuItem
+                  disabled={first || pending}
+                  onClick={() => onMove(-1)}
+                >
+                  {t("tasks:milestones.moveUp")}
+                </MenuItem>
+                <MenuItem disabled={last || pending} onClick={() => onMove(1)}>
+                  {t("tasks:milestones.moveDown")}
+                </MenuItem>
+              </>
+            )}
+            {canDelete && (
+              <MenuItem
+                variant="destructive"
+                onClick={() => {
+                  selectingDialog.current = true;
+                  onDelete();
+                }}
+              >
+                {t("tasks:milestones.delete")}
+              </MenuItem>
+            )}
           </MenuPopup>
         </Menu>
       )}

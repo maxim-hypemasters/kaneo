@@ -36,7 +36,9 @@ vi.mock("@/hooks/queries/project/use-get-projects", () => ({
   default: () => ({ data: [{ id: "project-1", slug: "WEB" }] }),
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: mocks.canUpdateTasks }),
+  useWorkspacePermission: () => ({
+    canWorkItem: () => mocks.canUpdateTasks(),
+  }),
 }));
 vi.mock("@/hooks/queries/task/use-get-project-features", () => ({
   useGetProjectFeatures: () => ({

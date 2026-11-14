@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "설명",
-			"toolbar": "문서 서식",
 			"paragraph": "Text",
 			"heading1": "제목 1",
 			"heading2": "제목 2",
@@ -227,8 +226,6 @@
 			"image": "이미지",
 			"file": "파일",
 			"embed": "임베드",
-			"undo": "실행 취소",
-			"redo": "다시 실행",
 			"expand": "문서 확대",
 			"collapse": "설명으로 돌아가기",
 			"uploading": "파일 업로드 중…",
@@ -1379,7 +1376,10 @@
 				"member": "Members",
 				"invitation": "Invitations",
 				"team": "Teams",
-				"ac": "Roles and permissions"
+				"ac": "Roles and permissions",
+				"bug": "Bugs",
+				"feature": "Features",
+				"milestone": "Milestones"
 			},
 			"permissions": {
 				"project": {
@@ -1526,6 +1526,60 @@
 					"delete": {
 						"label": "Delete roles",
 						"description": "Delete custom workspace roles."
+					}
+				},
+				"bug": {
+					"create": {
+						"description": "Can report bugs",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete bugs",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view bugs",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit bugs",
+						"label": "Update"
+					}
+				},
+				"feature": {
+					"create": {
+						"description": "Can create features",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete features and their documents",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view feature pages and the feature library",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit features, their documents and updates",
+						"label": "Update"
+					}
+				},
+				"milestone": {
+					"create": {
+						"description": "Can create milestones",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete milestones",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view milestones",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit, reorder and schedule milestones",
+						"label": "Update"
 					}
 				}
 			},

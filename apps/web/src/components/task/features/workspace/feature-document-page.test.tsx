@@ -51,8 +51,8 @@ vi.mock("@/hooks/queries/feature/use-feature-workspace", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canUpdateTasks: () => m.canEdit,
-    canDeleteTasks: () => m.canEdit,
+    canUpdateFeatures: () => m.canEdit,
+    canDeleteFeatures: () => m.canEdit,
   }),
 }));
 vi.mock("@/components/editor/document-draft-guard", () => ({

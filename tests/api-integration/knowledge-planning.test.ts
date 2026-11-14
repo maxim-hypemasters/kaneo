@@ -359,11 +359,12 @@ describe("Feature knowledge and milestone planning", () => {
     ).rejects.toThrow();
     expect((await task(child.id))?.type).toBe("task");
   });
-  it("protects library and milestone project reads with task:read API-key scopes", async () => {
+  it("protects library and milestone project reads with feature:read and milestone:read API-key scopes", async () => {
     const ctx = await setup();
     for (const [permissions, expected] of [
-      [{ task: ["read"] }, 200],
-      [{ task: ["update"] }, 403],
+      [{ feature: ["read"], milestone: ["read"] }, 200],
+      [{ task: ["read"] }, 403],
+      [{ feature: ["update"], milestone: ["update"] }, 403],
       [{ project: ["read"] }, 403],
     ] as const) {
       const key = await auth.api.createApiKey({
@@ -393,7 +394,7 @@ describe("Feature knowledge and milestone planning", () => {
       body: {
         userId: ctx.user.id,
         name: "Milestone editor",
-        permissions: { task: ["update"] },
+        permissions: { milestone: ["update"] },
       },
     });
     mockAnonymousSession();

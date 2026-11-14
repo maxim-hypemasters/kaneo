@@ -63,9 +63,11 @@ vi.mock("@/hooks/mutations/milestone/use-milestone-mutations", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canUpdateTasks: () => mocks.canEdit,
+    canCreateMilestones: () => mocks.canEdit,
+    canUpdateMilestones: () => mocks.canEdit,
+    canDeleteMilestones: () => mocks.canEdit,
     canAssignTasks: () => mocks.canEdit,
-    canCreateTasks: () => mocks.canEdit,
+    canWorkItem: () => mocks.canEdit,
   }),
 }));
 vi.mock("@/hooks/queries/workspace/use-active-workspace", () => ({

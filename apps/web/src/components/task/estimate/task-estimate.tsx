@@ -22,13 +22,13 @@ export function TaskEstimate({ task }: { task: Task }) {
   );
   const [valid, setValid] = useState(true);
   const [editorSession, setEditorSession] = useState(0);
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
   const mutation = useUpdateTask();
   const label =
     task.estimateSeconds == null
       ? t("tasks:estimate.empty")
       : formatEstimate(task.estimateSeconds);
-  if (!canUpdateTasks())
+  if (!canWorkItem(task.type, "update"))
     return <span className="text-sm text-muted-foreground">{label}</span>;
   return (
     <Popover

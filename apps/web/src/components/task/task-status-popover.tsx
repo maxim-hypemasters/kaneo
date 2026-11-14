@@ -30,9 +30,9 @@ export default function TaskStatusPopover({
     isError,
   } = useGetColumns(task.projectId);
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
 
-  if (!canUpdateTasks()) return <>{children}</>;
+  if (!canWorkItem(task.type, "update")) return <>{children}</>;
 
   const changeStatus = async (status: string) => {
     setOpen(false);

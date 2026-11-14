@@ -29,9 +29,9 @@ Masterplanning keeps the same release order, submission-date rail, and active-re
 
 Milestone rows show their owning Feature, lead, priority, derived dates, and progress. The progress diamond and counter describe all linked Tasks/Bugs across releases, including archived work, following the existing milestone counting rules. Derived status and dates exclude archived work. Done milestone names are crossed out. Select a milestone name to open its details.
 
-With **Edit tasks** permission, drag a milestone by its handle into another release or **No release**. You can also use **Move to release** in its row menu, including with a keyboard or on a phone. This changes only the milestone's release. Linked Tasks/Bugs whose release matches the milestone's previous release follow the move, including moves to or from **No release**; explicit child release overrides remain. The Feature and milestone's manual order do not change.
+With **Milestones: Update** permission, drag a milestone by its handle into another release or **No release**. You can also use **Move to release** in its row menu, including with a keyboard or on a phone. This changes only the milestone's release. Linked Tasks/Bugs whose release matches the milestone's previous release follow the move, including moves to or from **No release**; explicit child release overrides remain. The Feature and milestone's manual order do not change.
 
-Choose **New milestone** in a release group or **No release** to create a milestone directly from Masterplanning. Select a Feature in the project, then complete the existing milestone form. Its **Release** starts with the group you chose and remains editable, including **No release**. Creating a milestone requires **Edit tasks**; creating new Tasks/Bugs within that form also requires permission to create tasks. Cancelling creates nothing.
+Choose **New milestone** in a release group or **No release** to create a milestone directly from Masterplanning. Select a Feature in the project, then complete the existing milestone form. Its **Release** starts with the group you chose and remains editable, including **No release**. Creating a milestone requires **Milestones: Create**; creating new Tasks/Bugs within that form also requires permission to create that kind of work. Cancelling creates nothing.
 
 The moving row stays pending until its save is reconciled. If saving fails, Kaneo refreshes the membership and offers a retry. Other windows receive the same milestone and linked-work updates without reloading.
 
@@ -70,7 +70,7 @@ If that latest release has a two- or three-part version name, **Name** also star
 
 The release and selected milestone assignments save together. Linked Tasks/Bugs with **No release** follow their milestone into the new release; explicit child release overrides stay where they are. Cancelling creates nothing. If a milestone was deleted, moved, or assigned elsewhere while you were choosing it, the entire save is rejected and your form stays open for correction. Review the selected milestones and retry.
 
-Milestone selection requires permission to read and edit tasks, in addition to creating releases. Without those task permissions, you can still create a release using the usual fields. To move a milestone already assigned to another release, create the release first and use [Link existing milestone](#put-work-in-a-release) on its detail page.
+Milestone selection requires **Milestones: Read** and **Milestones: Update**, in addition to creating releases. Without those permissions, you can still create a release using the usual fields. To move a milestone already assigned to another release, create the release first and use [Link existing milestone](#put-work-in-a-release) on its detail page.
 
 ## Edit or delete a release
 
@@ -88,7 +88,7 @@ Opening a Feature from a release also preselects that release when you create a 
 
 From a release's **New** menu, choose **Link existing milestone** or **Link existing tasks or bugs** to add existing work. Search, select items across pages, then choose **Link selected**. Each row shows its current release or **No release**. Work from another release moves into the open release; already assigned items are omitted. Completed Tasks/Bugs and empty milestones are available, while archived Tasks/Bugs are excluded.
 
-Linking a Task/Bug changes only its release, preserving its Feature and milestone. Linking a milestone applies the follower rules below, keeping explicit child release overrides. Linking requires **Edit tasks**, independently of permission to create work. If an item cannot be linked, successful assignments remain saved and the remaining selection can be retried or removed.
+Linking a Task/Bug changes only its release, preserving its Feature and milestone. Linking a milestone applies the follower rules below, keeping explicit child release overrides. Linking requires update permission for the linked kind (Task, Bug or Milestone), independently of permission to create work. If an item cannot be linked, successful assignments remain saved and the remaining selection can be retried or removed.
 
 ## Schedule a release
 
@@ -96,7 +96,7 @@ Open a release and choose **Plan release** beside **New**. Each Task/Bug needs a
 
 The planner uses Monday–Friday, 09:00–17:00 for every assignee, without member calendar setup. It starts with today's full working hours or the release's **Start** date if that comes later. It uses the project's planning timezone. The first plan uses the manager's browser timezone when the project has none saved.
 
-When every Task/Bug already has an assignee and estimate, **Plan release** opens the fullscreen timeline preview directly. Otherwise, the planning dialog lists only Tasks/Bugs missing an assignee or estimate. Set these inputs directly on each row; priority is also editable there. These task-property edits save immediately and remain saved if you close the dialog. Corrected rows stay in the dialog until it is closed, and **Preview** becomes available once every Task/Bug has both required inputs. New missing inputs appear as they are detected; deleted or moved-out work is removed. Assigning work requires assignment permission; estimate and priority edits require task-update permission. Choose **Preview** to calculate a proposal for the release's complete work list and open its Gantt timeline. Opening the input editor alone does not calculate a plan.
+When every Task/Bug already has an assignee and estimate, **Plan release** opens the fullscreen timeline preview directly. Otherwise, the planning dialog lists only Tasks/Bugs missing an assignee or estimate. Set these inputs directly on each row; priority is also editable there. These task-property edits save immediately and remain saved if you close the dialog. Corrected rows stay in the dialog until it is closed, and **Preview** becomes available once every Task/Bug has both required inputs. New missing inputs appear as they are detected; deleted or moved-out work is removed. Assigning work requires assignment permission; estimate and priority edits require update permission for the Task or Bug. Choose **Preview** to calculate a proposal for the release's complete work list and open its Gantt timeline. Opening the input editor alone does not calculate a plan.
 
 The fullscreen preview groups Tasks/Bugs by proposed assignee. Each scheduled item appears as one card spanning its scheduled dates. The chart also shows dependency arrows within the release and release-date markers. Its timeline uses your browser's timezone. Scroll vertically to browse rows, scroll horizontally or drag to explore dates, or hold Shift while scrolling to zoom. Select a task bar to see its task name, milestone, and Feature. The preview is read-only, and unscheduled work remains visible with its reason and any warning that applying will remove a saved placement.
 
@@ -184,13 +184,13 @@ Each item moves on its own. Unfinished milestones and Tasks/Bugs are handled ind
 | Action | Permission | Default roles |
 | --- | --- | --- |
 | See releases and their progress | Access to the project | Everyone, including viewers |
-| Browse Masterplanning milestones | Read tasks | Everyone, including viewers |
-| Move milestones in Masterplanning | Edit tasks | Member, Admin, Owner |
+| Browse Masterplanning milestones | Read milestones | Everyone, including viewers |
+| Move milestones in Masterplanning | Update milestones | Member, Admin, Owner |
 | Create or edit a release | Manage projects | Admin, Owner |
-| Create a release with milestone links | Manage projects, read tasks, and edit tasks | Admin, Owner |
-| Delete a release | Manage projects and edit tasks | Admin, Owner |
-| Put Tasks/Bugs and milestones in a release | Edit tasks | Member, Admin, Owner |
-| Move unfinished work | Edit tasks | Member, Admin, Owner |
+| Create a release with milestone links | Manage projects, read milestones, and update milestones | Admin, Owner |
+| Delete a release | Manage projects, and update tasks, bugs, and milestones | Admin, Owner |
+| Put Tasks/Bugs and milestones in a release | Update permission for each kind linked | Member, Admin, Owner |
+| Move unfinished work | Update tasks, bugs, and milestones | Member, Admin, Owner |
 
 These are the starting roles; an admin can [change them](/core/functional/collaborate-with-team#choose-a-role). Controls you can't use are hidden, and the same rules apply to API keys, the CLI, and MCP clients.
 
@@ -198,6 +198,6 @@ These are the starting roles; an admin can [change them](/core/functional/collab
 
 The [Kaneo CLI](/cli/reference) and the [MCP server](/core/integrations/mcp) can list, create, edit, and delete releases and set a task's release. The API's [endpoint reference](/api-reference/introduction) lists the routes under **Releases**.
 
-API callers can supply up to 100 unique `milestoneIds` in `POST /release/project/{projectId}` to create a release with unassigned milestone links atomically. Supplying links additionally requires `task:update`; existing callers without them retain the normal creation behavior. `GET /release/project/{projectId}/milestone-link-candidates` requires `task:read` and returns searchable, paginated unassigned milestones in the project. Name conflicts use `RELEASE_NAME_TAKEN`; changed or ineligible selections use `MILESTONE_SELECTION_CONFLICT`, both with HTTP 409.
+API callers can supply up to 100 unique `milestoneIds` in `POST /release/project/{projectId}` to create a release with unassigned milestone links atomically. Supplying links additionally requires `milestone:update`; existing callers without them retain the normal creation behavior. `GET /release/project/{projectId}/milestone-link-candidates` requires `milestone:read` and returns searchable, paginated unassigned milestones in the project. Name conflicts use `RELEASE_NAME_TAKEN`; changed or ineligible selections use `MILESTONE_SELECTION_CONFLICT`, both with HTTP 409.
 
 Release summaries count milestone execution totals separately from Feature knowledge groups. The historical chart remains Task/Bug-only: editing milestone metadata alone does not create history events.

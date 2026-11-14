@@ -3,6 +3,7 @@ import type { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
 import { assertProjectAccess } from "../project-access/assert-project-access";
+import { readJsonObjectBody } from "./read-json-object-body";
 import { validateWorkspaceAccess } from "./validate-workspace-access";
 
 type LookupResource =
@@ -54,17 +55,13 @@ type WorkspaceAccessMiddlewareConfig = {
   sources: WorkspaceIdSource[];
 };
 
-type ResourceScope = { workspaceId: string; projectId: string | null };
-
-async function readJsonObjectBody(
-  c: Context,
-): Promise<Record<string, unknown>> {
-  const raw = (await c.req.json().catch(() => ({}))) || {};
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return {};
-  }
-  return raw as Record<string, unknown>;
-}
+// `taskType` is set when the resource is, or belongs to, a task row, so work
+// item permissions can be checked against the row's type.
+type ResourceScope = {
+  workspaceId: string;
+  projectId: string | null;
+  taskType?: string;
+};
 
 export function workspaceAccessMiddleware(
   config: WorkspaceAccessMiddlewareConfig,
@@ -78,6 +75,7 @@ export function workspaceAccessMiddleware(
 
     let workspaceId: string | null = null;
     let projectIds: string[] = [];
+    let taskTypes: string[] | null = null;
     let notFoundMessage = WORKSPACE_NOT_FOUND;
 
     for (const source of config.sources) {
@@ -106,6 +104,7 @@ export function workspaceAccessMiddleware(
           }
           workspaceId = scope.workspaceId;
           projectIds = scope.projectId ? [scope.projectId] : [];
+          if (scope.taskType) taskTypes = [scope.taskType];
         }
       } else if (source.type === "lookupMany") {
         const body = await readJsonObjectBody(c);
@@ -120,6 +119,7 @@ export function workspaceAccessMiddleware(
               .select({
                 workspaceId: schema.projectTable.workspaceId,
                 projectId: schema.projectTable.id,
+                taskType: schema.taskTable.type,
               })
               .from(schema.taskTable)
               .innerJoin(
@@ -140,6 +140,7 @@ export function workspaceAccessMiddleware(
             }
             workspaceId = workspaceIds[0] ?? null;
             projectIds = [...new Set(tasks.map((task) => task.projectId))];
+            taskTypes = [...new Set(tasks.map((task) => task.taskType))];
           }
         }
       }
@@ -165,6 +166,7 @@ export function workspaceAccessMiddleware(
 
     c.set("workspaceId", workspaceId);
     if (projectIds.length === 1) c.set("authorizedProjectId", projectIds[0]);
+    if (taskTypes) c.set("taskTypes", taskTypes);
 
     return next();
   };
@@ -192,6 +194,7 @@ async function lookupScope(
         .select({
           workspaceId: schema.projectTable.workspaceId,
           projectId: schema.projectTable.id,
+          taskType: schema.taskTable.type,
         })
         .from(schema.taskTable)
         .innerJoin(
@@ -256,6 +259,7 @@ async function lookupScope(
         .select({
           workspaceId: schema.projectTable.workspaceId,
           projectId: schema.projectTable.id,
+          taskType: schema.taskTable.type,
         })
         .from(schema.timeEntryTable)
         .innerJoin(
@@ -276,6 +280,7 @@ async function lookupScope(
         .select({
           workspaceId: schema.projectTable.workspaceId,
           projectId: schema.projectTable.id,
+          taskType: schema.taskTable.type,
         })
         .from(schema.activityTable)
         .innerJoin(
@@ -296,6 +301,7 @@ async function lookupScope(
         .select({
           workspaceId: schema.projectTable.workspaceId,
           projectId: schema.projectTable.id,
+          taskType: schema.taskTable.type,
         })
         .from(schema.activityTable)
         .innerJoin(

@@ -65,7 +65,7 @@ export default function ProjectLayout({
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] =
     useState(false);
   const [createType, setCreateType] = useState<TaskType | null>(null);
-  const { canCreateTasks } = useWorkspacePermission();
+  const { canCreateWorkItems } = useWorkspacePermission();
   const { background } = useBackgroundStore();
   const viewMode = useUserPreferencesStore((state) => state.viewMode);
 
@@ -86,7 +86,7 @@ export default function ProjectLayout({
               : "board");
   const currentView = resolveProjectView(resolvedRoute, viewMode);
   const showCreate =
-    resolvedRoute !== "releases" && Boolean(project) && canCreateTasks();
+    resolvedRoute !== "releases" && Boolean(project) && canCreateWorkItems();
   const showToolbar = Boolean(summary || toolbar || showCreate);
 
   // "Tasks" on the backlog or releases returns to the task view shown last,

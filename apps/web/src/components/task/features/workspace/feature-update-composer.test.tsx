@@ -36,7 +36,7 @@ vi.mock("@/hooks/queries/feature/use-feature-workspace", () => ({
   ],
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks: () => m.canEdit }),
+  useWorkspacePermission: () => ({ canUpdateFeatures: () => m.canEdit }),
 }));
 vi.mock("@/components/editor/document-draft-guard", () => ({
   useDocumentDraftGuard: (guard: { dirty: boolean; saving: boolean }) => {

@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "說明",
-			"toolbar": "文件格式",
 			"paragraph": "文字",
 			"heading1": "標題 1",
 			"heading2": "標題 2",
@@ -227,8 +226,6 @@
 			"image": "圖片",
 			"file": "檔案",
 			"embed": "嵌入",
-			"undo": "復原",
-			"redo": "重做",
 			"expand": "展開文件",
 			"collapse": "返回描述",
 			"uploading": "正在上傳檔案…",
@@ -987,7 +984,10 @@
 				"member": "成員",
 				"invitation": "邀請",
 				"team": "團隊",
-				"ac": "角色與權限"
+				"ac": "角色與權限",
+				"bug": "Bugs",
+				"feature": "Features",
+				"milestone": "Milestones"
 			},
 			"permissions": {
 				"project": {
@@ -1134,6 +1134,60 @@
 					"delete": {
 						"label": "刪除角色",
 						"description": "刪除自訂的工作區角色。"
+					}
+				},
+				"bug": {
+					"create": {
+						"description": "Can report bugs",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete bugs",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view bugs",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit bugs",
+						"label": "Update"
+					}
+				},
+				"feature": {
+					"create": {
+						"description": "Can create features",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete features and their documents",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view feature pages and the feature library",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit features, their documents and updates",
+						"label": "Update"
+					}
+				},
+				"milestone": {
+					"create": {
+						"description": "Can create milestones",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete milestones",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view milestones",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit, reorder and schedule milestones",
+						"label": "Update"
 					}
 				}
 			},

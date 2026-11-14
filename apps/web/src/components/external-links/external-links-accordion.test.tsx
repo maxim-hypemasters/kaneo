@@ -26,7 +26,7 @@ vi.mock("@/fetchers/external-link/delete-external-link", () => ({
 
 const canUpdateTasks = vi.fn(() => true);
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateTasks }),
+  useWorkspacePermission: () => ({ canWorkItem: () => canUpdateTasks() }),
 }));
 vi.mock("@/fetchers/external-link/create-external-link", () => ({
   default: vi.fn(),

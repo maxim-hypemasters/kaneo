@@ -40,7 +40,7 @@ vi.mock("@/hooks/queries/task/use-get-task", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canDeleteTasks: mocks.canDeleteTasks,
+    canWorkItem: () => mocks.canDeleteTasks(),
     isCheckingPermissions: false,
   }),
 }));

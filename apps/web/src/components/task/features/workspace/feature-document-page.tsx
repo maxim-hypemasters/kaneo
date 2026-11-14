@@ -34,7 +34,7 @@ export function FeatureDocumentPage({
   refresh: () => Promise<unknown>;
 }) {
   const { t } = useTranslation();
-  const { canUpdateTasks, canDeleteTasks } = useWorkspacePermission();
+  const { canUpdateFeatures, canDeleteFeatures } = useWorkspacePermission();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const editor = useRef<DocumentEditorHandle>(null);
@@ -42,7 +42,7 @@ export function FeatureDocumentPage({
     featureId,
     projectId,
     document,
-    canEdit: canUpdateTasks(),
+    canEdit: canUpdateFeatures(),
     refresh,
   });
   const remove = useFeatureWorkspaceMutation(projectId, featureId, () =>
@@ -74,7 +74,7 @@ export function FeatureDocumentPage({
               onRetry={draft.retry}
             />
           )}
-          {canDeleteTasks() && (
+          {canDeleteFeatures() && (
             <Button
               type="button"
               size="icon-sm"
@@ -152,7 +152,7 @@ export function FeatureDocumentPage({
         pending={remove.isPending}
         failed={remove.isError}
         onConfirm={() => {
-          if (!canDeleteTasks()) return;
+          if (!canDeleteFeatures()) return;
           void remove
             .mutateAsync()
             .then(() => {

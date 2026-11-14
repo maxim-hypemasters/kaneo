@@ -62,7 +62,7 @@ vi.mock(
   () => ({ default: () => ({ data: undefined }) }),
 );
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canDeleteTasks: () => true }),
+  useWorkspacePermission: () => ({ canWorkItem: () => true }),
 }));
 vi.mock("@/lib/toast", () => ({
   toast: { message: mocks.message, error: mocks.error },

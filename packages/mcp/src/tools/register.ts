@@ -648,7 +648,7 @@ export function registerTools(
     "delete_release",
     {
       description:
-        "Delete a release. Its milestones and tasks stay in the project with no release, and each records the change in its activity. Needs permission to update the project and its tasks.",
+        "Delete a release. Its milestones and tasks stay in the project with no release, and each records the change in its activity. Needs permission to update the project and its tasks, bugs and milestones.",
       inputSchema: z.object({ releaseId: nonEmptyString }),
     },
     async (args) =>

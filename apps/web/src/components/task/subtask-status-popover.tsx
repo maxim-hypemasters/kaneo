@@ -28,9 +28,10 @@ export default function SubtaskStatusPopover({
   const [open, setOpen] = useState(false);
   const { data: columns = [] } = useGetColumns(projectId);
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
 
-  if (!canUpdateTasks()) return <>{children}</>;
+  if (!tasks.every((task) => canWorkItem(task.type, "update")))
+    return <>{children}</>;
 
   const current = tasks.every((task) => task.status === tasks[0]?.status)
     ? tasks[0]?.status

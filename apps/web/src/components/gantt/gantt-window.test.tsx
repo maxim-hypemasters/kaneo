@@ -82,6 +82,9 @@ vi.mock("@/hooks/use-workspace-permission", () => ({
     canAssignTasks: () => true,
     canUpdateProjects: () => true,
     canUpdateTasks: () => true,
+    canUpdateBugs: () => true,
+    canUpdateMilestones: () => true,
+    canWorkItem: () => true,
   }),
 }));
 vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({

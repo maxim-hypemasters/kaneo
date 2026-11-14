@@ -1,6 +1,7 @@
 import type { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 import { GitBranch, Link2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import useGetTask from "@/hooks/queries/task/use-get-task";
 import { HeaderIconButton } from "./header-icon-button";
 import { TaskMoreMenu } from "./task-more-menu";
 import { useTaskCopyActions } from "./use-task-copy-actions";
@@ -20,6 +21,7 @@ export function TaskHeaderActions({
 }: TaskHeaderActionsProps) {
   const { t } = useTranslation();
   const actions = useTaskCopyActions({ taskId, projectId, workspaceId });
+  const { data: task } = useGetTask(taskId);
 
   return (
     <div className="flex items-center gap-1">
@@ -41,7 +43,11 @@ export function TaskHeaderActions({
           <GitBranch />
         </HeaderIconButton>
       )}
-      <TaskMoreMenu actions={actions} deleteHandle={deleteHandle} />
+      <TaskMoreMenu
+        actions={actions}
+        deleteHandle={deleteHandle}
+        taskType={task?.type}
+      />
     </div>
   );
 }

@@ -28,7 +28,7 @@ export function FeatureDocuments({
   onDocumentChange: (id?: string) => void;
 }) {
   const { t } = useTranslation();
-  const { canUpdateTasks } = useWorkspacePermission();
+  const { canUpdateFeatures } = useWorkspacePermission();
   const requestLeave = useDocumentDraftNavigation();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -88,7 +88,7 @@ export function FeatureDocuments({
           aria-label={t("tasks:features.workspace.searchDocuments")}
           className="min-w-0 flex-1"
         />
-        {canUpdateTasks() && (
+        {canUpdateFeatures() && (
           <Button
             type="button"
             size="sm"

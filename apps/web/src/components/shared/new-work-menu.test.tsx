@@ -12,7 +12,17 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
-afterEach(cleanup);
+const creatable = vi.hoisted(() => ({ types: ["task", "feature", "bug"] }));
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({
+    canWorkItem: (type: string) => creatable.types.includes(type),
+  }),
+}));
+
+afterEach(() => {
+  cleanup();
+  creatable.types = ["task", "feature", "bug"];
+});
 
 describe("NewWorkMenu", () => {
   it.each([
@@ -96,5 +106,17 @@ describe("NewWorkMenu", () => {
       "tasks:releases.link.taskAction",
     ]);
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+  });
+
+  it("offers only the kinds of work the role can create", async () => {
+    creatable.types = ["bug"];
+    render(<NewWorkMenu onSelect={vi.fn()} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:createMenu.label" }),
+    );
+    const options = await screen.findAllByRole("menuitem");
+    expect(options.map((option) => option.textContent)).toEqual([
+      "tasks:createMenu.newBug",
+    ]);
   });
 });

@@ -27,6 +27,14 @@ describe("@kaneo/permissions statement surface", () => {
       "delete",
       "assign",
     ]);
+    for (const resource of ["bug", "feature", "milestone"] as const) {
+      expect(statement[resource]).toEqual([
+        "create",
+        "read",
+        "update",
+        "delete",
+      ]);
+    }
     expect(statement.label).toEqual(["create", "read", "update", "delete"]);
     expect(statement.workspace).toEqual([
       "read",
@@ -53,6 +61,20 @@ describe("built-in role privileges", () => {
     expect(viewer.statements.task).toEqual(["read"]);
     expect(viewer.statements.label).toEqual(["read"]);
     expect(viewer.statements.workspace).toEqual(["read"]);
+    expect(viewer.statements.bug).toEqual(["read"]);
+    expect(viewer.statements.feature).toEqual(["read"]);
+    expect(viewer.statements.milestone).toEqual(["read"]);
+  });
+
+  it("gives bugs, features and milestones the same defaults as tasks", () => {
+    for (const role of [member, admin, owner]) {
+      const taskCrud = role.statements.task.filter(
+        (action) => action !== "assign",
+      );
+      expect(role.statements.bug).toEqual(taskCrud);
+      expect(role.statements.feature).toEqual(taskCrud);
+      expect(role.statements.milestone).toEqual(taskCrud);
+    }
   });
 
   it("member can create/read/update tasks but not delete or manage settings", () => {

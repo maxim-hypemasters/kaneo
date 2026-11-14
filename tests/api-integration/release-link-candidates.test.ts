@@ -464,11 +464,12 @@ describe("release link candidates", () => {
 
 describe("release link candidate access", () => {
   it.each([
-    [{ task: ["read"] }, 200],
+    [{ task: ["read"], bug: ["read"], milestone: ["read"] }, 200],
+    [{ task: ["read"] }, 403],
     [{ task: ["update"] }, 403],
     [{ project: ["read"] }, 403],
   ] as const)(
-    "requires custom role task:read %j",
+    "requires custom role task, bug and milestone read %j",
     async (permission, status) => {
       const ctx = await setup("release_link_reader");
       await db.insert(schema.workspaceRoleTable).values({
@@ -487,28 +488,32 @@ describe("release link candidate access", () => {
   );
 
   it.each([
-    [{ task: ["read"] }, 200],
+    [{ task: ["read"], bug: ["read"], milestone: ["read"] }, 200],
+    [{ task: ["read"] }, 403],
     [{ task: ["update"] }, 403],
     [{ project: ["read"] }, 403],
-  ] as const)("requires API-key task:read %j", async (permissions, status) => {
-    const ctx = await setup();
-    const key = await auth.api.createApiKey({
-      body: {
-        userId: ctx.user.id,
-        name: "Release link scope",
-        permissions: JSON.parse(JSON.stringify(permissions)),
-      },
-    });
-    mockAnonymousSession();
-    expect(
-      (
-        await ctx.app.request(
-          `/api/release/${ctx.release.id}/link-candidates?kind=milestone`,
-          { headers: { "x-api-key": key.key } },
-        )
-      ).status,
-    ).toBe(status);
-  });
+  ] as const)(
+    "requires API-key task, bug and milestone read %j",
+    async (permissions, status) => {
+      const ctx = await setup();
+      const key = await auth.api.createApiKey({
+        body: {
+          userId: ctx.user.id,
+          name: "Release link scope",
+          permissions: JSON.parse(JSON.stringify(permissions)),
+        },
+      });
+      mockAnonymousSession();
+      expect(
+        (
+          await ctx.app.request(
+            `/api/release/${ctx.release.id}/link-candidates?kind=milestone`,
+            { headers: { "x-api-key": key.key } },
+          )
+        ).status,
+      ).toBe(status);
+    },
+  );
 
   it("hides other workspaces and rejects anonymous requests", async () => {
     const ctx = await setup();

@@ -172,12 +172,12 @@ describe("new Feature link candidates", () => {
     expect((await ctx.read()).status).toBe(404);
   });
 
-  it("requires task:read for sessions and API keys", async () => {
+  it("requires feature:read for sessions and API keys", async () => {
     const ctx = await setup("creator");
     await db.insert(schema.workspaceRoleTable).values({
       workspaceId: ctx.workspace.id,
       role: "creator",
-      permission: JSON.stringify({ task: ["create"] }),
+      permission: JSON.stringify({ task: ["read"], feature: ["create"] }),
     });
     expect((await ctx.read()).status).toBe(403);
     await db
@@ -196,7 +196,7 @@ describe("new Feature link candidates", () => {
       body: {
         userId: ctx.user.id,
         name: "Read",
-        permissions: { task: ["read"] },
+        permissions: { feature: ["read"] },
       },
     });
     const request = (key: string) =>

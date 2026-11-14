@@ -179,3 +179,13 @@ export function requireWorkspacePermission(permissions: PermissionMap) {
     return next();
   };
 }
+
+// Passes when any one of the permission sets is granted, such as creating a
+// task, a bug or a feature. A refusal reports what the first set is missing.
+export function requireAnyWorkspacePermission(options: PermissionMap[]) {
+  return async (c: Context, next: Next) => {
+    const allowed = await workspacePermissionChecker(c);
+    if (options.some(allowed)) return next();
+    return requireWorkspacePermission(options[0] ?? {})(c, next);
+  };
+}

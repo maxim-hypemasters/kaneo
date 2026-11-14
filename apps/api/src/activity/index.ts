@@ -7,6 +7,7 @@ import {
   jsonResponse,
 } from "../openapi";
 import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import { requireWorkItemPermission } from "../utils/require-work-item-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import createActivity from "./controllers/create-activity";
 import createComment from "./controllers/create-comment";
@@ -79,7 +80,7 @@ const createActivityRoute = createRoute({
     "Record a system-generated event on a task. Most events are written by the server itself; this exists for importers and integrations.",
   middleware: [
     workspaceAccess.fromTaskId(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
   ] as const,
   request: {
     body: {
@@ -93,7 +94,7 @@ const createActivityRoute = createRoute({
       "Invalid body, or a reserved comment/Feature-update activity submitted through the generic endpoint",
     ),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for the task's type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
@@ -109,7 +110,7 @@ const createCommentRoute = createRoute({
     "Add a comment to a task. Equivalent to POST /comment/{taskId}, kept for the activity-feed client.",
   middleware: [
     workspaceAccess.fromTaskId(),
-    requireWorkspacePermission({ task: ["update"] }),
+    requireWorkItemPermission("update"),
   ] as const,
   request: {
     body: {
@@ -121,7 +122,7 @@ const createCommentRoute = createRoute({
     200: jsonResponse("The created comment", activitySchema),
     400: errorResponse("Invalid body"),
     403: errorResponse(
-      "No access to the project, or missing task:update permission",
+      "No access to the project, or missing update permission for the task's type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
   },
