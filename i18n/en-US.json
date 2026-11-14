@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Description",
-			"toolbar": "Document formatting",
 			"paragraph": "Text",
 			"heading1": "Heading 1",
 			"heading2": "Heading 2",
@@ -227,8 +226,6 @@
 			"image": "Image",
 			"file": "File",
 			"embed": "Embed",
-			"undo": "Undo",
-			"redo": "Redo",
 			"expand": "Expand document",
 			"collapse": "Return to description",
 			"uploading": "Uploading file…",

@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Beschrijving",
-			"toolbar": "Documentopmaak",
 			"paragraph": "Text",
 			"heading1": "Kop 1",
 			"heading2": "Kop 2",
@@ -227,8 +226,6 @@
 			"image": "Afbeelding",
 			"file": "Bestand",
 			"embed": "Insluiten",
-			"undo": "Ongedaan maken",
-			"redo": "Opnieuw",
 			"expand": "Document vergroten",
 			"collapse": "Terug naar de beschrijving",
 			"uploading": "Bestand uploaden…",

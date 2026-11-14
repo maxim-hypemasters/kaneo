@@ -11,7 +11,6 @@ import {
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { ToolbarButton } from "@/components/ui/toolbar";
 import {
   Dialog,
   DialogHeader,
@@ -24,7 +23,6 @@ import { DocumentEmbedDialog } from "./document-embed-dialog";
 import { DocumentFormattingMenu } from "./document-formatting-menu";
 import { DocumentLinkDialog } from "./document-link-dialog";
 import { DocumentSlashMenu } from "./document-slash-menu";
-import { DocumentToolbar } from "./document-toolbar";
 import type { DocumentEditorProps } from "./document-editor-types";
 import { focusDocumentEnd } from "./focus-document-end";
 import {
@@ -74,6 +72,10 @@ export function DocumentEditor(props: DocumentEditorProps) {
   const expandable = props.expandable ?? true;
   const locked = Boolean(props.disabled || uploading);
   const canActivate = Boolean(props.readOnly && props.onRequestEdit && !locked);
+  const showActions =
+    !fullscreen &&
+    (!editable || !page) &&
+    (expandable || Boolean(props.headerActions));
 
   useImperativeHandle(
     props.ref,
@@ -129,44 +131,6 @@ export function DocumentEditor(props: DocumentEditorProps) {
               page && "flex-1",
             )}
           >
-            {editable && !page && (
-              <div className="sticky top-0 z-20 shrink-0 border-b bg-background px-2 py-2 sm:px-3">
-                <DocumentToolbar
-                  editor={editor}
-                  disabled={locked}
-                  canUpload={Boolean(props.uploadAsset)}
-                  onUpload={openFile}
-                  onLink={openLink}
-                  onEmbed={openEmbed}
-                  endActions={
-                    !fullscreen ? (
-                      <>
-                        {props.headerActions}
-                        {expandable && (
-                          <ToolbarButton
-                            ref={expandButton}
-                            render={
-                              <Button
-                                type="button"
-                                size="icon-sm"
-                                variant="ghost"
-                              />
-                            }
-                            aria-label={t("common:documentEditor.expand")}
-                            title={t("common:documentEditor.expand")}
-                            disabled={locked}
-                            onMouseDown={(event) => event.preventDefault()}
-                            onClick={() => setFullscreen(true)}
-                          >
-                            <Maximize2 className="size-4" />
-                          </ToolbarButton>
-                        )}
-                      </>
-                    ) : undefined
-                  }
-                />
-              </div>
-            )}
             <div
               className={cn(
                 "min-h-0",
@@ -193,11 +157,9 @@ export function DocumentEditor(props: DocumentEditorProps) {
                   page ? "flex flex-1 flex-col" : "px-3 sm:px-4",
                   fullscreen && "mx-auto w-full max-w-4xl px-5 py-8 sm:px-10",
                   editable && !page && "[&_.ProseMirror]:min-h-44",
+                  editable && !page && !fullscreen && "pt-3",
                   !editable && "[&_.ProseMirror]:pb-2",
-                  !editable &&
-                    !fullscreen &&
-                    (expandable || props.headerActions) &&
-                    "min-h-8 [&_.ProseMirror]:pe-9",
+                  showActions && "min-h-8 [&_.ProseMirror]:pe-9",
                   canActivate &&
                     "cursor-text rounded-lg focus-within:ring-2 focus-within:ring-ring",
                 )}
@@ -246,28 +208,31 @@ export function DocumentEditor(props: DocumentEditorProps) {
                   props.onRequestEdit?.();
                 }}
               >
-                {!editable &&
-                  !fullscreen &&
-                  (expandable || props.headerActions) && (
-                    <div className="absolute right-1 top-0 z-10 flex items-center gap-2">
-                      {props.headerActions}
-                      {expandable && (
-                        <Button
-                          ref={expandButton}
-                          type="button"
-                          size="icon-sm"
-                          variant="ghost"
-                          aria-label={t("common:documentEditor.expand")}
-                          title={t("common:documentEditor.expand")}
-                          disabled={locked}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => setFullscreen(true)}
-                        >
-                          <Maximize2 className="size-4" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
+                {showActions && (
+                  <div
+                    className={cn(
+                      "absolute z-10 flex items-center gap-2",
+                      editable ? "right-2 top-2" : "right-1 top-0",
+                    )}
+                  >
+                    {props.headerActions}
+                    {expandable && (
+                      <Button
+                        ref={expandButton}
+                        type="button"
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label={t("common:documentEditor.expand")}
+                        title={t("common:documentEditor.expand")}
+                        disabled={locked}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => setFullscreen(true)}
+                      >
+                        <Maximize2 className="size-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
                 {!props.value && props.readOnly && (
                   <p className="py-3 text-muted-foreground text-sm">
                     {props.placeholder || t("common:documentEditor.empty")}

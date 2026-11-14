@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Opis",
-			"toolbar": "Formatowanie dokumentu",
 			"paragraph": "Text",
 			"heading1": "Nagłówek 1",
 			"heading2": "Nagłówek 2",
@@ -227,8 +226,6 @@
 			"image": "Obraz",
 			"file": "Plik",
 			"embed": "Osadź",
-			"undo": "Cofnij",
-			"redo": "Ponów",
 			"expand": "Powiększ dokument",
 			"collapse": "Wróć do opisu",
 			"uploading": "Przesyłanie pliku…",

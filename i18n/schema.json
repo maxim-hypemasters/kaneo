@@ -807,9 +807,6 @@
 						"description": {
 							"type": "string"
 						},
-						"toolbar": {
-							"type": "string"
-						},
 						"paragraph": {
 							"type": "string"
 						},
@@ -868,12 +865,6 @@
 							"type": "string"
 						},
 						"embed": {
-							"type": "string"
-						},
-						"undo": {
-							"type": "string"
-						},
-						"redo": {
 							"type": "string"
 						},
 						"expand": {
@@ -963,7 +954,6 @@
 					},
 					"required": [
 						"description",
-						"toolbar",
 						"paragraph",
 						"heading1",
 						"heading2",
@@ -984,8 +974,6 @@
 						"image",
 						"file",
 						"embed",
-						"undo",
-						"redo",
 						"expand",
 						"collapse",
 						"uploading",

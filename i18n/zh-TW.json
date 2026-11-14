@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "說明",
-			"toolbar": "文件格式",
 			"paragraph": "文字",
 			"heading1": "標題 1",
 			"heading2": "標題 2",
@@ -227,8 +226,6 @@
 			"image": "圖片",
 			"file": "檔案",
 			"embed": "嵌入",
-			"undo": "復原",
-			"redo": "重做",
 			"expand": "展開文件",
 			"collapse": "返回描述",
 			"uploading": "正在上傳檔案…",

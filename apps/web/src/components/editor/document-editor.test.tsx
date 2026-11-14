@@ -176,24 +176,18 @@ describe("DocumentEditor", () => {
     expect(editor.getText()).toBe("Original");
   });
 
-  it("places Expand directly after Undo and Redo inside the editing toolbar", async () => {
+  it("edits without a formatting toolbar and keeps one Expand inside the content", async () => {
     render(<DraftEditor />);
-    await getEditor();
-    const toolbar = screen.getByRole("toolbar", {
-      name: "common:documentEditor.toolbar",
-    });
-    const expand = within(toolbar).getByRole("button", {
+    const editor = await getEditor();
+    expect(editor.isEditable).toBe(true);
+    expect(screen.queryByRole("toolbar")).toBeNull();
+    const expand = screen.getAllByRole("button", {
       name: "common:documentEditor.expand",
     });
-    const redo = within(toolbar).getByRole("button", {
-      name: "common:documentEditor.redo",
-    });
-    expect(
-      redo.compareDocumentPosition(expand) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(
-      screen.getAllByRole("button", { name: "common:documentEditor.expand" }),
-    ).toHaveLength(1);
+    expect(expand).toHaveLength(1);
+    expect(expand[0].closest(".kaneo-tiptap-shell")).toContainElement(
+      editor.view.dom,
+    );
   });
 
   it("keeps reading Expand inside the content without starting click-to-edit", async () => {
@@ -234,8 +228,7 @@ describe("DocumentEditor", () => {
       const expand = screen.getByRole("button", {
         name: "common:documentEditor.expand",
       });
-      if (readOnly) expect(expand).toBeDisabled();
-      else expect(expand).toHaveAttribute("aria-disabled", "true");
+      expect(expand).toBeDisabled();
       fireEvent.click(expand);
       expect(screen.queryByRole("dialog")).toBeNull();
     },
@@ -295,19 +288,22 @@ describe("DocumentEditor", () => {
 
   it("does not offer upload commands without an injected upload capability", async () => {
     render(<DocumentEditor ariaLabel="Description" value="" />);
-    await getEditor();
-    fireEvent.click(
-      screen.getByRole("button", { name: "common:documentEditor.insert" }),
-    );
-    const menu = await screen.findByRole("menu");
+    const editor = await getEditor();
+    act(() => {
+      editor.view.focus();
+      editor.commands.insertContent("/");
+    });
+    const menu = await screen.findByRole("listbox", {
+      name: "common:documentEditor.insert",
+    });
     expect(
-      within(menu).queryByRole("menuitem", {
-        name: "common:documentEditor.image",
+      within(menu).queryByRole("option", {
+        name: /common:documentEditor\.image/,
       }),
     ).toBeNull();
     expect(
-      within(menu).getByRole("menuitem", {
-        name: "common:documentEditor.table",
+      within(menu).getByRole("option", {
+        name: /common:documentEditor\.table/,
       }),
     ).toBeVisible();
   });
@@ -353,35 +349,6 @@ describe("DocumentEditor", () => {
     view.rerender(<DocumentEditor {...props} readOnly />);
     expect(editor.getText()).toBe(props.value);
     expect(changed).not.toHaveBeenCalled();
-  });
-
-  it("makes undo available through the compact overflow menu", async () => {
-    render(
-      <DocumentEditor
-        ariaLabel="Description"
-        value="Original"
-        onChange={vi.fn()}
-      />,
-    );
-    const editor = await getEditor();
-    act(() => {
-      editor.chain().focus("end").insertContent(" changed").run();
-    });
-    fireEvent.click(
-      screen.getByRole("button", { name: "common:breadcrumb.more" }),
-    );
-    const menu = await screen.findByRole("menu");
-    expect(
-      within(menu).getByRole("menuitem", {
-        name: "common:documentEditor.bulletedList",
-      }),
-    ).toBeVisible();
-    fireEvent.click(
-      within(menu).getByRole("menuitem", {
-        name: "common:documentEditor.undo",
-      }),
-    );
-    expect(editor.getText()).toBe("Original");
   });
 
   it("keeps an upload from changing the document after editing permission is lost", async () => {
@@ -661,8 +628,14 @@ describe("DocumentEditor", () => {
         <DocumentEditor ariaLabel="Description" value="" onChange={vi.fn()} />,
       );
       const editor = await getEditor();
-      fireEvent.click(
-        screen.getByRole("button", { name: "common:documentEditor.link" }),
+      act(() => {
+        editor.view.focus();
+        editor.commands.insertContent("/link");
+      });
+      fireEvent.mouseDown(
+        await screen.findByRole("option", {
+          name: /common:documentEditor\.link/,
+        }),
       );
       const input = await screen.findByRole("textbox", {
         name: "common:editor.link.label",

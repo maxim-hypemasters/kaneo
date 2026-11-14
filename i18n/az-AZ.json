@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Təsvir",
-			"toolbar": "Sənədin formatlanması",
 			"paragraph": "Text",
 			"heading1": "Başlıq 1",
 			"heading2": "Başlıq 2",
@@ -227,8 +226,6 @@
 			"image": "Şəkil",
 			"file": "Fayl",
 			"embed": "Yerləşdir",
-			"undo": "Geri al",
-			"redo": "Təkrarla",
 			"expand": "Sənədi genişləndir",
 			"collapse": "Təsvirə qayıt",
 			"uploading": "Fayl yüklənir…",

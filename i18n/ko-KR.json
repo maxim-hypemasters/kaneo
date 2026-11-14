@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "설명",
-			"toolbar": "문서 서식",
 			"paragraph": "Text",
 			"heading1": "제목 1",
 			"heading2": "제목 2",
@@ -227,8 +226,6 @@
 			"image": "이미지",
 			"file": "파일",
 			"embed": "임베드",
-			"undo": "실행 취소",
-			"redo": "다시 실행",
 			"expand": "문서 확대",
 			"collapse": "설명으로 돌아가기",
 			"uploading": "파일 업로드 중…",

@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Description",
-			"toolbar": "Mise en forme du document",
 			"paragraph": "Texte",
 			"heading1": "Titre 1",
 			"heading2": "Titre 2",
@@ -227,8 +226,6 @@
 			"image": "Image",
 			"file": "Fichier",
 			"embed": "Intégrer",
-			"undo": "Annuler",
-			"redo": "Rétablir",
 			"expand": "Agrandir le document",
 			"collapse": "Revenir à la description",
 			"uploading": "Téléversement du fichier…",

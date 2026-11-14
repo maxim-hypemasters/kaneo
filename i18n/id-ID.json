@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Deskripsi",
-			"toolbar": "Pemformatan dokumen",
 			"paragraph": "Text",
 			"heading1": "Judul 1",
 			"heading2": "Judul 2",
@@ -227,8 +226,6 @@
 			"image": "Gambar",
 			"file": "File",
 			"embed": "Sematkan",
-			"undo": "Urungkan",
-			"redo": "Ulangi",
 			"expand": "Perluas dokumen",
 			"collapse": "Kembali ke deskripsi",
 			"uploading": "Mengunggah berkas…",

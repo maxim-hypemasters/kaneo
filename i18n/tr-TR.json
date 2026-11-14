@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Açıklama",
-			"toolbar": "Belge biçimlendirme",
 			"paragraph": "Text",
 			"heading1": "Başlık 1",
 			"heading2": "Başlık 2",
@@ -227,8 +226,6 @@
 			"image": "Görsel",
 			"file": "Dosya",
 			"embed": "Göm",
-			"undo": "Geri al",
-			"redo": "Yinele",
 			"expand": "Belgeyi genişlet",
 			"collapse": "Açıklamaya dön",
 			"uploading": "Dosya yükleniyor…",

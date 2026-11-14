@@ -206,7 +206,6 @@
 		},
 		"documentEditor": {
 			"description": "Mô tả",
-			"toolbar": "Định dạng tài liệu",
 			"paragraph": "Text",
 			"heading1": "Tiêu đề 1",
 			"heading2": "Tiêu đề 2",
@@ -227,8 +226,6 @@
 			"image": "Hình ảnh",
 			"file": "File",
 			"embed": "Nhúng",
-			"undo": "Hoàn tác",
-			"redo": "Làm lại",
 			"expand": "Mở rộng tài liệu",
 			"collapse": "Trở về mô tả",
 			"uploading": "Đang tải tệp lên…",
