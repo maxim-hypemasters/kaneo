@@ -45,7 +45,7 @@ Switch the layout to **List** when you want to compare task properties without o
 
 ## Find and filter work
 
-Use the search icon, or press ⌘F (Ctrl+F on Windows and Linux), to find Tasks, Bugs and Features by title, description, or number, and Feature documents by title or text. Features have their own **Features** group, with archived ones marked **Archived**. Choosing a document opens it in its Feature. Choosing a comment or activity opens the item it belongs to; for a Feature, that is its **Activity** tab. The full search page lists matching Features above Tasks and Bugs.
+Use the search icon, or press ⌘F (Ctrl+F on Windows and Linux), to find Tasks, Bugs and Features by title, description, or number, and documents by title or text: Feature documents, and project pages you can view. Features have their own **Features** group, with archived ones marked **Archived**. Choosing a Feature document opens it in its Feature; choosing a project page opens it on the project's home page. Choosing a comment or activity opens the item it belongs to; for a Feature, that is its **Activity** tab. The full search page lists matching Features above Tasks and Bugs.
 
 Use **Filter** to narrow the view by type, status, assignee, priority, labels, release, due date, or custom fields. Hover a property to pick its values, or type in **Add filter…** to search every value at once. Each filter appears as a chip above the tasks:
 
@@ -84,6 +84,17 @@ Choose **Expand document** for fullscreen reading or writing. Returning to the d
 - **Comments:** ask questions and record decisions where everyone following the task can find them.
 
 Use the attachment button, paste, or drag a file into the editor to add supporting material. Images appear inline; other files appear as attachments. On self-hosted instances, an operator must [configure file storage](/core/installation/object-storage-and-image-uploads) first.
+
+## Project home
+
+Clicking a project's name in the sidebar, in search, or with a project shortcut opens its home page. **Tasks**, **Features**, and **Releases** in the sidebar still open those views, and **Tasks** returns to the layout you used last. The home page has two tabs, and the selected tab and open document are part of the URL.
+
+- **Overview** shows the project's name and description. People with the **Edit project name and description** permission edit them in place, and changes save as they type. That permission covers nothing else about the project; the key, icon, and visibility stay in the project's settings.
+- **Documents** lists the project's own pages and, below them, the documents of every active Feature grouped under that Feature. Feature documents keep their place and order; open one to edit it as you would on the Feature, or use the arrow next to the Feature to open it.
+
+Project pages nest: any page can have sub-pages. **New page** adds a page at the top level, and **Add sub-page** in a page's menu adds one inside it. Drag a page by its handle to reorder it; drag it right to nest it under the page above, or left to move it out. **Move to…** in the menu does the same without dragging: choose **Top level** or a parent page, and the page moves there with its sub-pages, after the pages already in place. Pages open full screen and save automatically, like Feature documents, including uploads and the review when someone else saves first. Deleting a page also deletes its sub-pages and their uploads; the confirmation says how many sub-pages will go.
+
+Project pages have their own permissions under **Project documents** in the role editor: **View**, **Create**, **Edit** (which also covers uploads and moving pages), and **Delete**. People without **View** don't see the Documents tab or find pages in search. Feature documents listed on the tab follow feature permissions. When you upgrade, existing roles get the page permissions their task permissions used to give, and roles that could update projects can also edit project names and descriptions. Changes appear for everyone viewing the project without a reload.
 
 ## Group work into features
 

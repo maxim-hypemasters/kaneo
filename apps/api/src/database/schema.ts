@@ -1069,6 +1069,57 @@ export const featureDocumentTable = pgTable(
   ],
 );
 
+// Project-level pages. They nest through parent_id; position orders siblings
+// densely from 0 within each parent. Deleting a page deletes its subtree.
+export const projectDocumentTable = pgTable(
+  "project_document",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    parentId: text("parent_id").references(
+      (): AnyPgColumn => projectDocumentTable.id,
+      { onDelete: "cascade", onUpdate: "cascade" },
+    ),
+    position: integer("position").notNull().default(0),
+    title: text("title").notNull(),
+    body: text("body").notNull().default(""),
+    revision: integer("revision").notNull().default(1),
+    createdBy: text("created_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    updatedBy: text("updated_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdByName: text("created_by_name"),
+    updatedByName: text("updated_by_name"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("project_document_tree_idx").on(
+      table.projectId,
+      table.parentId,
+      table.position,
+      table.id,
+    ),
+    index("project_document_parent_idx").on(table.parentId),
+  ],
+);
+
 export const assetTable = pgTable(
   "asset",
   {
@@ -1095,6 +1146,10 @@ export const assetTable = pgTable(
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
+    documentId: text("document_id").references(() => projectDocumentTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     objectKey: text("object_key").notNull().unique(),
     filename: text("filename").notNull(),
     mimeType: text("mime_type").notNull(),
@@ -1114,6 +1169,7 @@ export const assetTable = pgTable(
     index("asset_projectId_idx").on(table.projectId),
     index("asset_taskId_idx").on(table.taskId),
     index("asset_activityId_idx").on(table.activityId),
+    index("asset_documentId_idx").on(table.documentId),
     index("asset_createdBy_idx").on(table.createdBy),
     index("asset_draft_expiry_idx")
       .on(table.createdAt, table.id)

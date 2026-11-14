@@ -6,21 +6,21 @@ import { extractAssetIds } from "../../storage/cleanup-assets";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export async function claimDescriptionAssets(
+type ClaimInput = {
+  projectId: string;
+  currentUserId: string;
+  description?: string;
+  draftAssetIds?: string[];
+};
+
+// A staged upload belongs either to a task (its description, comments and
+// Feature documents) or to one project document.
+type ClaimTarget = { taskId: string } | { documentId: string };
+
+async function claimStagedAssets(
   tx: Transaction,
-  {
-    taskId,
-    projectId,
-    currentUserId,
-    description,
-    draftAssetIds = [],
-  }: {
-    taskId: string;
-    projectId: string;
-    currentUserId: string;
-    description?: string;
-    draftAssetIds?: string[];
-  },
+  target: ClaimTarget,
+  { projectId, currentUserId, description, draftAssetIds = [] }: ClaimInput,
 ) {
   const referenced = extractAssetIds(description);
   const ids = [...new Set(draftAssetIds)].filter((id) => referenced.has(id));
@@ -45,7 +45,8 @@ export async function claimDescriptionAssets(
         asset.projectId !== projectId ||
         asset.createdBy !== currentUserId ||
         asset.surface !== "draft" ||
-        asset.taskId !== null,
+        asset.taskId !== null ||
+        asset.documentId !== null,
     )
   )
     throw new HTTPException(400, {
@@ -54,6 +55,32 @@ export async function claimDescriptionAssets(
     });
   await tx
     .update(assetTable)
-    .set({ taskId, surface: "description", workspaceId: project.workspaceId })
+    .set(
+      "taskId" in target
+        ? {
+            taskId: target.taskId,
+            surface: "description",
+            workspaceId: project.workspaceId,
+          }
+        : {
+            documentId: target.documentId,
+            surface: "document",
+            workspaceId: project.workspaceId,
+          },
+    )
     .where(inArray(assetTable.id, ids));
+}
+
+export async function claimDescriptionAssets(
+  tx: Transaction,
+  { taskId, ...input }: ClaimInput & { taskId: string },
+) {
+  await claimStagedAssets(tx, { taskId }, input);
+}
+
+export async function claimDocumentAssets(
+  tx: Transaction,
+  { documentId, ...input }: ClaimInput & { documentId: string },
+) {
+  await claimStagedAssets(tx, { documentId }, input);
 }

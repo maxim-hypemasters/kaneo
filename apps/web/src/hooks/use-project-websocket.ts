@@ -19,6 +19,7 @@ import type { ResumePreview } from "@/fetchers/integration-sync/types";
 import { patchBoardTask } from "@/lib/patch-board-task";
 import { releasesKey } from "@/hooks/queries/release/use-get-releases";
 import { featureWorkspaceKey } from "@/hooks/queries/feature/use-feature-workspace";
+import { projectDocumentsKey } from "@/hooks/queries/project-document/project-document-keys";
 import type { ProjectWithTasks } from "@/types/project";
 import {
   hasSyncTaskSample,
@@ -119,6 +120,25 @@ export function useProjectWebSocket(projectId: string) {
             predicate: (query) => query.queryKey[3] !== "issues",
           });
         changedFeatureContent.clear();
+        // The project's Documents tab lists Feature document titles.
+        void queryClient.invalidateQueries({
+          queryKey: projectDocumentsKey(projectId),
+          exact: true,
+        });
+      }, RELEASES_REFRESH_DELAY_MS);
+    }
+    // Project pages autosave too; one refresh covers the tree and any open
+    // page, whose newer revision the editor then adopts or flags.
+    let projectDocumentsRefreshTimer: ReturnType<typeof setTimeout> | null =
+      null;
+    function refreshProjectDocuments() {
+      if (projectDocumentsRefreshTimer !== null) return;
+      projectDocumentsRefreshTimer = setTimeout(() => {
+        projectDocumentsRefreshTimer = null;
+        if (!disposed)
+          void queryClient.invalidateQueries({
+            queryKey: projectDocumentsKey(projectId),
+          });
       }, RELEASES_REFRESH_DELAY_MS);
     }
     let workflowDirty = false;
@@ -397,6 +417,10 @@ export function useProjectWebSocket(projectId: string) {
           if (message.type === "FEATURE_CONTENT_UPDATED") {
             if (message.featureId) refreshFeatureContent(message.featureId);
             else refreshLinkCandidates();
+            return;
+          }
+          if (message.type === "PROJECT_DOCUMENTS_UPDATED") {
+            refreshProjectDocuments();
             return;
           }
           if (message.type === "COMMENT_UPDATED") refreshLinkCandidates();
@@ -960,6 +984,8 @@ export function useProjectWebSocket(projectId: string) {
         clearTimeout(linkCandidatesRefreshTimer);
       if (featureContentRefreshTimer !== null)
         clearTimeout(featureContentRefreshTimer);
+      if (projectDocumentsRefreshTimer !== null)
+        clearTimeout(projectDocumentsRefreshTimer);
       if (retryTimeout !== null) {
         clearTimeout(retryTimeout);
       }

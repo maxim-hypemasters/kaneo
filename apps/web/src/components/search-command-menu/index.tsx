@@ -25,6 +25,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useOpenProject } from "@/components/project/views/use-open-project";
+import { PROJECT_HOME_PATH } from "@/components/project/views/project-views";
 import { featureRoute } from "@/components/task/features/feature-route";
 import { Badge } from "@/components/ui/badge";
 import type { SearchResultItem } from "@/fetchers/search/global-search";
@@ -103,14 +104,22 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
         }
         break;
       case "document":
-        if (item.projectId && item.featureId && workspace?.id) {
+        if (!item.projectId || !workspace?.id) break;
+        // A Feature document opens on its Feature; a project page on the
+        // project's home page.
+        if (item.featureId)
           navigate(
             featureRoute(workspace.id, item.projectId, item.featureId, {
               featureTab: "documents",
               featureDocumentId: item.id,
             }),
           );
-        }
+        else
+          navigate({
+            to: PROJECT_HOME_PATH,
+            params: { workspaceId: workspace.id, projectId: item.projectId },
+            search: { tab: "documents", documentId: item.id },
+          });
         break;
       case "comment":
       case "activity":
@@ -223,10 +232,14 @@ function SearchCommandMenu({ open, setOpen }: SearchCommandMenuProps) {
                     <CommandCollection>
                       {(item: SearchResultItem) => {
                         const Icon = getItemIcon(item.type);
-                        // A document names the Feature it belongs to.
+                        // A document names its Feature, or the project for a
+                        // project page.
                         const detail =
                           item.type === "document"
-                            ? [item.featureTitle, item.content]
+                            ? [
+                                item.featureTitle ?? item.projectName,
+                                item.content,
+                              ]
                                 .filter(Boolean)
                                 .join(" · ")
                             : item.description;

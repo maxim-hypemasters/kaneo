@@ -12,7 +12,7 @@ import {
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { formatRelativeTime } from "@/lib/format";
 import { FeatureDocumentPage } from "./feature-document-page";
-import { FeatureDocumentWindow } from "./feature-document-window";
+import { DocumentWindow } from "@/components/documents/document-window";
 import { WorkspacePagination } from "./workspace-pagination";
 import { WorkspaceQueryState } from "./workspace-query-state";
 
@@ -63,7 +63,7 @@ export function FeatureDocuments({
         refresh={() => document.refetch({ throwOnError: true })}
       />
     ) : (
-      <FeatureDocumentWindow
+      <DocumentWindow
         title={t("tasks:features.workspace.documentBody")}
         onClose={back}
       >
@@ -71,7 +71,7 @@ export function FeatureDocuments({
           error={document.isError}
           onRetry={() => void document.refetch()}
         />
-      </FeatureDocumentWindow>
+      </DocumentWindow>
     )
   ) : null;
   return (

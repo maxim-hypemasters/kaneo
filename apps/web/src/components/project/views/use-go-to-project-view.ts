@@ -4,7 +4,7 @@ import { useUserPreferencesStore } from "@/store/user-preferences";
 import {
   isTaskLayoutView,
   PROJECT_ROUTE_PATHS,
-  type ProjectRoute,
+  type ProjectPage,
   type ProjectView,
   routeForView,
 } from "./project-views";
@@ -16,7 +16,7 @@ export function useGoToProjectView({
 }: {
   workspaceId: string;
   projectId: string;
-  currentRoute: ProjectRoute;
+  currentRoute: ProjectPage;
 }) {
   const navigate = useNavigate();
   const setViewMode = useUserPreferencesStore((state) => state.setViewMode);

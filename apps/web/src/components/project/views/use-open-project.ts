@@ -1,18 +1,16 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
-import { applyDefaultProjectView } from "./apply-default-project-view";
-import { PROJECT_ROUTE_PATHS } from "./project-views";
+import { PROJECT_HOME_PATH } from "./project-views";
 
-// Resolves the default view here instead of through the project index route.
-// The index redirect would add a second history entry when the project is
-// already open; a direct target lets the router treat that as a reload.
+// Opening a project from the sidebar, search or a shortcut lands on its home
+// page; the "Tasks" entry keeps going to the last task view.
 export function useOpenProject() {
   const navigate = useNavigate();
 
   return useCallback(
     (workspaceId: string, projectId: string) =>
       navigate({
-        to: PROJECT_ROUTE_PATHS[applyDefaultProjectView({ preload: false })],
+        to: PROJECT_HOME_PATH,
         params: { workspaceId, projectId },
       }),
     [navigate],

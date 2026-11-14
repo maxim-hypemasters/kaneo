@@ -17354,6 +17354,179 @@
 						"unavailableTask",
 						"reasons"
 					]
+				},
+				"projectHome": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"tabs": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"label": {
+									"type": "string"
+								},
+								"overview": {
+									"type": "string"
+								},
+								"documents": {
+									"type": "string"
+								}
+							},
+							"required": ["label", "overview", "documents"]
+						},
+						"overview": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"name": {
+									"type": "string"
+								},
+								"nameRequired": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"descriptionPlaceholder": {
+									"type": "string"
+								},
+								"noDescription": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"name",
+								"nameRequired",
+								"description",
+								"descriptionPlaceholder",
+								"noDescription"
+							]
+						},
+						"documents": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"label": {
+									"type": "string"
+								},
+								"pages": {
+									"type": "string"
+								},
+								"featureDocuments": {
+									"type": "string"
+								},
+								"newPage": {
+									"type": "string"
+								},
+								"untitled": {
+									"type": "string"
+								},
+								"empty": {
+									"type": "string"
+								},
+								"emptyReadOnly": {
+									"type": "string"
+								},
+								"createFailed": {
+									"type": "string"
+								},
+								"moveFailed": {
+									"type": "string"
+								},
+								"addSubPage": {
+									"type": "string"
+								},
+								"moveTo": {
+									"type": "string"
+								},
+								"move": {
+									"type": "string"
+								},
+								"delete": {
+									"type": "string"
+								},
+								"deleteConfirm": {
+									"type": "string"
+								},
+								"deleteConfirmWithSubPages_one": {
+									"type": "string"
+								},
+								"deleteConfirmWithSubPages_zero": {
+									"type": "string"
+								},
+								"deleteConfirmWithSubPages_two": {
+									"type": "string"
+								},
+								"deleteConfirmWithSubPages_few": {
+									"type": "string"
+								},
+								"deleteConfirmWithSubPages_many": {
+									"type": "string"
+								},
+								"deleteConfirmWithSubPages_other": {
+									"type": "string"
+								},
+								"pageActions": {
+									"type": "string"
+								},
+								"dragPage": {
+									"type": "string"
+								},
+								"expand": {
+									"type": "string"
+								},
+								"collapse": {
+									"type": "string"
+								},
+								"moveDialogTitle": {
+									"type": "string"
+								},
+								"moveDialogDescription": {
+									"type": "string"
+								},
+								"moveDestination": {
+									"type": "string"
+								},
+								"topLevel": {
+									"type": "string"
+								},
+								"openFeature": {
+									"type": "string"
+								},
+								"noAccess": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"label",
+								"pages",
+								"featureDocuments",
+								"newPage",
+								"untitled",
+								"empty",
+								"emptyReadOnly",
+								"createFailed",
+								"moveFailed",
+								"addSubPage",
+								"moveTo",
+								"move",
+								"delete",
+								"deleteConfirm",
+								"pageActions",
+								"dragPage",
+								"expand",
+								"collapse",
+								"moveDialogTitle",
+								"moveDialogDescription",
+								"moveDestination",
+								"topLevel",
+								"openFeature",
+								"noAccess"
+							]
+						}
+					},
+					"required": ["tabs", "overview", "documents"]
 				}
 			},
 			"required": [
@@ -17409,7 +17582,8 @@
 				"milestones",
 				"featureComposer",
 				"estimate",
-				"scheduling"
+				"scheduling",
+				"projectHome"
 			]
 		},
 		"invitations": {

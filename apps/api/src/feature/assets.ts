@@ -13,7 +13,11 @@ export async function pruneFeatureAssets(
       // Locks the Feature row first, as document saves do, so a save that
       // references an asset again commits before its references are checked.
       await featureOwner(tx, scope, true);
-      return deleteUnreferencedAssets(tx, scope.featureId, assetIds);
+      return deleteUnreferencedAssets(
+        tx,
+        { taskId: scope.featureId },
+        assetIds,
+      );
     }),
   );
   return { deletedAssetIds };

@@ -19,6 +19,7 @@ describe("@kaneo/permissions statement surface", () => {
       "update",
       "delete",
       "share",
+      "edit_details",
     ]);
     expect(statement.task).toEqual([
       "create",
@@ -35,6 +36,7 @@ describe("@kaneo/permissions statement surface", () => {
         "delete",
       ]);
     }
+    expect(statement.document).toEqual(["create", "read", "update", "delete"]);
     expect(statement.label).toEqual(["create", "read", "update", "delete"]);
     expect(statement.workspace).toEqual([
       "read",
@@ -59,6 +61,7 @@ describe("built-in role privileges", () => {
   it("viewer can read but cannot create or modify", () => {
     expect(viewer.statements.project).toEqual(["read"]);
     expect(viewer.statements.task).toEqual(["read"]);
+    expect(viewer.statements.document).toEqual(["read"]);
     expect(viewer.statements.label).toEqual(["read"]);
     expect(viewer.statements.workspace).toEqual(["read"]);
     expect(viewer.statements.bug).toEqual(["read"]);
@@ -83,6 +86,8 @@ describe("built-in role privileges", () => {
     expect(member.statements.task).not.toContain("delete");
     expect(member.statements.project).toContain("create");
     expect(member.statements.project).not.toContain("delete");
+    expect(member.statements.project).not.toContain("edit_details");
+    expect(member.statements.document).toEqual(["create", "read", "update"]);
     expect(member.statements.workspace).toEqual(["read"]);
   });
 
@@ -91,6 +96,8 @@ describe("built-in role privileges", () => {
     expect(admin.statements.task).toContain("assign");
     expect(admin.statements.project).toContain("delete");
     expect(admin.statements.project).toContain("share");
+    expect(admin.statements.project).toContain("edit_details");
+    expect(admin.statements.document).toContain("delete");
     expect(admin.statements.workspace).toContain("manage_settings");
     expect(admin.statements.workspace).not.toContain("delete");
   });
@@ -100,8 +107,21 @@ describe("built-in role privileges", () => {
       expect.arrayContaining(["create", "read", "update", "delete", "assign"]),
     );
     expect(owner.statements.project).toEqual(
-      expect.arrayContaining(["create", "read", "update", "delete", "share"]),
+      expect.arrayContaining([
+        "create",
+        "read",
+        "update",
+        "delete",
+        "share",
+        "edit_details",
+      ]),
     );
+    expect(owner.statements.document).toEqual([
+      "create",
+      "read",
+      "update",
+      "delete",
+    ]);
     expect(owner.statements.workspace).toEqual(
       expect.arrayContaining(["read", "update", "delete", "manage_settings"]),
     );

@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogHeader, DialogPopup } from "@/components/ui/dialog";
 
-// An open Feature document takes the whole screen; closing it returns to the
-// Documents list underneath.
-export function FeatureDocumentWindow({
+// An open document takes the whole screen; closing it returns to the
+// documents list underneath.
+export function DocumentWindow({
   title,
   onClose,
   closeDisabled = false,

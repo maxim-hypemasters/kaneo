@@ -16,29 +16,15 @@ afterEach(() => {
   });
 });
 
-function openProject() {
+it("opens the project's home page whatever the default view is", () => {
+  useUserPreferencesStore.setState({ defaultProjectView: "list" });
   const { result } = renderHook(() => useOpenProject());
-  result.current("w", "p");
-}
 
-it("opens the default view directly instead of the index redirect", () => {
-  openProject();
+  result.current("w", "p");
 
   expect(navigate).toHaveBeenCalledWith({
-    to: "/dashboard/workspace/$workspaceId/project/$projectId/gantt",
+    to: "/dashboard/workspace/$workspaceId/project/$projectId",
     params: { workspaceId: "w", projectId: "p" },
   });
-});
-
-it("opens a list default on the board route in list mode", () => {
-  useUserPreferencesStore.setState({ defaultProjectView: "list" });
-
-  openProject();
-
-  expect(navigate).toHaveBeenCalledWith(
-    expect.objectContaining({
-      to: "/dashboard/workspace/$workspaceId/project/$projectId/board",
-    }),
-  );
-  expect(useUserPreferencesStore.getState().viewMode).toBe("list");
+  expect(useUserPreferencesStore.getState().viewMode).toBe("board");
 });

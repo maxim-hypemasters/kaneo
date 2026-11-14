@@ -37,7 +37,7 @@ export const searchResultSchema = z
     }),
     featureId: z.string().optional().openapi({
       description:
-        "The Feature a document result belongs to; open it with `featureTab=documents` and `featureDocumentId`.",
+        "The Feature a Feature document result belongs to; open it with `featureTab=documents` and `featureDocumentId`. Absent for project pages, which open on the project's home page with `tab=documents` and `documentId`.",
     }),
     featureTitle: z
       .string()

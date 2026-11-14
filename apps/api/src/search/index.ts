@@ -4,6 +4,7 @@ import {
   errorResponse,
   jsonResponse,
 } from "../openapi";
+import { hasWorkspacePermission } from "../utils/require-workspace-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import globalSearch from "./controllers/global-search";
 import { searchResponseSchema } from "./response";
@@ -16,7 +17,7 @@ const globalSearchRoute = createRoute({
   tags: ["Search"],
   summary: "Global search",
   description:
-    "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, and Feature documents in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`. Comment and activity results carry the `taskId` and `taskType` of the item they belong to.",
+    "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, Feature documents and project pages in one workspace. Results are ranked by relevance and returned as a single flat list, each entry tagged with its `type`. Comment and activity results carry the `taskId` and `taskType` of the item they belong to. Project pages are `document` results without a `featureId`, included only with document:read.",
   middleware: [workspaceAccess.fromQuery()] as const,
   request: { query: searchQuery },
   responses: {
@@ -41,6 +42,9 @@ const search = apiRouter().openapi(globalSearchRoute, async (c) => {
       workspaceId,
       projectId,
       limit,
+      includeProjectPages: await hasWorkspacePermission(c, {
+        document: ["read"],
+      }),
     }),
     200,
   );

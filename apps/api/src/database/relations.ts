@@ -15,6 +15,7 @@ import {
   invitationTable,
   labelTable,
   notificationTable,
+  projectDocumentTable,
   projectTable,
   releaseTable,
   sessionTable,
@@ -107,6 +108,7 @@ export const projectTableRelations = relations(
     }),
     tasks: many(taskTable),
     assets: many(assetTable),
+    documents: many(projectDocumentTable),
     columns: many(columnTable),
     releases: many(releaseTable),
     workflowRules: many(workflowRuleTable),
@@ -212,6 +214,25 @@ export const featureDocumentTableRelations = relations(
   }),
 );
 
+export const projectDocumentTableRelations = relations(
+  projectDocumentTable,
+  ({ one, many }) => ({
+    project: one(projectTable, {
+      fields: [projectDocumentTable.projectId],
+      references: [projectTable.id],
+    }),
+    parent: one(projectDocumentTable, {
+      fields: [projectDocumentTable.parentId],
+      references: [projectDocumentTable.id],
+      relationName: "projectDocumentChildren",
+    }),
+    children: many(projectDocumentTable, {
+      relationName: "projectDocumentChildren",
+    }),
+    assets: many(assetTable),
+  }),
+);
+
 export const timeEntryTableRelations = relations(timeEntryTable, ({ one }) => ({
   task: one(taskTable, {
     fields: [timeEntryTable.taskId],
@@ -250,6 +271,10 @@ export const assetTableRelations = relations(assetTable, ({ one }) => ({
   activity: one(activityTable, {
     fields: [assetTable.activityId],
     references: [activityTable.id],
+  }),
+  document: one(projectDocumentTable, {
+    fields: [assetTable.documentId],
+    references: [projectDocumentTable.id],
   }),
   creator: one(userTable, {
     fields: [assetTable.createdBy],

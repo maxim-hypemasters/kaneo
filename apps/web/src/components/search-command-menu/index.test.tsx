@@ -80,6 +80,29 @@ describe("SearchCommandMenu", () => {
     });
   });
 
+  it("opens a project page on its project's home page", () => {
+    m.results = [
+      {
+        id: "page",
+        type: "document",
+        title: "Team handbook",
+        content: "…how we retry payments…",
+        projectId: "project",
+        projectName: "Payments",
+      },
+    ];
+    search();
+
+    expect(screen.getByText("Payments · …how we retry payments…")).toBeTruthy();
+    fireEvent.click(screen.getByText("Team handbook"));
+
+    expect(m.navigate).toHaveBeenCalledWith({
+      to: "/dashboard/workspace/$workspaceId/project/$projectId",
+      params: { workspaceId: "workspace", projectId: "project" },
+      search: { tab: "documents", documentId: "page" },
+    });
+  });
+
   it("lists Features in their own group, marks archived ones and opens them", () => {
     m.results = [
       {

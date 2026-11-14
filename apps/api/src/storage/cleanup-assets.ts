@@ -5,6 +5,7 @@ import {
   assetTable,
   commentTable,
   featureDocumentTable,
+  projectDocumentTable,
   taskTable,
 } from "../database/schema";
 import { deleteS3Object } from "./s3";
@@ -36,18 +37,47 @@ export function contentReferencesAsset(
   return extractAssetIds(content).has(assetId);
 }
 
-export interface AssetCleanupScope {
-  taskId: string;
+// Task uploads are shared by the task's description, comments, activity and
+// Feature documents. A project document's uploads belong to that page alone.
+export type AssetCleanupScope = { taskId: string } | { documentId: string };
+
+function assetOwnerFilter(scope: AssetCleanupScope) {
+  return "taskId" in scope
+    ? eq(assetTable.taskId, scope.taskId)
+    : eq(assetTable.documentId, scope.documentId);
+}
+
+async function isAssetReferencedElsewhere(
+  assetId: string,
+  scope: AssetCleanupScope,
+  executor: Pick<typeof db, "select"> = db,
+): Promise<boolean> {
+  return "taskId" in scope
+    ? isAssetReferencedByTask(assetId, scope.taskId, executor)
+    : isAssetReferencedByDocument(assetId, scope.documentId, executor);
+}
+
+async function isAssetReferencedByDocument(
+  assetId: string,
+  documentId: string,
+  executor: Pick<typeof db, "select">,
+): Promise<boolean> {
+  const [document] = await executor
+    .select({ body: projectDocumentTable.body })
+    .from(projectDocumentTable)
+    .where(eq(projectDocumentTable.id, documentId))
+    .limit(1);
+  return contentReferencesAsset(document?.body, assetId);
 }
 
 /**
  * Check whether an asset ID is still referenced in any content belonging to
- * the same task (description, comments, or activity comments).
+ * the same task (description, comments, activity comments or documents).
  */
-async function isAssetReferencedElsewhere(
+async function isAssetReferencedByTask(
   assetId: string,
   taskId: string,
-  executor: Pick<typeof db, "select"> = db,
+  executor: Pick<typeof db, "select">,
 ): Promise<boolean> {
   const pattern = `%/api/asset/${assetId}%`;
 
@@ -112,19 +142,11 @@ export async function deleteOrphanedAssets(
   const assets = await db
     .select({ id: assetTable.id, objectKey: assetTable.objectKey })
     .from(assetTable)
-    .where(
-      and(
-        inArray(assetTable.id, removedIds),
-        eq(assetTable.taskId, scope.taskId),
-      ),
-    );
+    .where(and(inArray(assetTable.id, removedIds), assetOwnerFilter(scope)));
 
   const assetsToDelete: typeof assets = [];
   for (const asset of assets) {
-    const stillReferenced = await isAssetReferencedElsewhere(
-      asset.id,
-      scope.taskId,
-    );
+    const stillReferenced = await isAssetReferencedElsewhere(asset.id, scope);
     if (!stillReferenced) {
       assetsToDelete.push(asset);
     }
@@ -146,15 +168,15 @@ export async function deleteOrphanedAssets(
 }
 
 /**
- * Delete the task's assets among `assetIds` that no content of the task still
- * references. Callers lock the task row first; rows are then locked by id like
- * claimDescriptionAssets does. The asset_storage_cleanup trigger queues each
- * deleted object key, and retryStorageCleanup removes it from storage once the
- * transaction has committed.
+ * Delete the owner's assets among `assetIds` that none of its content still
+ * references. Callers lock the owning row first; rows are then locked by id
+ * like claimDescriptionAssets does. The asset_storage_cleanup trigger queues
+ * each deleted object key, and retryStorageCleanup removes it from storage
+ * once the transaction has committed.
  */
 export async function deleteUnreferencedAssets(
   tx: Pick<typeof db, "select" | "delete">,
-  taskId: string,
+  scope: AssetCleanupScope,
   assetIds: string[],
 ): Promise<string[]> {
   const ids = [...new Set(assetIds)];
@@ -163,13 +185,13 @@ export async function deleteUnreferencedAssets(
   const assets = await tx
     .select({ id: assetTable.id })
     .from(assetTable)
-    .where(and(inArray(assetTable.id, ids), eq(assetTable.taskId, taskId)))
+    .where(and(inArray(assetTable.id, ids), assetOwnerFilter(scope)))
     .orderBy(asc(assetTable.id))
     .for("update");
 
   const deletable: string[] = [];
   for (const asset of assets) {
-    if (!(await isAssetReferencedElsewhere(asset.id, taskId, tx)))
+    if (!(await isAssetReferencedElsewhere(asset.id, scope, tx)))
       deletable.push(asset.id);
   }
   if (deletable.length === 0) return [];
