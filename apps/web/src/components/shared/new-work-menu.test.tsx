@@ -108,6 +108,18 @@ describe("NewWorkMenu", () => {
     expect(screen.queryByRole("separator")).not.toBeInTheDocument();
   });
 
+  it("offers only the kinds of work it is limited to", async () => {
+    render(<NewWorkMenu types={["task", "bug"]} onSelect={vi.fn()} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:createMenu.label" }),
+    );
+    const options = await screen.findAllByRole("menuitem");
+    expect(options.map((option) => option.textContent)).toEqual([
+      "tasks:createMenu.newTask",
+      "tasks:createMenu.newBug",
+    ]);
+  });
+
   it("offers only the kinds of work the role can create", async () => {
     creatable.types = ["bug"];
     render(<NewWorkMenu onSelect={vi.fn()} />);

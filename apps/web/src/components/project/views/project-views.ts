@@ -7,6 +7,7 @@ import {
   SquircleDashed,
 } from "lucide-react";
 import type { TaskLayout } from "@/store/user-preferences";
+import type { TaskType } from "@/types/task";
 
 export type ProjectView =
   | "board"
@@ -93,6 +94,9 @@ export function resolveProjectView(
 export function isTaskLayoutView(view: ProjectView): view is TaskLayout {
   return view !== "backlog" && view !== "releases" && view !== "features";
 }
+
+// The task views create tasks and bugs; features are created from Features.
+export const TASK_VIEW_CREATE_TYPES: readonly TaskType[] = ["task", "bug"];
 
 export const TASK_LAYOUTS = PROJECT_VIEWS.filter((view) =>
   isTaskLayoutView(view.id),

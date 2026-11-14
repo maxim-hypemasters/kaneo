@@ -21,6 +21,8 @@ const OPTIONS = [
 
 type NewWorkMenuProps = {
   onSelect?: (type: TaskType) => void;
+  // Limits the offered kinds of work; all kinds by default.
+  types?: readonly TaskType[];
   onLink?: (kind: "task" | "milestone") => void;
   children?: ReactElement;
   disabled?: boolean;
@@ -32,6 +34,7 @@ type NewWorkMenuProps = {
 
 export function NewWorkMenu({
   onSelect,
+  types,
   onLink,
   children,
   disabled,
@@ -43,7 +46,10 @@ export function NewWorkMenu({
   const { t } = useTranslation();
   const { canWorkItem } = useWorkspacePermission();
   const selected = useRef(false);
-  const options = OPTIONS.filter(({ type }) => canWorkItem(type, "create"));
+  const options = OPTIONS.filter(
+    ({ type }) =>
+      (!types || types.includes(type)) && canWorkItem(type, "create"),
+  );
 
   return (
     <Menu

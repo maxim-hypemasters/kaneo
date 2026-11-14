@@ -21,6 +21,7 @@ import { priorityColorsTaskCard } from "@/constants/priority-colors";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useTaskViewShortcuts } from "@/components/project/task-view-keys/use-task-view-shortcuts";
+import { TASK_VIEW_CREATE_TYPES } from "@/components/project/views/project-views";
 import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import useBulkSelectionStore from "@/store/bulk-selection";
@@ -51,7 +52,10 @@ function ListView({
   );
   const clearFocus = useBulkSelectionStore((state) => state.clearFocus);
   const { mutate: updateTask } = useUpdateTask();
-  const { canCreateWorkItems } = useWorkspacePermission();
+  const { canWorkItem } = useWorkspacePermission();
+  const canCreate = TASK_VIEW_CREATE_TYPES.some((type) =>
+    canWorkItem(type, "create"),
+  );
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [overColumnId, setOverColumnId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<
@@ -323,7 +327,7 @@ function ListView({
               }
               disableCollectionActions={disableCollectionActions}
               onToggle={toggleSection}
-              onAddTask={canCreateWorkItems() ? handleAddTask : undefined}
+              onAddTask={canCreate ? handleAddTask : undefined}
               onArchive={handleArchiveClick}
             />
           ))}

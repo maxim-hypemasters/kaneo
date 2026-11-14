@@ -2,6 +2,7 @@ import { produce } from "immer";
 import { Archive, Plus, ArchiveIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TASK_VIEW_CREATE_TYPES } from "@/components/project/views/project-views";
 import CreateTaskModal from "@/components/shared/modals/create-task-modal";
 import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
@@ -25,9 +26,11 @@ export function ColumnHeader({
   const { t } = useTranslation();
   const { project, setProject } = useProjectStore();
   const { mutate: updateTask } = useUpdateTask();
-  const { canUpdateTasks, canCreateWorkItems } = useWorkspacePermission();
+  const { canUpdateTasks, canWorkItem } = useWorkspacePermission();
   const canTask = canUpdateTasks();
-  const canCreate = canCreateWorkItems();
+  const canCreate = TASK_VIEW_CREATE_TYPES.some((type) =>
+    canWorkItem(type, "create"),
+  );
 
   const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
   const [createType, setCreateType] = useState<TaskType | null>(null);
@@ -86,7 +89,7 @@ export function ColumnHeader({
           </button>
         )}
         {canCreate && (
-          <NewWorkMenu onSelect={setCreateType}>
+          <NewWorkMenu types={TASK_VIEW_CREATE_TYPES} onSelect={setCreateType}>
             <button
               type="button"
               className="flex size-6 cursor-pointer items-center justify-center rounded-md text-chip-icon transition-colors hover:bg-chip-hover hover:text-board-title"

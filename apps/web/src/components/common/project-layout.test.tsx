@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import type { ProjectRoute } from "@/components/project/views/project-views";
+import type { ProjectPage } from "@/components/project/views/project-views";
 import { HttpError } from "@/lib/http-error";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import ProjectLayout from "./project-layout";
@@ -12,6 +12,7 @@ const project = vi.hoisted(() => ({
     error: unknown;
   },
   canCreate: true,
+  creatable: ["task", "feature", "bug"],
   shortcuts: vi.fn(),
   creation: {} as {
     open: boolean;
@@ -46,7 +47,8 @@ vi.mock("@/hooks/use-project-websocket", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canCreateWorkItems: () => project.canCreate,
-    canWorkItem: () => project.canCreate,
+    canWorkItem: (type: string) =>
+      project.canCreate && project.creatable.includes(type),
   }),
 }));
 vi.mock("@/components/common/layout", () => {
@@ -86,10 +88,11 @@ afterEach(() => {
   localStorage.removeItem("user-preferences");
   useUserPreferencesStore.setState({ viewMode: "board", taskLayout: "board" });
   project.canCreate = true;
+  project.creatable = ["task", "feature", "bug"];
   project.shortcuts.mockClear();
 });
 
-function renderLayout(activeView: ProjectRoute = "board") {
+function renderLayout(activeView: ProjectPage = "board") {
   render(
     <ProjectLayout
       projectId="project-1"
@@ -252,6 +255,52 @@ describe("ProjectLayout tasks view", () => {
       });
     },
   );
+
+  it.each(["board", "calendar", "gantt"] as const)(
+    "leaves features out of the %s header",
+    async (view) => {
+      project.current = { data: { name: "Alpha" }, error: null };
+      renderLayout(view);
+      fireEvent.click(
+        screen.getByRole("button", { name: "tasks:createMenu.label" }),
+      );
+      const options = await screen.findAllByRole("menuitem");
+      expect(options.map((option) => option.textContent)).toEqual([
+        "tasks:createMenu.newTask",
+        "tasks:createMenu.newBug",
+      ]);
+    },
+  );
+
+  it.each(["backlog", "features", "home"] as const)(
+    "offers features from the %s header",
+    async (view) => {
+      project.current = { data: { name: "Alpha" }, error: null };
+      renderLayout(view);
+      fireEvent.click(
+        screen.getByRole("button", { name: "tasks:createMenu.label" }),
+      );
+      expect(
+        await screen.findByRole("menuitem", {
+          name: "tasks:createMenu.newFeature",
+        }),
+      ).toBeVisible();
+    },
+  );
+
+  it("hides task-view creation from a role that only creates features", () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    project.creatable = ["feature"];
+    renderLayout("board");
+    expect(
+      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
+    ).toBeNull();
+    cleanup();
+    renderLayout("features");
+    expect(
+      screen.getByRole("button", { name: "tasks:createMenu.label" }),
+    ).toBeVisible();
+  });
 
   it("leaves release creation to its contextual header", () => {
     project.current = { data: { name: "Alpha" }, error: null };
