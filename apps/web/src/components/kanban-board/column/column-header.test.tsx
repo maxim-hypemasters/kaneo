@@ -19,6 +19,7 @@ const m = vi.hoisted(() => ({
   mutate: vi.fn(),
   setProject: vi.fn(),
   canCreate: true,
+  creatable: ["task", "feature", "bug"],
   creation: {} as {
     open: boolean;
     type: TaskType;
@@ -35,8 +36,7 @@ vi.mock("@/hooks/mutations/task/use-update-task", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canUpdateTasks: () => true,
-    canCreateWorkItems: () => m.canCreate,
-    canWorkItem: () => m.canCreate,
+    canWorkItem: (type: string) => m.canCreate && m.creatable.includes(type),
   }),
 }));
 vi.mock("@/store/project", () => ({
@@ -60,9 +60,10 @@ afterEach(() => {
 });
 beforeEach(() => {
   m.canCreate = true;
+  m.creatable = ["task", "feature", "bug"];
 });
 
-it.each(["task", "feature", "bug"] as const)(
+it.each(["task", "bug"] as const)(
   "creates %s in the selected board column",
   (type) => {
     const column = {
@@ -88,6 +89,34 @@ it.each(["task", "feature", "bug"] as const)(
     });
   },
 );
+
+it("leaves features out of the board column menu", () => {
+  const column = {
+    id: "todo",
+    name: "To do",
+    tasks: [],
+  } as unknown as ProjectWithTasks["columns"][number];
+  render(<ColumnHeader column={column} />);
+  fireEvent.click(
+    screen.getByRole("button", { name: "tasks:createMenu.label" }),
+  );
+  expect(
+    screen.getAllByRole("menuitem").map((item) => item.textContent),
+  ).toEqual(["tasks:createMenu.newTask", "tasks:createMenu.newBug"]);
+});
+
+it("hides board column creation from a role that only creates features", () => {
+  m.creatable = ["feature"];
+  const column = {
+    id: "todo",
+    name: "To do",
+    tasks: [],
+  } as unknown as ProjectWithTasks["columns"][number];
+  render(<ColumnHeader column={column} />);
+  expect(
+    screen.queryByRole("button", { name: "tasks:createMenu.label" }),
+  ).toBeNull();
+});
 
 it("hides board column creation without permission", () => {
   m.canCreate = false;

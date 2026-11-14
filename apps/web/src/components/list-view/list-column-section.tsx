@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Archive, ChevronRight, Plus } from "lucide-react";
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { TASK_VIEW_CREATE_TYPES } from "@/components/project/views/project-views";
 import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import { cn } from "@/lib/cn";
 import { getColumnIcon } from "@/lib/column";
@@ -81,7 +82,10 @@ const ListColumnSection = memo(function ListColumnSection({
 
         <div className="flex items-center gap-1 pointer-coarse:gap-6">
           {onAddTask && (
-            <NewWorkMenu onSelect={(type) => onAddTask(column.id, type)}>
+            <NewWorkMenu
+              types={TASK_VIEW_CREATE_TYPES}
+              onSelect={(type) => onAddTask(column.id, type)}
+            >
               <button
                 type="button"
                 className="touch-hitbox relative p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"

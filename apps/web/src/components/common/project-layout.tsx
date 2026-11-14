@@ -13,6 +13,7 @@ import {
   type ProjectPage,
   type ProjectRoute,
   resolveProjectView,
+  TASK_VIEW_CREATE_TYPES,
 } from "@/components/project/views/project-views";
 import { useGoToProjectView } from "@/components/project/views/use-go-to-project-view";
 import { useProjectViewShortcuts } from "@/components/project/views/use-project-view-shortcuts";
@@ -66,7 +67,7 @@ export default function ProjectLayout({
   const [isCreateProjectModalOpen, setIsCreateProjectModalOpen] =
     useState(false);
   const [createType, setCreateType] = useState<TaskType | null>(null);
-  const { canCreateWorkItems } = useWorkspacePermission();
+  const { canCreateWorkItems, canWorkItem } = useWorkspacePermission();
   const { background } = useBackgroundStore();
   const viewMode = useUserPreferencesStore((state) => state.viewMode);
 
@@ -88,8 +89,16 @@ export default function ProjectLayout({
   const isHome = page === "home";
   const resolvedRoute: ProjectRoute = isHome ? "board" : page;
   const currentView = resolveProjectView(resolvedRoute, viewMode);
+  const createTypes =
+    !isHome && isTaskLayoutView(currentView)
+      ? TASK_VIEW_CREATE_TYPES
+      : undefined;
   const showCreate =
-    resolvedRoute !== "releases" && Boolean(project) && canCreateWorkItems();
+    resolvedRoute !== "releases" &&
+    Boolean(project) &&
+    (createTypes
+      ? createTypes.some((type) => canWorkItem(type, "create"))
+      : canCreateWorkItems());
   const showToolbar = Boolean(summary || toolbar || showCreate);
 
   // "Tasks" on the backlog or releases returns to the task view shown last,
@@ -178,7 +187,9 @@ export default function ProjectLayout({
             >
               {summary}
               <div className="ml-auto flex shrink-0 items-center gap-1">
-                {showCreate && <NewWorkMenu onSelect={setCreateType} />}
+                {showCreate && (
+                  <NewWorkMenu types={createTypes} onSelect={setCreateType} />
+                )}
                 {toolbar}
               </div>
             </div>

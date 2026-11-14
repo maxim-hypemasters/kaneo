@@ -32,6 +32,7 @@ const m = vi.hoisted(() => ({
   },
   mutate: vi.fn(),
   setProject: vi.fn(),
+  creatable: ["task", "feature", "bug"],
   creation: {} as {
     open: boolean;
     type: TaskType;
@@ -44,8 +45,7 @@ vi.mock("react-i18next", () => ({
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
-    canCreateWorkItems: () => true,
-    canWorkItem: () => true,
+    canWorkItem: (type: string) => m.creatable.includes(type),
   }),
 }));
 vi.mock("@dnd-kit/core", async (original) => ({
@@ -82,21 +82,26 @@ vi.mock("../shared/modals/archive-tasks-modal", () => ({
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  m.creatable = ["task", "feature", "bug"];
 });
 
-it.each(["task", "feature", "bug"] as const)(
+const sectionProject = {
+  id: "p",
+  columns: [{ id: "review", name: "Review", tasks: [] }],
+  plannedTasks: [],
+  archivedTasks: [],
+} as unknown as ProjectWithTasks;
+
+it.each(["task", "bug"] as const)(
   "creates %s in the chosen list section",
   (type) => {
-    const project = {
-      id: "p",
-      columns: [{ id: "review", name: "Review", tasks: [] }],
-      plannedTasks: [],
-      archivedTasks: [],
-    } as unknown as ProjectWithTasks;
-    render(<ListView project={project} />, { wrapper: Providers });
+    render(<ListView project={sectionProject} />, { wrapper: Providers });
     fireEvent.click(
       screen.getByRole("button", { name: "tasks:createMenu.label" }),
     );
+    expect(
+      screen.getAllByRole("menuitem").map((item) => item.textContent),
+    ).toEqual(["tasks:createMenu.newTask", "tasks:createMenu.newBug"]);
     fireEvent.click(
       screen.getByRole("menuitem", {
         name: `tasks:createMenu.new${type[0].toUpperCase()}${type.slice(1)}`,
@@ -110,6 +115,13 @@ it.each(["task", "feature", "bug"] as const)(
     });
   },
 );
+it("hides list section creation from a role that only creates features", () => {
+  m.creatable = ["feature"];
+  render(<ListView project={sectionProject} />, { wrapper: Providers });
+  expect(
+    screen.queryByRole("button", { name: "tasks:createMenu.label" }),
+  ).toBeNull();
+});
 it("disables keyboard sensors and rejects drag completion on a partial board", () => {
   const project = {
     id: "p",
