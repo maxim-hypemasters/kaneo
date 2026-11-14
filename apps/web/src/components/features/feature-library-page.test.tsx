@@ -25,6 +25,7 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/components/common/project-layout", () => ({
   default: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
+vi.mock("./new-feature-button", () => ({ NewFeatureButton: () => null }));
 vi.mock("@/fetchers/task/feature-library", () => ({
   getFeatureLibrary: mocks.read,
   archiveFeature: mocks.archive,

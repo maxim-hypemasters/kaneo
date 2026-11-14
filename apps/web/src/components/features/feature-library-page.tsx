@@ -15,6 +15,7 @@ import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { toast } from "@/lib/toast";
 import { ArchiveFeatureDialog } from "./archive-feature-dialog";
+import { NewFeatureButton } from "./new-feature-button";
 
 export function FeatureLibraryPage({
   projectId,
@@ -58,6 +59,7 @@ export function FeatureLibraryPage({
       projectId={projectId}
       workspaceId={workspaceId}
       activeView="features"
+      toolbar={<NewFeatureButton projectId={projectId} />}
     >
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 p-4 sm:p-6">
         <h1 className="text-xl font-semibold">

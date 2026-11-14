@@ -272,21 +272,18 @@ describe("ProjectLayout tasks view", () => {
     },
   );
 
-  it.each(["backlog", "features", "home"] as const)(
-    "offers features from the %s header",
-    async (view) => {
-      project.current = { data: { name: "Alpha" }, error: null };
-      renderLayout(view);
-      fireEvent.click(
-        screen.getByRole("button", { name: "tasks:createMenu.label" }),
-      );
-      expect(
-        await screen.findByRole("menuitem", {
-          name: "tasks:createMenu.newFeature",
-        }),
-      ).toBeVisible();
-    },
-  );
+  it("offers features from the backlog header", async () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    renderLayout("backlog");
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:createMenu.label" }),
+    );
+    expect(
+      await screen.findByRole("menuitem", {
+        name: "tasks:createMenu.newFeature",
+      }),
+    ).toBeVisible();
+  });
 
   it("hides task-view creation from a role that only creates features", () => {
     project.current = { data: { name: "Alpha" }, error: null };
@@ -296,19 +293,23 @@ describe("ProjectLayout tasks view", () => {
       screen.queryByRole("button", { name: "tasks:createMenu.label" }),
     ).toBeNull();
     cleanup();
-    renderLayout("features");
+    renderLayout("backlog");
     expect(
       screen.getByRole("button", { name: "tasks:createMenu.label" }),
     ).toBeVisible();
   });
 
-  it("leaves release creation to its contextual header", () => {
-    project.current = { data: { name: "Alpha" }, error: null };
-    renderLayout("releases");
-    expect(
-      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
-    ).toBeNull();
-  });
+  it.each(["home", "features", "releases"] as const)(
+    "leaves %s creation to its own page",
+    (view) => {
+      project.current = { data: { name: "Alpha" }, error: null };
+      renderLayout(view);
+      expect(
+        screen.queryByRole("button", { name: "tasks:createMenu.label" }),
+      ).toBeNull();
+      expect(screen.getByText("Toolbar action")).toBeVisible();
+    },
+  );
 
   it("hides header creation without permission", () => {
     project.current = { data: { name: "Alpha" }, error: null };
