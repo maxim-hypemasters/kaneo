@@ -23,16 +23,18 @@ describe("Task/Bug estimate contracts", () => {
     }
   });
 
-  it("rejects manual dates, including explicit nulls and empty strings", () => {
-    for (const field of ["startDate", "dueDate"])
+  it("accepts manual dates on update but not on creation", () => {
+    for (const field of ["startDate", "dueDate"] as const) {
       for (const value of [null, "", "2026-10-24T10:00:00Z"])
-        for (const [schema, body] of [
-          [createTaskBody, creation],
-          [updateTaskBody, update],
-        ] as const)
-          expect(schema.safeParse({ ...body, [field]: value }).success).toBe(
-            false,
-          );
+        expect(
+          createTaskBody.safeParse({ ...creation, [field]: value }).success,
+        ).toBe(false);
+      for (const value of [null, "2026-10-24", "2026-10-24T10:00:00Z"])
+        expect(updateTaskBody.parse({ ...update, [field]: value })[field]).toBe(
+          value,
+        );
+      expect(updateTaskBody.parse(update)[field]).toBeUndefined();
+    }
   });
 
   it("rejects zero, negative, sub-minute, non-integer and overflowing estimates", () => {
@@ -60,14 +62,15 @@ describe("Task/Bug estimate contracts", () => {
     ).toBe(1800);
   });
 
-  it("replaces bulk due-date writes with canonical estimate updates", () => {
-    expect(
-      bulkUpdateBody.safeParse({
-        taskIds: ["task"],
-        operation: "updateDueDate",
-        value: null,
-      }).success,
-    ).toBe(false);
+  it("accepts bulk due-date writes alongside canonical estimate updates", () => {
+    for (const value of [null, "2026-10-24T10:00:00Z"])
+      expect(
+        bulkUpdateBody.safeParse({
+          taskIds: ["task"],
+          operation: "updateDueDate",
+          value,
+        }).success,
+      ).toBe(true);
     expect(
       bulkUpdateBody.safeParse({
         taskIds: ["task"],
