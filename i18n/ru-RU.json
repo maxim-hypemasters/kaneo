@@ -2600,6 +2600,24 @@
 		},
 		"shared": {
 			"autosave": "Изменения сохраняются автоматически"
+		},
+		"projectTriage": {
+			"pageTitle": "Триаж проекта",
+			"title": "Триаж",
+			"subtitle": "Выберите, кто проверяет новую работу в {{project}}.",
+			"membersTitle": "Участники триажа",
+			"membersDescription": "Они принимают или отклоняют новые задачи и баги до того, как работа попадёт на доску.",
+			"addMember": "Добавить участника",
+			"searchPlaceholder": "Поиск людей…",
+			"noCandidates": "Все, у кого есть доступ, уже в списке",
+			"removeMember": "Убрать {{name}} из триажа",
+			"unknownMember": "Бывший участник",
+			"emptyTitle": "Триаж выключен",
+			"emptyDescription": "Новые задачи и баги сразу попадают на доску. Добавьте участника, чтобы включить триаж.",
+			"rule": "Задачи и баги, созданные кем-то ещё, в том числе через интеграции, ждут в триаже, пока участник не примет или не отклонит их. Принятая работа переходит в «К выполнению», отклонённая — в архив.",
+			"readOnly": "Менять участников триажа могут только те, кто управляет проектами.",
+			"saved": "Участники триажа обновлены",
+			"saveError": "Не удалось обновить участников триажа"
 		}
 	},
 	"navigation": {
@@ -2862,6 +2880,19 @@
 			"task_overdue": {
 				"title": "Задача просрочена",
 				"content": "Срок выполнения задачи «{{taskTitle}}» истёк"
+			},
+			"task_triage_new": {
+				"title": "Новая работа для триажа",
+				"content": "«{{taskTitle}}» ожидает в триаже"
+			},
+			"task_triage_accepted": {
+				"title": "Ваш запрос принят",
+				"content": "«{{taskTitle}}» принят и перенесён на доску"
+			},
+			"task_triage_declined": {
+				"title": "Ваш запрос отклонён",
+				"content": "«{{taskTitle}}» отклонён",
+				"contentWithReason": "«{{taskTitle}}» отклонён: {{reason}}"
 			}
 		},
 		"reminderLeadTime": {
@@ -3029,7 +3060,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "принял(а) это из триажа",
+		"triageDeclined": "отклонил(а) это в триаже"
 	},
 	"tasks": {
 		"title": "Задачи",
@@ -3040,7 +3073,8 @@
 			"in-review": "На проверке",
 			"done": "Готово",
 			"archived": "В архиве",
-			"planned": "Запланировано"
+			"planned": "Запланировано",
+			"triage": "Триаж"
 		},
 		"priority": {
 			"label": "Приоритет",
@@ -4393,6 +4427,47 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "Триаж",
+			"pageTitle": "Триаж: {{name}}",
+			"waitingCount_one": "Ожидают триажа: {{count}}",
+			"waitingCount_few": "Ожидают триажа: {{count}}",
+			"waitingCount_many": "Ожидают триажа: {{count}}",
+			"waitingCount_other": "Ожидают триажа: {{count}}",
+			"empty": {
+				"title": "Нечего разбирать",
+				"description": "Здесь появляются новые задачи и баги от людей вне списка триажа."
+			},
+			"off": {
+				"title": "Триаж выключен",
+				"description": "Добавьте участников триажа в настройках проекта, чтобы проверять новые задачи и баги до того, как они попадут на доску.",
+				"action": "Настроить триаж"
+			},
+			"reportedBy": "Сообщил(а): {{name}}",
+			"accept": "Принять",
+			"acceptLabel": "Принять «{{title}}»",
+			"decline": "Отклонить",
+			"declineLabel": "Отклонить «{{title}}»",
+			"waiting": "Ожидает триажа",
+			"accepted": "Принято и перенесено на доску",
+			"declined": "Отклонено и отправлено в архив",
+			"acceptError": "Не удалось принять задачу",
+			"declineError": "Не удалось отклонить задачу",
+			"declineDialog": {
+				"title": "Отклонить «{{title}}»?",
+				"description": "Задача попадёт в архив. Автор получит уведомление с вашей причиной, если вы её укажете.",
+				"reasonLabel": "Причина (необязательно)",
+				"reasonPlaceholder": "Почему это не будет сделано?",
+				"confirm": "Отклонить",
+				"pending": "Отклоняем…"
+			},
+			"banner": {
+				"review": "Это ожидает в триаже. Примите, чтобы перенести на доску, или отклоните.",
+				"waiting": "Это ожидает проверки участником триажа."
+			},
+			"createNote": "Это попадёт в триаж на проверку",
+			"sentToTriage": "Отправлено в триаж на проверку"
 		}
 	},
 	"invitations": {

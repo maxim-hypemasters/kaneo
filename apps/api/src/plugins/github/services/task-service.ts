@@ -10,6 +10,7 @@ import { type GitHubConfig, hasVerifiedGitHubBinding } from "../config";
 import { extractTaskLinks } from "../utils/task-references";
 
 import type { IntegrationDatabase } from "./integration-task-scope";
+import { TRIAGE_STATUS } from "../../../triage/triage-status";
 
 export type TaskRow = InferSelectModel<typeof taskTable>;
 
@@ -67,7 +68,8 @@ export async function updateTaskStatus(
     where: eq(taskTable.id, taskId),
   });
 
-  if (!task || task.type === "feature") {
+  // Integrations can't send work to Triage; only the creation rule does.
+  if (!task || task.type === "feature" || newStatus === TRIAGE_STATUS) {
     return { applied: false };
   }
 

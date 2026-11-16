@@ -12,6 +12,7 @@ import {
   X,
   TagIcon,
   SquarePlusIcon,
+  Inbox,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -100,6 +101,8 @@ import {
 import { FeatureCompositionSection } from "./create-task/feature-composition-section";
 import { featureCreationOrigin } from "./create-task/feature-creation-origin";
 import { useTaskReleaseOrigin } from "@/components/task/task-release-origin-context";
+import { useRoutesToTriage } from "@/hooks/use-routes-to-triage";
+import { TRIAGE_STATUS } from "@/lib/triage/triage-status";
 
 type CreateTaskModalProps = {
   open: boolean;
@@ -325,6 +328,7 @@ function CreateTaskModalContent({
     (candidate) => candidate.id === (explicitProjectId || selectedProjectId),
   );
   const resolvedProjectId = resolvedProject?.id ?? "";
+  const goesToTriage = useRoutesToTriage(resolvedProjectId || undefined);
   const composition =
     compositionSession?.projectId === resolvedProjectId
       ? compositionSession.value
@@ -584,6 +588,14 @@ function CreateTaskModalContent({
           }
         }
 
+        if (task.status === TRIAGE_STATUS) {
+          draft.triageTasks = [
+            ...(draft.triageTasks ?? []).filter((item) => item.id !== task.id),
+            { ...existingTask, ...task, assigneeId: task.userId },
+          ];
+          return;
+        }
+
         if (task.status === "planned" || task.status === "archived") {
           return;
         }
@@ -777,9 +789,13 @@ function CreateTaskModalContent({
       stagedAssetsRef.current = [];
       if (!activeRef.current) return;
       syncTaskIntoProject(savedTask);
-      toast.success(copy.created, {
-        icon: SquarePlusIcon,
-      });
+      const sentToTriage = savedTask.status === TRIAGE_STATUS;
+      toast.success(
+        sentToTriage ? t("tasks:triage.sentToTriage") : copy.created,
+        {
+          icon: sentToTriage ? Inbox : SquarePlusIcon,
+        },
+      );
 
       if (createMore) {
         setCompositionSession(null);
@@ -1489,6 +1505,12 @@ function CreateTaskModalContent({
                 {t("common:error.tryAgain")}
               </Button>
             </div>
+          )}
+          {taskType !== "feature" && goesToTriage && (
+            <p className="flex items-center gap-2 px-6 py-2 text-sm text-muted-foreground">
+              <Inbox aria-hidden="true" className="size-4 shrink-0" />
+              {t("tasks:triage.createNote")}
+            </p>
           )}
           <DialogFooter className="flex-shrink-0 border-t border-border bg-background px-6 py-4">
             <div className="flex items-center gap-3 mr-auto">

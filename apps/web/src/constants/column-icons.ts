@@ -5,6 +5,7 @@ import {
   CircleDashed,
   CircleDot,
   Clock,
+  Inbox,
   Search,
 } from "lucide-react";
 import projectIcons from "./project-icons";
@@ -16,6 +17,7 @@ export const DEFAULT_COLUMN_ICON_NAMES = {
   done: "CheckCircle2",
   archived: "Archive",
   planned: "Clock",
+  triage: "Inbox",
 } as const;
 
 const columnIcons = {
@@ -27,6 +29,7 @@ const columnIcons = {
   CircleDashed,
   Clock,
   Archive,
+  Inbox,
 };
 
 export type ColumnIconName = keyof typeof columnIcons;

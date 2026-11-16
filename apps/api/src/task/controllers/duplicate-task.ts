@@ -32,6 +32,8 @@ import { findLockedRelease } from "../../release/membership/assign-release";
 import { publishFeatureChange } from "../feature-hierarchy/publish-feature-change";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
+import { routeNewWork } from "../../triage/route-new-work";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
 
 async function discardCopiedObjects(objectKeys: string[]) {
   await Promise.all(
@@ -167,8 +169,17 @@ async function duplicateTask({
       message: "Project changed workspaces; retry the request",
     });
 
+  // A copy is new work: it waits in Triage when its creator isn't a triage
+  // member. A triage member's copy of a triage ticket starts planned.
+  const copyStatus = await routeNewWork(db, {
+    projectId: sourceTask.projectId,
+    type: sourceTask.type,
+    requested:
+      sourceTask.status === TRIAGE_STATUS ? "planned" : sourceTask.status,
+    userId: currentUserId,
+  });
   if (sourceTask.type !== "feature")
-    await assertValidTaskStatus(sourceTask.status!, sourceTask.projectId);
+    await assertValidTaskStatus(copyStatus!, sourceTask.projectId);
   let assigneeId = sourceTask.userId;
   if (assigneeId) {
     const members = await filterAssignableUsers(
@@ -187,7 +198,7 @@ async function duplicateTask({
   const column = await db.query.columnTable.findFirst({
     where: and(
       eq(columnTable.projectId, sourceTask.projectId),
-      eq(columnTable.slug, sourceTask.status ?? "planned"),
+      eq(columnTable.slug, copyStatus ?? "planned"),
     ),
   });
 
@@ -297,7 +308,7 @@ async function duplicateTask({
             : await nextTaskPosition(
                 tx,
                 sourceTask.projectId,
-                sourceTask.status ?? "planned",
+                copyStatus ?? "planned",
                 column?.id ?? null,
               );
 
@@ -308,7 +319,8 @@ async function duplicateTask({
             projectId: sourceTask.projectId,
             userId: assigneeId,
             title: title?.trim() || sourceTask.title,
-            status: sourceTask.status,
+            status: copyStatus,
+            createdBy: currentUserId,
             columnId:
               sourceTask.type === "feature" ? null : (column?.id ?? null),
             estimateSeconds:

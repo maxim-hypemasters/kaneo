@@ -52,6 +52,16 @@ describe("planImport", () => {
     expect(plan.unknown).toEqual([]);
   });
 
+  it("reserves Triage instead of matching it to a column", () => {
+    const plan = planImport(
+      [{ title: "a", status: "triage", labels: 0 }],
+      [...columns, column("needs-triage", "Triage", 3)],
+    );
+    expect(plan.tasks[0]?.status).toBe("triage");
+    expect(plan.remapped).toEqual([]);
+    expect(plan.unknown).toEqual([]);
+  });
+
   it("reports unknown statuses before importing", () => {
     const plan = planImport(
       [

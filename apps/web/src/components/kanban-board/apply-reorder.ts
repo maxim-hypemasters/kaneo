@@ -15,6 +15,7 @@ export function applyBoardReorder(
       })),
       { slug: "planned", columnId: null, tasks: draft.plannedTasks },
       { slug: "archived", columnId: null, tasks: draft.archivedTasks },
+      { slug: "triage", columnId: null, tasks: (draft.triageTasks ??= []) },
     ];
     const moved: Array<{
       task: (typeof draft.columns)[number]["tasks"][number];

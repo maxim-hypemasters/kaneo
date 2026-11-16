@@ -6,6 +6,7 @@ import { columnTable, taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { publishTaskMutation } from "./task-mutation-effects";
 import { assertValidTaskStatus } from "../validate-task-fields";
+import { assertTriageTransition } from "../../triage/triage-status";
 
 async function updateTaskStatus({
   id,
@@ -20,6 +21,7 @@ async function updateTaskStatus({
     id,
     async (tx, existingTask) => {
       assertLeafPlanning(existingTask);
+      assertTriageTransition(existingTask.status, status);
       await assertValidTaskStatus(status, existingTask.projectId, tx);
 
       const column = await tx.query.columnTable.findFirst({

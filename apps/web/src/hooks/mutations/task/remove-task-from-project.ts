@@ -12,5 +12,6 @@ export function removeTaskFromProject(
     })),
     plannedTasks: project.plannedTasks.filter((task) => task.id !== taskId),
     archivedTasks: project.archivedTasks.filter((task) => task.id !== taskId),
+    triageTasks: project.triageTasks?.filter((task) => task.id !== taskId),
   };
 }

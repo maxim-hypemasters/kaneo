@@ -21,6 +21,14 @@ import { recordFeatureChange } from "../feature-hierarchy/record-feature-change"
 import { recordReleaseChange } from "../../release/membership/record-release-change";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
+
+function assertNotInTriage(status: string | null) {
+  if (status === TRIAGE_STATUS)
+    throw new HTTPException(409, {
+      message: "Accept or decline this task in Triage before moving it",
+    });
+}
 
 function isSameProjectMove(
   sourceProjectId: string,
@@ -89,6 +97,8 @@ async function moveTask({
       message: "Task not found",
     });
   }
+
+  assertNotInTriage(existingTask.status);
 
   if (isSameProjectMove(existingTask.projectId, destinationProjectId)) {
     throw new HTTPException(400, {
@@ -168,6 +178,7 @@ async function moveTask({
         featureId: taskTable.featureId,
         milestoneId: taskTable.milestoneId,
         releaseId: taskTable.releaseId,
+        status: taskTable.status,
       })
       .from(taskTable)
       .where(
@@ -182,6 +193,7 @@ async function moveTask({
         message: "Task was moved concurrently, please try again",
       });
     }
+    assertNotInTriage(current.status);
 
     const [updatedTask] = await tx
       .update(taskTable)

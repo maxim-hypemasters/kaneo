@@ -2466,6 +2466,24 @@
 		},
 		"shared": {
 			"autosave": "變更會自動儲存"
+		},
+		"projectTriage": {
+			"pageTitle": "專案分診",
+			"title": "分診",
+			"subtitle": "選擇由誰審核 {{project}} 中的新工作。",
+			"membersTitle": "分診成員",
+			"membersDescription": "他們會在工作進入看板前接受或拒絕新任務和錯誤。",
+			"addMember": "新增成員",
+			"searchPlaceholder": "搜尋成員…",
+			"noCandidates": "所有具存取權的人都已在名單中",
+			"removeMember": "將 {{name}} 移出分診",
+			"unknownMember": "前成員",
+			"emptyTitle": "分診已關閉",
+			"emptyDescription": "新任務和錯誤會直接進入看板。新增成員即可開啟分診。",
+			"rule": "其他人建立的任務和錯誤（包括透過整合建立的）會在分診中等待，直到成員接受或拒絕。接受的工作進入待辦，拒絕的工作會被封存。",
+			"readOnly": "只有能管理專案的人才能變更分診成員。",
+			"saved": "分診成員已更新",
+			"saveError": "無法更新分診成員"
 		}
 	},
 	"navigation": {
@@ -2727,6 +2745,19 @@
 				"title": "已開始計時",
 				"contentWithTask": "已開始為任務 {{taskTitle}} 計時",
 				"contentWithoutTask": "已開始為某個任務計時"
+			},
+			"task_triage_new": {
+				"title": "有新工作待分診",
+				"content": "「{{taskTitle}}」正在分診中等待"
+			},
+			"task_triage_accepted": {
+				"title": "你的回報已被接受",
+				"content": "「{{taskTitle}}」已被接受並移至看板"
+			},
+			"task_triage_declined": {
+				"title": "你的回報已被拒絕",
+				"content": "「{{taskTitle}}」已被拒絕",
+				"contentWithReason": "「{{taskTitle}}」已被拒絕：{{reason}}"
 			}
 		},
 		"inbox": {
@@ -2880,7 +2911,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "從分診中接受了此項目",
+		"triageDeclined": "在分診中拒絕了此項目"
 	},
 	"tasks": {
 		"title": "任務",
@@ -2891,7 +2924,8 @@
 			"in-review": "審查中",
 			"done": "已完成",
 			"archived": "已封存",
-			"planned": "已規劃"
+			"planned": "已規劃",
+			"triage": "分診"
 		},
 		"priority": {
 			"label": "優先順序",
@@ -4083,6 +4117,44 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "分診",
+			"pageTitle": "{{name}} 的分診",
+			"waitingCount_other": "{{count}} 項待分診",
+			"empty": {
+				"title": "沒有待分診的內容",
+				"description": "分診名單以外的人建立的新任務和錯誤會顯示在這裡等待審核。"
+			},
+			"off": {
+				"title": "分診已關閉",
+				"description": "在專案設定中新增分診成員，即可在新任務和錯誤進入看板前進行審核。",
+				"action": "設定分診"
+			},
+			"reportedBy": "回報者：{{name}}",
+			"accept": "接受",
+			"acceptLabel": "接受「{{title}}」",
+			"decline": "拒絕",
+			"declineLabel": "拒絕「{{title}}」",
+			"waiting": "等待分診",
+			"accepted": "已接受並移至看板",
+			"declined": "已拒絕並封存",
+			"acceptError": "無法接受此任務",
+			"declineError": "無法拒絕此任務",
+			"declineDialog": {
+				"title": "要拒絕「{{title}}」嗎？",
+				"description": "它將移至已封存。回報者會收到通知，若你填寫了原因，也會一併告知。",
+				"reasonLabel": "原因（選填）",
+				"reasonPlaceholder": "為什麼不繼續進行？",
+				"confirm": "拒絕",
+				"pending": "正在拒絕…"
+			},
+			"banner": {
+				"review": "此項目正在分診中等待。接受後會移至看板，也可以拒絕。",
+				"waiting": "此項目正在等待分診成員審核。"
+			},
+			"createNote": "此項目將進入分診等待審核",
+			"sentToTriage": "已送至分診等待審核"
 		}
 	},
 	"invitations": {

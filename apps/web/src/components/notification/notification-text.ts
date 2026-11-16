@@ -81,6 +81,13 @@ export function getNotificationTitle(
           ...eventData,
           defaultValue: notification.title ?? notification.type,
         });
+      case "task_triage_new":
+      case "task_triage_accepted":
+      case "task_triage_declined":
+        return t(`notifications:events.${notification.type}.title`, {
+          ...eventData,
+          defaultValue: notification.title ?? notification.type,
+        });
       default:
         break;
     }
@@ -106,6 +113,19 @@ export function getNotificationContent(
           ...eventData,
           defaultValue: notification.content ?? "",
         });
+      case "task_triage_new":
+      case "task_triage_accepted":
+        return t(`notifications:events.${notification.type}.content`, {
+          ...eventData,
+          defaultValue: notification.content ?? "",
+        });
+      case "task_triage_declined":
+        return t(
+          eventData.reason
+            ? "notifications:events.task_triage_declined.contentWithReason"
+            : "notifications:events.task_triage_declined.content",
+          { ...eventData, defaultValue: notification.content ?? "" },
+        );
       case "task_status_changed":
         return t("notifications:events.task_status_changed.content", {
           ...eventData,

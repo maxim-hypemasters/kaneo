@@ -23,6 +23,8 @@ import { formatTaskDescriptionFromIssue } from "../utils/format";
 import { getGithubApp } from "../utils/github-app";
 import { addLabelsToIssue } from "../utils/labels";
 import { resolveTargetStatus } from "../utils/resolve-column";
+import { triagesOpenIssue } from "../../../triage/triage-open-issue";
+import { TRIAGE_STATUS } from "../../../triage/triage-status";
 
 type IssueOpenedPayload = {
   action: string;
@@ -117,6 +119,7 @@ export async function handleIssueOpened(
           ),
           orderBy: (column, { asc }) => [asc(column.position)],
         });
+      const triaged = await triagesOpenIssue(tx, projectId, closed);
       const number = await claimTaskNumber(projectId, tx);
       const [task] = await tx
         .insert(taskTable)
@@ -125,8 +128,12 @@ export async function handleIssueOpened(
           userId: null,
           title: issue.title,
           description: formatTaskDescriptionFromIssue(issue.body),
-          status: closed ? (targetColumn?.slug ?? "done") : targetStatus,
-          columnId: targetColumn?.id ?? null,
+          status: closed
+            ? (targetColumn?.slug ?? "done")
+            : triaged
+              ? TRIAGE_STATUS
+              : targetStatus,
+          columnId: triaged ? null : (targetColumn?.id ?? null),
           priority: priority ?? "low",
           number,
         })

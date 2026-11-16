@@ -113,6 +113,7 @@ import { validateWorkspaceAccess } from "./utils/validate-workspace-access";
 import { apiKeyResponseHeaders } from "./utils/rate-limit-headers";
 import { readApiKeyCheck, verifyApiKey } from "./utils/verify-api-key";
 import workflowRule from "./workflow-rule";
+import triage from "./triage";
 import workspace from "./workspace";
 import {
   addConnection,
@@ -874,6 +875,7 @@ export function createApp() {
   const taskRelationApi = api.route("/task-relation", taskRelation);
   const externalLinkApi = api.route("/external-link", externalLink);
   const workflowRuleApi = api.route("/workflow-rule", workflowRule);
+  const triageApi = api.route("/triage", triage);
   const invitationApi = api.route("/invitation", invitation);
   const workspaceApi = api.route("/workspace", workspace);
   const customFieldApi = api.route("/custom-field", customField);
@@ -1013,6 +1015,7 @@ export function createApp() {
     userApi,
     adminApi,
     workflowRuleApi,
+    triageApi,
     workspaceApi,
     customFieldApi,
     importApi,
@@ -1154,6 +1157,7 @@ const {
   userApi,
   adminApi,
   workflowRuleApi,
+  triageApi,
   workspaceApi,
   customFieldApi,
   importApi,
@@ -1202,6 +1206,7 @@ export type AppType =
   | typeof taskRelationApi
   | typeof externalLinkApi
   | typeof workflowRuleApi
+  | typeof triageApi
   | typeof invitationApi
   | typeof workspaceApi
   | typeof customFieldApi

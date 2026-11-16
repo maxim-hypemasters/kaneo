@@ -230,7 +230,7 @@ export const VALID_PRIORITIES = [
   "urgent",
 ] as const;
 
-export const VIRTUAL_STATUSES = ["planned", "archived"] as const;
+export const VIRTUAL_STATUSES = ["planned", "archived", "triage"] as const;
 
 export function assertValidPriority(priority: string): void {
   if (!(VALID_PRIORITIES as readonly string[]).includes(priority)) {

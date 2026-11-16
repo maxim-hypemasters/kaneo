@@ -33,6 +33,7 @@ export default function TaskCrumbSelect({
     ...(project?.columns?.flatMap((column) => column.tasks) ?? []),
     ...(project?.plannedTasks ?? []),
     ...(project?.archivedTasks ?? []),
+    ...(project?.triageTasks ?? []),
   ];
 
   return (

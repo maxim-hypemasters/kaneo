@@ -115,6 +115,14 @@ function describeEvent(
       return plain(
         `changed status from ${status("oldStatus")} to ${status("newStatus")}`,
       );
+    case "triage_accepted":
+      return plain(
+        stringField(data, "newStatus")
+          ? `accepted the task from Triage into ${status("newStatus")}`
+          : "accepted the task from Triage",
+      );
+    case "triage_declined":
+      return plain("declined the task in Triage");
     case "priority_changed":
       return plain(
         `changed priority from ${priorityName(stringField(data, "oldPriority"))} to ${priorityName(stringField(data, "newPriority"))}`,

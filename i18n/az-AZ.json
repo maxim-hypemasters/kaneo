@@ -2508,6 +2508,24 @@
 		},
 		"shared": {
 			"autosave": "Dəyişikliklər avtomatik yadda saxlanılır"
+		},
+		"projectTriage": {
+			"pageTitle": "Layihə triajı",
+			"title": "Triaj",
+			"subtitle": "{{project}} layihəsində yeni işə kimin baxacağını seçin.",
+			"membersTitle": "Triaj üzvləri",
+			"membersDescription": "İş lövhəyə çatmazdan əvvəl yeni tapşırıqları və xətaları qəbul və ya rədd edirlər.",
+			"addMember": "Üzv əlavə et",
+			"searchPlaceholder": "Şəxs axtar…",
+			"noCandidates": "Girişi olan hər kəs artıq siyahıdadır",
+			"removeMember": "{{name}} triajdan çıxar",
+			"unknownMember": "Keçmiş üzv",
+			"emptyTitle": "Triaj söndürülüb",
+			"emptyDescription": "Yeni tapşırıqlar və xətalar birbaşa lövhəyə gedir. Triajı yandırmaq üçün üzv əlavə edin.",
+			"rule": "Başqası tərəfindən, o cümlədən inteqrasiyalar vasitəsilə yaradılan tapşırıqlar və xətalar üzv qəbul və ya rədd edənə qədər triajda gözləyir. Qəbul edilən iş Görüləcək bölməsinə keçir; rədd edilən iş arxivlənir.",
+			"readOnly": "Triajı kimin edəcəyini yalnız layihələri idarə edə bilənlər dəyişə bilər.",
+			"saved": "Triaj üzvləri yeniləndi",
+			"saveError": "Triaj üzvlərini yeniləmək alınmadı"
 		}
 	},
 	"navigation": {
@@ -2774,6 +2792,19 @@
 				"title": "Vaxtın izlənməsi başladı",
 				"contentWithTask": "Tapşırıqda vaxtın izlənməsi başladı: {{taskTitle}}",
 				"contentWithoutTask": "Tapşırıqda vaxtın izlənməsi başladı"
+			},
+			"task_triage_new": {
+				"title": "Baxılacaq yeni iş",
+				"content": "“{{taskTitle}}” triajda gözləyir"
+			},
+			"task_triage_accepted": {
+				"title": "Bildirişiniz qəbul edildi",
+				"content": "“{{taskTitle}}” qəbul edildi və lövhəyə köçürüldü"
+			},
+			"task_triage_declined": {
+				"title": "Bildirişiniz rədd edildi",
+				"content": "“{{taskTitle}}” rədd edildi",
+				"contentWithReason": "“{{taskTitle}}” rədd edildi: {{reason}}"
 			}
 		},
 		"inbox": {
@@ -2927,7 +2958,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "bunu triajdan qəbul etdi",
+		"triageDeclined": "bunu triajda rədd etdi"
 	},
 	"tasks": {
 		"title": "Tapşırıqlar",
@@ -2938,7 +2971,8 @@
 			"in-review": "Yoxlanılır",
 			"done": "Hazırdır",
 			"archived": "Arxivlənmiş",
-			"planned": "Planlaşdırılmış"
+			"planned": "Planlaşdırılmış",
+			"triage": "Triaj"
 		},
 		"priority": {
 			"label": "Prioritet",
@@ -4167,6 +4201,45 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "Triaj",
+			"pageTitle": "{{name}} triajı",
+			"waitingCount_one": "{{count}} triaj gözləyir",
+			"waitingCount_other": "{{count}} triaj gözləyir",
+			"empty": {
+				"title": "Baxılacaq heç nə yoxdur",
+				"description": "Triaj siyahısından kənar şəxslərin yeni tapşırıqları və xətaları baxış üçün burada görünür."
+			},
+			"off": {
+				"title": "Triaj söndürülüb",
+				"description": "Yeni tapşırıqları və xətaları lövhəyə çatmazdan əvvəl yoxlamaq üçün layihə ayarlarında triaj üzvləri əlavə edin.",
+				"action": "Triajı qur"
+			},
+			"reportedBy": "Bildirən: {{name}}",
+			"accept": "Qəbul et",
+			"acceptLabel": "“{{title}}” qəbul et",
+			"decline": "Rədd et",
+			"declineLabel": "“{{title}}” rədd et",
+			"waiting": "Triaj gözləyir",
+			"accepted": "Qəbul edildi və lövhəyə köçürüldü",
+			"declined": "Rədd edildi və arxivləndi",
+			"acceptError": "Bu tapşırığı qəbul etmək alınmadı",
+			"declineError": "Bu tapşırığı rədd etmək alınmadı",
+			"declineDialog": {
+				"title": "“{{title}}” rədd edilsin?",
+				"description": "Arxivlənəcək. Bildirən şəxsə, səbəb yazsanız, səbəbinizlə birlikdə bildiriş göndəriləcək.",
+				"reasonLabel": "Səbəb (istəyə bağlı)",
+				"reasonPlaceholder": "Bu niyə davam etməyəcək?",
+				"confirm": "Rədd et",
+				"pending": "Rədd edilir…"
+			},
+			"banner": {
+				"review": "Bu triajda gözləyir. Lövhəyə köçürmək üçün qəbul edin və ya rədd edin.",
+				"waiting": "Bu, triaj üzvünün baxışını gözləyir."
+			},
+			"createNote": "Bu, baxış üçün triaja gedəcək",
+			"sentToTriage": "Baxış üçün triaja göndərildi"
 		}
 	},
 	"invitations": {

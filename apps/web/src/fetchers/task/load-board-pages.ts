@@ -20,12 +20,14 @@ export async function loadBoardPages<T extends ProjectWithTasks>(
   signal?.throwIfAborted();
   const first = await load(1);
   const result = first.data;
+  result.triageTasks ??= [];
   const columns = new Map(result.columns.map((column) => [column.id, column]));
   const seen = new Map(
     [
       ...result.columns.flatMap((column) => column.tasks),
       ...result.archivedTasks,
       ...result.plannedTasks,
+      ...result.triageTasks,
     ].map((task) => [task.id, task]),
   );
   let progressWeight =
@@ -102,6 +104,7 @@ export async function loadBoardPages<T extends ProjectWithTasks>(
     }
     append(result.archivedTasks, next.data.archivedTasks);
     append(result.plannedTasks, next.data.plannedTasks);
+    append((result.triageTasks ??= []), next.data.triageTasks ?? []);
   };
   const loadRelated = async (page: number, initial: BoardPage<T>) => {
     // Each collection uses its initial count; live additions cannot indefinitely

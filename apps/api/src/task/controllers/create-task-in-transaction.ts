@@ -29,6 +29,11 @@ import { lockRelease } from "../../release/membership/assign-release";
 import { releaseForNewTask } from "../../release/membership/follow-feature-release";
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
+import { routeNewWork } from "../../triage/route-new-work";
+import {
+  assertTriageTransition,
+  TRIAGE_STATUS,
+} from "../../triage/triage-status";
 
 export type TaskCreationTransaction = Parameters<
   Parameters<typeof db.transaction>[0]
@@ -146,7 +151,17 @@ export async function createTaskInTransaction(
     throw new HTTPException(400, {
       message: "Features do not have planning fields",
     });
-  const resolvedStatus = status || "to-do";
+  // The client's status stands only for triage members and projects
+  // without triage; everyone else's Tasks and Bugs wait in Triage.
+  const requestedStatus = status || "to-do";
+  const resolvedStatus = await routeNewWork(tx, {
+    projectId,
+    type,
+    requested: requestedStatus === TRIAGE_STATUS ? "to-do" : requestedStatus,
+    userId: currentUserId,
+  });
+  if (resolvedStatus !== TRIAGE_STATUS)
+    assertTriageTransition(undefined, requestedStatus);
   const resolvedPriority = priority || "no-priority";
   const normalizedCustomFields = deduplicateCustomFields(customFields);
 
@@ -245,6 +260,7 @@ export async function createTaskInTransaction(
       featureId: featureId ?? null,
       milestoneId: milestoneId ?? null,
       releaseId: releaseForNewTask(releaseId, milestone?.releaseId ?? null),
+      createdBy: currentUserId,
     })
     .returning();
 

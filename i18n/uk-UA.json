@@ -2592,6 +2592,24 @@
 		},
 		"shared": {
 			"autosave": "Зміни зберігаються автоматично"
+		},
+		"projectTriage": {
+			"pageTitle": "Тріаж проєкту",
+			"title": "Тріаж",
+			"subtitle": "Оберіть, хто перевіряє нову роботу в {{project}}.",
+			"membersTitle": "Учасники тріажу",
+			"membersDescription": "Вони приймають або відхиляють нові завдання та баги, перш ніж робота потрапить на дошку.",
+			"addMember": "Додати учасника",
+			"searchPlaceholder": "Пошук людей…",
+			"noCandidates": "Усі, хто має доступ, уже в списку",
+			"removeMember": "Прибрати {{name}} з тріажу",
+			"unknownMember": "Колишній учасник",
+			"emptyTitle": "Тріаж вимкнено",
+			"emptyDescription": "Нові завдання та баги одразу потрапляють на дошку. Додайте учасника, щоб увімкнути тріаж.",
+			"rule": "Завдання та баги, створені кимось іншим, зокрема через інтеграції, чекають у тріажі, доки учасник не прийме або не відхилить їх. Прийнята робота переходить у «До виконання», відхилена архівується.",
+			"readOnly": "Змінювати учасників тріажу можуть лише ті, хто керує проєктами.",
+			"saved": "Учасників тріажу оновлено",
+			"saveError": "Не вдалося оновити учасників тріажу"
 		}
 	},
 	"navigation": {
@@ -2854,6 +2872,19 @@
 			"task_overdue": {
 				"title": "Завдання прострочено",
 				"content": "Дата завершення {{taskTitle}} вже минула"
+			},
+			"task_triage_new": {
+				"title": "Нова робота для тріажу",
+				"content": "«{{taskTitle}}» очікує в тріажі"
+			},
+			"task_triage_accepted": {
+				"title": "Ваш запит прийнято",
+				"content": "«{{taskTitle}}» прийнято й перенесено на дошку"
+			},
+			"task_triage_declined": {
+				"title": "Ваш запит відхилено",
+				"content": "«{{taskTitle}}» відхилено",
+				"contentWithReason": "«{{taskTitle}}» відхилено: {{reason}}"
 			}
 		},
 		"reminderLeadTime": {
@@ -3021,7 +3052,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "прийняв(ла) це з тріажу",
+		"triageDeclined": "відхилив(ла) це в тріажі"
 	},
 	"tasks": {
 		"title": "Завдання",
@@ -3032,7 +3065,8 @@
 			"in-review": "На перевірці",
 			"done": "Готово",
 			"archived": "Архівовано",
-			"planned": "Заплановано"
+			"planned": "Заплановано",
+			"triage": "Тріаж"
 		},
 		"priority": {
 			"label": "Пріоритет",
@@ -4341,6 +4375,47 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "Тріаж",
+			"pageTitle": "Тріаж: {{name}}",
+			"waitingCount_one": "Очікують тріажу: {{count}}",
+			"waitingCount_few": "Очікують тріажу: {{count}}",
+			"waitingCount_many": "Очікують тріажу: {{count}}",
+			"waitingCount_other": "Очікують тріажу: {{count}}",
+			"empty": {
+				"title": "Нічого розбирати",
+				"description": "Тут з’являються нові завдання та баги від людей поза списком тріажу."
+			},
+			"off": {
+				"title": "Тріаж вимкнено",
+				"description": "Додайте учасників тріажу в налаштуваннях проєкту, щоб перевіряти нові завдання та баги, перш ніж вони потраплять на дошку.",
+				"action": "Налаштувати тріаж"
+			},
+			"reportedBy": "Повідомив(ла): {{name}}",
+			"accept": "Прийняти",
+			"acceptLabel": "Прийняти «{{title}}»",
+			"decline": "Відхилити",
+			"declineLabel": "Відхилити «{{title}}»",
+			"waiting": "Очікує тріажу",
+			"accepted": "Прийнято й перенесено на дошку",
+			"declined": "Відхилено й архівовано",
+			"acceptError": "Не вдалося прийняти завдання",
+			"declineError": "Не вдалося відхилити завдання",
+			"declineDialog": {
+				"title": "Відхилити «{{title}}»?",
+				"description": "Завдання буде архівовано. Автор отримає сповіщення з вашою причиною, якщо ви її вкажете.",
+				"reasonLabel": "Причина (необов’язково)",
+				"reasonPlaceholder": "Чому це не буде зроблено?",
+				"confirm": "Відхилити",
+				"pending": "Відхиляємо…"
+			},
+			"banner": {
+				"review": "Це очікує в тріажі. Прийміть, щоб перенести на дошку, або відхиліть.",
+				"waiting": "Це очікує перевірки учасником тріажу."
+			},
+			"createNote": "Це потрапить у тріаж на перевірку",
+			"sentToTriage": "Надіслано в тріаж на перевірку"
 		}
 	},
 	"invitations": {

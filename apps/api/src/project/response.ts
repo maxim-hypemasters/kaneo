@@ -50,6 +50,9 @@ export const projectListItemSchema = projectSchema
     plannedTasks: z
       .array(boardTaskSchema)
       .openapi({ description: "Always empty." }),
+    triageTasks: z
+      .array(boardTaskSchema)
+      .openapi({ description: "Always empty." }),
     columns: z
       .array(boardColumnSchema)
       .openapi({ description: "Always empty." }),

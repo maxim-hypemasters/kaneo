@@ -19,5 +19,8 @@ export function filterProjectTasks(
     archivedTasks: (project.archivedTasks ?? []).filter(
       (task) => task.type !== "feature" && keep(task),
     ),
+    triageTasks: (project.triageTasks ?? []).filter(
+      (task) => task.type !== "feature" && keep(task),
+    ),
   };
 }

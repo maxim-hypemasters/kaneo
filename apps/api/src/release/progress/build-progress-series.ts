@@ -5,6 +5,7 @@ import type {
   StatusChange,
   WorkflowChange,
 } from "./types";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
 
 function groupDays<T extends { date: string }>(changes: readonly T[]) {
   const days = new Map<string, T[]>();
@@ -36,6 +37,8 @@ function countProgress(
   );
   const counts = { scope: 0, started: 0, completed: 0 };
   for (const [status, count] of statuses) {
+    // Work waiting in Triage hasn't been accepted into the release yet.
+    if (status === TRIAGE_STATUS) continue;
     counts.scope += count;
     if (completed.has(status)) {
       counts.completed += count;

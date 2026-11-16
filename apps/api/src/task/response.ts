@@ -34,6 +34,11 @@ const releaseIdSchema = z.string().nullable().openapi({
     "The Task/Bug release, from its own project. Always null for Features and on public boards.",
 });
 
+const createdBySchema = z.string().nullable().openapi({
+  description:
+    "The user who created the task. Null for work created by integrations or before Kaneo recorded it.",
+});
+
 const taskBaseSchema = z
   .object({
     id: z.string(),
@@ -70,6 +75,7 @@ const taskBaseSchema = z
     dueDate: nullableResponseTimestamp.openapi({ readOnly: true }),
     archivedAt: nullableResponseTimestamp,
     createdAt: responseTimestamp,
+    createdBy: createdBySchema.optional(),
     type: taskTypeSchema,
     featureId: featureIdSchema,
     milestoneId: milestoneIdSchema,
@@ -226,6 +232,7 @@ export const boardTaskSchema = z
     dueDate: nullableResponseTimestamp.openapi({ readOnly: true }),
     position: z.number().nullable(),
     createdAt: responseTimestamp,
+    createdBy: createdBySchema.optional(),
     userId: z.string().nullable(),
     assigneeName: z.string().nullable(),
     assigneeId: z.string().nullable(),
@@ -280,6 +287,10 @@ export const boardSchema = z
         columns: z.array(boardColumnSchema),
         archivedTasks: z.array(boardTaskSchema),
         plannedTasks: z.array(boardTaskSchema),
+        triageTasks: z.array(boardTaskSchema).openapi({
+          description:
+            "Tasks and Bugs waiting in Triage for a triage member to accept or decline. Always empty on public boards.",
+        }),
       })
       .openapi("Board"),
     pagination: z

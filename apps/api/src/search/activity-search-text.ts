@@ -56,6 +56,10 @@ export function activitySearchContent(
   switch (type) {
     case "status_changed":
       return `changed status from ${toDisplayCase(String(data.oldStatus ?? ""))} to ${toDisplayCase(String(data.newStatus ?? ""))}`;
+    case "triage_accepted":
+      return `accepted the ${subject} from Triage`;
+    case "triage_declined":
+      return `declined the ${subject} in Triage`;
     case "priority_changed":
       return `changed priority from ${toDisplayCase(String(data.oldPriority ?? ""))} to ${toDisplayCase(String(data.newPriority ?? ""))}`;
     case "unassigned":

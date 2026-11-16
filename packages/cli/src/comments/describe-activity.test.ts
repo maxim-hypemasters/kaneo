@@ -78,6 +78,24 @@ describe("describeActivity", () => {
     ).toBe("changed status from To Do to In Progress");
   });
 
+  it("describes Triage decisions", () => {
+    expect(
+      summary({
+        type: "triage_accepted",
+        eventData: { oldStatus: "triage", newStatus: "to-do" },
+      }),
+    ).toBe("accepted the task from Triage into To Do");
+    expect(
+      summary({ type: "triage_accepted", eventData: { oldStatus: "triage" } }),
+    ).toBe("accepted the task from Triage");
+    expect(
+      summary({
+        type: "triage_declined",
+        eventData: { oldStatus: "triage", newStatus: "archived" },
+      }),
+    ).toBe("declined the task in Triage");
+  });
+
   it("title-cases statuses the project no longer has", () => {
     expect(
       summary({

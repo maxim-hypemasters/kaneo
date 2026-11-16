@@ -76,6 +76,25 @@ function describe(
         message: preview ? `${named}: ${preview}` : named,
       };
     }
+    case "task_triage_new": {
+      const who = field(data, "reporterName");
+      return {
+        title: "New work to triage",
+        message: who ? `${who} reported "${named}"` : named,
+      };
+    }
+    case "task_triage_accepted": {
+      const who = field(data, "actorName") ?? "Someone";
+      return { title: `${who} accepted your report`, message: named };
+    }
+    case "task_triage_declined": {
+      const who = field(data, "actorName") ?? "Someone";
+      const reason = field(data, "reason");
+      return {
+        title: `${who} declined your report`,
+        message: reason ? `${named}: ${reason}` : named,
+      };
+    }
     case "due_date_reminder":
       return {
         title: "Task due soon",

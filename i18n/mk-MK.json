@@ -2508,6 +2508,24 @@
 		},
 		"shared": {
 			"autosave": "Промените се зачувуваат автоматски"
+		},
+		"projectTriage": {
+			"pageTitle": "Тријажа на проектот",
+			"title": "Тријажа",
+			"subtitle": "Изберете кој ја прегледува новата работа во {{project}}.",
+			"membersTitle": "Членови за тријажа",
+			"membersDescription": "Тие прифаќаат или одбиваат нови задачи и грешки пред работата да стигне на таблата.",
+			"addMember": "Додај член",
+			"searchPlaceholder": "Пребарај луѓе…",
+			"noCandidates": "Сите со пристап веќе се на листата",
+			"removeMember": "Отстрани го {{name}} од тријажата",
+			"unknownMember": "Поранешен член",
+			"emptyTitle": "Тријажата е исклучена",
+			"emptyDescription": "Новите задачи и грешки одат директно на таблата. Додајте член за да ја вклучите тријажата.",
+			"rule": "Задачите и грешките што ги креира некој друг, вклучително и преку интеграции, чекаат во тријажа додека член не ги прифати или одбие. Прифатената работа оди во „За правење“, а одбиената се архивира.",
+			"readOnly": "Само луѓето што можат да управуваат со проекти можат да менуваат кој прави тријажа.",
+			"saved": "Членовите за тријажа се ажурирани",
+			"saveError": "Членовите за тријажа не може да се ажурираат"
 		}
 	},
 	"navigation": {
@@ -2766,6 +2784,19 @@
 			"task_overdue": {
 				"title": "Задачата е задоцнета",
 				"content": "{{taskTitle}} го помина крајниот рок"
+			},
+			"task_triage_new": {
+				"title": "Нова работа за тријажа",
+				"content": "„{{taskTitle}}“ чека во тријажа"
+			},
+			"task_triage_accepted": {
+				"title": "Вашата пријава е прифатена",
+				"content": "„{{taskTitle}}“ е прифатено и преместено на таблата"
+			},
+			"task_triage_declined": {
+				"title": "Вашата пријава е одбиена",
+				"content": "„{{taskTitle}}“ е одбиено",
+				"contentWithReason": "„{{taskTitle}}“ е одбиено: {{reason}}"
 			}
 		},
 		"reminderLeadTime": {
@@ -2927,7 +2958,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "го прифати ова од тријажата",
+		"triageDeclined": "го одби ова во тријажата"
 	},
 	"tasks": {
 		"title": "Задачи",
@@ -2938,7 +2971,8 @@
 			"in-review": "На преглед",
 			"done": "Завршено",
 			"archived": "Архивирано",
-			"planned": "Планирано"
+			"planned": "Планирано",
+			"triage": "Тријажа"
 		},
 		"priority": {
 			"label": "Приоритет",
@@ -4167,6 +4201,45 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "Тријажа",
+			"pageTitle": "Тријажа на {{name}}",
+			"waitingCount_one": "{{count}} чека тријажа",
+			"waitingCount_other": "{{count}} чекаат тријажа",
+			"empty": {
+				"title": "Нема ништо за преглед",
+				"description": "Новите задачи и грешки од луѓе надвор од листата за тријажа се појавуваат тука за преглед."
+			},
+			"off": {
+				"title": "Тријажата е исклучена",
+				"description": "Додајте членови за тријажа во поставките на проектот за да ги прегледувате новите задачи и грешки пред да стигнат на таблата.",
+				"action": "Постави тријажа"
+			},
+			"reportedBy": "Пријавено од {{name}}",
+			"accept": "Прифати",
+			"acceptLabel": "Прифати „{{title}}“",
+			"decline": "Одбиј",
+			"declineLabel": "Одбиј „{{title}}“",
+			"waiting": "Чека тријажа",
+			"accepted": "Прифатено и преместено на таблата",
+			"declined": "Одбиено и архивирано",
+			"acceptError": "Задачата не може да се прифати",
+			"declineError": "Задачата не може да се одбие",
+			"declineDialog": {
+				"title": "Да се одбие „{{title}}“?",
+				"description": "Ќе биде архивирана. Пријавувачот ќе добие известување, со вашата причина ако ја наведете.",
+				"reasonLabel": "Причина (опционално)",
+				"reasonPlaceholder": "Зошто ова нема да продолжи?",
+				"confirm": "Одбиј",
+				"pending": "Се одбива…"
+			},
+			"banner": {
+				"review": "Ова чека во тријажа. Прифатете го за да оди на таблата или одбијте го.",
+				"waiting": "Ова чека преглед од член за тријажа."
+			},
+			"createNote": "Ова ќе оди во тријажа за преглед",
+			"sentToTriage": "Испратено во тријажа за преглед"
 		}
 	},
 	"invitations": {

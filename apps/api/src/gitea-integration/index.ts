@@ -339,7 +339,7 @@ const giteaIntegration = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(importIssuesRoute, async (c) => {
     const { projectId } = c.req.valid("json");
-    const result = await importGiteaIssues(projectId);
+    const result = await importGiteaIssues(projectId, c.get("userId"));
     return c.json(result, 200);
   });
 

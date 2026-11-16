@@ -16,7 +16,18 @@ import {
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import { ProjectSidebarMenu } from "./project-sidebar-menu";
 
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), closeMobile: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  navigate: vi.fn(),
+  closeMobile: vi.fn(),
+  triageMembers: [] as string[],
+  triageCount: undefined as number | undefined,
+}));
+vi.mock("@/hooks/queries/triage/use-get-triage-members", () => ({
+  useGetTriageMembers: () => ({ data: mocks.triageMembers }),
+}));
+vi.mock("@/hooks/queries/task/use-cached-triage-count", () => ({
+  useCachedTriageCount: () => mocks.triageCount,
+}));
 vi.mock("@/lib/i18n", () => ({ i18n: { t: (key: string) => key } }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => mocks.navigate,
@@ -47,6 +58,8 @@ vi.mock("@/components/ui/sidebar", async (importOriginal) => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.triageMembers = [];
+  mocks.triageCount = undefined;
   useUserPreferencesStore.setState({ taskLayout: "board", viewMode: "board" });
 });
 afterEach(() => {
@@ -55,7 +68,13 @@ afterEach(() => {
 });
 
 function menu(
-  activeScope: "tasks" | "backlog" | "features" | "releases" | null = "tasks",
+  activeScope:
+    | "tasks"
+    | "backlog"
+    | "triage"
+    | "features"
+    | "releases"
+    | null = "tasks",
   projectId = "p",
 ) {
   return render(
@@ -67,6 +86,32 @@ function menu(
     />,
   );
 }
+
+describe("project sidebar triage entry", () => {
+  it("shows Triage after Tasks, with a count, while the project uses it", () => {
+    mocks.triageMembers = ["u1"];
+    mocks.triageCount = 3;
+    menu("triage");
+    const links = screen.getAllByRole("link");
+    expect(links[1]?.textContent).toContain("tasks:triage.title");
+    expect(links[1]?.getAttribute("aria-current")).toBe("page");
+    expect(links[1]?.getAttribute("href")).toBe(
+      "/dashboard/workspace/w/project/p/triage",
+    );
+    expect(within(links[1]!).getByText("3")).toBeTruthy();
+  });
+
+  it("stays hidden when triage is off and nothing is waiting", () => {
+    menu();
+    expect(screen.queryByText("tasks:triage.title")).toBeNull();
+  });
+
+  it("stays visible while work is still waiting after triage is turned off", () => {
+    mocks.triageCount = 1;
+    menu();
+    expect(screen.getByText("tasks:triage.title")).toBeTruthy();
+  });
+});
 
 describe("project sidebar destinations", () => {
   it("renders the three destinations in order with the current destination marked", () => {

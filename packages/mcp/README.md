@@ -119,6 +119,7 @@ For headless or sandboxed environments where opening a browser is impractical, s
 - Search: `search`
 - Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `list_project_columns`
 - Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_estimate`, `update_task_due_date`, `list_task_activity`
+- Triage: `accept_triage_task`, `decline_triage_task`
 - Features: `list_features`, `archive_feature`, `set_task_feature`; Task/Bug conversion: `set_task_type`
 - Milestones: `list_project_milestones`, `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`, `set_task_milestone`
 - Releases: `list_releases`, `get_release`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
@@ -168,6 +169,17 @@ child releases. `list_tasks` filters by `releaseId`, or `none`.
 release, or out of every release. Creating and updating releases needs
 permission to update the project, and deleting one also needs permission to
 edit tasks, bugs and milestones. Owners and admins have all of these by default.
+
+A project with triage members sends new Tasks and Bugs from anyone else,
+including issues created by repository integrations, to the virtual `triage`
+status. `list_tasks` returns them in `data.triageTasks`, never in columns or
+`plannedTasks`; pass `status: "triage"` to list only them. Work leaves Triage
+only through `accept_triage_task`, which moves it to To Do (or the first open
+column), or `decline_triage_task`, which archives it and posts the optional
+`reason` as a comment. Both notify the reporter. `update_task_status`,
+`update_task` and `move_task` refuse to set `triage` or to move work out of it.
+Only triage members can accept or decline; with no triage members, holders of
+`project:update` can still clear work that is waiting.
 
 Relations (`blocks` and `related`) link Tasks and Bugs. Features do not have
 relations, so `create_task_relation` refuses a Feature on either end. It still

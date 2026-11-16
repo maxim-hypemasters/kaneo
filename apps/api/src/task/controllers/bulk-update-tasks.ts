@@ -20,6 +20,7 @@ import { removeLabelFromGitHub } from "../../plugins/github/utils/sync-label-to-
 import { removeLabelFromGitlab } from "../../plugins/gitlab/utils/sync-label-to-gitlab";
 import { assertAssignableUser } from "../../utils/assert-assignable-user";
 import { publishTaskMutation } from "./task-mutation-effects";
+import { assertTriageTransition } from "../../triage/triage-status";
 import {
   assertValidPriority,
   assertValidTaskStatus,
@@ -145,6 +146,7 @@ async function bulkUpdateTasks({
             .where(inArray(taskTable.id, foundIds))
             .orderBy(asc(taskTable.id))
             .for("update");
+          for (const task of before) assertTriageTransition(task.status, value);
           const beforeById = new Map(before.map((task) => [task.id, task]));
           const result: Array<{
             id: string;

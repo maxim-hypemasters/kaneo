@@ -1,6 +1,7 @@
-import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { columnTable, milestoneTable, taskTable } from "../database/schema";
+import { TRIAGE_STATUS } from "../triage/triage-status";
 
 type WorkStatus = { projectId: AnyPgColumn; status: AnyPgColumn };
 
@@ -15,7 +16,7 @@ export function milestoneWorkIsCompleted(task: WorkStatus) {
 
 export function milestoneWorkIsActive(task: WorkStatus) {
   const first = alias(columnTable, "milestone_first_nonfinal");
-  return sql<boolean>`${task.status} not in ('planned', 'backlog', 'archived') and exists (
+  return sql<boolean>`${task.status} not in ('planned', 'backlog', 'archived', 'triage') and exists (
     select 1 from ${columnTable}
     where ${columnTable.projectId} = ${task.projectId}
       and ${columnTable.slug} = ${task.status}
@@ -34,7 +35,8 @@ const eligible = and(
   eq(work.milestoneId, milestoneTable.id),
   eq(work.featureId, milestoneTable.featureId),
   inArray(work.type, ["task", "bug"]),
-  ne(work.status, "archived"),
+  // Archived and unreviewed (Triage) work doesn't count toward completion.
+  notInArray(work.status, ["archived", TRIAGE_STATUS]),
   sql`exists (select 1 from ${taskTable} as ${owner} where ${owner.id} = ${milestoneTable.featureId} and ${owner.type} = 'feature' and ${owner.projectId} = ${work.projectId})`,
 );
 

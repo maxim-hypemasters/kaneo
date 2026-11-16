@@ -1,0 +1,68 @@
+---
+title: "Triage"
+description: "Review new Tasks and Bugs from outside the team before they reach the board."
+---
+
+Triage keeps incoming requests off the board until someone on the team has looked at them. When a project has triage members, a Task or Bug created by anyone else starts in **Triage** instead of a board column. A triage member then accepts it onto the board or declines it.
+
+Triage is off until you add triage members, so existing projects keep working as before. It needs no extra service or configuration on a self-hosted instance.
+
+## Choose triage members
+
+Open **Settings → Projects**, select a project, and choose **Triage**. Add the people who should review new work, such as a lead or the person on support duty this week. You need permission to manage the project, the same permission that changes its columns.
+
+Each triage member must be a workspace member who can open the project. Someone who leaves the workspace or loses access to the project is removed from the list automatically.
+
+Remove everyone to turn triage off. Work that is already waiting stays in Triage until someone accepts or declines it.
+
+## What starts in Triage
+
+| New work | Where it starts |
+| --- | --- |
+| A Task or Bug created by a triage member | The status they chose |
+| A Task or Bug created by anyone else | Triage, whatever status they chose |
+| A Feature | Never in Triage; Features have no workflow status |
+| An open issue that arrives from a connected GitHub, Gitea, or GitLab repository | Triage, because it has no Kaneo author |
+| A closed issue from a connected repository | Its usual done column |
+| Open issues brought in with **Import issues** | Like work created by the person importing them |
+| A duplicated task, or tasks imported from a file | Like work created by the person who duplicates or imports them |
+
+The same rule applies whether the work comes from the web app, the [CLI](/cli), the [MCP server](/core/integrations/mcp), or the API. A Triage status in an imported file is not kept: imported work is routed again for the person importing it. Importing issues again does not move work out of Triage.
+
+## Review waiting work
+
+Waiting work stays off the board, List, and Backlog. Milestone progress, release charts, and project planning leave it out until it is accepted, and public boards never show it. Triage members review it in the project's **Triage** view.
+
+- **Accept** moves the work to the **To Do** column, or to the project's first open column when there is no To Do.
+- **Decline** moves the work to **Archived**. Add an optional reason to explain why; Kaneo posts it as a comment from you and includes it in the reporter's notification.
+
+Both choices are recorded in the task's activity. Only triage members can accept or decline, and they also need permission to update that kind of work. If the list is empty, anyone with permission to manage the project can still clear the work that is left.
+
+<Note>
+Accept and Decline are the only ways out of Triage. Changing the status, dragging the card, changing statuses in bulk, and moving the task to another project are refused while it waits, and no one can put existing work into Triage by hand.
+</Note>
+
+## Notifications
+
+When new work arrives in Triage, each triage member except its reporter is notified. These notifications follow the **task assignments** preference.
+
+When work is accepted or declined, its reporter is notified, with the reason if one was given. These notifications follow the **status changes** preference, and you are not notified about your own decisions. Issues that arrived from a repository have no reporter in Kaneo, so nobody is notified about them.
+
+Change these preferences, and where notifications are delivered, in [Notifications](/core/functional/account-notifications).
+
+## Automate triage
+
+The API's [endpoint reference](/api-reference/introduction) lists these routes under **Triage**:
+
+| Route | What it does |
+| --- | --- |
+| `GET /api/triage/project/{projectId}/members` | Returns the triage members as `{ "userIds": [...] }` |
+| `PUT /api/triage/project/{projectId}/members` | Replaces the list with `{ "userIds": [...] }`; an empty list turns triage off |
+| `POST /api/triage/task/{id}/accept` | Accepts waiting work and returns the updated task |
+| `POST /api/triage/task/{id}/decline` | Declines waiting work, with an optional `{ "reason": "..." }` |
+
+Waiting work has the status `triage`. The board read `GET /api/task/tasks/{projectId}` returns it in `data.triageTasks`, never in `columns` or `plannedTasks`. Asking any other route to set `triage` returns `400`, and trying to move work that is waiting returns `409`. Each task's `createdBy` names its reporter, or is `null` for work from an integration or created before Kaneo recorded reporters.
+
+The [MCP server](/core/integrations/mcp) has `accept_triage_task` and `decline_triage_task` tools, and its `list_tasks` tool accepts `status: "triage"`. Activity uses the `triage_accepted` and `triage_declined` types. Notifications use `task_triage_new`, `task_triage_accepted`, and `task_triage_declined`.
+
+Continue with [Backlog](/core/functional/backlog-planning) to prepare accepted work that isn't ready to start.
