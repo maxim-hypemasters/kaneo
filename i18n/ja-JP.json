@@ -2466,6 +2466,24 @@
 		},
 		"shared": {
 			"autosave": "変更は自動的に保存されます"
+		},
+		"projectTriage": {
+			"pageTitle": "プロジェクトのトリアージ",
+			"title": "トリアージ",
+			"subtitle": "{{project}} の新しい作業を誰が確認するかを選びます。",
+			"membersTitle": "トリアージ担当者",
+			"membersDescription": "作業がボードに載る前に、新しいタスクやバグを承認または却下します。",
+			"addMember": "メンバーを追加",
+			"searchPlaceholder": "ユーザーを検索…",
+			"noCandidates": "アクセス権のある全員がすでにリストにいます",
+			"removeMember": "{{name}} をトリアージから外す",
+			"unknownMember": "元メンバー",
+			"emptyTitle": "トリアージはオフです",
+			"emptyDescription": "新しいタスクやバグはそのままボードに載ります。メンバーを追加するとトリアージがオンになります。",
+			"rule": "ほかの人が作成したタスクやバグ（連携経由のものを含む）は、担当者が承認または却下するまでトリアージで待機します。承認された作業は To Do に、却下された作業はアーカイブされます。",
+			"readOnly": "トリアージ担当者を変更できるのは、プロジェクトを管理できるユーザーだけです。",
+			"saved": "トリアージ担当者を更新しました",
+			"saveError": "トリアージ担当者を更新できませんでした"
 		}
 	},
 	"navigation": {
@@ -2727,6 +2745,19 @@
 				"title": "時間計測を開始しました",
 				"contentWithTask": "タスク「{{taskTitle}}」の時間計測を開始しました",
 				"contentWithoutTask": "タスクの時間計測を開始しました"
+			},
+			"task_triage_new": {
+				"title": "トリアージする新しい作業",
+				"content": "「{{taskTitle}}」がトリアージで待機中です"
+			},
+			"task_triage_accepted": {
+				"title": "報告が承認されました",
+				"content": "「{{taskTitle}}」が承認され、ボードに移動しました"
+			},
+			"task_triage_declined": {
+				"title": "報告が却下されました",
+				"content": "「{{taskTitle}}」が却下されました",
+				"contentWithReason": "「{{taskTitle}}」が却下されました: {{reason}}"
 			}
 		},
 		"inbox": {
@@ -2880,7 +2911,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "がトリアージから承認しました",
+		"triageDeclined": "がトリアージで却下しました"
 	},
 	"tasks": {
 		"title": "タスク",
@@ -2891,7 +2924,8 @@
 			"in-review": "レビュー中",
 			"done": "完了",
 			"archived": "アーカイブ済み",
-			"planned": "計画中"
+			"planned": "計画中",
+			"triage": "トリアージ"
 		},
 		"priority": {
 			"label": "優先度",
@@ -4083,6 +4117,44 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "トリアージ",
+			"pageTitle": "{{name}} のトリアージ",
+			"waitingCount_other": "{{count}} 件がトリアージ待ち",
+			"empty": {
+				"title": "トリアージするものはありません",
+				"description": "トリアージ担当者以外が作成した新しいタスクやバグは、確認のためここに表示されます。"
+			},
+			"off": {
+				"title": "トリアージはオフです",
+				"description": "新しいタスクやバグをボードに載せる前に確認するには、プロジェクト設定でトリアージ担当者を追加してください。",
+				"action": "トリアージを設定"
+			},
+			"reportedBy": "報告者: {{name}}",
+			"accept": "承認",
+			"acceptLabel": "「{{title}}」を承認",
+			"decline": "却下",
+			"declineLabel": "「{{title}}」を却下",
+			"waiting": "トリアージ待ち",
+			"accepted": "承認してボードに移動しました",
+			"declined": "却下してアーカイブしました",
+			"acceptError": "このタスクを承認できませんでした",
+			"declineError": "このタスクを却下できませんでした",
+			"declineDialog": {
+				"title": "「{{title}}」を却下しますか？",
+				"description": "アーカイブ済みに移動します。報告者に通知され、理由を入力した場合はその理由も伝えられます。",
+				"reasonLabel": "理由（任意）",
+				"reasonPlaceholder": "なぜ進めないのですか？",
+				"confirm": "却下",
+				"pending": "却下しています…"
+			},
+			"banner": {
+				"review": "これはトリアージで待機中です。承認してボードに移動するか、却下してください。",
+				"waiting": "これはトリアージ担当者の確認を待っています。"
+			},
+			"createNote": "これは確認のためトリアージに送られます",
+			"sentToTriage": "確認のためトリアージに送りました"
 		}
 	},
 	"invitations": {

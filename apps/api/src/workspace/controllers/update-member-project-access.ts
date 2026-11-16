@@ -8,6 +8,10 @@ import { replaceMemberProjectAccess } from "../../project-access/replace-member-
 import type { ProjectAccessMode } from "../../project-access/project-access-mode";
 import { resolveProjectAccessRequest } from "../../project-access/resolve-project-access-request";
 import { unassignInaccessibleTasks } from "../../project-access/unassign-inaccessible-tasks";
+import {
+  publishTriageMembersUpdated,
+  removeTriageMemberships,
+} from "../../triage/remove-triage-memberships";
 
 async function updateMemberProjectAccess(request: {
   workspaceId: string;
@@ -24,8 +28,8 @@ async function updateMemberProjectAccess(request: {
     });
   }
 
-  const { access, changedProjectIds, unassigned } = await db.transaction(
-    async (tx) => {
+  const { access, changedProjectIds, unassigned, triageProjectIds } =
+    await db.transaction(async (tx) => {
       const lock = await lockAccessChange(tx, { workspaceId, actorId, userId });
       if (!lock.actorAllowed) {
         throw new HTTPException(403, { message: "Insufficient permissions" });
@@ -66,7 +70,13 @@ async function updateMemberProjectAccess(request: {
         ...outcome.access,
       });
       const after = await listAccessibleProjectIds(tx, workspaceId, userId);
+      const lost = [...before].filter((projectId) => !after.has(projectId));
       return {
+        triageProjectIds: await removeTriageMemberships(tx, {
+          workspaceId,
+          userId,
+          projectIds: lost,
+        }),
         access: resolution.access,
         changedProjectIds: [
           ...[...before].filter((projectId) => !after.has(projectId)),
@@ -78,14 +88,14 @@ async function updateMemberProjectAccess(request: {
           actorId,
         }),
       };
-    },
-  );
+    });
 
   await publishEvent("project_access.updated", {
     workspaceId,
     userId,
     projectIds: changedProjectIds,
   });
+  await publishTriageMembersUpdated(triageProjectIds);
   for (const projectId of new Set(unassigned.map((task) => task.projectId))) {
     await publishEvent("task.bulk_unassigned", { projectId, userId: actorId });
   }

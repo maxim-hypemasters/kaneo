@@ -1,6 +1,11 @@
 import type { TaskType } from "@/types/task";
 
-export type ProjectSidebarScope = "tasks" | "backlog" | "features" | "releases";
+export type ProjectSidebarScope =
+  | "tasks"
+  | "backlog"
+  | "triage"
+  | "features"
+  | "releases";
 
 export function projectSidebarRoute(pathname: string, workspaceId: string) {
   const match = pathname.match(
@@ -25,6 +30,7 @@ export function projectSidebarScope(
   switch (route.section) {
     case "features":
     case "backlog":
+    case "triage":
     case "releases":
       scope = route.section;
       break;

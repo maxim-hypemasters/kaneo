@@ -109,6 +109,7 @@ Both the HTTP endpoint and stdio package expose the same tools:
 - Search: `search`
 - Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `list_project_columns`
 - Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_due_date`, `list_task_activity`
+- Triage: `accept_triage_task`, `decline_triage_task`
 - Features: `list_features`, `archive_feature`, `set_task_feature`, `set_task_type`
 - Milestones: `list_milestones`, `list_project_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `reorder_milestones`, `delete_milestone`, `set_task_milestone`
 - Releases: `list_releases`, `get_release`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
@@ -138,6 +139,10 @@ Features do not have relations. `create_task_relation` links Tasks and Bugs with
 ### Milestones
 
 Milestone tools manage Feature-owned planning units with lead, workflow status, priority, release and dates. `list_project_milestones` returns paginated project summaries for scheduling without one request per Feature. `set_task_milestone` changes membership within the Task/Bug's existing Feature. Lead changes require assignment permission; management requires the milestone permissions (`milestone:create`, `milestone:update`, `milestone:delete`). Milestone status and dates are read-only and derived from nonarchived linked Tasks/Bugs. All eligible work Done means Done; any active or completed work means In Progress; otherwise To Do, including empty milestones. Status ignores filters and release boundaries; progress keeps its existing counting rules.
+
+### Triage
+
+In a project with [triage members](/core/functional/triage), new Tasks and Bugs from anyone else start in the `triage` status. `list_tasks` returns them in `data.triageTasks`, never in columns or `plannedTasks`; pass `status: "triage"` to list only them. `accept_triage_task` moves one to To Do, or the first open column, and `decline_triage_task` archives it and posts the optional `reason` as a comment. Both notify the reporter. Only triage members can use them; with no triage members, holders of `project:update` can still clear waiting work. `update_task_status`, `update_task` and `move_task` refuse to set `triage` or to move work out of it.
 
 ### Releases
 

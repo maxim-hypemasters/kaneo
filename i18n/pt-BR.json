@@ -2550,6 +2550,24 @@
 		},
 		"shared": {
 			"autosave": "As alterações são salvas automaticamente"
+		},
+		"projectTriage": {
+			"pageTitle": "Triagem do projeto",
+			"title": "Triagem",
+			"subtitle": "Escolha quem revisa o trabalho novo em {{project}}.",
+			"membersTitle": "Membros da triagem",
+			"membersDescription": "Eles aceitam ou recusam novas tarefas e bugs antes que o trabalho chegue ao quadro.",
+			"addMember": "Adicionar membro",
+			"searchPlaceholder": "Buscar pessoas…",
+			"noCandidates": "Todos com acesso já estão na lista",
+			"removeMember": "Remover {{name}} da triagem",
+			"unknownMember": "Ex-membro",
+			"emptyTitle": "A triagem está desativada",
+			"emptyDescription": "Novas tarefas e bugs vão direto para o quadro. Adicione um membro para ativar a triagem.",
+			"rule": "Tarefas e bugs criados por qualquer outra pessoa, inclusive os abertos por integrações, aguardam na triagem até que um membro os aceite ou recuse. O trabalho aceito vai para A Fazer; o recusado é arquivado.",
+			"readOnly": "Somente quem pode gerenciar projetos pode alterar quem faz a triagem.",
+			"saved": "Membros da triagem atualizados",
+			"saveError": "Não foi possível atualizar os membros da triagem"
 		}
 	},
 	"navigation": {
@@ -2820,6 +2838,19 @@
 				"title": "Registro de tempo iniciado",
 				"contentWithTask": "Registro de tempo iniciado na tarefa: {{taskTitle}}",
 				"contentWithoutTask": "Registro de tempo iniciado em uma tarefa"
+			},
+			"task_triage_new": {
+				"title": "Novo trabalho para triar",
+				"content": "“{{taskTitle}}” está aguardando na triagem"
+			},
+			"task_triage_accepted": {
+				"title": "Seu relato foi aceito",
+				"content": "“{{taskTitle}}” foi aceito e movido para o quadro"
+			},
+			"task_triage_declined": {
+				"title": "Seu relato foi recusado",
+				"content": "“{{taskTitle}}” foi recusado",
+				"contentWithReason": "“{{taskTitle}}” foi recusado: {{reason}}"
 			}
 		},
 		"newCount_many": "{{count}} novas",
@@ -2974,7 +3005,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "aceitou isto da triagem",
+		"triageDeclined": "recusou isto na triagem"
 	},
 	"tasks": {
 		"title": "Tarefas",
@@ -2985,7 +3018,8 @@
 			"in-review": "Em Revisão",
 			"done": "Concluído",
 			"archived": "Arquivado",
-			"planned": "Planejado"
+			"planned": "Planejado",
+			"triage": "Triagem"
 		},
 		"priority": {
 			"label": "Prioridade",
@@ -4254,6 +4288,46 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "Triagem",
+			"pageTitle": "Triagem de {{name}}",
+			"waitingCount_one": "{{count}} aguardando triagem",
+			"waitingCount_many": "{{count}} aguardando triagem",
+			"waitingCount_other": "{{count}} aguardando triagem",
+			"empty": {
+				"title": "Nada para triar",
+				"description": "Novas tarefas e bugs de pessoas fora da lista de triagem aparecem aqui para revisão."
+			},
+			"off": {
+				"title": "A triagem está desativada",
+				"description": "Adicione membros de triagem nas configurações do projeto para revisar novas tarefas e bugs antes que cheguem ao quadro.",
+				"action": "Configurar triagem"
+			},
+			"reportedBy": "Relatado por {{name}}",
+			"accept": "Aceitar",
+			"acceptLabel": "Aceitar “{{title}}”",
+			"decline": "Recusar",
+			"declineLabel": "Recusar “{{title}}”",
+			"waiting": "Aguardando triagem",
+			"accepted": "Aceito e movido para o quadro",
+			"declined": "Recusado e arquivado",
+			"acceptError": "Não foi possível aceitar esta tarefa",
+			"declineError": "Não foi possível recusar esta tarefa",
+			"declineDialog": {
+				"title": "Recusar “{{title}}”?",
+				"description": "Ela vai para Arquivado. Quem relatou será notificado, com o seu motivo, se você informar um.",
+				"reasonLabel": "Motivo (opcional)",
+				"reasonPlaceholder": "Por que isso não vai seguir em frente?",
+				"confirm": "Recusar",
+				"pending": "Recusando…"
+			},
+			"banner": {
+				"review": "Isto está aguardando na triagem. Aceite para movê-lo para o quadro ou recuse.",
+				"waiting": "Isto está aguardando a revisão de um membro da triagem."
+			},
+			"createNote": "Isto irá para a triagem para revisão",
+			"sentToTriage": "Enviado para a triagem para revisão"
 		}
 	},
 	"invitations": {

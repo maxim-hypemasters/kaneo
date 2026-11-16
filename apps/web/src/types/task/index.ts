@@ -37,6 +37,8 @@ type Task = {
   dueDate: string | null;
   position: number | null;
   createdAt: string;
+  // Who reported the work; null for integration-created and older tasks.
+  createdBy?: string | null;
   updatedAt?: string;
   userId: string | null;
   assigneeId: string | null;

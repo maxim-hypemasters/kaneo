@@ -17,6 +17,7 @@ import {
 import { projectAccessCondition } from "../project-access/project-access-condition";
 import type { ScheduleInput } from "./engine/types";
 import { uniformPlanningCalendar } from "./uniform-calendar";
+import { TRIAGE_STATUS } from "../triage/triage-status";
 
 export type PlanningTransaction = Parameters<
   Parameters<typeof db.transaction>[0]
@@ -234,8 +235,9 @@ export async function readScheduleInput(
     (column) =>
       !column.isFinal && !["planned", "backlog"].includes(column.slug),
   );
+  // Work waiting in Triage isn't accepted yet, so it isn't planned either.
   const state = (task: (typeof tasks)[number]) =>
-    task.status === "archived"
+    task.status === "archived" || task.status === TRIAGE_STATUS
       ? ("archived" as const)
       : columns.some((column) => column.slug === task.status && column.isFinal)
         ? ("done" as const)

@@ -6,6 +6,7 @@ const project = {
   columns: [{ tasks: [{ id: "board" }] }],
   plannedTasks: [{ id: "planned" }],
   archivedTasks: [{ id: "archived" }],
+  triageTasks: [{ id: "triage" }],
 } as unknown as ProjectWithTasks;
 
 const ids = (scope: Parameters<typeof scopeTasks>[1]) =>
@@ -15,5 +16,6 @@ it("picks the tasks each view works with", () => {
   expect(ids("board")).toEqual(["board"]);
   expect(ids("backlog")).toEqual(["planned", "archived"]);
   expect(ids("schedule")).toEqual(["board", "planned"]);
+  expect(ids("triage")).toEqual(["triage"]);
   expect(scopeTasks(null, "board")).toEqual([]);
 });

@@ -13,6 +13,7 @@ export type ProjectView =
   | "board"
   | "list"
   | "backlog"
+  | "triage"
   | "features"
   | "releases"
   | "calendar"
@@ -21,6 +22,7 @@ export type ProjectView =
 export type ProjectRoute =
   | "board"
   | "backlog"
+  | "triage"
   | "features"
   | "releases"
   | "calendar"
@@ -29,6 +31,7 @@ export type ProjectRoute =
 export const PROJECT_ROUTE_PATHS = {
   board: "/dashboard/workspace/$workspaceId/project/$projectId/board",
   backlog: "/dashboard/workspace/$workspaceId/project/$projectId/backlog",
+  triage: "/dashboard/workspace/$workspaceId/project/$projectId/triage",
   features: "/dashboard/workspace/$workspaceId/project/$projectId/features",
   releases: "/dashboard/workspace/$workspaceId/project/$projectId/releases",
   calendar: "/dashboard/workspace/$workspaceId/project/$projectId/calendar",
@@ -89,10 +92,15 @@ export function resolveProjectView(
   return route === "board" ? viewMode : route;
 }
 
-// The views that show the project's tasks; Backlog and Releases are planning
-// pages next to them.
+// The views that show the project's tasks; Backlog, Triage and Releases are
+// planning pages next to them.
 export function isTaskLayoutView(view: ProjectView): view is TaskLayout {
-  return view !== "backlog" && view !== "releases" && view !== "features";
+  return (
+    view !== "backlog" &&
+    view !== "triage" &&
+    view !== "releases" &&
+    view !== "features"
+  );
 }
 
 // The task views create tasks and bugs; features are created from Features.

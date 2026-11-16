@@ -58,6 +58,8 @@ export async function publishTaskMutation(
     fields?: Array<keyof Changes>;
     assigneeName?: string | null;
     sourceIntegrationId?: string;
+    // Records the status change as this activity instead of status_changed.
+    statusActivityType?: string;
   } = {},
 ) {
   const changed = (field: keyof Changes) =>
@@ -78,7 +80,7 @@ export async function publishTaskMutation(
       oldStatus: before.status,
       newStatus: after.status,
       assigneeId: after.userId,
-      type: "status_changed",
+      type: options.statusActivityType ?? "status_changed",
     });
   }
   const columnChanged =

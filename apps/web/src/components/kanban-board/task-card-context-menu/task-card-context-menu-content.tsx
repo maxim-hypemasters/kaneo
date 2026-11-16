@@ -50,6 +50,7 @@ import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { TASK_TYPE_CONVERSIONS } from "@/lib/task-type";
 import { PriorityGlyph } from "@/components/task-chips/priority-glyph";
 import { DueDateSubmenu } from "./due-date-submenu";
+import { TRIAGE_STATUS } from "@/lib/triage/triage-status";
 
 type TaskCardContext = {
   worskpaceId: string;
@@ -106,6 +107,8 @@ export default function TaskCardContextMenuContent({
   const canAssign = canAssignTasks();
 
   const isFeature = task.type === "feature";
+  // Triage work moves only through Accept or Decline.
+  const inTriage = task.status === TRIAGE_STATUS;
   const [isArchiveFeatureOpen, setIsArchiveFeatureOpen] = useState(false);
 
   const usersOptions = useMemo(() => {
@@ -240,7 +243,7 @@ export default function TaskCardContextMenuContent({
           </ContextMenuSub>
         )}
 
-        {canEdit && !isFeature && (
+        {canEdit && !isFeature && !inTriage && (
           <ContextMenuSub>
             <ContextMenuSubTrigger>
               <CircleDot className="size-3.5 text-muted-foreground" />
@@ -362,7 +365,7 @@ export default function TaskCardContextMenuContent({
                   </ContextMenuItem>
                 )}
 
-                {canEdit && (
+                {canEdit && !inTriage && (
                   <>
                     <ContextMenuItem
                       className="[&>svg]:mx-0"

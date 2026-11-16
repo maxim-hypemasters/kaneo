@@ -390,7 +390,7 @@ const githubIntegration = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(importIssuesRoute, async (c) => {
     const { projectId, runId } = c.req.valid("json");
-    const result = await importIssues(projectId, runId);
+    const result = await importIssues(projectId, runId, c.get("userId"));
     return result.pending ? c.json(result, 202) : c.json(result, 200);
   });
 

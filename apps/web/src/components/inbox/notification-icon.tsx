@@ -1,6 +1,9 @@
 import {
+  Archive,
   AtSign,
   Bell,
+  CircleCheck,
+  Inbox,
   CalendarClock,
   CalendarX,
   History,
@@ -21,6 +24,9 @@ const icons: Record<string, LucideIcon> = {
   due_date_reminder: CalendarClock,
   task_overdue: CalendarX,
   time_entry_created: Timer,
+  task_triage_new: Inbox,
+  task_triage_accepted: CircleCheck,
+  task_triage_declined: Archive,
 };
 
 export function NotificationIcon({ type }: { type: string }) {

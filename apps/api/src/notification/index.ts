@@ -14,6 +14,7 @@ import deleteNotification from "./controllers/delete-notification";
 import getNotifications from "./controllers/get-notifications";
 import markAllNotificationsAsRead from "./controllers/mark-all-notifications-as-read";
 import setNotificationRead from "./controllers/set-notification-read";
+import "./triage-notifications";
 import {
   bulkResultSchema,
   notificationListSchema,

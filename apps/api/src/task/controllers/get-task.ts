@@ -29,6 +29,7 @@ async function getTask(taskId: string, board = false, userId?: string) {
       position: taskTable.position,
       archivedAt: taskTable.archivedAt,
       createdAt: taskTable.createdAt,
+      createdBy: taskTable.createdBy,
       userId: taskTable.userId,
       assigneeName: userTable.name,
       assigneeId: userTable.id,

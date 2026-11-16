@@ -2466,6 +2466,24 @@
 		},
 		"shared": {
 			"autosave": "Perubahan disimpan otomatis"
+		},
+		"projectTriage": {
+			"pageTitle": "Triase proyek",
+			"title": "Triase",
+			"subtitle": "Pilih siapa yang meninjau pekerjaan baru di {{project}}.",
+			"membersTitle": "Anggota triase",
+			"membersDescription": "Mereka menerima atau menolak tugas dan bug baru sebelum pekerjaan masuk ke papan.",
+			"addMember": "Tambah anggota",
+			"searchPlaceholder": "Cari orang…",
+			"noCandidates": "Semua yang punya akses sudah ada di daftar",
+			"removeMember": "Hapus {{name}} dari triase",
+			"unknownMember": "Mantan anggota",
+			"emptyTitle": "Triase nonaktif",
+			"emptyDescription": "Tugas dan bug baru langsung masuk ke papan. Tambahkan anggota untuk mengaktifkan triase.",
+			"rule": "Tugas dan bug yang dibuat orang lain, termasuk melalui integrasi, menunggu di triase sampai anggota menerima atau menolaknya. Pekerjaan yang diterima masuk ke Perlu Dikerjakan; yang ditolak diarsipkan.",
+			"readOnly": "Hanya orang yang dapat mengelola proyek yang dapat mengubah siapa yang melakukan triase.",
+			"saved": "Anggota triase diperbarui",
+			"saveError": "Tidak dapat memperbarui anggota triase"
 		}
 	},
 	"navigation": {
@@ -2722,6 +2740,19 @@
 			"task_overdue": {
 				"title": "Tugas terlambat",
 				"content": "{{taskTitle}} telah melewati tenggatnya"
+			},
+			"task_triage_new": {
+				"title": "Pekerjaan baru untuk ditriase",
+				"content": "“{{taskTitle}}” menunggu di triase"
+			},
+			"task_triage_accepted": {
+				"title": "Laporan Anda diterima",
+				"content": "“{{taskTitle}}” diterima dan dipindahkan ke papan"
+			},
+			"task_triage_declined": {
+				"title": "Laporan Anda ditolak",
+				"content": "“{{taskTitle}}” ditolak",
+				"contentWithReason": "“{{taskTitle}}” ditolak: {{reason}}"
 			}
 		},
 		"reminderLeadTime": {
@@ -2880,7 +2911,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "menerima ini dari triase",
+		"triageDeclined": "menolak ini di triase"
 	},
 	"tasks": {
 		"title": "Tugas",
@@ -2891,7 +2924,8 @@
 			"in-review": "Dalam Review",
 			"done": "Selesai",
 			"archived": "Diarsipkan",
-			"planned": "Direncanakan"
+			"planned": "Direncanakan",
+			"triage": "Triase"
 		},
 		"priority": {
 			"label": "Prioritas",
@@ -4083,6 +4117,44 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "Triase",
+			"pageTitle": "Triase {{name}}",
+			"waitingCount_other": "{{count}} menunggu triase",
+			"empty": {
+				"title": "Tidak ada yang perlu ditinjau",
+				"description": "Tugas dan bug baru dari orang di luar daftar triase muncul di sini untuk ditinjau."
+			},
+			"off": {
+				"title": "Triase nonaktif",
+				"description": "Tambahkan anggota triase di pengaturan proyek untuk meninjau tugas dan bug baru sebelum masuk ke papan.",
+				"action": "Atur triase"
+			},
+			"reportedBy": "Dilaporkan oleh {{name}}",
+			"accept": "Terima",
+			"acceptLabel": "Terima “{{title}}”",
+			"decline": "Tolak",
+			"declineLabel": "Tolak “{{title}}”",
+			"waiting": "Menunggu triase",
+			"accepted": "Diterima dan dipindahkan ke papan",
+			"declined": "Ditolak dan diarsipkan",
+			"acceptError": "Tidak dapat menerima tugas ini",
+			"declineError": "Tidak dapat menolak tugas ini",
+			"declineDialog": {
+				"title": "Tolak “{{title}}”?",
+				"description": "Tugas ini akan diarsipkan. Pelapor akan diberi tahu, beserta alasan Anda jika Anda memberikannya.",
+				"reasonLabel": "Alasan (opsional)",
+				"reasonPlaceholder": "Mengapa ini tidak dilanjutkan?",
+				"confirm": "Tolak",
+				"pending": "Menolak…"
+			},
+			"banner": {
+				"review": "Ini menunggu di triase. Terima untuk memindahkannya ke papan, atau tolak.",
+				"waiting": "Ini menunggu ditinjau oleh anggota triase."
+			},
+			"createNote": "Ini akan masuk ke triase untuk ditinjau",
+			"sentToTriage": "Dikirim ke triase untuk ditinjau"
 		}
 	},
 	"invitations": {

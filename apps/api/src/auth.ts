@@ -51,6 +51,7 @@ import { isOwnerRole } from "./project-access/is-owner-role";
 import { publishMemberProjects } from "./project-access/publish-member-projects";
 import { handleMemberAdded } from "./workspace-members/handle-member-added";
 import { handleMemberRemoved } from "./workspace-members/handle-member-removed";
+import { dropTriageMemberships } from "./triage/remove-triage-memberships";
 import { handleOwnerPromoted } from "./workspace-members/handle-owner-promoted";
 import { hideInaccessibleInvitationProjects } from "./project-access/hide-inaccessible-invitation-projects";
 import clearEmailVerificationOnAdminChange from "./user/controllers/clear-email-verification-on-admin-change";
@@ -961,6 +962,12 @@ export const auth = betterAuth({
             removed.userId,
           ).catch((error) => {
             console.error("Project access cleanup failed:", error);
+          });
+          await dropTriageMemberships(
+            removed.organizationId,
+            removed.userId,
+          ).catch((error) => {
+            console.error("Triage member cleanup failed:", error);
           });
           await revokeWorkspaceConnections(
             removed.userId,

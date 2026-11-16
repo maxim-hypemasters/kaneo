@@ -31,6 +31,8 @@ import { createGiteaClient } from "../utils/gitea-api";
 import { addLabelsToIssueGitea } from "../utils/labels";
 import { resolveTargetStatus } from "../utils/resolve-column";
 import { baseUrlFromRepositoryHtmlUrl } from "../utils/webhook-repo";
+import { triagesOpenIssue } from "../../../triage/triage-open-issue";
+import { TRIAGE_STATUS } from "../../../triage/triage-status";
 
 type IssueOpenedPayload = {
   action: string;
@@ -132,6 +134,7 @@ export async function handleGiteaIssueOpened(
           ),
           orderBy: (column, { asc }) => [asc(column.position)],
         });
+      const triaged = await triagesOpenIssue(tx, projectId, closed);
       const nextTaskNumber = await claimTaskNumber(projectId, tx);
       const [task] = await tx
         .insert(taskTable)
@@ -140,8 +143,12 @@ export async function handleGiteaIssueOpened(
           userId: null,
           title: issue.title,
           description: formatTaskDescriptionFromIssue(issue.body),
-          status: closed ? (targetColumn?.slug ?? "done") : resolvedStatus,
-          columnId: targetColumn?.id ?? null,
+          status: closed
+            ? (targetColumn?.slug ?? "done")
+            : triaged
+              ? TRIAGE_STATUS
+              : resolvedStatus,
+          columnId: triaged ? null : (targetColumn?.id ?? null),
           priority: priority ?? "low",
           number: nextTaskNumber,
         })

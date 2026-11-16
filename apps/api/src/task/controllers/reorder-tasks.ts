@@ -7,6 +7,7 @@ import { retryTransaction } from "../../utils/retry-transaction";
 import { assertValidTaskStatus } from "../validate-task-fields";
 import { assertTaskPosition } from "./next-task-position";
 import { publishTaskMutation } from "./task-mutation-effects";
+import { assertTriageTransition } from "../../triage/triage-status";
 
 type Reorder = { id: string; position: number; status?: string };
 export default async function reorderTasks(
@@ -90,6 +91,9 @@ export default async function reorderTasks(
             message: "Board changed; refresh before reordering",
           });
       }
+      const current = new Map(before.map((task) => [task.id, task.status]));
+      for (const task of tasks)
+        assertTriageTransition(current.get(task.id), task.status);
       const requestedIds = new Set(tasks.map((task) => task.id));
       if (
         before.filter((task) => requestedIds.has(task.id)).length !==

@@ -10,7 +10,7 @@ import { scopeTasks } from "./scope-tasks";
 const NO_IGNORED_FILTERS: ReadonlyArray<keyof BoardFilters> = [];
 const BACKLOG_IGNORED_FILTERS: ReadonlyArray<keyof BoardFilters> = ["status"];
 
-export type TaskViewScope = "board" | "backlog" | "schedule";
+export type TaskViewScope = "board" | "backlog" | "schedule" | "triage";
 
 export type ProjectTaskView = ReturnType<typeof useProjectTaskView>;
 
@@ -25,8 +25,9 @@ export function useProjectTaskView({
   workspaceId: string;
   scope: TaskViewScope;
 }) {
-  const ignore =
-    scope === "backlog" ? BACKLOG_IGNORED_FILTERS : NO_IGNORED_FILTERS;
+  // Backlog and Triage each hold work outside the workflow columns.
+  const hidesStatus = scope === "backlog" || scope === "triage";
+  const ignore = hidesStatus ? BACKLOG_IGNORED_FILTERS : NO_IGNORED_FILTERS;
   const [search, setSearch] = useState("");
   const descriptionSearch = useDescriptionMatches(projectId, project, search);
   const filters = useTaskFiltersWithLabelsSupport(
@@ -43,7 +44,7 @@ export function useProjectTaskView({
     options,
     columns: project?.columns,
     tasks,
-    showStatus: scope !== "backlog",
+    showStatus: !hidesStatus,
   });
 
   return { search, setSearch, descriptionSearch, filters, subjects };

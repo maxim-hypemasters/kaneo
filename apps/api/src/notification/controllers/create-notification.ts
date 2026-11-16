@@ -39,11 +39,15 @@ export async function persistNotification(
   }
 
   const preferenceKey =
-    type === "task_assignee_changed" || type === "task_created"
+    type === "task_assignee_changed" ||
+    type === "task_created" ||
+    type === "task_triage_new"
       ? "taskAssignmentEnabled"
       : type === "task_comment" || type === "task_mention"
         ? "taskCommentEnabled"
-        : type === "task_status_changed"
+        : type === "task_status_changed" ||
+            type === "task_triage_accepted" ||
+            type === "task_triage_declined"
           ? "taskStatusChangeEnabled"
           : type === "due_date_reminder" || type === "task_overdue"
             ? "dueDateReminderEnabled"

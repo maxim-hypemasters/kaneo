@@ -21,6 +21,7 @@ export function findCachedFeatureId(
       ...board.columns.flatMap((column) => column.tasks),
       ...(board.plannedTasks ?? []),
       ...(board.archivedTasks ?? []),
+      ...(board.triageTasks ?? []),
     ].find((task) => task.id === taskId);
     if (task) return task.featureId ?? null;
   }

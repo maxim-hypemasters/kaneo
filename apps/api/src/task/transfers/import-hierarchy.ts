@@ -43,6 +43,8 @@ import {
   preserveImportedPlanning,
   type PlanningSnapshot,
 } from "./feature-planning";
+import { readTriageRouting } from "../../triage/read-triage-members";
+import { routeCreationStatus, TRIAGE_STATUS } from "../../triage/triage-status";
 
 export type HierarchyTransferTask = ImportTask & {
   key?: string;
@@ -96,7 +98,11 @@ export async function importHierarchy(
         message: members.has(id) ? NO_PROJECT_ACCESS : NOT_ASSIGNABLE,
       });
   }
-  const statuses = await getValidTaskStatuses(projectId);
+  // An exported Triage status is not kept: imported work is routed afresh.
+  const statuses = (await getValidTaskStatuses(projectId)).filter(
+    (status) => status !== TRIAGE_STATUS,
+  );
+  const triage = await readTriageRouting(projectId, currentUserId);
   const columns = await db
     .select()
     .from(columnTable)
@@ -119,7 +125,11 @@ export async function importHierarchy(
     return {
       item,
       id: createId(),
-      status: status.status,
+      status: routeCreationStatus({
+        type: item.type ?? "task",
+        requested: status.status,
+        ...triage,
+      }),
       priority: priority.priority,
       warnings: [status.warning, priority.warning].filter(
         (warning): warning is string => !!warning,
@@ -202,6 +212,7 @@ export async function importHierarchy(
               : item.releaseKey
                 ? releaseIds.get(item.releaseKey)!
                 : null,
+          createdBy: currentUserId ?? null,
           archivedAt:
             item.type === "feature" &&
             (item.archivedAt || item.status === "archived")

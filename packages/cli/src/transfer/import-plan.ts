@@ -3,7 +3,7 @@ import type { Column } from "../api/schemas.js";
 import { matchColumn } from "../tasks/match-column.js";
 import type { ImportCandidate } from "./parse-import-file.js";
 
-const VIRTUAL_STATUSES = ["planned", "archived"];
+const VIRTUAL_STATUSES = ["planned", "archived", "triage"];
 
 export type StatusRemap = { readonly from: string; readonly to: string };
 

@@ -83,4 +83,27 @@ describe("buildImportReport", () => {
       error: "Not a member",
     });
   });
+
+  it("names the statuses outside the board", () => {
+    const report = buildImportReport({
+      project,
+      columns,
+      webUrl: "https://kaneo.test",
+      plan,
+      outcomes: [
+        {
+          success: true,
+          task: { id: "t1", number: 7, title: "One", status: "triage" },
+        },
+        {
+          success: true,
+          task: { id: "t2", number: 8, title: "Two", status: "archived" },
+        },
+      ],
+    });
+    expect(report.tasks.map((task) => task.statusName)).toEqual([
+      "Triage",
+      "Archived",
+    ]);
+  });
 });

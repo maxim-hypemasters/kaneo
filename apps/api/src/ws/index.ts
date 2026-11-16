@@ -834,6 +834,19 @@ subscribeToEvent<{
   );
 });
 
+// Who triages changes the Triage view and the create dialog, not the board.
+subscribeToEvent<{ projectId: string; initiatorId?: string }>(
+  "project.triage_members_updated",
+  async ({ projectId, initiatorId }) => {
+    if (!projectId) return;
+    broadcastToProject(
+      projectId,
+      { type: "TRIAGE_MEMBERS_UPDATED", projectId },
+      initiatorId,
+    );
+  },
+);
+
 // Its own message rather than PROJECT_UPDATED, which refetches the board.
 subscribeToEvent<{ projectId: string; initiatorId?: string }>(
   "release.changed",

@@ -13,7 +13,7 @@ export function toColumnSlug(name: string): string {
 }
 
 // Kaneo rejects these as column slugs: they are virtual task statuses.
-export const RESERVED_COLUMN_SLUGS = ["planned", "archived"];
+export const RESERVED_COLUMN_SLUGS = ["planned", "archived", "triage"];
 
 const PROJECT_KEY_MAX = 8;
 export const SOURCE_PROJECT_KEY_MAX = 16;

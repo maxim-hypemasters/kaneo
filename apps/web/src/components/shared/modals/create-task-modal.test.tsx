@@ -84,11 +84,16 @@ vi.mock("@/hooks/queries/milestone/use-get-milestones", () => ({
     isError: false,
   }),
 }));
+let goesToTriage = false;
+vi.mock("@/hooks/use-routes-to-triage", () => ({
+  useRoutesToTriage: () => goesToTriage,
+}));
 vi.mock("@/lib/upload-draft-asset", () => ({
   uploadDraftAsset: (...args: unknown[]) => stageUpload(...args),
 }));
 
 beforeEach(() => {
+  goesToTriage = false;
   canManageFeature = true;
   releasesFetching = false;
   releasesError = false;
@@ -754,6 +759,24 @@ describe("CreateTaskModal", () => {
     expect(
       screen.queryByText("common:modals.createTask.selectProject"),
     ).toBeNull();
+  });
+
+  it("says when new work will wait in Triage", () => {
+    useLocation.mockReturnValue({
+      pathname: "/dashboard/workspace/workspace-1/project/project-1/board",
+    });
+    goesToTriage = true;
+    render(<CreateTaskModal open onClose={vi.fn()} type="bug" />, {
+      wrapper: createWrapper(),
+    });
+    expect(screen.getByText("tasks:triage.createNote")).toBeTruthy();
+    cleanup();
+
+    goesToTriage = false;
+    render(<CreateTaskModal open onClose={vi.fn()} type="bug" />, {
+      wrapper: createWrapper(),
+    });
+    expect(screen.queryByText("tasks:triage.createNote")).toBeNull();
   });
 });
 

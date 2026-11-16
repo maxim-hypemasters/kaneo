@@ -35,6 +35,8 @@ import { labelTitles } from "../utils/payload";
 import { resolveTargetStatus } from "../utils/resolve-column";
 import { withSyncedNoteId } from "../utils/synced-notes";
 import { baseUrlFromProjectWebUrl } from "../utils/webhook-project";
+import { triagesOpenIssue } from "../../../triage/triage-open-issue";
+import { TRIAGE_STATUS } from "../../../triage/triage-status";
 
 type IssueOpenedPayload = {
   user?: GitlabWebhookUser | null;
@@ -138,6 +140,7 @@ export async function handleGitlabIssueOpened(
           ),
           orderBy: (column, { asc }) => [asc(column.position)],
         });
+      const triaged = await triagesOpenIssue(tx, projectId, closed);
       const nextTaskNumber = await claimTaskNumber(projectId, tx);
       const [task] = await tx
         .insert(taskTable)
@@ -146,8 +149,12 @@ export async function handleGitlabIssueOpened(
           userId: null,
           title: issue.title,
           description: taskDescriptionFromIssue(issue.description),
-          status: closed ? (targetColumn?.slug ?? "done") : resolvedStatus,
-          columnId: targetColumn?.id ?? null,
+          status: closed
+            ? (targetColumn?.slug ?? "done")
+            : triaged
+              ? TRIAGE_STATUS
+              : resolvedStatus,
+          columnId: triaged ? null : (targetColumn?.id ?? null),
           priority: priority ?? "low",
           number: nextTaskNumber,
         })

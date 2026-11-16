@@ -4,6 +4,7 @@ import { buildFullTaskUpdateBody } from "../kaneo/task-helpers.js";
 import { errorResult, textResult } from "../utils/mcp-result.js";
 import { registerFeatureTools } from "./features.js";
 import { registerMilestoneTools } from "./milestones.js";
+import { registerTriageTools } from "./triage.js";
 import { getCurrentUser } from "./get-current-user.js";
 
 export type ToolClient = {
@@ -72,6 +73,7 @@ export function registerTools(
   const { client } = ctx;
   registerMilestoneTools(server, client);
   registerFeatureTools(server, client);
+  registerTriageTools(server, client);
   const registerTool = <S extends z.ZodObject>(
     name: string,
     config: { description: string; inputSchema: S },
@@ -258,7 +260,7 @@ export function registerTools(
     "list_tasks",
     {
       description:
-        "List a bounded page of Tasks and Bugs for a project (50 by default, maximum 100); Features are available through list_features. Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each item has a type ('task' or 'bug'), a featureId (the feature it belongs to, or null), a releaseId (its release, or null), and milestoneId (its milestone, or null).",
+        "List a bounded page of Tasks and Bugs for a project (50 by default, maximum 100); Features are available through list_features. Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each item has a type ('task' or 'bug'), a featureId (the feature it belongs to, or null), a releaseId (its release, or null), and milestoneId (its milestone, or null). New work waiting for review has status 'triage' and comes back in data.triageTasks, never in columns or plannedTasks; filter it with status 'triage'. Only accept_triage_task and decline_triage_task move work out of Triage.",
       inputSchema: listTasksSchema,
     },
     async (args) => {
@@ -320,7 +322,7 @@ export function registerTools(
     "create_task",
     {
       description:
-        "Create a task, bug or feature in a project. Pass type 'bug' for a bug, 'feature' for a feature, or featureId to create a task or bug inside a feature of the same project. A feature can't belong to another feature. Features are knowledge records without planning fields. Tasks/Bugs inherit their milestone's release when releaseId is omitted.",
+        "Create a task, bug or feature in a project. Pass type 'bug' for a bug, 'feature' for a feature, or featureId to create a task or bug inside a feature of the same project. A feature can't belong to another feature. Features are knowledge records without planning fields. Tasks/Bugs inherit their milestone's release when releaseId is omitted. When the project has triage members and you are not one, a new Task or Bug starts in the 'triage' status whatever status you pass.",
       inputSchema: z
         .object({
           projectId: nonEmptyString,
@@ -440,7 +442,7 @@ export function registerTools(
     "update_task",
     {
       description:
-        "Update a task (fetches current task, merges fields, then full update). Leaves the task's type, feature and release as they are: use set_task_type, set_task_feature and set_task_release for those.",
+        "Update a task (fetches current task, merges fields, then full update). Leaves the task's type, feature and release as they are: use set_task_type, set_task_feature and set_task_release for those. The status can't move into or out of 'triage': use accept_triage_task or decline_triage_task.",
       inputSchema: updateTaskSchema,
     },
     async (args) => {
@@ -463,7 +465,7 @@ export function registerTools(
     "move_task",
     {
       description:
-        "Move a task to another project (and optional column status). The task leaves its feature and its release; a feature that still has tasks can't be moved.",
+        "Move a task to another project (and optional column status). The task leaves its feature and its release; a feature that still has tasks can't be moved, and neither can work waiting in Triage.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         destinationProjectId: nonEmptyString,
@@ -487,7 +489,8 @@ export function registerTools(
   registerTool(
     "update_task_status",
     {
-      description: "Update only the status (column) of a task.",
+      description:
+        "Update only the status (column) of a task. The 'triage' status can't be set or left this way: use accept_triage_task or decline_triage_task for work waiting in Triage.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         status: nonEmptyString,
