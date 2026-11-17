@@ -46,6 +46,7 @@ describe("published Gantt placement", () => {
       { id: "published-assignee", name: "Published", image: null },
     ]);
     expect(row.userId).toBe("published-assignee");
+    expect(row.taskUserId).toBe("new-assignee");
     expect(row.assigneeName).toBe("Published");
     expect(row.scheduleStart.toISOString()).toBe(
       new Date(placement.start).toISOString(),

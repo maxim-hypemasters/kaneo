@@ -74,6 +74,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   document: "Project documents",
   label: "Labels",
   workspace: "Workspace",
+  time_off: "Time off",
 };
 
 const PERMISSION_LABELS: Record<
@@ -272,6 +273,20 @@ const PERMISSION_LABELS: Record<
     label: "Manage settings",
     description:
       "Configure integrations, notification rules, and workspace preferences.",
+  },
+  "time_off:create": {
+    label: "Request time off",
+    description:
+      "Request time off, edit or cancel your own requests, and choose your public holiday calendar.",
+  },
+  "time_off:read": {
+    label: "View time off",
+    description: "See who is away and when.",
+  },
+  "time_off:approve": {
+    label: "Approve time off",
+    description:
+      "Approve or decline requests, see everyone's time-off details, balances and holidays, record time off for others, set each type's allowances, and set members' holiday calendars.",
   },
 };
 

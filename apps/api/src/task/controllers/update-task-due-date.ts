@@ -4,6 +4,7 @@ import { taskTable } from "../../database/schema";
 import { publishEvent } from "../../events";
 import { validateDateRange } from "../../utils/validate-dates";
 import { assertLeafPlanning } from "../assert-leaf-planning";
+import { assertAssigneeAvailable } from "../assignee-away/assert-assignee-available";
 import {
   publishTaskMutation,
   recordTaskMutation,
@@ -12,20 +13,35 @@ import { withLockedTask } from "./with-locked-task";
 
 // A due date set by hand. Planned work stops following its estimate (its
 // planned segments are dropped) until the next Apply of its release plans
-// it again.
+// it again. The due day can't be one the assignee is away.
 async function updateTaskDueDate({
   id,
   dueDate,
+  timeZone,
   currentUserId,
 }: {
   id: string;
   dueDate: Date | null;
+  // The zone the date was picked in; see assertAssigneeAvailable.
+  timeZone?: string;
   currentUserId: string;
 }) {
   const { before, after } = await withLockedTask(id, async (tx, task) => {
     assertLeafPlanning(task);
     if (task.dueDate?.getTime() === dueDate?.getTime()) return task;
     validateDateRange(task.startDate, dueDate);
+    await assertAssigneeAvailable(
+      tx,
+      [
+        {
+          taskId: id,
+          projectId: task.projectId,
+          before: task,
+          after: { ...task, dueDate, scheduleSegments: null },
+        },
+      ],
+      timeZone,
+    );
     const [updated] = await tx
       .update(taskTable)
       .set({ dueDate, scheduleSegments: null })

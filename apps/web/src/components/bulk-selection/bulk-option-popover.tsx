@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useCallback, useState } from "react";
 import { OptionMenu } from "@/components/common/option-menu/option-menu";
 import type { OptionMenuItem } from "@/components/common/option-menu/option-menu-item";
 import {
@@ -21,6 +21,8 @@ type BulkOptionPopoverProps = {
   picker?: BulkPicker;
   onDismiss?: () => void;
   returnFocus?: () => HTMLElement | null;
+  // Told whenever the picker opens or closes, including by a shortcut.
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function BulkOptionPopover({
@@ -33,8 +35,16 @@ export function BulkOptionPopover({
   picker,
   onDismiss,
   returnFocus,
+  onOpenChange,
 }: BulkOptionPopoverProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(false);
+  const setOpen = useCallback(
+    (next: boolean) => {
+      setOpenState(next);
+      onOpenChange?.(next);
+    },
+    [onOpenChange],
+  );
   const { openedByRequest, openedManually } = useBulkPickerRequest(
     picker,
     setOpen,

@@ -77,6 +77,7 @@
 						"group": "Your team and account",
 						"pages": [
 							"core/functional/collaborate-with-team",
+							"core/functional/time-off",
 							"core/functional/account-notifications",
 							"core/functional/personalize-your-workspace",
 							"core/functional/manage-your-account"

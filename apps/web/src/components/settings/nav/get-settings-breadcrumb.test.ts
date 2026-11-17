@@ -9,6 +9,7 @@ const nav = buildSettingsNav({
   canImport: false,
   canManageSettings: true,
   hasAssistant: true,
+  canManageTimeOff: false,
   hasAdminAccess: true,
   projects: [{ id: "p1", name: "Kaneo Web" }],
 });

@@ -3,9 +3,14 @@ import { addDays, differenceInCalendarDays } from "date-fns";
 import { Check } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useReleaseToday } from "@/lib/releases/use-release-today";
 import { AssigneeAvatar } from "@/components/task/properties/assignee-avatar";
 import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
+import { awayNoteDates } from "./away/away-note";
+import { runsWithin } from "./away/away-runs";
+import { GanttAwayMarks } from "./away/gantt-away-marks";
+import { useAwayDragHint } from "./away/use-away-drag-hint";
 import { GANTT_BAR_STYLES } from "./gantt-bar-style";
 import { GanttResizeHandle } from "./gantt-resize-handle";
 import { canDropIntoMilestone } from "./group-gantt-tasks-by-milestone";
@@ -14,6 +19,7 @@ import { GanttLaneHint } from "./gantt-lane-hint";
 import { laneKeyAtPoint } from "./gantt-lane-dom";
 import { GanttSummaryShape } from "./gantt-summary-shape";
 import type {
+  GanttBarAway,
   GanttLaneDrag,
   GanttLaneTarget,
   GanttTaskEdit,
@@ -40,6 +46,8 @@ const LANE_ENGAGE_PX = 22;
 // The avatar plus the move button's padding and the bar's inset; resize
 // handles take their own width on top.
 const AVATAR_ROOM_PX = 48;
+// How far an arrow key looks past days the assignee is away.
+const MAX_NUDGE_DAYS = 366;
 
 type GanttTaskBarProps = {
   task: ScheduledTask;
@@ -62,6 +70,9 @@ type GanttTaskBarProps = {
   showAssignee?: boolean;
   // Reads the status out with the bar, where no rail beside it names it.
   describeStatus?: boolean;
+  // The assignee's days away, while the viewer may see them: marked on the
+  // bar, and a drag onto one says why it won't save.
+  away?: GanttBarAway;
 };
 
 type LaneView = {
@@ -96,8 +107,11 @@ export function GanttTaskBar({
   dependencyNote,
   showAssignee = false,
   describeStatus = false,
+  away,
 }: GanttTaskBarProps) {
   const { t } = useTranslation();
+  const today = useReleaseToday();
+  const awayDrag = useAwayDragHint(away);
   const isMilestone = task.entityKind === "milestone";
   const isBug = !isMilestone && task.type === "bug";
   const canMoveDates = canMoveDatesProp && !isMilestone;
@@ -106,6 +120,7 @@ export function GanttTaskBar({
   const progressId = useId();
   const timingId = useId();
   const statusId = useId();
+  const awayNoteId = useId();
   const phase = (!isMilestone && task.statusPhase) || "active";
   const barStyle = GANTT_BAR_STYLES[isBug ? "bug" : "task"][phase];
   const exactTiming =
@@ -287,6 +302,32 @@ export function GanttTaskBar({
       return target;
     };
 
+    // What a release at `clientX` over `target` would save.
+    const editAt = (
+      clientX: number,
+      target: GanttLaneTarget | null,
+    ): GanttTaskEdit => {
+      const { task: current } = latestRef.current;
+      const shift = shiftFor(clientX);
+      return {
+        start: addDays(initialStart, shift),
+        end: addDays(initialEnd, shift),
+        userId:
+          target?.kind === "assignee" ? target.userId : current.userId || null,
+        featureId: current.featureId ?? null,
+        milestoneId:
+          target?.kind === "milestone"
+            ? target.milestoneId
+            : (current.milestoneId ?? null),
+      };
+    };
+    // An assignee lane whose member is away on the dates the bar would take
+    // can't be dropped on: why not, or null.
+    const laneAwayLabel = (target: GanttLaneTarget | null, clientX: number) =>
+      target?.kind === "assignee" && target.droppable
+        ? awayDrag.blockedLabel(editAt(clientX, target))
+        : null;
+
     const syncLane = () => {
       if (!lane || !dragging) return;
       const offset = verticalOffset(pointer.y);
@@ -299,7 +340,9 @@ export function GanttTaskBar({
         return;
       }
       const target = laneTargetAt(pointer.x, pointer.y);
-      const targetKey = target?.droppable ? target.key : null;
+      const awayLabel = laneAwayLabel(target, pointer.x);
+      const droppable = Boolean(target?.droppable) && !awayLabel;
+      const targetKey = droppable && target ? target.key : null;
       if (targetKey !== reportedTarget) {
         reportedTarget = targetKey;
         lane.onChange({ taskId: task.id, targetLaneKey: targetKey });
@@ -312,8 +355,8 @@ export function GanttTaskBar({
           ? {
               x: pointer.x,
               y: pointer.y,
-              label: laneHintLabel(target),
-              disabled: !target.droppable,
+              label: awayLabel ?? laneHintLabel(target),
+              disabled: !droppable,
             }
           : null,
       });
@@ -336,6 +379,7 @@ export function GanttTaskBar({
       drag.end();
       setLaneView(null);
       setDragShift(0);
+      awayDrag.clear();
     };
 
     const onMove = (ev: PointerEvent) => {
@@ -354,7 +398,10 @@ export function GanttTaskBar({
         dragging = true;
         drag.start();
       }
-      if (dragging && movesDates) setDragShift(shiftFor(ev.clientX));
+      if (dragging && movesDates) {
+        setDragShift(shiftFor(ev.clientX));
+        awayDrag.follow(ev.clientX, ev.clientY, editAt(ev.clientX, null));
+      }
       syncLane();
     };
 
@@ -377,23 +424,14 @@ export function GanttTaskBar({
         return;
       }
       const shift = shiftFor(clientX);
-      const dropLane = target?.droppable ? target : null;
+      // A lane whose member is away then takes the dates only, as one that
+      // can't be dropped on.
+      const dropLane =
+        target?.droppable && !laneAwayLabel(target, clientX) ? target : null;
       if (current.entityKind === "milestone" && dropLane?.kind !== "assignee")
         return;
       if (!dropLane && shift === 0) return;
-      commit({
-        start: addDays(initialStart, shift),
-        end: addDays(initialEnd, shift),
-        userId:
-          dropLane?.kind === "assignee"
-            ? dropLane.userId
-            : current.userId || null,
-        featureId: current.featureId ?? null,
-        milestoneId:
-          dropLane?.kind === "milestone"
-            ? dropLane.milestoneId
-            : (current.milestoneId ?? null),
-      });
+      commit(editAt(clientX, dropLane));
     };
 
     const onUp = (ev: PointerEvent) => {
@@ -431,10 +469,14 @@ export function GanttTaskBar({
     );
     return edge === "start" ? Math.min(days, length) : Math.max(days, -length);
   };
-  const commitResize = (edge: "start" | "end", days: number) => {
-    const { task: current, onCommit: commit } = latestRef.current;
+  // The span a resize by `days` sets, or null when it changes nothing.
+  const resizedEdit = (
+    edge: "start" | "end",
+    days: number,
+  ): GanttTaskEdit | null => {
+    const { task: current } = latestRef.current;
     const shift = clampResize(edge, days);
-    if (shift === 0) return;
+    if (shift === 0) return null;
     // Planned work keeps its time of day, so a bar shrunk to one day could
     // otherwise start a few hours after it ends; the moved end stops at the
     // other one.
@@ -456,14 +498,38 @@ export function GanttTaskBar({
             ),
           )
         : current.scheduleEnd;
-    commit({
+    return {
       start,
       end,
       userId: current.userId || null,
       featureId: current.featureId ?? null,
       milestoneId: current.milestoneId ?? null,
       exact: true,
-    });
+    };
+  };
+  const commitResize = (edge: "start" | "end", days: number) => {
+    const edit = resizedEdit(edge, days);
+    if (edit) latestRef.current.onCommit(edit);
+  };
+  // An arrow key moves an end a day. Each press saves, so a day the assignee
+  // is away would refuse every press after it: the end steps on in the same
+  // direction to the first day that saves. With none in reach, the refused
+  // day is sent, and the route says why.
+  const nudgeResize = (edge: "start" | "end", step: number) => {
+    const first = resizedEdit(edge, step);
+    if (!first) return;
+    const refused = (candidate: GanttTaskEdit) =>
+      Boolean(away?.blockedHint(candidate));
+    let edit: GanttTaskEdit | null = first;
+    let days = step;
+    while (edit && refused(edit)) {
+      days += step;
+      edit =
+        Math.abs(days) <= MAX_NUDGE_DAYS && clampResize(edge, days) === days
+          ? resizedEdit(edge, days)
+          : null;
+    }
+    latestRef.current.onCommit(edit ?? first);
   };
 
   const handleResizePointerDown =
@@ -487,6 +553,7 @@ export function GanttTaskBar({
         endGestureRef.current = null;
         drag.end();
         setResize(null);
+        awayDrag.clear();
       };
       let lastX = originX;
       const finish = (clientX: number) => {
@@ -503,7 +570,11 @@ export function GanttTaskBar({
         }
         lastX = ev.clientX;
         drag.start();
-        setResize({ edge, days: daysFor(ev.clientX) });
+        const days = daysFor(ev.clientX);
+        setResize({ edge, days });
+        const edit = resizedEdit(edge, days);
+        if (edit) awayDrag.follow(ev.clientX, ev.clientY, edit);
+        else awayDrag.clear();
       };
       const onUp = (ev: PointerEvent) => finish(ev.clientX);
       const onKeyDown = (ev: KeyboardEvent) => {
@@ -567,11 +638,24 @@ export function GanttTaskBar({
   const showAvatar = assigneeNote !== null && barWidthPx >= AVATAR_ROOM_PX;
   const statusNote =
     describeStatus && !isMilestone ? getStatusLabel(task.status) : null;
+  // The days away the bar covers where it is shown, so a drag previews them.
+  const awayMarks =
+    away && !isMilestone
+      ? runsWithin(away.runs, lineStart - 1, lineEnd - 1)
+      : [];
+  const awayNote =
+    away && awayMarks.length > 0
+      ? t("tasks:gantt.away.note", {
+          name: away.name,
+          dates: awayNoteDates(awayMarks, timeline.rangeStart, today),
+        })
+      : null;
   const describedBy =
     // The dependency note goes first: it ends in a full stop, so a screen
     // reader pauses before the assignee or progress note that follows.
     [
       dependencyNote && noteId,
+      awayNote && awayNoteId,
       assigneeNote && assigneeId,
       progress && progressId,
       statusNote && statusId,
@@ -579,6 +663,9 @@ export function GanttTaskBar({
     ]
       .filter(Boolean)
       .join(" ") || undefined;
+
+  const laneHint =
+    laneView?.hint ?? (awayDrag.hint && { ...awayDrag.hint, disabled: true });
 
   const ariaLabel = isMilestone
     ? laneDrag?.kind === "assignee"
@@ -674,7 +761,7 @@ export function GanttTaskBar({
             label={t("tasks:gantt.resizeStart")}
             className={barStyle.handle}
             onPointerDown={handleResizePointerDown("start")}
-            onNudge={(days) => commitResize("start", days)}
+            onNudge={(days) => nudgeResize("start", days)}
           />
         )}
         {resizable && !clippedEnd && !laneView && (
@@ -683,7 +770,7 @@ export function GanttTaskBar({
             label={t("tasks:gantt.resizeDue")}
             className={barStyle.handle}
             onPointerDown={handleResizePointerDown("end")}
-            onNudge={(days) => commitResize("end", days)}
+            onNudge={(days) => nudgeResize("end", days)}
           />
         )}
         <button
@@ -801,7 +888,13 @@ export function GanttTaskBar({
             {dependencyNote}
           </span>
         )}
+        {awayNote && (
+          <span id={awayNoteId} hidden>
+            {awayNote}
+          </span>
+        )}
       </div>
+      <GanttAwayMarks runs={awayMarks} />
       {labelOutside && (
         <span
           aria-hidden="true"
@@ -825,12 +918,12 @@ export function GanttTaskBar({
           )}
         </span>
       )}
-      {laneView?.hint && (
+      {laneHint && (
         <GanttLaneHint
-          x={laneView.hint.x}
-          y={laneView.hint.y}
-          label={laneView.hint.label}
-          disabled={laneView.hint.disabled}
+          x={laneHint.x}
+          y={laneHint.y}
+          label={laneHint.label}
+          disabled={laneHint.disabled}
         />
       )}
     </div>

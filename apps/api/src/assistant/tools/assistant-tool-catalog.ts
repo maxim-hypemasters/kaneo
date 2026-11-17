@@ -68,6 +68,17 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
   list_workspace_labels: { pin: WORKSPACE_PIN },
   list_my_tasks: { pin: WORKSPACE_PIN },
   list_workspace_activity: { pin: WORKSPACE_PIN },
+  // Time off and public holidays, so it can say who is away and when. The API
+  // decides what each person may see.
+  list_time_off: { pin: WORKSPACE_PIN },
+  list_time_off_requests: { pin: WORKSPACE_PIN },
+  list_pending_time_off_requests: { pin: WORKSPACE_PIN },
+  get_time_off_request: {},
+  get_time_off_balance: { pin: WORKSPACE_PIN },
+  list_time_off_balances: { pin: WORKSPACE_PIN },
+  list_holiday_countries: { pin: WORKSPACE_PIN },
+  get_holiday_calendar: { pin: WORKSPACE_PIN },
+  list_holiday_calendar_requests: { pin: WORKSPACE_PIN },
   search: { pin: WORKSPACE_PIN },
   // The ticket lookup scopes itself and never checks the workspace pin, so
   // the pin must always reach it.
@@ -192,6 +203,9 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
   },
 };
 
+const TIME_OFF_CHANGES =
+  "Time off and holiday calendar changes are made on the Time off page or in Workspace settings → Time off";
+
 /** Registry tools the assistant never offers, with the reason. */
 export const EXCLUDED_TOOLS: Record<string, string> = {
   whoami: "The system prompt already names the user",
@@ -213,6 +227,18 @@ export const EXCLUDED_TOOLS: Record<string, string> = {
   accept_triage_task:
     "Triage decisions belong to the project's triage members in the triage view",
   decline_triage_task: "Declining archives the task; archiving is out of scope",
+  // Time off and holiday calendar changes stay in the Time off pages.
+  request_time_off: TIME_OFF_CHANGES,
+  update_time_off_request: TIME_OFF_CHANGES,
+  cancel_time_off_request: TIME_OFF_CHANGES,
+  approve_time_off_request: TIME_OFF_CHANGES,
+  decline_time_off_request: TIME_OFF_CHANGES,
+  set_time_off_allowance: TIME_OFF_CHANGES,
+  set_holiday_calendar: TIME_OFF_CHANGES,
+  approve_holiday_calendar_request: TIME_OFF_CHANGES,
+  decline_holiday_calendar_request: TIME_OFF_CHANGES,
+  cancel_holiday_calendar_request: TIME_OFF_CHANGES,
+  set_holiday_calendar_deadline: TIME_OFF_CHANGES,
   update_project: "Can make a project public; use update_project_details",
   update_task_comment: "Comment edits delete removed images",
   detach_label_from_task: "Removing is out of scope",

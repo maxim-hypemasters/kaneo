@@ -1,5 +1,6 @@
 import { ChevronLeft } from "lucide-react";
 import type { Matcher } from "react-day-picker";
+import type { BlockedDays } from "./blocked-days";
 import { DateLimitHint } from "./date-limit-hint";
 import { MonthGrid } from "./month-grid";
 
@@ -10,6 +11,7 @@ type DatePickerMonthViewProps = {
   disabled: Matcher[];
   limit: Date | undefined;
   limitHint: string | null;
+  blockedDays?: BlockedDays;
   onBack: () => void;
   onSelect: (date: Date) => void;
 };
@@ -21,6 +23,7 @@ export function DatePickerMonthView({
   disabled,
   limit,
   limitHint,
+  blockedDays,
   onBack,
   onSelect,
 }: DatePickerMonthViewProps) {
@@ -48,8 +51,11 @@ export function DatePickerMonthView({
         onSelect={onSelect}
         disabled={disabled}
         marked={limit}
+        away={blockedDays?.isBlocked}
+        onMonthChange={blockedDays?.onMonthChange}
       />
       {limitHint && <DateLimitHint>{limitHint}</DateLimitHint>}
+      {blockedDays?.hint && <DateLimitHint>{blockedDays.hint}</DateLimitHint>}
     </div>
   );
 }

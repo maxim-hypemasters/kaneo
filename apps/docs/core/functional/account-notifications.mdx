@@ -9,7 +9,9 @@ Your inbox in Kaneo keeps working whether or not you enable external delivery. F
 
 ## 1. Choose which events you want
 
-Use the event preferences at the top of the page to control task assignments, comments and mentions, status changes, and due-date reminders. These categories are enabled by default. Turning one off stops new notifications in that category, including in the Kaneo inbox.
+Use the event preferences at the top of the page to control task assignments, comments and mentions, status changes, due-date reminders, and team time off. These categories are enabled by default. Turning one off stops new notifications in that category, including in the Kaneo inbox.
+
+[Time off](/core/functional/time-off) creates seven notifications: a request waiting for your approval, your time off approved, your time off declined, a teammate's time off approved, a [holiday calendar change](/core/functional/time-off#holiday-calendar-changes) waiting for your approval, and your holiday calendar change approved or declined. **Team time off** controls only a teammate's time off. The other six always notify you.
 
 Due-date reminders default to one day before the deadline. Choose a whole number of hours (1–720) or days (1–30), then save. External delivery still needs a channel and workspace rule below.
 
@@ -42,6 +44,8 @@ Below the channel settings, add or edit a workspace delivery rule:
 
 For example, you can receive email for the website launch and use ntfy for another workspace. Configuring a channel alone is not enough; its workspace rule must also allow delivery.
 
+Time-off notifications belong to the workspace rather than a project. They ignore the project selection and follow only the workspace rule, so a rule set to **Selected projects** still forwards them. Email, ntfy, and Gotify messages for them link to the workspace's **Time off** page.
+
 ## Pause or stop delivery
 
 Pause the workspace rule to stop forwarding that workspace's notifications. Disable a channel on the rule to stop only that destination. Disable the account-level channel to stop using it across your rules.
@@ -56,7 +60,7 @@ A notification without a workspace or project context may stay in the inbox only
 
 ## If a channel cannot be saved or delivery fails
 
-Check the channel is enabled, the workspace rule is active, and the project is included. For email, ask the instance operator to check SMTP and its delivery logs.
+Check the channel is enabled, the workspace rule is active, and the project is included. For time-off notifications, the project selection doesn't matter. For email, ask the instance operator to check SMTP and its delivery logs.
 
 HTTP destinations must be reachable from the Kaneo API. By default, local and private network addresses are rejected. On a trusted private deployment, an operator can choose to allow them with [`KANEO_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS`](/core/installation/environment-variables#notifications); this changes a server-side security boundary, not an account preference.
 

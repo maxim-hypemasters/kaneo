@@ -13,13 +13,9 @@ import { UpNext } from "@/components/home/up-next";
 import { WeekStrip } from "@/components/home/week-strip";
 import PageTitle from "@/components/page-title";
 import CreateProjectModal from "@/components/shared/modals/create-project-modal";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
-import { NewWorkMenu } from "@/components/shared/new-work-menu";
-import useGetProjects from "@/hooks/queries/project/use-get-projects";
 import useGetAssignedTasks from "@/hooks/queries/task/use-get-assigned-tasks";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { formatDate } from "@/lib/format";
-import type { TaskType } from "@/types/task";
 
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/workspace/$workspaceId/",
@@ -39,14 +35,8 @@ function RouteComponent() {
     isLoading,
     isError,
   } = useGetAssignedTasks(workspaceId);
-  const { data: projects } = useGetProjects({ workspaceId }, true);
-  const { canCreateWorkItems, canCreateProjects } = useWorkspacePermission();
-  // What the open create dialog creates; null while it's closed.
-  const [createType, setCreateType] = useState<TaskType | null>(null);
+  const { canCreateProjects } = useWorkspacePermission();
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
-  const needsProjectFirst = projects?.length === 0 && canCreateProjects();
-  const openCreate = (type: TaskType) =>
-    needsProjectFirst ? setIsCreateProjectOpen(true) : setCreateType(type);
   const openCreateProject = canCreateProjects()
     ? () => setIsCreateProjectOpen(true)
     : undefined;
@@ -64,26 +54,17 @@ function RouteComponent() {
         <div className="h-full overflow-y-auto">
           <TrialExpiredCallout workspaceId={workspaceId} className="m-4" />
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-9 px-4 py-6 sm:px-6 sm:py-10 lg:px-10">
-            <header className="flex flex-wrap items-end justify-between gap-4">
-              <div className="flex flex-col gap-1.5">
-                <p className="font-medium text-[13px] text-muted-foreground">
-                  {formatDate(new Date(day), {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
-                <h1 className="font-semibold text-3xl text-foreground tracking-tight">
-                  {greetings[getDayPart()]}
-                </h1>
-              </div>
-              {canCreateWorkItems() && (
-                <NewWorkMenu
-                  size="sm"
-                  className="shrink-0"
-                  onSelect={openCreate}
-                />
-              )}
+            <header className="flex flex-col gap-1.5">
+              <p className="font-medium text-[13px] text-muted-foreground">
+                {formatDate(new Date(day), {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+              <h1 className="font-semibold text-3xl text-foreground tracking-tight">
+                {greetings[getDayPart()]}
+              </h1>
             </header>
 
             <AssistantPanel
@@ -132,11 +113,6 @@ function RouteComponent() {
         </div>
       </WorkspaceLayout>
 
-      <CreateTaskModal
-        open={createType !== null}
-        type={createType ?? "task"}
-        onClose={() => setCreateType(null)}
-      />
       <CreateProjectModal
         open={isCreateProjectOpen}
         onClose={() => setIsCreateProjectOpen(false)}

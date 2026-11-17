@@ -1,6 +1,7 @@
 import { GanttTaskBar } from "./gantt-task-bar";
 import { useHeldCompactTracks } from "./use-held-compact-tracks";
 import type {
+  GanttBarAway,
   GanttLaneDrag,
   GanttTaskEdit,
   ScheduledTask,
@@ -32,6 +33,7 @@ type GanttCompactRowsProps = {
   onCommit: (task: ScheduledTask, edit: GanttTaskEdit) => void;
   onDragChange: (taskId: string) => (dragging: boolean) => void;
   dependencyNote: (taskId: string) => string | undefined;
+  awayFor?: (task: ScheduledTask) => GanttBarAway | undefined;
 };
 
 // A lane's compact rows. Every bar is a direct child keyed by its task and
@@ -53,6 +55,7 @@ export function GanttCompactRows({
   onCommit,
   onDragChange,
   dependencyNote,
+  awayFor,
 }: GanttCompactRowsProps) {
   const tracks = useHeldCompactTracks(tasks, isMobile, ready);
   if (tracks.length === 0) return null;
@@ -108,6 +111,7 @@ export function GanttCompactRows({
                 dependencyNote={dependencyNote(task.id)}
                 showAssignee={showBarAssignee}
                 describeStatus
+                away={awayFor?.(task)}
               />
             </div>
           )),

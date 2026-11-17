@@ -23,6 +23,8 @@ import {
 } from "@/components/custom-fields/missing-required-fields";
 import type { CustomFieldDefinition } from "@/components/project/custom-fields/types";
 import TaskDescriptionEditor from "@/components/task/task-description-editor";
+import { useAwayLabels } from "@/components/time-off/away/use-away-labels";
+import { WithAwayBadge } from "@/components/time-off/away/with-away-badge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -310,6 +312,8 @@ function CreateTaskModalContent({
   const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
 
   const [labelsOpen, setLabelsOpen] = useState(false);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
+  const away = useAwayLabels(workspace?.id || "", { enabled: assigneeOpen });
   const [labelsStep, setLabelsStep] = useState<PopoverStep>("select");
   const [searchValue, setSearchValue] = useState("");
   const [selectedColor, setSelectedColor] = useState<LabelColor>("gray");
@@ -1218,7 +1222,7 @@ function CreateTaskModalContent({
                       </PopoverContent>
                     </Popover>
 
-                    <Popover>
+                    <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
                       <PopoverTrigger asChild>
                         <button
                           type="button"
@@ -1252,7 +1256,10 @@ function CreateTaskModalContent({
                           )}
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-48 p-1" align="start">
+                      <PopoverContent
+                        className={cn("p-1", away.size > 0 ? "w-64" : "w-48")}
+                        align="start"
+                      >
                         <div className="space-y-1">
                           <button
                             type="button"
@@ -1276,28 +1283,45 @@ function CreateTaskModalContent({
                               <Check className="ml-auto h-4 w-4" />
                             )}
                           </button>
-                          {assigneeOptions.map((member) => (
-                            <button
-                              key={member.id}
-                              type="button"
-                              className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
-                              onClick={() => setAssigneeId(member.id)}
-                            >
-                              <Avatar className="h-6 w-6">
-                                <AvatarImage
-                                  src={member.image ?? ""}
-                                  alt={member.name}
-                                />
-                                <AvatarFallback className="text-xs font-medium border border-border/30">
-                                  {getInitials(member.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-sm">{member.name}</span>
-                              {selectedUser?.id === member.id && (
-                                <Check className="ml-auto h-4 w-4" />
-                              )}
-                            </button>
-                          ))}
+                          {assigneeOptions.map((member) => {
+                            const awayLabel = away.get(member.id);
+                            return (
+                              <button
+                                key={member.id}
+                                type="button"
+                                className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent/50 text-left transition-colors h-8"
+                                onClick={() => setAssigneeId(member.id)}
+                              >
+                                <WithAwayBadge label={awayLabel} decorative>
+                                  <Avatar className="h-6 w-6">
+                                    <AvatarImage
+                                      src={member.image ?? ""}
+                                      alt={member.name}
+                                    />
+                                    <AvatarFallback className="text-xs font-medium border border-border/30">
+                                      {getInitials(member.name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                </WithAwayBadge>
+                                <span className="min-w-0 truncate text-sm">
+                                  {member.name}
+                                </span>
+                                {awayLabel && (
+                                  <span className="ml-auto shrink-0 text-muted-foreground text-xs">
+                                    {awayLabel}
+                                  </span>
+                                )}
+                                {selectedUser?.id === member.id && (
+                                  <Check
+                                    className={cn(
+                                      "h-4 w-4 shrink-0",
+                                      !awayLabel && "ml-auto",
+                                    )}
+                                  />
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
                       </PopoverContent>
                     </Popover>

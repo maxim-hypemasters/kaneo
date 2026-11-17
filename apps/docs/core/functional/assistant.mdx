@@ -81,6 +81,7 @@ It can look up:
 - milestones and releases
 - project pages and Feature documents
 - your own tasks, recent workspace activity, and workspace search
+- who is away and when, and, as your time off permissions allow, time off requests, balances, and public holiday calendars
 
 It can prepare these changes:
 
@@ -106,6 +107,7 @@ It can't:
 - remove labels from tasks
 - edit comments or time entries
 - make a project public
+- request, edit, cancel, approve, or decline time off, or change holiday calendars, allowances, or the holiday deadline. Use the Time off page or **Workspace settings → Time off** for those.
 
 ## Approve changes
 
@@ -120,7 +122,7 @@ Each waiting card ends with **Runs as you**, **Reject**, and **Approve**. Choose
 
 - **The change runs as you when you approve it.** Kaneo checks your permissions again then, so it fails if you've lost the right to make it.
 - **A successful card shows the result.** It names what was created or changed, with **Open** to go to it. Open boards update live, as with any other change.
-- **A failed card says why.** It reads **This change failed and nothing was written.**, followed by the reason.
+- **A failed card says why.** It reads **This change failed and nothing was written.**, followed by the reason. For example, Kaneo refuses a start date, due date, or assignee that falls on a day the assignee is away on approved time off or a public holiday.
 - **A rejected card folds into one line** marked **Rejected**.
 - **The answer continues after you decide.** Once nothing is waiting, the assistant carries on. If you reloaded the page in between, choose **Continue**.
 - **A new message skips waiting cards.** While cards wait, the message box warns that sending a new message skips them. If you send one anyway, each of those cards folds into one line marked **Skipped**, and nothing in them is written.
@@ -159,6 +161,7 @@ To answer, Kaneo sends the following to OpenRouter, which passes it to the model
 - your messages and the chat so far
 - what the assistant looks up, such as task, document, comment, and activity text, names, and dates
 - the workspace's name, your name, and your local date and time
+- time off you ask about. If you can approve time off, that can include other people's time off types, such as sick days, and their notes.
 
 Kaneo removes email addresses from what the assistant looks up before sending it. It never sends other people's chats or anything you can't see.
 

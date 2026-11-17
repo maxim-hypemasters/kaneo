@@ -36,6 +36,9 @@ async function updateTask(
       position: task.position ?? 0,
       projectId: task.projectId,
       ...dates,
+      // The server reads hand-set dates on this calendar to check them
+      // against the assignee's days away.
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
   });
 

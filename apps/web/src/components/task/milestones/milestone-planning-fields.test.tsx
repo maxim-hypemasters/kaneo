@@ -8,7 +8,14 @@ import {
   vi,
 } from "vite-plus/test";
 import { MilestonePlanningFields } from "./milestone-planning-fields";
-const mocks = vi.hoisted(() => ({ assign: true, update: true }));
+const mocks = vi.hoisted(() => ({
+  assign: true,
+  update: true,
+  away: vi.fn(
+    (_workspaceId: string, _options: { enabled: boolean }) =>
+      new Map<string, string>(),
+  ),
+}));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -20,6 +27,11 @@ vi.mock("@/lib/i18n/domain", () => ({
     status,
 }));
 vi.mock("@/lib/i18n", () => ({ i18n: { t: (key: string) => key } }));
+vi.mock("@/components/time-off/away/use-away-labels", () => ({
+  useAwayLabels: (workspaceId: string, options: { enabled: boolean }) =>
+    mocks.away(workspaceId, options),
+}));
+
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canUpdateMilestones: () => mocks.update,
@@ -45,6 +57,8 @@ vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
 beforeEach(() => {
   mocks.assign = true;
   mocks.update = true;
+  mocks.away.mockReset();
+  mocks.away.mockReturnValue(new Map());
 });
 afterEach(cleanup);
 const milestone = {
@@ -56,6 +70,27 @@ const milestone = {
   endDate: null,
 };
 describe("Milestone planning controls", () => {
+  it("shows until when a lead candidate is away, once the picker opens", async () => {
+    mocks.away.mockReturnValue(new Map([["u", "Away until Nov 20"]]));
+    render(
+      <MilestonePlanningFields
+        projectId="p"
+        workspaceId="w"
+        milestone={milestone}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(mocks.away).toHaveBeenLastCalledWith("w", { enabled: false });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:milestones.lead" }),
+    );
+
+    expect(mocks.away).toHaveBeenLastCalledWith("w", { enabled: true });
+    expect(
+      await screen.findByRole("option", { name: /Ava/ }),
+    ).toHaveTextContent("Away until Nov 20");
+  });
   it("omits derived status and dates only during creation", () => {
     render(
       <MilestonePlanningFields

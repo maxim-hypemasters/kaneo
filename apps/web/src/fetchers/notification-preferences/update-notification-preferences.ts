@@ -19,6 +19,7 @@ export type UpdateNotificationPreferencesRequest = {
   taskStatusChangeEnabled?: boolean;
   dueDateReminderEnabled?: boolean;
   dueDateReminderLeadTimeMinutes?: number;
+  teamTimeOffEnabled?: boolean;
 };
 
 async function updateNotificationPreferences(

@@ -15,8 +15,10 @@ import {
   it,
   vi,
 } from "vite-plus/test";
+import { toReleaseDate } from "@/lib/releases/release-date";
 import { GanttTaskBar } from "./gantt-task-bar";
 import type {
+  GanttTaskEdit,
   ScheduledTask,
   ScheduledLeaf,
   ScheduledMilestone,
@@ -748,6 +750,198 @@ describe("GanttTaskBar", () => {
 
       expect(avatar(bar)).toBeNull();
       expect(taskBar()).not.toHaveAccessibleDescription();
+    });
+  });
+
+  describe("days away", () => {
+    // Alice is away Sep 5 and 6 (0-based days 4 and 5) and on Sep 21; Bob is
+    // away whenever the work would start or be due on Sep 7.
+    const away = {
+      runs: [
+        { from: 4, to: 6, kind: "vacation" as const },
+        { from: 20, to: 21, kind: "away" as const },
+      ],
+      name: "Alice",
+      blockedHint: (edit: GanttTaskEdit) =>
+        edit.userId === "u2" ||
+        [edit.start, edit.end].some(
+          (date) => toReleaseDate(date) === "2026-09-07",
+        )
+          ? "away on Sep 7"
+          : null,
+    };
+    const marks = (bar: HTMLElement | null) =>
+      Array.from(
+        bar?.parentElement?.querySelectorAll<HTMLElement>(
+          "[data-gantt-away-mark]",
+        ) ?? [],
+        (mark) => `${mark.dataset.ganttAwayMark} ${mark.style.gridColumn}`,
+      );
+    const movable = () =>
+      screen.getByRole("button", {
+        name: "tasks:gantt.taskAriaLabelMovable(title=Checkout)",
+      });
+    const taskBar = () =>
+      screen.getByRole("button", {
+        name: "tasks:gantt.taskAriaLabel(title=Checkout)",
+      });
+
+    it("marks the days away the bar covers, and says so", () => {
+      const { bar } = show(task("2026-09-03", "2026-09-09"), { away });
+
+      expect(marks(bar)).toEqual(["vacation 5 / 7"]);
+      expect(taskBar()).toHaveAccessibleDescription(
+        expect.stringMatching(
+          /^tasks:gantt\.away\.note\(name=Alice,dates=.+\)$/,
+        ),
+      );
+    });
+
+    it("leaves bars clear of days away unmarked", () => {
+      const { bar } = show(task("2026-09-08", "2026-09-10"), { away });
+      expect(marks(bar)).toEqual([]);
+      expect(taskBar()).not.toHaveAccessibleDescription();
+    });
+
+    it("moves the marks with a drag, and says why the dates won't save", () => {
+      const { bar } = show(task("2026-09-01", "2026-09-03"), {
+        away,
+        canMoveDates: true,
+      });
+      expect(marks(bar)).toEqual([]);
+
+      fireEvent.pointerDown(movable(), {
+        button: 0,
+        clientX: 500,
+        clientY: 300,
+      });
+      fireEvent.pointerMove(window, {
+        clientX: 500 + 4 * DAY_PX,
+        clientY: 300,
+        buttons: 1,
+      });
+      // Now Sep 5 to 7: on both vacation days, and due on Sep 7.
+      expect(marks(bar)).toEqual(["vacation 5 / 7"]);
+      expect(screen.getByText("away on Sep 7")).toBeInTheDocument();
+
+      fireEvent.keyDown(window, { key: "Escape" });
+      expect(screen.queryByText("away on Sep 7")).toBeNull();
+      expect(marks(bar)).toEqual([]);
+    });
+
+    it("says why a resize won't save, until it ends", () => {
+      const { bar, onCommit } = show(task("2026-09-01", "2026-09-03"), {
+        away,
+        canMoveDates: true,
+      });
+      const end = bar!.querySelector<HTMLElement>('[data-gantt-resize="end"]')!;
+      fireEvent.pointerDown(end, { button: 0, clientX: 500, clientY: 300 });
+      fireEvent.pointerMove(window, {
+        clientX: 500 + 4 * DAY_PX,
+        clientY: 300,
+        buttons: 1,
+      });
+      expect(screen.getByText("away on Sep 7")).toBeInTheDocument();
+
+      fireEvent.pointerUp(window, { clientX: 500 + 4 * DAY_PX, clientY: 300 });
+      expect(screen.queryByText("away on Sep 7")).toBeNull();
+      // The route decides whether it saves.
+      expect(onCommit).toHaveBeenCalledOnce();
+    });
+
+    it("steps an arrow-key resize past a day away to the next one that saves", () => {
+      const nudge = (
+        scheduled: ScheduledLeaf,
+        edge: "start" | "end",
+        key: string,
+      ) => {
+        const { bar, onCommit } = show(scheduled, { away, canMoveDates: true });
+        fireEvent.keyDown(
+          bar!.querySelector<HTMLElement>(`[data-gantt-resize="${edge}"]`)!,
+          { key },
+        );
+        cleanup();
+        return onCommit;
+      };
+
+      // Due Sep 6: Sep 7 is away, so the due date goes to Sep 8.
+      let onCommit = nudge(
+        task("2026-09-03", "2026-09-06"),
+        "end",
+        "ArrowRight",
+      );
+      expect(onCommit).toHaveBeenCalledOnce();
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-03"),
+          end: parseISO("2026-09-08"),
+          exact: true,
+        }),
+      );
+
+      // Starting Sep 8: back past Sep 7 to Sep 6.
+      onCommit = nudge(task("2026-09-08", "2026-09-10"), "start", "ArrowLeft");
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-06"),
+          end: parseISO("2026-09-10"),
+        }),
+      );
+
+      // The start can't pass the due date, so the refused day is sent and
+      // the route says why.
+      onCommit = nudge(task("2026-09-06", "2026-09-07"), "start", "ArrowRight");
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-07"),
+          end: parseISO("2026-09-07"),
+        }),
+      );
+    });
+
+    it("won't drop on the lane of someone away on the dates", () => {
+      const target = document.createElement("div");
+      target.setAttribute("data-gantt-lane", "member:u2");
+      document.body.append(target);
+      Object.defineProperty(document, "elementFromPoint", {
+        configurable: true,
+        value: () => target,
+      });
+      const onChange = vi.fn();
+      const { onCommit } = show(task("2026-09-01", "2026-09-03"), {
+        away,
+        laneDrag: {
+          kind: "assignee",
+          laneKey: "member:u1",
+          resolveLane: (key) =>
+            key === "member:u2"
+              ? {
+                  kind: "assignee",
+                  key,
+                  userId: "u2",
+                  name: "Bob",
+                  droppable: true,
+                }
+              : null,
+          onChange,
+        },
+      });
+      const grouped = screen.getByRole("button", {
+        name: "tasks:gantt.taskAriaLabelGrouped(title=Checkout)",
+      });
+
+      fireEvent.pointerDown(grouped, { button: 0, clientX: 500, clientY: 300 });
+      fireEvent.pointerMove(window, { clientX: 500, clientY: 360, buttons: 1 });
+      expect(onChange).toHaveBeenLastCalledWith({
+        taskId: "checkout",
+        targetLaneKey: null,
+      });
+      expect(screen.getByText("away on Sep 7")).toBeInTheDocument();
+      fireEvent.pointerUp(window, { clientX: 500, clientY: 360 });
+
+      expect(onCommit).not.toHaveBeenCalled();
+      Reflect.deleteProperty(document, "elementFromPoint");
+      target.remove();
     });
   });
 });

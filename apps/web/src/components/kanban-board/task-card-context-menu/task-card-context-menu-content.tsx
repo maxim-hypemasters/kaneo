@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAwayLabels } from "@/components/time-off/away/use-away-labels";
+import { WithAwayBadge } from "@/components/time-off/away/with-away-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ContextMenuCheckboxItem,
@@ -42,6 +44,7 @@ import { getInitials } from "@/lib/get-initials";
 import { getPriorityLabel } from "@/lib/i18n/domain";
 import { getPriorityIcon } from "@/lib/priority";
 import { getTaskPath } from "@/lib/task-link";
+import { toastTaskSaveError } from "@/lib/time-off/task-away-error";
 import { toast } from "@/lib/toast";
 import useProjectStore from "@/store/project";
 import type Task from "@/types/task";
@@ -110,6 +113,10 @@ export default function TaskCardContextMenuContent({
   // Triage work moves only through Accept or Decline.
   const inTriage = task.status === TRIAGE_STATUS;
   const [isArchiveFeatureOpen, setIsArchiveFeatureOpen] = useState(false);
+  const [assigneeMenuOpen, setAssigneeMenuOpen] = useState(false);
+  const away = useAwayLabels(taskCardContext.worskpaceId, {
+    enabled: assigneeMenuOpen,
+  });
 
   const usersOptions = useMemo(() => {
     return projectMembers?.map((member) => ({
@@ -192,9 +199,7 @@ export default function TaskCardContextMenuContent({
           });
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("tasks:update.error"),
-      );
+      toastTaskSaveError(error, t("tasks:update.error"));
     }
   };
 
@@ -269,12 +274,12 @@ export default function TaskCardContextMenuContent({
         {canEdit && !isFeature && <DueDateSubmenu task={task} />}
 
         {canAssign && !isFeature && usersOptions && (
-          <ContextMenuSub>
+          <ContextMenuSub onOpenChange={setAssigneeMenuOpen}>
             <ContextMenuSubTrigger>
               <UserRound className="size-3.5 text-muted-foreground" />
               <span>{t("tasks:assignee.label")}</span>
             </ContextMenuSubTrigger>
-            <ContextMenuSubContent className="w-48">
+            <ContextMenuSubContent className={away.size > 0 ? "w-64" : "w-48"}>
               <ContextMenuCheckboxItem
                 checked={!task.userId}
                 onCheckedChange={() => handleChange("userId", "")}
@@ -290,25 +295,37 @@ export default function TaskCardContextMenuContent({
                 </div>
                 {t("tasks:assignee.unassigned")}
               </ContextMenuCheckboxItem>
-              {usersOptions.map((user) => (
-                <ContextMenuCheckboxItem
-                  key={user.value}
-                  checked={task.userId === user.value}
-                  onCheckedChange={() =>
-                    handleChange("userId", user.value ?? "")
-                  }
-                  closeOnClick
-                >
-                  <Avatar className="h-6 w-6">
-                    <AvatarImage src={user.image ?? ""} alt={user.name || ""} />
-                    <AvatarFallback className="text-xs font-medium border border-border/30">
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  {user.label}
-                </ContextMenuCheckboxItem>
-              ))}
+              {usersOptions.map((user) => {
+                const awayLabel = away.get(user.value);
+                return (
+                  <ContextMenuCheckboxItem
+                    key={user.value}
+                    checked={task.userId === user.value}
+                    onCheckedChange={() =>
+                      handleChange("userId", user.value ?? "")
+                    }
+                    closeOnClick
+                  >
+                    <WithAwayBadge label={awayLabel} decorative>
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage
+                          src={user.image ?? ""}
+                          alt={user.name || ""}
+                        />
+                        <AvatarFallback className="text-xs font-medium border border-border/30">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </WithAwayBadge>
+                    <span className="min-w-0 truncate">{user.label}</span>
+                    {awayLabel && (
+                      <span className="ms-auto shrink-0 text-muted-foreground text-xs">
+                        {awayLabel}
+                      </span>
+                    )}
+                  </ContextMenuCheckboxItem>
+                );
+              })}
             </ContextMenuSubContent>
           </ContextMenuSub>
         )}

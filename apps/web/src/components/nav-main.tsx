@@ -5,6 +5,7 @@ import {
   Inbox,
   type LucideIcon,
   Mail,
+  TreePalm,
   Users,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -19,6 +20,7 @@ import { usePendingInvitations } from "@/hooks/queries/invitation/use-pending-in
 import useGetNotifications from "@/hooks/queries/notification/use-get-notifications";
 import useGetAssignedTasks from "@/hooks/queries/task/use-get-assigned-tasks";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 
 type NavItem = {
@@ -39,6 +41,8 @@ export function NavMain() {
   const { data: invitations = [] } = usePendingInvitations();
   const { data: notifications = [] } = useGetNotifications(workspace?.id);
   const { data: assignedTasks } = useGetAssignedTasks(workspace?.id, true);
+  const { canReadTimeOff, canRequestTimeOff, canApproveTimeOff } =
+    useWorkspacePermission();
 
   if (!workspace) return null;
 
@@ -68,6 +72,15 @@ export function NavMain() {
       url: `${homeUrl}/members`,
     },
   ];
+
+  // No count: a pending-request query would run on every page.
+  if (canReadTimeOff() || canRequestTimeOff() || canApproveTimeOff()) {
+    navItems.push({
+      title: t("navigation:sidebar.timeOff"),
+      icon: TreePalm,
+      url: `${homeUrl}/time-off`,
+    });
+  }
 
   // Invitations to other workspaces only matter while one is waiting.
   if (invitations.length > 0) {

@@ -17,6 +17,7 @@ import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-projec
 import { projectTasks } from "@/components/project/task-view-keys/project-tasks";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { PriorityGlyph } from "@/components/task-chips/priority-glyph";
+import { toastBulkSaveError } from "@/lib/time-off/task-away-error";
 import { type ToastIcon, toast } from "@/lib/toast";
 import useProjectStore from "@/store/project";
 
@@ -37,6 +38,10 @@ export function useBulkActions(
   );
   const { canWorkItem, canAssignTasks, canUpdateLabels } =
     useWorkspacePermission();
+  const titles = useMemo(
+    () => new Map(projectTasks(project).map((task) => [task.id, task.title])),
+    [project],
+  );
   // Tasks and bugs have separate permissions, so every selected row's type
   // must allow the action.
   const selectedTypes = useMemo(() => {
@@ -72,13 +77,15 @@ export function useBulkActions(
       await action();
       toast.success(success, { icon });
       clearSelection();
-    } catch (_error) {
-      toast.error(error);
+    } catch (caught) {
+      // A due date or assignee the assignee rule refused names the tasks.
+      toastBulkSaveError(caught, error, (id) => titles.get(id));
     }
   };
 
   return {
     count,
+    workspaceId: workspace?.id ?? "",
     columns: project?.columns ?? [],
     members,
     labels,

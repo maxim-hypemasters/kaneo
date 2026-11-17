@@ -3750,6 +3750,1069 @@
           "updatedAt"
         ]
       },
+      "TimeOffCalendar": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "format": "date"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeOffEntry"
+            }
+          },
+          "holidays": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeOffHoliday"
+            },
+            "description": "Calendar public holidays of current members inside from-to, by date then member."
+          }
+        },
+        "required": [
+          "workspaceId",
+          "from",
+          "to",
+          "entries",
+          "holidays"
+        ]
+      },
+      "TimeOffEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "description": "The person away."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "vacation",
+              "sick",
+              "public_holiday"
+            ],
+            "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "declined",
+              "cancelled"
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "integer",
+            "description": "Working days in the range: Monday to Friday, leaving out the member's calendar public holidays."
+          },
+          "daysByYear": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "year": {
+                  "type": "integer"
+                },
+                "days": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "year",
+                "days"
+              ]
+            },
+            "description": "Working days per allowance year. Years the range touches only on weekends or holidays are left out."
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "description": "Incremented by every edit. Approve and decline must send it."
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "statusChangedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "statusChangedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canCancel": {
+            "type": "boolean"
+          },
+          "canDecide": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "startDate",
+          "endDate"
+        ],
+        "description": "Who is away and when. Type, status, note, days, version and the action flags appear only on your own entries, or on every entry when you hold time_off:approve."
+      },
+      "TimeOffHoliday": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "name": {
+            "type": "string",
+            "description": "The holiday's name. Present only on your own holidays, or on everyone's when you hold time_off:approve and are a member."
+          }
+        },
+        "required": [
+          "userId",
+          "date"
+        ],
+        "description": "One day of a current member's public holiday calendar. It counts as approved time off; weekends included."
+      },
+      "TimeOffRequestList": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeOffRequest"
+            }
+          }
+        },
+        "required": [
+          "workspaceId",
+          "requests"
+        ]
+      },
+      "TimeOffRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "description": "The person away."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "vacation",
+              "sick",
+              "public_holiday"
+            ],
+            "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "declined",
+              "cancelled"
+            ]
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "days": {
+            "type": "integer",
+            "description": "Working days in the range: Monday to Friday, leaving out the member's calendar public holidays."
+          },
+          "daysByYear": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "year": {
+                  "type": "integer"
+                },
+                "days": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "year",
+                "days"
+              ]
+            },
+            "description": "Working days per allowance year. Years the range touches only on weekends or holidays are left out."
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "description": "Incremented by every edit. Approve and decline must send it."
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "statusChangedBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "statusChangedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "canCancel": {
+            "type": "boolean"
+          },
+          "canDecide": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "userId",
+          "type",
+          "status",
+          "startDate",
+          "endDate",
+          "days",
+          "daysByYear",
+          "note",
+          "version",
+          "createdBy",
+          "statusChangedBy",
+          "statusChangedAt",
+          "createdAt",
+          "updatedAt",
+          "canEdit",
+          "canCancel",
+          "canDecide"
+        ]
+      },
+      "PendingTimeOffList": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "workspaceId": {
+                  "type": "string"
+                },
+                "userId": {
+                  "type": "string",
+                  "description": "The person away."
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "vacation",
+                    "sick",
+                    "public_holiday"
+                  ],
+                  "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "declined",
+                    "cancelled"
+                  ]
+                },
+                "startDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "endDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "days": {
+                  "type": "integer",
+                  "description": "Working days in the range: Monday to Friday, leaving out the member's calendar public holidays."
+                },
+                "daysByYear": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "year": {
+                        "type": "integer"
+                      },
+                      "days": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "year",
+                      "days"
+                    ]
+                  },
+                  "description": "Working days per allowance year. Years the range touches only on weekends or holidays are left out."
+                },
+                "note": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "description": "Incremented by every edit. Approve and decline must send it."
+                },
+                "createdBy": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "statusChangedBy": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "statusChangedAt": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "canEdit": {
+                  "type": "boolean"
+                },
+                "canCancel": {
+                  "type": "boolean"
+                },
+                "canDecide": {
+                  "type": "boolean"
+                },
+                "balances": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimeOffBalance"
+                  },
+                  "description": "The requester's balance for each year the range touches."
+                },
+                "overAllowanceDays": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "year": {
+                        "type": "integer"
+                      },
+                      "days": {
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "year",
+                      "days"
+                    ]
+                  },
+                  "description": "Per year, how far approving this request alone would go past the allowance of the request's own type: max(0, used + days in the year - allowance)."
+                }
+              },
+              "required": [
+                "id",
+                "workspaceId",
+                "userId",
+                "type",
+                "status",
+                "startDate",
+                "endDate",
+                "days",
+                "daysByYear",
+                "note",
+                "version",
+                "createdBy",
+                "statusChangedBy",
+                "statusChangedAt",
+                "createdAt",
+                "updatedAt",
+                "canEdit",
+                "canCancel",
+                "canDecide",
+                "balances",
+                "overAllowanceDays"
+              ]
+            }
+          }
+        },
+        "required": [
+          "workspaceId",
+          "requests"
+        ]
+      },
+      "TimeOffBalance": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "types": {
+            "type": "object",
+            "properties": {
+              "vacation": {
+                "$ref": "#/components/schemas/TimeOffTypeBalance"
+              },
+              "sick": {
+                "$ref": "#/components/schemas/TimeOffTypeBalance"
+              },
+              "public_holiday": {
+                "$ref": "#/components/schemas/TimeOffTypeBalance"
+              }
+            },
+            "required": [
+              "vacation",
+              "sick",
+              "public_holiday"
+            ],
+            "description": "One balance per type; each type has its own allowance."
+          }
+        },
+        "required": [
+          "workspaceId",
+          "userId",
+          "year",
+          "types"
+        ]
+      },
+      "TimeOffTypeBalance": {
+        "type": "object",
+        "properties": {
+          "allowanceDays": {
+            "type": "integer"
+          },
+          "allowanceSource": {
+            "type": "string",
+            "enum": [
+              "default",
+              "override"
+            ]
+          },
+          "usedDays": {
+            "type": "integer",
+            "description": "Approved working days of this type in the year; the member's calendar holidays never count. For public_holiday it also includes the weekday holidays of their calendar."
+          },
+          "pendingDays": {
+            "type": "integer",
+            "description": "Pending working days of this type in the year, not subtracted."
+          },
+          "remainingDays": {
+            "type": "integer",
+            "description": "allowanceDays - usedDays. Negative when over."
+          }
+        },
+        "required": [
+          "allowanceDays",
+          "allowanceSource",
+          "usedDays",
+          "pendingDays",
+          "remainingDays"
+        ]
+      },
+      "TimeOffRequestResult": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "request": {
+            "$ref": "#/components/schemas/TimeOffRequest"
+          },
+          "balances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeOffBalance"
+            },
+            "description": "The requester's balances for every type after the change, for every year the old and new ranges touch."
+          }
+        },
+        "required": [
+          "workspaceId",
+          "request",
+          "balances"
+        ]
+      },
+      "TimeOffBalances": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "defaultAllowances": {
+            "type": "object",
+            "properties": {
+              "vacation": {
+                "type": "integer"
+              },
+              "sick": {
+                "type": "integer"
+              },
+              "public_holiday": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "vacation",
+              "sick",
+              "public_holiday"
+            ],
+            "description": "The workspace default allowance of each type."
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimeOffBalance"
+            }
+          }
+        },
+        "required": [
+          "workspaceId",
+          "year",
+          "defaultAllowances",
+          "members"
+        ]
+      },
+      "TimeOffAllowanceDefaults": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "defaultAllowances": {
+            "type": "object",
+            "properties": {
+              "vacation": {
+                "type": "integer"
+              },
+              "sick": {
+                "type": "integer"
+              },
+              "public_holiday": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "vacation",
+              "sick",
+              "public_holiday"
+            ],
+            "description": "The workspace default allowance of each type."
+          }
+        },
+        "required": [
+          "workspaceId",
+          "defaultAllowances"
+        ]
+      },
+      "TimeOffAllowanceDefault": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "vacation",
+              "sick",
+              "public_holiday"
+            ],
+            "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+          },
+          "defaultAllowanceDays": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "workspaceId",
+          "type",
+          "defaultAllowanceDays"
+        ]
+      },
+      "HolidayCountryList": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "code",
+                "name"
+              ]
+            },
+            "description": "Every country with holiday data, sorted by name."
+          }
+        },
+        "required": [
+          "workspaceId",
+          "countries"
+        ]
+      },
+      "HolidayRegionList": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          },
+          "regions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "code",
+                "name"
+              ]
+            },
+            "description": "The country's regions, sorted by name; empty when it has none."
+          }
+        },
+        "required": [
+          "workspaceId",
+          "country",
+          "regions"
+        ]
+      },
+      "MemberHolidays": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "calendar": {
+            "$ref": "#/components/schemas/HolidayCalendar"
+          },
+          "calendarChosen": {
+            "type": "boolean",
+            "description": "Whether the member's calendar choice is made, No calendar included. Their first choice is free on or before the deadline."
+          },
+          "pendingRequest": {
+            "$ref": "#/components/schemas/HolidayCalendarRequest"
+          },
+          "holidayCalendarDeadline": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "The workspace's last UTC day for a free first choice, inclusive; null without a deadline."
+          },
+          "nextChangeNeedsApproval": {
+            "type": "boolean",
+            "description": "Whether your next change to this calendar becomes a request for approval instead of applying at once."
+          },
+          "holidays": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "date",
+                "name"
+              ]
+            },
+            "description": "The calendar's public holidays in the year, by date, weekends included. Only weekdays count as used public_holiday days."
+          }
+        },
+        "required": [
+          "workspaceId",
+          "userId",
+          "year",
+          "calendar",
+          "calendarChosen",
+          "pendingRequest",
+          "holidayCalendarDeadline",
+          "nextChangeNeedsApproval",
+          "holidays"
+        ]
+      },
+      "HolidayCalendar": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "country": {
+            "type": "string"
+          },
+          "countryName": {
+            "type": "string"
+          },
+          "region": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "regionName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "country",
+          "countryName",
+          "region",
+          "regionName"
+        ],
+        "description": "Null when the member has no calendar."
+      },
+      "HolidayCalendarRequest": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "description": "The member whose calendar would change."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "declined",
+              "cancelled"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "description": "Incremented each time the member changes the request. Approve and decline must send it."
+          },
+          "calendar": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HolidayCalendar"
+              },
+              {
+                "description": "The calendar asked for; null asks for no calendar."
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the member last changed the request."
+          }
+        },
+        "required": [
+          "id",
+          "workspaceId",
+          "userId",
+          "status",
+          "version",
+          "calendar",
+          "createdAt",
+          "updatedAt"
+        ],
+        "description": "The member's calendar change waiting for approval, or null. At most one is pending."
+      },
+      "HolidayCalendarResult": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "pending"
+            ],
+            "description": "applied: the calendar in effect is the one you sent. pending: the change waits for approval in pendingRequest."
+          },
+          "calendar": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HolidayCalendar"
+              },
+              {
+                "description": "The calendar in effect, or null for no calendar."
+              }
+            ]
+          },
+          "pendingRequest": {
+            "$ref": "#/components/schemas/HolidayCalendarRequest"
+          }
+        },
+        "required": [
+          "workspaceId",
+          "userId",
+          "status",
+          "calendar",
+          "pendingRequest"
+        ]
+      },
+      "PendingHolidayCalendarRequestList": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "requests": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "workspaceId": {
+                  "type": "string"
+                },
+                "userId": {
+                  "type": "string",
+                  "description": "The member whose calendar would change."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "declined",
+                    "cancelled"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "description": "Incremented each time the member changes the request. Approve and decline must send it."
+                },
+                "calendar": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/HolidayCalendar"
+                    },
+                    {
+                      "description": "The calendar asked for; null asks for no calendar."
+                    }
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updatedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "When the member last changed the request."
+                },
+                "currentCalendar": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/HolidayCalendar"
+                    },
+                    {
+                      "description": "The calendar the request would replace, or null."
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "workspaceId",
+                "userId",
+                "status",
+                "version",
+                "calendar",
+                "createdAt",
+                "updatedAt",
+                "currentCalendar"
+              ]
+            }
+          }
+        },
+        "required": [
+          "workspaceId",
+          "requests"
+        ]
+      },
+      "TimeOffSettings": {
+        "type": "object",
+        "properties": {
+          "workspaceId": {
+            "type": "string"
+          },
+          "holidayCalendarDeadline": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date",
+            "description": "The last day, inclusive, on which a member's first public holiday calendar choice applies without approval. It is a UTC day. Null means no deadline, so a first choice is always free."
+          }
+        },
+        "required": [
+          "workspaceId",
+          "holidayCalendarDeadline"
+        ]
+      },
       "WorkspaceActivity": {
         "type": "object",
         "properties": {
@@ -4108,10 +5171,10 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason)."
+            "description": "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason), time_off_requested, time_off_approved, time_off_declined, time_off_member_away, time_off_holiday_calendar_requested, time_off_holiday_calendar_approved, time_off_holiday_calendar_declined."
           },
           "eventData": {
-            "description": "Type-specific payload, e.g. { taskTitle, oldStatus, newStatus, projectId, workspaceId }."
+            "description": "Type-specific payload, e.g. { taskTitle, oldStatus, newStatus, projectId, workspaceId }. Time off notifications carry ids, names, dates and the working-day count, never the time off type or note. Holiday calendar request notifications carry ids and names only, never the country or region."
           },
           "isRead": {
             "type": [
@@ -4259,6 +5322,10 @@
           "dueDateReminderEnabled": {
             "type": "boolean"
           },
+          "teamTimeOffEnabled": {
+            "type": "boolean",
+            "description": "Whether approved time off of teammates notifies me."
+          },
           "dueDateReminderLeadTimeMinutes": {
             "type": "number",
             "description": "How long before a due date the reminder fires, in minutes."
@@ -4308,6 +5375,7 @@
           "taskCommentEnabled",
           "taskStatusChangeEnabled",
           "dueDateReminderEnabled",
+          "teamTimeOffEnabled",
           "dueDateReminderLeadTimeMinutes",
           "workspaces",
           "createdAt",
@@ -6798,6 +7866,15 @@
           "deleteLabels": {
             "type": "boolean"
           },
+          "readTimeOff": {
+            "type": "boolean"
+          },
+          "requestTimeOff": {
+            "type": "boolean"
+          },
+          "approveTimeOff": {
+            "type": "boolean"
+          },
           "manageWorkspace": {
             "type": "boolean"
           },
@@ -6848,6 +7925,9 @@
           "createLabels",
           "updateLabels",
           "deleteLabels",
+          "readTimeOff",
+          "requestTimeOff",
+          "approveTimeOff",
           "manageWorkspace",
           "manageSettings",
           "deleteWorkspace",
@@ -17749,7 +18829,7 @@
           "Tasks"
         ],
         "summary": "Bulk update tasks",
-        "description": "Apply one operation to many tasks at once. Every task must be in the same workspace.",
+        "description": "Apply one operation to many tasks at once. Every task must be in the same workspace. updateDueDate and updateAssignee refuse the whole batch when a due date, or the start or due date of work handed to someone else, falls on a day its assignee is away (approved time off or a public holiday); pending requests never block.",
         "requestBody": {
           "required": true,
           "content": {
@@ -17783,6 +18863,12 @@
                       "null"
                     ],
                     "description": "The new value for the chosen operation. Unused by `delete`; null clears an assignee or estimate; estimates are canonical seconds in whole minutes."
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "Used by updateDueDate and updateAssignee: the IANA timezone whose calendar days the dates name, to check them against the assignee's days away (approved time off and public holidays). Kaneo's web app sends the browser's. Defaults to each project's planning timezone, then UTC."
                   }
                 },
                 "required": [
@@ -17845,7 +18931,7 @@
             }
           },
           "409": {
-            "description": "Tasks changed projects; retry the operation",
+            "description": "Tasks changed projects (retry the operation), or a date falls on a day an assignee is away (TASK_ASSIGNEE_AWAY, one issue per task)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19168,7 +20254,7 @@
           "Tasks"
         ],
         "summary": "Update task",
-        "description": "Replace every field of a task. Its type, feature and release aren't part of this body and stay as they are: change them with PUT /task/type/{id}, /task/feature/{id} and /task/release/{id}. Use the single-field routes for narrower edits.",
+        "description": "Replace every field of a task. Its type, feature and release aren't part of this body and stay as they are: change them with PUT /task/type/{id}, /task/feature/{id} and /task/release/{id}. Use the single-field routes for narrower edits. A start or due date this changes, or both when the task goes to someone else, can't fall on a day the assignee is away (approved time off or a public holiday); pending requests never block.",
         "parameters": [
           {
             "schema": {
@@ -19246,6 +20332,12 @@
                   },
                   "userId": {
                     "type": "string"
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "IANA timezone whose calendar days these dates name, used to check them against the assignee's days away (approved time off and public holidays). Kaneo's web app sends the browser's. Defaults to the project's planning timezone, then UTC."
                   }
                 },
                 "required": [
@@ -19301,6 +20393,16 @@
           },
           "404": {
             "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A start or due date falls on a day the assignee is away (TASK_ASSIGNEE_AWAY), or the task changed concurrently",
             "content": {
               "application/json": {
                 "schema": {
@@ -20498,7 +21600,7 @@
           "Tasks"
         ],
         "summary": "Update task assignee",
-        "description": "Assign a task to a workspace member, or send null to unassign it.",
+        "description": "Assign a task to a workspace member, or send null to unassign it. Work whose dates were set by hand can't go to someone away (approved time off or a public holiday) on its start or due day; pending requests never block. Planned work keeps its planned assignee until the next Apply.",
         "parameters": [
           {
             "schema": {
@@ -20522,6 +21624,12 @@
                       "null"
                     ],
                     "description": "Null unassigns."
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "IANA timezone whose calendar days these dates name, used to check them against the assignee's days away (approved time off and public holidays). Kaneo's web app sends the browser's. Defaults to the project's planning timezone, then UTC."
                   }
                 },
                 "required": [
@@ -20582,6 +21690,16 @@
               }
             }
           },
+          "409": {
+            "description": "The new assignee is away on the start or due day of work with dates set by hand (TASK_ASSIGNEE_AWAY)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "429": {
             "$ref": "#/components/responses/ApiKeyRateLimited"
           }
@@ -20595,7 +21713,7 @@
           "Tasks"
         ],
         "summary": "Update task due date",
-        "description": "Set or clear a Task or Bug's due date by hand. Planned work stops following its estimate until the next Apply of its release plans it again.",
+        "description": "Set or clear a Task or Bug's due date by hand. Planned work stops following its estimate until the next Apply of its release plans it again. The due day can't be a day the assignee is away (approved time off or a public holiday); pending requests never block.",
         "parameters": [
           {
             "schema": {
@@ -20619,6 +21737,12 @@
                       "null"
                     ],
                     "description": "An ISO date or date-time. Null, empty or omitted clears it."
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "IANA timezone whose calendar days these dates name, used to check them against the assignee's days away (approved time off and public holidays). Kaneo's web app sends the browser's. Defaults to the project's planning timezone, then UTC."
                   }
                 }
               }
@@ -20676,6 +21800,16 @@
               }
             }
           },
+          "409": {
+            "description": "The due day is a day the assignee is away (TASK_ASSIGNEE_AWAY)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "429": {
             "$ref": "#/components/responses/ApiKeyRateLimited"
           }
@@ -20689,7 +21823,7 @@
           "Tasks"
         ],
         "summary": "Move a task on the schedule",
-        "description": "Moves a scheduled Task or Bug, as dragging it in Gantt does. Planned work keeps its planned assignee and remaining planned effort and is laid out again through working hours (Monday to Friday, 09:00 to 17:00 in the project's planning timezone) from `start`, so it may finish after `end`. Unplanned work takes `start` and `end` on the date fields it already has. The next Apply of the item's release plans it again.",
+        "description": "Moves a scheduled Task or Bug, as dragging it in Gantt does. Planned work keeps its planned assignee and remaining planned effort and is laid out again through working hours (Monday to Friday, 09:00 to 17:00 in the project's planning timezone) from `start`, skipping its planned assignee's approved time off and public holidays, so it may finish after `end`. Unplanned work takes `start` and `end` on the date fields it already has. A start or due date set by hand (an `exact` span, or unplanned work) can't fall on a day the assignee is away, though the span may cross such days; pending requests never block. `userId` also reassigns the work in the same step, as dropping it on another assignee lane does. The next Apply of the item's release plans it again.",
         "parameters": [
           {
             "schema": {
@@ -20720,6 +21854,19 @@
                   "exact": {
                     "type": "boolean",
                     "description": "Set the span by hand, as resizing a bar in Gantt does: the work takes `start` and `end` exactly as its start and due dates, and planned work stops following its estimate until the next Apply."
+                  },
+                  "userId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Also reassign, as dropping the bar on another assignee lane in Gantt does. Null unassigns; omit to keep the assignee. A different assignee needs task:assign. Planned work keeps its planned assignee until the next Apply."
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100,
+                    "description": "IANA timezone whose calendar days these dates name, used to check them against the assignee's days away (approved time off and public holidays). Kaneo's web app sends the browser's. Defaults to the project's planning timezone, then UTC."
                   }
                 },
                 "required": [
@@ -20762,7 +21909,7 @@
             }
           },
           "403": {
-            "description": "No access to the project, or missing update permission for its type (task, bug or feature)",
+            "description": "No access to the project, missing update permission for its type (task, bug or feature), missing task:assign for a different userId, or that assignee can't access the project",
             "content": {
               "application/json": {
                 "schema": {
@@ -20773,6 +21920,16 @@
           },
           "404": {
             "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A start or due date set by hand, or of unplanned work, falls on a day the assignee is away (TASK_ASSIGNEE_AWAY)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27538,6 +28695,2844 @@
         }
       }
     },
+    "/time-off/workspace/{workspaceId}": {
+      "get": {
+        "operationId": "listTimeOff",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "List who is away",
+        "description": "Time off of current members that overlaps the from-to window (at most 366 days): approved entries, plus pending requests that are your own or, with time_off:approve, everyone's, and holidays: each current member's calendar public holidays inside the window. Needs time_off:read. Other members' entries contain only id, userId, startDate and endDate, and their holidays only userId and date, unless you hold time_off:approve and are a member. Holiday names are in lang.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-10-20",
+              "description": "First day of the window."
+            },
+            "required": true,
+            "description": "First day of the window.",
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-10-20",
+              "description": "Last day of the window, at most 366 days after from."
+            },
+            "required": true,
+            "description": "Last day of the window, at most 366 days after from.",
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entries in the window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffCalendar"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTimeOffRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Request time off",
+        "description": "Creates a pending request for full days, start and end inclusive; every request starts pending, an approver's own too. For yourself it needs time_off:create; with userId it records time off for another current member and needs time_off:approve. Dates must fall between Jan 1 of last year and Dec 31 of next year, span at most 366 days and include a working day: a weekday that is not one of the member's calendar public holidays (400 TIME_OFF_NO_WEEKDAYS). Overlapping your other pending or approved days returns 409 TIME_OFF_OVERLAP. Each type counts against its own allowance; going over it is allowed, and the returned balances show it.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Record time off for another current member. Needs time_off:approve; omit it to request for yourself."
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "vacation",
+                      "sick",
+                      "public_holiday"
+                    ],
+                    "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "First day away, inclusive."
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "Last day away, inclusive. On or after the start date."
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Up to 500 characters, trimmed. Visible to the person away and to approvers only."
+                  }
+                },
+                "required": [
+                  "type",
+                  "startDate",
+                  "endDate"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffRequestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlapping days (TIME_OFF_OVERLAP), already decided (TIME_OFF_STATUS), edited since review (TIME_OFF_CHANGED) or past its first day (TIME_OFF_STARTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/requests": {
+      "get": {
+        "operationId": "listTimeOffRequests",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "List a member's time off requests",
+        "description": "Requests of every status that touch the Jan-Dec year, latest start first. Your own need any time_off permission; another member's need time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Member to read. Defaults to you; anyone else needs time_off:approve."
+            },
+            "required": false,
+            "description": "Member to read. Defaults to you; anyone else needs time_off:approve.",
+            "name": "userId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1970,
+              "maximum": 9999,
+              "description": "Jan-Dec allowance year. Defaults to the current UTC year."
+            },
+            "required": false,
+            "description": "Jan-Dec allowance year. Defaults to the current UTC year.",
+            "name": "year",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The member's requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffRequestList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/pending": {
+      "get": {
+        "operationId": "listPendingTimeOffRequests",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "List time off waiting for approval",
+        "description": "Pending requests of current members, oldest first, with type and note. Each carries the requester's balances for the years it touches and overAllowanceDays per year. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingTimeOffList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/balance": {
+      "get": {
+        "operationId": "getTimeOffBalance",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Read a time off balance",
+        "description": "Per type, the allowance, used (approved) and pending working days and what remains for one Jan-Dec year. Each type has its own allowance; there is no carry-over. Calendar public holidays never count as days of a request, and their weekdays count as used public_holiday days. Your own needs any time_off permission; another current member's needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Member to read. Defaults to you; anyone else needs time_off:approve."
+            },
+            "required": false,
+            "description": "Member to read. Defaults to you; anyone else needs time_off:approve.",
+            "name": "userId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1970,
+              "maximum": 9999,
+              "description": "Jan-Dec allowance year. Defaults to the current UTC year."
+            },
+            "required": false,
+            "description": "Jan-Dec allowance year. Defaults to the current UTC year.",
+            "name": "year",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffBalance"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/balances": {
+      "get": {
+        "operationId": "listTimeOffBalances",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "List every member's time off balance",
+        "description": "Balances of all current members for one Jan-Dec year, with the workspace default allowance of each type. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1970,
+              "maximum": 9999,
+              "description": "Jan-Dec allowance year. Defaults to the current UTC year."
+            },
+            "required": false,
+            "description": "Jan-Dec allowance year. Defaults to the current UTC year.",
+            "name": "year",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Balances",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffBalances"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/allowance": {
+      "get": {
+        "operationId": "getTimeOffAllowanceDefaults",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Read the default time off allowances",
+        "description": "The workspace default of each type: the working days each member may take per Jan-Dec year unless they have an override for that type. Until set: vacation 25, sick 10, public_holiday 10. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default allowances",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffAllowanceDefaults"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/allowance/{type}": {
+      "put": {
+        "operationId": "setDefaultTimeOffAllowance",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Set the default time off allowance of a type",
+        "description": "Working days of one type each member may take per Jan-Dec year unless they have an override for it. Until set: vacation 25, sick 10, public_holiday 10. It applies to every year, past balances included. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "vacation",
+                "sick",
+                "public_holiday"
+              ],
+              "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+            },
+            "required": true,
+            "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance.",
+            "name": "type",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 366,
+                    "description": "Working days of this type allowed per Jan-Dec year, applied to every year."
+                  }
+                },
+                "required": [
+                  "days"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default allowance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffAllowanceDefault"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlapping days (TIME_OFF_OVERLAP), already decided (TIME_OFF_STATUS), edited since review (TIME_OFF_CHANGED) or past its first day (TIME_OFF_STARTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/allowance/{type}/{userId}": {
+      "put": {
+        "operationId": "setTimeOffAllowanceOverride",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Set a member's time off allowance of a type",
+        "description": "Overrides one type's default for one current member, for every year. Other types keep their own allowance. Returns their balances for the current year. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "vacation",
+                "sick",
+                "public_holiday"
+              ],
+              "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+            },
+            "required": true,
+            "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance.",
+            "name": "type",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 366,
+                    "description": "Working days of this type allowed per Jan-Dec year, applied to every year."
+                  }
+                },
+                "required": [
+                  "days"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Current-year balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffBalance"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlapping days (TIME_OFF_OVERLAP), already decided (TIME_OFF_STATUS), edited since review (TIME_OFF_CHANGED) or past its first day (TIME_OFF_STARTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "clearTimeOffAllowanceOverride",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Clear a member's time off allowance of a type",
+        "description": "Puts a current member back on the workspace default of one type. Clearing a type without an override succeeds. Returns their balances for the current year. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "vacation",
+                "sick",
+                "public_holiday"
+              ],
+              "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+            },
+            "required": true,
+            "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance.",
+            "name": "type",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current-year balance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffBalance"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlapping days (TIME_OFF_OVERLAP), already decided (TIME_OFF_STATUS), edited since review (TIME_OFF_CHANGED) or past its first day (TIME_OFF_STARTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/{id}": {
+      "get": {
+        "operationId": "getTimeOffRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Read a time off request",
+        "description": "Your own request needs any time_off permission. Another member's request needs time_off:approve and membership; without them it returns 404, the same as an unknown id.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffRequest"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateTimeOffRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Edit a time off request",
+        "description": "Changes type, dates or note and increments version. Requesters with time_off:create edit their pending requests; approvers edit pending or approved ones, and approved time off stays approved. Declined and cancelled requests return 409 TIME_OFF_STATUS. New dates get the same checks as a new request, including 409 TIME_OFF_OVERLAP. Another member's request without time_off:approve returns 404.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "vacation",
+                      "sick",
+                      "public_holiday"
+                    ],
+                    "description": "vacation, sick (a sick day) or public_holiday. Each type has its own yearly allowance."
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "First day away, inclusive."
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "Last day away, inclusive. On or after the start date."
+                  },
+                  "note": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 500,
+                    "description": "Null or an empty string clears the note."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Edited request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffRequestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlapping days (TIME_OFF_OVERLAP), already decided (TIME_OFF_STATUS), edited since review (TIME_OFF_CHANGED) or past its first day (TIME_OFF_STARTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/{id}/cancel": {
+      "post": {
+        "operationId": "cancelTimeOffRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Cancel a time off request",
+        "description": "Marks the request cancelled and keeps it as history. Requesters with time_off:create cancel pending requests, and approved ones until the end of their first day by the UTC date (409 TIME_OFF_STARTED after that); approvers cancel any pending or approved request. Declined and cancelled requests return 409 TIME_OFF_STATUS. Another member's request without time_off:approve returns 404.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancelled request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffRequestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlapping days (TIME_OFF_OVERLAP), already decided (TIME_OFF_STATUS), edited since review (TIME_OFF_CHANGED) or past its first day (TIME_OFF_STARTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/{id}/approve": {
+      "post": {
+        "operationId": "approveTimeOffRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Approve a time off request",
+        "description": "Approves a pending request, your own included. Send the version you reviewed: an edit since then returns 409 TIME_OFF_CHANGED, and a request no longer pending returns 409 TIME_OFF_STATUS. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "The request version you reviewed. A request edited since then returns 409 TIME_OFF_CHANGED."
+                  }
+                },
+                "required": [
+                  "version"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Approved request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffRequestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlapping days (TIME_OFF_OVERLAP), already decided (TIME_OFF_STATUS), edited since review (TIME_OFF_CHANGED) or past its first day (TIME_OFF_STARTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/{id}/decline": {
+      "post": {
+        "operationId": "declineTimeOffRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Decline a time off request",
+        "description": "Declines a pending request, your own included. Send the version you reviewed: an edit since then returns 409 TIME_OFF_CHANGED, and a request no longer pending returns 409 TIME_OFF_STATUS. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "The request version you reviewed. A request edited since then returns 409 TIME_OFF_CHANGED."
+                  }
+                },
+                "required": [
+                  "version"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Declined request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffRequestResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Overlapping days (TIME_OFF_OVERLAP), already decided (TIME_OFF_STATUS), edited since review (TIME_OFF_CHANGED) or past its first day (TIME_OFF_STARTED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/holiday-countries": {
+      "get": {
+        "operationId": "listHolidayCountries",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "List holiday calendar countries",
+        "description": "Countries a member can pick as their public holiday calendar, with names in lang. Holiday data ships with Kaneo (date-holidays); only public holidays are used, not bank, school or optional days. Needs any time_off permission.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Countries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayCountryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or country not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/holiday-countries/{country}/regions": {
+      "get": {
+        "operationId": "listHolidayRegions",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "List a holiday calendar country's regions",
+        "description": "Regions (states or provinces) with their own public holidays, with names in lang; empty when the country has none. An unknown country returns 404. Needs any time_off permission.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{1,10}$",
+              "description": "Country code from GET holiday-countries, such as DE. Case does not matter."
+            },
+            "required": true,
+            "description": "Country code from GET holiday-countries, such as DE. Case does not matter.",
+            "name": "country",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Regions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayRegionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or country not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/holidays": {
+      "get": {
+        "operationId": "listMemberHolidays",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Read a member's public holiday calendar",
+        "description": "The member's calendar, or null, and its public holidays in one Jan-Dec year with names in lang, weekends included. Also whether the calendar choice is made, the change waiting for approval, the workspace's deadline for a free first choice and whether your next change needs approval. Your own needs any time_off permission; another current member's needs time_off:approve and membership.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Member to read. Defaults to you; anyone else needs time_off:approve."
+            },
+            "required": false,
+            "description": "Member to read. Defaults to you; anyone else needs time_off:approve.",
+            "name": "userId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1970,
+              "maximum": 9999,
+              "description": "Jan-Dec allowance year. Defaults to the current UTC year."
+            },
+            "required": false,
+            "description": "Jan-Dec allowance year. Defaults to the current UTC year.",
+            "name": "year",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calendar and holidays",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberHolidays"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or country not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/holiday-calendar": {
+      "put": {
+        "operationId": "setHolidayCalendar",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Set a member's public holiday calendar",
+        "description": "Picks a country and optional region; codes are case-insensitive. A member's first choice, No calendar included, applies at once on or before the workspace's holiday calendar deadline (a UTC day that counts), or at any time without a deadline. Every later change by the member, and any choice after the deadline, returns status \"pending\" and waits for an approver; sending another change updates the pending request, and POST holiday-calendar-requests/{requestId}/cancel or sending your current calendar withdraws it. Changes by approvers, for themselves or for another member, apply at once; applying the calendar a member asked for approves their request, and re-saving their current calendar leaves it pending. An applied calendar's holidays count as approved time off without requests, leave the member's other requests' working days, and count as used public_holiday days on weekdays. Plans that include the member become outdated. Members can still request public_holiday time off for other days, such as bank holidays. Your own needs time_off:create; another current member's needs time_off:approve and membership.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Member whose calendar to set. Defaults to you (time_off:create); anyone else needs time_off:approve."
+                  },
+                  "country": {
+                    "type": "string",
+                    "pattern": "^[A-Z0-9]{1,10}$",
+                    "description": "Country code from GET holiday-countries, such as DE. Case does not matter."
+                  },
+                  "region": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^[A-Z0-9]{1,10}$",
+                    "description": "Optional region. Null or omitted means the whole country."
+                  }
+                },
+                "required": [
+                  "country"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The calendar in effect and any pending change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayCalendarResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request, or an unknown country or region (TIME_OFF_HOLIDAY_CALENDAR_UNKNOWN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or country not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "clearHolidayCalendar",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Clear a member's public holiday calendar",
+        "description": "Sets No calendar, so the member enters public holidays as requests again; the choice stays recorded. A member's first choice, No calendar included, applies at once on or before the workspace's holiday calendar deadline (a UTC day that counts), or at any time without a deadline. Every later change by the member, and any choice after the deadline, returns status \"pending\" and waits for an approver; sending another change updates the pending request, and POST holiday-calendar-requests/{requestId}/cancel or sending your current calendar withdraws it. Changes by approvers, for themselves or for another member, apply at once; applying the calendar a member asked for approves their request, and re-saving their current calendar leaves it pending. Once it applies, plans that include the member become outdated. Your own needs time_off:create; another current member's needs time_off:approve and membership.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Member whose calendar to clear. Defaults to you (time_off:create); anyone else needs time_off:approve."
+            },
+            "required": false,
+            "description": "Member whose calendar to clear. Defaults to you (time_off:create); anyone else needs time_off:approve.",
+            "name": "userId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The calendar in effect and any pending change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolidayCalendarResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request, or an unknown country or region (TIME_OFF_HOLIDAY_CALENDAR_UNKNOWN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace, member or country not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/holiday-calendar-requests": {
+      "get": {
+        "operationId": "listHolidayCalendarRequests",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "List pending holiday calendar requests",
+        "description": "Current members' public holiday calendar changes waiting for approval, oldest first, each with the calendar it would replace. Names are in lang. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pending requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingHolidayCalendarRequestList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace or holiday calendar request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/approve": {
+      "post": {
+        "operationId": "approveHolidayCalendarRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Approve a holiday calendar request",
+        "description": "Applies the calendar the member asked for, or No calendar, like an approver setting it: plans that include the member become outdated. A calendar the holiday data no longer knows returns 400 TIME_OFF_HOLIDAY_CALENDAR_UNKNOWN; decline it instead. Send the version you reviewed: a change by the member since then returns 409 TIME_OFF_CHANGED, and a request no longer pending returns 409 TIME_OFF_STATUS. You may decide your own requests. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "requestId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "The request version you reviewed. A request edited since then returns 409 TIME_OFF_CHANGED."
+                  }
+                },
+                "required": [
+                  "version"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Approved request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/HolidayCalendarRequest"
+                    },
+                    {
+                      "description": "A member's request to change their public holiday calendar. Visible only to the member and to approvers."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request, or a calendar the holiday data no longer knows (TIME_OFF_HOLIDAY_CALENDAR_UNKNOWN)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace or holiday calendar request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already decided or cancelled (TIME_OFF_STATUS), or changed since review (TIME_OFF_CHANGED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/decline": {
+      "post": {
+        "operationId": "declineHolidayCalendarRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Decline a holiday calendar request",
+        "description": "Keeps the member's calendar as it is. Send the version you reviewed: a change by the member since then returns 409 TIME_OFF_CHANGED, and a request no longer pending returns 409 TIME_OFF_STATUS. You may decide your own requests. Needs time_off:approve. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "requestId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*$",
+              "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language."
+            },
+            "required": false,
+            "description": "Language of holiday names, such as de or de-DE. Defaults to en; names without a translation use the country's own language.",
+            "name": "lang",
+            "in": "query"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "The request version you reviewed. A request edited since then returns 409 TIME_OFF_CHANGED."
+                  }
+                },
+                "required": [
+                  "version"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Declined request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/HolidayCalendarRequest"
+                    },
+                    {
+                      "description": "A member's request to change their public holiday calendar. Visible only to the member and to approvers."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace or holiday calendar request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already decided or cancelled (TIME_OFF_STATUS), or changed since review (TIME_OFF_CHANGED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/cancel": {
+      "post": {
+        "operationId": "cancelHolidayCalendarRequest",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Withdraw a holiday calendar request",
+        "description": "Cancels a pending request; the calendar stays as it is. Your own needs time_off:create; anyone else's needs time_off:approve. A request no longer pending returns 409 TIME_OFF_STATUS. Approver actions need workspace membership as well as time_off:approve.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "requestId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancelled request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/HolidayCalendarRequest"
+                    },
+                    {
+                      "description": "A member's request to change their public holiday calendar. Visible only to the member and to approvers."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace or holiday calendar request not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already decided or cancelled (TIME_OFF_STATUS), or changed since review (TIME_OFF_CHANGED)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/time-off/workspace/{workspaceId}/settings": {
+      "get": {
+        "operationId": "getTimeOffSettings",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Read the time off settings",
+        "description": "The workspace's time off settings: the deadline for members' free first public holiday calendar choice. Needs time_off:approve and workspace membership. Members see the deadline that applies to them in GET holidays.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "setTimeOffSettings",
+        "tags": [
+          "Time off"
+        ],
+        "summary": "Set the time off settings",
+        "description": "Sets the deadline for members' free first public holiday calendar choice, a UTC day that counts, or null for none. After it, every calendar choice by a member needs approval; changing it leaves pending requests as they are. Needs time_off:approve and workspace membership. Members see the deadline that applies to them in GET holidays.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "holidayCalendarDeadline": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "example": "2026-10-20",
+                    "description": "The last day, inclusive, on which a member's first public holiday calendar choice applies without approval. It is a UTC day. Null means no deadline, so a first choice is always free. Send null to clear it."
+                  }
+                },
+                "required": [
+                  "holidayCalendarDeadline"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeOffSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
     "/activity/workspace/{workspaceId}": {
       "get": {
         "operationId": "getWorkspaceActivities",
@@ -29377,7 +33372,7 @@
           "Notifications"
         ],
         "summary": "List notifications",
-        "description": "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit.",
+        "description": "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit. A scoped API key sees time off notifications only with time_off:read, and new time off and holiday calendar requests only with time_off:approve as well.",
         "parameters": [
           {
             "schema": {
@@ -29942,6 +33937,10 @@
                   },
                   "dueDateReminderEnabled": {
                     "type": "boolean"
+                  },
+                  "teamTimeOffEnabled": {
+                    "type": "boolean",
+                    "description": "Notify me when a teammate's time off is approved. Requests and decisions on my own time off always notify."
                   },
                   "dueDateReminderLeadTimeMinutes": {
                     "type": "integer",
@@ -36512,7 +40511,7 @@
           "Workspaces"
         ],
         "summary": "Get my workspace capabilities",
-        "description": "Check every named workspace action for the caller in one request: which of them the caller's roles allow, narrowed by the API key's scope when one is used. Instance admins are allowed everything.",
+        "description": "Check every named workspace action for the caller in one request: which of them the caller's roles allow, narrowed by the API key's scope when one is used. Instance admins are allowed everything, except requesting and approving time off in a workspace they aren't a member of.",
         "parameters": [
           {
             "schema": {

@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Tag,
+  TreePalm,
   User,
 } from "lucide-react";
 import projectIcons from "@/constants/project-icons";
@@ -30,6 +31,8 @@ type BuildSettingsNavInput = {
   // has not turned the assistant off (config.hasAssistant).
   canManageSettings?: boolean;
   hasAssistant?: boolean;
+  // time_off:approve; false while permissions load.
+  canManageTimeOff: boolean;
   hasAdminAccess: boolean;
   projects: { id: string; name: string; icon?: string | null }[];
 };
@@ -71,6 +74,7 @@ export function buildSettingsNav({
   canImport,
   canManageSettings = false,
   hasAssistant = false,
+  canManageTimeOff,
   hasAdminAccess,
   projects,
 }: BuildSettingsNavInput): SettingsNav {
@@ -140,6 +144,16 @@ export function buildSettingsNav({
                 label: t("settings:assistantPage.title"),
                 to: "/dashboard/settings/workspace/assistant",
                 icon: Sparkles,
+              },
+            ]
+          : []),
+        ...(canManageTimeOff
+          ? [
+              {
+                id: "workspace-time-off",
+                label: t("settings:workspaceTimeOff.title"),
+                to: "/dashboard/settings/workspace/time-off",
+                icon: TreePalm,
               },
             ]
           : []),

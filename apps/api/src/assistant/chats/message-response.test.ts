@@ -109,6 +109,20 @@ describe("toAssistantMessageDto", () => {
     });
   });
 
+  it("drops the API route the tool error starts with", () => {
+    const dto = toAssistantMessageDto(
+      row({
+        role: "tool",
+        isError: true,
+        content:
+          "/api/task/due-date/t1: The assignee is away on 2026-12-24; choose another due date or assignee",
+      }),
+    );
+    expect(dto.errorText).toBe(
+      "The assignee is away on 2026-12-24; choose another due date or assignee",
+    );
+  });
+
   it("cuts a long error to the limit", () => {
     const dto = toAssistantMessageDto(
       row({ role: "tool", isError: true, content: "x".repeat(2000) }),

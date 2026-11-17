@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => {
     projectFindFirst: vi.fn(),
     createGiteaClient: vi.fn(),
     addLabelsToIssueGitea: vi.fn(),
+    readTriageRouting: vi.fn(),
     db: {
       transaction: async (run: (tx: unknown) => Promise<unknown>) =>
         run(mocks.db),
@@ -54,6 +55,10 @@ vi.mock(
 );
 
 vi.mock("../../../../../apps/api/src/database", () => ({ default: mocks.db }));
+
+vi.mock("../../../../../apps/api/src/triage/read-triage-members", () => ({
+  readTriageRouting: (...args: unknown[]) => mocks.readTriageRouting(...args),
+}));
 
 vi.mock("../../../../../apps/api/src/events", () => ({
   publishEvent: (...args: unknown[]) => mocks.publishEvent(...args),
@@ -147,6 +152,10 @@ beforeEach(() => {
   mocks.projectFindFirst.mockResolvedValue(null);
   mocks.createExternalLink.mockResolvedValue({ id: "link-1" });
   mocks.publishEvent.mockResolvedValue(undefined);
+  mocks.readTriageRouting.mockResolvedValue({
+    triageEnabled: false,
+    isMember: false,
+  });
 });
 
 describe("handleGiteaIssueOpened", () => {
@@ -197,6 +206,22 @@ describe("handleGiteaIssueOpened", () => {
 
     expect(mocks.insertedValues).toHaveLength(1);
     expect(mocks.insertedValues[0].priority).toBe("high");
+  });
+
+  it("sends an open issue to Triage when the project has triage members", async () => {
+    mocks.readTriageRouting.mockResolvedValue({
+      triageEnabled: true,
+      isMember: false,
+    });
+    mocks.columnFindFirst.mockResolvedValue({ id: "column-1", slug: "to-do" });
+
+    await handleGiteaIssueOpened(issueOpenedPayload([]));
+
+    expect(mocks.insertedValues).toHaveLength(1);
+    expect(mocks.insertedValues[0]).toMatchObject({
+      status: "triage",
+      columnId: null,
+    });
   });
 });
 

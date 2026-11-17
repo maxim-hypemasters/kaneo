@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
@@ -8,8 +14,9 @@ import {
   updateMilestone,
   setTaskMilestone,
 } from "@/fetchers/milestone/milestones";
+import { toastTaskSaveError } from "@/lib/time-off/task-away-error";
 import { toast } from "@/lib/toast";
-import type { GanttTaskEdit, ScheduledTask } from "./gantt-types";
+import type { AwayRefusal, GanttTaskEdit, ScheduledTask } from "./gantt-types";
 import {
   classifyEdit,
   type PendingTaskEdit,
@@ -22,8 +29,14 @@ type CommitOptions = {
   // dropped silently (the failure it waited on is the one reported).
   after?: Promise<unknown>;
 };
+type CommitsOptions = {
+  // Why an edit can't be saved (its assignee is away on a date it sets), or
+  // null. A refused edit is explained, never sent and never shown.
+  refuse?: (task: ScheduledTask, edit: GanttTaskEdit) => AwayRefusal | null;
+};
 const NO_PENDING_EDITS: ReadonlyMap<string, PendingTaskEdit> = new Map();
 const PREDECESSOR_FAILED = Symbol("gantt-predecessor-failed");
+const EDIT_REFUSED = Symbol("gantt-edit-refused");
 
 // Saves Gantt drags. Moving a Task/Bug sideways moves it on the schedule
 // (planned work keeps its effort until the next Apply); a lane drop changes
@@ -38,8 +51,14 @@ const PREDECESSOR_FAILED = Symbol("gantt-predecessor-failed");
 export function useGanttTaskCommits(
   tasks: readonly ScheduledTask[],
   positionsUpdatedAt?: number,
+  { refuse }: CommitsOptions = {},
 ) {
   const { t } = useTranslation();
+  // Read when an edit commits, so `commit` keeps its identity.
+  const refuseRef = useRef(refuse);
+  useLayoutEffect(() => {
+    refuseRef.current = refuse;
+  });
   const { mutateAsync: updateTaskAssignee } = useUpdateTaskAssignee();
   const client = useQueryClient();
   const refreshMilestone = useCallback(
@@ -71,6 +90,16 @@ export function useGanttTaskCommits(
     },
     [client],
   );
+  // What a reassignment refreshes besides the schedule (as
+  // useUpdateTaskAssignee does).
+  const refreshAssignee = useCallback(() => {
+    for (const queryKey of [
+      ["notifications"],
+      ["projects"],
+      ["task-relations"],
+    ])
+      void client.invalidateQueries({ queryKey });
+  }, [client]);
   const [pending, setPending] = useState(NO_PENDING_EDITS);
   const nextSeqRef = useRef(0);
   const queuesRef = useRef(new Map<string, Promise<unknown>>());
@@ -120,6 +149,16 @@ export function useGanttTaskCommits(
       const kind = classifyEdit(task, edit);
       if (!kind.dates && !kind.assignee && !kind.milestone)
         return Promise.resolve();
+      const refusal = refuseRef.current?.(task, edit);
+      if (refusal) {
+        toast.error(t("tasks:assigneeAway.title"), {
+          description: t("tasks:assigneeAway.onDay", refusal),
+        });
+        // Rejects like a failed save, so edits waiting on it are dropped.
+        const refused = Promise.reject(EDIT_REFUSED);
+        refused.catch(() => {});
+        return refused;
+      }
       const seq = ++nextSeqRef.current;
       setPending((current) =>
         new Map(current).set(task.id, {
@@ -139,6 +178,20 @@ export function useGanttTaskCommits(
         if (task.entityKind === "milestone") {
           await updateMilestone(task.milestone.id, { leadId: edit.userId });
           refreshMilestone(task);
+          return;
+        }
+        if (kind.dates && kind.assignee) {
+          // One request, so the new dates are checked against the new
+          // assignee only.
+          await moveTaskSchedule(
+            task.id,
+            edit.start,
+            edit.end,
+            Boolean(edit.exact),
+            edit.userId,
+          );
+          refreshSchedule(task);
+          refreshAssignee();
           return;
         }
         if (kind.dates) {
@@ -211,12 +264,11 @@ export function useGanttTaskCommits(
               return next;
             });
             if (error !== PREDECESSOR_FAILED)
-              toast.error(
-                error instanceof Error
-                  ? error.message
-                  : kind.dates
-                    ? t("tasks:gantt.updateDatesError")
-                    : t("tasks:gantt.reassignError"),
+              toastTaskSaveError(
+                error,
+                kind.dates
+                  ? t("tasks:gantt.updateDatesError")
+                  : t("tasks:gantt.reassignError"),
               );
           },
         )
@@ -226,7 +278,7 @@ export function useGanttTaskCommits(
         });
       return fieldsSaved;
     },
-    [t, updateTaskAssignee, refreshMilestone, refreshSchedule],
+    [t, updateTaskAssignee, refreshMilestone, refreshSchedule, refreshAssignee],
   );
   return { pending, commit };
 }

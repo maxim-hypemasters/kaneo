@@ -15,6 +15,7 @@ import getNotifications from "./controllers/get-notifications";
 import markAllNotificationsAsRead from "./controllers/mark-all-notifications-as-read";
 import setNotificationRead from "./controllers/set-notification-read";
 import "./triage-notifications";
+import { scopeHiddenNotificationTypes } from "./scope-hidden-notification-types";
 import {
   bulkResultSchema,
   notificationListSchema,
@@ -34,7 +35,7 @@ const listNotificationsRoute = createRoute({
   summary: "List notifications",
   request: { query: notificationWorkspaceQuery },
   description:
-    "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit.",
+    "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit. A scoped API key sees time off notifications only with time_off:read, and new time off and holiday calendar requests only with time_off:approve as well.",
   responses: {
     200: jsonResponse("List of notifications", notificationListSchema),
   },
@@ -153,7 +154,11 @@ const deleteNotificationRoute = createRoute({
 const notification = apiRouter()
   .openapi(listNotificationsRoute, async (c) =>
     c.json(
-      await getNotifications(c.get("userId"), c.req.valid("query").workspaceId),
+      await getNotifications(
+        c.get("userId"),
+        c.req.valid("query").workspaceId,
+        scopeHiddenNotificationTypes(c.get("apiKey")?.permissions),
+      ),
       200,
     ),
   )

@@ -49,6 +49,7 @@
     "better-auth": "1.6.26",
     "creem": "^1.13.0",
     "croner": "^10.0.1",
+    "date-holidays": "3.39.2",
     "drizzle-kit": "^0.31.11",
     "drizzle-orm": "^0.45.3",
     "hono": "^4.13.12",

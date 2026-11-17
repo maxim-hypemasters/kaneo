@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { createCalendarReader, fitWork } from "./calendar";
 import { localInterval, startOfLocalDay } from "./zoned-time";
 
@@ -58,6 +58,27 @@ describe("working-calendar timezone boundaries", () => {
     expect(
       new Date(startOfLocalDay("2026-10-26", "Asia/Kathmandu")).toISOString(),
     ).toBe("2026-10-25T18:15:00.000Z");
+  });
+
+  it("remembers local midnights instead of resolving them again", () => {
+    const formatToParts = vi.spyOn(
+      Intl.DateTimeFormat.prototype,
+      "formatToParts",
+    );
+    try {
+      const first = startOfLocalDay("2031-03-30", "Europe/Berlin");
+      expect(formatToParts).toHaveBeenCalled();
+      formatToParts.mockClear();
+      expect(startOfLocalDay("2031-03-30", "Europe/Berlin")).toBe(first);
+      expect(formatToParts).not.toHaveBeenCalled();
+      expect(new Date(first).toISOString()).toBe("2031-03-29T23:00:00.000Z");
+      // The same date in another zone is its own entry.
+      expect(
+        new Date(startOfLocalDay("2031-03-30", "Asia/Tokyo")).toISOString(),
+      ).toBe("2031-03-29T15:00:00.000Z");
+    } finally {
+      formatToParts.mockRestore();
+    }
   });
 
   it("changes UTC working hours across DST while preserving local 09:00", () => {

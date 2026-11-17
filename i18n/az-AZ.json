@@ -819,7 +819,9 @@
 			"stopSendingDescription": "Bu iş sahəsindən gələn bildirişlər yalnız Kaneo-da göstəriləcək.",
 			"stopSendingTitle": "{{workspaceName}} üçün göndərmə dayandırılsın?",
 			"workspacesDescription": "Kanallarınızdan hansı iş sahələrinin və layihələrin istifadə edə biləcəyini seçin.",
-			"workspacesTitle": "İş sahələri"
+			"workspacesTitle": "İş sahələri",
+			"eventTeamTimeOff": "Team time off",
+			"eventTeamTimeOffHint": "When a teammate's time off is approved. Your own requests and decisions always notify you."
 		},
 		"preferencesPage": {
 			"title": "Tərcihlər",
@@ -997,7 +999,8 @@
 				"ac": "Roles and permissions",
 				"bug": "Bugs",
 				"feature": "Features",
-				"milestone": "Milestones"
+				"milestone": "Milestones",
+				"time_off": "Time off"
 			},
 			"permissions": {
 				"project": {
@@ -1198,6 +1201,20 @@
 					"update": {
 						"description": "Can edit, reorder and schedule milestones",
 						"label": "Update"
+					}
+				},
+				"time_off": {
+					"approve": {
+						"description": "Approve or decline requests, see everyone's time-off details, balances and holidays, record time off for others, set each type's allowances, and set members' holiday calendars.",
+						"label": "Approve time off"
+					},
+					"create": {
+						"description": "Request time off, edit or cancel your own requests, and choose your public holiday calendar.",
+						"label": "Request time off"
+					},
+					"read": {
+						"description": "See who is away and when.",
+						"label": "View time off"
 					}
 				}
 			},
@@ -2509,6 +2526,32 @@
 		"shared": {
 			"autosave": "Dəyişikliklər avtomatik yadda saxlanılır"
 		},
+		"workspaceTimeOff": {
+			"defaultSaved_one": "{{type}}: default allowance set to {{count}} day",
+			"defaultSaved_other": "{{type}}: default allowance set to {{count}} days",
+			"defaultsDescription": "For members without their own allowance. Changing one also changes past years' balances.",
+			"defaultsTitle": "Default allowances",
+			"description": "How much time off members of {{workspaceName}} get each year, and when they choose their public holidays.",
+			"loadError": "Couldn't load the default allowances.",
+			"notAllowed": {
+				"description": "Default allowances and the public holiday deadline need permission to approve time off. Ask a workspace admin to change them.",
+				"title": "Only approvers can change time off settings"
+			},
+			"overridesNote": "To give a member their own allowance, use <link>Balances</link> on the Time off page.",
+			"pageTitle": "Time off",
+			"perYear": "working days per year",
+			"saveError": "Couldn't save the allowance.",
+			"title": "Time off",
+			"clearDeadline": "Remove deadline",
+			"deadlineCleared": "Setup deadline removed",
+			"deadlineLabel": "Setup deadline",
+			"deadlineLoadError": "Couldn't load the public holiday settings.",
+			"deadlineSaved": "Setup deadline set to {{date}}",
+			"deadlineSaveError": "Couldn't save the deadline.",
+			"holidaysDescription": "A member's first holiday calendar choice applies at once if made on or before this day, or any time without a deadline. Later changes, and any choice after the day, need an approver. The day ends at midnight UTC.",
+			"holidaysTitle": "Public holidays",
+			"noDeadline": "No deadline"
+		},
 		"projectTriage": {
 			"pageTitle": "Layihə triajı",
 			"title": "Triaj",
@@ -2646,7 +2689,8 @@
 			"createFeature": "İmkan yarat",
 			"goToReleases": "Buraxılışlara keç",
 			"createRelease": "Buraxılış yarat",
-			"createBug": "Create bug"
+			"createBug": "Create bug",
+			"timeOff": "Time off"
 		},
 		"sidebar": {
 			"projects": "Layihələr",
@@ -2657,7 +2701,8 @@
 			"home": "Home",
 			"inbox": "Inbox",
 			"invitePeople": "Invite people",
-			"myTasks": "My tasks"
+			"myTasks": "My tasks",
+			"timeOff": "Time off"
 		},
 		"projectList": {
 			"viewProject": "Layihəyə bax",
@@ -2887,6 +2932,37 @@
 				"contentWithTask": "Tapşırıqda vaxtın izlənməsi başladı: {{taskTitle}}",
 				"contentWithoutTask": "Tapşırıqda vaxtın izlənməsi başladı"
 			},
+			"time_off_member_away": {
+				"content": "Away {{range}}",
+				"title": "{{userName}} has time off"
+			},
+			"time_off_approved": {
+				"content_one": "{{deciderName}} approved {{range}} ({{count}} working day)",
+				"content_other": "{{deciderName}} approved {{range}} ({{count}} working days)",
+				"title": "Your time off was approved"
+			},
+			"time_off_declined": {
+				"content_one": "{{deciderName}} declined {{range}} ({{count}} working day)",
+				"content_other": "{{deciderName}} declined {{range}} ({{count}} working days)",
+				"title": "Your time off was declined"
+			},
+			"time_off_requested": {
+				"content_one": "{{range}}, {{count}} working day",
+				"content_other": "{{range}}, {{count}} working days",
+				"title": "{{requesterName}} requested time off"
+			},
+			"time_off_holiday_calendar_approved": {
+				"content": "{{deciderName}} approved your public holiday calendar change",
+				"title": "Your public holiday change was approved"
+			},
+			"time_off_holiday_calendar_declined": {
+				"content": "{{deciderName}} declined your public holiday calendar change",
+				"title": "Your public holiday change was declined"
+			},
+			"time_off_holiday_calendar_requested": {
+				"content": "A public holiday calendar change is waiting for your review",
+				"title": "{{requesterName}} asked to change their public holidays"
+			},
 			"task_triage_new": {
 				"title": "Baxılacaq yeni iş",
 				"content": "“{{taskTitle}}” triajda gözləyir"
@@ -2924,7 +3000,18 @@
 			"readCleared": "Oxunmuş bildirişlər silindi",
 			"featureLoadError": "This feature couldn’t be loaded.",
 			"featureUnavailable": "This feature is no longer available.",
-			"openFeature": "Open feature"
+			"openFeature": "Open feature",
+			"openTimeOff": "Open time off",
+			"timeOff": {
+				"approvedBy": "Approved by",
+				"declinedBy": "Declined by",
+				"hintDecided": "Your requests and balance are on the My time off tab.",
+				"hintMemberAway": "See who else is away on the Team tab.",
+				"hintRequested": "Approve or decline it on the Approvals tab.",
+				"member": "Member",
+				"requestedBy": "Requested by",
+				"hintHolidayCalendarDecided": "Your public holidays are on the My time off tab."
+			}
 		}
 	},
 	"activity": {
@@ -3470,7 +3557,14 @@
 				"taskAriaLabelMovable": "{{title}}: open details, or drag to move or change milestone"
 			},
 			"taskAriaLabelGroupedMovable": "{{title}}: open details, or drag to move or change assignee",
-			"taskAriaLabelMovable": "{{title}}: open details or drag to move"
+			"taskAriaLabelMovable": "{{title}}: open details or drag to move",
+			"away": {
+				"blockedHint": "{{name}} is away on {{date}}",
+				"laneSummary": "{{name}} is away: {{dates}}.",
+				"loadError": "Couldn't load who is away.",
+				"note": "{{name}} is away {{dates}}.",
+				"relatedRefused": "{{title}} would start or be due on {{date}}, when {{name}} is away, so the tasks stay where they were."
+			}
 		},
 		"delete": {
 			"title": "Tapşırıq silinsin?",
@@ -3674,7 +3768,9 @@
 			"pickDate": "Tarix seç",
 			"startsOn": "Başlayır: {{date}}",
 			"beforeStart": "{{date}} başlama tarixindən əvvəldir",
-			"afterDue": "{{date}} son tarixdən sonradır"
+			"afterDue": "{{date}} son tarixdən sonradır",
+			"assigneeAway": "{{name}} is away on {{date}}",
+			"awayHint": "Struck-through days: {{name}} is away"
 		},
 		"features": {
 			"badge": "İmkan",
@@ -4296,6 +4392,13 @@
 				"overview": "Overview"
 			}
 		},
+		"assigneeAway": {
+			"bulk_one": "{{title}} would start or be due on a day its assignee is away.",
+			"bulk_other": "{{count}} tasks would start or be due on a day their assignee is away: {{titles}}",
+			"onDay": "{{name}} is away on {{date}}. Tasks can't start or be due on a day their assignee is away.",
+			"onDays": "The assignee is away on {{dates}}. Tasks can't start or be due on a day their assignee is away.",
+			"title": "Assignee is away"
+		},
 		"triage": {
 			"title": "Triaj",
 			"pageTitle": "{{name}} triajı",
@@ -4770,7 +4873,16 @@
 				"listWorkspaceActivity": "Workspace activity",
 				"listWorkspaceLabels": "Workspace labels",
 				"listWorkspaceMembers": "Workspace members",
-				"search": "Workspace search"
+				"search": "Workspace search",
+				"getHolidayCalendar": "Public holiday calendar",
+				"getTimeOffBalance": "Time off balance",
+				"getTimeOffRequest": "Time off request",
+				"listHolidayCalendarRequests": "Holiday calendar requests",
+				"listHolidayCountries": "Holiday calendar countries",
+				"listPendingTimeOffRequests": "Time off awaiting approval",
+				"listTimeOff": "Who is away",
+				"listTimeOffBalances": "Time off balances",
+				"listTimeOffRequests": "Time off requests"
 			},
 			"warning": {
 				"keyRejected": "OpenRouter rejected the workspace's key, so answers may fail.",
@@ -4857,6 +4969,252 @@
 			"updateSuccess": "Project access updated",
 			"archived": "Archived",
 			"allProjectsUnavailable": "Your own access is limited, so you can only give access to selected projects."
+		},
+		"timeOff": {
+			"approvals": {
+				"alreadyDecided": "This request was already decided or cancelled.",
+				"approve": "Approve",
+				"approved": "Approved {{name}}'s time off",
+				"approveFor": "Approve {{name}}'s time off, {{range}}",
+				"changed": "This request changed since you opened it. Review it again before deciding.",
+				"decline": "Decline",
+				"declined": "Declined {{name}}'s time off",
+				"declineFor": "Decline {{name}}'s time off, {{range}}",
+				"empty": "No requests waiting",
+				"emptyHint": "New time-off requests and holiday calendar changes show up here for you to approve or decline.",
+				"error": "Couldn't save the decision.",
+				"hint": "Oldest first. Approved days count against the member's yearly allowance for that type.",
+				"loadError": "Couldn't load the requests waiting for approval.",
+				"overAllowance_one": "{{count}} day over the {{year}} allowance",
+				"overAllowance_other": "{{count}} days over the {{year}} allowance",
+				"tabLabel_one": "Approvals, {{count}} waiting",
+				"tabLabel_other": "Approvals, {{count}} waiting",
+				"title": "Waiting for approval",
+				"approveCalendarFor": "Approve {{name}}'s holiday calendar change",
+				"calendarApproved": "Approved {{name}}'s holiday calendar change",
+				"calendarChange": "From {{from}} to {{to}}",
+				"calendarDeclined": "Declined {{name}}'s holiday calendar change",
+				"calendarHint": "Oldest first. Approving a change replaces the member's public holidays.",
+				"calendarTitle": "Public holiday calendars",
+				"calendarUnknown": "That holiday calendar is no longer available. Decline the request instead.",
+				"declineCalendarFor": "Decline {{name}}'s holiday calendar change",
+				"requestedOn": "Requested {{date}}"
+			},
+			"away": {
+				"until": "Away until {{date}}"
+			},
+			"balance": {
+				"left_one": "{{count}} day left",
+				"left_other": "{{count}} days left",
+				"loadError": "Couldn't load your balance.",
+				"meterLabel": "{{type}}: {{used}} of {{allowance}} days used",
+				"over_one": "{{count}} day over",
+				"over_other": "{{count}} days over",
+				"override": "Set individually for you",
+				"pending": "Pending",
+				"pendingCount_one": "{{count}} pending",
+				"pendingCount_other": "{{count}} pending",
+				"remaining": "Remaining",
+				"title": "{{year}} balance",
+				"used": "Used",
+				"usedOf": "{{used}} of {{allowance}}"
+			},
+			"balances": {
+				"allowance": "Allowance",
+				"defaultPlaceholder": "{{count}} (default)",
+				"hint": "Allowances apply to every year. Used, pending and remaining days are for the year and type shown.",
+				"invalid": "Enter a whole number from 0 to 366.",
+				"loadError": "Couldn't load balances.",
+				"member": "Member",
+				"overrideCleared": "{{type}}: {{name}} is back on the default allowance",
+				"overrideLabel": "{{type}} allowance for {{name}}. Leave empty to use the default.",
+				"overrideSaved": "{{type}}: allowance for {{name}} saved",
+				"publicHolidayHint": "Weekday holidays from a member's holiday calendar count as used public holidays.",
+				"saveError": "Couldn't save the allowance.",
+				"title": "Balances in {{year}}",
+				"typeLabel": "Allowance type",
+				"useDefault": "Use default",
+				"useDefaultFor": "{{type}}: use the default allowance for {{name}}",
+				"defaultsInSettings": "Default allowances are set in <link>workspace settings</link>."
+			},
+			"cancelDialog": {
+				"confirm": "Cancel time off",
+				"description": "{{range}} ({{days}}) will be cancelled and kept in the history. The days can be requested again later.",
+				"descriptionApproved": "{{range}} ({{days}}) is approved. Cancelling gives the days back to the balance and frees them for planning.",
+				"error": "Couldn't cancel the time off.",
+				"keep": "Keep it",
+				"success": "Time off cancelled",
+				"title": "Cancel this time off?"
+			},
+			"days_one": "{{count}} day",
+			"days_other": "{{count}} days",
+			"details": {
+				"cancel": "Cancel time off",
+				"days": "Working days",
+				"edit": "Edit",
+				"note": "Note",
+				"private": "Only {{name}} and approvers see the details.",
+				"status": "Status",
+				"type": "Type"
+			},
+			"dialog": {
+				"beforeFirstDay": "{{date}} is before the first day",
+				"createError": "Couldn't request time off.",
+				"createSuccess": "Time off requested",
+				"createTitle": "Request time off",
+				"description": "Requests stay pending until an approver decides. Each type has its own yearly allowance.",
+				"descriptionApproved": "This time off is approved and stays approved after your changes.",
+				"editTitle": "Edit time off",
+				"endLabel": "Last day",
+				"me": "Me",
+				"memberLabel": "For",
+				"memberPlaceholder": "Choose a member",
+				"noteHint": "Only the person away and approvers see the note.",
+				"noteLabel": "Note",
+				"notePlaceholder": "Optional",
+				"onOrAfter": "On or after {{date}}",
+				"outsideWindow": "{{date}} is outside the dates you can request",
+				"pickDate": "Pick a day",
+				"recordSuccess": "Time off added",
+				"save": "Save changes",
+				"startLabel": "First day",
+				"submit": "Send request",
+				"typeLabel": "Type",
+				"updateError": "Couldn't update the time off.",
+				"updateSuccess": "Time off updated"
+			},
+			"errors": {
+				"changed": "This request changed since you opened it. Review it again.",
+				"holidayCalendarUnknown": "That holiday calendar isn't available. Pick another country or region.",
+				"noWeekdays": "Pick a range with at least one working day. Weekends and public holidays don't count.",
+				"overlap": "These days overlap another request. Pick other days or edit that request.",
+				"range": "These days are outside the dates you can request.",
+				"started": "This time off has started. Ask an approver to cancel it.",
+				"status": "This request was already decided. Close this and check its status."
+			},
+			"holidays": {
+				"calendarHint": "These holidays count as approved time off, without requests. Weekday ones use your public holiday allowance.",
+				"calendarName": "{{country}} · {{region}}",
+				"change": "Change",
+				"changeLabel": "Change holiday calendar",
+				"cleared": "Holiday calendar removed",
+				"countryLabel": "Country",
+				"empty": "No public holidays in {{year}}.",
+				"listLabel": "Public holidays in {{year}}",
+				"loadError": "Couldn't load your public holidays.",
+				"loadingOptions": "Loading…",
+				"noCalendar": "No calendar",
+				"noCalendarHint": "Without a calendar, add public holidays as time off of the type Public holiday.",
+				"noCountryResults": "No country found.",
+				"noRegionResults": "No region found.",
+				"optionsError": "Couldn't load the list.",
+				"regionLabel": "Region",
+				"save": "Save",
+				"saved": "Holiday calendar saved",
+				"saveError": "Couldn't save the holiday calendar.",
+				"searchCountry": "Search countries",
+				"searchRegion": "Search regions",
+				"title": "Public holidays",
+				"weekend": "On a weekend, doesn't count",
+				"wholeCountry": "Whole country",
+				"approvalNote": "An approver reviews this change first. Your current calendar stays until then.",
+				"pending": "Waiting for approval: {{calendar}}",
+				"pendingHint": "Your current calendar applies until an approver decides.",
+				"reminder": "Set up your public holidays by {{date}}",
+				"reminderHint": "Pick your country under Public holidays. Your first choice applies right away; later changes need approval.",
+				"reminderPassed": "The deadline for public holidays has passed",
+				"reminderPassedHint": "Choosing a calendar now needs approval.",
+				"requestChange": "Request change",
+				"requestChangeLabel": "Request change to holiday calendar",
+				"requestSent": "Holiday calendar change sent for approval",
+				"sendForApproval": "Send for approval",
+				"withdraw": "Withdraw",
+				"withdrawDecided": "This change was already decided.",
+				"withdrawError": "Couldn't withdraw the change.",
+				"withdrawLabel": "Withdraw holiday calendar change",
+				"withdrawn": "Holiday calendar change withdrawn",
+				"reminderApproverHint": "Pick your country under Public holidays. It applies right away."
+			},
+			"loadError": "Couldn't load time off.",
+			"loading": "Loading time off",
+			"monthNav": {
+				"label": "Month"
+			},
+			"noAccess": {
+				"description": "Your role doesn't include time off in this workspace. Ask a workspace admin if you need it.",
+				"title": "No access to time off"
+			},
+			"pageTitle": "Time off",
+			"request": "Request time off",
+			"requests": {
+				"actionsFor": "Actions for {{range}}",
+				"cancel": "Cancel time off",
+				"edit": "Edit",
+				"empty": "No time off in {{year}}",
+				"emptyHint": "Requests you make show up here with their status.",
+				"loadError": "Couldn't load your requests.",
+				"title": "Requests in {{year}}"
+			},
+			"status": {
+				"approved": "Approved",
+				"cancelled": "Cancelled",
+				"declined": "Declined",
+				"pending": "Pending"
+			},
+			"summary": {
+				"balanceUnavailable": "Couldn't load the balance.",
+				"checking": "Checking the balance…",
+				"over_one": "{{type}}, {{year}}: {{count}} day over the allowance",
+				"over_other": "{{type}}, {{year}}: {{count}} days over the allowance",
+				"overDescription": "You can still send it. An approver decides, and the days count once approved.",
+				"overTitle": "Over the allowance",
+				"pickDates": "Pick the first and last day to see how many working days this uses.",
+				"remaining_one": "{{type}}, {{year}}: {{count}} day left if approved",
+				"remaining_other": "{{type}}, {{year}}: {{count}} days left if approved",
+				"weekdays_one": "{{count}} working day",
+				"weekdays_other": "{{count}} working days"
+			},
+			"timeline": {
+				"away": "Away",
+				"barLabel": "{{name}}: away {{range}}",
+				"barLabelPrivate": "{{name}}: {{type}}, {{status}}, {{range}}, {{days}}",
+				"clippedEnd": "Continues into the next month",
+				"clippedStart": "Continues from the previous month",
+				"empty": "Nobody is away this month.",
+				"holidayLabel": "{{name}}: public holiday, {{holiday}}, {{date}}",
+				"holidayNamed": "Public holiday: {{name}}",
+				"label": "Team time off, {{month}}",
+				"member": "Member",
+				"scrollHint": "Scroll sideways to see every day of the month. Select a bar for details."
+			},
+			"types": {
+				"publicHoliday": "Public holiday",
+				"sick": "Sick day",
+				"vacation": "Vacation"
+			},
+			"validation": {
+				"dateRequired": "Pick a day.",
+				"endBeforeStart": "The last day can't be before the first day.",
+				"memberRequired": "Choose a member.",
+				"noWeekdays": "Pick a range with at least one working day. Weekends and public holidays don't count.",
+				"outOfRange": "Pick days between {{start}} and {{end}}.",
+				"tooLong": "Time off can span at most 366 days."
+			},
+			"views": {
+				"approvals": "Approvals",
+				"balances": "Balances",
+				"label": "Time off views",
+				"mine": "My time off",
+				"team": "Team"
+			},
+			"weekdays_one": "{{count}} working day",
+			"weekdays_other": "{{count}} working days",
+			"yearNav": {
+				"label": "Year",
+				"next": "Next year",
+				"previous": "Previous year"
+			},
+			"you": "(you)"
 		}
 	},
 	"publicProject": {

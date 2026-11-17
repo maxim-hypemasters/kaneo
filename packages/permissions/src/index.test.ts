@@ -44,6 +44,7 @@ describe("@kaneo/permissions statement surface", () => {
       "delete",
       "manage_settings",
     ]);
+    expect(statement.time_off).toEqual(["create", "read", "approve"]);
     // The organization plugin's defaults must still be present so we can
     // reuse them in member/admin/owner roles without breaking better-auth
     // checks like organization:update.
@@ -67,6 +68,13 @@ describe("built-in role privileges", () => {
     expect(viewer.statements.bug).toEqual(["read"]);
     expect(viewer.statements.feature).toEqual(["read"]);
     expect(viewer.statements.milestone).toEqual(["read"]);
+    expect(viewer.statements.time_off).toEqual(["read"]);
+  });
+
+  it("lets members request time off and only admins and owners approve it", () => {
+    expect(member.statements.time_off).toEqual(["create", "read"]);
+    expect(admin.statements.time_off).toEqual(["create", "read", "approve"]);
+    expect(owner.statements.time_off).toEqual(["create", "read", "approve"]);
   });
 
   it("gives bugs, features and milestones the same defaults as tasks", () => {

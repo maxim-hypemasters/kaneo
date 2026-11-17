@@ -7,6 +7,7 @@ import {
   it,
   vi,
 } from "vite-plus/test";
+import { timeOffYearKey } from "./queries/time-off/time-off-keys";
 import { useUserWebSocket } from "./use-user-websocket";
 
 const { client, auth, navigate, evictProject } = vi.hoisted(() => ({
@@ -332,6 +333,56 @@ describe("user WebSocket lifecycle", () => {
     expect(client.removeQueries).toHaveBeenCalledOnce();
     expect(auth.notify).toHaveBeenCalledWith("$listOrg");
     expect(auth.notify).toHaveBeenCalledWith("$activeOrgSignal");
+  });
+
+  it("refetches the workspace's time off on TIME_OFF_UPDATED", () => {
+    renderHook(useUserWebSocket);
+    act(() =>
+      TestSocket.instances[0].onmessage?.({
+        data: JSON.stringify({
+          type: "TIME_OFF_UPDATED",
+          workspaceId: "workspace",
+        }),
+      }),
+    );
+    expect(client.invalidateQueries).toHaveBeenCalledOnce();
+    expect(client.invalidateQueries).toHaveBeenCalledWith(
+      { queryKey: ["time-off", "workspace"] },
+      { cancelRefetch: false },
+    );
+    // That prefix covers the Gantt's and the date pickers' years too.
+    const [[{ queryKey }]] = client.invalidateQueries.mock.calls as [
+      { queryKey: readonly unknown[] },
+      unknown,
+    ][];
+    const yearKey = timeOffYearKey("workspace", 2027, "en");
+    expect(yearKey.slice(0, queryKey.length)).toEqual(queryKey);
+  });
+
+  it("ignores TIME_OFF_UPDATED without a workspace", () => {
+    renderHook(useUserWebSocket);
+    act(() =>
+      TestSocket.instances[0].onmessage?.({
+        data: JSON.stringify({ type: "TIME_OFF_UPDATED" }),
+      }),
+    );
+    expect(client.invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it("refetches all time off after a reconnect snapshot", () => {
+    renderHook(useUserWebSocket);
+    act(() =>
+      TestSocket.instances[0].onmessage?.({
+        data: JSON.stringify({
+          type: "WORKSPACE_ACCESS_SYNC",
+          workspaceIds: ["workspace"],
+        }),
+      }),
+    );
+    expect(client.invalidateQueries).toHaveBeenCalledWith(
+      { queryKey: ["time-off"] },
+      { cancelRefetch: false },
+    );
   });
 });
 

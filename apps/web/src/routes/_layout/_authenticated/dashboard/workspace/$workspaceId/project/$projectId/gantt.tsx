@@ -28,6 +28,9 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import ProjectLayout from "@/components/common/project-layout";
+import { GanttAwayBands } from "@/components/gantt/away/gantt-away-bands";
+import { GanttAwayLoadError } from "@/components/gantt/away/gantt-away-load-error";
+import { useGanttAway } from "@/components/gantt/away/use-gantt-away";
 import { GanttMilestoneLaneHeader } from "@/components/gantt/gantt-milestone-lane-header";
 import { GanttItemCount } from "@/components/gantt/gantt-item-count";
 import { GanttEntityFilterControl } from "@/components/gantt/gantt-entity-filter-control";
@@ -99,6 +102,7 @@ import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
 import { releaseSummaries } from "@/lib/releases/release-summaries";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
+import { toast } from "@/lib/toast";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type { ReleaseSummary } from "@/types/release";
 import { useGetProjectSchedule } from "@/components/scheduling/use-project-schedule";
@@ -110,6 +114,7 @@ type GanttSearchParams = FeatureWorkspaceSearch & {
 const NO_COLLAPSED_LANES: ReadonlySet<string> = new Set();
 const NO_RELEASES: ReleaseSummary[] = [];
 const NO_MILESTONES: GanttMilestoneRecord[] = [];
+const NO_MEMBERS: { id: string; name: string }[] = [];
 const ALL_ENTITIES = ["milestone", "task", "bug"];
 
 type TaskAssignee = { name: string | null; image: string | null };
@@ -331,12 +336,40 @@ function RouteComponent() {
   // Rows hold the order the chart opened in while bars are moved or
   // resized, here or by anyone else, until the page is reloaded.
   const parsedTasks = useHeldRowOrder(datedTasks, rangeReady);
+  // The rendered days follow the scroll: the span grows as either edge comes
+  // near, and jumps re-centre it on dates outside it.
+  const {
+    timeline,
+    viewport,
+    scrollToDate,
+    scrollByPage,
+    dayColumnWidthRem,
+    zoomAt,
+  } = useGanttRange({
+    projectId,
+    tasks: parsedTasks,
+    extraSpans: openingSpans,
+    ready: rangeReady,
+    showEmptyTimeline: groupByMilestone && milestones.length > 0,
+    weekStartsOn,
+    dayColumnWidthRem: defaultDayColumnWidthRem,
+    railWidthRem,
+    scrollElement,
+  });
+  // Members' days away: bands, marks, and the check that keeps an edit the
+  // server would refuse from being sent.
+  const away = useGanttAway(
+    workspaceId,
+    timeline ?? null,
+    projectMembers ?? NO_MEMBERS,
+  );
   const { pending: pendingEdits, commit } = useGanttTaskCommits(
     parsedTasks,
     // Bars are placed by the applied schedule, or by the tasks before one.
     scheduleQuery.data && !scheduleQuery.data.legacy
       ? scheduleQuery.dataUpdatedAt
       : tasksUpdatedAt,
+    { refuse: away.refusal },
   );
   const { data: relations } = useGetProjectTaskRelations({
     projectId,
@@ -666,6 +699,12 @@ function RouteComponent() {
         ? (task.assigneeImage ?? null)
         : (targetLane?.image ?? null),
     };
+    // An edit that can't be saved is explained by commit, with no question
+    // about its dependencies first.
+    if (away.refusal(task, edit)) {
+      void commit(task, edit, assignee);
+      return;
+    }
     const changes = classifyEdit(task, edit);
     // A resized span is no longer planned to the minute, so its dependencies
     // are judged by the day, as they will be once it is saved.
@@ -700,24 +739,41 @@ function RouteComponent() {
   const resolveHeldEdit = (moveRelated: boolean) => {
     setHeldEdit(null);
     if (!heldTask || !heldDraft) return;
+    const relatedMoves = moveRelated
+      ? (heldPlan?.moves ?? []).flatMap((move) => {
+          const related = savedTasksById.get(move.taskId);
+          if (!related) return [];
+          const edit: GanttTaskEdit = {
+            start: move.to.start,
+            end: move.to.end,
+            userId: related.userId || null,
+            featureId: related.featureId ?? null,
+            milestoneId: related.milestoneId ?? null,
+          };
+          return [{ related, edit, refusal: away.refusal(related, edit) }];
+        })
+      : [];
+    // A related task that can't follow keeps the whole change back (a resize
+    // already saved stays), so the dependencies aren't left half moved.
+    const refused = relatedMoves.find((move) => move.refusal);
+    if (refused?.refusal) {
+      toast.error(t("tasks:assigneeAway.title"), {
+        description: t("tasks:gantt.away.relatedRefused", {
+          ...refused.refusal,
+          title: refused.related.title,
+        }),
+      });
+      return;
+    }
     const saved =
       heldEdit?.saved ?? commit(heldTask, heldDraft.edit, heldDraft.assignee);
-    if (!moveRelated) return;
-    for (const move of heldPlan?.moves ?? []) {
-      const related = savedTasksById.get(move.taskId);
-      if (!related) continue;
+    for (const { related, edit } of relatedMoves) {
       // Only once the moved task's dates have saved (not its milestone move):
       // if they fail, the tasks moved to make room for it stay where they
       // were.
       commit(
         related,
-        {
-          start: move.to.start,
-          end: move.to.end,
-          userId: related.userId || null,
-          featureId: related.featureId ?? null,
-          milestoneId: related.milestoneId ?? null,
-        },
+        edit,
         {
           name: related.assigneeName,
           image: related.assigneeImage ?? null,
@@ -757,26 +813,6 @@ function RouteComponent() {
       replace: true,
     });
 
-  // The rendered days follow the scroll: the span grows as either edge comes
-  // near, and jumps re-centre it on dates outside it.
-  const {
-    timeline,
-    viewport,
-    scrollToDate,
-    scrollByPage,
-    dayColumnWidthRem,
-    zoomAt,
-  } = useGanttRange({
-    projectId,
-    tasks: parsedTasks,
-    extraSpans: openingSpans,
-    ready: rangeReady,
-    showEmptyTimeline: groupByMilestone && milestones.length > 0,
-    weekStartsOn,
-    dayColumnWidthRem: defaultDayColumnWidthRem,
-    railWidthRem,
-    scrollElement,
-  });
   useWheelZoomsTime(scrollElement, {
     onZoom: zoomAt,
     isZoomBlocked: () => Boolean(draggingTaskId || laneDragState),
@@ -841,6 +877,7 @@ function RouteComponent() {
         onCommit={(edit) => commitTaskEdit(task, edit)}
         onDragChange={dragChangeFor(task.id)}
         dependencyNote={dependencyNote(task.id)}
+        away={away.barFor(task)}
       />
     );
 
@@ -871,6 +908,7 @@ function RouteComponent() {
         onCommit={commitTaskEdit}
         onDragChange={dragChangeFor}
         dependencyNote={dependencyNote}
+        awayFor={away.barFor}
       />
     ) : (
       tasks.map((task) => renderTaskRow(task, options))
@@ -1059,6 +1097,7 @@ function RouteComponent() {
             {t("tasks:milestones.loading")}
           </p>
         )}
+        {away.isError && <GanttAwayLoadError onRetry={away.retry} />}
         {milestoneQuery.isError && (
           <div
             role="status"
@@ -1338,6 +1377,16 @@ function RouteComponent() {
                                   ),
                                   { showAssignee: false, laneDrag },
                                 )}
+                            {/* Last, so the bands paint over the rows but
+                                under the bars. */}
+                            {lane.userId ? (
+                              <GanttAwayBands
+                                runs={away.runsFor(lane.userId)}
+                                name={lane.name}
+                                timeline={timeline}
+                                left={taskRailWidth}
+                              />
+                            ) : null}
                           </GanttLaneGroup>
                         );
                       })

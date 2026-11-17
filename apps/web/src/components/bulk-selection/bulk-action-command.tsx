@@ -19,6 +19,8 @@ export type BulkCommandItem = {
   value: string;
   label: string;
   icon?: ReactNode;
+  // Extra text after the label, such as "Away until Nov 20".
+  hint?: string;
   onRun: () => void;
 };
 
@@ -66,6 +68,11 @@ export function BulkActionCommand({
                         >
                           <span className="shrink-0">{item.icon}</span>
                           <span className="flex-1 text-sm">{item.label}</span>
+                          {item.hint && (
+                            <span className="shrink-0 text-muted-foreground text-xs">
+                              {item.hint}
+                            </span>
+                          )}
                         </CommandItem>
                       )}
                     </CommandCollection>

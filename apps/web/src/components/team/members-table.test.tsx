@@ -120,6 +120,16 @@ vi.mock("../providers/auth-provider/hooks/use-auth", () => ({
   useAuth: () => ({ user: { id: "current-user" } }),
 }));
 
+const awayLabels = vi.fn(
+  (_workspaceId: string, _options: { enabled: boolean }) =>
+    new Map<string, string>(),
+);
+
+vi.mock("@/components/time-off/away/use-away-labels", () => ({
+  useAwayLabels: (workspaceId: string, options: { enabled: boolean }) =>
+    awayLabels(workspaceId, options),
+}));
+
 beforeEach(() => {
   canInviteUsers.mockReturnValue(true);
 });
@@ -330,5 +340,43 @@ describe("MembersTable project access", () => {
       await screen.findByText("team:projectAccess.selectAtLeastOne"),
     ).toBeVisible();
     expect(updateProjectAccess).not.toHaveBeenCalled();
+  });
+});
+
+describe("MembersTable away badges", () => {
+  it("marks members who are away today on their avatar", () => {
+    awayLabels.mockReturnValue(
+      new Map([["restricted-user", "Away until Nov 20"]]),
+    );
+
+    render(
+      <MembersTable
+        workspaceId="workspace-1"
+        invitations={[]}
+        users={[
+          makeMember("restricted-user", "member", "Riley Restricted"),
+          makeMember("open-user", "member", "Avery All"),
+        ]}
+      />,
+    );
+
+    const badges = screen.getAllByRole("img", { name: "Away until Nov 20" });
+    expect(badges).toHaveLength(1);
+    expect(badges[0]).toHaveAttribute("title", "Away until Nov 20");
+    expect(awayLabels).toHaveBeenCalledWith("workspace-1", { enabled: true });
+  });
+
+  it("shows no badge when nobody is away", () => {
+    awayLabels.mockReturnValue(new Map());
+
+    render(
+      <MembersTable
+        workspaceId="workspace-1"
+        invitations={[]}
+        users={[makeMember("open-user", "member", "Avery All")]}
+      />,
+    );
+
+    expect(screen.queryByRole("img", { name: /Away until/ })).toBeNull();
   });
 });

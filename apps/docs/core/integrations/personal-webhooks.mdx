@@ -29,6 +29,24 @@ Kaneo sends a JSON POST with these fields:
 
 A notification needs a resolvable workspace context for external delivery. It must also pass the active workspace rule and project selection.
 
+### Time-off notifications
+
+[Time off](/core/functional/time-off) sends seven notification types:
+
+| `notification.type` | Sent to | `eventData` |
+| --- | --- | --- |
+| `time_off_requested` | Approvers, except the person who created the request | `workspaceId`, `timeOffId`, `requesterId`, `requesterName`, `startDate`, `endDate`, `days` |
+| `time_off_approved` | The person away, unless they approved it themselves | `workspaceId`, `timeOffId`, `startDate`, `endDate`, `days`, `deciderId`, `deciderName` |
+| `time_off_declined` | The person away, unless they declined it themselves | Same as `time_off_approved` |
+| `time_off_member_away` | Members who can view time off, except the person away and the approver, when the time off hasn't ended | `workspaceId`, `timeOffId`, `userId`, `userName`, `startDate`, `endDate` |
+| `time_off_holiday_calendar_requested` | Approvers, except the member, when a member's [holiday calendar change](/core/functional/time-off#change-your-calendar) starts waiting for approval | `workspaceId`, `requestId`, `requesterId`, `requesterName` |
+| `time_off_holiday_calendar_approved` | The member, unless they approved it themselves | `workspaceId`, `requestId`, `deciderId`, `deciderName` |
+| `time_off_holiday_calendar_declined` | The member, unless they declined it themselves | Same as `time_off_holiday_calendar_approved` |
+
+Dates are inclusive `YYYY-MM-DD` days, and `days` counts the working days: Monday to Friday, except the person's [public holidays](/core/functional/time-off#public-holidays). The event data never includes the type of time off, its note, or a holiday calendar's country or region. `resourceType` is `workspace` and `resourceId` is the workspace ID; `project` and `task` are `null`.
+
+Time-off notifications ignore the project selection and follow only the workspace rule, so a rule set to selected projects still forwards them. **Team time off** in your event preferences turns off `time_off_member_away`; the other six can't be turned off.
+
 ## Verify requests
 
 When a signing secret is set, Kaneo sends `X-Kaneo-Signature`: the lowercase hexadecimal HMAC-SHA256 digest of the exact JSON body. Verify the raw body before parsing it, using a constant-time comparison. Use the notification ID to avoid processing the same notification twice.

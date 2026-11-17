@@ -8,7 +8,7 @@ Kaneo supports the Model Context Protocol (MCP) in two ways:
 1. **Built-in HTTP endpoint**: every Kaneo instance exposes `/api/mcp` out of the box. No extra setup, no extra process.
 2. **Stdio package** ([`@kaneo/mcp`](https://www.npmjs.com/package/@kaneo/mcp)): the official Kaneo MCP package on npm, a local stdio server for clients that prefer stdio transport.
 
-Both offer the same tools for managing workspaces, projects, project pages, tasks, Features and their documents, milestones, releases, comments, and labels.
+Both offer the same tools for managing workspaces, projects, project pages, tasks, Features and their documents, milestones, releases, time off, comments, and labels.
 
 To work with Kaneo from a terminal or a shell script instead, use the [Kaneo CLI](/cli).
 
@@ -103,7 +103,7 @@ On the first tool call that needs Kaneo access, the MCP server:
 
 ## Available tools
 
-Both the HTTP endpoint and stdio package expose the same 83 tools:
+Both the HTTP endpoint and stdio package expose the same 103 tools:
 
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
 - My work: `list_my_tasks`, `list_workspace_activity`
@@ -118,6 +118,8 @@ Both the HTTP endpoint and stdio package expose the same 83 tools:
 - Milestones: `list_project_milestones`, `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`, `set_task_milestone`
 - Releases: `list_releases`, `get_release`, `list_release_milestones`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
 - Time entries: `list_task_time_entries`, `get_time_entry`, `create_time_entry`, `update_time_entry`
+- Time off: `list_time_off`, `list_time_off_requests`, `list_pending_time_off_requests`, `get_time_off_request`, `request_time_off`, `update_time_off_request`, `cancel_time_off_request`, `approve_time_off_request`, `decline_time_off_request`, `get_time_off_balance`, `list_time_off_balances`, `set_time_off_allowance`
+- Public holiday calendars: `list_holiday_countries`, `get_holiday_calendar`, `set_holiday_calendar`, `list_holiday_calendar_requests`, `approve_holiday_calendar_request`, `decline_holiday_calendar_request`, `cancel_holiday_calendar_request`, `set_holiday_calendar_deadline`
 - Comments: `list_task_comments`, `create_task_comment`, `update_task_comment`, `delete_task_comment`
 - Labels: `list_workspace_labels`, `create_label`, `attach_label_to_task`, `detach_label_from_task`, `delete_label`
 - Task relations: `create_task_relation`, `get_task_relations`, `delete_task_relation`
@@ -135,6 +137,8 @@ slugs it returns are exactly the values `create_task` and `update_task_status`
 accept. Likewise `list_workspace_members` resolves the user IDs the assignee
 tools expect. Time entries have no delete endpoint on the API, so there is no
 `delete_time_entry` tool.
+
+`update_task`, `update_task_assignee` and `update_task_due_date` return 409 `TASK_ASSIGNEE_AWAY` when a start or due date they set falls on a day the assignee is away: approved [time off](/core/functional/time-off#task-dates) or a public holiday of their calendar. Only the dates a call changes are checked, or both when the work goes to someone else; pending requests never block, and planned work keeps its planned assignee until the next Apply. Dates are read as days in the project's planning timezone, or UTC when it has none. The message names the dates, never the type of time off.
 
 ### Features
 
@@ -169,6 +173,27 @@ Releases hold milestones and Tasks/Bugs. Their summaries count Task/Bug executio
 `set_task_release` changes a Task/Bug's release. New work inherits its milestone's release only when omitted; an explicit release or null wins. Assigning existing unassigned work inherits the milestone release, while existing release choices remain. Updating a milestone's release moves only followers matching its old release, including null. Clearing/deleting membership preserves releases.
 
 `move_unfinished_release_items` handles unfinished milestones and leaf work independently, leaving completed work in its original release. Release creation/edit requires project update permission; deletion and moving unfinished items also require update permission on tasks, bugs and milestones.
+
+### Time off
+
+[Time off](/core/functional/time-off) is whole days, start and end inclusive, as `YYYY-MM-DD`. The type is `vacation`, `sick` or `public_holiday`. Days count as working days: Monday to Friday, except the member's calendar public holidays. The server's "today" is the UTC date.
+
+- `list_time_off` lists who is away from `from` to `to`, both included, in a window of at most 366 days, with members' calendar holidays under `holidays`. Other members' entries contain only `id`, `userId`, `startDate` and `endDate`, and their holidays only `userId` and `date`; type, note, status, balance and holiday names stay with the person away and approvers.
+- `request_time_off` always creates a pending request, an approver's own too. Pass `userId` to record time off for another current member. The dates need a working day (400 `TIME_OFF_NO_WEEKDAYS` otherwise), and overlapping the member's other pending or approved days returns 409 `TIME_OFF_OVERLAP`.
+- `update_time_off_request` changes the type, dates or note; `note: null` clears it. Approvers can also edit approved time off, which stays approved. `cancel_time_off_request` keeps the request as history; the person away can cancel approved time off only until its first day is over, by the UTC date (409 `TIME_OFF_STARTED` after).
+- `approve_time_off_request` and `decline_time_off_request` need the request's current `version`, so call `get_time_off_request` first. An edit since then returns 409 `TIME_OFF_CHANGED`, and a request that is no longer pending returns 409 `TIME_OFF_STATUS`.
+- `get_time_off_balance` and `list_time_off_balances` return one balance per type under `types`, each counting working days per January–December year against that type's own allowance, with no carry-over. Weekday holidays of the member's calendar also count as used `public_holiday` days. `list_time_off_balances` also returns `defaultAllowances`. Going over an allowance is allowed: check `remainingDays` in a balance, or `overAllowanceDays` on a pending request, which uses the request's own type.
+- `set_time_off_allowance` takes a `type`. Without `userId` it sets that type's workspace default (`vacation` 25, `sick` 10 and `public_holiday` 10 until set); with `userId` and a number it sets the member's override of that type, and with `userId` and `days: null` it clears it. An allowance applies to every year.
+- `list_holiday_countries` lists the countries a member can pick as their public holiday calendar; with `country`, it lists that country's regions instead.
+- `get_holiday_calendar` reads a member's calendar, or null, and its holidays in one year, weekends included. It also returns `calendarChosen`, `pendingRequest` (a change waiting for approval, with its `id` and `version`, or null), `holidayCalendarDeadline` and `nextChangeNeedsApproval`.
+- `set_holiday_calendar` sets a member's calendar to a `country` and optional `region`, or clears it with `country: null`. An unknown country or region returns 400 `TIME_OFF_HOLIDAY_CALENDAR_UNKNOWN`. A member's first choice, `country: null` included, applies at once on or before the workspace's [setup deadline](/core/functional/time-off#the-setup-deadline), a UTC day that counts, or at any time without one. Every later change by the member, and any choice after the deadline, returns `status: "pending"` with `pendingRequest`. A new request notifies approvers; sending another calendar while one waits updates that request and increases its `version` without notifying anyone. Changes by approvers, for themselves or another member, apply at once with `status: "applied"`, and applying the calendar a member asked for approves their request. Applied calendar holidays count as approved time off without requests, planned work skips them, and plans that include the member become outdated. Members can still request `public_holiday` time off for days the calendar leaves out, such as bank holidays.
+- `list_holiday_calendar_requests` lists current members' calendar changes waiting for approval, oldest first, each with the calendar asked for (null for no calendar) and `currentCalendar`. `approve_holiday_calendar_request` and `decline_holiday_calendar_request` take the `requestId` and the `version` you reviewed; a change by the member since then returns 409 `TIME_OFF_CHANGED`, and a request that is no longer pending returns 409 `TIME_OFF_STATUS`. Approving applies the calendar at once, or returns 400 `TIME_OFF_HOLIDAY_CALENDAR_UNKNOWN` if the holiday data no longer has it. The member is notified of either decision, unless they made it themselves.
+- `cancel_holiday_calendar_request` withdraws a waiting change, your own or, for approvers, anyone's; sending your current calendar again with `set_holiday_calendar` withdraws your own too. Nobody is notified.
+- `set_holiday_calendar_deadline` sets the workspace's setup deadline as `YYYY-MM-DD`, or removes it with `deadline: null`. Changes already waiting stay as they are.
+- Holiday calendar requests show the country and region only to the member and to approvers; notifications and live updates never carry them.
+- `list_holiday_countries`, `get_holiday_calendar`, `list_time_off`, `list_holiday_calendar_requests`, `approve_holiday_calendar_request` and `decline_holiday_calendar_request` take an optional `lang`, such as `de`, for holiday, country and region names.
+
+Viewing the team needs `time_off:read`. Listing holiday countries and reading your own calendar need any time-off permission. Requesting, editing or cancelling your own requests, setting your own holiday calendar, and withdrawing your own calendar change need `time_off:create`. Approving, declining, recording time off for others, reading other members' requests, balances and holiday calendars, setting allowances and the setup deadline, listing and deciding holiday calendar changes, and setting other members' holiday calendars need `time_off:approve` and workspace membership.
 
 ## Debugging
 

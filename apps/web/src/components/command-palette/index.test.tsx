@@ -20,6 +20,8 @@ const m = vi.hoisted(() => ({
   pathname: "/dashboard/workspace/workspace-1",
   navigate: vi.fn(),
   canManageReleases: true,
+  canReadTimeOff: true,
+  canApproveTimeOff: false,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -88,6 +90,13 @@ vi.mock("@/components/shared/modals/create-task-modal", () => ({
       />
     ) : null,
 }));
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({
+    canReadTimeOff: () => m.canReadTimeOff,
+    canRequestTimeOff: () => false,
+    canApproveTimeOff: () => m.canApproveTimeOff,
+  }),
+}));
 vi.mock("@/hooks/queries/config/use-get-config", () => ({
   default: () => ({ data: { disableWorkspaceCreation: false } }),
 }));
@@ -103,6 +112,8 @@ beforeEach(() => {
   m.pathname = "/dashboard/workspace/workspace-1";
   m.navigate.mockReset();
   m.canManageReleases = true;
+  m.canReadTimeOff = true;
+  m.canApproveTimeOff = false;
   Object.defineProperty(Element.prototype, "getAnimations", {
     configurable: true,
     value: () => [],
@@ -243,5 +254,37 @@ describe("CommandPalette releases", () => {
     expect(
       screen.queryByText("navigation:commandPalette.createRelease"),
     ).toBeNull();
+  });
+});
+
+describe("CommandPalette time off", () => {
+  it("goes to the workspace's time off", async () => {
+    await runCommand("navigation:commandPalette.timeOff");
+
+    expect(m.navigate).toHaveBeenCalledWith({
+      to: "/dashboard/workspace/$workspaceId/time-off",
+      params: { workspaceId: "workspace-1" },
+    });
+  });
+
+  it("shows time off to an approver without read access", async () => {
+    m.canReadTimeOff = false;
+    m.canApproveTimeOff = true;
+    await runCommand("navigation:commandPalette.timeOff");
+
+    expect(m.navigate).toHaveBeenCalledWith({
+      to: "/dashboard/workspace/$workspaceId/time-off",
+      params: { workspaceId: "workspace-1" },
+    });
+  });
+
+  it("hides time off without a time-off permission", () => {
+    m.canReadTimeOff = false;
+    render(<CommandPalette />);
+    act(() => m.shortcuts.get("openCommandMenu")?.());
+
+    expect(
+      screen.queryByText("navigation:commandPalette.timeOff"),
+    ).not.toBeInTheDocument();
   });
 });

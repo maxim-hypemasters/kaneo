@@ -5,8 +5,16 @@ import {
 } from "@kaneo/permissions";
 import type { PermissionMap } from "../../utils/role-permissions";
 
+// Time off belongs to members: an instance admin outside the workspace sees
+// the calendar but can't request or approve (see time-off/viewer.ts).
+const MEMBER_ONLY: readonly WorkspaceCapability[] = [
+  "requestTimeOff",
+  "approveTimeOff",
+];
+
 function getMyCapabilities(
   allows: (permissions: PermissionMap) => boolean,
+  isMember: boolean,
 ): Record<WorkspaceCapability, boolean> {
   const result = {} as Record<WorkspaceCapability, boolean>;
   for (const name of WORKSPACE_CAPABILITY_NAMES) {
@@ -16,7 +24,8 @@ function getMyCapabilities(
     )) {
       permissions[resource] = [...actions];
     }
-    result[name] = allows(permissions);
+    result[name] =
+      (isMember || !MEMBER_ONLY.includes(name)) && allows(permissions);
   }
   return result;
 }

@@ -6,6 +6,7 @@ import updateTaskAssignee from "@/fetchers/task/update-task-assignee";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import { invalidateReleaseLinks } from "@/lib/invalidate-release-links";
+import { taskSaveErrorMessage } from "@/lib/time-off/task-away-error";
 import type {
   ReleasePlanTask,
   ReleasePlanTaskInputPatch,
@@ -113,16 +114,18 @@ export function ReleasePlanTaskInputs({
       );
       return true;
     } catch (failure) {
-      const message =
-        failure instanceof Error
-          ? failure.message
-          : t(
-              change.field === "assignee"
-                ? "tasks:popover.assignee.updateError"
-                : change.field === "estimate"
-                  ? "tasks:estimate.updateError"
-                  : "tasks:popover.priority.updateError",
-            );
+      // A reassignment the assignee rule refused says which day is the
+      // problem, in the viewer's language.
+      const message = taskSaveErrorMessage(
+        failure,
+        t(
+          change.field === "assignee"
+            ? "tasks:popover.assignee.updateError"
+            : change.field === "estimate"
+              ? "tasks:estimate.updateError"
+              : "tasks:popover.priority.updateError",
+        ),
+      );
       setErrors((current) => ({ ...current, [change.field]: message }));
       return false;
     } finally {

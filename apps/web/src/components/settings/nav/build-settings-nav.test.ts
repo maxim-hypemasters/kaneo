@@ -13,6 +13,7 @@ function build(
     canImport: false,
     canManageSettings: false,
     hasAssistant: false,
+    canManageTimeOff: false,
     hasAdminAccess: false,
     projects: [],
     ...overrides,
@@ -44,10 +45,19 @@ describe("buildSettingsNav", () => {
     expect(links(build())).not.toContain(
       "/dashboard/settings/workspace/import",
     );
-    expect(links(build({ canImport: true, billingEnabled: true }))).toEqual([
+    expect(
+      links(
+        build({
+          canImport: true,
+          canManageTimeOff: true,
+          billingEnabled: true,
+        }),
+      ),
+    ).toEqual([
       "/dashboard/settings/workspace/general",
       "/dashboard/settings/workspace/roles",
       "/dashboard/settings/workspace/labels",
+      "/dashboard/settings/workspace/time-off",
       "/dashboard/settings/workspace/import",
       "/dashboard/settings/workspace/billing",
     ]);
@@ -81,6 +91,21 @@ describe("buildSettingsNav", () => {
       nav.workspace.links.find((link) => link.id === "workspace-assistant")
         ?.label,
     ).toBe("settings:assistantPage.title");
+  });
+
+  it("only offers time off settings to people who can approve time off", () => {
+    const links = (nav: ReturnType<typeof build>) =>
+      nav.workspace.links.map((link) => link.to);
+
+    expect(links(build())).not.toContain(
+      "/dashboard/settings/workspace/time-off",
+    );
+    expect(links(build({ canManageTimeOff: true }))).toEqual([
+      "/dashboard/settings/workspace/general",
+      "/dashboard/settings/workspace/roles",
+      "/dashboard/settings/workspace/labels",
+      "/dashboard/settings/workspace/time-off",
+    ]);
   });
 
   it("only shows administration to instance admins", () => {

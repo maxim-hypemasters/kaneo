@@ -1,8 +1,11 @@
+import { timeOffInterval } from "./approved-time-off-calendars";
+import { coalesceDays } from "./coalesce-days";
 import { createCalendarReader, fitWork } from "./engine/calendar";
 import { uniformPlanningCalendar } from "./uniform-calendar";
 
 // The planner's own horizon (see build-schedule).
-const HORIZON_MS = 3660 * 86_400_000;
+export const MOVE_HORIZON_DAYS = 3660;
+const HORIZON_MS = MOVE_HORIZON_DAYS * 86_400_000;
 
 export type TaskPlacement = {
   startDate: Date | null;
@@ -18,11 +21,16 @@ export type TaskPlacement = {
 //
 // `exact` is a span set by hand (resizing a bar): the work takes both dates
 // as given and stops following its estimate, so its planned segments go.
+//
+// `blockedDays` (local YYYY-MM-DD days) are skipped whole when planned work
+// is laid out again, as Apply skips the assignee's days away. Hand-set spans
+// and unplanned work ignore them.
 export function movePlacement(
   task: TaskPlacement,
   target: { start: Date; end: Date },
   timeZone: string,
   exact = false,
+  blockedDays: Iterable<string> = [],
 ): TaskPlacement | null {
   if (exact)
     return {
@@ -43,8 +51,15 @@ export function movePlacement(
     0,
   );
   const earliest = target.start.getTime();
+  const calendar = {
+    ...uniformPlanningCalendar("", timeZone),
+    // A run made only of skipped civil dates has no interval to block.
+    timeOff: coalesceDays(blockedDays)
+      .map((range) => timeOffInterval(range, timeZone))
+      .filter((interval) => interval.start < interval.end),
+  };
   const fitted = fitWork(
-    createCalendarReader(uniformPlanningCalendar("", timeZone)),
+    createCalendarReader(calendar),
     earliest,
     effort,
     [],

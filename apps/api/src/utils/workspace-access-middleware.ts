@@ -3,6 +3,7 @@ import type { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
 import { assertProjectAccess } from "../project-access/assert-project-access";
+import { TIME_OFF_NOT_FOUND } from "../time-off/time-off-errors";
 import { readJsonObjectBody } from "./read-json-object-body";
 import { validateWorkspaceAccess } from "./validate-workspace-access";
 
@@ -18,7 +19,8 @@ type LookupResource =
   | "projectDocument"
   | "release"
   | "workflowRule"
-  | "customField";
+  | "customField"
+  | "timeOff";
 
 type WorkspaceIdSource =
   | { type: "query"; key: string }
@@ -51,6 +53,7 @@ const RESOURCE_NOT_FOUND: Record<LookupResource, string> = {
   projectDocument: "Document not found",
   workflowRule: "Workflow rule not found",
   customField: "Custom field not found",
+  timeOff: TIME_OFF_NOT_FOUND,
 };
 
 type WorkspaceAccessMiddlewareConfig = {
@@ -407,6 +410,17 @@ async function lookupScope(
       return field ?? null;
     }
 
+    case "timeOff": {
+      const [timeOff] = await db
+        .select({ workspaceId: schema.timeOffTable.workspaceId })
+        .from(schema.timeOffTable)
+        .where(eq(schema.timeOffTable.id, id))
+        .limit(1);
+      return timeOff
+        ? { workspaceId: timeOff.workspaceId, projectId: null }
+        : null;
+    }
+
     default:
       return null;
   }
@@ -501,6 +515,11 @@ export const workspaceAccess = {
   fromRelease: (idKey = "id") =>
     workspaceAccessMiddleware({
       sources: [{ type: "lookup", resource: "release", idKey }],
+    }),
+
+  fromTimeOff: (idKey = "id") =>
+    workspaceAccessMiddleware({
+      sources: [{ type: "lookup", resource: "timeOff", idKey }],
     }),
 
   fromWorkflowRule: (idKey = "id") =>

@@ -51,6 +51,30 @@ Never use `docker compose down -v` as an upgrade or troubleshooting step. It rem
 
 ## Upgrade notes
 
+### Time off
+
+Kaneo added [time off](/core/functional/time-off). Migration `0078_time_off` only adds things: the `time_off`, `time_off_policy`, `time_off_allowance`, `time_off_holiday_calendar`, `time_off_holiday_calendar_request` and `time_off_setting` tables, and a `team_time_off_enabled` column on `user_notification_preference` that defaults to on. No existing data changes.
+
+Stored workspace roles replace the built-in defaults, so the first start after the upgrade grants the time-off permissions once, from what each role already allows:
+
+| Permission | Granted to roles that can |
+| --- | --- |
+| **View time off** | Read the workspace |
+| **Request time off** | Update tasks, bugs, or features |
+| **Approve time off** | Change member roles |
+
+With unchanged built-in roles, viewers can view time off, members can also request it, and admins and owners can also approve it. Custom roles get the same treatment. A role that already has a time-off entry is left as it is. The grant runs once, so later role edits are kept.
+
+API keys created with an explicit permission list are not changed. They can't use time off, and don't list time-off notifications, until you create a key whose list includes the time-off permissions. Sessions, keys without a permission list, the CLI, and MCP clients follow each person's role.
+
+Existing plans and task dates stay as they are after the upgrade. A plan becomes outdated only once approved time off or a holiday calendar affects its assignees.
+
+Public holiday data ships with the API, from one pinned version of the `date-holidays` package; nothing is downloaded at runtime. A later Kaneo version that updates it can change members' holidays, past years included, and marks the plans that include members with a holiday calendar outdated.
+
+Update the API and the web app together. When they are hosted separately, an older web app doesn't show **Time off**, and a newer one can't reach the time-off routes on an older API. When running several API instances, update all of them before people use time off: older instances don't serve the time-off routes, don't skip approved time off or public holidays when planning, don't check task dates against days away, and don't cancel a removed member's pending requests.
+
+After upgrading, request time off as a member, approve it as an admin, and check that the **Team** timeline updates in another browser session.
+
 ### Feature milestones
 
 The milestone migration adds a feature-owned table and a nullable milestone link to work items. Existing work starts without a milestone. It does not alter item types, Feature or Release membership, release-progress baselines, or historical totals. Apply the migration before serving milestone-capable code; the API migrates before accepting requests at startup.

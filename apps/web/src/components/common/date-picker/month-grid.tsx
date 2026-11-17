@@ -32,6 +32,8 @@ const classNames = {
 
 const modifiersClassNames = {
   past: "not-data-selected:*:text-muted-foreground/70",
+  // Struck through as well as dimmed, so it doesn't rely on colour alone.
+  away: "*:line-through",
   limit:
     "*:after:absolute *:after:bottom-0.5 *:after:start-1/2 *:after:size-1 *:after:-translate-x-1/2 *:after:rounded-full *:after:bg-muted-foreground data-selected:*:after:bg-background",
 };
@@ -54,6 +56,9 @@ type MonthGridProps = {
   onSelect: (date: Date) => void;
   disabled?: Matcher[];
   marked?: Date;
+  // Days the assignee is away; pass them in `disabled` too.
+  away?: Matcher;
+  onMonthChange?: (month: Date) => void;
   autoFocus?: boolean;
 };
 
@@ -62,6 +67,8 @@ export function MonthGrid({
   onSelect,
   disabled,
   marked,
+  away,
+  onMonthChange,
   autoFocus = true,
 }: MonthGridProps) {
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
@@ -76,9 +83,14 @@ export function MonthGrid({
       selected={value ?? undefined}
       defaultMonth={value ?? today}
       onSelect={onSelect}
+      onMonthChange={onMonthChange}
       disabled={disabled}
       weekStartsOn={weekStartsOn}
-      modifiers={{ past: { before: today }, limit: marked ?? false }}
+      modifiers={{
+        past: { before: today },
+        limit: marked ?? false,
+        away: away ?? false,
+      }}
       modifiersClassNames={modifiersClassNames}
       classNames={classNames}
       components={{ Chevron }}

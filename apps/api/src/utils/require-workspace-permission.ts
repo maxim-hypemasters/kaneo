@@ -14,7 +14,7 @@ import {
 } from "./role-permissions";
 import { splitRoles } from "./split-roles";
 
-async function storedRolePermissions(
+export async function storedRolePermissions(
   workspaceId: string,
   roles: string[],
   database: Pick<typeof db, "select">,
@@ -126,6 +126,9 @@ async function memberRoles(
         eq(schema.workspaceUserTable.userId, userId),
       ),
     )
+    // workspace_member has no unique (workspace, user): with duplicate rows,
+    // the first one decides, as in workspaceMembersWithPermission.
+    .orderBy(schema.workspaceUserTable.joinedAt, schema.workspaceUserTable.id)
     .limit(1);
 
   // Prefer the DB row when present so admin-edited defaults

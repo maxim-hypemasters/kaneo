@@ -90,19 +90,23 @@ export async function requireBulkTaskEntitlement(c: Context, next: Next) {
   return requireEntitlement(c, next);
 }
 
-export async function requireTaskAssigneePermission(c: Context, next: Next) {
-  const id = c.req.param("id");
-  const { userId } = await readJsonObjectBody(c);
-  // Mirror the controller: a blank userId means "unassigned", so an
-  // unassigned task saved with `userId: ""` keeps its (null) assignee and
-  // must not require task:assign.
-  const nextAssignee =
-    typeof userId === "string" && userId.trim() ? userId.trim() : null;
+// Mirror the controllers: a blank userId means "unassigned", so an
+// unassigned task saved with `userId: ""` keeps its (null) assignee and
+// must not require task:assign.
+function bodyAssignee(userId: unknown) {
+  return typeof userId === "string" && userId.trim() ? userId.trim() : null;
+}
 
+// Changing the task's assignee needs task:assign.
+async function requireAssignWhenChanged(
+  c: Context,
+  next: Next,
+  nextAssignee: string | null,
+) {
   const [existingTask] = await db
     .select({ userId: taskTable.userId })
     .from(taskTable)
-    .where(eq(taskTable.id, id ?? ""))
+    .where(eq(taskTable.id, c.req.param("id") ?? ""))
     .limit(1);
 
   if (existingTask && existingTask.userId !== nextAssignee) {
@@ -110,6 +114,22 @@ export async function requireTaskAssigneePermission(c: Context, next: Next) {
   }
 
   return next();
+}
+
+export async function requireTaskAssigneePermission(c: Context, next: Next) {
+  const { userId } = await readJsonObjectBody(c);
+  return requireAssignWhenChanged(c, next, bodyAssignee(userId));
+}
+
+// A schedule move may also reassign the work (a Gantt lane drop). Without
+// a userId it keeps its assignee.
+export async function requireMovedTaskAssigneePermission(
+  c: Context,
+  next: Next,
+) {
+  const body = await readJsonObjectBody(c);
+  if (!("userId" in body)) return next();
+  return requireAssignWhenChanged(c, next, bodyAssignee(body.userId));
 }
 
 // The validators run after middleware, so an invalid type is checked as a task

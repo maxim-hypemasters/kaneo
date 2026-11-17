@@ -21,7 +21,13 @@ export type MessageDtoSource = Pick<
 export const ERROR_TEXT_MAX_CHARS = 500;
 
 function shortError(content: string): string {
-  const line = content.replace(/\s+/g, " ").trim() || "The tool failed.";
+  // Tool errors start with the API route ("/api/task/…: message"); the model
+  // keeps it, people only need the message.
+  const line =
+    content
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/^\/api\/\S+: /, "") || "The tool failed.";
   if (line.length <= ERROR_TEXT_MAX_CHARS) return line;
   // Drop a high surrogate the cut would leave without its pair.
   const cut = line

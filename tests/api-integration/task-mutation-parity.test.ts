@@ -1,6 +1,7 @@
 import updateTaskStatus from "../../apps/api/src/task/controllers/update-task-status";
 import updateTaskAssignee from "../../apps/api/src/task/controllers/update-task-assignee";
 import updateTaskPriority from "../../apps/api/src/task/controllers/update-task-priority";
+import updateTaskDueDate from "../../apps/api/src/task/controllers/update-task-due-date";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, expect, it, vi } from "vite-plus/test";
 import db, { getDatabase, schema } from "../../apps/api/src/database";
@@ -248,8 +249,27 @@ it("validates status and assignment without a second pool client inside the muta
   const { project } = await createProjectFixture({ workspaceId: workspace.id });
   const [task] = await db
     .insert(schema.taskTable)
-    .values({ projectId: project.id, title: "pool safety" })
+    .values({
+      projectId: project.id,
+      title: "pool safety",
+      dueDate: new Date("2027-01-06T00:00:00Z"),
+    })
     .returning();
+  // The assignee check reads time off and holidays inside the transaction.
+  await db.insert(schema.timeOffTable).values({
+    workspaceId: workspace.id,
+    userId: user.id,
+    type: "vacation",
+    status: "approved",
+    startDate: "2027-01-07",
+    endDate: "2027-01-07",
+    createdBy: user.id,
+  });
+  await db.insert(schema.timeOffHolidayCalendarTable).values({
+    workspaceId: workspace.id,
+    userId: user.id,
+    country: "DE",
+  });
   let locked = false;
   const select = getDatabase().select.bind(getDatabase());
   vi.spyOn(getDatabase(), "select").mockImplementation((...args) => {
@@ -278,11 +298,24 @@ it("validates status and assignment without a second pool client inside the muta
     userId: user.id,
     currentUserId: user.id,
   });
+  // New Year's Day is on the assignee's calendar.
+  await expect(
+    updateTaskDueDate({
+      id: task.id,
+      dueDate: new Date("2027-01-01T00:00:00Z"),
+      timeZone: "UTC",
+      currentUserId: user.id,
+    }),
+  ).rejects.toMatchObject({ code: "TASK_ASSIGNEE_AWAY" });
   expect(
     await db.query.taskTable.findFirst({
       where: eq(schema.taskTable.id, task.id),
     }),
-  ).toMatchObject({ status: "done", userId: user.id });
+  ).toMatchObject({
+    status: "done",
+    userId: user.id,
+    dueDate: new Date("2027-01-06T00:00:00Z"),
+  });
 });
 
 it.each(["single", "full"])(

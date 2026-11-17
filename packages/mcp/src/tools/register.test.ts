@@ -89,6 +89,26 @@ describe("registerTools", () => {
       "delete_release",
       "set_task_release",
       "move_unfinished_release_items",
+      "list_time_off",
+      "list_time_off_requests",
+      "list_pending_time_off_requests",
+      "get_time_off_request",
+      "request_time_off",
+      "update_time_off_request",
+      "cancel_time_off_request",
+      "approve_time_off_request",
+      "decline_time_off_request",
+      "get_time_off_balance",
+      "list_time_off_balances",
+      "set_time_off_allowance",
+      "list_holiday_countries",
+      "get_holiday_calendar",
+      "set_holiday_calendar",
+      "list_holiday_calendar_requests",
+      "approve_holiday_calendar_request",
+      "decline_holiday_calendar_request",
+      "cancel_holiday_calendar_request",
+      "set_holiday_calendar_deadline",
     ]) {
       expect(server.registerTool).toHaveBeenCalledWith(
         name,
@@ -103,7 +123,7 @@ describe("registerTools", () => {
 
     registerTools(server as never, { client: { json: vi.fn() } as never });
 
-    expect(tools.size).toBe(83);
+    expect(tools.size).toBe(103);
     for (const [name, { config }] of tools) {
       const isRead =
         name === "whoami" ||
@@ -114,6 +134,21 @@ describe("registerTools", () => {
       expect(config.annotations?.destructiveHint ?? false, name).toBe(
         name.startsWith("delete_"),
       );
+    }
+  });
+
+  it("tells agents which task edits a day away refuses", () => {
+    const { server, tools } = createServerMock();
+    registerTools(server as never, { client: { json: vi.fn() } as never });
+    for (const name of [
+      "update_task",
+      "update_task_assignee",
+      "update_task_due_date",
+    ]) {
+      const config = tools.get(name)?.config as
+        | { description?: string }
+        | undefined;
+      expect(config?.description).toContain("TASK_ASSIGNEE_AWAY");
     }
   });
 

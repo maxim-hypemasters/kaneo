@@ -64,6 +64,7 @@ import {
   requireAnyWorkItemCreatePermission,
   requireBulkTaskEntitlement,
   requireBulkTaskPermission,
+  requireMovedTaskAssigneePermission,
   requireTaskAssigneePermission,
   requireFeatureCompositionPermission,
   requireReorderTaskPermission,
@@ -275,7 +276,7 @@ const bulkUpdateTasksRoute = createRoute({
   tags: ["Tasks"],
   summary: "Bulk update tasks",
   description:
-    "Apply one operation to many tasks at once. Every task must be in the same workspace.",
+    "Apply one operation to many tasks at once. Every task must be in the same workspace. updateDueDate and updateAssignee refuse the whole batch when a due date, or the start or due date of work handed to someone else, falls on a day its assignee is away (approved time off or a public holiday); pending requests never block.",
   middleware: [
     workspaceAccess.fromTasks(),
     requireBulkTaskPermission,
@@ -296,7 +297,9 @@ const bulkUpdateTasksRoute = createRoute({
       "No access to the project, or missing the permission the operation needs",
     ),
     404: errorResponse("No tasks found"),
-    409: errorResponse("Tasks changed projects; retry the operation"),
+    409: errorResponse(
+      "Tasks changed projects (retry the operation), or a date falls on a day an assignee is away (TASK_ASSIGNEE_AWAY, one issue per task)",
+    ),
   },
 });
 
@@ -609,7 +612,7 @@ const updateTaskRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task",
   description:
-    "Replace every field of a task. Its type, feature and release aren't part of this body and stay as they are: change them with PUT /task/type/{id}, /task/feature/{id} and /task/release/{id}. Use the single-field routes for narrower edits.",
+    "Replace every field of a task. Its type, feature and release aren't part of this body and stay as they are: change them with PUT /task/type/{id}, /task/feature/{id} and /task/release/{id}. Use the single-field routes for narrower edits. A start or due date this changes, or both when the task goes to someone else, can't fall on a day the assignee is away (approved time off or a public holiday); pending requests never block.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkItemPermission("update"),
@@ -630,6 +633,9 @@ const updateTaskRoute = createRoute({
       "No access to the project, or missing task:assign or update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
+    409: errorResponse(
+      "A start or due date falls on a day the assignee is away (TASK_ASSIGNEE_AWAY), or the task changed concurrently",
+    ),
   },
 });
 
@@ -771,7 +777,7 @@ const updateTaskAssigneeRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task assignee",
   description:
-    "Assign a task to a workspace member, or send null to unassign it.",
+    "Assign a task to a workspace member, or send null to unassign it. Work whose dates were set by hand can't go to someone away (approved time off or a public holiday) on its start or due day; pending requests never block. Planned work keeps its planned assignee until the next Apply.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkspacePermission({ task: ["assign"] }),
@@ -793,6 +799,9 @@ const updateTaskAssigneeRoute = createRoute({
     404: errorResponse(
       "Task not found, or assignee is not a member of the workspace",
     ),
+    409: errorResponse(
+      "The new assignee is away on the start or due day of work with dates set by hand (TASK_ASSIGNEE_AWAY)",
+    ),
   },
 });
 
@@ -803,7 +812,7 @@ const updateTaskDueDateRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task due date",
   description:
-    "Set or clear a Task or Bug's due date by hand. Planned work stops following its estimate until the next Apply of its release plans it again.",
+    "Set or clear a Task or Bug's due date by hand. Planned work stops following its estimate until the next Apply of its release plans it again. The due day can't be a day the assignee is away (approved time off or a public holiday); pending requests never block.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkItemPermission("update"),
@@ -825,6 +834,9 @@ const updateTaskDueDateRoute = createRoute({
       "No access to the project, or missing update permission for its type (task, bug or feature)",
     ),
     404: errorResponse("Task not found"),
+    409: errorResponse(
+      "The due day is a day the assignee is away (TASK_ASSIGNEE_AWAY)",
+    ),
   },
 });
 
@@ -835,10 +847,11 @@ const moveTaskScheduleRoute = createRoute({
   tags: ["Tasks"],
   summary: "Move a task on the schedule",
   description:
-    "Moves a scheduled Task or Bug, as dragging it in Gantt does. Planned work keeps its planned assignee and remaining planned effort and is laid out again through working hours (Monday to Friday, 09:00 to 17:00 in the project's planning timezone) from `start`, so it may finish after `end`. Unplanned work takes `start` and `end` on the date fields it already has. The next Apply of the item's release plans it again.",
+    "Moves a scheduled Task or Bug, as dragging it in Gantt does. Planned work keeps its planned assignee and remaining planned effort and is laid out again through working hours (Monday to Friday, 09:00 to 17:00 in the project's planning timezone) from `start`, skipping its planned assignee's approved time off and public holidays, so it may finish after `end`. Unplanned work takes `start` and `end` on the date fields it already has. A start or due date set by hand (an `exact` span, or unplanned work) can't fall on a day the assignee is away, though the span may cross such days; pending requests never block. `userId` also reassigns the work in the same step, as dropping it on another assignee lane does. The next Apply of the item's release plans it again.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkItemPermission("update"),
+    requireMovedTaskAssigneePermission,
     requireEntitlement,
   ] as const,
   request: {
@@ -854,9 +867,12 @@ const moveTaskScheduleRoute = createRoute({
       "Invalid body, a Feature, unscheduled work, or work that no longer fits within the planning horizon",
     ),
     403: errorResponse(
-      "No access to the project, or missing update permission for its type (task, bug or feature)",
+      "No access to the project, missing update permission for its type (task, bug or feature), missing task:assign for a different userId, or that assignee can't access the project",
     ),
     404: errorResponse("Task not found"),
+    409: errorResponse(
+      "A start or due date set by hand, or of unplanned work, falls on a day the assignee is away (TASK_ASSIGNEE_AWAY)",
+    ),
   },
 });
 
@@ -1241,7 +1257,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
     return c.json(tasks, 200);
   })
   .openapi(bulkUpdateTasksRoute, async (c) => {
-    const { taskIds, operation, value } = c.req.valid("json");
+    const { taskIds, operation, value, timeZone } = c.req.valid("json");
     const userId = c.get("userId");
 
     if (!userId) {
@@ -1264,6 +1280,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       operation,
       value,
       userId,
+      timeZone,
     });
 
     return c.json(result, 200);
@@ -1430,6 +1447,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       estimateSeconds,
       startDate,
       dueDate,
+      timeZone,
     } = c.req.valid("json");
 
     const currentUserId = c.get("userId");
@@ -1449,6 +1467,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       userId,
       currentUserId,
       estimateSeconds,
+      timeZone,
     );
 
     return c.json(taskResource(task), 200);
@@ -1559,21 +1578,27 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(updateTaskAssigneeRoute, async (c) => {
     const { id } = c.req.valid("param");
-    const { userId } = c.req.valid("json");
+    const { userId, timeZone } = c.req.valid("json");
     const currentUserId = c.get("userId");
 
-    const task = await updateTaskAssignee({ id, userId, currentUserId });
+    const task = await updateTaskAssignee({
+      id,
+      userId,
+      timeZone,
+      currentUserId,
+    });
 
     return c.json(taskResource(task), 200);
   })
   .openapi(updateTaskDueDateRoute, async (c) => {
     const { id } = c.req.valid("param");
-    const { dueDate } = c.req.valid("json");
+    const { dueDate, timeZone } = c.req.valid("json");
     const currentUserId = c.get("userId");
 
     const task = await updateTaskDueDate({
       id,
       dueDate: dueDate ? validateAndParseDate(dueDate, "dueDate") : null,
+      timeZone,
       currentUserId,
     });
 
@@ -1581,7 +1606,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(moveTaskScheduleRoute, async (c) => {
     const { id } = c.req.valid("param");
-    const { start, end, exact } = c.req.valid("json");
+    const { start, end, exact, userId, timeZone } = c.req.valid("json");
     const currentUserId = c.get("userId");
 
     const task = await moveTaskSchedule({
@@ -1589,6 +1614,8 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       start: new Date(start),
       end: new Date(end),
       exact,
+      userId,
+      timeZone,
       currentUserId,
     });
 
