@@ -10,6 +10,7 @@ import {
   Shield,
   SlidersHorizontal,
   Tag,
+  TreePalm,
   User,
 } from "lucide-react";
 import projectIcons from "@/constants/project-icons";
@@ -25,6 +26,8 @@ type BuildSettingsNavInput = {
   workspaceName?: string;
   billingEnabled: boolean;
   canImport: boolean;
+  // time_off:approve; false while permissions load.
+  canManageTimeOff: boolean;
   hasAdminAccess: boolean;
   projects: { id: string; name: string; icon?: string | null }[];
 };
@@ -64,6 +67,7 @@ export function buildSettingsNav({
   workspaceName,
   billingEnabled,
   canImport,
+  canManageTimeOff,
   hasAdminAccess,
   projects,
 }: BuildSettingsNavInput): SettingsNav {
@@ -126,6 +130,16 @@ export function buildSettingsNav({
           to: "/dashboard/settings/workspace/labels",
           icon: Tag,
         },
+        ...(canManageTimeOff
+          ? [
+              {
+                id: "workspace-time-off",
+                label: t("settings:workspaceTimeOff.title"),
+                to: "/dashboard/settings/workspace/time-off",
+                icon: TreePalm,
+              },
+            ]
+          : []),
         ...(canImport
           ? [
               {

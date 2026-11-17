@@ -47,6 +47,7 @@ const m = vi.hoisted(() => ({
   project: null as unknown,
   groupBy: "none",
   compactRows: false,
+  refuse: null as string | null,
   relations: [] as {
     id: string;
     sourceTaskId: string;
@@ -128,6 +129,17 @@ vi.mock("react-i18next", () => ({
   initReactI18next: { type: "3rdParty", init: vi.fn() },
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: m.toastError } }));
+// `m.refuse` names a task whose assignee is away on any new dates.
+vi.mock("@/components/gantt/away/use-gantt-away", () => ({
+  useGanttAway: () => ({
+    runsFor: () => [],
+    barFor: () => undefined,
+    refusal: (task: { id: string }) =>
+      task.id === m.refuse ? { name: "Ann", date: "Sep 5" } : null,
+    isError: false,
+    retry: vi.fn(),
+  }),
+}));
 vi.mock("@/hooks/queries/task/use-description-matches", () => ({
   useDescriptionMatches: () => ({
     ids: new Set<string>(),
@@ -243,6 +255,7 @@ beforeEach(() => {
   vi.setSystemTime(new Date(2026, 7, 31));
   m.groupBy = "none";
   m.compactRows = false;
+  m.refuse = null;
   m.update.mockResolvedValue({});
   // Design blocks Build: Build may start on Sep 3, the day Design ends.
   setTasks(
@@ -487,6 +500,25 @@ describe("Gantt dependencies", () => {
     // Build keeps its three days and starts the day Design now ends.
     expect(m.update).toHaveBeenNthCalledWith(2, "Build", day(9, 5), day(9, 7));
     expect(screen.queryByRole("alertdialog")).toBeNull();
+  });
+
+  it("moves nothing when a related task can't follow: its assignee is away", () => {
+    m.refuse = "Build";
+    show();
+
+    dragBy(bar("Design"), 88);
+    fireEvent.click(
+      within(screen.getByRole("alertdialog")).getByRole("button", {
+        name: "tasks:gantt.dependencies.moveRelated:1",
+      }),
+    );
+
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(m.update).not.toHaveBeenCalled();
+    expect(m.toastError).toHaveBeenCalledTimes(1);
+    expect(m.toastError).toHaveBeenCalledWith("tasks:assigneeAway.title", {
+      description: "tasks:gantt.away.relatedRefused:Build",
+    });
   });
 
   it("can keep just this change, leaving the dependency broken", () => {

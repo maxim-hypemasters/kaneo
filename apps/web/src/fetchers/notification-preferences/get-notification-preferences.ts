@@ -40,6 +40,8 @@ export type NotificationPreferences = {
   taskStatusChangeEnabled: boolean;
   dueDateReminderEnabled: boolean;
   dueDateReminderLeadTimeMinutes: number;
+  // Approved time off of other members (time_off_member_away).
+  teamTimeOffEnabled: boolean;
   workspaces: NotificationPreferenceWorkspaceRule[];
   createdAt: string | null;
   updatedAt: string | null;

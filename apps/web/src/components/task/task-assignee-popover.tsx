@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { OptionMenu } from "@/components/common/option-menu/option-menu";
 import {
   Popover,
   PopoverContent,
@@ -9,9 +8,9 @@ import {
 import { useUpdateTaskAssignee } from "@/hooks/mutations/task/use-update-task-assignee";
 import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-project-members";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { toast } from "@/lib/toast";
+import { toastTaskSaveError } from "@/lib/time-off/task-away-error";
 import type Task from "@/types/task";
-import { assigneeMenuOptions } from "./menus/assignee-menu-options";
+import { AssigneePickerMenu } from "./assignee-picker-menu";
 
 type TaskAssigneePopoverProps = {
   task: Task;
@@ -40,11 +39,7 @@ export default function TaskAssigneePopover({
     try {
       await updateTaskAssignee({ ...task, userId });
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("tasks:popover.assignee.updateError"),
-      );
+      toastTaskSaveError(error, t("tasks:popover.assignee.updateError"));
     }
   };
 
@@ -52,14 +47,10 @@ export default function TaskAssigneePopover({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent className="w-60 p-0" align="start">
-        <OptionMenu
-          label={t("tasks:assignee.label")}
-          placeholder={t("tasks:bulk.assigneePlaceholder")}
-          options={assigneeMenuOptions(
-            members,
-            task.userId ?? null,
-            t("tasks:popover.assignee.unassigned"),
-          )}
+        <AssigneePickerMenu
+          workspaceId={workspaceId}
+          members={members}
+          current={task.userId ?? null}
           onSelect={changeAssignee}
         />
       </PopoverContent>

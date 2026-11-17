@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, notInArray } from "drizzle-orm";
 import db from "../../database";
 import {
   notificationTable,
@@ -10,7 +10,13 @@ import {
 import { notificationResourceAccess } from "../resource-access";
 import { notificationWorkspaceFilter } from "../workspace-filter";
 
-async function getNotifications(userId: string, workspaceId?: string) {
+// `hiddenTypes` are left out before the limit, such as the time off types a
+// scoped API key may not read.
+async function getNotifications(
+  userId: string,
+  workspaceId?: string,
+  hiddenTypes: readonly string[] = [],
+) {
   const rows = await db
     .select({
       notification: notificationTable,
@@ -32,6 +38,9 @@ async function getNotifications(userId: string, workspaceId?: string) {
       and(
         eq(notificationTable.userId, userId),
         notificationWorkspaceFilter(workspaceId),
+        hiddenTypes.length > 0
+          ? notInArray(notificationTable.type, [...hiddenTypes])
+          : undefined,
         notificationResourceAccess(
           userId,
           notificationTable.resourceId,

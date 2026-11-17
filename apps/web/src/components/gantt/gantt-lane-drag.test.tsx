@@ -51,6 +51,7 @@ const m = vi.hoisted(() => ({
   project: null as unknown,
   members: [] as { id: string; name: string; image: string | null }[],
   hit: null as Element | null,
+  awayUser: null as string | null,
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -121,6 +122,30 @@ vi.mock("react-i18next", () => ({
   initReactI18next: { type: "3rdParty", init: vi.fn() },
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: m.toastError } }));
+// `m.awayUser` is away on every day, so no work may move to them.
+vi.mock("@/components/gantt/away/use-gantt-away", () => {
+  const refusal = (_task: unknown, edit: { userId: string | null }) =>
+    edit.userId && edit.userId === m.awayUser
+      ? { name: "Bob", date: "Sep 2" }
+      : null;
+  return {
+    useGanttAway: () => ({
+      runsFor: () => [],
+      barFor: () =>
+        m.awayUser
+          ? {
+              runs: [],
+              name: "",
+              blockedHint: (edit: { userId: string | null }) =>
+                refusal(null, edit) ? "tasks:gantt.away.blockedHint:Bob" : null,
+            }
+          : undefined,
+      refusal,
+      isError: false,
+      retry: vi.fn(),
+    }),
+  };
+});
 vi.mock("@/hooks/queries/task/use-description-matches", () => ({
   useDescriptionMatches: () => ({
     ids: new Set<string>(),
@@ -267,6 +292,7 @@ beforeEach(() => {
   m.canUpdate = true;
   m.groupBy = "assignee";
   m.hit = null;
+  m.awayUser = null;
   m.members = [
     { id: "u1", name: "Alice", image: null },
     { id: "u2", name: "Bob", image: null },
@@ -332,24 +358,41 @@ describe("Gantt drag to reassign", () => {
     expect(screen.queryByText("tasks:gantt.assignTo:Bob")).toBeNull();
   });
 
-  it("moves and reassigns in one diagonal lane drag", async () => {
+  it("moves and reassigns in one diagonal lane drag", () => {
     const { container } = show();
     drag(groupedBar("A1"), {
       dx: 88,
       dy: 60,
       over: lane(container, "member:u2"),
     });
+    // One request, so the new dates are checked against Bob only.
+    expect(m.update).toHaveBeenCalledTimes(1);
     expect(m.update).toHaveBeenCalledWith(
       "A1",
       new Date(2026, 8, 3),
       new Date(2026, 8, 5),
+      false,
+      "u2",
     );
-    // The reassignment goes out once the move has saved.
-    await waitFor(() =>
-      expect(m.updateAssignee).toHaveBeenCalledWith(
-        expect.objectContaining({ id: "A1", userId: "u2" }),
-      ),
-    );
+    expect(m.updateAssignee).not.toHaveBeenCalled();
+  });
+
+  it("won't drop work on the lane of someone away on its dates", () => {
+    m.awayUser = "u2";
+    const { container } = show();
+    const bobLane = lane(container, "member:u2");
+
+    press(groupedBar("A1"));
+    moveTo(0, 60, bobLane);
+    expect(bobLane).not.toHaveAttribute("data-drop-target");
+    expect(
+      screen.getByText("tasks:gantt.away.blockedHint:Bob"),
+    ).toBeInTheDocument();
+    release(0, 60);
+
+    expect(m.updateAssignee).not.toHaveBeenCalled();
+    expect(m.update).not.toHaveBeenCalled();
+    expect(m.toastError).not.toHaveBeenCalled();
   });
 
   it("keeps the assignee when dropped back on its own lane", () => {
@@ -630,7 +673,7 @@ describe("Gantt drag to reassign", () => {
     const { container } = show();
 
     drag(groupedBar("A1"), {
-      dx: 88,
+      dx: 0,
       dy: 60,
       over: lane(container, "member:u2"),
     });

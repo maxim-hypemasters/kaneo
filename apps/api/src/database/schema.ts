@@ -20,6 +20,7 @@ import {
 import type { GitHubImportState } from "../github-integration/import-state";
 import type { ImportRunProject } from "../import/import-run-project";
 import type { TaskType } from "../task/task-type";
+import type { TimeOffStatus, TimeOffType } from "../time-off/time-off-kinds";
 
 // Timestamp columns without a time zone hold UTC (Drizzle reads and writes
 // them as UTC). A bare now() default would be cast through the session time
@@ -418,6 +419,245 @@ export const workCalendarTable = pgTable(
     unique("work_calendar_workspace_user_unique").on(
       table.workspaceId,
       table.userId,
+    ),
+  ],
+);
+
+// A member's leave as an inclusive range of calendar days (string mode keeps
+// YYYY-MM-DD, as for releases). Rows outlive membership: reads keep only
+// current members, so history and overrides return if someone rejoins.
+export const timeOffTable = pgTable(
+  "time_off",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    type: text("type").$type<TimeOffType>().notNull(),
+    status: text("status").$type<TimeOffStatus>().notNull().default("pending"),
+    startDate: date("start_date", { mode: "string" }).notNull(),
+    endDate: date("end_date", { mode: "string" }).notNull(),
+    note: text("note"),
+    // Approve and decline must name the version they reviewed.
+    version: integer("version").notNull().default(0),
+    createdBy: text("created_by").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    statusChangedBy: text("status_changed_by").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    statusChangedAt: timestamp("status_changed_at", { mode: "date" }),
+    // "id:start:end" of the approved days plans may still use, or null. Set
+    // only by changes that refresh schedules (see planning-key.ts), so the
+    // plan fingerprint ignores changes to time off that already ended.
+    planningKey: text("planning_key"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("time_off_member_dates_idx").on(
+      table.workspaceId,
+      table.userId,
+      table.startDate,
+    ),
+    index("time_off_workspace_dates_idx").on(
+      table.workspaceId,
+      table.endDate,
+      table.startDate,
+    ),
+    check(
+      "time_off_dates_order_check",
+      sql`${table.startDate} <= ${table.endDate}`,
+    ),
+    check(
+      "time_off_type_check",
+      sql`${table.type} in ('vacation', 'sick', 'public_holiday')`,
+    ),
+    check(
+      "time_off_status_check",
+      sql`${table.status} in ('pending', 'approved', 'declined', 'cancelled')`,
+    ),
+  ],
+);
+
+// A workspace's default allowance for one type, applied to every year. A
+// type without a row uses DEFAULT_ALLOWANCE_DAYS.
+export const timeOffPolicyTable = pgTable(
+  "time_off_policy",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    type: text("type").$type<TimeOffType>().notNull(),
+    defaultAllowanceDays: integer("default_allowance_days").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("time_off_policy_workspace_type_unique").on(
+      table.workspaceId,
+      table.type,
+    ),
+    check(
+      "time_off_policy_type_check",
+      sql`${table.type} in ('vacation', 'sick', 'public_holiday')`,
+    ),
+    check(
+      "time_off_policy_days_check",
+      sql`${table.defaultAllowanceDays} between 0 and 366`,
+    ),
+  ],
+);
+
+// A member's override for one type, applied to every year.
+export const timeOffAllowanceTable = pgTable(
+  "time_off_allowance",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    type: text("type").$type<TimeOffType>().notNull(),
+    days: integer("days").notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("time_off_allowance_workspace_user_type_unique").on(
+      table.workspaceId,
+      table.userId,
+      table.type,
+    ),
+    check(
+      "time_off_allowance_type_check",
+      sql`${table.type} in ('vacation', 'sick', 'public_holiday')`,
+    ),
+    check(
+      "time_off_allowance_days_check",
+      sql`${table.days} between 0 and 366`,
+    ),
+  ],
+);
+
+// A member's public holiday calendar in one workspace: a date-holidays
+// country and optional subdivision. A null country records an explicit "No
+// calendar". Any row means the member's free first choice is used. Like
+// allowance overrides, rows outlive membership; reads keep current members
+// only.
+export const timeOffHolidayCalendarTable = pgTable(
+  "time_off_holiday_calendar",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    country: text("country"),
+    region: text("region"),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("time_off_holiday_calendar_workspace_user_unique").on(
+      table.workspaceId,
+      table.userId,
+    ),
+    check(
+      "time_off_holiday_calendar_region_check",
+      sql`${table.country} is not null or ${table.region} is null`,
+    ),
+  ],
+);
+
+// Workspace-wide time off settings, one row per workspace. A missing row
+// means every setting is at its default.
+export const timeOffSettingTable = pgTable("time_off_setting", {
+  workspaceId: text("workspace_id")
+    .primaryKey()
+    .references(() => workspaceTable.id, { onDelete: "cascade" }),
+  // Last UTC day a member's first holiday calendar choice applies without
+  // approval. Null means there is no deadline.
+  holidayCalendarDeadline: date("holiday_calendar_deadline", {
+    mode: "string",
+  }),
+  updatedAt: timestamp("updated_at", { mode: "date" })
+    .default(utcNow)
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+// A member's request to change their holiday calendar once their free choice
+// is used. A null country asks for "No calendar". At most one is pending per
+// member; resubmitting updates it in place and bumps the version.
+export const timeOffHolidayCalendarRequestTable = pgTable(
+  "time_off_holiday_calendar_request",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    country: text("country"),
+    region: text("region"),
+    status: text("status").$type<TimeOffStatus>().notNull().default("pending"),
+    // Approve and decline must name the version they reviewed.
+    version: integer("version").notNull().default(0),
+    statusChangedBy: text("status_changed_by").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
+    statusChangedAt: timestamp("status_changed_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    // When the member last changed the request. A resubmission sets it;
+    // decisions and cancellations leave it alone, so it has no $onUpdate.
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("time_off_holiday_calendar_request_pending_unique")
+      .on(table.workspaceId, table.userId)
+      .where(sql`${table.status} = 'pending'`),
+    check(
+      "time_off_holiday_calendar_request_status_check",
+      sql`${table.status} in ('pending', 'approved', 'declined', 'cancelled')`,
+    ),
+    check(
+      "time_off_holiday_calendar_request_region_check",
+      sql`${table.country} is not null or ${table.region} is null`,
     ),
   ],
 );
@@ -1320,6 +1560,10 @@ export const userNotificationPreferenceTable = pgTable(
       "due_date_reminder_lead_time_minutes",
     )
       .default(1440)
+      .notNull(),
+    // Gates only the "member away" notice; requests and decisions always send.
+    teamTimeOffEnabled: boolean("team_time_off_enabled")
+      .default(true)
       .notNull(),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(utcNow)

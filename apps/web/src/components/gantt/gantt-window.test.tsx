@@ -103,6 +103,16 @@ vi.mock("react-i18next", () => ({
   initReactI18next: { type: "3rdParty", init: vi.fn() },
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: vi.fn() } }));
+// Nobody is away: the chart renders and saves as without time off.
+vi.mock("@/components/gantt/away/use-gantt-away", () => ({
+  useGanttAway: () => ({
+    runsFor: () => [],
+    barFor: () => undefined,
+    refusal: () => null,
+    isError: false,
+    retry: vi.fn(),
+  }),
+}));
 vi.mock("@/hooks/queries/task/use-description-matches", () => ({
   useDescriptionMatches: () => ({
     ids: new Set<string>(),

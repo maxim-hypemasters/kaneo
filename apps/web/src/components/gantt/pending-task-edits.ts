@@ -70,6 +70,11 @@ export function applyPendingEdit(
     startDate: pending.hasStartDate ? toIsoDay(pending.start) : null,
     dueDate: pending.hasDueDate ? toIsoDay(pending.end) : null,
     userId: pending.userId,
+    // A lane change reassigns the task itself.
+    taskUserId:
+      (task.userId || null) === pending.userId
+        ? task.taskUserId
+        : pending.userId,
     assigneeId: pending.userId,
     assigneeName: pending.assigneeName,
     assigneeImage: pending.assigneeImage,

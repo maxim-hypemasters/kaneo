@@ -17,6 +17,7 @@ import { validateDateRange } from "../../utils/validate-dates";
 import { assertValidTaskStatus } from "../validate-task-fields";
 import { assertTaskPosition } from "./next-task-position";
 import { assertTriageTransition } from "../../triage/triage-status";
+import { assertAssigneeAvailable } from "../assignee-away/assert-assignee-available";
 
 async function updateTask(
   id: string,
@@ -32,6 +33,8 @@ async function updateTask(
   userId?: string,
   currentUserId?: string,
   estimateSeconds?: number | null,
+  // The zone the dates were picked in; see assertAssigneeAvailable.
+  timeZone?: string,
 ) {
   assertEstimateSeconds(estimateSeconds);
   assertTaskPosition(position);
@@ -127,6 +130,8 @@ async function updateTask(
         columnId: taskTable.columnId,
         position: taskTable.position,
         projectId: taskTable.projectId,
+        scheduleSegments: taskTable.scheduleSegments,
+        scheduledAssigneeId: taskTable.scheduledAssigneeId,
       })
       .from(taskTable)
       .where(and(eq(taskTable.id, id), eq(taskTable.projectId, projectId)))
@@ -154,6 +159,24 @@ async function updateTask(
         startChanged ? startDate : locked.startDate,
         dueChanged ? dueDate : locked.dueDate,
       );
+    await assertAssigneeAvailable(
+      tx,
+      [
+        {
+          taskId: id,
+          projectId,
+          before: locked,
+          after: {
+            userId: normalizedUserId ?? null,
+            scheduledAssigneeId: locked.scheduledAssigneeId,
+            scheduleSegments: datesChanged ? null : locked.scheduleSegments,
+            startDate: startChanged ? (startDate ?? null) : locked.startDate,
+            dueDate: dueChanged ? (dueDate ?? null) : locked.dueDate,
+          },
+        },
+      ],
+      timeZone,
+    );
 
     const [task] = await tx
       .update(taskTable)

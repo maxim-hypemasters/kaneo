@@ -12,6 +12,7 @@ async function updateTaskAssignee(
     param: { id: taskId },
     json: {
       userId: task.userId || "",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     },
   });
 

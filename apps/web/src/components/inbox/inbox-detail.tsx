@@ -9,7 +9,9 @@ import { formatDateTime, formatRelativeTime } from "@/lib/format";
 import type { Notification } from "@/types/notification";
 import { InboxFeature } from "./inbox-feature";
 import { InboxTask } from "./inbox-task";
+import { InboxTimeOff } from "./inbox-time-off";
 import { NotificationIcon } from "./notification-icon";
+import { isTimeOffNotificationType } from "./time-off-notification-type";
 
 type InboxDetailProps = {
   notification: Notification;
@@ -62,6 +64,15 @@ export function InboxDetail({
               )}
             </div>
           </div>
+
+          {isTimeOffNotificationType(notification.type) && (
+            <InboxTimeOff
+              key={notification.id}
+              type={notification.type}
+              eventData={notification.eventData}
+              workspaceId={workspaceId}
+            />
+          )}
 
           {taskId &&
             (notification.taskType === "feature" ? (

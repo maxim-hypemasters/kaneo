@@ -15,7 +15,11 @@ import {
   userTable,
 } from "../database/schema";
 import { projectAccessCondition } from "../project-access/project-access-condition";
+import { withApprovedTimeOff } from "./approved-time-off-calendars";
 import type { ScheduleInput } from "./engine/types";
+import { addDays } from "./engine/zoned-time";
+import { readApprovedTimeOff } from "./read-approved-time-off";
+import { readPlanningHolidays } from "./read-planning-holidays";
 import { uniformPlanningCalendar } from "./uniform-calendar";
 import { TRIAGE_STATUS } from "../triage/triage-status";
 
@@ -148,7 +152,7 @@ export async function readScheduleInput(
       : [];
   const planningTimeZone =
     project.planningTimeZone ?? options.timeZone ?? "UTC";
-  const planningCalendars = options.uniformCalendars
+  const baseCalendars = options.uniformCalendars
     ? eligibleMembers.map(({ userId }) =>
         uniformPlanningCalendar(userId, planningTimeZone),
       )
@@ -158,6 +162,31 @@ export async function readScheduleInput(
         weeklyIntervals: calendar.weeklyIntervals,
         timeOff: calendar.timeOff,
       }));
+  // Both modes plan task.userId, so approved time off and calendar holidays
+  // follow the assignee. Every local date is within a day of the UTC one and
+  // planFrom is never before asOf, so days before yesterday cannot block work.
+  const plannedIds = baseCalendars.map((calendar) => calendar.assigneeId);
+  const approvedTimeOff = await readApprovedTimeOff(
+    tx,
+    project.workspaceId,
+    plannedIds,
+    addDays(new Date(asOf).toISOString().slice(0, 10), -1),
+  );
+  const holidays = await readPlanningHolidays(
+    tx,
+    project.workspaceId,
+    plannedIds,
+    addDays(
+      new Date(Math.max(Date.parse(asOf), Date.parse(planFrom)))
+        .toISOString()
+        .slice(0, 10),
+      -1,
+    ),
+  );
+  const planningCalendars = withApprovedTimeOff(baseCalendars, [
+    ...approvedTimeOff.ranges,
+    ...holidays.ranges,
+  ]);
   const relations = await tx
     .select({
       sourceTaskId: taskRelationTable.sourceTaskId,
@@ -301,11 +330,16 @@ export async function readScheduleInput(
       ? 480
       : project.estimateDayMinutes,
     tasks: input.tasks.map(({ loggedSeconds: _logged, ...task }) => task),
-    calendars: input.calendars,
+    // Approved time off enters through its own fingerprint, so passing days
+    // never change the digest; undefined (none) is dropped by the digest.
+    calendars: baseCalendars,
     releases: input.releases,
     dependencies: input.dependencies,
     external: input.externalBlockers,
     logs,
+    approvedTimeOff: approvedTimeOff.revision,
+    // Calendars and the holiday data version; undefined (none) is dropped.
+    holidays: holidays.revision,
   };
   return {
     project,

@@ -42,6 +42,7 @@ const preferences = {
   taskStatusChangeEnabled: true,
   dueDateReminderEnabled: true,
   dueDateReminderLeadTimeMinutes: 1440,
+  teamTimeOffEnabled: true,
   workspaces: [],
 } as unknown as NotificationPreferences;
 
@@ -79,6 +80,37 @@ describe("NotifyMeSection", () => {
         name: "settings:notificationsPage.saveEventPreferences",
       }),
     ).toBeNull();
+  });
+
+  it("saves the team time off switch on its own", () => {
+    render(<NotifyMeSection preferences={preferences} />);
+    const toggle = screen.getByRole("switch", {
+      name: "settings:notificationsPage.eventTeamTimeOff",
+    });
+
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(toggle);
+
+    expect(updatePreferences).toHaveBeenCalledWith({
+      teamTimeOffEnabled: false,
+    });
+    expect(toggle.getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("shows the team time off switch off when it was turned off", () => {
+    render(
+      <NotifyMeSection
+        preferences={{ ...preferences, teamTimeOffEnabled: false }}
+      />,
+    );
+
+    expect(
+      screen
+        .getByRole("switch", {
+          name: "settings:notificationsPage.eventTeamTimeOff",
+        })
+        .getAttribute("aria-checked"),
+    ).toBe("false");
   });
 
   it("restores a switch when saving it fails", async () => {

@@ -112,6 +112,9 @@ it("reports every capability for the caller's role in one response", async () =>
     updateTasks: false,
     manageWorkspace: false,
     inviteUsers: false,
+    readTimeOff: true,
+    requestTimeOff: false,
+    approveTimeOff: false,
   });
 
   // Custom roles resolve from the stored definition, like enforcement does.
@@ -123,6 +126,10 @@ it("reports every capability for the caller's role in one response", async () =>
     updateTasks: true,
     deleteTasks: false,
     createProjects: false,
+    // A stored role without a time_off key gets no time off access.
+    readTimeOff: false,
+    requestTimeOff: false,
+    approveTimeOff: false,
   });
 });
 
@@ -141,4 +148,38 @@ it("does not reveal capabilities in a workspace the caller isn't in", async () =
 
   const response = await getCapabilities(workspace.id, outsider.cookie);
   expect(response.status).toBe(404);
+});
+
+it("keeps time off requests and approvals for members, even for instance admins", async () => {
+  // The first account on an instance becomes its admin.
+  const instanceAdmin = await signup("admin@example.com");
+  const owner = await signup("owner@example.com");
+  const workspace = await seedWorkspace();
+  await db.insert(schema.workspaceUserTable).values({
+    workspaceId: workspace.id,
+    userId: owner.id,
+    role: "owner",
+    joinedAt: new Date(),
+  });
+
+  const outside = await getCapabilities(workspace.id, instanceAdmin.cookie);
+  expect(outside.status).toBe(200);
+  expect(await outside.json()).toMatchObject({
+    createTasks: true,
+    manageWorkspace: true,
+    readTimeOff: true,
+    requestTimeOff: false,
+    approveTimeOff: false,
+  });
+
+  await db.insert(schema.workspaceUserTable).values({
+    workspaceId: workspace.id,
+    userId: instanceAdmin.id,
+    role: "viewer",
+    joinedAt: new Date(),
+  });
+  const inside = await (
+    await getCapabilities(workspace.id, instanceAdmin.cookie)
+  ).json();
+  expect(Object.values(inside).every(Boolean)).toBe(true);
 });

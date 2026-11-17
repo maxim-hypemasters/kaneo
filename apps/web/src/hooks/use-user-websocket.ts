@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import { timeOffKey } from "@/hooks/queries/time-off/time-off-keys";
 import {
   evictInaccessibleWorkspaceCache,
   evictWorkspaceCache,
@@ -112,6 +113,11 @@ export function useUserWebSocket() {
             evictInaccessibleWorkspaceCache(queryClient, message.workspaceIds);
             for (const workspaceId of message.workspaceIds)
               reconcileProjectAccess(queryClient, workspaceId, () => !disposed);
+            // TIME_OFF_UPDATED messages missed while disconnected.
+            void queryClient.invalidateQueries(
+              { queryKey: ["time-off"] },
+              { cancelRefetch: false },
+            );
             refreshOrganizationState();
             const path = pathnameRef.current;
             const current =
@@ -154,6 +160,14 @@ export function useUserWebSocket() {
           }
           if (message.type === "NOTIFICATION_CREATED") {
             queryClient.invalidateQueries({ queryKey: ["notifications"] });
+          }
+          // Data-free: refetch through the permission-checked routes. The
+          // tab that made the change already refetches, so don't cancel it.
+          if (message.type === "TIME_OFF_UPDATED" && message.workspaceId) {
+            void queryClient.invalidateQueries(
+              { queryKey: timeOffKey(message.workspaceId) },
+              { cancelRefetch: false },
+            );
           }
         } catch {
           // Ignore malformed messages

@@ -12,6 +12,8 @@ const {
   archiveFeature,
   invalidateQueries,
   toastError,
+  projectMembers,
+  awayLabels,
 } = vi.hoisted(() => ({
   updateTaskType: vi.fn(),
   updateTaskFeature: vi.fn(),
@@ -19,6 +21,13 @@ const {
   archiveFeature: vi.fn(),
   invalidateQueries: vi.fn(),
   toastError: vi.fn(),
+  projectMembers: vi.fn(
+    (): { id: string; name: string; email: string; image: null }[] => [],
+  ),
+  awayLabels: vi.fn(
+    (_workspaceId: string, _options: { enabled: boolean }) =>
+      new Map<string, string>(),
+  ),
 }));
 vi.mock("@/fetchers/task/feature-library", () => ({ archiveFeature }));
 vi.mock("@/components/features/archive-feature-dialog", () => ({
@@ -54,6 +63,8 @@ vi.mock("@/lib/toast", () => ({
 
 afterEach(() => {
   canCreateTasks.mockReturnValue(true);
+  projectMembers.mockReturnValue([]);
+  awayLabels.mockReturnValue(new Map());
   cleanup();
   vi.clearAllMocks();
 });
@@ -80,9 +91,20 @@ vi.mock("@/components/ui/context-menu", () => ({
   ContextMenuSeparator: (): React.JSX.Element => <div />,
   ContextMenuSub: ({
     children,
+    onOpenChange,
   }: {
     children: React.ReactNode;
-  }): React.JSX.Element => <div>{children}</div>,
+    onOpenChange?: (open: boolean) => void;
+  }): React.JSX.Element => (
+    <div>
+      {onOpenChange && (
+        <button type="button" onClick={() => onOpenChange(true)}>
+          Open submenu
+        </button>
+      )}
+      {children}
+    </div>
+  ),
   ContextMenuSubContent: ({
     children,
   }: {
@@ -116,7 +138,7 @@ vi.mock(
 );
 
 vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
-  default: () => ({ data: [] }),
+  default: () => ({ data: projectMembers() }),
 }));
 
 vi.mock("@tanstack/react-query", async (importOriginal) => ({
@@ -150,6 +172,16 @@ vi.mock("@/hooks/mutations/task/use-update-task-status-priority", () => ({
 
 vi.mock("@/hooks/mutations/task/use-update-task-title", () => ({
   useUpdateTaskTitle: () => ({ mutateAsync: vi.fn() }),
+}));
+
+vi.mock("@/components/time-off/away/use-away-labels", () => ({
+  useAwayLabels: (workspaceId: string, options: { enabled: boolean }) =>
+    awayLabels(workspaceId, options),
+}));
+
+// Nobody is away, so the due date menu blocks no day.
+vi.mock("@/components/time-off/away/use-assignee-blocked-days", () => ({
+  useAssigneeBlockedDays: () => undefined,
 }));
 
 vi.mock("@/hooks/use-workspace-permission", () => ({
@@ -340,6 +372,40 @@ describe("feature actions", () => {
     );
     await vi.waitFor(() =>
       expect(toastError).toHaveBeenCalledWith("tasks:features.typeError"),
+    );
+  });
+});
+
+describe("assignee submenu", () => {
+  it("loads away labels only once the submenu opens", () => {
+    projectMembers.mockReturnValue([
+      { id: "user-2", name: "Ana Lee", email: "ana@example.com", image: null },
+    ]);
+    renderTask(task);
+
+    expect(awayLabels).toHaveBeenLastCalledWith("workspace-1", {
+      enabled: false,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Open submenu" }));
+    expect(awayLabels).toHaveBeenLastCalledWith("workspace-1", {
+      enabled: true,
+    });
+  });
+
+  it("shows until when a member is away", () => {
+    projectMembers.mockReturnValue([
+      { id: "user-2", name: "Ana Lee", email: "ana@example.com", image: null },
+      { id: "user-3", name: "Ben Ito", email: "ben@example.com", image: null },
+    ]);
+    awayLabels.mockReturnValue(new Map([["user-2", "Away until Nov 20"]]));
+    renderTask(task);
+
+    const hint = screen.getByText("Away until Nov 20");
+    expect(hint.parentElement).toHaveTextContent("Ana Lee");
+    const badge = document.querySelector('[data-slot="away-badge"]');
+    expect(badge).toHaveAttribute("title", "Away until Nov 20");
+    expect(document.querySelectorAll('[data-slot="away-badge"]')).toHaveLength(
+      1,
     );
   });
 });

@@ -6,6 +6,9 @@ import { registerFeatureTools } from "./features.js";
 import { registerMilestoneTools } from "./milestones.js";
 import { registerTriageTools } from "./triage.js";
 import { getCurrentUser } from "./get-current-user.js";
+import { registerTimeOffTools } from "./time-off.js";
+import { registerTimeOffHolidayRequestTools } from "./time-off-holiday-requests.js";
+import { registerTimeOffHolidayTools } from "./time-off-holidays.js";
 
 export type ToolClient = {
   readonly usingApiKey?: boolean;
@@ -74,6 +77,9 @@ export function registerTools(
   registerMilestoneTools(server, client);
   registerFeatureTools(server, client);
   registerTriageTools(server, client);
+  registerTimeOffTools(server, client);
+  registerTimeOffHolidayTools(server, client);
+  registerTimeOffHolidayRequestTools(server, client);
   const registerTool = <S extends z.ZodObject>(
     name: string,
     config: { description: string; inputSchema: S },
@@ -442,7 +448,7 @@ export function registerTools(
     "update_task",
     {
       description:
-        "Update a task (fetches current task, merges fields, then full update). Leaves the task's type, feature and release as they are: use set_task_type, set_task_feature and set_task_release for those. The status can't move into or out of 'triage': use accept_triage_task or decline_triage_task.",
+        "Update a task (fetches current task, merges fields, then full update). Leaves the task's type, feature and release as they are: use set_task_type, set_task_feature and set_task_release for those. The status can't move into or out of 'triage': use accept_triage_task or decline_triage_task. Reassigning work whose dates were set by hand fails with TASK_ASSIGNEE_AWAY when the new assignee is away (approved time off or a public holiday) on its start or due day.",
       inputSchema: updateTaskSchema,
     },
     async (args) => {
@@ -1025,7 +1031,7 @@ export function registerTools(
     "update_task_assignee",
     {
       description:
-        "Assign a task to a workspace member, or pass a null userId to unassign it.",
+        "Assign a task to a workspace member, or pass a null userId to unassign it. Reassigning work whose dates were set by hand fails with TASK_ASSIGNEE_AWAY when the new assignee is away (approved time off or a public holiday) on its start or due day; pending requests never block. Planned work keeps its planned assignee until the next Apply.",
       inputSchema: z.object({
         taskId: nonEmptyString,
         userId: nonEmptyString
@@ -1072,7 +1078,7 @@ export function registerTools(
     "update_task_due_date",
     {
       description:
-        "Set a Task/Bug due date by hand. Omit dueDate to clear it. Planned work stops following its estimate until the next Apply of its release.",
+        "Set a Task/Bug due date by hand. Omit dueDate to clear it. Planned work stops following its estimate until the next Apply of its release. The due day can't be a day the assignee is away (approved time off or a public holiday), or it fails with TASK_ASSIGNEE_AWAY; pending requests never block. The day is read in the project's planning timezone (UTC when unset).",
       inputSchema: z
         .object({
           taskId: nonEmptyString,

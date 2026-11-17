@@ -4,12 +4,15 @@ import db, { schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
 import { mockAuthenticatedSession } from "./helpers/auth";
 import { resetTestDatabase } from "./helpers/database";
+import { readErrorBody } from "./helpers/error-body";
 import {
   createProjectFixture,
   createWorkspaceMember,
 } from "./helpers/fixtures";
+import { addWorkspaceMember } from "./helpers/project-access/add-workspace-member";
 import { insertTask } from "./helpers/release/insert-task";
 import { jsonRequest } from "./helpers/release/json-request";
+import { insertTimeOff, setWorkspaceRolePermissions } from "./helpers/time-off";
 
 beforeEach(resetTestDatabase);
 
@@ -192,5 +195,237 @@ describe("moving work on the schedule", () => {
     const replanned = await row(task.id);
     expect(replanned.startDate).toEqual(planned.startDate);
     expect(replanned.scheduleSegments).toEqual(planned.scheduleSegments);
+  });
+});
+
+// Eight planned hours: Monday 13:00–17:00 and Tuesday 09:00–13:00 UTC.
+const plannedDay = (userId: string) => ({
+  userId,
+  estimateSeconds: 28_800,
+  startDate: new Date("2027-01-04T13:00:00Z"),
+  dueDate: new Date("2027-01-05T13:00:00Z"),
+  scheduledAssigneeId: userId,
+  scheduleSegments: [
+    { start: "2027-01-04T13:00:00.000Z", end: "2027-01-04T17:00:00.000Z" },
+    { start: "2027-01-05T09:00:00.000Z", end: "2027-01-05T13:00:00.000Z" },
+  ],
+});
+
+const away = (
+  ctx: { workspace: { id: string } },
+  userId: string,
+  startDate: string,
+  endDate = startDate,
+  status: "approved" | "pending" = "approved",
+) =>
+  insertTimeOff({
+    workspaceId: ctx.workspace.id,
+    userId,
+    startDate,
+    endDate,
+    status,
+  });
+
+describe("moving work around days its assignee is away", () => {
+  it("lays planned work out again around its planned assignee's approved time off", async () => {
+    const ctx = await setup();
+    await away(ctx, ctx.user.id, "2027-01-08");
+    const task = await insertTask(ctx.project.id, plannedDay(ctx.user.id));
+
+    // Dropped on Thursday afternoon; Friday is away, so the rest is Monday.
+    const response = await ctx.move(
+      task.id,
+      "2027-01-07T13:00:00.000Z",
+      "2027-01-08T13:00:00.000Z",
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).dueDate).toBe("2027-01-11T13:00:00.000Z");
+    expect((await row(task.id)).scheduleSegments).toEqual([
+      { start: "2027-01-07T13:00:00.000Z", end: "2027-01-07T17:00:00.000Z" },
+      { start: "2027-01-11T09:00:00.000Z", end: "2027-01-11T13:00:00.000Z" },
+    ]);
+  });
+
+  it("skips the public holidays of the planned assignee's calendar", async () => {
+    const ctx = await setup();
+    await db.insert(schema.timeOffHolidayCalendarTable).values({
+      workspaceId: ctx.workspace.id,
+      userId: ctx.user.id,
+      country: "DE",
+    });
+    const task = await insertTask(ctx.project.id, plannedDay(ctx.user.id));
+
+    // Good Friday and Easter Monday 2027 are public holidays in Germany.
+    expect(
+      (
+        await ctx.move(
+          task.id,
+          "2027-03-25T13:00:00.000Z",
+          "2027-03-26T13:00:00.000Z",
+        )
+      ).status,
+    ).toBe(200);
+    expect((await row(task.id)).scheduleSegments).toEqual([
+      { start: "2027-03-25T13:00:00.000Z", end: "2027-03-25T17:00:00.000Z" },
+      { start: "2027-03-30T09:00:00.000Z", end: "2027-03-30T13:00:00.000Z" },
+    ]);
+  });
+
+  it("reads days away across the whole planning horizon", async () => {
+    const ctx = await setup();
+    await away(ctx, ctx.user.id, "2027-01-05", "2028-01-04");
+    await away(ctx, ctx.user.id, "2028-01-05", "2028-03-31");
+    const task = await insertTask(ctx.project.id, plannedDay(ctx.user.id));
+
+    const response = await ctx.move(
+      task.id,
+      "2027-01-04T13:00:00.000Z",
+      "2027-01-05T13:00:00.000Z",
+    );
+    expect(response.status).toBe(200);
+    expect((await row(task.id)).scheduleSegments).toEqual([
+      { start: "2027-01-04T13:00:00.000Z", end: "2027-01-04T17:00:00.000Z" },
+      { start: "2028-04-03T09:00:00.000Z", end: "2028-04-03T13:00:00.000Z" },
+    ]);
+  });
+
+  it("ignores pending requests", async () => {
+    const ctx = await setup();
+    await away(ctx, ctx.user.id, "2027-01-08", "2027-01-08", "pending");
+    const task = await insertTask(ctx.project.id, plannedDay(ctx.user.id));
+
+    await ctx.move(
+      task.id,
+      "2027-01-07T13:00:00.000Z",
+      "2027-01-08T13:00:00.000Z",
+    );
+    expect((await row(task.id)).scheduleSegments).toEqual([
+      { start: "2027-01-07T13:00:00.000Z", end: "2027-01-07T17:00:00.000Z" },
+      { start: "2027-01-08T09:00:00.000Z", end: "2027-01-08T13:00:00.000Z" },
+    ]);
+  });
+
+  it("refuses a resized span that ends on a day away", async () => {
+    const ctx = await setup();
+    await away(ctx, ctx.user.id, "2027-01-08");
+    const task = await insertTask(ctx.project.id, plannedDay(ctx.user.id));
+
+    const response = await ctx.call("PUT", `/task/schedule/${task.id}`, {
+      start: "2027-01-04T13:00:00.000Z",
+      end: "2027-01-08T13:00:00.000Z",
+      exact: true,
+    });
+    expect(response.status).toBe(409);
+    expect((await readErrorBody(response)).code).toBe("TASK_ASSIGNEE_AWAY");
+    expect(await row(task.id)).toMatchObject({
+      dueDate: new Date("2027-01-05T13:00:00Z"),
+      scheduleSegments: plannedDay(ctx.user.id).scheduleSegments,
+    });
+  });
+
+  it("refuses unplanned work that would start on a day away, but lets it span one", async () => {
+    const ctx = await setup();
+    await away(ctx, ctx.user.id, "2027-01-06");
+    const task = await insertTask(ctx.project.id, {
+      userId: ctx.user.id,
+      startDate: new Date("2027-01-04T00:00:00Z"),
+      dueDate: new Date("2027-01-05T00:00:00Z"),
+    });
+
+    expect(
+      (
+        await ctx.move(
+          task.id,
+          "2027-01-06T00:00:00.000Z",
+          "2027-01-07T00:00:00.000Z",
+        )
+      ).status,
+    ).toBe(409);
+    expect((await row(task.id)).startDate).toEqual(
+      new Date("2027-01-04T00:00:00Z"),
+    );
+    expect(
+      (
+        await ctx.move(
+          task.id,
+          "2027-01-05T00:00:00.000Z",
+          "2027-01-07T00:00:00.000Z",
+        )
+      ).status,
+    ).toBe(200);
+  });
+
+  it("moves and reassigns in one step, checking the new assignee", async () => {
+    const ctx = await setup();
+    await away(ctx, ctx.user.id, "2027-01-06");
+    const free = await addWorkspaceMember(ctx.workspace.id);
+    const wednesday = "2027-01-06T00:00:00.000Z";
+    const drop = (id: string, userId: string) =>
+      ctx.call("PUT", `/task/schedule/${id}`, {
+        start: wednesday,
+        end: wednesday,
+        userId,
+        timeZone: "UTC",
+      });
+
+    // Off the lane of someone away that day, onto a free one.
+    const handed = await insertTask(ctx.project.id, {
+      userId: ctx.user.id,
+      dueDate: new Date("2027-01-05T00:00:00Z"),
+    });
+    expect((await drop(handed.id, free.id)).status).toBe(200);
+    expect(await row(handed.id)).toMatchObject({
+      userId: free.id,
+      dueDate: new Date(wednesday),
+    });
+
+    const refused = await insertTask(ctx.project.id, {
+      userId: free.id,
+      dueDate: new Date("2027-01-05T00:00:00Z"),
+    });
+    const response = await drop(refused.id, ctx.user.id);
+    expect(response.status).toBe(409);
+    expect((await readErrorBody(response)).code).toBe("TASK_ASSIGNEE_AWAY");
+    expect(await row(refused.id)).toMatchObject({
+      userId: free.id,
+      dueDate: new Date("2027-01-05T00:00:00Z"),
+    });
+  });
+
+  it("needs task:assign to move work onto someone else", async () => {
+    const ctx = await setup("custom");
+    await setWorkspaceRolePermissions(ctx.workspace.id, "custom", {
+      task: ["read", "update"],
+    });
+    const other = await addWorkspaceMember(ctx.workspace.id);
+    const task = await insertTask(ctx.project.id, {
+      userId: ctx.user.id,
+      dueDate: new Date("2027-01-04T00:00:00Z"),
+    });
+    const span = {
+      start: "2027-01-05T00:00:00.000Z",
+      end: "2027-01-05T00:00:00.000Z",
+    };
+
+    expect(
+      (
+        await ctx.call("PUT", `/task/schedule/${task.id}`, {
+          ...span,
+          userId: other.id,
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await ctx.call("PUT", `/task/schedule/${task.id}`, {
+          ...span,
+          userId: ctx.user.id,
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (await ctx.call("PUT", `/task/schedule/${task.id}`, span)).status,
+    ).toBe(200);
+    expect((await row(task.id)).userId).toBe(ctx.user.id);
   });
 });

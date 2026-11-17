@@ -16,4 +16,14 @@ describe("workspaceCapabilities", () => {
       }
     }
   });
+
+  it("maps each time-off capability to one time_off action", () => {
+    expect(workspaceCapabilities.readTimeOff).toEqual({ time_off: ["read"] });
+    expect(workspaceCapabilities.requestTimeOff).toEqual({
+      time_off: ["create"],
+    });
+    expect(workspaceCapabilities.approveTimeOff).toEqual({
+      time_off: ["approve"],
+    });
+  });
 });

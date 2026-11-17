@@ -29,6 +29,8 @@ import type {
   WorkspaceUserInvitation,
 } from "@/types/workspace-user";
 import { useAuth } from "../providers/auth-provider/hooks/use-auth";
+import { useAwayLabels } from "../time-off/away/use-away-labels";
+import { WithAwayBadge } from "../time-off/away/with-away-badge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -140,6 +142,7 @@ function MembersTable({ workspaceId, invitations, users }: Props) {
     canManageProjectAccess,
   );
   const managerLimited = myAccess?.projectAccess === "selected";
+  const away = useAwayLabels(workspaceId, { enabled: users.length > 0 });
   const columnCount = canManageProjectAccess ? 5 : 4;
 
   const describeAccess = (access: ProjectAccessValue) =>
@@ -271,15 +274,20 @@ function MembersTable({ workspaceId, invitations, users }: Props) {
               <TableRow key={member.user.email}>
                 <TableCell className="ps-6 py-3">
                   <div className="flex items-center gap-3">
-                    <Avatar className={cn("size-8", tone)}>
-                      <AvatarImage
-                        src={member.user.image ?? ""}
-                        alt={member.user.name ?? ""}
-                      />
-                      <AvatarFallback className="bg-transparent text-[11px] font-medium">
-                        {getInitials(member.user.name)}
-                      </AvatarFallback>
-                    </Avatar>
+                    <WithAwayBadge
+                      label={away.get(member.userId)}
+                      badgeClassName="size-3.5"
+                    >
+                      <Avatar className={cn("size-8", tone)}>
+                        <AvatarImage
+                          src={member.user.image ?? ""}
+                          alt={member.user.name ?? ""}
+                        />
+                        <AvatarFallback className="bg-transparent text-[11px] font-medium">
+                          {getInitials(member.user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </WithAwayBadge>
                     {/* Capped on phones so the email truncates and the role column
                         peeks in, hinting that the table scrolls sideways. */}
                     <div className="min-w-0 max-w-[55vw] sm:max-w-none">

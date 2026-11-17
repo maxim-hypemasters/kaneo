@@ -12,10 +12,12 @@ import {
   workspaceTable,
 } from "../database/schema";
 import { canReceiveResourceNotification } from "../notification/resource-access";
+import { isTimeOffNotificationType } from "../time-off/time-off-notification-types";
 import {
   safeOutboundError,
   sendOutboundRequest,
 } from "../utils/outbound-request";
+import { formatDayRange } from "./format-day-range";
 import { resolveEmailTask } from "./resolve-email-task";
 import { decryptSecret } from "./secrets";
 
@@ -42,6 +44,10 @@ function buildTaskUrl(workspaceId: string, projectId: string, taskId: string) {
   return `${getClientUrl()}/dashboard/workspace/${workspaceId}/project/${projectId}/task/${taskId}`;
 }
 
+function buildTimeOffUrl(workspaceId: string) {
+  return `${getClientUrl()}/dashboard/workspace/${workspaceId}/time-off`;
+}
+
 function getStringValue(
   data: Record<string, unknown> | null | undefined,
   key: string,
@@ -56,6 +62,19 @@ function getNumberValue(
 ) {
   const value = data?.[key];
   return typeof value === "number" ? value : null;
+}
+
+function eventDayRange(data: Record<string, unknown> | null | undefined) {
+  const startDate = getStringValue(data, "startDate");
+  const endDate = getStringValue(data, "endDate");
+  return startDate && endDate ? formatDayRange(startDate, endDate) : null;
+}
+
+// Weekdays minus the member's calendar holidays, so not plain weekdays.
+function formatWorkdays(days: number | null) {
+  return days === null
+    ? null
+    : `${days} ${days === 1 ? "working day" : "working days"}`;
 }
 
 function formatLeadTime(minutes: number | null) {
@@ -214,6 +233,73 @@ function buildDeliveryContent(notification: {
         body: taskTitle
           ? `A new comment was added to ${taskTitle}.`
           : "A new comment was added to a Kaneo task.",
+      };
+    }
+    case "time_off_requested": {
+      const requesterName = getStringValue(
+        notification.eventData,
+        "requesterName",
+      );
+      const range = eventDayRange(notification.eventData);
+      const days = formatWorkdays(
+        getNumberValue(notification.eventData, "days"),
+      );
+      return {
+        title: requesterName
+          ? `${requesterName} requested time off`
+          : "Time off requested",
+        body: range
+          ? `${range}${days ? ` (${days})` : ""} is waiting for your review.`
+          : "A time off request is waiting for your review.",
+      };
+    }
+    case "time_off_approved":
+    case "time_off_declined": {
+      const approved = notification.type === "time_off_approved";
+      const deciderName = getStringValue(notification.eventData, "deciderName");
+      const range = eventDayRange(notification.eventData);
+      const verb = approved ? "approved" : "declined";
+      return {
+        title: approved ? "Time off approved" : "Time off declined",
+        body: range
+          ? `${deciderName ?? "An approver"} ${verb} your time off for ${range}.`
+          : `Your time off request was ${verb}.`,
+      };
+    }
+    case "time_off_member_away": {
+      const userName = getStringValue(notification.eventData, "userName");
+      const range = eventDayRange(notification.eventData);
+      return {
+        title: userName ? `${userName} has time off` : "Teammate time off",
+        body: range
+          ? `${userName ?? "A teammate"} is away ${range}.`
+          : `${userName ?? "A teammate"} has approved time off.`,
+      };
+    }
+    // Calendar request notices never name the country or region.
+    case "time_off_holiday_calendar_requested": {
+      const requesterName = getStringValue(
+        notification.eventData,
+        "requesterName",
+      );
+      return {
+        title: requesterName
+          ? `${requesterName} asked to change their public holidays`
+          : "Public holiday change requested",
+        body: "A public holiday calendar change is waiting for your review.",
+      };
+    }
+    case "time_off_holiday_calendar_approved":
+    case "time_off_holiday_calendar_declined": {
+      const approved =
+        notification.type === "time_off_holiday_calendar_approved";
+      const deciderName = getStringValue(notification.eventData, "deciderName");
+      const verb = approved ? "approved" : "declined";
+      return {
+        title: approved
+          ? "Public holiday change approved"
+          : "Public holiday change declined",
+        body: `${deciderName ?? "An approver"} ${verb} your public holiday calendar change.`,
       };
     }
     default:
@@ -451,8 +537,11 @@ export async function deliverNotification(
     return;
   }
 
+  // Time off belongs to the workspace rather than a project, so a rule
+  // limited to selected projects still delivers it.
   if (
     rule.projectMode === "selected" &&
+    !isTimeOffNotificationType(notification.type) &&
     (!context.projectId ||
       !rule.selectedProjects.some(
         (project) => project.projectId === context.projectId,
@@ -470,6 +559,12 @@ export async function deliverNotification(
         ? (notification.eventData as Record<string, unknown>)
         : null,
   });
+
+  const actionUrl =
+    context.taskUrl ??
+    (isTimeOffNotificationType(notification.type)
+      ? buildTimeOffUrl(context.workspaceId)
+      : null);
 
   const webhookPayload = {
     notification: {
@@ -518,7 +613,7 @@ export async function deliverNotification(
         await sendNotificationEmail(recipient, content.title, {
           title: content.title,
           message: content.body,
-          actionUrl: context.taskUrl,
+          actionUrl,
           locale: user.locale ?? null,
           breadcrumb: context.projectName
             ? `${context.workspaceName} / ${context.projectName}`
@@ -543,7 +638,7 @@ export async function deliverNotification(
         token: decryptedPreference.ntfyToken,
         title: content.title,
         body: content.body,
-        clickUrl: context.taskUrl,
+        clickUrl: actionUrl,
       }),
     );
   }
@@ -560,7 +655,7 @@ export async function deliverNotification(
         token: decryptedPreference.gotifyToken,
         title: content.title,
         body: content.body,
-        clickUrl: context.taskUrl,
+        clickUrl: actionUrl,
       }),
     );
   }

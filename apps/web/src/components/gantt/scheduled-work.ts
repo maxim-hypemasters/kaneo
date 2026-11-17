@@ -33,6 +33,7 @@ export function scheduledWork(
       return [
         {
           ...task,
+          taskUserId: task.userId || null,
           ...(placement && !legacy
             ? {
                 userId: placement.assigneeId,

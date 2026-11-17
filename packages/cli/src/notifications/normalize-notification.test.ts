@@ -182,6 +182,100 @@ describe("normalizeNotification", () => {
     ).toBe("Custom event");
   });
 
+  it("describes time off requests, decisions and absences", () => {
+    const timeOff = (type: string, eventData: Record<string, unknown>) =>
+      normalizeNotification(
+        raw({
+          type,
+          eventData: {
+            workspaceId: "ws_1",
+            timeOffId: "to1",
+            startDate: "2026-11-16",
+            endDate: "2026-11-20",
+            ...eventData,
+          },
+          resourceId: "ws_1",
+          resourceType: "workspace",
+        }),
+      );
+    expect(
+      timeOff("time_off_requested", { requesterName: "Mia", days: 5 }),
+    ).toMatchObject({
+      title: "Mia requested time off",
+      message: "Nov 16 – 20, 2026 (5 working days)",
+      workspaceId: "ws_1",
+      projectId: null,
+      taskId: null,
+    });
+    expect(
+      timeOff("time_off_requested", {
+        requesterName: "Mia",
+        endDate: "2026-11-16",
+        days: 1,
+      }).message,
+    ).toBe("Nov 16, 2026 (1 working day)");
+    expect(
+      timeOff("time_off_approved", { deciderName: "Olga", days: 5 }),
+    ).toMatchObject({
+      title: "Time off approved",
+      message: "Nov 16 – 20, 2026, approved by Olga",
+    });
+    expect(timeOff("time_off_declined", {})).toMatchObject({
+      title: "Time off declined",
+      message: "Nov 16 – 20, 2026",
+    });
+    expect(timeOff("time_off_member_away", { userName: "Mia" })).toMatchObject({
+      title: "Mia is away",
+      message: "Nov 16 – 20, 2026",
+    });
+    expect(timeOff("time_off_member_away", { startDate: null })).toMatchObject({
+      title: "A teammate is away",
+      message: "Dates unavailable",
+    });
+  });
+
+  it("describes holiday calendar requests and decisions without a calendar", () => {
+    const calendar = (type: string, eventData: Record<string, unknown>) =>
+      normalizeNotification(
+        raw({
+          type,
+          eventData: { workspaceId: "ws_1", requestId: "hcr1", ...eventData },
+          resourceId: "ws_1",
+          resourceType: "workspace",
+        }),
+      );
+    expect(
+      calendar("time_off_holiday_calendar_requested", {
+        requesterId: "u1",
+        requesterName: "Mia",
+      }),
+    ).toMatchObject({
+      title: "Mia asked to change their public holidays",
+      message: "Waiting for your review",
+      workspaceId: "ws_1",
+      taskId: null,
+    });
+    expect(
+      calendar("time_off_holiday_calendar_requested", { requesterName: null })
+        .title,
+    ).toBe("Someone asked to change their public holidays");
+    expect(
+      calendar("time_off_holiday_calendar_approved", {
+        deciderId: "u2",
+        deciderName: "Olga",
+      }),
+    ).toMatchObject({
+      title: "Public holiday change approved",
+      message: "Approved by Olga",
+    });
+    expect(
+      calendar("time_off_holiday_calendar_declined", { deciderName: null }),
+    ).toMatchObject({
+      title: "Public holiday change declined",
+      message: null,
+    });
+  });
+
   it("points workspace notifications at their workspace", () => {
     expect(
       normalizeNotification(

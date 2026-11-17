@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { PriorityGlyph } from "@/components/task-chips/priority-glyph";
+import { useAwayLabels } from "@/components/time-off/away/use-away-labels";
 import { cn } from "@/lib/cn";
 import { Toolbar } from "../ui/toolbar";
 import { barButtonClass } from "./bar-button-class";
@@ -50,6 +51,7 @@ const toCommandItems = (
     value: `${prefix}-${option.value}`,
     label: option.label,
     icon: option.icon,
+    hint: option.hint,
     onRun: () => void run(option.value),
   }));
 
@@ -62,9 +64,13 @@ export function BulkBar({
 }: BulkBarProps) {
   const { t } = useTranslation();
   const actions = useBulkActions(selectedTaskIds, clearSelection);
-  const options = useBulkOptions(actions);
-  const { mounted, hidden, displayCount } = useToolbarPresence(actions.count);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
+  const away = useAwayLabels(actions.workspaceId, {
+    enabled: assigneeOpen || commandOpen,
+  });
+  const options = useBulkOptions(actions, away);
+  const { mounted, hidden, displayCount } = useToolbarPresence(actions.count);
   useBulkSelectionKeys({
     hasSelection: actions.count > 0,
     selectAll,
@@ -229,6 +235,7 @@ export function BulkBar({
               picker="assignee"
               onDismiss={dismissTemporary}
               returnFocus={focusedTaskElement}
+              onOpenChange={setAssigneeOpen}
             />
           )}
           {can.labels && (

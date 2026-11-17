@@ -19,6 +19,10 @@ export const updatePreferencesBody = z.object({
   taskCommentEnabled: z.boolean().optional(),
   taskStatusChangeEnabled: z.boolean().optional(),
   dueDateReminderEnabled: z.boolean().optional(),
+  teamTimeOffEnabled: z.boolean().optional().openapi({
+    description:
+      "Notify me when a teammate's time off is approved. Requests and decisions on my own time off always notify.",
+  }),
   dueDateReminderLeadTimeMinutes: z
     .number()
     .int()

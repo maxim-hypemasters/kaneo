@@ -1,0 +1,311 @@
+---
+title: "Time off"
+description: "Request time off, approve it, track public holidays, and see who is away."
+---
+
+Time off belongs to a workspace. Members request days off, approvers approve or decline them, and the team sees who is away. Members can also pick a public holiday calendar, so their holidays count without requests; after their first choice, changing it needs approval. Approved time off and public holidays keep planned work off those days, and tasks can't start or be due on them.
+
+## Open Time off
+
+Open **Time off** in the workspace sidebar, or find it in the command palette. It appears when your role includes any time-off permission. The page has up to four tabs:
+
+| Tab | Shows | Needs |
+| --- | --- | --- |
+| **Team** | A month timeline of who is away, public holidays included | **View time off** |
+| **My time off** | Your balances for a year, your public holiday calendar and any change to it waiting for approval, and your requests of every status | Any time-off permission |
+| **Approvals** | Time-off requests and holiday calendar changes waiting for a decision, with their number on the tab | **Approve time off** |
+| **Balances** | Every member's allowances and balances | **Approve time off** |
+
+In **Team**, each member has a row, with yours first. Use the arrows to change months and **Today** to come back. Weekends are shaded and today, by your device's date, is highlighted. Your own time off shows its type. Other members' approved time off shows as **Away**; approvers see its type instead. Public holidays from a member's [calendar](#public-holidays) show on their row too, with the holiday's name on your own row and, for approvers, on everyone's; otherwise they show as **Away**. Pending requests have a dashed outline: you see your own, and approvers see everyone's. Declined and cancelled requests don't appear. Select a bar to see its dates. For your own time off, or anyone's if you're an approver, it also shows the type, status, working days, and note, and **Edit** and **Cancel time off** when you may use them. A holiday shows its name wherever the row does. For anyone else's time off or holidays, it says that only they and approvers see the details.
+
+**My time off** shows one year at a time. Use the arrows to change the year. The balance card has a meter for each type, **Vacation**, **Sick day**, and **Public holiday**, with its allowance and the days used, pending, and left. Over an allowance, the meter shows how many days over you are. A type says so when an approver gave you an allowance of your own for it. The **Public holidays** card below it shows your holiday calendar and its holidays in that year. Until you choose a calendar, a [reminder](#the-setup-deadline) above them may show the workspace's deadline. **Requests in** and the year lists your requests of every status that touch that year, each with a menu for **Edit** and **Cancel time off** when you may use them.
+
+The page updates live when someone requests, decides, edits, or cancels time off or a holiday calendar change, changes an allowance or the setup deadline, or changes a holiday calendar.
+
+## Request time off
+
+1. Choose **Request time off** at the top of the page. When you have no requests in the year shown, **My time off** offers the same button.
+2. Choose the **Type**: **Vacation**, **Sick day**, or **Public holiday**.
+3. Pick the **First day** and **Last day**. Both days are included. Time off is always whole days.
+4. Optionally add a **Note** of up to 500 characters. Only you and approvers see it.
+5. Choose **Send request**.
+
+While you pick dates, the dialog counts the working days and shows, for each year, how many days of the chosen type would be left once this request and your other pending requests are approved. Working days are Monday to Friday, except the public holidays of your calendar. Going over the allowance shows **Over the allowance**, but you can still send the request.
+
+Every request starts as **Pending**, including requests from approvers. The dates must:
+
+- include at least one working day. Weekends and your calendar's public holidays count nothing, so a range of only those can't be requested;
+- span at most 366 days;
+- fall between January 1 of last year and December 31 of next year;
+- not overlap another pending or approved request of the same person. Both ends count, so a request that ends on a Friday overlaps one that starts that Friday, but not one that starts the following Monday.
+
+## Edit or cancel a request
+
+Use the menu on a request in **My time off**, or select its bar in **Team**. Approvers change other members' time off from its bar in **Team**, and approve or decline it in **Approvals**.
+
+| Status | The person away | An approver |
+| --- | --- | --- |
+| Pending | Edit or cancel | Edit, cancel, approve, or decline |
+| Approved | Cancel, until the end of the first day (UTC) | Edit or cancel at any time. Edited time off stays approved. |
+| Declined or Cancelled | Nothing; the request is final | Nothing; the request is final |
+
+Editing or cancelling your own requests needs **Request time off**. Cancelling asks for confirmation; **Keep it** closes the dialog without changes. Declined and cancelled requests stay in your history. To take those days after all, send a new request.
+
+Only approvers can change approved time off, and after its first day, only they can cancel it. For example, if you come back early, an approver can move the last day. Cancelling approved time off gives the days back to your balance.
+
+## Approve or decline
+
+Open **Approvals**. The tab shows how many time-off requests and [holiday calendar changes](#holiday-calendar-changes) are waiting. Requests are listed oldest first, with the member, the dates, the number of working days, the type, and the note. A request that would take the person past their allowance for its type gets a badge for each year it goes over, such as **2 days over the 2026 allowance**. The badge counts the person's approved time off of that type, not their other pending requests. Choose **Approve** or **Decline**. Kaneo doesn't record a reason, so tell the person directly if they need one.
+
+Approvers can approve or decline their own requests. To change a request before deciding it, select its bar in **Team** and choose **Edit**.
+
+If the request was edited after you last saw it, Kaneo doesn't decide it and says **This request changed since you opened it. Review it again before deciding.** The list then shows the current version. If someone else already decided or cancelled it, Kaneo says **This request was already decided or cancelled.** instead.
+
+Approving time off over work that already starts or is due on those days is allowed. The work keeps its dates, and [Gantt](/core/functional/calendar-and-gantt#time-off-and-public-holidays) marks the conflict.
+
+### Holiday calendar changes
+
+Members' changes to their [public holiday calendar](#change-your-calendar) are listed under **Public holiday calendars**, below the time-off requests, oldest first. Each shows the member, the calendar in effect and the one they asked for, either of which can be **No calendar**, and **Requested** with the day they last changed it.
+
+- **Approve** applies the calendar they asked for at once, like a calendar they chose freely: its holidays replace their old ones, past years included, and plans that include them become outdated.
+- **Decline** keeps their calendar as it is.
+
+The member is notified either way, unless they decided it themselves. Approvers' own changes apply at once, but one they sent before their role could approve still waits here, and they can decide it.
+
+If the member changed the request after you opened it, Kaneo doesn't decide it and says **This request changed since you opened it. Review it again before deciding.** If it was already decided or withdrawn, Kaneo says **This request was already decided or cancelled.** If an upgrade removed the calendar they asked for from the holiday data, approving says **That holiday calendar is no longer available. Decline the request instead.**
+
+### Record time off for someone else
+
+Approvers can request time off on someone else's behalf, for example to record a sick day reported by phone. In the request dialog, choose the member under **For**. It defaults to **Me**. In a custom role that can approve but not request time off, **Me** isn't offered, so choose a member first. The days left that the dialog shows are then that member's.
+
+The person must be a current member of the workspace. The request starts as pending like any other, so approve it afterwards. The person is notified when it is approved or declined.
+
+## Allowances
+
+Each type has its own allowance: the working days of that type a member may take per calendar year, January 1 to December 31. Until an approver changes them, the workspace defaults are:
+
+| Type | Default allowance |
+| --- | --- |
+| **Vacation** | 25 |
+| **Sick day** | 10 |
+| **Public holiday** | 10 |
+
+- **Set a default:** open **Settings → Workspace → Time off** and enter a number in that type's field under **Default allowances**. The page is for people with **Approve time off**, and **Balances** links to it. It also sets the public holiday [setup deadline](#the-setup-deadline).
+- **Give someone their own allowance:** in **Balances**, choose the type above the member list, then enter a number in that member's **Allowance** field. Without one, the field shows the default, such as **25 (default)**. **Use default**, or emptying the field, removes the override for that type, so the member follows the workspace default again. Their other types keep their own allowances.
+
+Both fields take a whole number from 0 to 366 and save when you leave the field or press Enter. Escape puts back the saved value. The member list in **Balances** shows one year and one type at a time; use the arrows to see another year, and the type choice to see another type's allowances and used, pending, and remaining days.
+
+How balances are counted:
+
+- Only working days count: Monday to Friday, except the member's [public holidays](#public-holidays). A public holiday from their calendar inside a request never counts as a day of it.
+- Each type counts only against its own allowance. A sick day doesn't use vacation days.
+- **Used** is approved working days of the type in the year. For **Public holiday**, it also includes the weekday holidays of the member's calendar. **Pending** working days are shown separately and are not subtracted.
+- **Remaining** is the allowance minus the used days. It can go below zero.
+- Time off across New Year counts in each year. For example, December 29, 2026 to January 8, 2027 uses 3 working days of 2026 and 6 of 2027. With a calendar for Bavaria, Germany, New Year's Day and Epiphany don't count, so it uses 4 of 2027.
+- Unused days don't carry over to the next year.
+- Going over the allowance is allowed. The person sees a warning when requesting, and approvers see how many days over the request would go.
+
+An allowance has one value that applies to every year. Changing a default or an override also changes the balances of past years. Nothing carries over, so this only affects what those years show.
+
+<Tip>
+Some calendars have more than 10 public holidays on weekdays in a year. Members with such a calendar show as over their **Public holiday** allowance until an approver raises the default or their own allowance. It's only a warning.
+</Tip>
+
+## Public holidays
+
+Each member can pick a public holiday calendar: a country, and optionally a region, such as a state or province with holidays of its own. The calendar's holidays then count as approved time off, without a request for each holiday.
+
+In **My time off**, the **Public holidays** card shows your calendar and its holidays in the year shown. Holidays that fall on a weekend are listed too, marked **On a weekend, doesn't count**.
+
+Without a calendar, request your public holidays like any other time off, with the type **Public holiday**. They need approval like other requests. With a calendar, you can still request **Public holiday** time off for days the calendar leaves out.
+
+A calendar has only official public holidays. Bank holidays, school holidays, optional days, and holidays of a single city aren't in it. For example, December 24 isn't a public holiday in Germany, so a German calendar doesn't include it; request it if you take it off.
+
+With a calendar:
+
+- Its holidays never count as days of your requests. A Monday-to-Friday vacation with a weekday holiday in it uses 4 vacation days.
+- Its weekday holidays count as used **Public holiday** days. Weekend holidays count nothing.
+- Planning skips its holidays, like approved time off. Picking, changing, or clearing a calendar marks the plans that include you outdated once the change applies.
+- Tasks can't start or be due on its holidays. See [Task dates](#task-dates).
+- The **Team** timeline shows its holidays on your row.
+- Its holidays don't show an away badge, and nobody is notified about them.
+
+A calendar has no start date. It applies to every year, so changing it also changes the day counts and balances of past years.
+
+Other members see your holidays as **Away**, like your approved time off. They never see a holiday's name, your country, or your region, or that you asked to change your calendar. You and approvers see the names. Names follow your language when the holiday data has a translation, and otherwise use the country's own language.
+
+Holiday data comes from [date-holidays](https://github.com/commenthol/date-holidays) (ISC license; holiday data CC BY-SA 4.0). It ships with Kaneo, so nothing is fetched online. Upgrading Kaneo may update it, which can change members' holidays, past years included, and marks the plans that include members with a calendar outdated.
+
+### Change your calendar
+
+On the **Public holidays** card, choose **Change**, then pick a country, and a region if holidays differ across the country; **Whole country** leaves the region out. **No calendar** removes the calendar. Choose **Save**. Changing your calendar needs **Request time off**.
+
+- **Your first choice is free.** It applies at once if you make it on or before the workspace's [setup deadline](#the-setup-deadline), or at any time when the workspace has none. Choosing **No calendar** counts as your choice too.
+- **Later changes need approval.** After your first choice, every change waits for an approver: another country or region, or **No calendar**. The button reads **Request change**, and the form says that an approver reviews the change first and shows **Send for approval**. After the deadline, even a first choice needs approval.
+- **While a change waits,** the card shows **Waiting for approval:** and the calendar you asked for, and your current calendar applies until an approver decides. A waiting change affects nothing else: the **Team** timeline, balances, task dates, and plans keep using your current calendar. Approvers are notified, and you're notified of their decision.
+- **To change your mind,** open the form again: it starts from the calendar you asked for. Sending another calendar replaces the waiting change, and approvers review the new one. **Withdraw** takes the change back, and so does saving your current calendar again.
+
+You have at most one change waiting at a time.
+
+Approvers' own changes apply at once, whatever the deadline. Approvers can also set or clear another member's calendar through the [API](#use-time-off-from-other-tools) or [MCP](/core/integrations/mcp#time-off), and that applies at once too. It counts as that member's choice, so their free first choice is used. If it's the calendar the member asked for, their waiting change is approved; any other calendar cancels it. Saving the member's current calendar again leaves their waiting change as it is. In the app, you change only your own.
+
+### The setup deadline
+
+Approvers set one deadline for the workspace in **Settings → Workspace → Time off**, under **Public holidays**. Open the date picker next to **Setup deadline** and pick a day, or choose **Remove deadline** to have none; the change saves right away. Without a deadline, the picker reads **No deadline** and a member's first choice is always free.
+
+The deadline is a day in UTC, and it counts: a first choice applies at once until midnight UTC at the end of that day. West of UTC, that midnight comes during the deadline day in local time, so the window closes a few hours early there. Moving or removing the deadline leaves changes already waiting for approval as they are.
+
+Until you choose a calendar, **My time off** shows a reminder above your balances while the workspace has a deadline:
+
+- **Set up your public holidays by** and the date, up to the deadline;
+- **The deadline for public holidays has passed** after it, because choosing a calendar now needs approval.
+
+The reminder goes away once you choose a calendar, **No calendar** included, or while a change waits for approval. It shows only if you can request time off. Approvers see only the first wording, until the deadline, since their choices always apply.
+
+## Task dates
+
+A Task or Bug can't start or be due on a day its assignee is away: approved time off of any type, or a public holiday of their calendar. Work may still span such days. Pending requests never block, so they stay private.
+
+- Kaneo checks only the dates a change moves, or both dates when the work goes to someone else. Time off approved over existing work never blocks an unrelated edit.
+- Planned work moved in Gantt is laid out around its planned assignee's days away instead, as Apply does.
+- The rule applies wherever dates or assignees change: task properties, a card's right-click menu, the bulk bar, Gantt, the API, the CLI, and MCP. Creating, duplicating, or importing work, and moving it to another project, don't check it. Applying a plan doesn't need to: the planner already skips those days.
+- A refused change returns 409 `TASK_ASSIGNEE_AWAY`. Its message names the dates, never the type of time off or a holiday's name. A bulk change saves nothing and lists each task in `issues`, with the path `tasks.<id>`.
+- A date is read as a day in the timezone it was picked in. The web app sends your browser's; other clients default to the project's planning timezone, or UTC.
+
+[Calendar and Gantt](/core/functional/calendar-and-gantt#time-off-and-public-holidays) shows how days away appear on the chart and in date pickers.
+
+## Who sees what
+
+| Who | What they see |
+| --- | --- |
+| Members with **View time off** | Who is away and when, for approved time off and public holidays. They don't see other people's type, note, status, balance, holiday names, or holiday calendar, any of their requests that aren't approved, or their holiday calendar changes. |
+| The person away | Everything about their own time off: type, note, status, requests of every status, their balances, their holiday calendar, and their calendar change waiting for approval |
+| Approvers who are members of the workspace | Everything about every member's time off, including pending requests on the timeline, every balance, holiday names, and holiday calendar changes waiting for approval, with the calendar each would replace. Through the API and MCP, also every member's holiday calendar. |
+| Instance administrators who aren't members of the workspace | Who is away and when, like a member. They don't get **Request time off**, **Approvals**, or **Balances**, and can't decide requests or record time off. |
+
+An instance administrator who is a member of the workspace has approver access, whatever their role.
+
+Notifications, live updates, webhooks, and MCP follow the same rule. Notifications name who is away and when, never the type or the note. Holiday calendar notifications name only the member and the approver, never the country or the region. Through the API, other members can tell that a day comes from someone's holiday calendar, but never the holiday's name, the country, or the region.
+
+## Away badges
+
+If your role includes **View time off**, members who are away today show a palm-tree badge on their avatar. Today is your device's date. Badges appear in:
+
+- assignee pickers: on tasks and subtasks, in the creation window, in a card's right-click menu, in the bulk bar, when planning a release, and for a Milestone Lead. **Away until** and the person's last day away show next to their name.
+- the **Members** page. Hover over the badge to read **Away until** and the last day.
+
+Only approved time off shows a badge; public holidays from a calendar don't. Time off that follows on directly, overlaps, or has only a weekend between reads as one absence, so **Away until** shows the last day of the whole stretch.
+
+## Notifications
+
+| Notification | Who gets it | When |
+| --- | --- | --- |
+| *Name* requested time off (`time_off_requested`) | Approvers, except the person who created the request | A request is created |
+| Your time off was approved or declined (`time_off_approved`, `time_off_declined`) | The person away, unless they decided it themselves | A pending request is approved or declined |
+| *Name* has time off (`time_off_member_away`) | Members with **View time off**, except the person away and the approver | Time off that hasn't ended yet is approved |
+| *Name* asked to change their public holidays (`time_off_holiday_calendar_requested`) | Approvers, except the person who made the change | A member's holiday calendar change starts waiting for approval |
+| Your public holiday change was approved or declined (`time_off_holiday_calendar_approved`, `time_off_holiday_calendar_declined`) | The member, unless they decided it themselves | A waiting holiday calendar change is approved or declined, including when an approver sets the calendar the member asked for |
+
+Cancellations, edits, public holidays themselves, calendar changes that apply at once (unless they approve a waiting change), sending another calendar while a change waits, withdrawing a change, and the cleanup after a member leaves or is removed notify nobody. Approvers are the members whose role includes **Approve time off**, and instance admins who are members of the workspace.
+
+In the inbox, a time-off notification shows the days, the person who asked, decided, or is away, and the number of working days. A holiday calendar notification has no days, so it shows **Public holidays** and the person. **Open time off** goes to **Approvals** for a request or a calendar change, to **My time off** for a decision on yours (in that year, for time off), and to that month in **Team** for a teammate's time off.
+
+To stop the teammate notice, turn off **Team time off** in [notification settings](/core/functional/account-notifications#1-choose-which-events-you-want). Requests and holiday calendar changes waiting for your approval, and decisions on your own, always notify you. Time off belongs to the workspace rather than a project, so a workspace delivery rule limited to selected projects still forwards it. Email, ntfy, and Gotify messages link to the workspace's **Time off** page.
+
+## Planning
+
+Approved time off and the public holidays of a member's calendar remove the person's days off from the plans of work assigned to them. In [release plans](/core/functional/releases#schedule-a-release), each day off is a whole day in the project's planning timezone. Project-wide plans made through the API use each member's work calendar timezone. Pending and declined requests never affect a plan, so planning doesn't reveal them.
+
+Approving time off, cancelling approved time off, or changing the dates of approved time off marks affected plans outdated, and so does a new holiday calendar, or **No calendar**, taking effect for a member the plan includes: a free first choice, an approver's change, or an approved request. A calendar change waiting for approval doesn't. Preview and apply them again. Time off approved after it ended, such as a sick day recorded the following week, doesn't mark plans outdated, and neither does changing or cancelling time off that has already ended. See [Calendar and Gantt](/core/functional/calendar-and-gantt#estimate-and-plan-work).
+
+Dragging planned work in Gantt lays it out around its planned assignee's approved time off and public holidays too. Work with dates set by hand follows the [task date rule](#task-dates) instead.
+
+## Permissions
+
+| Permission | Allows | Default roles |
+| --- | --- | --- |
+| **View time off** (`time_off:read`) | See the **Team** timeline, away badges, and days away in Gantt and task date pickers | Viewer, Member, Admin, Owner |
+| **Request time off** (`time_off:create`) | Request time off, edit your pending requests, cancel your own requests (approved ones until their first day is over), choose your own holiday calendar, and withdraw your own calendar change | Member, Admin, Owner |
+| **Approve time off** (`time_off:approve`) | Approve or decline requests and holiday calendar changes, see every member's details and balances, record time off for others, edit approved time off, set each type's allowances and the public holiday setup deadline, change your own calendar without approval, and set members' holiday calendars through the API or MCP | Admin, Owner |
+
+Any of the three opens the page and **My time off**. Requesting time off and approver actions also need membership of the workspace. An admin can change the editable roles in [Members and roles](/core/functional/collaborate-with-team#edit-roles-or-create-a-custom-role).
+
+The [task date rule](#task-dates) applies to everyone, whatever their time-off permissions.
+
+Roles that existed before time off was added got these permissions once, on upgrade. See the [upgrade note](/core/operations/upgrades#time-off).
+
+API keys created with an explicit permission list keep that list. Unless it includes the time-off permissions, such a key can't use time off. It also doesn't list time-off notifications without `time_off:read`, or requests and holiday calendar changes waiting for approval without `time_off:approve`. Sessions, keys without a permission list, the CLI, and MCP clients follow your role.
+
+## When someone leaves
+
+When a member leaves the workspace or is removed from it:
+
+- their pending requests, and their holiday calendar change waiting for approval, are cancelled, so nobody is left to decide them;
+- the notes on all their time off in that workspace are deleted;
+- their time off and public holidays disappear from the timeline and **Balances**.
+
+The requests stay as history, and so does their holiday calendar, so their free first choice stays used. If the person is added back, their approved time off returns without notes, their calendar applies again, and the cancelled requests stay cancelled. Nobody is notified.
+
+## Use time off from other tools
+
+The [MCP server](/core/integrations/mcp#time-off) has tools to list time off, request, edit, cancel, approve, and decline it, read balances, set allowances, read and set holiday calendars, list, approve, decline, and withdraw holiday calendar changes, and set the setup deadline. The CLI has no time-off commands, but `kaneo notification list` shows time-off notifications.
+
+The API's [endpoint reference](/api-reference/introduction) lists the routes under **Time off**:
+
+| Route | Does | Needs |
+| --- | --- | --- |
+| `GET /api/time-off/workspace/{workspaceId}?from=&to=&lang=` | Lists who is away in a window of up to 366 days, with members' public holidays | `time_off:read` |
+| `GET /api/time-off/workspace/{workspaceId}/requests?userId=&year=` | Lists one member's requests that touch a year | Any time-off permission for yourself, `time_off:approve` for others |
+| `GET /api/time-off/workspace/{workspaceId}/pending` | Lists requests waiting for approval, with balances and `overAllowanceDays` per year | `time_off:approve` |
+| `POST /api/time-off/workspace/{workspaceId}` | Requests time off; `userId` records it for another member | `time_off:create` for yourself, `time_off:approve` for others |
+| `GET /api/time-off/workspace/{workspaceId}/balance?userId=&year=` | Reads one member's balances | Any time-off permission for yourself, `time_off:approve` for others |
+| `GET /api/time-off/workspace/{workspaceId}/balances?year=` | Lists every member's balances and the default allowances | `time_off:approve` |
+| `GET /api/time-off/workspace/{workspaceId}/allowance` | Reads the workspace default of each type | `time_off:approve` |
+| `PUT /api/time-off/workspace/{workspaceId}/allowance/{type}` | Sets a type's workspace default | `time_off:approve` |
+| `PUT /api/time-off/workspace/{workspaceId}/allowance/{type}/{userId}` | Sets a member's override of a type | `time_off:approve` |
+| `DELETE /api/time-off/workspace/{workspaceId}/allowance/{type}/{userId}` | Clears a member's override of a type | `time_off:approve` |
+| `GET /api/time-off/workspace/{workspaceId}/holiday-countries?lang=` | Lists the countries that have holiday calendars | Any time-off permission |
+| `GET /api/time-off/workspace/{workspaceId}/holiday-countries/{country}/regions?lang=` | Lists a country's regions; an unknown country returns 404 | Any time-off permission |
+| `GET /api/time-off/workspace/{workspaceId}/holidays?userId=&year=&lang=` | Reads a member's holiday calendar and its holidays in a year, any change waiting for approval, and the setup deadline | Any time-off permission for yourself, `time_off:approve` for others |
+| `PUT /api/time-off/workspace/{workspaceId}/holiday-calendar?lang=` | Sets a holiday calendar, such as `{"country": "DE", "region": "BY"}`, or asks for it when the change needs approval; `userId` sets another member's | `time_off:create` for yourself, `time_off:approve` for others |
+| `DELETE /api/time-off/workspace/{workspaceId}/holiday-calendar?userId=&lang=` | Sets **No calendar**, or asks for it, by the same rules as `PUT` | `time_off:create` for yourself, `time_off:approve` for others |
+| `GET /api/time-off/workspace/{workspaceId}/holiday-calendar-requests?lang=` | Lists current members' holiday calendar changes waiting for approval, oldest first, each with `currentCalendar` | `time_off:approve` |
+| `POST /api/time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/approve?lang=` | Approves a calendar change, which applies at once | `time_off:approve` |
+| `POST /api/time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/decline?lang=` | Declines a calendar change | `time_off:approve` |
+| `POST /api/time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/cancel` | Withdraws a calendar change | `time_off:create` for your own, `time_off:approve` for others |
+| `GET /api/time-off/workspace/{workspaceId}/settings` | Reads the setup deadline | `time_off:approve` |
+| `PUT /api/time-off/workspace/{workspaceId}/settings` | Sets the setup deadline, such as `{"holidayCalendarDeadline": "2026-03-31"}`, or `null` for none | `time_off:approve` |
+| `GET /api/time-off/{id}` | Reads one request | Any time-off permission for your own, `time_off:approve` for others |
+| `PATCH /api/time-off/{id}` | Edits the type, dates, or note | `time_off:create` for your pending requests, `time_off:approve` otherwise |
+| `POST /api/time-off/{id}/cancel` | Cancels a request | `time_off:create` for your own, `time_off:approve` for others |
+| `POST /api/time-off/{id}/approve` | Approves a pending request | `time_off:approve` |
+| `POST /api/time-off/{id}/decline` | Declines a pending request | `time_off:approve` |
+
+Days are `YYYY-MM-DD`, and the server's "today" is the UTC date. The type is `vacation`, `sick`, or `public_holiday`. `days` and `daysByYear` count working days. Requests carry a `version` that each edit increases. Approve and decline must send the `version` you reviewed, as `{"version": 3}`. Other members' entries in the calendar list contain only `id`, `userId`, `startDate`, and `endDate`, and their `holidays` only `userId` and `date`, unless you can approve. Another member's request reads as 404, like an unknown ID, unless you can approve. Every change returns the request and the person's balances for each year its old and new dates touch.
+
+`PUT` and `DELETE .../holiday-calendar` return `status`: `applied` when what you sent is in effect, or `pending` when it waits for approval. They also return `calendar`, the calendar in effect, and `pendingRequest`, the change waiting for approval or `null`. `GET .../holidays` also returns `calendarChosen`, `pendingRequest`, `holidayCalendarDeadline`, and `nextChangeNeedsApproval`, which says whether your next change to that calendar would wait for approval. A holiday calendar request has `id`, `userId`, `status`, `version`, `calendar` (`null` asks for **No calendar**), `createdAt`, and `updatedAt`, when the member last changed it. Sending another calendar while one waits updates the same request and increases its `version`, so approve and decline it with `{"version": 3}` like a time-off request. Only the member and approvers see a holiday calendar request: other members get 403 from these routes. An unknown holiday calendar request, or one of someone who left the workspace, returns 404 `NOT_FOUND`. `holidayCalendarDeadline` is a UTC day, or `null`.
+
+A balance has one entry per type under `types`, each with `allowanceDays`, `allowanceSource` (`default` or `override`), `usedDays`, `pendingDays`, and `remainingDays`. The balances list also returns `defaultAllowances`, the workspace default of each type, and `GET .../allowance` returns `defaultAllowances` on its own. Country and region codes are case-insensitive. `lang` sets the language of holiday, country, and region names, such as `de`; it defaults to English.
+
+| Code | Status | Meaning |
+| --- | --- | --- |
+| `TIME_OFF_OVERLAP` | 409 | The dates overlap another pending or approved request of the same person. |
+| `TIME_OFF_STATUS` | 409 | The request or holiday calendar request was already decided or cancelled, or the person away tried to edit approved time off. |
+| `TIME_OFF_CHANGED` | 409 | The request or holiday calendar request changed after the `version` you sent. Read it again. |
+| `TIME_OFF_STARTED` | 409 | The person away tried to cancel approved time off that has started. |
+| `TIME_OFF_RANGE` | 400 | The dates are out of order, span more than 366 days, or fall outside the allowed years. A calendar window that runs backwards or is longer than 366 days also gets it. |
+| `TIME_OFF_NO_WEEKDAYS` | 400 | The dates contain no working day: only weekends or the member's public holidays. |
+| `TIME_OFF_HOLIDAY_CALENDAR_UNKNOWN` | 400 | The holiday data has no such country, or no such region in that country. Approving a holiday calendar change gets it when the holiday data no longer has the calendar asked for; decline the change instead. |
+
+## Limits
+
+- Time off and public holidays are whole days. There are no half days.
+- Kaneo has no accrual or carry-over.
+- A holiday calendar has only the public holidays of a country or one of its regions. Request other days off, such as bank holidays, as **Public holiday** time off.
+- In the app, approvers can't change another member's holiday calendar. Use the API or MCP.
+- The workspace has one setup deadline for everyone. To give someone more time, an approver can set their calendar for them or approve their change.
+- A calendar change waiting for approval has no effective date. Once approved, it applies to every year, past ones included.
+- The server's "today" is the UTC date. It decides which years you can request, whether the person away can still cancel approved time off, whether time off has ended for the teammate notice, and whether the setup deadline has passed. Away badges use your device's date, so near midnight the two can differ by a day.
+- Someone whose role can see project plans but not time off may still notice the gaps that time off leaves in a schedule. A task date that Kaneo refuses also tells them the assignee is away that day, though never why.
+- An approver who loses **Approve time off** keeps the request notifications they already received. Those name only who asked and for which days, or, for a holiday calendar change, only who asked.
+- Work calendars (`/api/work-calendar`, under **Planning** in the endpoint reference) are separate from time off. Their unavailable times need no approval, don't count against an allowance, and only affect project-wide plans made through the API.

@@ -15,8 +15,9 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
+import { useAssigneeBlockedDays } from "@/components/time-off/away/use-assignee-blocked-days";
 import { useUpdateTaskDueDate } from "@/hooks/mutations/task/use-update-task-due-date";
-import { toast } from "@/lib/toast";
+import { toastTaskSaveError } from "@/lib/time-off/task-away-error";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import type Task from "@/types/task";
 
@@ -26,8 +27,15 @@ export function DueDateSubmenu({ task }: { task: Task }) {
   const { mutateAsync: updateTaskDueDate } = useUpdateTaskDueDate();
   const value = task.dueDate ? new Date(task.dueDate) : null;
   const start = task.startDate ? new Date(task.startDate) : undefined;
+  // Mounted only while the menu is open, so closed cards load nothing.
+  const blocked = useAssigneeBlockedDays(
+    { userId: task.userId, name: task.assigneeName },
+    value,
+  );
   const quickDates = getQuickDates(new Date(), weekStartsOn).filter(
-    (item) => !start || !isBefore(item.date, startOfDay(start)),
+    (item) =>
+      (!start || !isBefore(item.date, startOfDay(start))) &&
+      !blocked?.isBlocked(item.date),
   );
 
   const setDueDate = async (date: Date | null) => {
@@ -37,9 +45,7 @@ export function DueDateSubmenu({ task }: { task: Task }) {
         dueDate: date?.toISOString() ?? null,
       });
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t("tasks:dueDate.updateError"),
-      );
+      toastTaskSaveError(error, t("tasks:dueDate.updateError"));
     }
   };
 
@@ -76,8 +82,13 @@ export function DueDateSubmenu({ task }: { task: Task }) {
             <MonthGrid
               value={value}
               onSelect={setDueDate}
-              disabled={start ? [{ before: start }] : []}
+              disabled={[
+                ...(start ? [{ before: start }] : []),
+                ...(blocked ? [blocked.isBlocked] : []),
+              ]}
               marked={start}
+              away={blocked?.isBlocked}
+              onMonthChange={blocked?.onMonthChange}
               autoFocus={false}
             />
           </ContextMenuSubContent>
@@ -92,14 +103,21 @@ export function DueDateSubmenu({ task }: { task: Task }) {
             <span>{t("tasks:dueDate.clear")}</span>
           </ContextMenuItem>
         )}
-        {start && (
+        {(start || blocked?.hint) && (
           <>
             <ContextMenuSeparator />
-            <p className="py-1.5 ps-8 pe-2 text-muted-foreground text-xs">
-              {t("tasks:datePicker.startsOn", {
-                date: formatPickerDay(start),
-              })}
-            </p>
+            {start && (
+              <p className="py-1.5 ps-8 pe-2 text-muted-foreground text-xs">
+                {t("tasks:datePicker.startsOn", {
+                  date: formatPickerDay(start),
+                })}
+              </p>
+            )}
+            {blocked?.hint && (
+              <p className="py-1.5 ps-8 pe-2 text-muted-foreground text-xs">
+                {blocked.hint}
+              </p>
+            )}
           </>
         )}
       </ContextMenuSubContent>

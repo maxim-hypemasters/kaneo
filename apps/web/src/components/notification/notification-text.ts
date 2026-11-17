@@ -1,4 +1,5 @@
 import { getStatusLabel } from "@/lib/i18n/domain";
+import { formatReleaseRange } from "@/lib/releases/release-date";
 import type { Notification } from "@/types/notification";
 
 export function getEventDataRecord(
@@ -27,6 +28,33 @@ function getReminderLeadTime(
     });
   }
   return t("notifications:reminderLeadTime.minutes", { count: minutes });
+}
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+function nameOr(value: unknown, fallback: string) {
+  return typeof value === "string" && value ? value : fallback;
+}
+
+// Time off notifications carry ids, names, dates and the weekday count only;
+// holiday calendar requests carry ids and names, never the country or region.
+// Names fall back to "Someone" for deleted accounts.
+function getTimeOffValues(
+  eventData: Record<string, unknown>,
+  t: (key: string, options?: Record<string, unknown>) => string,
+) {
+  const startDate = String(eventData.startDate ?? "");
+  const endDate = String(eventData.endDate ?? "");
+  const someone = t("common:people.someone");
+  return {
+    range:
+      ISO_DAY.test(startDate) && ISO_DAY.test(endDate)
+        ? formatReleaseRange(startDate, endDate)
+        : "",
+    requesterName: nameOr(eventData.requesterName, someone),
+    deciderName: nameOr(eventData.deciderName, someone),
+    userName: nameOr(eventData.userName, someone),
+  };
 }
 
 export function getNotificationTitle(
@@ -88,6 +116,57 @@ export function getNotificationTitle(
           ...eventData,
           defaultValue: notification.title ?? notification.type,
         });
+      case "time_off_requested":
+        return t("notifications:events.time_off_requested.title", {
+          ...eventData,
+          ...getTimeOffValues(eventData, t),
+          defaultValue: notification.title ?? notification.type,
+        });
+      case "time_off_approved":
+        return t("notifications:events.time_off_approved.title", {
+          ...eventData,
+          ...getTimeOffValues(eventData, t),
+          defaultValue: notification.title ?? notification.type,
+        });
+      case "time_off_declined":
+        return t("notifications:events.time_off_declined.title", {
+          ...eventData,
+          ...getTimeOffValues(eventData, t),
+          defaultValue: notification.title ?? notification.type,
+        });
+      case "time_off_member_away":
+        return t("notifications:events.time_off_member_away.title", {
+          ...eventData,
+          ...getTimeOffValues(eventData, t),
+          defaultValue: notification.title ?? notification.type,
+        });
+      case "time_off_holiday_calendar_requested":
+        return t(
+          "notifications:events.time_off_holiday_calendar_requested.title",
+          {
+            ...eventData,
+            ...getTimeOffValues(eventData, t),
+            defaultValue: notification.title ?? notification.type,
+          },
+        );
+      case "time_off_holiday_calendar_approved":
+        return t(
+          "notifications:events.time_off_holiday_calendar_approved.title",
+          {
+            ...eventData,
+            ...getTimeOffValues(eventData, t),
+            defaultValue: notification.title ?? notification.type,
+          },
+        );
+      case "time_off_holiday_calendar_declined":
+        return t(
+          "notifications:events.time_off_holiday_calendar_declined.title",
+          {
+            ...eventData,
+            ...getTimeOffValues(eventData, t),
+            defaultValue: notification.title ?? notification.type,
+          },
+        );
       default:
         break;
     }
@@ -169,6 +248,60 @@ export function getNotificationContent(
           ...eventData,
           defaultValue: notification.content ?? "",
         });
+      case "time_off_requested":
+        return t("notifications:events.time_off_requested.content", {
+          ...eventData,
+          ...getTimeOffValues(eventData, t),
+          count: Number(eventData.days) || 0,
+          defaultValue: notification.content ?? "",
+        });
+      case "time_off_approved":
+        return t("notifications:events.time_off_approved.content", {
+          ...eventData,
+          ...getTimeOffValues(eventData, t),
+          count: Number(eventData.days) || 0,
+          defaultValue: notification.content ?? "",
+        });
+      case "time_off_declined":
+        return t("notifications:events.time_off_declined.content", {
+          ...eventData,
+          ...getTimeOffValues(eventData, t),
+          count: Number(eventData.days) || 0,
+          defaultValue: notification.content ?? "",
+        });
+      case "time_off_member_away":
+        return t("notifications:events.time_off_member_away.content", {
+          ...eventData,
+          ...getTimeOffValues(eventData, t),
+          defaultValue: notification.content ?? "",
+        });
+      case "time_off_holiday_calendar_requested":
+        return t(
+          "notifications:events.time_off_holiday_calendar_requested.content",
+          {
+            ...eventData,
+            ...getTimeOffValues(eventData, t),
+            defaultValue: notification.content ?? "",
+          },
+        );
+      case "time_off_holiday_calendar_approved":
+        return t(
+          "notifications:events.time_off_holiday_calendar_approved.content",
+          {
+            ...eventData,
+            ...getTimeOffValues(eventData, t),
+            defaultValue: notification.content ?? "",
+          },
+        );
+      case "time_off_holiday_calendar_declined":
+        return t(
+          "notifications:events.time_off_holiday_calendar_declined.content",
+          {
+            ...eventData,
+            ...getTimeOffValues(eventData, t),
+            defaultValue: notification.content ?? "",
+          },
+        );
       default:
         break;
     }

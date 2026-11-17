@@ -5,7 +5,10 @@ import type Task from "@/types/task";
 async function updateTaskDueDate(taskId: string, task: Task) {
   const response = await client.task["due-date"][":id"].$put({
     param: { id: taskId },
-    json: { dueDate: task.dueDate || null },
+    json: {
+      dueDate: task.dueDate || null,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
   });
 
   if (!response.ok) {

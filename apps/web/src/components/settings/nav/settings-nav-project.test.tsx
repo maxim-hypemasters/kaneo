@@ -19,6 +19,7 @@ const [project] = buildSettingsNav({
   t: (key) => key,
   billingEnabled: false,
   canImport: false,
+  canManageTimeOff: false,
   hasAdminAccess: false,
   projects: [{ id: "p1", name: "Kaneo Web" }],
 }).projects;

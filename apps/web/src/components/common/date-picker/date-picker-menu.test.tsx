@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import type { BlockedDays } from "./blocked-days";
 import { DatePickerMenu } from "./date-picker-menu";
 
 vi.mock("react-i18next", () => ({
@@ -76,5 +77,68 @@ describe("DatePickerMenu", () => {
     renderMenu({ formatLimit: (date) => `Due ${date}` });
 
     expect(screen.getByText(/^Due /)).toBeInTheDocument();
+  });
+
+  describe("with days that can't be picked", () => {
+    // Mon Jan 14, 2030; the assignee is away on Jan 15 and 16.
+    const blocked = new Set([15, 16]);
+    const blockedDays = (onMonthChange = vi.fn()): BlockedDays => ({
+      isBlocked: (day) =>
+        day.getFullYear() === 2030 &&
+        day.getMonth() === 0 &&
+        blocked.has(day.getDate()),
+      describe: (day) => `Ann is away on Jan ${day.getDate()}`,
+      hint: "Struck-through days: Ann is away",
+      onMonthChange,
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("leaves them out of the quick dates and explains them", () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date(2030, 0, 14));
+      renderMenu({ blockedDays: blockedDays() });
+
+      expect(screen.getByText("tasks:due.today")).toBeInTheDocument();
+      expect(screen.queryByText("tasks:due.tomorrow")).toBeNull();
+      expect(
+        screen.getByText("Struck-through days: Ann is away"),
+      ).toBeInTheDocument();
+    });
+
+    it("says why a typed day can't be picked, and doesn't offer it", () => {
+      const onChange = vi.fn();
+      const input = renderMenu({ blockedDays: blockedDays(), onChange });
+
+      fireEvent.change(input, { target: { value: "2030-01-16" } });
+
+      expect(screen.getByText("Ann is away on Jan 16")).toBeInTheDocument();
+      fireEvent.keyDown(input, { key: "Enter" });
+      expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("disables and strikes them through in the month", () => {
+      const onMonthChange = vi.fn();
+      renderMenu({
+        blockedDays: blockedDays(onMonthChange),
+        value: new Date(2030, 0, 12),
+      });
+      fireEvent.click(screen.getByText("tasks:datePicker.pickDate"));
+
+      const away = screen.getByRole("button", { name: /January 16th, 2030/ });
+      expect(away).toBeDisabled();
+      expect(away.closest("td")).toHaveClass("*:line-through");
+      expect(
+        screen.getByRole("button", { name: /January 17th, 2030/ }),
+      ).toBeEnabled();
+      expect(
+        screen.getByText("Struck-through days: Ann is away"),
+      ).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("button", { name: /next month/i }));
+      expect(onMonthChange).toHaveBeenCalledWith(new Date(2030, 1, 1));
+    });
   });
 });

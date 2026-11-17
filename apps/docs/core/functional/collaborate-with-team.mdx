@@ -36,14 +36,16 @@ These are the starting permissions. An administrator can edit the **Viewer**, **
 
 | Role | Default access |
 | --- | --- |
-| Viewer | Read projects, tasks, bugs, features, milestones, project pages, labels, and workspace details |
-| Member | Create projects; create and update tasks, bugs, features, milestones, and project pages; manage labels |
-| Admin | Manage projects, tasks, bugs, features, milestones, project pages, members, and workspace settings, including project names and descriptions |
+| Viewer | Read projects, tasks, bugs, features, milestones, project pages, labels, and workspace details; see who is away |
+| Member | Create projects; create and update tasks, bugs, features, milestones, and project pages; manage labels; request time off |
+| Admin | Manage projects, tasks, bugs, features, milestones, project pages, members, and workspace settings, including project names and descriptions; approve time off and set allowances |
 | Owner | Full workspace control, including deleting the workspace |
 
 Tasks, Bugs, Features, and Milestones each have their own **Create**, **Read**, **Update**, and **Delete** permissions, so a role can, for example, report bugs without creating tasks, or plan milestones without deleting features. Editing an item, including its comments, time entries, links, and custom fields, uses the update permission for its kind. Assignment stays one permission, **Assign** under Tasks, for every kind of work and for milestone leads.
 
 Deletion is a separate permission. A member who can edit a task may still be unable to assign or delete it.
+
+[Time off](/core/functional/time-off) has three permissions. **View time off** shows who is away and when. **Request time off** lets someone request time off, edit or cancel their own requests, and choose their own public holiday calendar; changes after their first choice, or after the workspace's setup deadline, need approval. **Approve time off** lets someone approve or decline requests and holiday calendar changes, see everyone's time-off details and balances, record time off for others, set each type's allowances and the public holiday setup deadline, and set members' holiday calendars through the API or MCP. Roles that existed before time off was added get these from what they already allow: viewing from reading the workspace, requesting from updating tasks, bugs, or features, and approving from **Change member roles**. Scoped API keys are not changed.
 
 ## Limit a member to selected projects
 
@@ -76,7 +78,7 @@ Give people the access their work needs. For example, a reviewer may only need t
 
 ## Remove a member or transfer ownership
 
-In **Members**, use the member's menu to remove them and confirm the action. They lose membership in this workspace, but their Kaneo account is not deleted.
+In **Members**, use the member's menu to remove them and confirm the action. They lose membership in this workspace, but their Kaneo account is not deleted. Their pending time-off requests are cancelled and the notes on their time off are deleted; see [When someone leaves](/core/functional/time-off#when-someone-leaves).
 
 To change the owner, use **Settings → Workspace → General → Transfer ownership**. Transfer ownership before leaving or deleting your account if you are the only owner of a shared workspace. If the owner has already left, an instance administrator can transfer ownership for them. See [Administer users and workspaces](/core/operations/administration#manage-workspaces).
 

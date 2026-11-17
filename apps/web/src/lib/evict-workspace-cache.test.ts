@@ -142,3 +142,19 @@ it.each(["revocation", "snapshot"])(
     client.clear();
   },
 );
+
+it("evicts a revoked workspace's time off and keeps another workspace's", () => {
+  const client = new QueryClient();
+  const kept = { workspaceId: "active", from: "2026-11-01", entries: [] };
+  client.setQueryData(["time-off", "active", "calendar"], kept);
+  client.setQueryData(["time-off", "revoked", "calendar"], {
+    workspaceId: "revoked",
+    entries: [{ id: "entry", userId: "user", note: "private" }],
+  });
+  evictWorkspaceCache(client, "revoked");
+  expect(client.getQueryData(["time-off", "active", "calendar"])).toEqual(kept);
+  expect(
+    client.getQueryData(["time-off", "revoked", "calendar"]),
+  ).toBeUndefined();
+  client.clear();
+});
