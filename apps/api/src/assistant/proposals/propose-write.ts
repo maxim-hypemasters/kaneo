@@ -30,7 +30,9 @@ function modelKeys(rawArgs: string): string[] {
  * Turns the write calls of one turn into pending proposals with a card the
  * server built, or into errors the model can act on. `readClient` is the
  * turn's read-only loopback client: everything a card shows, the user can
- * read. `userId` is the user, who runs each change on approval. Nothing is
+ * read. `userId` is the user, who runs each change on approval. `timeZone`
+ * is the zone the system prompt gave the model, so tools that check dates
+ * against the assignee's days away read the same calendar days. Nothing is
  * written until the user approves.
  */
 export function createProposeWrite(input: {
@@ -38,6 +40,7 @@ export function createProposeWrite(input: {
   readClient: ToolClient;
   workspaceId: string;
   userId: string;
+  timeZone: string;
 }): ProposeWrite {
   const { tools } = input;
   // One per turn, so a step's lookups are shared and never outlive it.
@@ -55,8 +58,12 @@ export function createProposeWrite(input: {
     proposedInStep.set(context, count);
     if (count > MAX_PROPOSALS_PER_STEP) return errorDraft(TOO_MANY_PROPOSALS);
 
+    const setsTimeZone = handle.entry.serverSet?.includes("timeZone");
     const prepared = tools.prepareArgs(call.name, call.arguments, (args) =>
-      withExpectationPlaceholder(call.name, args),
+      withExpectationPlaceholder(
+        call.name,
+        setsTimeZone ? { ...args, timeZone: input.timeZone } : args,
+      ),
     );
     if (!prepared.ok) return errorDraft(prepared.error);
 

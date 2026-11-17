@@ -38,6 +38,7 @@ function setup(can: () => boolean = () => true) {
       readClient: client,
       workspaceId: "ws",
       userId: "u1",
+      timeZone: "Europe/Berlin",
     }),
   };
 }
@@ -75,6 +76,33 @@ describe("createProposeWrite", () => {
       RequestInit,
     ][])
       expect(init?.method ?? "GET").toBe("GET");
+  });
+
+  it("runs date and assignee changes in the person's time zone", async () => {
+    const { propose } = setup();
+    const draft = await propose(
+      call("update_task_due_date", {
+        taskId: "t1",
+        dueDate: "2026-12-24T00:00:00+01:00",
+        timeZone: "Pacific/Auckland",
+      }),
+      step(),
+    );
+    expect(draft.approval).toBe("pending");
+    // The model's zone is dropped; the turn's zone runs the change.
+    expect(JSON.parse(draft.toolArgs ?? "{}")).toMatchObject({
+      taskId: "t1",
+      timeZone: "Europe/Berlin",
+    });
+    expect(
+      draft.preview?.fields.some((field) => field.key === "timeZone"),
+    ).toBe(false);
+
+    const create = await propose(
+      call("create_task", { projectId: "p1", title: "Fix", description: "" }),
+      step(),
+    );
+    expect(JSON.parse(create.toolArgs ?? "{}")).not.toHaveProperty("timeZone");
   });
 
   it("pins the workspace and keeps it off the card", async () => {

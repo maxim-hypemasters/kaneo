@@ -571,6 +571,65 @@ describe("registerTools", () => {
     expect(putBody).not.toHaveProperty("releaseId");
   });
 
+  it("sends the time zone for the away check only when given", async () => {
+    const existing = {
+      title: "Write docs",
+      status: "open",
+      priority: "medium",
+      projectId: "project-1",
+      position: 4,
+    };
+    const bodyOf = (call: unknown[] | undefined) =>
+      JSON.parse(String((call?.[1] as { body?: string })?.body ?? "{}"));
+    const { server, tools } = createServerMock();
+    const client = {
+      json: vi.fn(async (_path: string, init?: RequestInit) =>
+        init?.method === "GET" ? existing : { id: "task-1" },
+      ),
+    };
+    registerTools(server as never, { client: client as never });
+
+    await tools.get("update_task")?.handler({
+      taskId: "task-1",
+      userId: "user-2",
+      timeZone: "Europe/Berlin",
+    });
+    expect(bodyOf(client.json.mock.calls[1])).toMatchObject({
+      userId: "user-2",
+      timeZone: "Europe/Berlin",
+    });
+
+    await tools.get("update_task_assignee")?.handler({
+      taskId: "task-1",
+      userId: "user-2",
+      timeZone: "Europe/Berlin",
+    });
+    expect(client.json.mock.calls[2]?.[0]).toBe("/api/task/assignee/task-1");
+    expect(bodyOf(client.json.mock.calls[2])).toEqual({
+      userId: "user-2",
+      timeZone: "Europe/Berlin",
+    });
+
+    await tools.get("update_task_due_date")?.handler({
+      taskId: "task-1",
+      dueDate: "2026-12-24T00:00:00+01:00",
+      timeZone: "Europe/Berlin",
+    });
+    expect(client.json.mock.calls[3]?.[0]).toBe("/api/task/due-date/task-1");
+    expect(bodyOf(client.json.mock.calls[3])).toEqual({
+      dueDate: "2026-12-24T00:00:00+01:00",
+      timeZone: "Europe/Berlin",
+    });
+
+    await tools.get("update_task_assignee")?.handler({
+      taskId: "task-1",
+      userId: null,
+    });
+    await tools.get("update_task_due_date")?.handler({ taskId: "task-1" });
+    expect(bodyOf(client.json.mock.calls[4])).toEqual({ userId: null });
+    expect(bodyOf(client.json.mock.calls[5])).toEqual({ dueDate: null });
+  });
+
   it("creates a task inside a feature in one call", async () => {
     const { server, tools } = createServerMock();
     const client = { json: vi.fn().mockResolvedValue({ id: "task-2" }) };

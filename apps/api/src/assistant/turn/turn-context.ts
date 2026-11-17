@@ -27,6 +27,7 @@ import { runTurn } from "./run-turn";
 import { type EmitEvent, streamTurn } from "./stream-turn";
 import { type TurnSlot, tryAcquireTurnSlot } from "./turn-slots";
 import { checkDailyAllowance } from "./usage";
+import { resolveTimeZone } from "./system-prompt";
 
 export type AssistantContext = Context<{
   Variables: BaseVariables & { workspaceId: string };
@@ -159,6 +160,7 @@ export function streamChatTurn(
           readClient: setup.readClient,
           workspaceId: setup.workspace.id,
           userId: setup.user.id,
+          timeZone: resolveTimeZone(input.timeZone),
         }),
       });
     },

@@ -155,8 +155,9 @@ assignee is away: approved time off or a public holiday of their calendar. Only
 the dates a call changes are checked, or both when the work goes to someone
 else; pending requests never block, and planned work keeps its planned assignee
 until the next Apply. Dates are read as days in the project's planning
-timezone, or UTC when it has none. The message names the dates, never the type
-of time off.
+timezone, or UTC when it has none, unless the call passes `timeZone` (an IANA
+zone such as `Europe/Berlin`). The message names the dates, never the type of
+time off.
 
 `search` requires a `workspaceId` and searches that one workspace.
 `list_task_activity` takes an optional `limit` (1 to 100) for the most recent

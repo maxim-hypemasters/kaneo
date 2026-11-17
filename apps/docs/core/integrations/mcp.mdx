@@ -138,7 +138,7 @@ accept. Likewise `list_workspace_members` resolves the user IDs the assignee
 tools expect. Time entries have no delete endpoint on the API, so there is no
 `delete_time_entry` tool.
 
-`update_task`, `update_task_assignee` and `update_task_due_date` return 409 `TASK_ASSIGNEE_AWAY` when a start or due date they set falls on a day the assignee is away: approved [time off](/core/functional/time-off#task-dates) or a public holiday of their calendar. Only the dates a call changes are checked, or both when the work goes to someone else; pending requests never block, and planned work keeps its planned assignee until the next Apply. Dates are read as days in the project's planning timezone, or UTC when it has none. The message names the dates, never the type of time off.
+`update_task`, `update_task_assignee` and `update_task_due_date` return 409 `TASK_ASSIGNEE_AWAY` when a start or due date they set falls on a day the assignee is away: approved [time off](/core/functional/time-off#task-dates) or a public holiday of their calendar. Only the dates a call changes are checked, or both when the work goes to someone else; pending requests never block, and planned work keeps its planned assignee until the next Apply. Dates are read as days in the `timeZone` the call passes (an IANA zone such as `Europe/Berlin`), else in the project's planning timezone, or UTC when it has none. The message names the dates, never the type of time off.
 
 ### Features
 

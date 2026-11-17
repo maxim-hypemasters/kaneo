@@ -656,6 +656,50 @@ describe("assistant write approvals", () => {
     expect(saved).toMatchObject({ body: "v2 by a teammate", revision: 2 });
   });
 
+  it("runs an approved due date in the time zone the browser sent", async () => {
+    const ctx = await setup();
+    const { owner, mobile, fake } = ctx;
+    const task = (await createTaskFixture(mobile, "Ship it", owner.id))!;
+
+    fake.queueChatResponses(
+      chatReply({
+        toolCalls: [
+          {
+            id: "call_due",
+            name: "update_task_due_date",
+            arguments: {
+              taskId: task.id,
+              dueDate: "2026-12-24T00:00:00+01:00",
+              // A zone the model made up is dropped.
+              timeZone: "Pacific/Auckland",
+            },
+          },
+        ],
+      }),
+      chatReply({ content: "Done." }),
+    );
+    const proposed = await ctx.turn(owner, "/chats", {
+      content: "Make it due on Christmas Eve",
+      timeZone: "Europe/Berlin",
+    });
+    const card = proposed.tools[0];
+    expect(card).toMatchObject({ approval: "pending" });
+    expect(
+      card?.preview?.fields.some((field) => field.key === "timeZone"),
+    ).toBe(false);
+
+    await ctx.decideOk(owner, proposed.chatId, [
+      { messageId: card!.id, approve: true },
+    ]);
+    const write = ctx
+      .writes()
+      .find((request) => request.path.startsWith("/api/task/due-date/"));
+    expect(JSON.parse(write?.body ?? "{}")).toEqual({
+      dueDate: "2026-12-24T00:00:00+01:00",
+      timeZone: "Europe/Berlin",
+    });
+  });
+
   /** A task whose description holds an upload, and a chat that read it in full and proposes `next`. */
   async function proposeDescriptionRewrite(
     ctx: Awaited<ReturnType<typeof setup>>,

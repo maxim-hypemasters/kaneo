@@ -140,6 +140,8 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
     omit: ["description", "projectId", "position"],
     requires: anyWorkItem("update"),
     assignFields: ["userId"],
+    // A proposal sets the person's zone, so the away check reads their days.
+    serverSet: ["timeZone"],
     refuse: refuseVirtualStatus,
   },
   update_task_description: {
@@ -152,9 +154,12 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
     requires: executionUpdate,
     refuse: refuseVirtualStatus,
   },
-  update_task_assignee: { requires: [{ task: ["assign"] }] },
+  update_task_assignee: {
+    requires: [{ task: ["assign"] }],
+    serverSet: ["timeZone"],
+  },
   update_task_estimate: { requires: executionUpdate },
-  update_task_due_date: { requires: executionUpdate },
+  update_task_due_date: { requires: executionUpdate, serverSet: ["timeZone"] },
   // Converting edits the task and creates the other type.
   set_task_type: {
     requires: [

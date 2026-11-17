@@ -53,6 +53,16 @@ const optionalNonEmptyString = nonEmptyString.optional();
 const nullableOptionalNonEmptyString = nonEmptyString.nullable().optional();
 const isoDateTimeSchema = z.string().datetime({ offset: true });
 const optionalIsoDateTimeSchema = isoDateTimeSchema.optional();
+// The API checks hand-set dates against the assignee's days away in this zone.
+const dayTimeZoneSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .optional()
+  .describe(
+    "IANA time zone whose calendar days the dates name, such as Europe/Berlin. Kaneo checks those days against the assignee's days away. Defaults to the project's planning time zone, then UTC.",
+  );
 const estimateSecondsSchema = z
   .number()
   .int()
@@ -502,6 +512,7 @@ export function registerTools(
       position: z.number().optional(),
       estimateSeconds: estimateSecondsSchema.optional(),
       userId: nullableOptionalNonEmptyString,
+      timeZone: dayTimeZoneSchema,
     })
     .strict();
 
@@ -514,13 +525,16 @@ export function registerTools(
       annotations: { readOnlyHint: false },
     },
     async (args) => {
-      const { taskId, ...patch } = args;
+      const { taskId, timeZone, ...patch } = args;
       return run(async () => {
         const existing = (await client.json(
           `/api/task/${encodeURIComponent(taskId)}`,
           { method: "GET" },
         )) as Record<string, unknown>;
-        const body = buildFullTaskUpdateBody(existing, patch);
+        const body = {
+          ...buildFullTaskUpdateBody(existing, patch),
+          ...(timeZone ? { timeZone } : {}),
+        };
         return client.json(`/api/task/${encodeURIComponent(taskId)}`, {
           method: "PUT",
           body: JSON.stringify(body),
@@ -1128,6 +1142,7 @@ export function registerTools(
         userId: nonEmptyString
           .nullable()
           .describe("Member user ID, or null to unassign"),
+        timeZone: dayTimeZoneSchema,
       }),
       annotations: { readOnlyHint: false },
     },
@@ -1135,7 +1150,10 @@ export function registerTools(
       run(() =>
         client.json(`/api/task/assignee/${encodeURIComponent(args.taskId)}`, {
           method: "PUT",
-          body: JSON.stringify({ userId: args.userId }),
+          body: JSON.stringify({
+            userId: args.userId,
+            ...(args.timeZone ? { timeZone: args.timeZone } : {}),
+          }),
         }),
       ),
   );
@@ -1171,20 +1189,24 @@ export function registerTools(
     "update_task_due_date",
     {
       description:
-        "Set a Task/Bug due date by hand. Omit dueDate to clear it. Planned work stops following its estimate until the next Apply of its release. The due day can't be a day the assignee is away (approved time off or a public holiday), or it fails with TASK_ASSIGNEE_AWAY; pending requests never block. The day is read in the project's planning timezone (UTC when unset).",
+        "Set a Task/Bug due date by hand. Omit dueDate to clear it. Planned work stops following its estimate until the next Apply of its release. The due day can't be a day the assignee is away (approved time off or a public holiday), or it fails with TASK_ASSIGNEE_AWAY; pending requests never block. The day is read in timeZone when given, else the project's planning timezone (UTC when unset).",
       inputSchema: z
         .object({
           taskId: nonEmptyString,
           dueDate: optionalIsoDateTimeSchema,
+          timeZone: dayTimeZoneSchema,
         })
         .strict(),
       annotations: { readOnlyHint: false },
     },
-    async ({ taskId, dueDate }) =>
+    async ({ taskId, dueDate, timeZone }) =>
       run(() =>
         client.json(`/api/task/due-date/${encodeURIComponent(taskId)}`, {
           method: "PUT",
-          body: JSON.stringify({ dueDate: dueDate ?? null }),
+          body: JSON.stringify({
+            dueDate: dueDate ?? null,
+            ...(timeZone ? { timeZone } : {}),
+          }),
         }),
       ),
   );
