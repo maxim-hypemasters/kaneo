@@ -169,6 +169,20 @@ describe("applyPendingEdit", () => {
     });
   });
 
+  it("reassigns the task itself only when the lane changes", () => {
+    const reassigned = {
+      ...task,
+      taskUserId: "carol",
+    } as ScheduledTask;
+    expect(applyPendingEdit(reassigned, pending)).toMatchObject({
+      userId: "bob",
+      taskUserId: "bob",
+    });
+    expect(
+      applyPendingEdit(reassigned, { ...pending, userId: "alice" }),
+    ).toMatchObject({ userId: "alice", taskUserId: "carol" });
+  });
+
   it("shows milestone changes while preserving the Feature", () => {
     expect(
       applyPendingEdit(task, {

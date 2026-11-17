@@ -55,6 +55,14 @@ export function NotifyMeSection({ preferences }: NotifyMeSectionProps) {
           }
           onLeadTimeChange={setLeadTime}
         />
+        <EventSwitchRow
+          title={t("settings:notificationsPage.eventTeamTimeOff")}
+          description={t("settings:notificationsPage.eventTeamTimeOffHint")}
+          checked={state.teamTimeOffEnabled}
+          onCheckedChange={(checked) =>
+            setSwitch("teamTimeOffEnabled", checked)
+          }
+        />
       </SettingsCard>
     </SettingsSection>
   );

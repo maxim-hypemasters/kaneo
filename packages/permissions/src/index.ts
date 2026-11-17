@@ -18,6 +18,10 @@ export const statement = {
   document: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "delete", "manage_settings"],
+  // read: see who is away and when. create: request time off and edit or
+  // cancel your own requests. approve: decide requests, see everyone's
+  // details and balances, record time off for others, and set allowances.
+  time_off: ["create", "read", "approve"],
 } as const;
 
 export const ac = createAccessControl(statement);
@@ -32,6 +36,7 @@ export const viewer = ac.newRole({
   document: ["read"],
   label: ["read"],
   workspace: ["read"],
+  time_off: ["read"],
 });
 
 export const member = ac.newRole({
@@ -44,6 +49,7 @@ export const member = ac.newRole({
   document: ["create", "read", "update"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read"],
+  time_off: ["create", "read"],
 });
 
 export const admin = ac.newRole({
@@ -56,6 +62,7 @@ export const admin = ac.newRole({
   document: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "manage_settings"],
+  time_off: ["create", "read", "approve"],
 });
 
 export const owner = ac.newRole({
@@ -68,6 +75,7 @@ export const owner = ac.newRole({
   document: ["create", "read", "update", "delete"],
   label: ["create", "read", "update", "delete"],
   workspace: ["read", "update", "delete", "manage_settings"],
+  time_off: ["create", "read", "approve"],
 });
 
 export const builtInRoles = { viewer, member, admin, owner } as const;

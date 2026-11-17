@@ -1,4 +1,5 @@
 import type { RawNotification } from "../api/notifications.js";
+import { dayRangeLabel } from "./day-range-label.js";
 
 export type NotificationView = {
   readonly id: string;
@@ -41,6 +42,13 @@ function leadTime(data: EventData): string {
   if (minutes % 1440 === 0) return plural(minutes / 1440, "day");
   if (minutes % 60 === 0) return plural(minutes / 60, "hour");
   return plural(minutes, "minute");
+}
+
+function timeOffRange(data: EventData): string {
+  return (
+    dayRangeLabel(field(data, "startDate"), field(data, "endDate")) ??
+    "Dates unavailable"
+  );
 }
 
 function describe(
@@ -107,6 +115,50 @@ function describe(
       };
     case "time_entry_created":
       return { title: "Time tracking started", message: named };
+    case "time_off_requested": {
+      const who = field(data, "requesterName") ?? "Someone";
+      const days = field(data, "days");
+      const workdays = days === "1" ? "1 working day" : `${days} working days`;
+      return {
+        title: `${who} requested time off`,
+        message: days
+          ? `${timeOffRange(data)} (${workdays})`
+          : timeOffRange(data),
+      };
+    }
+    case "time_off_approved":
+    case "time_off_declined": {
+      const decider = field(data, "deciderName");
+      const verb = raw.type === "time_off_approved" ? "approved" : "declined";
+      return {
+        title: `Time off ${verb}`,
+        message: decider
+          ? `${timeOffRange(data)}, ${verb} by ${decider}`
+          : timeOffRange(data),
+      };
+    }
+    case "time_off_member_away":
+      return {
+        title: `${field(data, "userName") ?? "A teammate"} is away`,
+        message: timeOffRange(data),
+      };
+    // Calendar request notices never carry the country or region.
+    case "time_off_holiday_calendar_requested":
+      return {
+        title: `${field(data, "requesterName") ?? "Someone"} asked to change their public holidays`,
+        message: "Waiting for your review",
+      };
+    case "time_off_holiday_calendar_approved":
+    case "time_off_holiday_calendar_declined": {
+      const decider = field(data, "deciderName");
+      const approved = raw.type === "time_off_holiday_calendar_approved";
+      return {
+        title: `Public holiday change ${approved ? "approved" : "declined"}`,
+        message: decider
+          ? `${approved ? "Approved" : "Declined"} by ${decider}`
+          : null,
+      };
+    }
     default:
       return null;
   }

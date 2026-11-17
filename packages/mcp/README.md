@@ -124,6 +124,8 @@ For headless or sandboxed environments where opening a browser is impractical, s
 - Milestones: `list_project_milestones`, `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`, `set_task_milestone`
 - Releases: `list_releases`, `get_release`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
 - Time entries: `list_task_time_entries`, `get_time_entry`, `create_time_entry`, `update_time_entry`
+- Time off: `list_time_off`, `list_time_off_requests`, `list_pending_time_off_requests`, `get_time_off_request`, `request_time_off`, `update_time_off_request`, `cancel_time_off_request`, `approve_time_off_request`, `decline_time_off_request`, `get_time_off_balance`, `list_time_off_balances`, `set_time_off_allowance`
+- Public holiday calendars: `list_holiday_countries`, `get_holiday_calendar`, `set_holiday_calendar`, `list_holiday_calendar_requests`, `approve_holiday_calendar_request`, `decline_holiday_calendar_request`, `cancel_holiday_calendar_request`, `set_holiday_calendar_deadline`
 - Comments: `list_task_comments`, `create_task_comment`, `update_task_comment`, `delete_task_comment`
 - Labels: `list_workspace_labels`, `create_label`, `attach_label_to_task`, `detach_label_from_task`, `delete_label`
 - Task relations: `create_task_relation`, `get_task_relations`, `delete_task_relation`
@@ -136,6 +138,15 @@ pass `workspaceId` or `projectId` to select one.
 `list_workspace_members` resolves the user IDs the assignee tools expect.
 Time entries have no delete endpoint on the API, so there is no
 `delete_time_entry` tool.
+
+`update_task`, `update_task_assignee` and `update_task_due_date` return 409
+`TASK_ASSIGNEE_AWAY` when a start or due date they set falls on a day the
+assignee is away: approved time off or a public holiday of their calendar. Only
+the dates a call changes are checked, or both when the work goes to someone
+else; pending requests never block, and planned work keeps its planned assignee
+until the next Apply. Dates are read as days in the project's planning
+timezone, or UTC when it has none. The message names the dates, never the type
+of time off.
 
 A Feature retains its task-resource identity with `type: "feature"`, and is a
 knowledge record containing documentation, resources, milestones and implementation
@@ -180,6 +191,52 @@ column), or `decline_triage_task`, which archives it and posts the optional
 `update_task` and `move_task` refuse to set `triage` or to move work out of it.
 Only triage members can accept or decline; with no triage members, holders of
 `project:update` can still clear work that is waiting.
+
+Time off is full days, start and end inclusive (`YYYY-MM-DD`), of type
+`vacation`, `sick` or `public_holiday`. Every request starts pending,
+including an approver's own, and overlapping the member's other pending or
+approved days returns 409 `TIME_OFF_OVERLAP`. `list_time_off` shows who is away
+and when; other members' entries carry only `id`, `userId`, `startDate` and
+`endDate`, and type, note, status and balance stay visible to the person away
+and to approvers. Approve and decline need the request's current `version`, so
+call `get_time_off_request` first; an edit since then returns 409
+`TIME_OFF_CHANGED`. Days are working days: Monday to Friday, minus the member's
+calendar public holidays, counted per Jan-Dec year with no carry-over. Each type
+has its own allowance, and balances report one per type. Going over an
+allowance is allowed, so check `overAllowanceDays` on pending requests or
+`remainingDays` in balances. `set_time_off_allowance` takes a `type`; it sets
+that type's workspace default without `userId`, sets a member override with
+`userId` and a number, and clears the override with `userId` and `days: null`.
+Viewing the team needs `time_off:read`, requesting needs `time_off:create`, and
+deciding, recording time off for others, reading other members' balances and
+setting allowances need `time_off:approve`. Viewers get read by default,
+members also create, and owners and admins also approve.
+
+A member can pick a public holiday calendar: a country and optional region
+from `list_holiday_countries`. `set_holiday_calendar` sets it, or clears it with
+`country: null`; your own needs `time_off:create`, and another member's needs
+`time_off:approve`. A member's first choice, "No calendar" included, applies at
+once on or before the workspace's deadline (a UTC day that counts), or at any
+time without one. Every later change by the member, and any choice after the
+deadline, returns `status: "pending"` and waits for an approver: a new request
+notifies approvers, who find it with `list_holiday_calendar_requests` and
+decide it with `approve_holiday_calendar_request` or
+`decline_holiday_calendar_request` and the `version` they reviewed, after which
+the member is notified unless they decided it themselves. Sending another
+change while one waits updates that request (its `version` goes up) without
+notifying anyone. `cancel_holiday_calendar_request`, or sending the current
+calendar again, withdraws a pending change. Approvers' changes, for themselves or another
+member, apply at once, and `set_holiday_calendar_deadline` sets or clears the
+deadline (`time_off:approve`). An applied calendar's holidays count as approved
+time off without requests: they never count as days of a request, weekday ones
+count as used `public_holiday` days, planned work skips them, and plans that
+include the member become outdated. Only public holidays are used, so members
+can still request `public_holiday` time off for other days, such as bank
+holidays. `get_holiday_calendar` returns a member's calendar, its holidays for
+a year, any pending change and the deadline. In `list_time_off`, `holidays`
+lists every member's calendar days in the window; names appear only on your
+own, or on everyone's for approvers, and other members never see a country or
+region, nor does any notification. Pass `lang` for localized names.
 
 Relations (`blocks` and `related`) link Tasks and Bugs. Features do not have
 relations, so `create_task_relation` refuses a Feature on either end. It still

@@ -7,6 +7,7 @@ import { useUpdateTaskDueDate } from "@/hooks/mutations/task/use-update-task-due
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useShortcut } from "@/lib/shortcuts/use-shortcut";
+import { toastTaskSaveError } from "@/lib/time-off/task-away-error";
 import { toast } from "@/lib/toast";
 import { useFeatureTasks } from "./features/use-feature-tasks";
 import { useTaskFeature } from "./features/use-task-feature";
@@ -97,11 +98,7 @@ export function TaskShortcuts({
           icon: UserRoundIcon,
         });
       } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : t("tasks:popover.assignee.updateError"),
-        );
+        toastTaskSaveError(error, t("tasks:popover.assignee.updateError"));
       }
     },
     assignable,

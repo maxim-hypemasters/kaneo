@@ -1,3 +1,4 @@
+import type { AwayRun } from "./away/away-runs";
 import type { GanttStatusPhase } from "./gantt-status-phase";
 import type Task from "@/types/task";
 
@@ -27,6 +28,9 @@ export type ScheduledLeaf = Omit<Task, "status" | "type"> &
     entityKind?: "task";
     scheduleSegments?: ScheduledWorkSegment[];
     scheduleApplied?: boolean;
+    // The task's own assignee. `userId` is the lane, which for planned work
+    // is its planned assignee until the next Apply, even after a reassignment.
+    taskUserId?: string | null;
     // Set by the route from the project's columns; see ganttStatusPhase.
     statusPhase?: GanttStatusPhase;
     milestone?: never;
@@ -52,6 +56,20 @@ export type GanttTaskEdit = {
   // The span was set by hand (a resize), so the work takes both dates as
   // given instead of being laid out again from its estimate.
   exact?: boolean;
+};
+
+// Why an edit can't be saved: who is away, and on which (formatted) day.
+export type AwayRefusal = { name: string; date: string };
+
+// A Task/Bug bar's view of its assignee's days away (only while the viewer
+// may read time off).
+export type GanttBarAway = {
+  // The assignee's days away in the rendered span.
+  runs: readonly AwayRun[];
+  // The assignee's name, for the bar's description.
+  name: string;
+  // What a drag or resize showing `edit` says when it can't be saved.
+  blockedHint: (edit: GanttTaskEdit) => string | null;
 };
 
 export type GanttLane = {

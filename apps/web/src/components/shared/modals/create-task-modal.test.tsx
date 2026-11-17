@@ -43,6 +43,13 @@ const deleteTask = vi.fn(async () => {});
 const updateTask = vi.fn(async (input: Record<string, unknown>) => input);
 const setProject = vi.fn();
 let workspaceId = "workspace-1";
+let projectMembers:
+  | { id: string; name: string; email: string; image: null }[]
+  | undefined;
+const awayLabels = vi.fn(
+  (_workspaceId: string, _options: { enabled: boolean }) =>
+    new Map<string, string>(),
+);
 let projects: { id: string; name: string; slug: string }[] | undefined;
 let columnsError = false;
 let columnsFetching = false;
@@ -99,6 +106,8 @@ beforeEach(() => {
   releasesError = false;
   refetchReleases.mockReset();
   workspaceId = "workspace-1";
+  projectMembers = undefined;
+  awayLabels.mockReturnValue(new Map());
   projects = [
     { id: "project-1", name: "Alpha", slug: "alp" },
     { id: "project-2", name: "Beta", slug: "bet" },
@@ -216,7 +225,12 @@ vi.mock(
 );
 
 vi.mock("@/hooks/queries/workspace-users/use-get-project-members", () => ({
-  default: () => ({ data: undefined }),
+  default: () => ({ data: projectMembers }),
+}));
+
+vi.mock("@/components/time-off/away/use-away-labels", () => ({
+  useAwayLabels: (id: string, options: { enabled: boolean }) =>
+    awayLabels(id, options),
 }));
 
 vi.mock("@/hooks/use-workspace-permission", () => ({
@@ -799,6 +813,39 @@ async function chooseBeta() {
 function submit() {
   fireEvent.submit(document.querySelector("form") as HTMLFormElement);
 }
+
+describe("CreateTaskModal assignee", () => {
+  it("shows until when a member is away, loading it only once the list opens", async () => {
+    useLocation.mockReturnValue({
+      pathname: "/dashboard/workspace/workspace-1/project/project-1/board",
+    });
+    projectMembers = [
+      { id: "user-2", name: "Ana Lee", email: "ana@example.com", image: null },
+      { id: "user-3", name: "Ben Ito", email: "ben@example.com", image: null },
+    ];
+    awayLabels.mockReturnValue(new Map([["user-2", "Away until Nov 20"]]));
+
+    render(<CreateTaskModal open onClose={vi.fn()} />, {
+      wrapper: createWrapper(),
+    });
+    expect(awayLabels).toHaveBeenLastCalledWith("workspace-1", {
+      enabled: false,
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "common:modals.createTask.assign" }),
+    );
+
+    expect(awayLabels).toHaveBeenLastCalledWith("workspace-1", {
+      enabled: true,
+    });
+    const hint = await screen.findByText("Away until Nov 20");
+    expect(hint.closest("button")).toHaveTextContent("Ana Lee");
+    expect(
+      screen.getByRole("button", { name: /Ben Ito/ }),
+    ).not.toHaveTextContent("Away until");
+  });
+});
 
 describe("CreateTaskModal context isolation", () => {
   it("never falls back to the last globally visited project", () => {

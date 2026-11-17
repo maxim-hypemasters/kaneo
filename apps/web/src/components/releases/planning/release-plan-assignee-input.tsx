@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { OptionMenu } from "@/components/common/option-menu/option-menu";
 import { assigneeMenuOptions } from "@/components/task/menus/assignee-menu-options";
 import { AssigneeAvatar } from "@/components/task/properties/assignee-avatar";
+import { useAwayLabels } from "@/components/time-off/away/use-away-labels";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -44,6 +45,7 @@ export function ReleasePlanAssigneeInput({
     projectId,
     enabled: editable && open,
   });
+  const away = useAwayLabels(workspaceId, { enabled: editable && open });
   const blocked = disabled || saving;
   const label = value.userId
     ? (value.name ?? t("common:people.unknown"))
@@ -111,6 +113,7 @@ export function ReleasePlanAssigneeInput({
                     members.data ?? [],
                     draft.userId,
                     t("tasks:popover.assignee.unassigned"),
+                    away,
                   )}
                   status={
                     members.isPending ? t("common:empty.loading") : undefined

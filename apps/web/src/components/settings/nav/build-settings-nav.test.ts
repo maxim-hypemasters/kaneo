@@ -11,6 +11,7 @@ function build(
     workspaceName: "Acme",
     billingEnabled: false,
     canImport: false,
+    canManageTimeOff: false,
     hasAdminAccess: false,
     projects: [],
     ...overrides,
@@ -42,12 +43,36 @@ describe("buildSettingsNav", () => {
     expect(links(build())).not.toContain(
       "/dashboard/settings/workspace/import",
     );
-    expect(links(build({ canImport: true, billingEnabled: true }))).toEqual([
+    expect(
+      links(
+        build({
+          canImport: true,
+          canManageTimeOff: true,
+          billingEnabled: true,
+        }),
+      ),
+    ).toEqual([
       "/dashboard/settings/workspace/general",
       "/dashboard/settings/workspace/roles",
       "/dashboard/settings/workspace/labels",
+      "/dashboard/settings/workspace/time-off",
       "/dashboard/settings/workspace/import",
       "/dashboard/settings/workspace/billing",
+    ]);
+  });
+
+  it("only offers time off settings to people who can approve time off", () => {
+    const links = (nav: ReturnType<typeof build>) =>
+      nav.workspace.links.map((link) => link.to);
+
+    expect(links(build())).not.toContain(
+      "/dashboard/settings/workspace/time-off",
+    );
+    expect(links(build({ canManageTimeOff: true }))).toEqual([
+      "/dashboard/settings/workspace/general",
+      "/dashboard/settings/workspace/roles",
+      "/dashboard/settings/workspace/labels",
+      "/dashboard/settings/workspace/time-off",
     ]);
   });
 

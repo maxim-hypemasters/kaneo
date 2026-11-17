@@ -1,4 +1,10 @@
+import { cached } from "../../utils/bounded-cache";
+
 const DAY_MS = 86_400_000;
+// Schedule reads and moves turn years of holiday days into intervals, and
+// each day boundary costs dozens of Intl calls; boundaries never change.
+const DAY_START_LIMIT = 20_000;
+const dayStarts = new Map<string, number>();
 const formatters = new Map<string, Intl.DateTimeFormat>();
 
 function formatter(timeZone: string) {
@@ -99,10 +105,12 @@ export function localInterval(
 }
 
 export function startOfLocalDay(date: string, timeZone: string) {
-  // A skipped civil date has the same boundary as the following civil date.
-  for (let day = 0; day < 3; day++) {
-    const intervals = localInterval(addDays(date, day), 0, 1440, timeZone);
-    if (intervals.length) return intervals[0]!.start;
-  }
-  throw new Error("Cannot resolve local date boundary");
+  return cached(dayStarts, DAY_START_LIMIT, `${timeZone}|${date}`, () => {
+    // A skipped civil date has the same boundary as the following civil date.
+    for (let day = 0; day < 3; day++) {
+      const intervals = localInterval(addDays(date, day), 0, 1440, timeZone);
+      if (intervals.length) return intervals[0]!.start;
+    }
+    throw new Error("Cannot resolve local date boundary");
+  });
 }

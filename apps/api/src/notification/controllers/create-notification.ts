@@ -51,7 +51,9 @@ export async function persistNotification(
           ? "taskStatusChangeEnabled"
           : type === "due_date_reminder" || type === "task_overdue"
             ? "dueDateReminderEnabled"
-            : null;
+            : type === "time_off_member_away"
+              ? "teamTimeOffEnabled"
+              : null;
 
   if (preferenceKey) {
     const preference =

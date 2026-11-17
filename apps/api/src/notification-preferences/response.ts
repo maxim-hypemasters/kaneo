@@ -47,6 +47,9 @@ export const notificationPreferenceSchema = z
     taskCommentEnabled: z.boolean(),
     taskStatusChangeEnabled: z.boolean(),
     dueDateReminderEnabled: z.boolean(),
+    teamTimeOffEnabled: z.boolean().openapi({
+      description: "Whether approved time off of teammates notifies me.",
+    }),
     dueDateReminderLeadTimeMinutes: z.number().openapi({
       description: "How long before a due date the reminder fires, in minutes.",
     }),

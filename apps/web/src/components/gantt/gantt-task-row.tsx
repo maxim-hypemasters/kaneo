@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { getStatusLabel } from "@/lib/i18n/domain";
 import { GanttTaskBar } from "./gantt-task-bar";
 import type {
+  GanttBarAway,
   GanttLaneDrag,
   GanttTaskEdit,
   ScheduledTask,
@@ -30,6 +31,7 @@ type GanttTaskRowProps = {
   onCommit: (edit: GanttTaskEdit) => void;
   onDragChange?: (dragging: boolean) => void;
   dependencyNote?: string;
+  away?: GanttBarAway;
 };
 
 export function GanttTaskRow({
@@ -48,6 +50,7 @@ export function GanttTaskRow({
   onCommit,
   onDragChange,
   dependencyNote,
+  away,
 }: GanttTaskRowProps) {
   const { t } = useTranslation();
   const isMilestone = task.entityKind === "milestone";
@@ -164,6 +167,7 @@ export function GanttTaskRow({
           onDragChange={onDragChange}
           dependencyNote={dependencyNote}
           showAssignee={showBarAssignee}
+          away={away}
         />
       </div>
     </div>

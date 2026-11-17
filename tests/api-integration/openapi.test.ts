@@ -85,6 +85,33 @@ describe("Kaneo API OpenAPI spec", () => {
       "GET /notification",
       "GET /workspace",
       "GET /workspace/{workspaceId}",
+      "GET /workspace/{workspaceId}/capabilities",
+      "GET /time-off/workspace/{workspaceId}",
+      "POST /time-off/workspace/{workspaceId}",
+      "GET /time-off/workspace/{workspaceId}/requests",
+      "GET /time-off/workspace/{workspaceId}/pending",
+      "GET /time-off/workspace/{workspaceId}/balance",
+      "GET /time-off/workspace/{workspaceId}/balances",
+      "GET /time-off/workspace/{workspaceId}/allowance",
+      "PUT /time-off/workspace/{workspaceId}/allowance/{type}",
+      "PUT /time-off/workspace/{workspaceId}/allowance/{type}/{userId}",
+      "DELETE /time-off/workspace/{workspaceId}/allowance/{type}/{userId}",
+      "GET /time-off/workspace/{workspaceId}/holiday-countries",
+      "GET /time-off/workspace/{workspaceId}/holiday-countries/{country}/regions",
+      "GET /time-off/workspace/{workspaceId}/holidays",
+      "PUT /time-off/workspace/{workspaceId}/holiday-calendar",
+      "DELETE /time-off/workspace/{workspaceId}/holiday-calendar",
+      "GET /time-off/workspace/{workspaceId}/holiday-calendar-requests",
+      "POST /time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/approve",
+      "POST /time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/decline",
+      "POST /time-off/workspace/{workspaceId}/holiday-calendar-requests/{requestId}/cancel",
+      "GET /time-off/workspace/{workspaceId}/settings",
+      "PUT /time-off/workspace/{workspaceId}/settings",
+      "GET /time-off/{id}",
+      "PATCH /time-off/{id}",
+      "POST /time-off/{id}/cancel",
+      "POST /time-off/{id}/approve",
+      "POST /time-off/{id}/decline",
       "POST /auth/organization/create",
     ]) {
       expect(keys.has(op), `missing operation ${op}`).toBe(true);
@@ -128,6 +155,27 @@ describe("Kaneo API OpenAPI spec", () => {
         "Workspace",
         "WorkspaceMember",
         "MattermostIntegration",
+        "WorkspaceCapabilities",
+        "TimeOffCalendar",
+        "TimeOffEntry",
+        "TimeOffRequest",
+        "TimeOffRequestList",
+        "TimeOffRequestResult",
+        "PendingTimeOffList",
+        "TimeOffBalance",
+        "TimeOffTypeBalance",
+        "TimeOffBalances",
+        "TimeOffAllowanceDefault",
+        "TimeOffAllowanceDefaults",
+        "TimeOffHoliday",
+        "HolidayCountryList",
+        "HolidayRegionList",
+        "HolidayCalendar",
+        "MemberHolidays",
+        "HolidayCalendarResult",
+        "HolidayCalendarRequest",
+        "PendingHolidayCalendarRequestList",
+        "TimeOffSettings",
       ]),
     );
   });
@@ -160,6 +208,24 @@ describe("Kaneo API OpenAPI spec", () => {
         },
       },
     });
+  });
+
+  it("documents the assignee-away conflict on every task date and assignee write", () => {
+    for (const [method, path] of [
+      ["put", "/task/{id}"],
+      ["put", "/task/assignee/{id}"],
+      ["put", "/task/due-date/{id}"],
+      ["put", "/task/schedule/{id}"],
+      ["patch", "/task/bulk"],
+    ] as const) {
+      const conflict = spec.paths[path]?.[method]?.responses["409"] as
+        | { description?: string }
+        | undefined;
+      expect(
+        conflict?.description,
+        `${method.toUpperCase()} ${path}`,
+      ).toContain("TASK_ASSIGNEE_AWAY");
+    }
   });
 
   it("documents a 401 on every operation that requires auth", () => {

@@ -17,7 +17,7 @@ Every error from `/api/*` is JSON with `Content-Type: application/json`:
 | --- | --- | --- |
 | `message` | Yes | Human-readable text. Show it to people; do not parse it. |
 | `code` | Yes | Stable `UPPER_SNAKE_CASE` code. Branch on this instead of the message. |
-| `issues` | No | Every invalid input, for `VALIDATION_ERROR`. |
+| `issues` | No | Every invalid input, for `VALIDATION_ERROR`, or every task in conflict, for `TASK_ASSIGNEE_AWAY`. |
 | `missingPermissions` | No | The permissions the route requires that the caller lacks, for `MISSING_PERMISSION` and `API_KEY_SCOPE`. |
 
 The HTTP status stays meaningful on its own. New fields may be added, so ignore ones you do not recognize.
@@ -54,9 +54,12 @@ An unknown path under `/api` returns `404` with `{"message": "Not found", "code"
 | `MISSING_PERMISSION` | 403 | Your workspace role does not grant the action. `missingPermissions` lists what is missing, such as `task:update`. |
 | `API_KEY_SCOPE` | 403 | The API key was created with permissions that do not cover the action. `missingPermissions` lists what is missing. |
 | `SESSION_REQUIRED` | 403 | The endpoint needs a signed-in user session and does not accept API keys. This covers account-level actions such as billing, instance administration, and some GitHub setup routes. |
+| `TASK_ASSIGNEE_AWAY` | 409 | A start or due date the request sets falls on a day the task's assignee is away: approved time off or a public holiday. `issues` has one entry per task, with the path `tasks.<id>`. The messages name dates only. See [Task dates](/core/functional/time-off#task-dates). |
 | `INTEGRATION_AUTH_FAILED` | 401 | A connected service such as GitLab rejected the token in the request, or could not be reached to check it. Your Kaneo session or API key is still valid. |
 
 `missingPermissions` only names permissions for the route you called in the workspace it targets.
+
+Routes for one record return `404` with `NOT_FOUND` when it doesn't exist, and the message names the record, such as `Holiday calendar request not found` for a holiday calendar request that is unknown or belongs to someone who left the workspace. [Time off](/core/functional/time-off#use-time-off-from-other-tools) lists its own `TIME_OFF_*` codes.
 
 A `401` with `UNAUTHORIZED` means Kaneo did not accept your session or API key. Sign in again or replace the key only for that code, not for every `401`.
 

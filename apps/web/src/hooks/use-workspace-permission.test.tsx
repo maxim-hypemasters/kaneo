@@ -28,6 +28,18 @@ vi.mock("@/lib/auth-client", () => ({
   },
 }));
 
+function capabilitiesFor(granted: Record<string, Set<string>>) {
+  return Object.fromEntries(
+    Object.entries(workspaceCapabilities).map(([name, permissions]) => [
+      name,
+      Object.entries(permissions as Record<string, readonly string[]>).every(
+        ([resource, actions]) =>
+          actions.every((action) => granted[resource]?.has(action)),
+      ),
+    ]),
+  );
+}
+
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -52,18 +64,7 @@ describe("useWorkspacePermission", () => {
       label: new Set(["create", "read", "update"]),
     } as Record<string, Set<string>>;
 
-    getMyCapabilities.mockResolvedValue(
-      Object.fromEntries(
-        Object.entries(workspaceCapabilities).map(([name, permissions]) => [
-          name,
-          Object.entries(
-            permissions as Record<string, readonly string[]>,
-          ).every(([resource, actions]) =>
-            actions.every((action) => granted[resource]?.has(action)),
-          ),
-        ]),
-      ),
-    );
+    getMyCapabilities.mockResolvedValue(capabilitiesFor(granted));
 
     const { result } = renderHook(() => useWorkspacePermission(), {
       wrapper: createWrapper(),
@@ -79,6 +80,24 @@ describe("useWorkspacePermission", () => {
     expect(result.current.canCreateLabels()).toBe(true);
     expect(result.current.canUpdateLabels()).toBe(true);
     expect(result.current.canDeleteLabels()).toBe(false);
+  });
+
+  it("lets a role request time off without approving it", async () => {
+    getMyCapabilities.mockResolvedValue(
+      capabilitiesFor({ time_off: new Set(["create", "read"]) }),
+    );
+
+    const { result } = renderHook(() => useWorkspacePermission(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isCheckingPermissions).toBe(false);
+    });
+
+    expect(result.current.canReadTimeOff()).toBe(true);
+    expect(result.current.canRequestTimeOff()).toBe(true);
+    expect(result.current.canApproveTimeOff()).toBe(false);
   });
 
   it("loads every capability in a single request", async () => {

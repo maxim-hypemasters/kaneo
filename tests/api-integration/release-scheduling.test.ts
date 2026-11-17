@@ -19,6 +19,11 @@ import {
 import { insertTask } from "./helpers/release/insert-task";
 import { jsonRequest } from "./helpers/release/json-request";
 import { restrictToProjects } from "./helpers/project-access/restrict-to-projects";
+import {
+  decideTimeOff,
+  requestTimeOff,
+  setHolidayCalendar,
+} from "./helpers/time-off-planning";
 
 beforeEach(resetTestDatabase);
 afterEach(() => vi.useRealTimers());
@@ -872,5 +877,116 @@ describe("release-scoped effort planning", () => {
     expect(
       (await ctx.call("POST", `${ctx.base(release.id)}/preview`, {})).status,
     ).toBe(403);
+  });
+});
+
+describe("approved time off in release planning", () => {
+  it("moves work off approved days in the planning time zone", async () => {
+    const ctx = await setup();
+    const release = await ctx.release("Time off");
+    const task = await ctx.leaf(release.id);
+    // Auckland's 09:00-17:00 straddles UTC midnight, so a UTC day would leave
+    // Monday morning free.
+    const placement = async () =>
+      (await ctx.preview(release.id, "Pacific/Auckland")).tasks[0];
+    const monday = {
+      taskId: task.id,
+      start: "2027-01-03T20:00:00.000Z",
+      end: "2027-01-03T22:00:00.000Z",
+    };
+    expect(await placement()).toMatchObject(monday);
+    const request = await requestTimeOff(ctx.call, ctx.workspace.id, {
+      startDate: "2027-01-04",
+    });
+    expect(await placement()).toMatchObject(monday);
+    await decideTimeOff(ctx.call, request, "approve");
+    expect(await placement()).toMatchObject({
+      taskId: task.id,
+      start: "2027-01-04T20:00:00.000Z",
+      end: "2027-01-04T22:00:00.000Z",
+    });
+  });
+
+  it("marks applied release and project plans outdated when time off is approved", async () => {
+    const ctx = await setup();
+    const release = await ctx.release("Approval");
+    await ctx.leaf(release.id);
+    expect(
+      (await ctx.apply(release.id, await ctx.preview(release.id))).status,
+    ).toBe(200);
+    const old = await ctx.preview(release.id);
+    const request = await requestTimeOff(ctx.call, ctx.workspace.id, {
+      startDate: "2027-01-04",
+    });
+    expect(
+      await (await ctx.call("GET", ctx.base(release.id))).json(),
+    ).toMatchObject({ planned: true, outdated: false });
+    await decideTimeOff(ctx.call, request, "approve");
+    expect(
+      await (await ctx.call("GET", ctx.base(release.id))).json(),
+    ).toMatchObject({ planned: true, outdated: true });
+    expect(
+      await (
+        await ctx.call("GET", `/project-schedule/${ctx.project.id}`)
+      ).json(),
+    ).toMatchObject({ outdated: true });
+    expect((await ctx.apply(release.id, old)).status).toBe(409);
+    const next = await ctx.preview(release.id);
+    expect(next.tasks[0]).toMatchObject({
+      start: "2027-01-05T09:00:00.000Z",
+      end: "2027-01-05T11:00:00.000Z",
+    });
+    expect((await ctx.apply(release.id, next)).status).toBe(200);
+    expect(
+      await (await ctx.call("GET", ctx.base(release.id))).json(),
+    ).toMatchObject({ outdated: false });
+  });
+});
+
+describe("public holidays in release planning", () => {
+  it("moves work off a member's calendar holidays and marks applied plans outdated", async () => {
+    const ctx = await setup();
+    const release = await ctx.release("Holidays");
+    const task = await ctx.leaf(release.id);
+    const placement = async () => (await ctx.preview(release.id)).tasks[0];
+    const read = async () =>
+      (await ctx.call("GET", ctx.base(release.id))).json();
+    const onDay = (day: string) => ({
+      taskId: task.id,
+      start: `${day}T09:00:00.000Z`,
+      end: `${day}T11:00:00.000Z`,
+    });
+    await decideTimeOff(
+      ctx.call,
+      await requestTimeOff(ctx.call, ctx.workspace.id, {
+        startDate: "2027-01-04",
+        endDate: "2027-01-05",
+      }),
+      "approve",
+    );
+    expect(await placement()).toMatchObject(onDay("2027-01-06"));
+    expect(
+      (await ctx.apply(release.id, await ctx.preview(release.id))).status,
+    ).toBe(200);
+    expect(await read()).toMatchObject({ outdated: false });
+
+    // Epiphany (Jan 6) is a public holiday in Bavaria, not in all of Germany.
+    await setHolidayCalendar(ctx.call, ctx.workspace.id, { country: "DE" });
+    expect(await placement()).toMatchObject(onDay("2027-01-06"));
+    await setHolidayCalendar(ctx.call, ctx.workspace.id, {
+      country: "DE",
+      region: "BY",
+    });
+    expect(await placement()).toMatchObject(onDay("2027-01-07"));
+    expect(await read()).toMatchObject({ planned: true, outdated: true });
+    expect(
+      await (
+        await ctx.call("GET", `/project-schedule/${ctx.project.id}`)
+      ).json(),
+    ).toMatchObject({ outdated: true });
+
+    await setHolidayCalendar(ctx.call, ctx.workspace.id, null);
+    expect(await placement()).toMatchObject(onDay("2027-01-06"));
+    expect(await read()).toMatchObject({ outdated: false });
   });
 });

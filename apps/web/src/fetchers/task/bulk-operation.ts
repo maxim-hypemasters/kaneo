@@ -22,7 +22,12 @@ async function bulkOperation({
   value?: string | null;
 }) {
   const response = await client.task.bulk.$patch({
-    json: { taskIds, operation, value },
+    json: {
+      taskIds,
+      operation,
+      value,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
   });
 
   if (!response.ok) {

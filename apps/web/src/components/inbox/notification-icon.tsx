@@ -2,15 +2,18 @@ import {
   Archive,
   AtSign,
   Bell,
-  CircleCheck,
-  Inbox,
+  CalendarCheck,
   CalendarClock,
+  CalendarCog,
   CalendarX,
+  CircleCheck,
   History,
+  Inbox,
   type LucideIcon,
   MessageSquare,
   SquarePlus,
   Timer,
+  TreePalm,
   UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -27,6 +30,13 @@ const icons: Record<string, LucideIcon> = {
   task_triage_new: Inbox,
   task_triage_accepted: CircleCheck,
   task_triage_declined: Archive,
+  time_off_requested: TreePalm,
+  time_off_approved: CalendarCheck,
+  time_off_declined: CalendarX,
+  time_off_member_away: TreePalm,
+  time_off_holiday_calendar_requested: CalendarCog,
+  time_off_holiday_calendar_approved: CalendarCheck,
+  time_off_holiday_calendar_declined: CalendarX,
 };
 
 export function NotificationIcon({ type }: { type: string }) {

@@ -1,5 +1,12 @@
 import { and, eq, sql } from "drizzle-orm";
-import { beforeEach, describe, expect, it } from "vite-plus/test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vite-plus/test";
 import { auth } from "../../apps/api/src/auth";
 import db, { schema } from "../../apps/api/src/database";
 import { createApp } from "../../apps/api/src/index";
@@ -12,9 +19,17 @@ import {
 import { insertTask } from "./helpers/release/insert-task";
 import { jsonRequest } from "./helpers/release/json-request";
 import { restrictToProjects } from "./helpers/project-access/restrict-to-projects";
+import { addWorkspaceMember } from "./helpers/project-access/add-workspace-member";
+import { addDays, insertTimeOff } from "./helpers/time-off";
+import {
+  decideTimeOff,
+  requestTimeOff,
+  setHolidayCalendar,
+} from "./helpers/time-off-planning";
 import { readMilestoneExecution } from "../../apps/api/src/milestone/execution";
 
 beforeEach(resetTestDatabase);
+afterEach(() => vi.useRealTimers());
 async function setup(role = "owner") {
   const member = await createWorkspaceMember({ role });
   const fixture = await createProjectFixture({
@@ -680,5 +695,213 @@ describe("project effort planning", () => {
       headers: { "content-type": "application/json", "x-api-key": key.key },
     });
     expect(response.status).toBe(403);
+  });
+});
+
+describe("approved time off in project planning", () => {
+  const monday = "2027-01-04";
+  const original = {
+    start: "2027-01-04T09:00:00.000Z",
+    end: "2027-01-04T11:00:00.000Z",
+  };
+  const moved = {
+    start: "2027-01-05T09:00:00.000Z",
+    end: "2027-01-05T11:00:00.000Z",
+  };
+  const read = async (ctx: Awaited<ReturnType<typeof setup>>) =>
+    (await ctx.call("GET", ctx.base)).json();
+
+  it("moves work off approved days only, alongside working-calendar time off", async () => {
+    const ctx = await setup();
+    await ctx.configure();
+    const task = await ctx.leaf();
+    const placement = async () =>
+      (await ctx.preview()).tasks.find(
+        (row: { taskId: string }) => row.taskId === task.id,
+      );
+    const declined = await requestTimeOff(ctx.call, ctx.workspace.id, {
+      startDate: monday,
+    });
+    expect(await placement()).toMatchObject(original);
+    await decideTimeOff(ctx.call, declined, "decline");
+    expect(await placement()).toMatchObject(original);
+    const approved = await requestTimeOff(ctx.call, ctx.workspace.id, {
+      startDate: monday,
+    });
+    expect(await placement()).toMatchObject(original);
+    await decideTimeOff(ctx.call, approved, "approve");
+    expect(await placement()).toMatchObject(moved);
+    expect(
+      (
+        await ctx.call(
+          "PUT",
+          `/work-calendar/${ctx.workspace.id}/${ctx.user.id}`,
+          {
+            ...ctx.calendar,
+            timeOff: [
+              { start: "2027-01-05T09:00:00Z", end: "2027-01-05T12:00:00Z" },
+            ],
+          },
+        )
+      ).status,
+    ).toBe(200);
+    expect(await placement()).toMatchObject({
+      start: "2027-01-05T12:00:00.000Z",
+      end: "2027-01-05T14:00:00.000Z",
+    });
+  });
+
+  it("marks an applied plan outdated on approval, not while pending, and not as days pass", async () => {
+    const ctx = await setup();
+    await ctx.configure();
+    const task = await ctx.leaf();
+    expect((await ctx.apply(await ctx.preview())).status).toBe(200);
+    const old = await ctx.preview();
+    const request = await requestTimeOff(ctx.call, ctx.workspace.id, {
+      startDate: monday,
+    });
+    expect((await ctx.preview()).inputRevision).toBe(old.inputRevision);
+    expect(await read(ctx)).toMatchObject({ outdated: false });
+    await decideTimeOff(ctx.call, request, "approve");
+    expect(await read(ctx)).toMatchObject({
+      generation: 1,
+      outdated: true,
+      tasks: [{ taskId: task.id, ...original }],
+    });
+    expect((await ctx.apply(old)).status).toBe(409);
+    const next = await ctx.preview();
+    expect(next.tasks[0]).toMatchObject(moved);
+    expect((await ctx.apply(next)).status).toBe(200);
+    expect(await read(ctx)).toMatchObject({ outdated: false });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2027-01-12T00:00:00Z"));
+    expect(await read(ctx)).toMatchObject({ outdated: false });
+  });
+
+  it("keeps a plan current when sick days are approved after they ended", async () => {
+    const ctx = await setup();
+    await ctx.configure();
+    await ctx.leaf();
+    expect((await ctx.apply(await ctx.preview())).status).toBe(200);
+    const old = await ctx.preview();
+    const today = new Date().toISOString().slice(0, 10);
+    const sick = await requestTimeOff(ctx.call, ctx.workspace.id, {
+      type: "sick",
+      startDate: addDays(today, -14),
+      endDate: addDays(today, -8),
+    });
+    await decideTimeOff(ctx.call, sick, "approve");
+    expect(await read(ctx)).toMatchObject({ outdated: false });
+    expect((await ctx.apply(old)).status).toBe(200);
+  });
+
+  it("keeps a plan current when ended time off is re-dated or cancelled", async () => {
+    const ctx = await setup();
+    await ctx.configure();
+    await ctx.leaf();
+    const request = await requestTimeOff(ctx.call, ctx.workspace.id, {
+      startDate: monday,
+    });
+    await decideTimeOff(ctx.call, request, "approve");
+    expect((await ctx.apply(await ctx.preview())).status).toBe(200);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2027-02-22T00:00:00Z"));
+
+    const edited = await ctx.call("PATCH", `/time-off/${request.id}`, {
+      endDate: addDays(monday, 1),
+    });
+    expect(edited.status).toBe(200);
+    expect(await read(ctx)).toMatchObject({ outdated: false });
+    const cancelled = await ctx.call("POST", `/time-off/${request.id}/cancel`);
+    expect(cancelled.status).toBe(200);
+    expect(await read(ctx)).toMatchObject({ outdated: false });
+  });
+
+  it("ignores the assignee's approved time off in another workspace", async () => {
+    const ctx = await setup();
+    await ctx.configure();
+    await ctx.leaf();
+    expect((await ctx.apply(await ctx.preview())).status).toBe(200);
+    const other = await createWorkspaceMember({ role: "owner" });
+    await db.insert(schema.workspaceUserTable).values({
+      workspaceId: other.workspace.id,
+      userId: ctx.user.id,
+      role: "member",
+      joinedAt: new Date(),
+    });
+    await insertTimeOff({
+      workspaceId: other.workspace.id,
+      userId: ctx.user.id,
+      status: "approved",
+      statusChangedAt: new Date(),
+      startDate: monday,
+      endDate: monday,
+    });
+    expect(await read(ctx)).toMatchObject({ outdated: false });
+    expect((await ctx.preview()).tasks[0]).toMatchObject(original);
+  });
+
+  it("leaves a member without a working calendar unscheduled", async () => {
+    const ctx = await setup();
+    await ctx.configure();
+    const colleague = await addWorkspaceMember(ctx.workspace.id, "member");
+    const task = await ctx.leaf({ userId: colleague.id });
+    const request = await requestTimeOff(ctx.call, ctx.workspace.id, {
+      userId: colleague.id,
+      startDate: monday,
+    });
+    await decideTimeOff(ctx.call, request, "approve");
+    expect((await ctx.preview()).diagnostics).toContainEqual({
+      taskId: task.id,
+      reason: "no_calendar",
+    });
+  });
+});
+
+describe("public holidays in project planning", () => {
+  it("moves work off a member's calendar holidays and marks the applied plan outdated", async () => {
+    const ctx = await setup();
+    await ctx.configure();
+    const task = await ctx.leaf();
+    const placement = async () =>
+      (await ctx.preview()).tasks.find(
+        (row: { taskId: string }) => row.taskId === task.id,
+      );
+    const read = async () => (await ctx.call("GET", ctx.base)).json();
+    const onDay = (day: string) => ({
+      start: `${day}T09:00:00.000Z`,
+      end: `${day}T11:00:00.000Z`,
+    });
+    await decideTimeOff(
+      ctx.call,
+      await requestTimeOff(ctx.call, ctx.workspace.id, {
+        startDate: "2027-01-04",
+        endDate: "2027-01-05",
+      }),
+      "approve",
+    );
+    expect(await placement()).toMatchObject(onDay("2027-01-06"));
+    expect((await ctx.apply(await ctx.preview())).status).toBe(200);
+    expect(await read()).toMatchObject({ outdated: false });
+
+    // Epiphany (Jan 6) is a public holiday in Bavaria, not in all of Germany.
+    await setHolidayCalendar(ctx.call, ctx.workspace.id, { country: "DE" });
+    expect(await placement()).toMatchObject(onDay("2027-01-06"));
+    await setHolidayCalendar(ctx.call, ctx.workspace.id, {
+      country: "DE",
+      region: "BY",
+    });
+    expect(await placement()).toMatchObject(onDay("2027-01-07"));
+    expect(await read()).toMatchObject({
+      generation: 1,
+      outdated: true,
+      tasks: [{ taskId: task.id, ...onDay("2027-01-06") }],
+    });
+    const next = await ctx.preview();
+    expect((await ctx.apply(next)).status).toBe(200);
+    expect(await read()).toMatchObject({
+      outdated: false,
+      tasks: [{ taskId: task.id, ...onDay("2027-01-07") }],
+    });
   });
 });

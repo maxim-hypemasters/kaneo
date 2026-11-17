@@ -40,6 +40,7 @@ export type NotificationPreferenceResponse = {
   taskStatusChangeEnabled: boolean;
   dueDateReminderEnabled: boolean;
   dueDateReminderLeadTimeMinutes: number;
+  teamTimeOffEnabled: boolean;
   workspaces: Array<{
     id: string;
     workspaceId: string;
@@ -75,6 +76,7 @@ export type UpdateNotificationPreferenceInput = {
   taskStatusChangeEnabled?: boolean;
   dueDateReminderEnabled?: boolean;
   dueDateReminderLeadTimeMinutes?: number;
+  teamTimeOffEnabled?: boolean;
 };
 
 export type UpsertWorkspaceRuleInput = {
@@ -231,6 +233,7 @@ export async function getNotificationPreferences(
     dueDateReminderEnabled: preference?.dueDateReminderEnabled ?? true,
     dueDateReminderLeadTimeMinutes:
       preference?.dueDateReminderLeadTimeMinutes ?? 1440,
+    teamTimeOffEnabled: preference?.teamTimeOffEnabled ?? true,
     workspaces: rules.map((rule) => ({
       id: rule.id,
       workspaceId: rule.workspaceId,
@@ -423,6 +426,8 @@ export async function updateNotificationPreferences(
       input.dueDateReminderLeadTimeMinutes ??
       existing?.dueDateReminderLeadTimeMinutes ??
       1440,
+    teamTimeOffEnabled:
+      input.teamTimeOffEnabled ?? existing?.teamTimeOffEnabled ?? true,
   };
 
   if (existing) {

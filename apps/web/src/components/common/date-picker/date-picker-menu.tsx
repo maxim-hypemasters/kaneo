@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { OptionMenu } from "@/components/common/option-menu/option-menu";
 import type { OptionMenuItem } from "@/components/common/option-menu/option-menu-item";
 import { useUserPreferencesStore } from "@/store/user-preferences";
+import type { BlockedDays } from "./blocked-days";
 import { DateLimitHint } from "./date-limit-hint";
 import { DatePickerMonthView } from "./date-picker-month-view";
 import { parseDateQuery } from "./parse-date-query";
@@ -27,6 +28,9 @@ type DatePickerMenuProps = {
   // What a typed day outside the bounds says; `date` is already formatted.
   outOfRangeLabel?: (side: "before" | "after", date: string) => string;
   canClear?: boolean;
+  // Days that can't be picked, e.g. while the assignee is away: disabled,
+  // struck through, and left out of the quick and typed dates.
+  blockedDays?: BlockedDays;
 };
 
 const PICK = "pick";
@@ -51,6 +55,7 @@ export function DatePickerMenu({
   limitHint: limitHintOverride,
   outOfRangeLabel,
   canClear = value !== null,
+  blockedDays,
 }: DatePickerMenuProps) {
   const { t } = useTranslation();
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
@@ -58,24 +63,30 @@ export function DatePickerMenu({
   const [query, setQuery] = useState("");
   const now = new Date();
 
-  const quickDates = getQuickDates(now, weekStartsOn).filter((item) =>
-    isAllowed(item.date, bounds),
+  const isBlocked = (date: Date) => blockedDays?.isBlocked(date) ?? false;
+  const quickDates = getQuickDates(now, weekStartsOn).filter(
+    (item) => isAllowed(item.date, bounds) && !isBlocked(item.date),
   );
   const typed = parseDateQuery(query, now, weekStartsOn, bounds?.before);
-  const typedDate = typed && isAllowed(typed, bounds) ? typed : null;
+  const typedInRange = typed && isAllowed(typed, bounds) ? typed : null;
+  const typedDate =
+    typedInRange && !isBlocked(typedInRange) ? typedInRange : null;
   const typedSide =
     bounds?.before && typed && typed < bounds.before ? "before" : "after";
-  const typedOutOfRange =
-    typed && !typedDate
-      ? outOfRangeLabel
-        ? outOfRangeLabel(typedSide, formatPickerDay(typed))
-        : t(
-            typedSide === "before"
-              ? "tasks:datePicker.beforeStart"
-              : "tasks:datePicker.afterDue",
-            { date: formatPickerDay(typed) },
-          )
-      : undefined;
+  // Why a typed day isn't offered.
+  const typedStatus =
+    typedInRange && !typedDate
+      ? blockedDays?.describe(typedInRange)
+      : typed && !typedInRange
+        ? outOfRangeLabel
+          ? outOfRangeLabel(typedSide, formatPickerDay(typed))
+          : t(
+              typedSide === "before"
+                ? "tasks:datePicker.beforeStart"
+                : "tasks:datePicker.afterDue",
+              { date: formatPickerDay(typed) },
+            )
+        : undefined;
 
   const options: OptionMenuItem[] = [
     ...(typedDate
@@ -111,6 +122,7 @@ export function DatePickerMenu({
   const disabledDays: Matcher[] = [];
   if (bounds?.before) disabledDays.push({ before: bounds.before });
   if (bounds?.after) disabledDays.push({ after: bounds.after });
+  if (blockedDays) disabledDays.push(blockedDays.isBlocked);
 
   const select = (selected: string) => {
     if (selected === PICK) {
@@ -138,6 +150,7 @@ export function DatePickerMenu({
         disabled={disabledDays}
         limit={limit}
         limitHint={limitHint}
+        blockedDays={blockedDays}
         onBack={() => setView("menu")}
         onSelect={onChange}
       />
@@ -153,9 +166,10 @@ export function DatePickerMenu({
         onSelect={select}
         onQueryChange={setQuery}
         inputHint={value ? formatPickerDay(value) : undefined}
-        status={typedOutOfRange}
+        status={typedStatus}
       />
       {limitHint && <DateLimitHint>{limitHint}</DateLimitHint>}
+      {blockedDays?.hint && <DateLimitHint>{blockedDays.hint}</DateLimitHint>}
     </>
   );
 }

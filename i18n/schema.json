@@ -3906,6 +3906,12 @@
 						"eventDueDateRemindersHint": {
 							"type": "string"
 						},
+						"eventTeamTimeOff": {
+							"type": "string"
+						},
+						"eventTeamTimeOffHint": {
+							"type": "string"
+						},
 						"reminderLeadTimeUnitLabel": {
 							"type": "string"
 						},
@@ -4151,6 +4157,8 @@
 						"eventTaskAssignmentsHint",
 						"eventStatusChangesHint",
 						"eventDueDateRemindersHint",
+						"eventTeamTimeOff",
+						"eventTeamTimeOffHint",
 						"reminderLeadTimeUnitLabel",
 						"channelsTitle",
 						"channelsDescription",
@@ -4851,6 +4859,9 @@
 								"workspace": {
 									"type": "string"
 								},
+								"time_off": {
+									"type": "string"
+								},
 								"organization": {
 									"type": "string"
 								},
@@ -4875,6 +4886,7 @@
 								"milestone",
 								"label",
 								"workspace",
+								"time_off",
 								"organization",
 								"member",
 								"invitation",
@@ -5325,6 +5337,52 @@
 									},
 									"required": ["read", "update", "delete", "manage_settings"]
 								},
+								"time_off": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"create": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"read": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"approve": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										}
+									},
+									"required": ["create", "read", "approve"]
+								},
 								"organization": {
 									"type": "object",
 									"additionalProperties": false,
@@ -5551,6 +5609,7 @@
 								"milestone",
 								"label",
 								"workspace",
+								"time_off",
 								"organization",
 								"member",
 								"invitation",
@@ -7079,6 +7138,118 @@
 						"run",
 						"toast",
 						"entry"
+					]
+				},
+				"workspaceTimeOff": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"pageTitle": {
+							"type": "string"
+						},
+						"title": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"defaultsTitle": {
+							"type": "string"
+						},
+						"defaultsDescription": {
+							"type": "string"
+						},
+						"perYear": {
+							"type": "string"
+						},
+						"defaultSaved_one": {
+							"type": "string"
+						},
+						"defaultSaved_zero": {
+							"type": "string"
+						},
+						"defaultSaved_two": {
+							"type": "string"
+						},
+						"defaultSaved_few": {
+							"type": "string"
+						},
+						"defaultSaved_many": {
+							"type": "string"
+						},
+						"defaultSaved_other": {
+							"type": "string"
+						},
+						"saveError": {
+							"type": "string"
+						},
+						"loadError": {
+							"type": "string"
+						},
+						"overridesNote": {
+							"type": "string"
+						},
+						"holidaysTitle": {
+							"type": "string"
+						},
+						"holidaysDescription": {
+							"type": "string"
+						},
+						"deadlineLabel": {
+							"type": "string"
+						},
+						"noDeadline": {
+							"type": "string"
+						},
+						"clearDeadline": {
+							"type": "string"
+						},
+						"deadlineSaved": {
+							"type": "string"
+						},
+						"deadlineCleared": {
+							"type": "string"
+						},
+						"deadlineSaveError": {
+							"type": "string"
+						},
+						"deadlineLoadError": {
+							"type": "string"
+						},
+						"notAllowed": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "description"]
+						}
+					},
+					"required": [
+						"pageTitle",
+						"title",
+						"description",
+						"defaultsTitle",
+						"defaultsDescription",
+						"perYear",
+						"saveError",
+						"loadError",
+						"overridesNote",
+						"holidaysTitle",
+						"holidaysDescription",
+						"deadlineLabel",
+						"noDeadline",
+						"clearDeadline",
+						"deadlineSaved",
+						"deadlineCleared",
+						"deadlineSaveError",
+						"deadlineLoadError",
+						"notAllowed"
 					]
 				},
 				"projectGeneral": {
@@ -10290,6 +10461,7 @@
 				"workspaceRoles",
 				"workspaceLabels",
 				"workspaceImport",
+				"workspaceTimeOff",
 				"projectGeneral",
 				"projectIntegrations",
 				"projectVisibility",
@@ -10398,6 +10570,9 @@
 						},
 						"createBug": {
 							"type": "string"
+						},
+						"timeOff": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -10419,7 +10594,8 @@
 						"createFeature",
 						"goToReleases",
 						"createRelease",
-						"createBug"
+						"createBug",
+						"timeOff"
 					]
 				},
 				"sidebar": {
@@ -10452,6 +10628,9 @@
 						},
 						"invitePeople": {
 							"type": "string"
+						},
+						"timeOff": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -10463,7 +10642,8 @@
 						"home",
 						"inbox",
 						"myTasks",
-						"invitePeople"
+						"invitePeople",
+						"timeOff"
 					]
 				},
 				"projectList": {
@@ -11398,6 +11578,142 @@
 							},
 							"required": ["title", "contentWithTask", "contentWithoutTask"]
 						},
+						"time_off_requested": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content_one": {
+									"type": "string"
+								},
+								"content_zero": {
+									"type": "string"
+								},
+								"content_two": {
+									"type": "string"
+								},
+								"content_few": {
+									"type": "string"
+								},
+								"content_many": {
+									"type": "string"
+								},
+								"content_other": {
+									"type": "string"
+								}
+							},
+							"required": ["title"]
+						},
+						"time_off_approved": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content_one": {
+									"type": "string"
+								},
+								"content_zero": {
+									"type": "string"
+								},
+								"content_two": {
+									"type": "string"
+								},
+								"content_few": {
+									"type": "string"
+								},
+								"content_many": {
+									"type": "string"
+								},
+								"content_other": {
+									"type": "string"
+								}
+							},
+							"required": ["title"]
+						},
+						"time_off_declined": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content_one": {
+									"type": "string"
+								},
+								"content_zero": {
+									"type": "string"
+								},
+								"content_two": {
+									"type": "string"
+								},
+								"content_few": {
+									"type": "string"
+								},
+								"content_many": {
+									"type": "string"
+								},
+								"content_other": {
+									"type": "string"
+								}
+							},
+							"required": ["title"]
+						},
+						"time_off_member_away": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
+						"time_off_holiday_calendar_requested": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
+						"time_off_holiday_calendar_approved": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
+						"time_off_holiday_calendar_declined": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
 						"task_triage_new": {
 							"type": "object",
 							"additionalProperties": false,
@@ -11451,6 +11767,13 @@
 						"due_date_reminder",
 						"task_overdue",
 						"time_entry_created",
+						"time_off_requested",
+						"time_off_approved",
+						"time_off_declined",
+						"time_off_member_away",
+						"time_off_holiday_calendar_requested",
+						"time_off_holiday_calendar_approved",
+						"time_off_holiday_calendar_declined",
 						"task_triage_new",
 						"task_triage_accepted",
 						"task_triage_declined"
@@ -11529,6 +11852,49 @@
 						},
 						"readCleared": {
 							"type": "string"
+						},
+						"openTimeOff": {
+							"type": "string"
+						},
+						"timeOff": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"requestedBy": {
+									"type": "string"
+								},
+								"approvedBy": {
+									"type": "string"
+								},
+								"declinedBy": {
+									"type": "string"
+								},
+								"member": {
+									"type": "string"
+								},
+								"hintRequested": {
+									"type": "string"
+								},
+								"hintDecided": {
+									"type": "string"
+								},
+								"hintMemberAway": {
+									"type": "string"
+								},
+								"hintHolidayCalendarDecided": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"requestedBy",
+								"approvedBy",
+								"declinedBy",
+								"member",
+								"hintRequested",
+								"hintDecided",
+								"hintMemberAway",
+								"hintHolidayCalendarDecided"
+							]
 						}
 					},
 					"required": [
@@ -11549,7 +11915,9 @@
 						"featureUnavailable",
 						"featureLoadError",
 						"actionError",
-						"readCleared"
+						"readCleared",
+						"openTimeOff",
+						"timeOff"
 					]
 				}
 			},
@@ -13869,6 +14237,34 @@
 								"taskAriaLabelMovable",
 								"bar"
 							]
+						},
+						"away": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"note": {
+									"type": "string"
+								},
+								"laneSummary": {
+									"type": "string"
+								},
+								"blockedHint": {
+									"type": "string"
+								},
+								"relatedRefused": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"note",
+								"laneSummary",
+								"blockedHint",
+								"relatedRefused",
+								"loadError"
+							]
 						}
 					},
 					"required": [
@@ -13900,7 +14296,8 @@
 						"featuresLabel",
 						"featureBar",
 						"featureLanes",
-						"milestones"
+						"milestones",
+						"away"
 					]
 				},
 				"delete": {
@@ -14882,6 +15279,12 @@
 						},
 						"afterDue": {
 							"type": "string"
+						},
+						"assigneeAway": {
+							"type": "string"
+						},
+						"awayHint": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -14893,8 +15296,44 @@
 						"pickDate",
 						"startsOn",
 						"beforeStart",
-						"afterDue"
+						"afterDue",
+						"assigneeAway",
+						"awayHint"
 					]
+				},
+				"assigneeAway": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"onDay": {
+							"type": "string"
+						},
+						"onDays": {
+							"type": "string"
+						},
+						"bulk_one": {
+							"type": "string"
+						},
+						"bulk_zero": {
+							"type": "string"
+						},
+						"bulk_two": {
+							"type": "string"
+						},
+						"bulk_few": {
+							"type": "string"
+						},
+						"bulk_many": {
+							"type": "string"
+						},
+						"bulk_other": {
+							"type": "string"
+						}
+					},
+					"required": ["title", "onDay", "onDays"]
 				},
 				"features": {
 					"type": "object",
@@ -17878,6 +18317,7 @@
 				"shortcuts",
 				"due",
 				"datePicker",
+				"assigneeAway",
 				"features",
 				"releases",
 				"createMenu",
@@ -18840,6 +19280,1100 @@
 						"updateSuccess",
 						"updateError"
 					]
+				},
+				"timeOff": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"pageTitle": {
+							"type": "string"
+						},
+						"request": {
+							"type": "string"
+						},
+						"loading": {
+							"type": "string"
+						},
+						"loadError": {
+							"type": "string"
+						},
+						"you": {
+							"type": "string"
+						},
+						"days_one": {
+							"type": "string"
+						},
+						"days_zero": {
+							"type": "string"
+						},
+						"days_two": {
+							"type": "string"
+						},
+						"days_few": {
+							"type": "string"
+						},
+						"days_many": {
+							"type": "string"
+						},
+						"days_other": {
+							"type": "string"
+						},
+						"weekdays_one": {
+							"type": "string"
+						},
+						"weekdays_zero": {
+							"type": "string"
+						},
+						"weekdays_two": {
+							"type": "string"
+						},
+						"weekdays_few": {
+							"type": "string"
+						},
+						"weekdays_many": {
+							"type": "string"
+						},
+						"weekdays_other": {
+							"type": "string"
+						},
+						"noAccess": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "description"]
+						},
+						"views": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"label": {
+									"type": "string"
+								},
+								"team": {
+									"type": "string"
+								},
+								"mine": {
+									"type": "string"
+								},
+								"approvals": {
+									"type": "string"
+								},
+								"balances": {
+									"type": "string"
+								}
+							},
+							"required": ["label", "team", "mine", "approvals", "balances"]
+						},
+						"types": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"vacation": {
+									"type": "string"
+								},
+								"sick": {
+									"type": "string"
+								},
+								"publicHoliday": {
+									"type": "string"
+								}
+							},
+							"required": ["vacation", "sick", "publicHoliday"]
+						},
+						"status": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"pending": {
+									"type": "string"
+								},
+								"approved": {
+									"type": "string"
+								},
+								"declined": {
+									"type": "string"
+								},
+								"cancelled": {
+									"type": "string"
+								}
+							},
+							"required": ["pending", "approved", "declined", "cancelled"]
+						},
+						"monthNav": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"label": {
+									"type": "string"
+								}
+							},
+							"required": ["label"]
+						},
+						"yearNav": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"label": {
+									"type": "string"
+								},
+								"previous": {
+									"type": "string"
+								},
+								"next": {
+									"type": "string"
+								}
+							},
+							"required": ["label", "previous", "next"]
+						},
+						"away": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"until": {
+									"type": "string"
+								}
+							},
+							"required": ["until"]
+						},
+						"timeline": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"label": {
+									"type": "string"
+								},
+								"member": {
+									"type": "string"
+								},
+								"away": {
+									"type": "string"
+								},
+								"empty": {
+									"type": "string"
+								},
+								"barLabel": {
+									"type": "string"
+								},
+								"barLabelPrivate": {
+									"type": "string"
+								},
+								"holidayNamed": {
+									"type": "string"
+								},
+								"holidayLabel": {
+									"type": "string"
+								},
+								"clippedStart": {
+									"type": "string"
+								},
+								"clippedEnd": {
+									"type": "string"
+								},
+								"scrollHint": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"label",
+								"member",
+								"away",
+								"empty",
+								"barLabel",
+								"barLabelPrivate",
+								"holidayNamed",
+								"holidayLabel",
+								"clippedStart",
+								"clippedEnd",
+								"scrollHint"
+							]
+						},
+						"details": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"type": {
+									"type": "string"
+								},
+								"status": {
+									"type": "string"
+								},
+								"days": {
+									"type": "string"
+								},
+								"note": {
+									"type": "string"
+								},
+								"edit": {
+									"type": "string"
+								},
+								"cancel": {
+									"type": "string"
+								},
+								"private": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"type",
+								"status",
+								"days",
+								"note",
+								"edit",
+								"cancel",
+								"private"
+							]
+						},
+						"balance": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"used": {
+									"type": "string"
+								},
+								"pending": {
+									"type": "string"
+								},
+								"remaining": {
+									"type": "string"
+								},
+								"over_one": {
+									"type": "string"
+								},
+								"over_zero": {
+									"type": "string"
+								},
+								"over_two": {
+									"type": "string"
+								},
+								"over_few": {
+									"type": "string"
+								},
+								"over_many": {
+									"type": "string"
+								},
+								"over_other": {
+									"type": "string"
+								},
+								"meterLabel": {
+									"type": "string"
+								},
+								"usedOf": {
+									"type": "string"
+								},
+								"pendingCount_one": {
+									"type": "string"
+								},
+								"pendingCount_zero": {
+									"type": "string"
+								},
+								"pendingCount_two": {
+									"type": "string"
+								},
+								"pendingCount_few": {
+									"type": "string"
+								},
+								"pendingCount_many": {
+									"type": "string"
+								},
+								"pendingCount_other": {
+									"type": "string"
+								},
+								"left_one": {
+									"type": "string"
+								},
+								"left_zero": {
+									"type": "string"
+								},
+								"left_two": {
+									"type": "string"
+								},
+								"left_few": {
+									"type": "string"
+								},
+								"left_many": {
+									"type": "string"
+								},
+								"left_other": {
+									"type": "string"
+								},
+								"override": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"used",
+								"pending",
+								"remaining",
+								"meterLabel",
+								"usedOf",
+								"override",
+								"loadError"
+							]
+						},
+						"requests": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"empty": {
+									"type": "string"
+								},
+								"emptyHint": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								},
+								"actionsFor": {
+									"type": "string"
+								},
+								"edit": {
+									"type": "string"
+								},
+								"cancel": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"empty",
+								"emptyHint",
+								"loadError",
+								"actionsFor",
+								"edit",
+								"cancel"
+							]
+						},
+						"cancelDialog": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"descriptionApproved": {
+									"type": "string"
+								},
+								"confirm": {
+									"type": "string"
+								},
+								"keep": {
+									"type": "string"
+								},
+								"success": {
+									"type": "string"
+								},
+								"error": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"description",
+								"descriptionApproved",
+								"confirm",
+								"keep",
+								"success",
+								"error"
+							]
+						},
+						"dialog": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"createTitle": {
+									"type": "string"
+								},
+								"editTitle": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"descriptionApproved": {
+									"type": "string"
+								},
+								"memberLabel": {
+									"type": "string"
+								},
+								"me": {
+									"type": "string"
+								},
+								"memberPlaceholder": {
+									"type": "string"
+								},
+								"typeLabel": {
+									"type": "string"
+								},
+								"startLabel": {
+									"type": "string"
+								},
+								"endLabel": {
+									"type": "string"
+								},
+								"pickDate": {
+									"type": "string"
+								},
+								"onOrAfter": {
+									"type": "string"
+								},
+								"beforeFirstDay": {
+									"type": "string"
+								},
+								"outsideWindow": {
+									"type": "string"
+								},
+								"noteLabel": {
+									"type": "string"
+								},
+								"notePlaceholder": {
+									"type": "string"
+								},
+								"noteHint": {
+									"type": "string"
+								},
+								"submit": {
+									"type": "string"
+								},
+								"save": {
+									"type": "string"
+								},
+								"createSuccess": {
+									"type": "string"
+								},
+								"recordSuccess": {
+									"type": "string"
+								},
+								"updateSuccess": {
+									"type": "string"
+								},
+								"createError": {
+									"type": "string"
+								},
+								"updateError": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"createTitle",
+								"editTitle",
+								"description",
+								"descriptionApproved",
+								"memberLabel",
+								"me",
+								"memberPlaceholder",
+								"typeLabel",
+								"startLabel",
+								"endLabel",
+								"pickDate",
+								"onOrAfter",
+								"beforeFirstDay",
+								"outsideWindow",
+								"noteLabel",
+								"notePlaceholder",
+								"noteHint",
+								"submit",
+								"save",
+								"createSuccess",
+								"recordSuccess",
+								"updateSuccess",
+								"createError",
+								"updateError"
+							]
+						},
+						"summary": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"pickDates": {
+									"type": "string"
+								},
+								"weekdays_one": {
+									"type": "string"
+								},
+								"weekdays_zero": {
+									"type": "string"
+								},
+								"weekdays_two": {
+									"type": "string"
+								},
+								"weekdays_few": {
+									"type": "string"
+								},
+								"weekdays_many": {
+									"type": "string"
+								},
+								"weekdays_other": {
+									"type": "string"
+								},
+								"remaining_one": {
+									"type": "string"
+								},
+								"remaining_zero": {
+									"type": "string"
+								},
+								"remaining_two": {
+									"type": "string"
+								},
+								"remaining_few": {
+									"type": "string"
+								},
+								"remaining_many": {
+									"type": "string"
+								},
+								"remaining_other": {
+									"type": "string"
+								},
+								"over_one": {
+									"type": "string"
+								},
+								"over_zero": {
+									"type": "string"
+								},
+								"over_two": {
+									"type": "string"
+								},
+								"over_few": {
+									"type": "string"
+								},
+								"over_many": {
+									"type": "string"
+								},
+								"over_other": {
+									"type": "string"
+								},
+								"checking": {
+									"type": "string"
+								},
+								"balanceUnavailable": {
+									"type": "string"
+								},
+								"overTitle": {
+									"type": "string"
+								},
+								"overDescription": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"pickDates",
+								"checking",
+								"balanceUnavailable",
+								"overTitle",
+								"overDescription"
+							]
+						},
+						"validation": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"dateRequired": {
+									"type": "string"
+								},
+								"endBeforeStart": {
+									"type": "string"
+								},
+								"tooLong": {
+									"type": "string"
+								},
+								"outOfRange": {
+									"type": "string"
+								},
+								"noWeekdays": {
+									"type": "string"
+								},
+								"memberRequired": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"dateRequired",
+								"endBeforeStart",
+								"tooLong",
+								"outOfRange",
+								"noWeekdays",
+								"memberRequired"
+							]
+						},
+						"errors": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"overlap": {
+									"type": "string"
+								},
+								"status": {
+									"type": "string"
+								},
+								"changed": {
+									"type": "string"
+								},
+								"started": {
+									"type": "string"
+								},
+								"range": {
+									"type": "string"
+								},
+								"noWeekdays": {
+									"type": "string"
+								},
+								"holidayCalendarUnknown": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"overlap",
+								"status",
+								"changed",
+								"started",
+								"range",
+								"noWeekdays",
+								"holidayCalendarUnknown"
+							]
+						},
+						"approvals": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"hint": {
+									"type": "string"
+								},
+								"tabLabel_one": {
+									"type": "string"
+								},
+								"tabLabel_zero": {
+									"type": "string"
+								},
+								"tabLabel_two": {
+									"type": "string"
+								},
+								"tabLabel_few": {
+									"type": "string"
+								},
+								"tabLabel_many": {
+									"type": "string"
+								},
+								"tabLabel_other": {
+									"type": "string"
+								},
+								"empty": {
+									"type": "string"
+								},
+								"emptyHint": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								},
+								"approve": {
+									"type": "string"
+								},
+								"decline": {
+									"type": "string"
+								},
+								"approveFor": {
+									"type": "string"
+								},
+								"declineFor": {
+									"type": "string"
+								},
+								"approved": {
+									"type": "string"
+								},
+								"declined": {
+									"type": "string"
+								},
+								"changed": {
+									"type": "string"
+								},
+								"alreadyDecided": {
+									"type": "string"
+								},
+								"error": {
+									"type": "string"
+								},
+								"overAllowance_one": {
+									"type": "string"
+								},
+								"overAllowance_zero": {
+									"type": "string"
+								},
+								"overAllowance_two": {
+									"type": "string"
+								},
+								"overAllowance_few": {
+									"type": "string"
+								},
+								"overAllowance_many": {
+									"type": "string"
+								},
+								"overAllowance_other": {
+									"type": "string"
+								},
+								"calendarTitle": {
+									"type": "string"
+								},
+								"calendarHint": {
+									"type": "string"
+								},
+								"calendarChange": {
+									"type": "string"
+								},
+								"requestedOn": {
+									"type": "string"
+								},
+								"approveCalendarFor": {
+									"type": "string"
+								},
+								"declineCalendarFor": {
+									"type": "string"
+								},
+								"calendarApproved": {
+									"type": "string"
+								},
+								"calendarDeclined": {
+									"type": "string"
+								},
+								"calendarUnknown": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"hint",
+								"empty",
+								"emptyHint",
+								"loadError",
+								"approve",
+								"decline",
+								"approveFor",
+								"declineFor",
+								"approved",
+								"declined",
+								"changed",
+								"alreadyDecided",
+								"error",
+								"calendarTitle",
+								"calendarHint",
+								"calendarChange",
+								"requestedOn",
+								"approveCalendarFor",
+								"declineCalendarFor",
+								"calendarApproved",
+								"calendarDeclined",
+								"calendarUnknown"
+							]
+						},
+						"balances": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"hint": {
+									"type": "string"
+								},
+								"defaultsInSettings": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								},
+								"defaultPlaceholder": {
+									"type": "string"
+								},
+								"defaultPlaceholder_zero": {
+									"type": "string"
+								},
+								"defaultPlaceholder_one": {
+									"type": "string"
+								},
+								"defaultPlaceholder_two": {
+									"type": "string"
+								},
+								"defaultPlaceholder_few": {
+									"type": "string"
+								},
+								"defaultPlaceholder_many": {
+									"type": "string"
+								},
+								"defaultPlaceholder_other": {
+									"type": "string"
+								},
+								"member": {
+									"type": "string"
+								},
+								"allowance": {
+									"type": "string"
+								},
+								"typeLabel": {
+									"type": "string"
+								},
+								"publicHolidayHint": {
+									"type": "string"
+								},
+								"overrideLabel": {
+									"type": "string"
+								},
+								"overrideSaved": {
+									"type": "string"
+								},
+								"overrideCleared": {
+									"type": "string"
+								},
+								"useDefault": {
+									"type": "string"
+								},
+								"useDefaultFor": {
+									"type": "string"
+								},
+								"invalid": {
+									"type": "string"
+								},
+								"saveError": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"hint",
+								"defaultsInSettings",
+								"loadError",
+								"member",
+								"allowance",
+								"typeLabel",
+								"publicHolidayHint",
+								"overrideLabel",
+								"overrideSaved",
+								"overrideCleared",
+								"useDefault",
+								"useDefaultFor",
+								"invalid",
+								"saveError"
+							]
+						},
+						"holidays": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"countryLabel": {
+									"type": "string"
+								},
+								"regionLabel": {
+									"type": "string"
+								},
+								"noCalendar": {
+									"type": "string"
+								},
+								"wholeCountry": {
+									"type": "string"
+								},
+								"noCalendarHint": {
+									"type": "string"
+								},
+								"calendarName": {
+									"type": "string"
+								},
+								"calendarHint": {
+									"type": "string"
+								},
+								"change": {
+									"type": "string"
+								},
+								"changeLabel": {
+									"type": "string"
+								},
+								"requestChange": {
+									"type": "string"
+								},
+								"requestChangeLabel": {
+									"type": "string"
+								},
+								"save": {
+									"type": "string"
+								},
+								"sendForApproval": {
+									"type": "string"
+								},
+								"approvalNote": {
+									"type": "string"
+								},
+								"requestSent": {
+									"type": "string"
+								},
+								"pending": {
+									"type": "string"
+								},
+								"pendingHint": {
+									"type": "string"
+								},
+								"withdraw": {
+									"type": "string"
+								},
+								"withdrawLabel": {
+									"type": "string"
+								},
+								"withdrawn": {
+									"type": "string"
+								},
+								"withdrawDecided": {
+									"type": "string"
+								},
+								"withdrawError": {
+									"type": "string"
+								},
+								"reminder": {
+									"type": "string"
+								},
+								"reminderHint": {
+									"type": "string"
+								},
+								"reminderApproverHint": {
+									"type": "string"
+								},
+								"reminderPassed": {
+									"type": "string"
+								},
+								"reminderPassedHint": {
+									"type": "string"
+								},
+								"saved": {
+									"type": "string"
+								},
+								"cleared": {
+									"type": "string"
+								},
+								"saveError": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								},
+								"empty": {
+									"type": "string"
+								},
+								"listLabel": {
+									"type": "string"
+								},
+								"searchCountry": {
+									"type": "string"
+								},
+								"searchRegion": {
+									"type": "string"
+								},
+								"noCountryResults": {
+									"type": "string"
+								},
+								"noRegionResults": {
+									"type": "string"
+								},
+								"loadingOptions": {
+									"type": "string"
+								},
+								"optionsError": {
+									"type": "string"
+								},
+								"weekend": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"countryLabel",
+								"regionLabel",
+								"noCalendar",
+								"wholeCountry",
+								"noCalendarHint",
+								"calendarName",
+								"calendarHint",
+								"change",
+								"changeLabel",
+								"requestChange",
+								"requestChangeLabel",
+								"save",
+								"sendForApproval",
+								"approvalNote",
+								"requestSent",
+								"pending",
+								"pendingHint",
+								"withdraw",
+								"withdrawLabel",
+								"withdrawn",
+								"withdrawDecided",
+								"withdrawError",
+								"reminder",
+								"reminderHint",
+								"reminderApproverHint",
+								"reminderPassed",
+								"reminderPassedHint",
+								"saved",
+								"cleared",
+								"saveError",
+								"loadError",
+								"empty",
+								"listLabel",
+								"searchCountry",
+								"searchRegion",
+								"noCountryResults",
+								"noRegionResults",
+								"loadingOptions",
+								"optionsError",
+								"weekend"
+							]
+						}
+					},
+					"required": [
+						"pageTitle",
+						"request",
+						"loading",
+						"loadError",
+						"you",
+						"noAccess",
+						"views",
+						"types",
+						"status",
+						"monthNav",
+						"yearNav",
+						"away",
+						"timeline",
+						"details",
+						"balance",
+						"requests",
+						"cancelDialog",
+						"dialog",
+						"summary",
+						"validation",
+						"errors",
+						"approvals",
+						"balances",
+						"holidays"
+					]
 				}
 			},
 			"required": [
@@ -18848,7 +20382,8 @@
 				"invitations",
 				"inviteModal",
 				"membersTable",
-				"projectAccess"
+				"projectAccess",
+				"timeOff"
 			]
 		},
 		"publicProject": {

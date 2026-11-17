@@ -20,6 +20,22 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-query")>()),
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
+// Members' days away, by lane; nobody is away unless a test says so.
+const ganttAway = vi.hoisted(() => ({
+  runs: new Map<string, { from: number; to: number; kind: "vacation" }[]>(),
+  isError: false,
+  retry: vi.fn(),
+}));
+vi.mock("@/components/gantt/away/use-gantt-away", () => ({
+  useGanttAway: () => ({
+    runsFor: (userId: string | null | undefined) =>
+      (userId && ganttAway.runs.get(userId)) || [],
+    barFor: () => undefined,
+    refusal: () => null,
+    isError: ganttAway.isError,
+    retry: ganttAway.retry,
+  }),
+}));
 import enUS from "@i18n/en-US.json";
 import {
   act,
@@ -365,6 +381,9 @@ afterEach(() => {
   updateTask.mockClear();
   barDragChanges.clear();
   mobile = false;
+  ganttAway.runs.clear();
+  ganttAway.isError = false;
+  ganttAway.retry.mockClear();
 });
 
 describe("Gantt jump-to-today", () => {
@@ -717,6 +736,48 @@ describe("Gantt group by assignee", () => {
     rerender(<GanttRoute />);
     expect(container.querySelector("[data-gantt-lane]")).toBeNull();
     expect(screen.getAllByText(/• alice/)).toHaveLength(2);
+  });
+
+  it("bands a member's days away across their lane only", () => {
+    preferences.ganttGroupBy = "assignee";
+    mockTeamProject();
+    // Aug 29 and 30: columns 14 and 15 of a window opening Aug 16.
+    ganttAway.runs.set("u-al", [{ from: 13, to: 15, kind: "vacation" }]);
+
+    const { container, rerender } = render(<GanttRoute />);
+    const aliceLane = lane(container, "member:u-al");
+    const band = aliceLane.querySelector("[data-gantt-away-band]");
+    expect(band).toHaveAttribute("data-gantt-away-band", "vacation");
+    expect(band?.getAttribute("style")).toContain("grid-column: 14 / 16");
+    expect(band?.closest("[aria-hidden]")).not.toBeNull();
+    // In words for screen readers, with what the band says.
+    expect(
+      within(aliceLane).getByText(/^alice is away: .+ \(Vacation\)\.$/),
+    ).toHaveClass("sr-only");
+    expect(
+      lane(container, "unassigned").querySelector("[data-gantt-away-bands]"),
+    ).toBeNull();
+    expect(
+      lane(container, "member:u-bob").querySelector("[data-gantt-away-bands]"),
+    ).toBeNull();
+
+    // The flat chart has no lanes to band.
+    preferences.ganttGroupBy = "none";
+    rerender(<GanttRoute />);
+    expect(container.querySelector("[data-gantt-away-bands]")).toBeNull();
+  });
+
+  it("says when days away couldn't load, with a retry", () => {
+    mockTeamProject();
+    ganttAway.isError = true;
+
+    render(<GanttRoute />);
+    const status = screen
+      .getByText("Couldn't load who is away.")
+      .closest<HTMLElement>("[role=status]");
+    if (!status) throw new Error("no status");
+    fireEvent.click(within(status).getByRole("button", { name: "Try again" }));
+    expect(ganttAway.retry).toHaveBeenCalledOnce();
   });
 
   it("falls back to the flat list for an unknown stored grouping", () => {

@@ -28,6 +28,7 @@ import {
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import useGetConfig from "@/hooks/queries/config/use-get-config";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useShortcut } from "@/lib/shortcuts/use-shortcut";
 import type { ShortcutId } from "@/lib/shortcuts/catalog";
 import { authClient } from "@/lib/auth-client";
@@ -78,6 +79,10 @@ function CommandPalette() {
     undefined;
   const isBacklogView = location.pathname.endsWith("/backlog");
   const { canManage: canManageReleases } = useReleasePermissions();
+  const { canReadTimeOff, canRequestTimeOff, canApproveTimeOff } =
+    useWorkspacePermission();
+  const canOpenTimeOff =
+    canReadTimeOff() || canRequestTimeOff() || canApproveTimeOff();
 
   const openShortcutsPanel = useShortcutsPanelStore((state) => state.setOpen);
 
@@ -123,6 +128,20 @@ function CommandPalette() {
               navigate({ to: "/dashboard/settings/workspace/members" });
             },
           },
+          ...(canOpenTimeOff && workspace?.id
+            ? [
+                {
+                  value: "time-off",
+                  label: t("navigation:commandPalette.timeOff"),
+                  onRun: () => {
+                    navigate({
+                      to: "/dashboard/workspace/$workspaceId/time-off",
+                      params: { workspaceId: workspace.id },
+                    });
+                  },
+                },
+              ]
+            : []),
           {
             value: "create-task",
             label: t("tasks:createMenu.newTask"),
@@ -221,6 +240,7 @@ function CommandPalette() {
       projectIdFromRoute,
       workspaceIdFromRoute,
       canManageReleases,
+      canOpenTimeOff,
     ],
   );
 

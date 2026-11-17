@@ -55,6 +55,7 @@ import importRoutes from "./import";
 import milestone from "./milestone";
 import feature from "./feature";
 import projectDocument from "./project-document";
+import timeOff from "./time-off";
 import { stopActiveImports } from "./import/runs/stop-active-imports";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
 import invitation from "./invitation";
@@ -64,6 +65,7 @@ import mcpRoutes, { mcpWellKnownRoutes } from "./mcp";
 import { migrateColumns } from "./migrations/column-migration";
 import { migrateWorkItemPermissions } from "./migrations/work-item-permissions";
 import { migrateProjectDocumentPermissions } from "./migrations/project-document-permissions";
+import { migrateTimeOffPermissions } from "./migrations/time-off-permissions";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
@@ -75,6 +77,7 @@ import release from "./release";
 import projectSchedule from "./scheduling";
 import workCalendar from "./scheduling/calendars";
 import "./scheduling/events";
+import "./time-off/events";
 import { assertProjectAccess } from "./project-access/assert-project-access";
 import { getPublicProject } from "./project/controllers/get-public-project";
 import { initializeScheduler, shutdownScheduler } from "./scheduler";
@@ -835,6 +838,7 @@ export function createApp() {
   const milestoneApi = api.route("/milestone", milestone);
   const featureApi = api.route("/feature", feature);
   const projectDocumentApi = api.route("/project-document", projectDocument);
+  const timeOffApi = api.route("/time-off", timeOff);
   const activityApi = api.route("/activity", activity);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
@@ -1005,6 +1009,7 @@ export function createApp() {
     milestoneApi,
     featureApi,
     projectDocumentApi,
+    timeOffApi,
     searchApi,
     mattermostIntegrationApi,
     slackIntegrationApi,
@@ -1055,6 +1060,7 @@ export async function runStartupTasks() {
   await migrateColumns();
   await migrateWorkItemPermissions();
   await migrateProjectDocumentPermissions();
+  await migrateTimeOffPermissions();
   await seedDefaultWorkspaceRoles();
 
   initializePlugins();
@@ -1148,6 +1154,7 @@ const {
   milestoneApi,
   featureApi,
   projectDocumentApi,
+  timeOffApi,
   searchApi,
   slackIntegrationApi,
   taskApi,
@@ -1187,6 +1194,7 @@ export type AppType =
   | typeof milestoneApi
   | typeof featureApi
   | typeof projectDocumentApi
+  | typeof timeOffApi
   | typeof activityApi
   | typeof commentApi
   | typeof timeEntryApi

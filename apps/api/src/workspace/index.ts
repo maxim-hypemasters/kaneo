@@ -1,3 +1,4 @@
+import db from "../database";
 import {
   apiRouter,
   type BaseVariables,
@@ -6,6 +7,7 @@ import {
   jsonResponse,
 } from "../openapi";
 import { listWorkspaceProjectAccess } from "../project-access/list-workspace-project-access";
+import { isWorkspaceMember } from "../time-off/access";
 import {
   requireApiKeyScope,
   requireWorkspacePermission,
@@ -132,7 +134,7 @@ const getMyCapabilitiesRoute = createRoute({
   tags: ["Workspaces"],
   summary: "Get my workspace capabilities",
   description:
-    "Check every named workspace action for the caller in one request: which of them the caller's roles allow, narrowed by the API key's scope when one is used. Instance admins are allowed everything.",
+    "Check every named workspace action for the caller in one request: which of them the caller's roles allow, narrowed by the API key's scope when one is used. Instance admins are allowed everything, except requesting and approving time off in a workspace they aren't a member of.",
   middleware: [workspaceAccess.fromParam("workspaceId")] as const,
   request: { params: workspaceIdParam },
   responses: {
@@ -203,9 +205,13 @@ const workspace = apiRouter<BaseVariables & { workspaceId: string }>()
       200,
     ),
   )
-  .openapi(getMyCapabilitiesRoute, async (c) =>
-    c.json(getMyCapabilitiesCtrl(await workspacePermissionChecker(c)), 200),
-  )
+  .openapi(getMyCapabilitiesRoute, async (c) => {
+    const [allows, member] = await Promise.all([
+      workspacePermissionChecker(c),
+      isWorkspaceMember(db, c.get("workspaceId"), c.get("userId")),
+    ]);
+    return c.json(getMyCapabilitiesCtrl(allows, member), 200);
+  })
   .openapi(getWorkspaceProjectAccessRoute, async (c) =>
     c.json(
       await listWorkspaceProjectAccess(c.get("workspaceId"), c.get("userId")),

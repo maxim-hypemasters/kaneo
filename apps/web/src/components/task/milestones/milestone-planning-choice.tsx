@@ -17,6 +17,7 @@ export function MilestonePlanningChoice({
   loading,
   error,
   onRetry,
+  onOpenChange,
 }: {
   label: string;
   children: ReactNode;
@@ -26,13 +27,20 @@ export function MilestonePlanningChoice({
   loading?: boolean;
   error?: boolean;
   onRetry?: () => void;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const { t } = useTranslation();
   return (
     <label className="flex min-w-0 flex-col gap-1.5 text-sm">
       <span>{label}</span>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          onOpenChange?.(next);
+        }}
+      >
         <PopoverTrigger
           render={
             <Button
@@ -53,6 +61,7 @@ export function MilestonePlanningChoice({
             onSelect={(value) => {
               onSelect(value);
               setOpen(false);
+              onOpenChange?.(false);
             }}
             status={loading ? t("common:empty.loading") : undefined}
           />

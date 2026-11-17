@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DatePickerMenu } from "@/components/common/date-picker/date-picker-menu";
 import {
   Popover,
   PopoverContent,
@@ -8,8 +7,9 @@ import {
 } from "@/components/ui/popover";
 import { useUpdateTaskStartDate } from "@/hooks/mutations/task/use-update-task-start-date";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { toast } from "@/lib/toast";
+import { toastTaskSaveError } from "@/lib/time-off/task-away-error";
 import type Task from "@/types/task";
+import { AssigneeDatePickerMenu } from "./assignee-date-picker-menu";
 
 type TaskStartDatePopoverProps = {
   task: Task;
@@ -34,11 +34,7 @@ export default function TaskStartDatePopover({
       });
       setOpen(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("tasks:popover.startDate.updateError"),
-      );
+      toastTaskSaveError(error, t("tasks:popover.startDate.updateError"));
     }
   };
 
@@ -48,7 +44,9 @@ export default function TaskStartDatePopover({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent className="w-65 p-0" align="start">
-        <DatePickerMenu
+        {/* A date set by hand belongs to the task's own assignee. */}
+        <AssigneeDatePickerMenu
+          assignee={{ userId: task.userId, name: task.assigneeName }}
           label={t("tasks:properties.startDate")}
           placeholder={t("tasks:datePicker.startDatePlaceholder")}
           clearLabel={t("tasks:popover.startDate.clear")}

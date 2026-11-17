@@ -61,6 +61,10 @@ vi.mock("@/hooks/mutations/milestone/use-milestone-mutations", () => ({
     reorder: { mutateAsync: mocks.reorder },
   }),
 }));
+// Away badges have their own tests; nobody is away here.
+vi.mock("@/components/time-off/away/use-away-labels", () => ({
+  useAwayLabels: () => new Map(),
+}));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canCreateMilestones: () => mocks.canEdit,

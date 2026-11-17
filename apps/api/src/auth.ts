@@ -49,6 +49,7 @@ import { resolveInvitationProjectAccess } from "./project-access/resolve-invitat
 import { clearMemberProjectAccess } from "./project-access/clear-member-project-access";
 import { isOwnerRole } from "./project-access/is-owner-role";
 import { publishMemberProjects } from "./project-access/publish-member-projects";
+import { clearRemovedMemberTimeOff } from "./time-off/clear-removed-member-time-off";
 import { handleMemberAdded } from "./workspace-members/handle-member-added";
 import { handleMemberRemoved } from "./workspace-members/handle-member-removed";
 import { dropTriageMemberships } from "./triage/remove-triage-memberships";
@@ -976,6 +977,14 @@ export const auth = betterAuth({
               role: ctx.context.session?.user.role ?? null,
             },
           );
+          // Better Auth's leave skips afterRemoveMember, so this path clears
+          // time off itself, like handleMemberRemoved does.
+          await clearRemovedMemberTimeOff(
+            removed.organizationId,
+            removed.userId,
+          ).catch((error) => {
+            console.error("Time off cleanup failed:", error);
+          });
         }
       }
 

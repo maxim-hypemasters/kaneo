@@ -21,6 +21,7 @@ import { removeLabelFromGitlab } from "../../plugins/gitlab/utils/sync-label-to-
 import { assertAssignableUser } from "../../utils/assert-assignable-user";
 import { publishTaskMutation } from "./task-mutation-effects";
 import { assertTriageTransition } from "../../triage/triage-status";
+import { assertAssigneeAvailable } from "../assignee-away/assert-assignee-available";
 import {
   assertValidPriority,
   assertValidTaskStatus,
@@ -41,11 +42,14 @@ async function bulkUpdateTasks({
   operation,
   value,
   userId,
+  timeZone,
 }: {
   taskIds: string[];
   operation: BulkOperation;
   value?: string | null;
   userId: string;
+  // The zone a due date was picked in; see assertAssigneeAvailable.
+  timeZone?: string;
 }) {
   const tasks = await db
     .select({
@@ -285,6 +289,10 @@ async function bulkUpdateTasks({
               projectId: taskTable.projectId,
               title: taskTable.title,
               userId: taskTable.userId,
+              startDate: taskTable.startDate,
+              dueDate: taskTable.dueDate,
+              scheduleSegments: taskTable.scheduleSegments,
+              scheduledAssigneeId: taskTable.scheduledAssigneeId,
             })
             .from(taskTable)
             .where(inArray(taskTable.id, foundIds))
@@ -302,6 +310,18 @@ async function bulkUpdateTasks({
             throw new HTTPException(409, {
               message: "Tasks changed projects; retry the operation",
             });
+          // All or nothing: one refusal lists every task the assignee is
+          // away for.
+          await assertAssigneeAvailable(
+            tx,
+            locked.map((task) => ({
+              taskId: task.id,
+              projectId: task.projectId,
+              before: task,
+              after: { ...task, userId: assigneeId },
+            })),
+            timeZone,
+          );
           await tx
             .update(taskTable)
             .set({ userId: assigneeId })
@@ -507,6 +527,9 @@ async function bulkUpdateTasks({
               type: taskTable.type,
               startDate: taskTable.startDate,
               dueDate: taskTable.dueDate,
+              userId: taskTable.userId,
+              scheduleSegments: taskTable.scheduleSegments,
+              scheduledAssigneeId: taskTable.scheduledAssigneeId,
             })
             .from(taskTable)
             .where(inArray(taskTable.id, foundIds))
@@ -541,6 +564,18 @@ async function bulkUpdateTasks({
             throw new HTTPException(400, {
               message: "Due date cannot be before a selected task's start date",
             });
+          // All or nothing: one refusal lists every task whose assignee is
+          // away on the new due day.
+          await assertAssigneeAvailable(
+            tx,
+            changed.map((task) => ({
+              taskId: task.id,
+              projectId: task.projectId,
+              before: task,
+              after: { ...task, dueDate: parsedDate, scheduleSegments: null },
+            })),
+            timeZone,
+          );
           const changedIds = changed.map((task) => task.id);
           if (!changedIds.length) return { updatedTasks: [], beforeById };
           await tx

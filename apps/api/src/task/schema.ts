@@ -5,6 +5,7 @@ import { TICKET_ID_PATTERN } from "./ticket-id";
 import { VALID_PRIORITIES } from "./validate-task-fields";
 import { TASK_TYPES } from "./task-type";
 import { featureCompositionSchema } from "./feature-composition-schema";
+import { planningTimeZone } from "../scheduling/schema";
 import {
   transferFeatureDocumentSchema,
   transferFeatureUpdateSchema,
@@ -86,6 +87,12 @@ export const listTasksQuery = z.object({
   }),
 });
 
+// The zone a date was picked in, so the server reads the same calendar day.
+const dayTimeZone = planningTimeZone.optional().openapi({
+  description:
+    "IANA timezone whose calendar days these dates name, used to check them against the assignee's days away (approved time off and public holidays). Kaneo's web app sends the browser's. Defaults to the project's planning timezone, then UTC.",
+});
+
 export const bulkUpdateBody = z.object({
   taskIds: z.array(z.string()).min(1),
   operation: z.enum([
@@ -101,6 +108,10 @@ export const bulkUpdateBody = z.object({
   value: z.string().nullable().optional().openapi({
     description:
       "The new value for the chosen operation. Unused by `delete`; null clears an assignee or estimate; estimates are canonical seconds in whole minutes.",
+  }),
+  timeZone: planningTimeZone.optional().openapi({
+    description:
+      "Used by updateDueDate and updateAssignee: the IANA timezone whose calendar days the dates name, to check them against the assignee's days away (approved time off and public holidays). Kaneo's web app sends the browser's. Defaults to each project's planning timezone, then UTC.",
   }),
 });
 
@@ -166,6 +177,7 @@ export const updateTaskBody = z
     projectId: z.string(),
     position: z.number().int().min(0).max(MAX_TASK_POSITION),
     userId: z.string().optional(),
+    timeZone: dayTimeZone,
   })
   .strict();
 
@@ -226,11 +238,13 @@ export const updateStatusBody = z.object({ status: z.string() });
 export const updatePriorityBody = z.object({ priority });
 export const updateAssigneeBody = z.object({
   userId: z.string().nullable().openapi({ description: "Null unassigns." }),
+  timeZone: dayTimeZone,
 });
 export const updateDueDateBody = z.object({
   dueDate: z.string().nullable().optional().openapi({
     description: "An ISO date or date-time. Null, empty or omitted clears it.",
   }),
+  timeZone: dayTimeZone,
 });
 export const moveTaskScheduleBody = z
   .object({
@@ -246,6 +260,11 @@ export const moveTaskScheduleBody = z
       description:
         "Set the span by hand, as resizing a bar in Gantt does: the work takes `start` and `end` exactly as its start and due dates, and planned work stops following its estimate until the next Apply.",
     }),
+    userId: z.string().nullable().optional().openapi({
+      description:
+        "Also reassign, as dropping the bar on another assignee lane in Gantt does. Null unassigns; omit to keep the assignee. A different assignee needs task:assign. Planned work keeps its planned assignee until the next Apply.",
+    }),
+    timeZone: dayTimeZone,
   })
   .refine((body) => Date.parse(body.start) <= Date.parse(body.end), {
     message: "start must not be after end",

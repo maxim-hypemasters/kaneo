@@ -189,6 +189,7 @@ try {
             taskStatusChangeEnabled: true,
             dueDateReminderEnabled: true,
             dueDateReminderLeadTimeMinutes: 1440,
+            teamTimeOffEnabled: true,
             workspaces: [],
             createdAt: date,
             updatedAt: date,

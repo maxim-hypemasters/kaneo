@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { DatePickerMenu } from "@/components/common/date-picker/date-picker-menu";
 import {
   Popover,
   PopoverContent,
@@ -8,8 +7,9 @@ import {
 } from "@/components/ui/popover";
 import { useUpdateTaskDueDate } from "@/hooks/mutations/task/use-update-task-due-date";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { toast } from "@/lib/toast";
+import { toastTaskSaveError } from "@/lib/time-off/task-away-error";
 import type Task from "@/types/task";
+import { AssigneeDatePickerMenu } from "./assignee-date-picker-menu";
 
 type TaskDueDatePopoverProps = {
   task: Task;
@@ -34,11 +34,7 @@ export default function TaskDueDatePopover({
       });
       setOpen(false);
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : t("tasks:popover.dueDate.updateError"),
-      );
+      toastTaskSaveError(error, t("tasks:popover.dueDate.updateError"));
     }
   };
 
@@ -48,7 +44,9 @@ export default function TaskDueDatePopover({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent className="w-65 p-0" align="start">
-        <DatePickerMenu
+        {/* A date set by hand belongs to the task's own assignee. */}
+        <AssigneeDatePickerMenu
+          assignee={{ userId: task.userId, name: task.assigneeName }}
           label={t("tasks:dueDate.label")}
           placeholder={t("tasks:datePicker.dueDatePlaceholder")}
           clearLabel={t("tasks:popover.dueDate.clear")}

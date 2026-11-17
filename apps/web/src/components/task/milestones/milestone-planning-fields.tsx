@@ -1,5 +1,7 @@
 import { MilestonePlanningChoice } from "./milestone-planning-choice";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useAwayLabels } from "@/components/time-off/away/use-away-labels";
 import type {
   Milestone,
   MilestoneInput,
@@ -35,6 +37,8 @@ export function MilestonePlanningFields({
   const permission = useWorkspacePermission();
   const releases = useGetReleases(projectId);
   const members = useGetProjectMembers({ projectId, workspaceId });
+  const [leadOpen, setLeadOpen] = useState(false);
+  const away = useAwayLabels(workspaceId, { enabled: leadOpen });
   const canEdit = permission.canUpdateMilestones() && !pending;
   const lead = members.data?.find((m) => m.id === milestone.leadId);
   const release = releases.data?.find((r) => r.id === milestone.releaseId);
@@ -47,10 +51,12 @@ export function MilestonePlanningFields({
           members.data ?? [],
           milestone.leadId,
           t("tasks:popover.assignee.unassigned"),
+          away,
         )}
         loading={members.isPending}
         error={members.isError}
         onRetry={() => void members.refetch()}
+        onOpenChange={setLeadOpen}
         onSelect={(value) => {
           if (canEdit && permission.canAssignTasks())
             onChange({ leadId: value || null });
