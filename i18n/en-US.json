@@ -4680,6 +4680,7 @@
 					"url": "URL",
 					"value": "Value",
 					"customFields": "Custom fields",
+					"triage": "Triage",
 					"fallback": "Detail"
 				},
 				"none": "None",

@@ -18,4 +18,6 @@ export const entityPaths = {
     `/api/custom-field/project/${segment(projectId)}`,
   taskCustomFields: (taskId: string) =>
     `/api/custom-field/task/${segment(taskId)}`,
+  triageMembers: (projectId: string) =>
+    `/api/triage/project/${segment(projectId)}/members`,
 };

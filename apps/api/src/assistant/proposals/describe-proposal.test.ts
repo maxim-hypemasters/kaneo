@@ -5,6 +5,8 @@ import type { ProposalContext } from "../turn/run-tool-calls";
 import { ARCHIVED_TASK } from "./archived-task";
 import { describeProposal } from "./describe-proposal";
 import { createIdLabels } from "./id-labels";
+import { NESTED_TRIAGE_NOTE, TRIAGE_NOTE } from "./triage-fields";
+import { TRIAGE_TASK } from "./triage-task";
 
 const ENTITIES: Record<string, unknown> = {
   "/api/project/p1": {
@@ -52,6 +54,27 @@ const ENTITIES: Record<string, unknown> = {
   ],
   "/api/custom-field/project/p1": [{ id: "cf1", name: "Severity" }],
   "/api/custom-field/task/t1": [{ fieldId: "cf1", value: "minor" }],
+  "/api/triage/project/p1/members": { userIds: [] },
+  // Support triages its new work: Grace decides, everyone else waits.
+  "/api/project/p2": { id: "p2", name: "Support", slug: "sup" },
+  "/api/triage/project/p2/members": { userIds: ["u2"] },
+  "/api/task/t3": {
+    id: "t3",
+    title: "Crash report",
+    number: 3,
+    projectId: "p2",
+    status: "triage",
+  },
+  "/api/task/f2": {
+    id: "f2",
+    title: "Payments",
+    number: 4,
+    projectId: "p2",
+    type: "feature",
+    status: null,
+  },
+  // A project whose triage members can't be read.
+  "/api/project/p3": { id: "p3", name: "Locked", slug: "loc" },
 };
 
 function labels() {
@@ -85,7 +108,11 @@ function readOf(receipt: ReadReceipt): ProposalContext {
 const describeCall = (
   toolName: string,
   args: Record<string, unknown>,
-  options: { proposal?: ProposalContext; pinnedKeys?: string[] } = {},
+  options: {
+    proposal?: ProposalContext;
+    pinnedKeys?: string[];
+    userId?: string;
+  } = {},
 ) =>
   describeProposal({
     toolName,
@@ -96,7 +123,12 @@ const describeCall = (
     pinnedKeys: options.pinnedKeys ?? [],
     labels: labels(),
     proposal: options.proposal ?? noReads,
+    userId: options.userId ?? "u1",
   });
+
+/** The keys of a card's fields, or the refusal. */
+const fieldKeys = (result: Awaited<ReturnType<typeof describeCall>>) =>
+  result.ok ? result.preview.fields.map((field) => field.key) : result.error;
 
 describe("describeProposal", () => {
   it("shows a new task by name, with ids resolved", async () => {
@@ -346,5 +378,146 @@ describe("describeProposal", () => {
     expect(
       described.ok && described.preview.fields.map((field) => field.key),
     ).toEqual(["projectId", "title", "description", "type"]);
+  });
+  it("shows a new task from outside triage in triage, with a note", async () => {
+    const args = {
+      projectId: "p2",
+      title: "Export fails",
+      description: "",
+      status: "in-progress",
+      type: "bug",
+    };
+    expect(await describeCall("create_task", args)).toEqual({
+      ok: true,
+      preview: {
+        target: "Support",
+        targetKey: "projectId",
+        fields: [
+          { key: "projectId", kind: "ref", value: "Support" },
+          { key: "title", kind: "text", value: "Export fails" },
+          { key: "description", kind: "markdown", value: "" },
+          { key: "status", kind: "text", value: "triage", from: "in-progress" },
+          { key: "type", kind: "text", value: "bug" },
+          { key: "triage", kind: "text", value: TRIAGE_NOTE },
+        ],
+        diff: null,
+        nested: null,
+      },
+      // The API routes it; the arguments run as the model set them.
+      args,
+    });
+  });
+
+  it("adds the triage status when the model sets none", async () => {
+    const described = await describeCall("create_task", {
+      projectId: "p2",
+      title: "Export fails",
+      description: "",
+    });
+    expect(described.ok && described.preview.fields.slice(-2)).toEqual([
+      { key: "status", kind: "text", value: "triage" },
+      { key: "triage", kind: "text", value: TRIAGE_NOTE },
+    ]);
+  });
+
+  it("keeps the status for triage members and projects without triage", async () => {
+    const args = {
+      projectId: "p2",
+      title: "Export fails",
+      description: "",
+      status: "in-progress",
+    };
+    for (const [described, project] of [
+      [await describeCall("create_task", args, { userId: "u2" }), "p2"],
+      [await describeCall("create_task", { ...args, projectId: "p1" }), "p1"],
+    ] as const) {
+      expect(described.ok && described.preview.fields, project).toContainEqual({
+        key: "status",
+        kind: "text",
+        value: "in-progress",
+      });
+      expect(
+        described.ok &&
+          described.preview.fields.some((field) => field.key === "triage"),
+        project,
+      ).toBe(false);
+    }
+  });
+
+  it("notes the new work a Feature or milestone brings into triage", async () => {
+    const feature = await describeCall("create_task", {
+      projectId: "p2",
+      title: "Payments",
+      description: "",
+      type: "feature",
+      featureComposition: { newTasks: [{ title: "Card form" }] },
+    });
+    expect(fieldKeys(feature)).toEqual([
+      "projectId",
+      "title",
+      "description",
+      "type",
+      "triage",
+    ]);
+    expect(feature.ok && feature.preview.fields.at(-1)).toEqual({
+      key: "triage",
+      kind: "text",
+      value: NESTED_TRIAGE_NOTE,
+    });
+
+    const milestone = await describeCall("create_milestone", {
+      featureId: "f2",
+      title: "Beta",
+      newTasks: [{ title: "Receipts", type: "bug" }],
+    });
+    expect(milestone.ok && milestone.preview.fields.at(-1)).toEqual({
+      key: "triage",
+      kind: "text",
+      value: NESTED_TRIAGE_NOTE,
+    });
+
+    // A Feature alone never waits in Triage.
+    const alone = await describeCall("create_task", {
+      projectId: "p2",
+      title: "Payments",
+      description: "",
+      type: "feature",
+    });
+    expect(fieldKeys(alone)).toEqual([
+      "projectId",
+      "title",
+      "description",
+      "type",
+    ]);
+  });
+
+  it("refuses new work whose triage members it can't read", async () => {
+    for (const [toolName, args] of [
+      ["create_task", { projectId: "p3", title: "x", description: "" }],
+      [
+        "create_milestone",
+        { featureId: "nope", title: "x", newTasks: [{ title: "y" }] },
+      ],
+    ] as const) {
+      expect(await describeCall(toolName, args), toolName).toEqual({
+        ok: false,
+        error: expect.stringContaining("triage members"),
+      });
+    }
+  });
+
+  it("refuses to change the status of a task waiting in Triage", async () => {
+    expect(
+      await describeCall("update_task_status", {
+        taskId: "t3",
+        status: "done",
+      }),
+    ).toEqual({ ok: false, error: TRIAGE_TASK });
+    expect(
+      await describeCall("update_task", { taskId: "t3", status: "to-do" }),
+    ).toEqual({ ok: false, error: TRIAGE_TASK });
+    expect(
+      await describeCall("update_task", { taskId: "t3", title: "Crash" }),
+    ).toMatchObject({ ok: true });
   });
 });

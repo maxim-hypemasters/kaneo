@@ -11,6 +11,8 @@ import {
   CHANGED_SINCE,
 } from "../../apps/api/src/assistant/proposals/execute-approved";
 import { ARCHIVED_TASK } from "../../apps/api/src/assistant/proposals/archived-task";
+import { TRIAGE_NOTE } from "../../apps/api/src/assistant/proposals/triage-fields";
+import { TRIAGE_TASK } from "../../apps/api/src/assistant/proposals/triage-task";
 import { SKIPPED_BY_NEW_MESSAGE } from "../../apps/api/src/assistant/turn/send-message";
 import db, { schema } from "../../apps/api/src/database";
 import {
@@ -901,6 +903,88 @@ describe("assistant write approvals", () => {
     expect(proposal.tools[0]?.errorText).toContain("can't archive work");
     expect(proposal.tools[1]?.errorText).toBe(ARCHIVED_TASK);
     expect(ctx.writes()).toEqual([]);
+  });
+
+  it("shows new work from outside triage in Triage and creates it there", async () => {
+    const ctx = await setup();
+    const { owner, member, mobile } = ctx;
+    // The owner triages Mobile; the member's new work waits for them.
+    await db.insert(schema.projectTriageMemberTable).values({
+      workspaceId: ctx.workspace.id,
+      projectId: mobile.project.id,
+      userId: owner.id,
+    });
+
+    const proposal = await ctx.propose(member, {
+      id: "call_create",
+      name: "create_task",
+      arguments: {
+        projectId: mobile.project.id,
+        title: "Export fails",
+        description: "",
+        status: "in-progress",
+        type: "bug",
+      },
+    });
+    const card = proposal.tools[0]!;
+    expect(card.approval).toBe("pending");
+    expect(card.preview?.fields).toEqual([
+      { key: "projectId", kind: "ref", value: "Mobile" },
+      { key: "title", kind: "text", value: "Export fails" },
+      { key: "description", kind: "markdown", value: "" },
+      { key: "status", kind: "text", value: "triage", from: "in-progress" },
+      { key: "type", kind: "text", value: "bug" },
+      { key: "triage", kind: "text", value: TRIAGE_NOTE },
+    ]);
+
+    const result = await ctx.decideOk(member, proposal.chatId, [
+      { messageId: card.id, approve: true },
+    ]);
+    expect(result.messages[0]).toMatchObject({
+      approval: "approved",
+      isError: false,
+    });
+    const [task, ...others] = await ctx.tasks();
+    expect(others).toEqual([]);
+    expect(task).toMatchObject({
+      title: "Export fails",
+      type: "bug",
+      status: "triage",
+    });
+
+    // Only a triage member can take it out of Triage, in the Triage view.
+    const writes = ctx.writes().length;
+    const move = await ctx.propose(member, {
+      id: "call_move",
+      name: "update_task_status",
+      arguments: { taskId: task!.id, status: "in-progress" },
+    });
+    expect(move.tools[0]).toMatchObject({
+      isError: true,
+      approval: null,
+      errorText: TRIAGE_TASK,
+    });
+    expect(ctx.writes()).toHaveLength(writes);
+
+    // The owner is a triage member: their card keeps the status asked for.
+    const own = await ctx.propose(owner, {
+      id: "call_own",
+      name: "create_task",
+      arguments: {
+        projectId: mobile.project.id,
+        title: "Own work",
+        description: "",
+        status: "in-progress",
+      },
+    });
+    expect(own.tools[0]?.preview?.fields).toContainEqual({
+      key: "status",
+      kind: "text",
+      value: "in-progress",
+    });
+    expect(
+      own.tools[0]?.preview?.fields.some((field) => field.key === "triage"),
+    ).toBe(false);
   });
 
   it("shows a new Feature's nested work and creates it atomically", async () => {

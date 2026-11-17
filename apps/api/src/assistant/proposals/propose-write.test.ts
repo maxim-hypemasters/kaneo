@@ -16,6 +16,7 @@ const ENTITIES: Record<string, unknown> = {
     status: "to-do",
     description: "Steps",
   },
+  "/api/triage/project/p1/members": { userIds: [] },
 };
 
 function setup(can: () => boolean = () => true) {
@@ -36,6 +37,7 @@ function setup(can: () => boolean = () => true) {
       tools,
       readClient: client,
       workspaceId: "ws",
+      userId: "u1",
     }),
   };
 }

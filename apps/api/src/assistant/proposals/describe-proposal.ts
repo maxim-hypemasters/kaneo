@@ -19,6 +19,9 @@ import {
   proposalField,
   REF_KEYS,
 } from "./proposal-fields";
+import { withTriage } from "./triage-fields";
+import { triageRouting } from "./triage-routing";
+import { changesTriageStatus, TRIAGE_TASK } from "./triage-task";
 import { targetKey, updateTarget } from "./update-target";
 
 type Json = Record<string, unknown>;
@@ -33,6 +36,8 @@ export type DescribeProposalInput = {
   pinnedKeys: readonly string[];
   labels: IdLabels;
   proposal: ProposalContext;
+  /** Who proposes, and runs the change on approval: triage routes by it. */
+  userId: string;
 };
 
 export type DescribedProposal =
@@ -145,8 +150,10 @@ async function targetOf(
  * read now: the target's name, each argument the model set with ids shown
  * by name and, on updates, the value it replaces; a diff for page, document
  * and description edits; and the nested work a new Feature or milestone
- * brings. Refuses rewrites the model hasn't read in full and changes to
- * archived tasks. The returned args are the ones to execute on approval.
+ * brings. New Tasks and Bugs that will wait in Triage show the triage
+ * status and a note. Refuses rewrites the model hasn't read in full,
+ * changes to archived tasks and status changes to tasks waiting in Triage.
+ * The returned args are the ones to execute on approval.
  */
 export async function describeProposal(
   input: DescribeProposalInput,
@@ -167,6 +174,15 @@ export async function describeProposal(
   }
   if (UNARCHIVING.has(toolName) && entity?.status === "archived")
     return { ok: false, error: ARCHIVED_TASK };
+  if (changesTriageStatus(toolName, entity, args))
+    return { ok: false, error: TRIAGE_TASK };
+  const triage = await triageRouting({
+    toolName,
+    args,
+    labels,
+    userId: input.userId,
+  });
+  if (!triage.ok) return triage;
 
   let diff: AssistantProposalPreview["diff"] = null;
   if (isDocumentEdit(toolName)) {
@@ -214,7 +230,7 @@ export async function describeProposal(
     ok: true,
     preview: {
       ...(await targetOf(toolName, args, labels)),
-      fields,
+      fields: withTriage(fields, triage.routing, args.status),
       diff,
       nested: await nestedPreview(toolName, args, (key, id) =>
         labels.label(key, id, args),

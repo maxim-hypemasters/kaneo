@@ -127,6 +127,8 @@ const FIELD_LABEL_KEYS: Record<string, string> = {
   url: `${FIELD}.url`,
   value: `${FIELD}.value`,
   customFields: `${FIELD}.customFields`,
+  // Not an argument: the server's note on work that will wait in Triage.
+  triage: `${FIELD}.triage`,
 };
 
 export const FIELD_FALLBACK_KEY = `${FIELD}.fallback`;

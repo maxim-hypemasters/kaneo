@@ -49,6 +49,12 @@ export const HIDDEN_KEYS: ReadonlySet<string> = new Set([
   "newTasks",
 ]);
 
+/** The note on new work that will wait in Triage. */
+export const TRIAGE_FIELD_KEY = "triage";
+
+/** Fields a card can list that aren't arguments, which the server adds. */
+export const SERVER_FIELD_KEYS: readonly string[] = [TRIAGE_FIELD_KEY];
+
 export function fieldKind(key: string, value: unknown): Kind {
   if (Array.isArray(value)) return "list";
   if (REF_KEYS.has(key)) return "ref";

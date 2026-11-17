@@ -94,10 +94,13 @@ It can prepare these changes:
 | Features | Post a Feature update; create or edit a Feature document |
 | Project pages | Create or edit a page |
 
+Tasks and bugs it creates follow the project's [triage](/core/functional/triage) rules, just as when you create them yourself: if the project has triage members and you aren't one, they wait in Triage, whatever status the assistant chose. The card then shows **triage** as the status and says a triage member decides. The same goes for the tasks and bugs a new Feature or milestone brings along.
+
 It can't:
 
 - delete anything
 - archive or unarchive work
+- accept or decline work waiting in Triage, change its status, or put work into Triage
 - move tasks to another project, or duplicate or reorder them
 - move work in bulk
 - remove labels from tasks
@@ -109,7 +112,7 @@ It can't:
 The assistant never changes anything by itself. Each change it prepares appears in the chat as a card. The card shows exactly what will be written:
 
 - **What it changes.** The title names the change and the item, such as *Update KAN-12 Fix login* or *Create task in Mobile*.
-- **The fields it sets.** On an update, the old value is crossed out before the new one. An empty value reads **None**.
+- **The fields it sets.** On an update, the old value is crossed out before the new one. On new work headed for Triage, the status the assistant asked for is crossed out before **triage**. An empty value reads **None**.
 - **A diff of the text.** A rewrite of, or addition to, a page, Feature document, or task description shows the changes line by line.
 - **The work it includes.** A new Feature lists its milestones with their lead, release, and priority, and under each one the tasks and bugs it creates, with their estimates. Existing work it moves into the Feature is marked **Existing**. Work outside a milestone is listed under **Not in a milestone**, with the release that new work there goes to. A new milestone lists the tasks it creates the same way.
 

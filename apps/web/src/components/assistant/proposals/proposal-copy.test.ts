@@ -1,7 +1,10 @@
 import en from "@i18n/en-US.json";
 import { describe, expect, it } from "vite-plus/test";
 // Runtime-free API modules: only type imports besides their own code.
-import { HIDDEN_KEYS } from "../../../../../api/src/assistant/proposals/proposal-fields";
+import {
+  HIDDEN_KEYS,
+  SERVER_FIELD_KEYS,
+} from "../../../../../api/src/assistant/proposals/proposal-fields";
 import { ASSISTANT_TOOL_CATALOG } from "../../../../../api/src/assistant/tools/assistant-tool-catalog";
 import { READ_TOOL_NAMES } from "../conversation/tool-label";
 import {
@@ -136,6 +139,14 @@ describe("proposal copy", () => {
         expect(labelKey, `${name}.${key}`).not.toBe(FIELD_FALLBACK_KEY);
         expect(typeof copyAt(labelKey), labelKey).toBe("string");
       }
+    }
+  });
+
+  it("labels every field the server adds to a card", () => {
+    for (const key of SERVER_FIELD_KEYS) {
+      const labelKey = fieldLabelKey(key);
+      expect(labelKey, key).not.toBe(FIELD_FALLBACK_KEY);
+      expect(typeof copyAt(labelKey), labelKey).toBe("string");
     }
   });
 

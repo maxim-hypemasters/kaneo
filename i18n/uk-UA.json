@@ -4834,7 +4834,8 @@
 					"type": "Type",
 					"url": "URL",
 					"userId": "Assignee",
-					"value": "Value"
+					"value": "Value",
+					"triage": "Triage"
 				},
 				"nested": {
 					"bug": "Bug",

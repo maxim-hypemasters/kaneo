@@ -190,12 +190,15 @@ describe("assistant tool catalog", () => {
   });
 
   it.each(["create_task", "update_task", "update_task_status"])(
-    "%s refuses the archived status",
+    "%s refuses the archived and triage statuses",
     (name) => {
       const refuse = ASSISTANT_TOOL_CATALOG[name]?.refuse;
       expect(refuse?.({ status: "archived" })).toMatch(/archive/);
       expect(refuse?.({ status: " Archived " })).toMatch(/archive/);
+      expect(refuse?.({ status: "triage" })).toMatch(/into Triage/);
+      expect(refuse?.({ status: " TRIAGE " })).toMatch(/into Triage/);
       expect(refuse?.({ status: "in-progress" })).toBeNull();
+      expect(refuse?.({ status: "triaged" })).toBeNull();
       expect(refuse?.({})).toBeNull();
     },
   );

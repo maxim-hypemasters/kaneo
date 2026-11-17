@@ -45,13 +45,19 @@ const executionUpdate: PermissionMap[] = [
 ];
 const featureUpdate: PermissionMap[] = [{ feature: ["update"] }];
 
-// `archived` is a virtual status that archives the task; archiving is out of
-// the assistant's scope.
-function refuseArchivedStatus(args: Record<string, unknown>): string | null {
-  return typeof args.status === "string" &&
-    args.status.trim().toLowerCase() === "archived"
-    ? "The assistant can't archive work. Pick one of the project's columns (list_project_columns)."
-    : null;
+// Virtual statuses the assistant never sets: `archived` archives the task,
+// which is out of scope, and only Kaneo's creation rule puts new work in
+// `triage`. Literals, since this module stays free of runtime imports.
+function refuseVirtualStatus(args: Record<string, unknown>): string | null {
+  if (typeof args.status !== "string") return null;
+  switch (args.status.trim().toLowerCase()) {
+    case "archived":
+      return "The assistant can't archive work. Pick one of the project's columns (list_project_columns).";
+    case "triage":
+      return "The assistant can't move work into Triage: new Tasks and Bugs from people who aren't the project's triage members go there on their own. Pick one of the project's columns (list_project_columns).";
+    default:
+      return null;
+  }
 }
 
 /** The explicit allowlist. Every registry tool is here or in EXCLUDED_TOOLS. */
@@ -114,7 +120,7 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
     // The route checks create on the requested type.
     requires: anyWorkItem("create"),
     assignFields: ["userId", "featureComposition.milestones[].leadId"],
-    refuse: refuseArchivedStatus,
+    refuse: refuseVirtualStatus,
   },
   update_task: {
     // Descriptions go through update_task_description, which keeps uploads
@@ -123,7 +129,7 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
     omit: ["description", "projectId", "position"],
     requires: anyWorkItem("update"),
     assignFields: ["userId"],
-    refuse: refuseArchivedStatus,
+    refuse: refuseVirtualStatus,
   },
   update_task_description: {
     requires: anyWorkItem("update"),
@@ -133,7 +139,7 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
   },
   update_task_status: {
     requires: executionUpdate,
-    refuse: refuseArchivedStatus,
+    refuse: refuseVirtualStatus,
   },
   update_task_assignee: { requires: [{ task: ["assign"] }] },
   update_task_estimate: { requires: executionUpdate },

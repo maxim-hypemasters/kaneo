@@ -158,6 +158,7 @@ export function streamChatTurn(
           tools: setup.tools,
           readClient: setup.readClient,
           workspaceId: setup.workspace.id,
+          userId: setup.user.id,
         }),
       });
     },

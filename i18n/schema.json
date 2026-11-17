@@ -19636,6 +19636,9 @@
 										"customFields": {
 											"type": "string"
 										},
+										"triage": {
+											"type": "string"
+										},
 										"fallback": {
 											"type": "string"
 										}
@@ -19681,6 +19684,7 @@
 										"url",
 										"value",
 										"customFields",
+										"triage",
 										"fallback"
 									]
 								},

@@ -247,18 +247,23 @@ describe("prepareArgs", () => {
     ).toMatchObject({ ok: true, args: { userId: "u1" } });
   });
 
-  it("refuses the archived status", () => {
-    for (const [name, args] of [
-      ["update_task_status", { taskId: "t1", status: "archived" }],
-      ["update_task", { taskId: "t1", status: "archived" }],
-      [
-        "create_task",
-        { projectId: "p1", title: "A", description: "", status: "archived" },
-      ],
+  it("refuses the archived and triage statuses", () => {
+    for (const [status, message] of [
+      ["archived", /archive/],
+      ["triage", /into Triage/],
     ] as const) {
-      const prepared = admin.prepareArgs(name, JSON.stringify(args));
-      expect(prepared, name).toMatchObject({ ok: false });
-      expect(!prepared.ok && prepared.error, name).toMatch(/archive/);
+      for (const [name, args] of [
+        ["update_task_status", { taskId: "t1", status }],
+        ["update_task", { taskId: "t1", status }],
+        [
+          "create_task",
+          { projectId: "p1", title: "A", description: "", status },
+        ],
+      ] as const) {
+        const prepared = admin.prepareArgs(name, JSON.stringify(args));
+        expect(prepared, `${name} ${status}`).toMatchObject({ ok: false });
+        expect(!prepared.ok && prepared.error, name).toMatch(message);
+      }
     }
     expect(
       admin.prepareArgs(

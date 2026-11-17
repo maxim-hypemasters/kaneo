@@ -30,12 +30,14 @@ function modelKeys(rawArgs: string): string[] {
  * Turns the write calls of one turn into pending proposals with a card the
  * server built, or into errors the model can act on. `readClient` is the
  * turn's read-only loopback client: everything a card shows, the user can
- * read. Nothing is written until the user approves.
+ * read. `userId` is the user, who runs each change on approval. Nothing is
+ * written until the user approves.
  */
 export function createProposeWrite(input: {
   tools: AssistantTools;
   readClient: ToolClient;
   workspaceId: string;
+  userId: string;
 }): ProposeWrite {
   const { tools } = input;
   // One per turn, so a step's lookups are shared and never outlive it.
@@ -65,6 +67,7 @@ export function createProposeWrite(input: {
       pinnedKeys: handle.entry.pin ?? [],
       labels,
       proposal: context,
+      userId: input.userId,
     });
     if (!described.ok)
       return { ...errorDraft(described.error), toolArgs: prepared.argsJson };
