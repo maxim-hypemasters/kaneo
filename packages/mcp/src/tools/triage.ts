@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { errorResult, textResult } from "../utils/mcp-result.js";
 import type { ToolClient, ToolRegistrar } from "./register.js";
+import { registerTool } from "./register-tool.js";
 
 const taskId = z.string().trim().min(1);
 const reason = z
@@ -20,26 +20,22 @@ export function registerTriageTools(
   server: ToolRegistrar,
   client: ToolClient,
 ): void {
+  // Both tools change a task's status, so neither is read-only.
   function register<S extends z.ZodObject>(
     name: string,
     description: string,
     schema: S,
     request: (args: z.output<S>) => Promise<unknown>,
   ) {
-    server.registerTool(
+    registerTool(
+      server,
       name,
-      { description, inputSchema: schema },
-      async (args) => {
-        const parsed = schema.safeParse(args);
-        if (!parsed.success) return errorResult(z.prettifyError(parsed.error));
-        try {
-          return textResult(await request(parsed.data));
-        } catch (error) {
-          return errorResult(
-            error instanceof Error ? error.message : String(error),
-          );
-        }
+      {
+        description,
+        inputSchema: schema,
+        annotations: { readOnlyHint: false },
       },
+      request,
     );
   }
   const triagePath = (id: string, outcome: "accept" | "decline") =>

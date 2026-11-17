@@ -9,6 +9,7 @@ import {
   Settings,
   Shield,
   SlidersHorizontal,
+  Sparkles,
   Tag,
   TreePalm,
   User,
@@ -26,6 +27,10 @@ type BuildSettingsNavInput = {
   workspaceName?: string;
   billingEnabled: boolean;
   canImport: boolean;
+  // The assistant link needs workspace:manage_settings and an instance that
+  // has not turned the assistant off (config.hasAssistant).
+  canManageSettings?: boolean;
+  hasAssistant?: boolean;
   // time_off:approve; false while permissions load.
   canManageTimeOff: boolean;
   hasAdminAccess: boolean;
@@ -67,6 +72,8 @@ export function buildSettingsNav({
   workspaceName,
   billingEnabled,
   canImport,
+  canManageSettings = false,
+  hasAssistant = false,
   canManageTimeOff,
   hasAdminAccess,
   projects,
@@ -130,6 +137,16 @@ export function buildSettingsNav({
           to: "/dashboard/settings/workspace/labels",
           icon: Tag,
         },
+        ...(canManageSettings && hasAssistant
+          ? [
+              {
+                id: "workspace-assistant",
+                label: t("settings:assistantPage.title"),
+                to: "/dashboard/settings/workspace/assistant",
+                icon: Sparkles,
+              },
+            ]
+          : []),
         ...(canManageTimeOff
           ? [
               {

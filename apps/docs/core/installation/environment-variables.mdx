@@ -44,7 +44,7 @@ Name | Description |
 
 ### Authentication
 
-Keep `AUTH_SECRET` stable across restarts and include it in your protected configuration backup. The bundled image can generate a temporary secret if it is unset; a host-native API requires you to provide one.
+Keep `AUTH_SECRET` stable across restarts and include it in your protected configuration backup. The bundled image can generate a temporary secret if it is unset; a host-native API requires you to provide one. Kaneo also encrypts each workspace's [assistant](/core/functional/assistant) OpenRouter key with a key derived from `AUTH_SECRET`. After you rotate it, a workspace admin must enter that key again in **Workspace → Assistant**.
 
 Name | Description |
 --- | --- |
@@ -61,11 +61,19 @@ For the supported `_FILE` variables, a non-empty direct value takes precedence. 
 
 ## Optional variables
 
-### MCP
+### MCP and assistant
 
 Name | Description | Default |
 --- | --- | --- |
-| `KANEO_INTERNAL_API_URL` | API origin used only for server-side requests from the built-in HTTP MCP endpoint. Override it only if the API is not reachable at the default loopback address from its own process. | `http://127.0.0.1:1337` |
+| `KANEO_INTERNAL_API_URL` | API origin used only for server-side requests that the API makes to itself as the signed-in user: tool calls from the built-in HTTP MCP endpoint and from the in-app [assistant](/core/functional/assistant). Override it only if the API is not reachable at the default loopback address from its own process. | `http://127.0.0.1:1337` |
+
+### Assistant
+
+The [workspace assistant](/core/functional/assistant) is off until a workspace admin saves an OpenRouter key. It needs no other service, but the API must reach `openrouter.ai` over HTTPS.
+
+Name | Description | Default |
+--- | --- | --- |
+| `DISABLE_ASSISTANT` | Set to `true` to turn the assistant off on every workspace. Home and settings no longer show it, and its API routes return 404. Saved keys and chats stay in the database. | `false` |
 
 ### Object Storage
 

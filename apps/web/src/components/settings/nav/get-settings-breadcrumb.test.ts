@@ -7,6 +7,8 @@ const nav = buildSettingsNav({
   workspaceName: "Acme",
   billingEnabled: false,
   canImport: false,
+  canManageSettings: true,
+  hasAssistant: true,
   canManageTimeOff: false,
   hasAdminAccess: true,
   projects: [{ id: "p1", name: "Kaneo Web" }],
@@ -23,6 +25,12 @@ describe("getSettingsBreadcrumb", () => {
     expect(
       getSettingsBreadcrumb(nav, "/dashboard/settings/workspace/labels/"),
     ).toEqual({ section: "Acme", page: "settings:workspaceLabels.title" });
+  });
+
+  it("names the assistant page under the workspace", () => {
+    expect(
+      getSettingsBreadcrumb(nav, "/dashboard/settings/workspace/assistant"),
+    ).toEqual({ section: "Acme", page: "settings:assistantPage.title" });
   });
 
   it("uses the project name for project pages", () => {

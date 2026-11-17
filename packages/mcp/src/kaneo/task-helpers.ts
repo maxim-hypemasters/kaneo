@@ -18,7 +18,9 @@ export type TaskUpdatePatch = {
 };
 
 /**
- * Builds the JSON body for `PUT /api/task/:id` from an existing task plus a patch.
+ * Builds the JSON body for `PUT /api/task/:id` from an existing task plus a
+ * patch. The description is sent only when the patch sets it: the API keeps
+ * the current one when it's left out, and a task read may not carry all of it.
  */
 export function buildFullTaskUpdateBody(
   existing: Record<string, unknown>,
@@ -40,13 +42,9 @@ export function buildFullTaskUpdateBody(
   }
 
   const description =
-    patch.description !== undefined
-      ? patch.description === null
-        ? ""
-        : String(patch.description)
-      : existing.description == null
-        ? ""
-        : String(existing.description);
+    patch.description === undefined
+      ? {}
+      : { description: patch.description ?? "" };
 
   const projectId =
     patch.projectId ??
@@ -63,7 +61,7 @@ export function buildFullTaskUpdateBody(
       );
     return {
       title,
-      description,
+      ...description,
       projectId,
       ...(Number.isFinite(position) ? { position } : {}),
     };
@@ -102,7 +100,7 @@ export function buildFullTaskUpdateBody(
 
   const body: Record<string, string | number | null | undefined> = {
     title,
-    description,
+    ...description,
     status,
     priority: priorityRaw,
     projectId,

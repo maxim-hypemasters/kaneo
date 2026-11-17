@@ -7,16 +7,28 @@ import {
   check,
   customType,
   date,
+  doublePrecision,
   foreignKey,
   index,
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type {
+  AssistantApproval,
+  AssistantMessageRole,
+  AssistantMessageStatus,
+  AssistantMessageUsage,
+  AssistantProposalPreview,
+  AssistantResultSummary,
+  AssistantToolCall,
+  ReadReceipt,
+} from "../assistant/message-types";
 import type { GitHubImportState } from "../github-integration/import-state";
 import type { ImportRunProject } from "../import/import-run-project";
 import type { TaskType } from "../task/task-type";
@@ -2194,3 +2206,172 @@ export const dataMigrationTable = pgTable("data_migration", {
     .default(utcNow)
     .notNull(),
 });
+
+// One row per workspace while an admin has saved an OpenRouter key. The key is
+// sealed with utils/secret-box; only the hint is ever returned.
+export const workspaceAssistantSettingTable = pgTable(
+  "workspace_assistant_setting",
+  {
+    workspaceId: text("workspace_id")
+      .primaryKey()
+      .references(() => workspaceTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    apiKeyCiphertext: text("api_key_ciphertext").notNull(),
+    apiKeyHint: text("api_key_hint").notNull(),
+    model: text("model").notNull(),
+    allowDataCollection: boolean("allow_data_collection")
+      .notNull()
+      .default(false),
+    lastErrorCode: text("last_error_code"),
+    lastErrorAt: timestamp("last_error_at", { mode: "date" }),
+    updatedByUserId: text("updated_by_user_id").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "workspace_assistant_setting_last_error_code_check",
+      sql`${table.lastErrorCode} is null or ${table.lastErrorCode} in ('OPENROUTER_KEY_INVALID', 'OPENROUTER_CREDITS')`,
+    ),
+  ],
+);
+
+// Chats are private to their author. busy_until and busy_token form the
+// lease that lets only one turn run per chat.
+export const assistantChatTable = pgTable(
+  "assistant_chat",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    title: text("title").notNull().default(""),
+    busyUntil: timestamp("busy_until", { mode: "date" }),
+    busyToken: text("busy_token"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("assistant_chat_owner_idx").on(
+      table.workspaceId,
+      table.userId,
+      table.updatedAt,
+      table.id,
+    ),
+  ],
+);
+
+// The transcript in OpenAI wire order. Tool rows carry the approval state of
+// write proposals; a null approval is a read that ran automatically.
+export const assistantMessageTable = pgTable(
+  "assistant_message",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    chatId: text("chat_id")
+      .notNull()
+      .references(() => assistantChatTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    seq: bigserial("seq", { mode: "number" }).notNull(),
+    role: text("role").$type<AssistantMessageRole>().notNull(),
+    content: text("content").notNull().default(""),
+    status: text("status")
+      .$type<AssistantMessageStatus>()
+      .notNull()
+      .default("complete"),
+    model: text("model"),
+    toolCalls: jsonb("tool_calls").$type<AssistantToolCall[]>(),
+    reasoningDetails: jsonb("reasoning_details").$type<unknown[]>(),
+    usage: jsonb("usage").$type<AssistantMessageUsage>(),
+    toolCallId: text("tool_call_id"),
+    toolName: text("tool_name"),
+    toolArgs: text("tool_args"),
+    approval: text("approval").$type<AssistantApproval>(),
+    isError: boolean("is_error").notNull().default(false),
+    preview: jsonb("preview").$type<AssistantProposalPreview>(),
+    resultSummary: jsonb("result_summary").$type<AssistantResultSummary>(),
+    readReceipts: jsonb("read_receipts").$type<ReadReceipt[]>(),
+    decidedAt: timestamp("decided_at", { mode: "date" }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    index("assistant_message_chat_seq_idx").on(table.chatId, table.seq),
+    index("assistant_message_pending_idx")
+      .on(table.chatId)
+      .where(sql`${table.approval} = 'pending'`),
+    check(
+      "assistant_message_role_check",
+      sql`${table.role} in ('user', 'assistant', 'tool')`,
+    ),
+    check(
+      "assistant_message_status_check",
+      sql`${table.status} in ('complete', 'interrupted')`,
+    ),
+    check(
+      "assistant_message_approval_check",
+      sql`${table.approval} is null or ${table.approval} in ('pending', 'approved', 'rejected', 'skipped')`,
+    ),
+  ],
+);
+
+// Daily counters behind the per-user cap. No FK to chats: deleting a chat
+// must never reset the day's count.
+export const assistantUsageTable = pgTable(
+  "assistant_usage",
+  {
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaceTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    day: date("day", { mode: "string" }).notNull(),
+    modelCalls: integer("model_calls").notNull().default(0),
+    promptTokens: integer("prompt_tokens").notNull().default(0),
+    completionTokens: integer("completion_tokens").notNull().default(0),
+    costUsd: doublePrecision("cost_usd").notNull().default(0),
+  },
+  (table) => [
+    primaryKey({
+      name: "assistant_usage_pk",
+      columns: [table.workspaceId, table.userId, table.day],
+    }),
+  ],
+);

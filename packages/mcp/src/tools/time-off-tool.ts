@@ -52,7 +52,13 @@ export function timeOffToolRegistrar(server: ToolRegistrar) {
   ) {
     server.registerTool(
       name,
-      { description: summary, inputSchema: schema },
+      {
+        description: summary,
+        inputSchema: schema,
+        // These tools follow the registry's naming rule: list_ and get_ only
+        // read; every other name changes something.
+        annotations: { readOnlyHint: /^(list|get)_/.test(name) },
+      },
       async (args) => {
         const parsed = schema.safeParse(args);
         if (!parsed.success) return errorResult(z.prettifyError(parsed.error));

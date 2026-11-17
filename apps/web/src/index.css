@@ -70,6 +70,9 @@ input:-webkit-autofill:active {
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --animate-skeleton: skeleton 2s -1s infinite linear;
   --animate-caret-blink: caret-blink 1.25s ease-out infinite;
+  /* The Home assistant bar: a beam circling its border, and a twinkle. */
+  --animate-assistant-beam: assistant-beam 6s linear infinite;
+  --animate-assistant-twinkle: assistant-twinkle 3.2s ease-in-out infinite;
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
   --font-mono: var(--font-mono);
@@ -169,6 +172,23 @@ input:-webkit-autofill:active {
     20%,
     50% {
       opacity: 0;
+    }
+  }
+  /* rotate, not transform, so the element's own translate stays put. */
+  @keyframes assistant-beam {
+    to {
+      rotate: 1turn;
+    }
+  }
+  @keyframes assistant-twinkle {
+    0%,
+    100% {
+      opacity: 1;
+      scale: 1;
+    }
+    50% {
+      opacity: 0.6;
+      scale: 0.86;
     }
   }
 }

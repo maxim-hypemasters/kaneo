@@ -115,20 +115,30 @@ For headless or sandboxed environments where opening a browser is impractical, s
 
 ## Tools
 
+The server registers 103 tools:
+
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
+- My work: `list_my_tasks`, `list_workspace_activity`
 - Search: `search`
-- Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `list_project_columns`
+- Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `update_project_details`, `list_project_columns`, `list_custom_fields`
+- Project pages: `list_project_pages`, `get_project_page`, `create_project_page`, `update_project_page`
 - Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_estimate`, `update_task_due_date`, `list_task_activity`
+- Task details: `get_task_description`, `update_task_description`, `get_task_custom_fields`, `set_task_custom_field_value`, `list_task_external_links`, `create_task_external_link`
 - Triage: `accept_triage_task`, `decline_triage_task`
-- Features: `list_features`, `archive_feature`, `set_task_feature`; Task/Bug conversion: `set_task_type`
+- Features: `list_features`, `archive_feature`, `set_task_feature`, `set_task_type`, `list_feature_issues`, `list_feature_activity`, `get_latest_feature_update`, `post_feature_update`
+- Feature documents: `list_feature_documents`, `get_feature_document`, `create_feature_document`, `update_feature_document`
 - Milestones: `list_project_milestones`, `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`, `set_task_milestone`
-- Releases: `list_releases`, `get_release`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
+- Releases: `list_releases`, `get_release`, `list_release_milestones`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
 - Time entries: `list_task_time_entries`, `get_time_entry`, `create_time_entry`, `update_time_entry`
 - Time off: `list_time_off`, `list_time_off_requests`, `list_pending_time_off_requests`, `get_time_off_request`, `request_time_off`, `update_time_off_request`, `cancel_time_off_request`, `approve_time_off_request`, `decline_time_off_request`, `get_time_off_balance`, `list_time_off_balances`, `set_time_off_allowance`
 - Public holiday calendars: `list_holiday_countries`, `get_holiday_calendar`, `set_holiday_calendar`, `list_holiday_calendar_requests`, `approve_holiday_calendar_request`, `decline_holiday_calendar_request`, `cancel_holiday_calendar_request`, `set_holiday_calendar_deadline`
 - Comments: `list_task_comments`, `create_task_comment`, `update_task_comment`, `delete_task_comment`
 - Labels: `list_workspace_labels`, `create_label`, `attach_label_to_task`, `detach_label_from_task`, `delete_label`
 - Task relations: `create_task_relation`, `get_task_relations`, `delete_task_relation`
+
+Every tool carries MCP annotations: `readOnlyHint: true` on reads and `false`
+on writes, and `destructiveHint: true` on the `delete_*` tools, so clients can
+run reads freely and confirm the rest.
 
 Call `list_project_columns` before setting a status: the column slugs it
 returns are the values `create_task` and `update_task_status` accept.
@@ -145,8 +155,41 @@ assignee is away: approved time off or a public holiday of their calendar. Only
 the dates a call changes are checked, or both when the work goes to someone
 else; pending requests never block, and planned work keeps its planned assignee
 until the next Apply. Dates are read as days in the project's planning
-timezone, or UTC when it has none. The message names the dates, never the type
-of time off.
+timezone, or UTC when it has none, unless the call passes `timeZone` (an IANA
+zone such as `Europe/Berlin`). The message names the dates, never the type of
+time off.
+
+`search` requires a `workspaceId` and searches that one workspace.
+`list_task_activity` takes an optional `limit` (1 to 100) for the most recent
+entries; without it, it returns the whole feed.
+
+`create_task` accepts `customFields` (field ids from `list_custom_fields`, each
+value a string). With `type: "feature"` it also accepts `featureComposition`:
+milestones identified by your own `key`, existing Tasks/Bugs with no Feature
+to move in, title-only Task/Bug drafts placed by `milestoneKey`, and
+`unassignedReleaseId` for drafts without a milestone. The Feature and all of
+it are saved together, or nothing is. `create_milestone` likewise accepts
+`newTasks`, title-only Task/Bug drafts created in the new milestone and its
+release.
+
+### Documents and descriptions
+
+`get_project_page` and `get_feature_document` return the body in slices with
+`offset`, `totalLength`, `truncated` and `nextOffset`, plus the `revision`.
+`get_task_description` returns 32,768-character pages with a `version`; pass it
+back with `offset` to read on. `truncated` is false only when the result holds
+the whole text.
+
+`update_project_page` and `update_feature_document` rename, append Markdown
+(`appendMarkdown`), or replace the whole `body`. A full replace needs the
+`expectedRevision` you read and fails with `DOCUMENT_CONFLICT` if the document
+changed since. Renames and appends use the current revision unless you pass
+one.
+`update_task_description` either appends Markdown or replaces the description,
+and a replace needs `expectedDescription`, the complete current text. These
+edits keep the attachments they remove. Document writes return the metadata
+and `totalLength` instead of the body, and `update_task_description` returns
+the task without its description, plus `descriptionLength`.
 
 A Feature retains its task-resource identity with `type: "feature"`, and is a
 knowledge record containing documentation, resources, milestones and implementation

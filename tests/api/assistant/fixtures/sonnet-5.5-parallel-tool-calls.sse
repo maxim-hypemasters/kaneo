@@ -1,0 +1,43 @@
+: Recorded-style fixture: an OpenRouter chat.completion.chunk stream for
+: anthropic/claude-sonnet-5.5 with reasoning, two parallel tool calls with
+: split arguments and a final usage chunk. Built from OpenRouter's documented
+: format, not captured live; replace it with a real recording.
+
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":"","reasoning":"The user wants the open work on the Onboarding feature","reasoning_details":[{"type":"reasoning.text","text":"The user wants the open work on the Onboarding feature","signature":null,"format":"anthropic-claude-v1","index":0}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":"","reasoning":" and their own bugs. I’ll search for the Feature","reasoning_details":[{"type":"reasoning.text","text":" and their own bugs. I’ll search for the Feature","signature":null,"format":"anthropic-claude-v1","index":0}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+: OPENROUTER PROCESSING
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":"","reasoning":" and list their assigned tasks in parallel.","reasoning_details":[{"type":"reasoning.text","text":" and list their assigned tasks in parallel.","signature":null,"format":"anthropic-claude-v1","index":0}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":"","reasoning":"","reasoning_details":[{"type":"reasoning.text","signature":"EqQBCkYIDBgCKkBz3n0Lr8Vq1hJ0cW5yXo2mK7fPj9sT4uD6eA1bN3gH8iC5vR0wQ2xZ7yL4kM9pS6tU1jF3oE8dG5hB2nY0aV7EgwqZm9vYmFyZXhhbXBsZRoM","format":"anthropic-claude-v1","index":0}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":"I’ll look up the"},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":" Onboarding feature and"},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":" your open bugs — one moment."},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"id":"toolu_01PZ8mJ4kQx3V9bN2cR7tLwE","type":"function","function":{"name":"search","arguments":""}}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"type":"function","function":{"arguments":"{\"q\": \"Onboa"}}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"type":"function","function":{"arguments":"rding\", \"typ"}}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":0,"type":"function","function":{"arguments":"e\": \"features\"}"}}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":1,"id":"toolu_01Hc6TzW2nRb8YqLx4Vd9KsA","type":"function","function":{"name":"list_my_tasks","arguments":""}}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":1,"type":"function","function":{"arguments":"{\"countOn"}}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":null,"tool_calls":[{"index":1,"type":"function","function":{"arguments":"ly\": false}"}}]},"finish_reason":null,"native_finish_reason":null,"logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":"tool_calls","native_finish_reason":"tool_use","logprobs":null}]}
+
+data: {"id":"gen-1763294401-q7Wm2ZkT9xVb4NcRfH3d","provider":"Anthropic","model":"anthropic/claude-sonnet-5.5","object":"chat.completion.chunk","created":1763294401,"choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":"tool_calls","native_finish_reason":"tool_use","logprobs":null}],"usage":{"prompt_tokens":9876,"completion_tokens":214,"total_tokens":10090,"cost":0.021892,"is_byok":false,"prompt_tokens_details":{"cached_tokens":0},"cost_details":{"upstream_inference_cost":null},"completion_tokens_details":{"reasoning_tokens":58}}}
+
+data: [DONE]
+

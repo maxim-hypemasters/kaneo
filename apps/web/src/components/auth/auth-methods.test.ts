@@ -29,6 +29,7 @@ function config(overrides: Partial<GetConfigResponse> = {}) {
     customOAuthAutoLogin: false,
     customOAuthLogoutUrl: null,
     billingEnabled: false,
+    hasAssistant: true,
     ...overrides,
   } satisfies GetConfigResponse;
 }

@@ -26,5 +26,9 @@ export const configSchema = z
     customOAuthAutoLogin: z.boolean(),
     customOAuthLogoutUrl: z.string().nullable(),
     billingEnabled: z.boolean(),
+    hasAssistant: z.boolean().openapi({
+      description:
+        "Whether the workspace assistant is available on this instance. False when DISABLE_ASSISTANT is true. Each workspace still needs an admin to save an OpenRouter key before members can chat.",
+    }),
   })
   .openapi("Config");

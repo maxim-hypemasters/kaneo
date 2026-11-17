@@ -2,22 +2,40 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { buildFullTaskUpdateBody } from "../kaneo/task-helpers.js";
 import { errorResult, textResult } from "../utils/mcp-result.js";
+import { featureCompositionSchema } from "./feature-composition-schema.js";
+import { registerFeatureDocumentTools } from "./feature-documents.js";
+import { registerFeatureInsightTools } from "./feature-insights.js";
 import { registerFeatureTools } from "./features.js";
-import { registerMilestoneTools } from "./milestones.js";
-import { registerTriageTools } from "./triage.js";
 import { getCurrentUser } from "./get-current-user.js";
+import { registerMilestoneTools } from "./milestones.js";
+import { registerMyWorkTools } from "./my-work.js";
+import { registerProjectExtraTools } from "./project-extras.js";
+import { registerProjectPageTools } from "./project-pages.js";
+import { registerTaskExtraTools } from "./task-extras.js";
 import { registerTimeOffTools } from "./time-off.js";
 import { registerTimeOffHolidayRequestTools } from "./time-off-holiday-requests.js";
 import { registerTimeOffHolidayTools } from "./time-off-holidays.js";
+import { registerTriageTools } from "./triage.js";
+
+// Shared with the API's assistant, so its append previews match the write.
+export { appendMarkdown } from "./append-to-document.js";
 
 export type ToolClient = {
   readonly usingApiKey?: boolean;
   json<T = unknown>(path: string, init?: RequestInit): Promise<T>;
 };
+export type ToolAnnotations = {
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+};
 export type ToolRegistrar = {
   registerTool(
     name: string,
-    config: { description: string; inputSchema: z.ZodObject },
+    config: {
+      description: string;
+      inputSchema: z.ZodObject;
+      annotations?: ToolAnnotations;
+    },
     callback: (args: unknown) => Promise<CallToolResult>,
   ): unknown;
 };
@@ -35,6 +53,16 @@ const optionalNonEmptyString = nonEmptyString.optional();
 const nullableOptionalNonEmptyString = nonEmptyString.nullable().optional();
 const isoDateTimeSchema = z.string().datetime({ offset: true });
 const optionalIsoDateTimeSchema = isoDateTimeSchema.optional();
+// The API checks hand-set dates against the assignee's days away in this zone.
+const dayTimeZoneSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .optional()
+  .describe(
+    "IANA time zone whose calendar days the dates name, such as Europe/Berlin. Kaneo checks those days against the assignee's days away. Defaults to the project's planning time zone, then UTC.",
+  );
 const estimateSecondsSchema = z
   .number()
   .int()
@@ -60,6 +88,12 @@ const hexColorSchema = z
     /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/,
     "Expected a hex color like #FF6600",
   );
+// Mirrors createTaskBody.customFields in apps/api/src/task/schema.ts.
+const customFieldsSchema = z
+  .array(z.object({ fieldId: z.string().min(1), value: z.string() }))
+  .describe(
+    "Custom field values (see list_custom_fields). value is a string: a number, 'true'/'false', YYYY-MM-DD, a dropdown option, or a JSON array of multiselect options.",
+  );
 
 function run(fn: () => Promise<unknown>): Promise<CallToolResult> {
   return fn()
@@ -77,12 +111,22 @@ export function registerTools(
   registerMilestoneTools(server, client);
   registerFeatureTools(server, client);
   registerTriageTools(server, client);
+  registerProjectPageTools(server, client);
+  registerFeatureDocumentTools(server, client);
+  registerFeatureInsightTools(server, client);
+  registerMyWorkTools(server, client);
+  registerTaskExtraTools(server, client);
+  registerProjectExtraTools(server, client);
   registerTimeOffTools(server, client);
   registerTimeOffHolidayTools(server, client);
   registerTimeOffHolidayRequestTools(server, client);
   const registerTool = <S extends z.ZodObject>(
     name: string,
-    config: { description: string; inputSchema: S },
+    config: {
+      description: string;
+      inputSchema: S;
+      annotations: ToolAnnotations & { readOnlyHint: boolean };
+    },
     callback: (args: z.output<S>) => Promise<CallToolResult>,
   ) =>
     server.registerTool(name, config, async (args) => {
@@ -97,6 +141,7 @@ export function registerTools(
       description:
         "Return the current Kaneo user for the configured authentication method.",
       inputSchema: z.object({}),
+      annotations: { readOnlyHint: true },
     },
     async () => run(() => getCurrentUser(client)),
   );
@@ -107,6 +152,7 @@ export function registerTools(
       description:
         "List workspaces (Better Auth organizations) the signed-in user can access.",
       inputSchema: z.object({}),
+      annotations: { readOnlyHint: true },
     },
     async () =>
       run(() => client.json("/api/auth/organization/list", { method: "GET" })),
@@ -123,6 +169,7 @@ export function registerTools(
           .optional()
           .describe("Include archived projects"),
       }),
+      annotations: { readOnlyHint: true },
     },
     async (args) => {
       const { workspaceId, includeArchived } = args;
@@ -141,6 +188,7 @@ export function registerTools(
     {
       description: "Get a single project by ID.",
       inputSchema: z.object({ id: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() => client.json(`/api/project/${encodeURIComponent(args.id)}`)),
@@ -156,6 +204,7 @@ export function registerTools(
         icon: nonEmptyString,
         slug: nonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -184,6 +233,7 @@ export function registerTools(
         description: z.string().optional(),
         isPublic: z.boolean().optional(),
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) => {
       const { id, ...patch } = args;
@@ -268,6 +318,7 @@ export function registerTools(
       description:
         "List a bounded page of Tasks and Bugs for a project (50 by default, maximum 100); Features are available through list_features. Use pagination.totalPages and page to retrieve the rest; filters and sorting apply before pagination. For every task page, also follow relatedPage through pagination.relatedTotalPages for complete labels, links and column metadata. Each item has a type ('task' or 'bug'), a featureId (the feature it belongs to, or null), a releaseId (its release, or null), and milestoneId (its milestone, or null). New work waiting for review has status 'triage' and comes back in data.triageTasks, never in columns or plannedTasks; filter it with status 'triage'. Only accept_triage_task and decline_triage_task move work out of Triage.",
       inputSchema: listTasksSchema,
+      annotations: { readOnlyHint: true },
     },
     async (args) => {
       const { projectId, ...rest } = args;
@@ -290,6 +341,7 @@ export function registerTools(
       description:
         "Get a task by ID, including its type ('task', 'bug' or 'feature'), featureId (the feature it belongs to, or null), releaseId (its release, or null), and milestoneId (its milestone, or null).",
       inputSchema: z.object({ taskId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -309,6 +361,7 @@ export function registerTools(
         workspaceId: optionalNonEmptyString,
         projectId: optionalNonEmptyString,
       }),
+      annotations: { readOnlyHint: true },
     },
     async ({ ticketId, workspaceId, projectId }) => {
       const query = new URLSearchParams();
@@ -328,7 +381,7 @@ export function registerTools(
     "create_task",
     {
       description:
-        "Create a task, bug or feature in a project. Pass type 'bug' for a bug, 'feature' for a feature, or featureId to create a task or bug inside a feature of the same project. A feature can't belong to another feature. Features are knowledge records without planning fields. Tasks/Bugs inherit their milestone's release when releaseId is omitted. When the project has triage members and you are not one, a new Task or Bug starts in the 'triage' status whatever status you pass.",
+        "Create a task, bug or feature in a project. Pass type 'bug' for a bug, 'feature' for a feature, or featureId to create a task or bug inside a feature of the same project. A feature can't belong to another feature. Features are knowledge records without planning fields. Tasks/Bugs inherit their milestone's release when releaseId is omitted. A new Feature can bring its milestones, existing work and new Tasks/Bugs in featureComposition; all of it is saved or nothing is. When the project has triage members and you are not one, a new Task or Bug starts in the 'triage' status whatever status you pass.",
       inputSchema: z
         .object({
           projectId: nonEmptyString,
@@ -352,8 +405,18 @@ export function registerTools(
           releaseId: nullableOptionalNonEmptyString.describe(
             "A release of the same project (see list_releases), or null for none. Omit it to follow the milestone's release.",
           ),
+          customFields: customFieldsSchema.optional(),
+          featureComposition: featureCompositionSchema.optional(),
         })
         .strict()
+        .refine(
+          (args) =>
+            args.featureComposition === undefined || args.type === "feature",
+          {
+            message: "Creation drafts are only supported for Features",
+            path: ["featureComposition"],
+          },
+        )
         .refine(
           (args) =>
             args.type !== "feature" ||
@@ -371,9 +434,10 @@ export function registerTools(
               "Features are knowledge records without planning or parent membership fields.",
           },
         ),
+      annotations: { readOnlyHint: false },
     },
     async (args) => {
-      const body: Record<string, string | number | null | undefined> = {
+      const body: Record<string, unknown> = {
         title: args.title,
         description: args.description,
         priority: args.priority,
@@ -397,6 +461,12 @@ export function registerTools(
       if (args.releaseId !== undefined) {
         body.releaseId = args.releaseId;
       }
+      if (args.customFields !== undefined) {
+        body.customFields = args.customFields;
+      }
+      if (args.featureComposition !== undefined) {
+        body.featureComposition = args.featureComposition;
+      }
       return run(() =>
         client.json(`/api/task/${encodeURIComponent(args.projectId)}`, {
           method: "POST",
@@ -415,6 +485,7 @@ export function registerTools(
         taskId: nonEmptyString,
         title: optionalNonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) => {
       const body: Record<string, string> = {};
@@ -441,6 +512,7 @@ export function registerTools(
       position: z.number().optional(),
       estimateSeconds: estimateSecondsSchema.optional(),
       userId: nullableOptionalNonEmptyString,
+      timeZone: dayTimeZoneSchema,
     })
     .strict();
 
@@ -450,15 +522,19 @@ export function registerTools(
       description:
         "Update a task (fetches current task, merges fields, then full update). Leaves the task's type, feature and release as they are: use set_task_type, set_task_feature and set_task_release for those. The status can't move into or out of 'triage': use accept_triage_task or decline_triage_task. Reassigning work whose dates were set by hand fails with TASK_ASSIGNEE_AWAY when the new assignee is away (approved time off or a public holiday) on its start or due day.",
       inputSchema: updateTaskSchema,
+      annotations: { readOnlyHint: false },
     },
     async (args) => {
-      const { taskId, ...patch } = args;
+      const { taskId, timeZone, ...patch } = args;
       return run(async () => {
         const existing = (await client.json(
           `/api/task/${encodeURIComponent(taskId)}`,
           { method: "GET" },
         )) as Record<string, unknown>;
-        const body = buildFullTaskUpdateBody(existing, patch);
+        const body = {
+          ...buildFullTaskUpdateBody(existing, patch),
+          ...(timeZone ? { timeZone } : {}),
+        };
         return client.json(`/api/task/${encodeURIComponent(taskId)}`, {
           method: "PUT",
           body: JSON.stringify(body),
@@ -477,6 +553,7 @@ export function registerTools(
         destinationProjectId: nonEmptyString,
         destinationStatus: optionalNonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -501,6 +578,7 @@ export function registerTools(
         taskId: nonEmptyString,
         status: nonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -524,6 +602,7 @@ export function registerTools(
             "A task of type 'feature' in the same project, or null to remove the task from its feature",
           ),
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -547,6 +626,7 @@ export function registerTools(
             "Task and Bug may be converted into each other; Features cannot be converted.",
           ),
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -562,6 +642,7 @@ export function registerTools(
     {
       description: `List a project's releases, ordered by start date, with their progress: Tasks/Bugs and milestones (total and completed, meaning in a final column), knowledge Feature groups, and unfinished work (neither archived nor completed). Dates are YYYY-MM-DD calendar days ordered startDate ≤ codeFreezeDate ≤ submissionDate. ${RELEASE_PHASES}`,
       inputSchema: z.object({ projectId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -577,6 +658,7 @@ export function registerTools(
     {
       description: `Get a release by ID, with its progress. ${RELEASE_PHASES}`,
       inputSchema: z.object({ releaseId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -599,6 +681,7 @@ export function registerTools(
         submissionDate: releaseDaySchema.describe("The day the release ships"),
         description: releaseDescriptionSchema.optional(),
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -633,6 +716,7 @@ export function registerTools(
         submissionDate: optionalReleaseDaySchema,
         description: releaseDescriptionSchema.nullable().optional(),
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) => {
       const { releaseId, ...patch } = args;
@@ -659,6 +743,7 @@ export function registerTools(
       description:
         "Delete a release. Its milestones and tasks stay in the project with no release, and each records the change in its activity. Needs permission to update the project and its tasks, bugs and milestones.",
       inputSchema: z.object({ releaseId: nonEmptyString }),
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     async (args) =>
       run(() =>
@@ -681,6 +766,7 @@ export function registerTools(
             "A release in the task's project, or null to take the task out of its release",
           ),
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -702,6 +788,7 @@ export function registerTools(
           .nullable()
           .describe("Another release of the project, or null for none"),
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -720,6 +807,7 @@ export function registerTools(
     {
       description: "List comments on a task.",
       inputSchema: z.object({ taskId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -737,6 +825,7 @@ export function registerTools(
         taskId: nonEmptyString,
         content: nonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -755,6 +844,7 @@ export function registerTools(
         commentId: nonEmptyString,
         content: nonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -770,6 +860,7 @@ export function registerTools(
     {
       description: "Delete one of your comments from a task.",
       inputSchema: z.object({ commentId: nonEmptyString }),
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     async (args) =>
       run(() =>
@@ -784,6 +875,7 @@ export function registerTools(
     {
       description: "List labels defined in a workspace.",
       inputSchema: z.object({ workspaceId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -805,6 +897,7 @@ export function registerTools(
         workspaceId: nonEmptyString,
         taskId: optionalNonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -828,6 +921,7 @@ export function registerTools(
         labelId: nonEmptyString,
         taskId: nonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -843,6 +937,7 @@ export function registerTools(
     {
       description: "Detach a label from its current task.",
       inputSchema: z.object({ labelId: nonEmptyString }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -862,6 +957,7 @@ export function registerTools(
         targetTaskId: nonEmptyString,
         relationType: z.enum(["subtask", "blocks", "related"]),
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -882,6 +978,7 @@ export function registerTools(
       description:
         "List the blocks and related relations of a Task or Bug; Features have none of those. Feature membership also appears as deprecated 'subtask' entries (sourceTaskId is the Feature, targetTaskId the task): one for a task in a Feature, and one per task for a Feature. Prefer featureId on get_task and list_tasks.",
       inputSchema: z.object({ taskId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -897,6 +994,7 @@ export function registerTools(
       description:
         "Delete a task relation by its relation ID. Deleting a 'subtask' entry (id 'feature:<taskId>:<featureId>') takes the task out of its feature; prefer set_task_feature with a null featureId.",
       inputSchema: z.object({ id: nonEmptyString }),
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     async (args) =>
       run(() =>
@@ -912,6 +1010,7 @@ export function registerTools(
       description:
         "Delete a task or workspace label by ID. Workspace-label cascades resume automatically; repeat the tool if pendingDeletion remains true.",
       inputSchema: z.object({ id: nonEmptyString }),
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     async (args) =>
       run(async () => {
@@ -947,6 +1046,7 @@ export function registerTools(
       description:
         "List the members of a workspace. Use this to resolve the user ID an assignee tool expects.",
       inputSchema: z.object({ workspaceId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -960,7 +1060,7 @@ export function registerTools(
     "search",
     {
       description:
-        "Search across Tasks, Bugs, Features, projects, workspaces, comments, activities, Feature documents and project pages. Features come back as `feature` results, with `archived` and no status or priority. Comment and activity results carry the `taskId` and `taskType` of the item they belong to. Documents with a `featureId` belong to that Feature; documents without one are project pages.",
+        "Search one workspace's Tasks, Bugs, Features, projects, comments, activities, Feature documents and project pages, plus your workspaces by name. Features come back as `feature` results, with `archived` and no status or priority. Comment and activity results carry the `taskId` and `taskType` of the item they belong to. Documents with a `featureId` belong to that Feature; documents without one are project pages.",
       inputSchema: z.object({
         q: nonEmptyString.describe("Search query"),
         type: z
@@ -978,7 +1078,9 @@ export function registerTools(
           .describe(
             "Restrict results to one kind. `tasks` returns Tasks and Bugs; `features` returns Features. Defaults to all.",
           ),
-        workspaceId: optionalNonEmptyString.describe("Limit to one workspace"),
+        workspaceId: nonEmptyString.describe(
+          "The workspace to search (see list_workspaces)",
+        ),
         projectId: optionalNonEmptyString.describe("Limit to one project"),
         limit: z
           .number()
@@ -988,11 +1090,12 @@ export function registerTools(
           .optional()
           .describe("Maximum results, 1 to 50. Defaults to 20."),
       }),
+      annotations: { readOnlyHint: true },
     },
     async (args) => {
       const qs = new URLSearchParams({ q: args.q });
       if (args.type) qs.set("type", args.type);
-      if (args.workspaceId) qs.set("workspaceId", args.workspaceId);
+      qs.set("workspaceId", args.workspaceId);
       if (args.projectId) qs.set("projectId", args.projectId);
       if (args.limit !== undefined) qs.set("limit", String(args.limit));
       return run(() => client.json(`/api/search?${qs.toString()}`));
@@ -1005,6 +1108,7 @@ export function registerTools(
       description:
         "List a project's columns. Their slugs are the values update_task_status and create_task accept as a status.",
       inputSchema: z.object({ projectId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -1018,6 +1122,7 @@ export function registerTools(
       description:
         "Delete a task by ID. Deleting a feature keeps its tasks and takes them out of it.",
       inputSchema: z.object({ taskId: nonEmptyString }),
+      annotations: { readOnlyHint: false, destructiveHint: true },
     },
     async (args) =>
       run(() =>
@@ -1037,13 +1142,18 @@ export function registerTools(
         userId: nonEmptyString
           .nullable()
           .describe("Member user ID, or null to unassign"),
+        timeZone: dayTimeZoneSchema,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
         client.json(`/api/task/assignee/${encodeURIComponent(args.taskId)}`, {
           method: "PUT",
-          body: JSON.stringify({ userId: args.userId }),
+          body: JSON.stringify({
+            userId: args.userId,
+            ...(args.timeZone ? { timeZone: args.timeZone } : {}),
+          }),
         }),
       ),
   );
@@ -1059,6 +1169,7 @@ export function registerTools(
           estimateSeconds: estimateSecondsSchema,
         })
         .strict(),
+      annotations: { readOnlyHint: false },
     },
     async ({ taskId, estimateSeconds }) =>
       run(async () => {
@@ -1078,19 +1189,24 @@ export function registerTools(
     "update_task_due_date",
     {
       description:
-        "Set a Task/Bug due date by hand. Omit dueDate to clear it. Planned work stops following its estimate until the next Apply of its release. The due day can't be a day the assignee is away (approved time off or a public holiday), or it fails with TASK_ASSIGNEE_AWAY; pending requests never block. The day is read in the project's planning timezone (UTC when unset).",
+        "Set a Task/Bug due date by hand. Omit dueDate to clear it. Planned work stops following its estimate until the next Apply of its release. The due day can't be a day the assignee is away (approved time off or a public holiday), or it fails with TASK_ASSIGNEE_AWAY; pending requests never block. The day is read in timeZone when given, else the project's planning timezone (UTC when unset).",
       inputSchema: z
         .object({
           taskId: nonEmptyString,
           dueDate: optionalIsoDateTimeSchema,
+          timeZone: dayTimeZoneSchema,
         })
         .strict(),
+      annotations: { readOnlyHint: false },
     },
-    async ({ taskId, dueDate }) =>
+    async ({ taskId, dueDate, timeZone }) =>
       run(() =>
         client.json(`/api/task/due-date/${encodeURIComponent(taskId)}`, {
           method: "PUT",
-          body: JSON.stringify({ dueDate: dueDate ?? null }),
+          body: JSON.stringify({
+            dueDate: dueDate ?? null,
+            ...(timeZone ? { timeZone } : {}),
+          }),
         }),
       ),
   );
@@ -1100,6 +1216,7 @@ export function registerTools(
     {
       description: "List the time entries logged against a task.",
       inputSchema: z.object({ taskId: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() =>
@@ -1112,6 +1229,7 @@ export function registerTools(
     {
       description: "Get a single time entry by ID.",
       inputSchema: z.object({ id: nonEmptyString }),
+      annotations: { readOnlyHint: true },
     },
     async (args) =>
       run(() => client.json(`/api/time-entry/${encodeURIComponent(args.id)}`)),
@@ -1128,6 +1246,7 @@ export function registerTools(
         endTime: optionalIsoDateTimeSchema,
         description: optionalNonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -1154,6 +1273,7 @@ export function registerTools(
         endTime: optionalIsoDateTimeSchema,
         description: optionalNonEmptyString,
       }),
+      annotations: { readOnlyHint: false },
     },
     async (args) =>
       run(() =>
@@ -1171,13 +1291,25 @@ export function registerTools(
   registerTool(
     "list_task_activity",
     {
-      description: "List a task's activity history.",
-      inputSchema: z.object({ taskId: nonEmptyString }),
+      description: "List a task's activity history, newest first.",
+      inputSchema: z.object({
+        taskId: nonEmptyString,
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe("Most recent entries to return, 1 to 100. Omit for all."),
+      }),
+      annotations: { readOnlyHint: true },
     },
-    async (args) =>
-      run(() =>
-        client.json(`/api/activity/${encodeURIComponent(args.taskId)}`),
-      ),
+    async ({ taskId, limit }) => {
+      const query = limit === undefined ? "" : `?limit=${limit}`;
+      return run(() =>
+        client.json(`/api/activity/${encodeURIComponent(taskId)}${query}`),
+      );
+    },
   );
 
   registerTool(
@@ -1185,6 +1317,7 @@ export function registerTools(
     {
       description: "List the signed-in user's notifications.",
       inputSchema: z.object({}),
+      annotations: { readOnlyHint: true },
     },
     async () => run(() => client.json("/api/notification")),
   );

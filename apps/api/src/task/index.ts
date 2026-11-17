@@ -1108,7 +1108,7 @@ const updateTaskDescriptionRoute = createRoute({
   tags: ["Tasks"],
   summary: "Update task description",
   description:
-    "Replace a task description and claim referenced staged uploads atomically. Supply expectedDescription to reject concurrent edits with DESCRIPTION_CONFLICT.",
+    "Replace a task description and claim referenced staged uploads atomically. Supply expectedDescription to reject concurrent edits with DESCRIPTION_CONFLICT. Uploads removed from the description are deleted unless keepRemovedAssets is true.",
   middleware: [
     workspaceAccess.fromTask(),
     requireWorkItemPermission("update"),
@@ -1854,8 +1854,12 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(updateTaskDescriptionRoute, async (c) => {
     const { id } = c.req.valid("param");
-    const { description, expectedDescription, draftAssetIds } =
-      c.req.valid("json");
+    const {
+      description,
+      expectedDescription,
+      draftAssetIds,
+      keepRemovedAssets,
+    } = c.req.valid("json");
     const currentUserId = c.get("userId");
 
     const task = await updateTaskDescription({
@@ -1863,6 +1867,7 @@ const task = apiRouter<BaseVariables & { workspaceId: string }>()
       description,
       expectedDescription,
       draftAssetIds,
+      keepRemovedAssets,
       currentUserId,
       expectedProjectId: c.get("authorizedProjectId"),
       expectedWorkspaceId: c.get("workspaceId"),

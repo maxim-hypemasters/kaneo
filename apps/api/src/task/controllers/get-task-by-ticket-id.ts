@@ -14,6 +14,7 @@ import {
 } from "../../project/project-key";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
 import { TICKET_ID_PATTERN } from "../ticket-id";
+import { getPinnedWorkspaceId } from "../../utils/assistant-workspace-pin";
 import { hasInstanceAdminRole } from "../../utils/instance-admin-role";
 import getTask from "./get-task";
 
@@ -44,6 +45,7 @@ export default async function getTaskByTicketId(
     .where(eq(userTable.id, userId))
     .limit(1);
 
+  const pinnedWorkspaceId = getPinnedWorkspaceId();
   const memberWorkspaces = db
     .select({ workspaceId: workspaceUserTable.workspaceId })
     .from(workspaceUserTable)
@@ -80,6 +82,9 @@ export default async function getTaskByTicketId(
         eq(taskTable.number, number),
         mayMatchProjectKey(projectKey),
         workspaceId ? eq(projectTable.workspaceId, workspaceId) : undefined,
+        pinnedWorkspaceId
+          ? eq(projectTable.workspaceId, pinnedWorkspaceId)
+          : undefined,
         slugWorkspaceIds
           ? inArray(projectTable.workspaceId, slugWorkspaceIds)
           : undefined,

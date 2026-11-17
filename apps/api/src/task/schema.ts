@@ -299,6 +299,10 @@ export const updateDescriptionBody = z.object({
       "The saved description being edited. A changed value returns 409.",
   }),
   draftAssetIds: z.array(z.string().min(1)).max(100).optional(),
+  keepRemovedAssets: z.boolean().optional().openapi({
+    description:
+      "Keep uploads this save removes from the description instead of deleting them. Tasks and Bugs have no prune route, so kept uploads remain until the task is deleted; for a Feature, release them with POST /feature/{id}/assets/prune.",
+  }),
 });
 
 const surface = z.enum(["description", "comment"]).openapi({

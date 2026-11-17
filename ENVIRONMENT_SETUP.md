@@ -60,7 +60,7 @@ Use the [environment reference](https://kaneo.app/docs/core/installation/environ
 - **Uploads:** configure S3-compatible storage. [Silo](https://kaneo.app/docs/core/installation/silo) is the documented self-hosted option. The API and browser must both reach its endpoint.
 - **Email:** configure SMTP. Email verification codes become the default sign-in method; `DISABLE_EMAIL_OTP_SIGN_IN=true` keeps password sign-in. Invitations and password resets still use SMTP.
 - **Sign-in providers:** configure OAuth credentials on the API and register the local callback URL with the provider.
-- **MCP:** the built-in endpoint uses `KANEO_INTERNAL_API_URL`, defaulting to `http://127.0.0.1:1337`, for internal tool requests. Device authorization allows `kaneo-cli` and `kaneo-mcp` by default.
+- **MCP and assistant:** the built-in MCP endpoint and the in-app assistant use `KANEO_INTERNAL_API_URL`, defaulting to `http://127.0.0.1:1337`, for internal tool requests. Device authorization allows `kaneo-cli` and `kaneo-mcp` by default.
 - **Private-network connections:** `KANEO_ALLOW_PRIVATE_WEBHOOK_DESTINATIONS=true` permits internal ntfy, Gotify, webhook, Gitea, GitLab, and import source (PLANKA, Plane, Kaneo) destinations. Only enable it on a trusted deployment.
 - **Trello imports:** `TRELLO_API_KEY` is the API key of a Trello Power-Up. Workspace admins starting a Trello import get a link to Trello's authorize page built from it; without it, they paste their own API key next to the token.
 - **Redis:** only needed to relay live updates between multiple API instances. Leave it unset for one local API process.

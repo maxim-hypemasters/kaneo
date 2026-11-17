@@ -81,7 +81,9 @@ server {
 }
 ```
 
-The upgrade headers follow [Nginx's WebSocket guidance](https://nginx.org/en/docs/http/websocket.html). They allow live task updates through the proxy. Disabling response buffering also lets streaming MCP responses arrive promptly.
+The upgrade headers follow [Nginx's WebSocket guidance](https://nginx.org/en/docs/http/websocket.html). They allow live task updates through the proxy. Disabling response buffering also lets streaming MCP responses and [assistant](/core/functional/assistant) answers arrive promptly.
+
+Assistant answers stream from `/api/assistant/` as server-sent events, with a heartbeat every 15 seconds. Keep `proxy_buffering off` and a `proxy_read_timeout` of 60 seconds or more, as in the example. The API sends `X-Accel-Buffering: no`, but the bundled container's Nginx consumes that header, so this proxy never sees it. If another proxy, load balancer, or CDN sits in front, turn off response buffering and compression for `/api/assistant/` there too. Otherwise each answer arrives all at once when it finishes.
 
 Enable the site using your distribution's normal procedure, then validate and reload:
 

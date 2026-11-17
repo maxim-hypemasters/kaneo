@@ -58,6 +58,7 @@ export async function publishTaskMutation(
     fields?: Array<keyof Changes>;
     assigneeName?: string | null;
     sourceIntegrationId?: string;
+    keepRemovedAssets?: boolean;
     // Records the status change as this activity instead of status_changed.
     statusActivityType?: string;
   } = {},
@@ -154,9 +155,10 @@ export async function publishTaskMutation(
       newDescription: after.description,
       type: "description_changed",
     });
-    deleteOrphanedAssets(before.description, after.description, {
-      taskId: after.id,
-    }).catch(() => {});
+    if (!options.keepRemovedAssets)
+      deleteOrphanedAssets(before.description, after.description, {
+        taskId: after.id,
+      }).catch(() => {});
     const oldMentions = new Set(parseMentionIds(before.description));
     const newlyMentioned = parseMentionIds(after.description).filter(
       (id) => id !== userId && !oldMentions.has(id),

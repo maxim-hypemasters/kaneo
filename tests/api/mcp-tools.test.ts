@@ -9,6 +9,7 @@ import {
 import {
   type McpToolRegistrar,
   registerMcpTools,
+  toMcpToolRegistrar,
 } from "../../apps/api/src/mcp/tools";
 
 type ToolCallback = (args: unknown) => Promise<{
@@ -67,12 +68,15 @@ describe("MCP tool catalog", () => {
   });
 
   it("passes only the search filters that were supplied", async () => {
-    await call("search", { q: "login bug" });
-    expect(lastRequest().url).toBe("http://api.test/api/search?q=login+bug");
+    await call("search", { q: "login bug", workspaceId: "ws1" });
+    expect(lastRequest().url).toBe(
+      "http://api.test/api/search?q=login+bug&workspaceId=ws1",
+    );
 
     await call("search", {
       q: "login bug",
       type: "tasks",
+      workspaceId: "ws1",
       projectId: "p1",
       limit: 5,
     });
@@ -80,13 +84,25 @@ describe("MCP tool catalog", () => {
     expect(Object.fromEntries(url.searchParams)).toEqual({
       q: "login bug",
       type: "tasks",
+      workspaceId: "ws1",
       projectId: "p1",
       limit: "5",
     });
   });
 
+  it("rejects a search without a workspace", async () => {
+    const result = await call("search", { q: "login bug" });
+
+    expect(result.isError).toBe(true);
+    expect(apiFetch).not.toHaveBeenCalled();
+  });
+
   it("rejects a search limit above the API maximum", async () => {
-    const result = await call("search", { q: "x", limit: 500 });
+    const result = await call("search", {
+      q: "x",
+      workspaceId: "ws1",
+      limit: 500,
+    });
 
     expect(result.isError).toBe(true);
     expect(apiFetch).not.toHaveBeenCalled();
@@ -235,8 +251,39 @@ describe("MCP tool catalog", () => {
     await call("list_task_activity", { taskId: "t1" });
     expect(lastRequest().url).toBe("http://api.test/api/activity/t1");
 
+    await call("list_task_activity", { taskId: "t1", limit: 10 });
+    expect(lastRequest().url).toBe("http://api.test/api/activity/t1?limit=10");
+
     await call("list_notifications");
     expect(lastRequest().url).toBe("http://api.test/api/notification");
+  });
+
+  it("hands tool annotations and raw input shapes to the hosted server", () => {
+    const configs = new Map<
+      string,
+      { inputSchema: object; annotations?: Record<string, unknown> }
+    >();
+    registerMcpTools(
+      toMcpToolRegistrar({
+        registerTool: (name, config) => configs.set(name, config),
+      }),
+      "http://api.test",
+      "test-token",
+    );
+
+    expect(configs.get("get_task")).toMatchObject({
+      inputSchema: { taskId: expect.any(Object) },
+      annotations: { readOnlyHint: true },
+    });
+    expect(configs.get("create_task")?.annotations).toEqual({
+      readOnlyHint: false,
+    });
+    expect(configs.get("delete_task")?.annotations).toEqual({
+      readOnlyHint: false,
+      destructiveHint: true,
+    });
+    for (const [name, config] of configs)
+      expect(typeof config.annotations?.readOnlyHint, name).toBe("boolean");
   });
 
   it("surfaces an API failure as a tool error", async () => {

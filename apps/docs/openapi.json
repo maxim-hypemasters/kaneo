@@ -678,6 +678,10 @@
           },
           "billingEnabled": {
             "type": "boolean"
+          },
+          "hasAssistant": {
+            "type": "boolean",
+            "description": "Whether the workspace assistant is available on this instance. False when DISABLE_ASSISTANT is true. Each workspace still needs an admin to save an OpenRouter key before members can chat."
           }
         },
         "required": [
@@ -698,7 +702,8 @@
           "customOAuthName",
           "customOAuthAutoLogin",
           "customOAuthLogoutUrl",
-          "billingEnabled"
+          "billingEnabled",
+          "hasAssistant"
         ]
       },
       "McpClientRegistration": {
@@ -8792,6 +8797,713 @@
           "image",
           "role",
           "joinedAt"
+        ]
+      },
+      "AssistantStatus": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether a saved OpenRouter key can be decrypted, so members can chat. A key OpenRouter rejected last time still counts; `reason` reports that."
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "not_configured",
+              "key_unreadable",
+              "key_rejected",
+              "out_of_credits",
+              null
+            ],
+            "description": "Why the assistant is unavailable or degraded. not_configured: no key saved. key_unreadable: the key can no longer be decrypted (AUTH_SECRET changed); an admin must enter it again. key_rejected and out_of_credits: OpenRouter's last answer for this key; they clear when an admin saves the settings again. Null when nothing is wrong."
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The saved model id, or null when no key is saved."
+          },
+          "canManage": {
+            "type": "boolean",
+            "description": "Whether the caller has workspace:manage_settings and can configure the assistant."
+          }
+        },
+        "required": [
+          "enabled",
+          "reason",
+          "model",
+          "canManage"
+        ],
+        "description": "Whether the workspace assistant is available. Never includes the key or its hint."
+      },
+      "AssistantSettings": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "description": "Whether an OpenRouter key is saved for the workspace."
+          },
+          "keyHint": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The last four characters of the saved key after an ellipsis, or null. The key itself is never returned."
+          },
+          "keyState": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "ok",
+              "rejected",
+              "out_of_credits",
+              "unreadable",
+              null
+            ],
+            "description": "ok: the key can be used. rejected and out_of_credits: OpenRouter's last answer for this key. unreadable: the key can no longer be decrypted (AUTH_SECRET changed) and must be entered again. Null when no key is saved."
+          },
+          "model": {
+            "type": "string",
+            "description": "The saved model id, or the default when no key is saved."
+          },
+          "defaultModel": {
+            "type": "string"
+          },
+          "allowDataCollection": {
+            "type": "boolean",
+            "description": "Whether OpenRouter may route requests to providers that collect or train on prompts."
+          },
+          "lastError": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "OPENROUTER_KEY_INVALID or OPENROUTER_CREDITS."
+              },
+              "at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "code",
+              "at"
+            ]
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "updatedBy": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "description": "Who last saved the settings, or null when unknown or deleted."
+          },
+          "modelUnverified": {
+            "type": "boolean",
+            "description": "Only on save: true when OpenRouter's model list could not be loaded, so the model was saved without being checked."
+          }
+        },
+        "required": [
+          "configured",
+          "keyHint",
+          "keyState",
+          "model",
+          "defaultModel",
+          "allowDataCollection",
+          "lastError",
+          "updatedAt",
+          "updatedBy"
+        ],
+        "description": "The workspace's assistant configuration, for admins. Never includes the key."
+      },
+      "AssistantKeyUsage": {
+        "type": "object",
+        "properties": {
+          "usageUsd": {
+            "type": "number",
+            "description": "Credits the key has used, in US dollars."
+          },
+          "limitUsd": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "The key's credit limit in US dollars, or null for none."
+          },
+          "limitRemainingUsd": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Credits left under the limit, or null without a limit."
+          },
+          "isFreeTier": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "usageUsd",
+          "limitUsd",
+          "limitRemainingUsd",
+          "isFreeTier"
+        ],
+        "description": "Credit usage of the saved OpenRouter key, as OpenRouter reports it. Cached for up to 60 seconds."
+      },
+      "AssistantModelList": {
+        "type": "object",
+        "properties": {
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssistantModel"
+            },
+            "description": "OpenRouter models that support tool calling through chat completions: recommended models first, then by name. Cached for up to an hour."
+          }
+        },
+        "required": [
+          "models"
+        ]
+      },
+      "AssistantModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "anthropic/claude-sonnet-5.5"
+          },
+          "name": {
+            "type": "string"
+          },
+          "contextLength": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "promptPerMTokUsd": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "US dollars per million prompt tokens, or null when OpenRouter gives no fixed price."
+          },
+          "completionPerMTokUsd": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "US dollars per million completion tokens, or null when OpenRouter gives no fixed price."
+          },
+          "recommended": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "contextLength",
+          "promptPerMTokUsd",
+          "completionPerMTokUsd",
+          "recommended"
+        ]
+      },
+      "AssistantChatList": {
+        "type": "object",
+        "properties": {
+          "chats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssistantChatSummary"
+            },
+            "description": "The caller's chats in the workspace, latest activity first."
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Pass as `before` to get the next page; null on the last page."
+          }
+        },
+        "required": [
+          "chats",
+          "nextCursor"
+        ]
+      },
+      "AssistantChatSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "description": "The chat's first message on one line, cut to at most 80 characters."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the chat last had a turn."
+          },
+          "busy": {
+            "type": "boolean",
+            "description": "Whether a turn is answering in this chat right now."
+          },
+          "pendingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Proposed changes in the chat that wait for approval."
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "updatedAt",
+          "busy",
+          "pendingCount"
+        ]
+      },
+      "AssistantChatDetail": {
+        "type": "object",
+        "properties": {
+          "chat": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "description": "The chat's first message on one line, cut to at most 80 characters."
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "createdAt",
+              "updatedAt"
+            ]
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssistantMessage"
+            },
+            "description": "The latest 300 messages, oldest first."
+          },
+          "hasOlder": {
+            "type": "boolean",
+            "description": "Whether the chat has messages before the first one here."
+          },
+          "pendingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Proposed changes in the chat that wait for approval."
+          },
+          "busy": {
+            "type": "boolean",
+            "description": "Whether a turn is answering in this chat right now. New messages, Continue and delete are refused until it ends."
+          },
+          "resumable": {
+            "type": "boolean",
+            "description": "Whether Continue can resume the chat: no turn is answering, nothing waits for approval and the transcript stops short of a final answer, after tool results or an interrupted or failed step."
+          }
+        },
+        "required": [
+          "chat",
+          "messages",
+          "hasOlder",
+          "pendingCount",
+          "busy",
+          "resumable"
+        ]
+      },
+      "AssistantMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "tool"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "description": "Text of user and assistant messages; empty for tool steps. Read results and reasoning are never returned."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "complete",
+              "interrupted"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "toolCalls": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          },
+          "toolCallId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toolName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "approval": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "pending",
+              "approved",
+              "rejected",
+              "skipped",
+              null
+            ]
+          },
+          "isError": {
+            "type": "boolean"
+          },
+          "errorText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "preview": {
+            "$ref": "#/components/schemas/AssistantProposalPreview"
+          },
+          "resultSummary": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "href": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "label",
+              "href"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "content",
+          "status",
+          "createdAt",
+          "toolCalls",
+          "toolCallId",
+          "toolName",
+          "approval",
+          "isError",
+          "errorText",
+          "preview",
+          "resultSummary"
+        ]
+      },
+      "AssistantProposalPreview": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "target": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "What the change is about, by name."
+          },
+          "targetKey": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The argument whose value `target` already shows, so a card can leave that field out. Null when there is no target."
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "text",
+                    "markdown",
+                    "ref",
+                    "date",
+                    "list"
+                  ]
+                },
+                "value": {
+                  "type": "string"
+                },
+                "from": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "key",
+                "kind",
+                "value"
+              ]
+            }
+          },
+          "diff": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "before": {
+                "type": "string"
+              },
+              "after": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "before",
+              "after"
+            ]
+          },
+          "nested": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "milestones": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "leadLabel": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "releaseLabel": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "priority": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "tasks": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AssistantNestedTask"
+                      }
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "leadLabel",
+                    "releaseLabel",
+                    "priority",
+                    "tasks"
+                  ]
+                }
+              },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AssistantNestedTask"
+                },
+                "description": "Work outside any milestone."
+              },
+              "unassignedReleaseLabel": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The release that new work outside any milestone joins."
+              }
+            },
+            "required": [
+              "milestones",
+              "tasks",
+              "unassignedReleaseLabel"
+            ],
+            "description": "The milestones and tasks a new Feature or milestone creates or links along with it; null when there are none."
+          }
+        },
+        "required": [
+          "target",
+          "targetKey",
+          "fields",
+          "diff",
+          "nested"
+        ]
+      },
+      "AssistantNestedTask": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "A new draft's title, or linked work as its ticket id and title, such as `KAN-12 Fix login`."
+          },
+          "type": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "task",
+              "bug",
+              null
+            ],
+            "description": "A draft's type; null when it takes the default (task), and for linked work."
+          },
+          "estimateSeconds": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "A draft's estimate; null when it has none, and for linked work."
+          },
+          "existing": {
+            "type": "boolean",
+            "description": "True for existing work the change links, false for a new draft."
+          }
+        },
+        "required": [
+          "title",
+          "type",
+          "estimateSeconds",
+          "existing"
+        ]
+      },
+      "AssistantChatDeleted": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "AssistantDecisionsResult": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AssistantMessage"
+            },
+            "description": "The tool messages this request decided, in the order they were proposed. A rejected change has approval `rejected`. An approved one has approval `approved` and then either a `resultSummary` (it ran), `isError` with `errorText` (it failed and wrote nothing, or `Outcome unknown; check before retrying.` when the request timed out, lost its connection or got a gateway error), or neither while its outcome is unknown."
+          },
+          "pendingCount": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Proposed changes in the chat that wait for approval."
+          },
+          "resumable": {
+            "type": "boolean",
+            "description": "Whether Continue can now resume the answer: true once nothing waits for approval."
+          }
+        },
+        "required": [
+          "messages",
+          "pendingCount",
+          "resumable"
         ]
       }
     },
@@ -21901,7 +22613,7 @@
           "Tasks"
         ],
         "summary": "Update task description",
-        "description": "Replace a task description and claim referenced staged uploads atomically. Supply expectedDescription to reject concurrent edits with DESCRIPTION_CONFLICT.",
+        "description": "Replace a task description and claim referenced staged uploads atomically. Supply expectedDescription to reject concurrent edits with DESCRIPTION_CONFLICT. Uploads removed from the description are deleted unless keepRemovedAssets is true.",
         "parameters": [
           {
             "schema": {
@@ -21933,6 +22645,10 @@
                       "minLength": 1
                     },
                     "maxItems": 100
+                  },
+                  "keepRemovedAssets": {
+                    "type": "boolean",
+                    "description": "Keep uploads this save removes from the description instead of deleting them. Tasks and Bugs have no prune route, so kept uploads remain until the task is deleted; for a Feature, release them with POST /feature/{id}/assets/prune."
                   }
                 },
                 "required": [
@@ -42142,6 +42858,1295 @@
           },
           "404": {
             "description": "Workspace or member not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/status": {
+      "get": {
+        "operationId": "getAssistantStatus",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Get assistant availability",
+        "description": "Whether members can chat with the workspace assistant, the model it uses, and whether the caller can configure it. Never includes the key or its hint.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assistant availability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, or no access to the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or ASSISTANT_DISABLED when the instance turned the assistant off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/settings": {
+      "get": {
+        "operationId": "getAssistantSettings",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Get assistant settings",
+        "description": "The workspace's OpenRouter configuration: the key's last four characters and state, the model and the data collection choice. The key itself is never returned.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assistant settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, no access to the workspace, or missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or ASSISTANT_DISABLED when the instance turned the assistant off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateAssistantSettings",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Save assistant settings",
+        "description": "Save the workspace's OpenRouter key and model. A new key is checked with OpenRouter, encrypted at rest and never returned; leave it out to keep the saved key. The model must support tool calls on OpenRouter; when the model list can't be loaded, it is saved unchecked with modelUnverified. Every member then chats on this key. Saving clears the last provider error.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "apiKey": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "pattern": "^(?:|[\\x20-\\x7E]{20,256})$",
+                    "description": "A new OpenRouter API key, checked with OpenRouter before it is saved. Omit it, or send it blank, to keep the saved key. Required when no readable key is saved."
+                  },
+                  "model": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "description": "An OpenRouter model id (or its canonical slug) that supports tool calls through chat completions.",
+                    "example": "anthropic/claude-sonnet-5.5"
+                  },
+                  "allowDataCollection": {
+                    "type": "boolean",
+                    "description": "Allow providers that may collect or train on prompts. Omit to keep the saved choice; new settings default to false."
+                  }
+                },
+                "required": [
+                  "model"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body; UNSUPPORTED_CONTENT_TYPE; OPENROUTER_KEY_REQUIRED when no readable key is saved and none is given; OPENROUTER_KEY_INVALID when OpenRouter rejects the key; ASSISTANT_MODEL_UNSUPPORTED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, no access to the workspace, or missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or ASSISTANT_DISABLED when the instance turned the assistant off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body is too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "502": {
+            "description": "OPENROUTER_UNREACHABLE: the key could not be checked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAssistantSettings",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Remove assistant settings",
+        "description": "Remove the workspace's OpenRouter key and model, which turns the assistant off for every member. Chats are kept.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The settings after removal (configured false)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, no access to the workspace, or missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or ASSISTANT_DISABLED when the instance turned the assistant off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/settings/usage": {
+      "get": {
+        "operationId": "getAssistantKeyUsage",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Get assistant key usage",
+        "description": "The saved OpenRouter key's credit usage and limit, as OpenRouter reports them. Cached for up to 60 seconds.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credit usage of the key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantKeyUsage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "OPENROUTER_KEY_INVALID: OpenRouter rejected the saved key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, no access to the workspace, or missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or ASSISTANT_DISABLED when the instance turned the assistant off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ASSISTANT_NOT_CONFIGURED, or ASSISTANT_KEY_UNREADABLE when the saved key must be entered again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "502": {
+            "description": "OPENROUTER_UNREACHABLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/models": {
+      "get": {
+        "operationId": "listAssistantModels",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "List assistant models",
+        "description": "OpenRouter models that support tool calls through chat completions, with prices per million tokens. Recommended models come first. Cached for up to an hour.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tool-capable models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantModelList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, no access to the workspace, or missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or ASSISTANT_DISABLED when the instance turned the assistant off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "502": {
+            "description": "OPENROUTER_UNREACHABLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/chats": {
+      "get": {
+        "operationId": "listAssistantChats",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "List assistant chats",
+        "description": "The caller's own chats in the workspace, latest activity first, with whether each is answering and how many changes wait for approval. Chats are private: nobody else, admins included, can list them. Page with `before` set to the previous page's `nextCursor`.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 30
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 512,
+              "description": "The `nextCursor` of the previous page, to list the chats after it."
+            },
+            "required": false,
+            "description": "The `nextCursor` of the previous page, to list the chats after it.",
+            "name": "before",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of chats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantChatList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid limit or cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, or no access to the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or ASSISTANT_DISABLED when the instance turned the assistant off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "startAssistantChat",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Start an assistant chat",
+        "description": "Create a chat with its first message and stream the assistant's answer. The assistant reads the workspace as the caller, with the caller's permissions. Changes it proposes wait as pending tool messages until the caller approves them with POST /chats/{chatId}/decisions; the stream then ends with `done` and their count. Every refusal is answered as JSON before the chat is created, so a refused request leaves no chat. The stream's first event is `chat` with the new chat's id. Stopping the request stops the answer; what streamed so far is kept.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 8000,
+                    "description": "The message, up to 8,000 characters. NUL characters are refused."
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[A-Za-z0-9_+:/-]+$",
+                    "description": "The browser's IANA time zone, used for dates and times in answers. A zone the server doesn't know falls back to UTC.",
+                    "example": "Europe/Berlin"
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events, each one `data:` line of JSON (AssistantStreamEvent): `chat` (POST /chats only, first), `delta` (answer text), `message` (a saved message to insert or replace by id), then exactly one `done` or `error`. Error events carry a code and whether a retry may help, never upstream text. `: ping` comments keep the connection alive.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "An SSE stream of AssistantStreamEvent records"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or UNSUPPORTED_CONTENT_TYPE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, or no access to the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or ASSISTANT_DISABLED when the instance turned the assistant off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ASSISTANT_NOT_CONFIGURED, or ASSISTANT_KEY_UNREADABLE when an admin must enter the key again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body is too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "ASSISTANT_TOO_MANY_TURNS while too many answers stream at once (retry after Retry-After), or ASSISTANT_DAILY_LIMIT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/chats/{chatId}": {
+      "get": {
+        "operationId": "getAssistantChat",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Get an assistant chat",
+        "description": "One of the caller's own chats with its latest 300 messages, oldest first. Tool steps show their name, approval state, preview and a short error, never what a read returned. `busy` says whether a turn is answering in it right now, and `resumable` whether Continue can pick the chat up.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "chatId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The chat and its messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantChatDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, or no access to the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ASSISTANT_CHAT_NOT_FOUND when the chat doesn't exist or isn't the caller's in this workspace; also workspace not found, or ASSISTANT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAssistantChat",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Delete an assistant chat",
+        "description": "Delete one of the caller's own chats and its messages. Refused while the chat is answering. The daily usage count is kept.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "chatId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The chat was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantChatDeleted"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, or no access to the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ASSISTANT_CHAT_NOT_FOUND when the chat doesn't exist or isn't the caller's in this workspace; also workspace not found, or ASSISTANT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ASSISTANT_CHAT_BUSY while a turn is answering in the chat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/chats/{chatId}/messages": {
+      "post": {
+        "operationId": "sendAssistantMessage",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Send a message in an assistant chat",
+        "description": "Add the next message to one of the caller's chats and stream the answer. Proposed changes still waiting for approval are skipped. Refused while the chat is answering.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "chatId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 8000,
+                    "description": "The message, up to 8,000 characters. NUL characters are refused."
+                  },
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[A-Za-z0-9_+:/-]+$",
+                    "description": "The browser's IANA time zone, used for dates and times in answers. A zone the server doesn't know falls back to UTC.",
+                    "example": "Europe/Berlin"
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events, each one `data:` line of JSON (AssistantStreamEvent): `chat` (POST /chats only, first), `delta` (answer text), `message` (a saved message to insert or replace by id), then exactly one `done` or `error`. Error events carry a code and whether a retry may help, never upstream text. `: ping` comments keep the connection alive.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "An SSE stream of AssistantStreamEvent records"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or UNSUPPORTED_CONTENT_TYPE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, or no access to the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ASSISTANT_CHAT_NOT_FOUND when the chat doesn't exist or isn't the caller's in this workspace; also workspace not found, or ASSISTANT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ASSISTANT_NOT_CONFIGURED, or ASSISTANT_KEY_UNREADABLE when an admin must enter the key again; ASSISTANT_CHAT_BUSY while the chat is answering",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body is too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "ASSISTANT_TOO_MANY_TURNS while too many answers stream at once (retry after Retry-After), or ASSISTANT_DAILY_LIMIT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/chats/{chatId}/continue": {
+      "post": {
+        "operationId": "continueAssistantTurn",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Continue an assistant answer",
+        "description": "Resume one of the caller's chats where its answer stopped: after Stop, a failed step, or decided changes. Adds no message and streams the rest of the answer.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "chatId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[A-Za-z0-9_+:/-]+$",
+                    "description": "The browser's IANA time zone, used for dates and times in answers. A zone the server doesn't know falls back to UTC.",
+                    "example": "Europe/Berlin"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Server-Sent Events, each one `data:` line of JSON (AssistantStreamEvent): `chat` (POST /chats only, first), `delta` (answer text), `message` (a saved message to insert or replace by id), then exactly one `done` or `error`. Error events carry a code and whether a retry may help, never upstream text. `: ping` comments keep the connection alive.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "An SSE stream of AssistantStreamEvent records"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or UNSUPPORTED_CONTENT_TYPE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, or no access to the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ASSISTANT_CHAT_NOT_FOUND when the chat doesn't exist or isn't the caller's in this workspace; also workspace not found, or ASSISTANT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ASSISTANT_NOT_CONFIGURED, or ASSISTANT_KEY_UNREADABLE when an admin must enter the key again; ASSISTANT_CHAT_BUSY while the chat is answering; ASSISTANT_PENDING_APPROVALS while proposed changes wait; ASSISTANT_NOTHING_TO_CONTINUE when the chat already ends in an answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body is too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "ASSISTANT_TOO_MANY_TURNS while too many answers stream at once (retry after Retry-After), or ASSISTANT_DAILY_LIMIT",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assistant/{workspaceId}/chats/{chatId}/decisions": {
+      "post": {
+        "operationId": "decideAssistantActions",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Approve or reject proposed changes",
+        "description": "Approve or reject changes the assistant proposed in one of the caller's chats. Each decided change leaves pending exactly once, so a repeated or concurrent request runs nothing twice. Approved changes run in the order they were proposed, as the caller with the caller's current permissions; one that fails writes nothing and reports the API's error. Updates of text without a conflict check fail without writing when the text changed since the proposal, and a task archived since stays archived. No write starts after about 10 seconds: those changes stay pending. Messages of other chats are ignored. Call Continue afterwards when `resumable` is true.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "chatId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "decisions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "messageId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 64,
+                          "description": "A tool message of the chat that waits for approval."
+                        },
+                        "approve": {
+                          "type": "boolean",
+                          "description": "True runs the change as the caller; false rejects it."
+                        }
+                      },
+                      "required": [
+                        "messageId",
+                        "approve"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "description": "Up to 10 decisions. Approved changes run in the order they were proposed."
+                  }
+                },
+                "required": [
+                  "decisions"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The decided changes and what waits next",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantDecisionsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, a message decided twice, or UNSUPPORTED_CONTENT_TYPE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED for API keys, or no access to the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ASSISTANT_CHAT_NOT_FOUND when the chat doesn't exist or isn't the caller's in this workspace; also workspace not found, or ASSISTANT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ASSISTANT_CHAT_BUSY while the chat is answering or deciding; ASSISTANT_NOTHING_PENDING when none of the messages waits for approval",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body is too large",
             "content": {
               "application/json": {
                 "schema": {

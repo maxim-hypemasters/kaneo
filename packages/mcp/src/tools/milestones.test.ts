@@ -52,6 +52,26 @@ describe("milestone tools", () => {
       },
     ],
     [
+      "create_milestone",
+      {
+        featureId: "f",
+        title: "Beta",
+        newTasks: [
+          { title: " Write docs ", type: "bug" },
+          { title: "Ship", estimateSeconds: 3600 },
+        ],
+      },
+      "/api/milestone/feature/f",
+      "POST",
+      {
+        title: "Beta",
+        newTasks: [
+          { title: "Write docs", type: "bug" },
+          { title: "Ship", estimateSeconds: 3600 },
+        ],
+      },
+    ],
+    [
       "update_milestone",
       { milestoneId: "m", description: null },
       "/api/milestone/m",
@@ -122,6 +142,34 @@ describe("milestone tools", () => {
       { featureId: "f", title: "Ship", taskIds: ["t", "t"] },
     ],
     ["create_milestone", { featureId: "f", title: "Ship", taskIds: [""] }],
+    [
+      "create_milestone",
+      { featureId: "f", title: "Ship", newTasks: [{ title: " " }] },
+    ],
+    [
+      "create_milestone",
+      {
+        featureId: "f",
+        title: "Ship",
+        newTasks: [{ title: "Docs", type: "feature" }],
+      },
+    ],
+    [
+      "create_milestone",
+      {
+        featureId: "f",
+        title: "Ship",
+        newTasks: [{ title: "Docs", estimateSeconds: 61 }],
+      },
+    ],
+    [
+      "create_milestone",
+      {
+        featureId: "f",
+        title: "Ship",
+        newTasks: Array.from({ length: 101 }, (_, i) => ({ title: `T${i}` })),
+      },
+    ],
     [
       "create_milestone",
       {

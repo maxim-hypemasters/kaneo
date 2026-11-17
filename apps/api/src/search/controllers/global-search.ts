@@ -11,6 +11,7 @@ import {
 } from "../../database/schema";
 import { redactInaccessibleActivity } from "../../activity/redaction/redact-inaccessible-activity";
 import { canAccessProject } from "../../project-access/can-access-project";
+import { getPinnedWorkspaceId } from "../../utils/assistant-workspace-pin";
 import { projectAccessCondition } from "../../project-access/project-access-condition";
 import {
   activityResultTitle,
@@ -365,6 +366,7 @@ async function globalSearch(params: SearchParams): Promise<{
   }
 
   if (type === "all" || type === "workspaces") {
+    const pinnedWorkspaceId = getPinnedWorkspaceId();
     const workspaceRelevanceScore = sql<number>`
       CASE
         WHEN LOWER(${workspaceTable.name}) LIKE ${searchPattern} THEN 3
@@ -382,13 +384,16 @@ async function globalSearch(params: SearchParams): Promise<{
         relevanceScore: workspaceRelevanceScore.as("relevanceScore"),
       })
       .from(workspaceTable)
-      .leftJoin(
-        workspaceUserTable,
-        eq(workspaceTable.id, workspaceUserTable.workspaceId),
-      )
       .where(
         and(
-          inArray(workspaceTable.id, accessibleWorkspaceIds),
+          // The assistant searches only its pinned workspace; Cmd+K still
+          // offers every workspace the user can switch to.
+          inArray(
+            workspaceTable.id,
+            pinnedWorkspaceId
+              ? accessibleWorkspaceIds.filter((id) => id === pinnedWorkspaceId)
+              : accessibleWorkspaceIds,
+          ),
           or(
             ilike(workspaceTable.name, searchPattern),
             ilike(workspaceTable.description, searchPattern),

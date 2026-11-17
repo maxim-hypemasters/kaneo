@@ -1,5 +1,6 @@
 import { isSmtpConfigured } from "@kaneo/email";
 import { config } from "dotenv-mono";
+import { isAssistantEnabled } from "../assistant/assistant-enabled";
 import { isBillingEnabled } from "../billing/config";
 import { isStorageConfigured } from "../storage/s3";
 import { resolveFileSecret } from "./file-secret";
@@ -40,6 +41,7 @@ function getSettings() {
     customOAuthAutoLogin: process.env.CUSTOM_OAUTH_AUTO_LOGIN === "true",
     customOAuthLogoutUrl: process.env.CUSTOM_OAUTH_LOGOUT_URL || null,
     billingEnabled: isBillingEnabled(),
+    hasAssistant: isAssistantEnabled(),
   };
 }
 

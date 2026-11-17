@@ -17,7 +17,9 @@ export function useSettingsNav() {
   const { data: config } = useGetConfig();
   const { data: hasAdminAccess } = useAdminAccess();
   const { canImport } = useCanImport();
-  const { canApproveTimeOff, isCheckingPermissions } = useWorkspacePermission();
+  const { canManageSettings, canApproveTimeOff, isCheckingPermissions } =
+    useWorkspacePermission();
+  const canManage = canManageSettings();
   const canManageTimeOff = !isCheckingPermissions && canApproveTimeOff();
 
   return useMemo(
@@ -27,6 +29,8 @@ export function useSettingsNav() {
         workspaceName: workspace?.name,
         billingEnabled: Boolean(config?.billingEnabled),
         canImport,
+        canManageSettings: canManage,
+        hasAssistant: Boolean(config?.hasAssistant),
         canManageTimeOff,
         hasAdminAccess: Boolean(hasAdminAccess),
         projects: projects ?? [],
@@ -35,7 +39,9 @@ export function useSettingsNav() {
       t,
       workspace?.name,
       config?.billingEnabled,
+      config?.hasAssistant,
       canImport,
+      canManage,
       canManageTimeOff,
       hasAdminAccess,
       projects,

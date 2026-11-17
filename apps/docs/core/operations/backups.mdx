@@ -7,11 +7,13 @@ A complete Kaneo backup has three parts:
 
 | Part | What it contains |
 | --- | --- |
-| PostgreSQL | Accounts, workspaces, tasks, comments, settings, avatars, and attachment records |
+| PostgreSQL | Accounts, workspaces, tasks, comments, settings, avatars, attachment records, and [assistant](/core/functional/assistant) chats |
 | Object storage | The actual files attached to tasks and comments |
 | Configuration | Compose files, environment files, proxy configuration, and the application image tag or digest |
 
 Keep an encrypted copy away from the server. A backup on the same disk will not help if you lose that disk.
+
+Assistant chats are private in Kaneo, but anyone with the database dump can read them. Protect the dump like the rest of your workspace data.
 
 The commands below apply to the [Docker Compose setup](/core/installation/docker-compose). Run them from its directory. With a managed database or storage service, use the provider's backup tools as well.
 
@@ -45,7 +47,7 @@ cp compose.yml .env "$backup_dir/"
 docker compose images > "$backup_dir/images.txt"
 ```
 
-Also copy any `silo.env`, proxy files, Compose override files, and secret references needed to recreate your setup. Preserve `AUTH_SECRET` and, when used, `NOTIFICATION_SECRET_ENCRYPTION_KEY`; the latter is needed to decrypt personal notification credentials. Use your actual Compose filename if it differs.
+Also copy any `silo.env`, proxy files, Compose override files, and secret references needed to recreate your setup. Preserve `AUTH_SECRET` and, when used, `NOTIFICATION_SECRET_ENCRYPTION_KEY`; the latter is needed to decrypt personal notification credentials. Each workspace's assistant OpenRouter key is stored encrypted with a key derived from `AUTH_SECRET`, so a restore with a different `AUTH_SECRET` can't read it: a workspace admin must then enter the key again. Use your actual Compose filename if it differs.
 
 The custom archive is created by [pg_dump](https://www.postgresql.org/docs/16/app-pgdump.html). Listing its contents checks the archive structure; a successful restore is the stronger check.
 
@@ -112,9 +114,9 @@ Use a new, empty recovery volume for each rehearsal. Do not run the restore repe
 
 1. Restore PostgreSQL into an empty recovery database.
 2. Restore the matching storage backup, preserving bucket names, object keys, and required key material. For a fresh single-node Silo recovery volume, create the stopped container with `docker compose create silo`, copy the saved `silo-data/.` into `silo:/data/` with `docker compose cp`, check ownership matches the container's runtime user, then start it. Do not overlay a recovery copy onto a live storage volume.
-3. Deploy the Kaneo image recorded with the backup. Restore its `AUTH_SECRET` and other required settings.
+3. Deploy the Kaneo image recorded with the backup. Restore its `AUTH_SECRET` and other required settings. With a different `AUTH_SECRET`, assistant keys must be entered again.
 4. Set the recovery instance's URLs, database connection, and storage endpoint to the recovery services.
-5. Before starting it, isolate outbound email, webhooks, and repository integrations at the network level. Integration credentials can be present in the restored database, not only in `.env`.
+5. Before starting it, isolate outbound email, webhooks, repository integrations, and OpenRouter at the network level. Integration credentials and assistant keys can be present in the restored database, not only in `.env`.
 6. Sign in, compare several projects and tasks with the expected backup state, and open existing attachments. Try a new task and file upload.
 7. Only after those checks, plan the cutover and restore the intended URLs and delivery channels.
 

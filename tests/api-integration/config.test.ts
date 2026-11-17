@@ -40,9 +40,23 @@ describe("API integration: config", () => {
         "hasGoogleSignIn",
         "hasDiscordSignIn",
         "hasCustomOAuth",
+        "hasAssistant",
       ].every((key) => typeof value[key] === "boolean"),
     );
   });
+
+  it.each([
+    ["true", false],
+    ["false", true],
+    [undefined, true],
+  ])(
+    "reports the assistant for DISABLE_ASSISTANT=%s",
+    async (value, expected) => {
+      vi.stubEnv("DISABLE_ASSISTANT", value);
+      const response = await createApp().app.request("/api/config");
+      expect(await response.json()).toHaveProperty("hasAssistant", expected);
+    },
+  );
 
   it.each([
     [{ S3_ENDPOINT: "https://s3.example.com", S3_BUCKET: "kaneo" }, true],
