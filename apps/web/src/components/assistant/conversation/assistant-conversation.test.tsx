@@ -5,7 +5,7 @@ import {
   screen,
   within,
 } from "@testing-library/react";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   afterEach,
   beforeEach,
@@ -22,6 +22,7 @@ import type { AssistantDecisionsResult } from "@/fetchers/assistant/decide-assis
 import type { DecideVariables } from "@/hooks/mutations/assistant/use-decide-assistant-actions";
 import type { AssistantTurn } from "@/hooks/use-assistant-turn";
 import { AssistantConversation } from "./assistant-conversation";
+import { useComposerDraft } from "./use-composer-draft";
 
 type DecideMock = {
   isPending: boolean;
@@ -58,6 +59,10 @@ vi.mock("@/hooks/mutations/assistant/use-decide-assistant-actions", () => ({
     m.onResumable = options?.onResumable;
     return m.decide;
   },
+}));
+vi.mock("@/hooks/mutations/assistant/use-decisions-in-flight", () => ({
+  useDecisionsInFlight: () =>
+    m.decide.isPending && m.decide.variables ? [m.decide.variables] : [],
 }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
 vi.mock("@/components/ui/scroll-area", () => ({
@@ -136,9 +141,22 @@ function idleTurn(overrides: Partial<AssistantTurn> = {}): AssistantTurn {
   };
 }
 
+// The composer's text lives with the parent, as on Home.
+function Conversation(
+  props: Omit<
+    ComponentProps<typeof AssistantConversation>,
+    "text" | "onTextChange"
+  >,
+) {
+  const [text, setText] = useComposerDraft(props.chatId, props.turn.chatId);
+  return (
+    <AssistantConversation {...props} text={text} onTextChange={setText} />
+  );
+}
+
 function renderConversation(chatId: string | null, turn: AssistantTurn) {
   return render(
-    <AssistantConversation
+    <Conversation
       workspaceId="ws1"
       workspaceSlug="acme"
       chatId={chatId}
@@ -384,7 +402,7 @@ describe("AssistantConversation", () => {
     );
     m.decide = { isPending: false, variables: undefined, mutate: vi.fn() };
     view.rerender(
-      <AssistantConversation
+      <Conversation
         workspaceId="ws1"
         workspaceSlug="acme"
         chatId="c1"
@@ -411,7 +429,7 @@ describe("AssistantConversation", () => {
       mutate: vi.fn(),
     };
     view.rerender(
-      <AssistantConversation
+      <Conversation
         workspaceId="ws1"
         workspaceSlug="acme"
         chatId="c1"
@@ -434,7 +452,7 @@ describe("AssistantConversation", () => {
     );
     m.decide = { isPending: false, variables: undefined, mutate: vi.fn() };
     view.rerender(
-      <AssistantConversation
+      <Conversation
         workspaceId="ws1"
         workspaceSlug="acme"
         chatId="c1"
@@ -485,7 +503,7 @@ describe("AssistantConversation", () => {
       failed(waiting),
     ]);
     view.rerender(
-      <AssistantConversation
+      <Conversation
         workspaceId="ws1"
         workspaceSlug="acme"
         chatId="c1"

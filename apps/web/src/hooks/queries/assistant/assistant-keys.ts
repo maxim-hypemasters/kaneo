@@ -1,5 +1,6 @@
 // One key factory for every assistant query, so mutations and streams can
-// invalidate exactly what they changed.
+// invalidate exactly what they changed, and for mutations other components
+// watch.
 export const assistantKeys = {
   all: ["assistant"] as const,
   status: (workspaceId: string) =>
@@ -12,4 +13,7 @@ export const assistantKeys = {
   chats: (workspaceId: string) => ["assistant", "chats", workspaceId] as const,
   chat: (workspaceId: string, chatId: string) =>
     ["assistant", "chat", workspaceId, chatId] as const,
+  /** Mutation key: approving or rejecting proposed changes. */
+  decide: (workspaceId: string) =>
+    ["assistant", "decide", workspaceId] as const,
 };

@@ -37,12 +37,36 @@ describe("composerKeyAction", () => {
     ).toBeNull();
   });
 
-  it("stops a streaming answer on Escape", () => {
+  it("stops a streaming answer on Escape, and minimizes otherwise", () => {
     expect(composerKeyAction(key({ key: "Escape" }), { streaming: true })).toBe(
       "stop",
     );
     expect(
       composerKeyAction(key({ key: "Escape" }), { streaming: false }),
+    ).toBe("minimize");
+  });
+
+  it("sends once while Enter is held, without adding lines", () => {
+    expect(composerKeyAction(key({ repeat: true }), { streaming: false })).toBe(
+      "hold",
+    );
+    expect(
+      composerKeyAction(key({ repeat: true, shiftKey: true }), {
+        streaming: false,
+      }),
+    ).toBeNull();
+  });
+
+  it("ignores a held Escape", () => {
+    expect(
+      composerKeyAction(key({ key: "Escape", repeat: true }), {
+        streaming: true,
+      }),
+    ).toBeNull();
+    expect(
+      composerKeyAction(key({ key: "Escape", repeat: true }), {
+        streaming: false,
+      }),
     ).toBeNull();
   });
 

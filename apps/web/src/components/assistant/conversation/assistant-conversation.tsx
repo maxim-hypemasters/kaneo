@@ -1,6 +1,8 @@
 import {
+  type Dispatch,
   type ReactNode,
   type RefObject,
+  type SetStateAction,
   useMemo,
   useRef,
   useState,
@@ -30,7 +32,12 @@ type AssistantConversationProps = {
   chatId: string | null;
   model: string | null;
   turn: AssistantTurn;
+  /** The composer's unsent text (see useComposerDraft). */
+  text: string;
+  onTextChange: Dispatch<SetStateAction<string>>;
   onNewChat: () => void;
+  /** Escape in the composer while nothing streams. */
+  onMinimize?: () => void;
   /** The composer's textarea, for a parent that moves focus to it. */
   composerRef?: RefObject<HTMLTextAreaElement | null>;
 };
@@ -41,23 +48,17 @@ export function AssistantConversation({
   chatId,
   model,
   turn,
+  text,
+  onTextChange: setText,
   onNewChat,
+  onMinimize,
   composerRef,
 }: AssistantConversationProps) {
   const { t } = useTranslation();
-  const [text, setText] = useState("");
   const [pinKey, setPinKey] = useState(0);
   const ownTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const textareaRef = composerRef ?? ownTextareaRef;
   const rootRef = useRef<HTMLDivElement | null>(null);
-
-  // A new chat that just got its id keeps what is being typed; switching to
-  // another chat starts with an empty composer.
-  const [shownChatId, setShownChatId] = useState(chatId);
-  if (shownChatId !== chatId) {
-    setShownChatId(chatId);
-    if (!(shownChatId === null && chatId === turn.chatId)) setText("");
-  }
 
   const streamingHere =
     turn.isActive &&
@@ -256,6 +257,7 @@ export function AssistantConversation({
         }
         pendingCount={streamingHere ? 0 : (detail?.pendingCount ?? 0)}
         textareaRef={textareaRef}
+        onMinimize={onMinimize}
       />
     </div>
   );

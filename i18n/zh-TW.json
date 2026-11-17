@@ -4790,7 +4790,14 @@
 				"keyRejected": "OpenRouter rejected the workspace's key, so answers may fail.",
 				"outOfCredits": "The workspace's OpenRouter key is out of credits, so answers may fail.",
 				"updateKey": "Update key"
-			}
+			},
+			"bar": {
+				"answering": "Answering…",
+				"open": "Open the assistant",
+				"pending_other": "{{count}} changes waiting",
+				"placeholder": "Ask about your work…"
+			},
+			"minimize": "Minimize"
 		}
 	},
 	"team": {

@@ -1,20 +1,11 @@
-import { MessagesSquareIcon, SparklesIcon } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import { useAssistantTurn } from "@/hooks/use-assistant-turn";
-import { cn } from "@/lib/cn";
-import { AssistantConversation } from "../conversation/assistant-conversation";
-import {
-  AssistantHistory,
-  type AssistantHistoryHandle,
-} from "../history/assistant-history";
-import { AssistantKeyWarning } from "./assistant-key-warning";
-
-export type SelectChatOptions = { replace?: boolean };
-
-// Below lg one pane shows at a time; focus follows the pane that appears.
-type FocusAfterToggle = "history" | "chats-button" | "composer";
+import { useComposerDraft } from "../conversation/use-composer-draft";
+import { AssistantBar } from "./assistant-bar";
+import { AssistantChatWindow } from "./assistant-chat-window";
+import { readMinimized, writeMinimized } from "./minimized-assistant";
+import type { SelectChatOptions } from "./select-chat-options";
 
 type AssistantChatCardProps = {
   workspaceId: string;
@@ -27,9 +18,12 @@ type AssistantChatCardProps = {
 };
 
 /**
- * The conversation with its chat history beside it (one at a time below
- * lg). It owns the streaming turn, above everything keyed by chat id, so a
- * new chat getting its id and the URL following never interrupts it.
+ * The assistant on Home: a bar that opens into the chat, and minimizes back
+ * to it. It starts open on a link to a chat, unless it was minimized in this
+ * tab. It owns the streaming turn and the composer's text, above everything
+ * keyed by chat id and above the open chat, so neither a new chat getting its
+ * id (and the URL following) nor minimizing interrupts an answer or loses
+ * what is being typed.
  */
 export function AssistantChatCard({
   workspaceId,
@@ -42,28 +36,38 @@ export function AssistantChatCard({
 }: AssistantChatCardProps) {
   const { t } = useTranslation();
   const headingId = useId();
-  const historyId = useId();
-  const [showHistory, setShowHistory] = useState(false);
-  const chatIdRef = useRef(chatId);
-  chatIdRef.current = chatId;
-  const historyRef = useRef<AssistantHistoryHandle>(null);
-  const chatsButtonRef = useRef<HTMLButtonElement>(null);
+  const windowId = useId();
+  const [expanded, setExpanded] = useState(
+    () => chatId !== null && !readMinimized(workspaceId),
+  );
+  // The open chat, for callbacks that land later. Undefined once Home is
+  // gone, so a chat created or deleted meanwhile doesn't navigate back to it.
+  const chatIdRef = useRef<string | null | undefined>(chatId);
+  useLayoutEffect(() => {
+    chatIdRef.current = chatId;
+    return () => {
+      chatIdRef.current = undefined;
+    };
+  }, [chatId]);
+  const barRef = useRef<HTMLButtonElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
-  const focusAfterToggle = useRef<FocusAfterToggle | null>(null);
+  const focusAfterToggle = useRef<"bar" | "composer" | null>(null);
 
-  // Runs once the pane that was hidden is shown, so it can take focus.
-  useEffect(() => {
+  // Runs once the bar or the chat has replaced the other, so it can take
+  // focus before the next key press: typing on the bar carries on in the
+  // composer.
+  useLayoutEffect(() => {
     const target = focusAfterToggle.current;
     focusAfterToggle.current = null;
-    if (target === "history") historyRef.current?.focus();
-    else if (target === "chats-button") chatsButtonRef.current?.focus();
-    else if (target === "composer") composerRef.current?.focus();
-  }, [showHistory]);
-
-  const toggleHistory = (show: boolean, focus: FocusAfterToggle) => {
-    focusAfterToggle.current = focus;
-    setShowHistory(show);
-  };
+    if (target === "bar") barRef.current?.focus();
+    else if (target === "composer") {
+      const composer = composerRef.current;
+      if (!composer) return;
+      composer.focus();
+      // Typing goes on after the text already there.
+      composer.setSelectionRange(composer.value.length, composer.value.length);
+    }
+  }, [expanded]);
 
   const turn = useAssistantTurn({
     workspaceId,
@@ -72,75 +76,61 @@ export function AssistantChatCard({
       if (chatIdRef.current === null) onSelectChat(id, { replace: true });
     },
   });
+  const [text, setText] = useComposerDraft(chatId, turn.chatId);
 
-  const selectChat = (id: string | null) => {
-    if (showHistory) toggleHistory(false, "composer");
-    if (id !== chatId) onSelectChat(id);
+  const expand = () => {
+    writeMinimized(workspaceId, false);
+    focusAfterToggle.current = "composer";
+    setExpanded(true);
+  };
+  const minimize = () => {
+    writeMinimized(workspaceId, true);
+    focusAfterToggle.current = "bar";
+    setExpanded(false);
+  };
+  // Also once the chat was minimized while its deletion was on its way.
+  const leaveDeletedChat = (id: string) => {
+    if (id === chatIdRef.current) onSelectChat(null, { replace: true });
   };
 
-  return (
-    <section
-      aria-labelledby={headingId}
-      className="flex h-[min(40rem,72vh)] min-h-80 overflow-hidden rounded-xl border bg-card shadow-xs/5"
-    >
-      <div
-        className={cn(
-          "flex min-w-0 flex-1 flex-col",
-          showHistory && "max-lg:hidden",
-        )}
-      >
-        <div className="flex h-12 shrink-0 items-center gap-2 border-border/60 border-b px-4">
-          <SparklesIcon
-            aria-hidden="true"
-            className="size-4 text-muted-foreground"
-          />
-          <h2
-            id={headingId}
-            className="flex-1 font-semibold text-foreground text-sm"
-          >
-            {t("workspace:assistant.title")}
-          </h2>
-          <Button
-            ref={chatsButtonRef}
-            variant="ghost"
-            size="xs"
-            className="lg:hidden"
-            aria-expanded={showHistory}
-            aria-controls={historyId}
-            onClick={() => toggleHistory(true, "history")}
-          >
-            <MessagesSquareIcon aria-hidden="true" />
-            {t("workspace:assistant.chats")}
-          </Button>
-        </div>
-        {warning ? (
-          <AssistantKeyWarning reason={warning} canManage={canManage} />
-        ) : null}
-        <AssistantConversation
+  // One section in either state, so the assistant stays a landmark with a
+  // heading while minimized.
+  if (!expanded) {
+    return (
+      <section aria-labelledby={headingId}>
+        <h2 id={headingId} className="sr-only">
+          {t("workspace:assistant.title")}
+        </h2>
+        <AssistantBar
+          ref={barRef}
           workspaceId={workspaceId}
-          workspaceSlug={workspaceSlug}
           chatId={chatId}
-          model={model}
-          turn={turn}
-          onNewChat={() => selectChat(null)}
-          composerRef={composerRef}
+          controlsId={windowId}
+          answering={turn.isActive}
+          onOpen={expand}
         />
-      </div>
-      <AssistantHistory
-        ref={historyRef}
-        id={historyId}
+      </section>
+    );
+  }
+
+  return (
+    <section aria-labelledby={headingId}>
+      <AssistantChatWindow
+        id={windowId}
+        headingId={headingId}
         workspaceId={workspaceId}
-        selectedChatId={chatId}
-        onSelect={selectChat}
-        onNewChat={() => selectChat(null)}
-        onBack={() => toggleHistory(false, "chats-button")}
-        onDeleted={(id) => {
-          if (id === chatIdRef.current) onSelectChat(null, { replace: true });
-        }}
-        className={cn(
-          "w-full shrink-0 border-border/60 lg:flex lg:w-64 lg:border-l",
-          !showHistory && "max-lg:hidden",
-        )}
+        workspaceSlug={workspaceSlug}
+        chatId={chatId}
+        model={model}
+        warning={warning}
+        canManage={canManage}
+        turn={turn}
+        text={text}
+        onTextChange={setText}
+        composerRef={composerRef}
+        onSelectChat={onSelectChat}
+        onChatDeleted={leaveDeletedChat}
+        onMinimize={minimize}
       />
     </section>
   );

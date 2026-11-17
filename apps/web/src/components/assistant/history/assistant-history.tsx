@@ -55,16 +55,14 @@ export function AssistantHistory({
     [],
   );
   const chatsQuery = useAssistantChats(workspaceId);
-  const deleteChat = useDeleteAssistantChat(workspaceId);
+  const deleteChat = useDeleteAssistantChat(workspaceId, { onDeleted });
   const [deleteTarget, setDeleteTarget] = useState<AssistantChatSummary | null>(
     null,
   );
   const chats = chatsQuery.data?.pages.flatMap((page) => page.chats) ?? [];
 
   const confirmDelete = () => {
-    if (!deleteTarget) return;
-    const chatId = deleteTarget.id;
-    deleteChat.mutate(chatId, { onSuccess: () => onDeleted(chatId) });
+    if (deleteTarget) deleteChat.mutate(deleteTarget.id);
   };
 
   let list: ReactNode;

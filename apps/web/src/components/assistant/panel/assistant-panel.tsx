@@ -1,11 +1,9 @@
 import { useAssistantStatus } from "@/hooks/queries/assistant/use-assistant-status";
 import useGetConfig from "@/hooks/queries/config/use-get-config";
 import useActiveWorkspace from "@/hooks/queries/workspace/use-active-workspace";
-import {
-  AssistantChatCard,
-  type SelectChatOptions,
-} from "./assistant-chat-card";
+import { AssistantChatCard } from "./assistant-chat-card";
 import { AssistantSetupCard } from "./assistant-setup-card";
+import type { SelectChatOptions } from "./select-chat-options";
 
 type AssistantPanelProps = {
   workspaceId: string;

@@ -4599,6 +4599,14 @@
 			"newChat": "New chat",
 			"chats": "Chats",
 			"backToChat": "Back to chat",
+			"minimize": "Minimize",
+			"bar": {
+				"placeholder": "Ask about your work…",
+				"open": "Open the assistant",
+				"answering": "Answering…",
+				"pending_one": "{{count}} change waiting",
+				"pending_other": "{{count}} changes waiting"
+			},
 			"setup": {
 				"title": "Ask the assistant about your work",
 				"description": "Connect an OpenRouter key so everyone in the workspace can ask about Features, tasks, bugs, documents and releases right here.",

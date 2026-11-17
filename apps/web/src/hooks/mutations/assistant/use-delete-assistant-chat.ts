@@ -6,8 +6,20 @@ import { assistantKeys } from "@/hooks/queries/assistant/assistant-keys";
 import { HttpError } from "@/lib/http-error";
 import { toast } from "@/lib/toast";
 
+type Options = {
+  /**
+   * The chat is gone. It runs even when the list that deleted it unmounted
+   * meanwhile (Home's chat minimized), which a callback passed to `mutate`
+   * would not.
+   */
+  onDeleted?: (chatId: string) => void;
+};
+
 // Deletes one of the caller's chats. Refused (409) while it is answering.
-export function useDeleteAssistantChat(workspaceId: string) {
+export function useDeleteAssistantChat(
+  workspaceId: string,
+  { onDeleted }: Options = {},
+) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -23,6 +35,7 @@ export function useDeleteAssistantChat(workspaceId: string) {
       toast.success(t("workspace:assistant.history.deleted"), {
         icon: Trash2Icon,
       });
+      onDeleted?.(chatId);
     },
     onError: (error) => {
       toast.error(

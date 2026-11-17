@@ -66,6 +66,8 @@ export function useDecideAssistantActions(
   const chatKey = (chatId: string) => assistantKeys.chat(workspaceId, chatId);
 
   return useMutation({
+    // Read by useDecisionsInFlight.
+    mutationKey: assistantKeys.decide(workspaceId),
     mutationFn: ({ chatId, decisions }: DecideVariables) =>
       decideAssistantActions(workspaceId, chatId, { decisions }),
     // A fetch of the chat from before the decision would land after it and

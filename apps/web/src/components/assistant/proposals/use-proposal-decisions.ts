@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useDecideAssistantActions } from "@/hooks/mutations/assistant/use-decide-assistant-actions";
+import { useDecisionsInFlight } from "@/hooks/mutations/assistant/use-decisions-in-flight";
 
 // Mirrors MAX_DECISIONS in apps/api/src/assistant/constants.ts. A step
 // proposes at most as many, so Approve all covers every waiting card.
@@ -15,16 +16,17 @@ export function useProposalDecisions(
   options: { onResumable?: (chatId: string) => void },
 ) {
   const mutation = useDecideAssistantActions(workspaceId, options);
+  const inFlight = useDecisionsInFlight(workspaceId);
   const [justDecided, setJustDecided] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
-  const variables = mutation.isPending ? mutation.variables : undefined;
-  const decidingHere = variables !== undefined && variables.chatId === chatId;
-  const onTheirWay = decidingHere ? variables.decisions : [];
+  const variables = inFlight.find((decision) => decision.chatId === chatId);
+  const decidingHere = variables !== undefined;
+  const onTheirWay = variables?.decisions ?? [];
 
   return {
     /** A decision is on its way, in this chat or another one. */
-    anyDeciding: mutation.isPending,
+    anyDeciding: inFlight.length > 0,
     /** A decision on this chat's changes is on its way. */
     decidingHere,
     /** Decisions on their way, by message id: true approves, false rejects. */

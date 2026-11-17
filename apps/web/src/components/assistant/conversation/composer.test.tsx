@@ -54,6 +54,15 @@ describe("Composer", () => {
     expect(onSend).toHaveBeenCalledTimes(2);
   });
 
+  it("sends nothing while Enter is held, nor adds lines", () => {
+    const { onSend, textarea } = renderComposer();
+    // false: the key's default (a new line) was prevented.
+    expect(fireEvent.keyDown(textarea, { key: "Enter", repeat: true })).toBe(
+      false,
+    );
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
   it("keeps Shift+Enter and IME composition for the text", () => {
     const { onSend, textarea } = renderComposer();
     fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
@@ -98,6 +107,22 @@ describe("Composer", () => {
 
     fireEvent.keyDown(textarea, { key: "Enter" });
     expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it("minimizes on Escape only while nothing streams", () => {
+    const onMinimize = vi.fn();
+    const { onStop, textarea, rerender } = renderComposer({ onMinimize });
+    fireEvent.keyDown(textarea, { key: "Escape" });
+    expect(onMinimize).toHaveBeenCalledTimes(1);
+
+    // An IME's Escape cancels its composition.
+    fireEvent.keyDown(textarea, { key: "Escape", isComposing: true });
+    expect(onMinimize).toHaveBeenCalledTimes(1);
+
+    rerender({ streaming: true });
+    fireEvent.keyDown(textarea, { key: "Escape" });
+    expect(onStop).toHaveBeenCalledTimes(1);
+    expect(onMinimize).toHaveBeenCalledTimes(1);
   });
 
   it("keeps focus on the button as it turns into Stop and back", () => {

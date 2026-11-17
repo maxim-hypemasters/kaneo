@@ -19378,6 +19378,43 @@
 						"backToChat": {
 							"type": "string"
 						},
+						"minimize": {
+							"type": "string"
+						},
+						"bar": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"placeholder": {
+									"type": "string"
+								},
+								"open": {
+									"type": "string"
+								},
+								"answering": {
+									"type": "string"
+								},
+								"pending_one": {
+									"type": "string"
+								},
+								"pending_zero": {
+									"type": "string"
+								},
+								"pending_two": {
+									"type": "string"
+								},
+								"pending_few": {
+									"type": "string"
+								},
+								"pending_many": {
+									"type": "string"
+								},
+								"pending_other": {
+									"type": "string"
+								}
+							},
+							"required": ["placeholder", "open", "answering"]
+						},
 						"setup": {
 							"type": "object",
 							"additionalProperties": false,
@@ -20553,6 +20590,8 @@
 						"newChat",
 						"chats",
 						"backToChat",
+						"minimize",
+						"bar",
 						"setup",
 						"warning",
 						"empty",

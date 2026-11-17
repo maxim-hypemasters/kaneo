@@ -16,6 +16,7 @@ const composerKey = (event: KeyboardEvent): ComposerKey => ({
   altKey: event.altKey,
   isComposing: event.nativeEvent.isComposing,
   keyCode: event.keyCode,
+  repeat: event.repeat,
 });
 
 type ComposerProps = {
@@ -30,6 +31,8 @@ type ComposerProps = {
   /** Proposed changes a new message would skip. */
   pendingCount?: number;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
+  /** Escape while nothing streams: puts the chat away. */
+  onMinimize?: () => void;
 };
 
 export function Composer({
@@ -41,6 +44,7 @@ export function Composer({
   canSend,
   pendingCount = 0,
   textareaRef,
+  onMinimize,
 }: ComposerProps) {
   const { t, i18n } = useTranslation();
   const hintId = useId();
@@ -73,11 +77,17 @@ export function Composer({
         event.preventDefault();
         submit();
       }}
-      // Escape stops from the text and from the Stop button alike.
+      // Escape stops from the text and from the Stop button alike, and
+      // minimizes the chat once nothing streams.
       onKeyDown={(event) => {
-        if (composerKeyAction(composerKey(event), { streaming }) === "stop") {
+        if (event.defaultPrevented) return;
+        const action = composerKeyAction(composerKey(event), { streaming });
+        if (action === "stop") {
           event.preventDefault();
           onStop();
+        } else if (action === "minimize" && onMinimize) {
+          event.preventDefault();
+          onMinimize();
         }
       }}
     >
@@ -88,11 +98,12 @@ export function Composer({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
-            if (
-              composerKeyAction(composerKey(event), { streaming }) === "send"
-            ) {
+            const action = composerKeyAction(composerKey(event), {
+              streaming,
+            });
+            if (action === "send" || action === "hold") {
               event.preventDefault();
-              submit();
+              if (action === "send") submit();
             }
           }}
           placeholder={t("workspace:assistant.composer.placeholder")}
