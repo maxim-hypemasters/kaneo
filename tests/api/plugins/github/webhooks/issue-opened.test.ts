@@ -76,6 +76,11 @@ vi.mock("../../../../../apps/api/src/database", () => ({
   default: mocks.mockDb,
 }));
 
+// No triage members; triage routing is covered by the PostgreSQL triage tests.
+vi.mock("../../../../../apps/api/src/triage/read-triage-members", () => ({
+  readTriageRouting: async () => ({ triageEnabled: false, isMember: false }),
+}));
+
 vi.mock("../../../../../apps/api/src/plugins/github/utils/github-app", () => ({
   getGithubApp: () => mocks.mockGetGithubApp(),
 }));
