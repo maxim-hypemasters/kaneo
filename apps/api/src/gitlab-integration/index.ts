@@ -350,7 +350,7 @@ const gitlabIntegration = apiRouter<BaseVariables & { workspaceId: string }>()
   })
   .openapi(importIssuesRoute, async (c) => {
     const { projectId } = c.req.valid("json");
-    const result = await importGitlabIssues(projectId);
+    const result = await importGitlabIssues(projectId, c.get("userId"));
     return c.json(result, 200);
   });
 

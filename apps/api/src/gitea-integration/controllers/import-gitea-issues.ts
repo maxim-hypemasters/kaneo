@@ -1,7 +1,7 @@
 import { acceptsIssue } from "../../plugins/sync/rules";
 import { canSyncTask } from "../../plugins/sync/eligibility";
 import { sameConfig } from "../../plugins/sync/same-config";
-import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
@@ -39,6 +39,12 @@ import {
   linkedTaskScope,
   withIntegrationTask,
 } from "../../plugins/github/services/integration-task-scope";
+import { readTriageRouting } from "../../triage/read-triage-members";
+import {
+  routeImportedIssue,
+  type TriageRouting,
+} from "../../triage/route-imported-issue";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
 
 type ImportResult = {
   imported: number;
@@ -55,6 +61,7 @@ function toPriorityLabels(labels: GiteaLabel[]): LabelLike[] {
 
 export async function importGiteaIssues(
   projectId: string,
+  userId?: string,
 ): Promise<ImportResult> {
   const errors: string[] = [];
   let imported = 0;
@@ -128,6 +135,7 @@ export async function importGiteaIssues(
     page++;
   }
 
+  const triage = await readTriageRouting(projectId, userId);
   for (const issue of allIssues) {
     try {
       const result = await importSingleIssue(
@@ -137,6 +145,7 @@ export async function importGiteaIssues(
         project.workspaceId,
         config,
         client,
+        triage,
       );
 
       if (result === "imported") {
@@ -208,6 +217,7 @@ async function importSingleIssue(
   workspaceId: string,
   config: GiteaConfig,
   client: ReturnType<typeof createGiteaClient>,
+  triage: TriageRouting,
 ): Promise<"imported" | "updated" | "skipped"> {
   const existingLink = await findExternalLink(
     integrationId,
@@ -252,7 +262,9 @@ async function importSingleIssue(
         };
 
         if (priority) updateData.priority = priority;
-        if (status) updateData.status = status;
+        // Status labels don't move work out of Triage.
+        if (status)
+          updateData.status = sql`case when ${taskTable.status} = ${TRIAGE_STATUS} then ${taskTable.status} else ${status} end`;
 
         await database
           .update(taskTable)
@@ -312,7 +324,11 @@ async function importSingleIssue(
         userId: null,
         title: issue.title,
         description: formatTaskDescriptionFromIssue(issue.body),
-        status: status || "to-do",
+        status: routeImportedIssue(
+          triage,
+          issue.state === "open",
+          status || "to-do",
+        ),
         priority: priority ?? "low",
         number: nextNumber,
       };

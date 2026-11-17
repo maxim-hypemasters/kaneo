@@ -2,7 +2,7 @@ import { responseTimestamp, z } from "../openapi";
 import { taskTypeSchema } from "../task/response";
 
 const activityTypeDescription =
-  "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null.";
+  "One of: comment, task, create, status_changed, triage_accepted and triage_declined (a triage member accepted or declined new work; same { oldStatus, newStatus } payload as status_changed), priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null.";
 
 export const activitySchema = z
   .object({

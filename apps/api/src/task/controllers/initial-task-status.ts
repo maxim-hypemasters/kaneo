@@ -1,6 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { columnTable } from "../../database/schema";
 import type { TaskCreationTransaction } from "./create-task-in-transaction";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
 
 export async function initialTaskStatus(
   tx: TaskCreationTransaction,
@@ -20,6 +21,7 @@ export async function initialTaskStatus(
         !column.isFinal &&
         column.slug !== "planned" &&
         column.slug !== "archived" &&
+        column.slug !== TRIAGE_STATUS &&
         slugCounts.get(column.slug) === 1,
     )?.slug ?? "planned"
   );

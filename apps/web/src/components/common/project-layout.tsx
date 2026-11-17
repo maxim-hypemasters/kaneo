@@ -77,24 +77,28 @@ export default function ProjectLayout({
     activeView ??
     (location.pathname.includes("/backlog")
       ? "backlog"
-      : location.pathname.includes("/features")
-        ? "features"
-        : location.pathname.includes("/releases")
-          ? "releases"
-          : location.pathname.includes("/calendar")
-            ? "calendar"
-            : location.pathname.includes("/gantt")
-              ? "gantt"
-              : "board");
+      : location.pathname.includes("/triage")
+        ? "triage"
+        : location.pathname.includes("/features")
+          ? "features"
+          : location.pathname.includes("/releases")
+            ? "releases"
+            : location.pathname.includes("/calendar")
+              ? "calendar"
+              : location.pathname.includes("/gantt")
+                ? "gantt"
+                : "board");
   const isHome = page === "home";
   const resolvedRoute: ProjectRoute = isHome ? "board" : page;
   const currentView = resolveProjectView(resolvedRoute, viewMode);
+  // The header menu belongs to the task views and the backlog; the project
+  // page, Features, and Releases bring their own actions.
+  const isTaskView = !isHome && isTaskLayoutView(currentView);
+  // Triage creates tasks and bugs too; they follow the normal routing.
   const createTypes =
-    !isHome && isTaskLayoutView(currentView)
-      ? TASK_VIEW_CREATE_TYPES
-      : undefined;
+    isTaskView || page === "triage" ? TASK_VIEW_CREATE_TYPES : undefined;
   const showCreate =
-    resolvedRoute !== "releases" &&
+    (isTaskView || page === "backlog" || page === "triage") &&
     Boolean(project) &&
     (createTypes
       ? createTypes.some((type) => canWorkItem(type, "create"))

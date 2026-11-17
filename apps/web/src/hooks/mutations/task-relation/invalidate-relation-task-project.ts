@@ -15,7 +15,8 @@ export function invalidateRelationTaskProject(
           column.tasks.some((task) => task.id === taskId),
         ) ||
         project?.plannedTasks?.some((task) => task.id === taskId) ||
-        project?.archivedTasks?.some((task) => task.id === taskId),
+        project?.archivedTasks?.some((task) => task.id === taskId) ||
+        project?.triageTasks?.some((task) => task.id === taskId),
       );
     },
   });

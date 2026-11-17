@@ -30,6 +30,12 @@ export function statusDot(
   return { text: ui.glyphs.dot, style: statusStyle(ui, slug, isFinal) };
 }
 
+export const VIRTUAL_STATUS_LABELS: Readonly<Record<string, string>> = {
+  planned: "Planned",
+  archived: "Archived",
+  triage: "Triage",
+};
+
 export const PRIORITY_LABELS: Readonly<Record<string, string>> = {
   urgent: "Urgent",
   high: "High",

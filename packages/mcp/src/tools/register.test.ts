@@ -103,7 +103,7 @@ describe("registerTools", () => {
 
     registerTools(server as never, { client: { json: vi.fn() } as never });
 
-    expect(tools.size).toBe(81);
+    expect(tools.size).toBe(83);
     for (const [name, { config }] of tools) {
       const isRead =
         name === "whoami" ||

@@ -23,6 +23,8 @@ import { claimTaskNumber } from "./claim-task-numbers";
 import { preserveImportedPlanning } from "../transfers/feature-planning";
 import { nextTaskPosition } from "./next-task-position";
 import type { TaskType } from "../task-type";
+import { readTriageRouting } from "../../triage/read-triage-members";
+import { routeCreationStatus, TRIAGE_STATUS } from "../../triage/triage-status";
 
 export type ImportTask = ImportedScheduleFields & {
   estimateSeconds?: number | null;
@@ -68,7 +70,11 @@ async function importTasks(
     projectId,
   );
 
-  const validStatuses = await getValidTaskStatuses(projectId);
+  // An exported Triage status is not kept: imported work is routed afresh.
+  const validStatuses = (await getValidTaskStatuses(projectId)).filter(
+    (status) => status !== TRIAGE_STATUS,
+  );
+  const triage = await readTriageRouting(projectId, currentUserId);
 
   const results = [];
 
@@ -89,10 +95,15 @@ async function importTasks(
     }
 
     try {
-      const { status, warning: statusWarning } = coerceStatus(
+      const { status: importedStatus, warning: statusWarning } = coerceStatus(
         taskData.status ?? "planned",
         validStatuses,
       );
+      const status = routeCreationStatus({
+        type: taskData.type ?? "task",
+        requested: importedStatus,
+        ...triage,
+      });
       const { priority, warning: priorityWarning } = coercePriority(
         taskData.priority || "low",
       );
@@ -147,6 +158,7 @@ async function importTasks(
                 : null,
             number: taskNumber,
             position,
+            createdBy: currentUserId ?? null,
           })
           .returning();
 

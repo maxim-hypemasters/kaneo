@@ -96,6 +96,7 @@ async function getProjects(
     statistics: statisticsByProject.get(project.id) ?? EMPTY_STATISTICS,
     archivedTasks: [],
     plannedTasks: [],
+    triageTasks: [],
     columns: [],
   }));
 }

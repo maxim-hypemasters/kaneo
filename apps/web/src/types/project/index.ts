@@ -16,7 +16,11 @@ type ProjectWithTasksRaw = TasksApiResponse["data"];
 
 export type ProjectWithTasks = Omit<
   ProjectWithTasksRaw,
-  "archivedTasks" | "backgroundVersion" | "columns" | "plannedTasks"
+  | "archivedTasks"
+  | "backgroundVersion"
+  | "columns"
+  | "plannedTasks"
+  | "triageTasks"
 > & {
   // Older cache fixtures and persisted query data predate board backgrounds.
   backgroundVersion?: string | null;
@@ -27,4 +31,6 @@ export type ProjectWithTasks = Omit<
     }
   >;
   plannedTasks: Task[];
+  // Optional while older cache fixtures and persisted data predate Triage.
+  triageTasks?: Task[];
 };

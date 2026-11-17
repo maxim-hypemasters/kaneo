@@ -10,6 +10,7 @@ import { useUpdateTaskStatus } from "@/hooks/mutations/task/use-update-task-stat
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { toast } from "@/lib/toast";
+import { TRIAGE_STATUS } from "@/lib/triage/triage-status";
 import type Task from "@/types/task";
 import { statusMenuOptions } from "./menus/status-menu-options";
 
@@ -32,7 +33,9 @@ export default function TaskStatusPopover({
   const { mutateAsync: updateTaskStatus } = useUpdateTaskStatus();
   const { canWorkItem } = useWorkspacePermission();
 
-  if (!canWorkItem(task.type, "update")) return <>{children}</>;
+  // Work in Triage leaves it only through Accept or Decline.
+  if (!canWorkItem(task.type, "update") || task.status === TRIAGE_STATUS)
+    return <>{children}</>;
 
   const changeStatus = async (status: string) => {
     setOpen(false);

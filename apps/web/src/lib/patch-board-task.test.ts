@@ -209,3 +209,29 @@ it("applies a leaf classification change and clears reported Feature membership"
     labels: [{ id: "label" }],
   });
 });
+
+describe("triage on the board", () => {
+  it("keeps work waiting in Triage in its own bucket, and moves it out on accept", () => {
+    const reported = patchBoardTask(board(), "t", {
+      id: "t",
+      projectId: "p",
+      type: "bug",
+      status: "triage",
+      title: "Broken",
+    });
+    expect(reported?.triageTasks?.map((task) => task.id)).toEqual(["t"]);
+    expect(reported?.plannedTasks).toHaveLength(0);
+    expect(
+      reported?.columns.flatMap((column) =>
+        column.tasks.map((task) => task.id),
+      ),
+    ).toEqual(["a"]);
+
+    const accepted = patchBoardTask(reported!, "t", {
+      projectId: "p",
+      status: "todo",
+    });
+    expect(accepted?.triageTasks).toHaveLength(0);
+    expect(accepted?.columns[0].tasks.map((task) => task.id)).toContain("t");
+  });
+});

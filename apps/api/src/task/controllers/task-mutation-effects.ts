@@ -59,6 +59,8 @@ export async function publishTaskMutation(
     assigneeName?: string | null;
     sourceIntegrationId?: string;
     keepRemovedAssets?: boolean;
+    // Records the status change as this activity instead of status_changed.
+    statusActivityType?: string;
   } = {},
 ) {
   const changed = (field: keyof Changes) =>
@@ -79,7 +81,7 @@ export async function publishTaskMutation(
       oldStatus: before.status,
       newStatus: after.status,
       assigneeId: after.userId,
-      type: "status_changed",
+      type: options.statusActivityType ?? "status_changed",
     });
   }
   const columnChanged =

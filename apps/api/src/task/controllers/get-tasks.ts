@@ -32,6 +32,7 @@ import {
 } from "../description-pages";
 import { taskIsCompleted } from "../task-is-completed";
 import { getSubtaskCounts } from "../get-subtask-counts";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
 
 export type GetTasksOptions = {
   type?: typeof taskTable.$inferSelect.type;
@@ -129,6 +130,9 @@ async function getTasksPage(
   ];
 
   if (options.type) conditions.push(eq(taskTable.type, options.type));
+  // Unreviewed reports stay private until a triage member accepts them.
+  if (options.publicOnly)
+    conditions.push(sql`${taskTable.status} <> ${TRIAGE_STATUS}`);
 
   for (const key of ["featureId", "milestoneId"] as const) {
     const value = options[key];
@@ -218,6 +222,9 @@ async function getTasksPage(
     scheduleSource: taskScheduleSource,
     position: taskTable.position,
     createdAt: taskTable.createdAt,
+    createdBy: options.publicOnly
+      ? sql<string | null>`null`
+      : taskTable.createdBy,
     userId: taskTable.userId,
     assigneeName: userTable.name,
     assigneeId: userTable.id,
@@ -336,6 +343,7 @@ async function getTasksPage(
     (status) =>
       status !== "planned" &&
       status !== "archived" &&
+      status !== TRIAGE_STATUS &&
       !projectColumns.some((column) => column.slug === status),
   );
   if (missingStatuses.length) {
@@ -463,14 +471,18 @@ async function getTasksPage(
       })),
   }));
 
+  const decorate = (task: (typeof paginatedTasks)[number]) => ({
+    ...task,
+    subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },
+    labels: taskLabelsMap.get(task.id) || [],
+    externalLinks: taskExternalLinksMap.get(task.id) || [],
+  });
   const archivedTasks = paginatedTasks
     .filter((task) => task.status === "archived")
-    .map((task) => ({
-      ...task,
-      subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },
-      labels: taskLabelsMap.get(task.id) || [],
-      externalLinks: taskExternalLinksMap.get(task.id) || [],
-    }));
+    .map(decorate);
+  const triageTasks = paginatedTasks
+    .filter((task) => task.status === TRIAGE_STATUS)
+    .map(decorate);
 
   // Legacy work can outlive its workflow column. Keep it discoverable without
   // changing its stored status or inventing a workflow column.
@@ -481,14 +493,10 @@ async function getTasksPage(
     .filter(
       (task) =>
         task.status !== "archived" &&
+        task.status !== TRIAGE_STATUS &&
         (task.status === "planned" || !representedStatuses.has(task.status)),
     )
-    .map((task) => ({
-      ...task,
-      subtaskCounts: subtaskCounts.get(task.id) ?? { completed: 0, total: 0 },
-      labels: taskLabelsMap.get(task.id) || [],
-      externalLinks: taskExternalLinksMap.get(task.id) || [],
-    }));
+    .map(decorate);
 
   return {
     data: {
@@ -504,6 +512,7 @@ async function getTasksPage(
       columns,
       archivedTasks,
       plannedTasks,
+      triageTasks,
     },
     pagination: {
       total,

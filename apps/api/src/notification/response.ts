@@ -12,7 +12,7 @@ export const notificationSchema = z
     }),
     type: z.string().openapi({
       description:
-        "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment.",
+        "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason).",
     }),
     eventData: z.unknown().openapi({
       description:

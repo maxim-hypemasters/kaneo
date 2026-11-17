@@ -49,6 +49,13 @@ import {
   importProgress,
   initialImportState,
 } from "../import-state";
+import { readTriageRouting } from "../../triage/read-triage-members";
+import {
+  keepsTriage,
+  routeImportedIssue,
+  type TriageRouting,
+} from "../../triage/route-imported-issue";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
 
 type ImportEvent = "task.updated" | "task.labels_updated" | "comment.updated";
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -58,8 +65,9 @@ async function resolveImportedStatus(
   requested: string | null,
   current?: string,
 ) {
+  if (keepsTriage(current)) return { status: TRIAGE_STATUS, columnId: null };
   for (const status of [requested, current, "to-do"]) {
-    if (!status) continue;
+    if (!status || status === TRIAGE_STATUS) continue;
     const column = await tx.query.columnTable.findFirst({
       where: and(
         eq(columnTable.projectId, projectId),
@@ -77,6 +85,18 @@ async function resolveImportedStatus(
     columns: { id: true, slug: true },
   });
   return { status: first?.slug ?? "planned", columnId: first?.id ?? null };
+}
+async function routedImportStatus(
+  tx: Transaction,
+  projectId: string,
+  requested: string | null,
+  triage: TriageRouting,
+  open: boolean,
+) {
+  const resolved = await resolveImportedStatus(tx, projectId, requested);
+  return routeImportedIssue(triage, open, resolved.status) === TRIAGE_STATUS
+    ? { status: TRIAGE_STATUS, columnId: null }
+    : resolved;
 }
 function readConfig(integration: typeof integrationTable.$inferSelect) {
   if (!integration.isActive)
@@ -104,7 +124,11 @@ function conflict() {
   });
 }
 
-export async function importIssues(projectId: string, runId?: string) {
+export async function importIssues(
+  projectId: string,
+  runId?: string,
+  userId?: string,
+) {
   return withGithubImportLock(projectId, async () => {
     const project = await db.query.projectTable.findFirst({
       where: eq(projectTable.id, projectId),
@@ -237,6 +261,7 @@ export async function importIssues(projectId: string, runId?: string) {
         )
           throw conflict();
         const state = structuredClone(currentRun.state);
+        const triage = await readTriageRouting(project.id, userId, tx);
         await applyPage(
           tx,
           payload,
@@ -250,6 +275,7 @@ export async function importIssues(projectId: string, runId?: string) {
           },
           admitted,
           scopeLabels,
+          triage,
         );
         const [saved] = await tx
           .update(githubImportTable)
@@ -314,6 +340,7 @@ async function applyPage(
   announce: (taskId: string, ...types: ImportEvent[]) => void,
   admitted = true,
   scopeLabels: unknown = [],
+  triage: TriageRouting = { triageEnabled: false, isMember: false },
 ) {
   if (state.phase === "issues") {
     const parsed = issuesPageSchema.safeParse(payload);
@@ -336,7 +363,13 @@ async function applyPage(
       finishIssue(state);
       return;
     }
-    const task = await importIssue(tx, issue, integrationId, project.id);
+    const task = await importIssue(
+      tx,
+      issue,
+      integrationId,
+      project.id,
+      triage,
+    );
     if (!task) {
       state.skipped++;
       finishIssue(state);
@@ -530,6 +563,7 @@ async function importIssue(
   issue: ImportedIssue,
   integrationId: string,
   projectId: string,
+  triage: TriageRouting,
 ): Promise<{ id: string; result: "imported" | "updated" } | null> {
   const link = await findLink(tx, integrationId, "issue", issue.number);
   const priority = extractIssuePriority(issue.labels.nodes);
@@ -577,7 +611,13 @@ async function importIssue(
       userId: null,
       title: issue.title,
       description: formatTaskDescriptionFromIssue(issue.body),
-      ...(await resolveImportedStatus(tx, projectId, status)),
+      ...(await routedImportStatus(
+        tx,
+        projectId,
+        status,
+        triage,
+        issue.state.toLowerCase() === "open",
+      )),
       priority: priority ?? "low",
       number,
     })

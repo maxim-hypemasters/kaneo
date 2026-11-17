@@ -94,6 +94,35 @@ function buildDeliveryContent(notification: {
           : "A new task was created in Kaneo.",
       };
     }
+    case "task_triage_new": {
+      const taskTitle = getStringValue(notification.eventData, "taskTitle");
+      return {
+        title: "New work to triage",
+        body: taskTitle
+          ? `${taskTitle} is waiting in Triage.`
+          : "New work is waiting in Triage.",
+      };
+    }
+    case "task_triage_accepted": {
+      const taskTitle = getStringValue(notification.eventData, "taskTitle");
+      return {
+        title: "Your report was accepted",
+        body: taskTitle
+          ? `${taskTitle} was accepted and moved to the board.`
+          : "Your report was accepted and moved to the board.",
+      };
+    }
+    case "task_triage_declined": {
+      const taskTitle = getStringValue(notification.eventData, "taskTitle");
+      const reason = getStringValue(notification.eventData, "reason");
+      const declined = taskTitle
+        ? `${taskTitle} was declined.`
+        : "Your report was declined.";
+      return {
+        title: "Your report was declined",
+        body: reason ? `${declined} Reason: ${reason}` : declined,
+      };
+    }
     case "workspace_created": {
       const workspaceName = getStringValue(
         notification.eventData,

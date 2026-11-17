@@ -1,7 +1,7 @@
 import type { ImportOutcome } from "../api/export-import.js";
 import type { Column } from "../api/schemas.js";
 import { projectUrl, taskUrl } from "../render/links.js";
-import { ticketId } from "../render/task-format.js";
+import { ticketId, VIRTUAL_STATUS_LABELS } from "../render/task-format.js";
 import type { ImportPlan, StatusRemap } from "./import-plan.js";
 
 export type ImportTaskReport = {
@@ -48,7 +48,7 @@ function statusName(
   const column = columns.find((candidate) => candidate.slug === slug);
   if (column) return column.name;
   if (slug === null) return "";
-  return slug === "archived" ? "Archived" : "Planned";
+  return VIRTUAL_STATUS_LABELS[slug] ?? "Planned";
 }
 
 export function buildImportReport(input: {

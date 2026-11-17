@@ -1,7 +1,9 @@
 import {
+  Archive,
   Calendar,
   CircleAlert,
   History,
+  Inbox,
   Layers,
   Rocket,
   UserRound,
@@ -67,6 +69,10 @@ function getActivityTypeIcon(type: string) {
   switch (type) {
     case "status_changed":
       return <History className={iconClass} />;
+    case "triage_accepted":
+      return <Inbox className={iconClass} />;
+    case "triage_declined":
+      return <Archive className={iconClass} />;
     case "priority_changed":
       return <CircleAlert className={iconClass} />;
     case "due_date_changed":
@@ -223,6 +229,20 @@ function renderActivityContent({
       </span>
     );
   }
+
+  if (
+    activity.type === "triage_accepted" ||
+    activity.type === "triage_declined"
+  )
+    return (
+      <span className="text-muted-foreground">
+        {t(
+          activity.type === "triage_accepted"
+            ? "activity:triageAccepted"
+            : "activity:triageDeclined",
+        )}
+      </span>
+    );
 
   if (activity.type === "status_changed") {
     if (eventData) {

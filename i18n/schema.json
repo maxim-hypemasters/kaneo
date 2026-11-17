@@ -10589,6 +10589,78 @@
 						"fieldsTitle",
 						"fieldsDescription"
 					]
+				},
+				"projectTriage": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"pageTitle": {
+							"type": "string"
+						},
+						"title": {
+							"type": "string"
+						},
+						"subtitle": {
+							"type": "string"
+						},
+						"membersTitle": {
+							"type": "string"
+						},
+						"membersDescription": {
+							"type": "string"
+						},
+						"addMember": {
+							"type": "string"
+						},
+						"searchPlaceholder": {
+							"type": "string"
+						},
+						"noCandidates": {
+							"type": "string"
+						},
+						"removeMember": {
+							"type": "string"
+						},
+						"unknownMember": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"rule": {
+							"type": "string"
+						},
+						"readOnly": {
+							"type": "string"
+						},
+						"saved": {
+							"type": "string"
+						},
+						"saveError": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"pageTitle",
+						"title",
+						"subtitle",
+						"membersTitle",
+						"membersDescription",
+						"addMember",
+						"searchPlaceholder",
+						"noCandidates",
+						"removeMember",
+						"unknownMember",
+						"emptyTitle",
+						"emptyDescription",
+						"rule",
+						"readOnly",
+						"saved",
+						"saveError"
+					]
 				}
 			},
 			"required": [
@@ -10641,7 +10713,8 @@
 				"chatIntegrations",
 				"codeHosting",
 				"shared",
-				"projectCustomFields"
+				"projectCustomFields",
+				"projectTriage"
 			]
 		},
 		"navigation": {
@@ -11720,6 +11793,48 @@
 								}
 							},
 							"required": ["title", "contentWithTask", "contentWithoutTask"]
+						},
+						"task_triage_new": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
+						"task_triage_accepted": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
+						"task_triage_declined": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								},
+								"contentWithReason": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content", "contentWithReason"]
 						}
 					},
 					"required": [
@@ -11731,7 +11846,10 @@
 						"task_comment",
 						"due_date_reminder",
 						"task_overdue",
-						"time_entry_created"
+						"time_entry_created",
+						"task_triage_new",
+						"task_triage_accepted",
+						"task_triage_declined"
 					]
 				},
 				"inbox": {
@@ -12321,6 +12439,12 @@
 				},
 				"changedTypeToBug": {
 					"type": "string"
+				},
+				"triageAccepted": {
+					"type": "string"
+				},
+				"triageDeclined": {
+					"type": "string"
 				}
 			},
 			"required": [
@@ -12350,7 +12474,9 @@
 				"changedRelease",
 				"changedTypeToTask",
 				"changedTypeToFeature",
-				"changedTypeToBug"
+				"changedTypeToBug",
+				"triageAccepted",
+				"triageDeclined"
 			]
 		},
 		"tasks": {
@@ -12387,6 +12513,9 @@
 						},
 						"planned": {
 							"type": "string"
+						},
+						"triage": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -12396,7 +12525,8 @@
 						"in-review",
 						"done",
 						"archived",
-						"planned"
+						"planned",
+						"triage"
 					]
 				},
 				"priority": {
@@ -16762,7 +16892,16 @@
 								"chooseFeature": {
 									"type": "string"
 								},
+								"chooseOrCreateFeature": {
+									"type": "string"
+								},
 								"noFeatures": {
+									"type": "string"
+								},
+								"noFeaturesCreate": {
+									"type": "string"
+								},
+								"creatingFeature": {
 									"type": "string"
 								}
 							},
@@ -16785,7 +16924,10 @@
 								"dragHelp",
 								"membersError",
 								"chooseFeature",
-								"noFeatures"
+								"chooseOrCreateFeature",
+								"noFeatures",
+								"noFeaturesCreate",
+								"creatingFeature"
 							]
 						},
 						"planning": {
@@ -17923,6 +18065,166 @@
 						}
 					},
 					"required": ["tabs", "overview", "documents"]
+				},
+				"triage": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"pageTitle": {
+							"type": "string"
+						},
+						"waitingCount_one": {
+							"type": "string"
+						},
+						"waitingCount_zero": {
+							"type": "string"
+						},
+						"waitingCount_two": {
+							"type": "string"
+						},
+						"waitingCount_few": {
+							"type": "string"
+						},
+						"waitingCount_many": {
+							"type": "string"
+						},
+						"waitingCount_other": {
+							"type": "string"
+						},
+						"empty": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "description"]
+						},
+						"off": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"action": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "description", "action"]
+						},
+						"reportedBy": {
+							"type": "string"
+						},
+						"accept": {
+							"type": "string"
+						},
+						"acceptLabel": {
+							"type": "string"
+						},
+						"decline": {
+							"type": "string"
+						},
+						"declineLabel": {
+							"type": "string"
+						},
+						"waiting": {
+							"type": "string"
+						},
+						"accepted": {
+							"type": "string"
+						},
+						"declined": {
+							"type": "string"
+						},
+						"acceptError": {
+							"type": "string"
+						},
+						"declineError": {
+							"type": "string"
+						},
+						"declineDialog": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"reasonLabel": {
+									"type": "string"
+								},
+								"reasonPlaceholder": {
+									"type": "string"
+								},
+								"confirm": {
+									"type": "string"
+								},
+								"pending": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"description",
+								"reasonLabel",
+								"reasonPlaceholder",
+								"confirm",
+								"pending"
+							]
+						},
+						"banner": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"review": {
+									"type": "string"
+								},
+								"waiting": {
+									"type": "string"
+								}
+							},
+							"required": ["review", "waiting"]
+						},
+						"createNote": {
+							"type": "string"
+						},
+						"sentToTriage": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"pageTitle",
+						"empty",
+						"off",
+						"reportedBy",
+						"accept",
+						"acceptLabel",
+						"decline",
+						"declineLabel",
+						"waiting",
+						"accepted",
+						"declined",
+						"acceptError",
+						"declineError",
+						"declineDialog",
+						"banner",
+						"createNote",
+						"sentToTriage"
+					]
 				}
 			},
 			"required": [
@@ -17979,7 +18281,8 @@
 				"featureComposer",
 				"estimate",
 				"scheduling",
-				"projectHome"
+				"projectHome",
+				"triage"
 			]
 		},
 		"invitations": {

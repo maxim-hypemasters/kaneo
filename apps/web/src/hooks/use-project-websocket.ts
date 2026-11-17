@@ -423,6 +423,12 @@ export function useProjectWebSocket(projectId: string) {
             refreshProjectDocuments();
             return;
           }
+          if (message.type === "TRIAGE_MEMBERS_UPDATED") {
+            void queryClient.invalidateQueries({
+              queryKey: ["triage-members", projectId],
+            });
+            return;
+          }
           if (message.type === "COMMENT_UPDATED") refreshLinkCandidates();
           if (message.type === "SCHEDULE_UPDATED") {
             void queryClient.invalidateQueries({
@@ -651,10 +657,12 @@ export function useProjectWebSocket(projectId: string) {
               ),
               ...board.plannedTasks.map((task) => task.id),
               ...board.archivedTasks.map((task) => task.id),
+              ...(board.triageTasks ?? []).map((task) => task.id),
             ]);
             const statuses = new Set([
               "planned",
               "archived",
+              "triage",
               ...board.columns.map((column) => column.slug),
             ]);
             if (

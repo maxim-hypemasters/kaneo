@@ -2551,6 +2551,24 @@
 		"shared": {
 			"autosave": "Le modifiche vengono salvate automaticamente"
 		},
+		"projectTriage": {
+			"pageTitle": "Triage del progetto",
+			"title": "Triage",
+			"subtitle": "Scegli chi valuta il nuovo lavoro in {{project}}.",
+			"membersTitle": "Membri del triage",
+			"membersDescription": "Accettano o rifiutano nuove attività e bug prima che il lavoro arrivi sulla board.",
+			"addMember": "Aggiungi membro",
+			"searchPlaceholder": "Cerca persone…",
+			"noCandidates": "Tutte le persone con accesso sono già nell’elenco",
+			"removeMember": "Rimuovi {{name}} dal triage",
+			"unknownMember": "Ex membro",
+			"emptyTitle": "Il triage è disattivato",
+			"emptyDescription": "Le nuove attività e i nuovi bug vanno direttamente sulla board. Aggiungi un membro per attivare il triage.",
+			"rule": "Le attività e i bug creati da chiunque altro, anche tramite integrazioni, restano nel triage finché un membro non li accetta o li rifiuta. Il lavoro accettato passa in Da Fare; quello rifiutato viene archiviato.",
+			"readOnly": "Solo chi può gestire i progetti può cambiare chi fa il triage.",
+			"saved": "Membri del triage aggiornati",
+			"saveError": "Impossibile aggiornare i membri del triage"
+		},
 		"assistantPage": {
 			"disabledDescription": "This Kaneo instance turned the assistant off with DISABLE_ASSISTANT.",
 			"disabledTitle": "The assistant is turned off",
@@ -2914,6 +2932,19 @@
 				"title": "Tracciamento tempo iniziato",
 				"contentWithTask": "Tracciamento tempo iniziato sull'attività: {{taskTitle}}",
 				"contentWithoutTask": "Tracciamento tempo iniziato su un'attività"
+			},
+			"task_triage_new": {
+				"title": "Nuovo lavoro da valutare",
+				"content": "«{{taskTitle}}» è in attesa nel triage"
+			},
+			"task_triage_accepted": {
+				"title": "La tua segnalazione è stata accettata",
+				"content": "«{{taskTitle}}» è stato accettato e spostato sulla board"
+			},
+			"task_triage_declined": {
+				"title": "La tua segnalazione è stata rifiutata",
+				"content": "«{{taskTitle}}» è stato rifiutato",
+				"contentWithReason": "«{{taskTitle}}» è stato rifiutato: {{reason}}"
 			}
 		},
 		"newCount_many": "{{count}} nuove",
@@ -3068,7 +3099,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "ha accettato dal triage",
+		"triageDeclined": "ha rifiutato nel triage"
 	},
 	"tasks": {
 		"title": "Attività",
@@ -3079,7 +3112,8 @@
 			"in-review": "In Revisione",
 			"done": "Completato",
 			"archived": "Archiviato",
-			"planned": "Pianificato"
+			"planned": "Pianificato",
+			"triage": "Triage"
 		},
 		"priority": {
 			"label": "Priorità",
@@ -4087,7 +4121,10 @@
 				"dragHelp": "Drag milestones to another release, or use Move to release.",
 				"membersError": "Milestone lead names could not be loaded.",
 				"chooseFeature": "Choose the Feature this milestone belongs to.",
-				"noFeatures": "Create a Feature before adding a milestone."
+				"noFeatures": "Create a Feature before adding a milestone.",
+				"chooseOrCreateFeature": "Choose the Feature this milestone belongs to, or type a name to create one.",
+				"creatingFeature": "Creating Feature…",
+				"noFeaturesCreate": "Type a name to create this project’s first Feature."
 			},
 			"planning": {
 				"preview": "Preview",
@@ -4345,6 +4382,46 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "Triage",
+			"pageTitle": "Triage di {{name}}",
+			"waitingCount_one": "{{count}} in attesa di triage",
+			"waitingCount_many": "{{count}} in attesa di triage",
+			"waitingCount_other": "{{count}} in attesa di triage",
+			"empty": {
+				"title": "Niente da valutare",
+				"description": "Le nuove attività e i nuovi bug di persone fuori dall’elenco di triage compaiono qui per essere valutati."
+			},
+			"off": {
+				"title": "Il triage è disattivato",
+				"description": "Aggiungi membri del triage nelle impostazioni del progetto per valutare nuove attività e bug prima che arrivino sulla board.",
+				"action": "Configura il triage"
+			},
+			"reportedBy": "Segnalato da {{name}}",
+			"accept": "Accetta",
+			"acceptLabel": "Accetta «{{title}}»",
+			"decline": "Rifiuta",
+			"declineLabel": "Rifiuta «{{title}}»",
+			"waiting": "In attesa di triage",
+			"accepted": "Accettato e spostato sulla board",
+			"declined": "Rifiutato e archiviato",
+			"acceptError": "Impossibile accettare questa attività",
+			"declineError": "Impossibile rifiutare questa attività",
+			"declineDialog": {
+				"title": "Rifiutare «{{title}}»?",
+				"description": "Verrà spostata in Archiviato. Chi l’ha segnalata riceverà una notifica, con il tuo motivo se lo indichi.",
+				"reasonLabel": "Motivo (facoltativo)",
+				"reasonPlaceholder": "Perché non si procede?",
+				"confirm": "Rifiuta",
+				"pending": "Rifiuto in corso…"
+			},
+			"banner": {
+				"review": "È in attesa nel triage. Accettalo per spostarlo sulla board, oppure rifiutalo.",
+				"waiting": "È in attesa che un membro del triage lo valuti."
+			},
+			"createNote": "Andrà nel triage per essere valutato",
+			"sentToTriage": "Inviato al triage per la valutazione"
 		}
 	},
 	"invitations": {

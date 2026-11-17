@@ -1,3 +1,5 @@
+import { TRIAGE_STATUS } from "../triage/triage-status";
+
 export type MilestoneProgress = {
   total: number;
   started: number;
@@ -23,6 +25,8 @@ export function milestoneProgress(
   );
   const result = { total: 0, started: 0, completed: 0 };
   for (const { status, count } of statuses) {
+    // Work waiting in Triage hasn't been accepted into the milestone yet.
+    if (status === TRIAGE_STATUS) continue;
     result.total += count;
     if (status !== null && completed.has(status)) {
       result.completed += count;

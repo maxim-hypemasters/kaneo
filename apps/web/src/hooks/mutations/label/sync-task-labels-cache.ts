@@ -43,6 +43,9 @@ export function updateTaskLabelsInProject(
     archivedTasks: project.archivedTasks.map((task) =>
       updateTaskLabels(task, taskId, updater),
     ),
+    triageTasks: project.triageTasks?.map((task) =>
+      updateTaskLabels(task, taskId, updater),
+    ),
   };
 }
 

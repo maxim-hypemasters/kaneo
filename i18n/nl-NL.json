@@ -2509,6 +2509,24 @@
 		"shared": {
 			"autosave": "Wijzigingen worden automatisch opgeslagen"
 		},
+		"projectTriage": {
+			"pageTitle": "Projecttriage",
+			"title": "Triage",
+			"subtitle": "Kies wie nieuw werk in {{project}} beoordeelt.",
+			"membersTitle": "Triageleden",
+			"membersDescription": "Zij accepteren of wijzen nieuwe taken en bugs af voordat het werk op het bord komt.",
+			"addMember": "Lid toevoegen",
+			"searchPlaceholder": "Personen zoeken…",
+			"noCandidates": "Iedereen met toegang staat al op de lijst",
+			"removeMember": "{{name}} uit triage verwijderen",
+			"unknownMember": "Voormalig lid",
+			"emptyTitle": "Triage staat uit",
+			"emptyDescription": "Nieuwe taken en bugs gaan direct naar het bord. Voeg een lid toe om triage aan te zetten.",
+			"rule": "Taken en bugs die iemand anders maakt, ook via integraties, wachten in triage tot een lid ze accepteert of afwijst. Geaccepteerd werk gaat naar Te doen; afgewezen werk wordt gearchiveerd.",
+			"readOnly": "Alleen mensen die projecten mogen beheren, kunnen wijzigen wie de triage doet.",
+			"saved": "Triageleden bijgewerkt",
+			"saveError": "Kan triageleden niet bijwerken"
+		},
 		"assistantPage": {
 			"disabledDescription": "This Kaneo instance turned the assistant off with DISABLE_ASSISTANT.",
 			"disabledTitle": "The assistant is turned off",
@@ -2860,6 +2878,19 @@
 			"task_overdue": {
 				"title": "Taak te laat",
 				"content": "{{taskTitle}} is over de einddatum heen"
+			},
+			"task_triage_new": {
+				"title": "Nieuw werk om te beoordelen",
+				"content": "“{{taskTitle}}” wacht in triage"
+			},
+			"task_triage_accepted": {
+				"title": "Je melding is geaccepteerd",
+				"content": "“{{taskTitle}}” is geaccepteerd en naar het bord verplaatst"
+			},
+			"task_triage_declined": {
+				"title": "Je melding is afgewezen",
+				"content": "“{{taskTitle}}” is afgewezen",
+				"contentWithReason": "“{{taskTitle}}” is afgewezen: {{reason}}"
 			}
 		},
 		"reminderLeadTime": {
@@ -3021,7 +3052,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "heeft dit uit triage geaccepteerd",
+		"triageDeclined": "heeft dit in triage afgewezen"
 	},
 	"tasks": {
 		"title": "Taken",
@@ -3032,7 +3065,8 @@
 			"in-review": "Ter beoordeling",
 			"done": "Gereed",
 			"archived": "Gearchiveerd",
-			"planned": "Gepland"
+			"planned": "Gepland",
+			"triage": "Triage"
 		},
 		"priority": {
 			"label": "Prioriteit",
@@ -4002,7 +4036,10 @@
 				"dragHelp": "Drag milestones to another release, or use Move to release.",
 				"membersError": "Milestone lead names could not be loaded.",
 				"chooseFeature": "Choose the Feature this milestone belongs to.",
-				"noFeatures": "Create a Feature before adding a milestone."
+				"noFeatures": "Create a Feature before adding a milestone.",
+				"chooseOrCreateFeature": "Choose the Feature this milestone belongs to, or type a name to create one.",
+				"creatingFeature": "Creating Feature…",
+				"noFeaturesCreate": "Type a name to create this project’s first Feature."
 			},
 			"planning": {
 				"preview": "Preview",
@@ -4258,6 +4295,45 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "Triage",
+			"pageTitle": "Triage van {{name}}",
+			"waitingCount_one": "{{count}} wacht op triage",
+			"waitingCount_other": "{{count}} wachten op triage",
+			"empty": {
+				"title": "Niets te beoordelen",
+				"description": "Nieuwe taken en bugs van mensen buiten de triagelijst verschijnen hier ter beoordeling."
+			},
+			"off": {
+				"title": "Triage staat uit",
+				"description": "Voeg triageleden toe in de projectinstellingen om nieuwe taken en bugs te beoordelen voordat ze op het bord komen.",
+				"action": "Triage instellen"
+			},
+			"reportedBy": "Gemeld door {{name}}",
+			"accept": "Accepteren",
+			"acceptLabel": "“{{title}}” accepteren",
+			"decline": "Afwijzen",
+			"declineLabel": "“{{title}}” afwijzen",
+			"waiting": "Wacht op triage",
+			"accepted": "Geaccepteerd en naar het bord verplaatst",
+			"declined": "Afgewezen en gearchiveerd",
+			"acceptError": "Kan deze taak niet accepteren",
+			"declineError": "Kan deze taak niet afwijzen",
+			"declineDialog": {
+				"title": "“{{title}}” afwijzen?",
+				"description": "Hij gaat naar Gearchiveerd. De melder krijgt een melding, met je reden als je die opgeeft.",
+				"reasonLabel": "Reden (optioneel)",
+				"reasonPlaceholder": "Waarom gaat dit niet door?",
+				"confirm": "Afwijzen",
+				"pending": "Afwijzen…"
+			},
+			"banner": {
+				"review": "Dit wacht in triage. Accepteer het om het naar het bord te verplaatsen, of wijs het af.",
+				"waiting": "Dit wacht tot een triagelid het beoordeelt."
+			},
+			"createNote": "Dit gaat naar triage ter beoordeling",
+			"sentToTriage": "Naar triage gestuurd ter beoordeling"
 		}
 	},
 	"invitations": {

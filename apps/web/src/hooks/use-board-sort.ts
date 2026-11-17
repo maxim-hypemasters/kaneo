@@ -50,7 +50,7 @@ function normalizeSort(value: unknown): SortConfig {
 
 export function useBoardSort(
   projectId: string | undefined,
-  scope: "board" | "backlog" = "board",
+  scope: "board" | "backlog" | "triage" = "board",
 ) {
   const [sort, setSort] = useStoredState(
     projectId ? `kaneo:${scope}-sort:${projectId}` : null,

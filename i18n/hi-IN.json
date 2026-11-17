@@ -2509,6 +2509,24 @@
 		"shared": {
 			"autosave": "बदलाव अपने आप सहेजे जाते हैं"
 		},
+		"projectTriage": {
+			"pageTitle": "प्रोजेक्ट ट्राइएज",
+			"title": "ट्राइएज",
+			"subtitle": "चुनें कि {{project}} में नए काम की समीक्षा कौन करेगा।",
+			"membersTitle": "ट्राइएज सदस्य",
+			"membersDescription": "वे काम के बोर्ड तक पहुँचने से पहले नए टास्क और बग स्वीकार या अस्वीकार करते हैं।",
+			"addMember": "सदस्य जोड़ें",
+			"searchPlaceholder": "लोगों को खोजें…",
+			"noCandidates": "पहुँच वाले सभी लोग पहले से सूची में हैं",
+			"removeMember": "{{name}} को ट्राइएज से हटाएँ",
+			"unknownMember": "पूर्व सदस्य",
+			"emptyTitle": "ट्राइएज बंद है",
+			"emptyDescription": "नए टास्क और बग सीधे बोर्ड पर जाते हैं। ट्राइएज चालू करने के लिए कोई सदस्य जोड़ें।",
+			"rule": "किसी और के बनाए टास्क और बग, इंटीग्रेशन से आए हुए भी, तब तक ट्राइएज में रहते हैं जब तक कोई सदस्य उन्हें स्वीकार या अस्वीकार न करे। स्वीकार किया गया काम करना है में जाता है; अस्वीकार किया गया काम संग्रहित होता है।",
+			"readOnly": "केवल वे लोग जो प्रोजेक्ट प्रबंधित कर सकते हैं, बदल सकते हैं कि ट्राइएज कौन करता है।",
+			"saved": "ट्राइएज सदस्य अपडेट किए गए",
+			"saveError": "ट्राइएज सदस्य अपडेट नहीं किए जा सके"
+		},
 		"assistantPage": {
 			"disabledDescription": "This Kaneo instance turned the assistant off with DISABLE_ASSISTANT.",
 			"disabledTitle": "The assistant is turned off",
@@ -2868,6 +2886,19 @@
 				"title": "समय ट्रैकिंग शुरू",
 				"contentWithTask": "कार्य पर समय ट्रैकिंग शुरू: {{taskTitle}}",
 				"contentWithoutTask": "एक कार्य पर समय ट्रैकिंग शुरू"
+			},
+			"task_triage_new": {
+				"title": "ट्राइएज के लिए नया काम",
+				"content": "“{{taskTitle}}” ट्राइएज में प्रतीक्षा कर रहा है"
+			},
+			"task_triage_accepted": {
+				"title": "आपकी रिपोर्ट स्वीकार की गई",
+				"content": "“{{taskTitle}}” स्वीकार किया गया और बोर्ड पर ले जाया गया"
+			},
+			"task_triage_declined": {
+				"title": "आपकी रिपोर्ट अस्वीकार की गई",
+				"content": "“{{taskTitle}}” अस्वीकार किया गया",
+				"contentWithReason": "“{{taskTitle}}” अस्वीकार किया गया: {{reason}}"
 			}
 		},
 		"inbox": {
@@ -3021,7 +3052,9 @@
 		"createdFeature": "created this feature",
 		"movedFeature": "moved feature from \"{{from}}\" to \"{{to}}\"",
 		"movedFeatureFromOtherProject": "moved feature from another project to \"{{to}}\"",
-		"postedFeatureUpdate": "posted an update"
+		"postedFeatureUpdate": "posted an update",
+		"triageAccepted": "ने इसे ट्राइएज से स्वीकार किया",
+		"triageDeclined": "ने इसे ट्राइएज में अस्वीकार किया"
 	},
 	"tasks": {
 		"title": "कार्य",
@@ -3032,7 +3065,8 @@
 			"in-review": "समीक्षा में",
 			"done": "पूरा हुआ",
 			"archived": "संग्रहित",
-			"planned": "नियोजित"
+			"planned": "नियोजित",
+			"triage": "ट्राइएज"
 		},
 		"priority": {
 			"label": "प्राथमिकता",
@@ -4002,7 +4036,10 @@
 				"dragHelp": "Drag milestones to another release, or use Move to release.",
 				"membersError": "Milestone lead names could not be loaded.",
 				"chooseFeature": "Choose the Feature this milestone belongs to.",
-				"noFeatures": "Create a Feature before adding a milestone."
+				"noFeatures": "Create a Feature before adding a milestone.",
+				"chooseOrCreateFeature": "Choose the Feature this milestone belongs to, or type a name to create one.",
+				"creatingFeature": "Creating Feature…",
+				"noFeaturesCreate": "Type a name to create this project’s first Feature."
 			},
 			"planning": {
 				"preview": "Preview",
@@ -4258,6 +4295,45 @@
 				"label": "Project home",
 				"overview": "Overview"
 			}
+		},
+		"triage": {
+			"title": "ट्राइएज",
+			"pageTitle": "{{name}} का ट्राइएज",
+			"waitingCount_one": "{{count}} ट्राइएज की प्रतीक्षा में",
+			"waitingCount_other": "{{count}} ट्राइएज की प्रतीक्षा में",
+			"empty": {
+				"title": "समीक्षा के लिए कुछ नहीं",
+				"description": "ट्राइएज सूची से बाहर के लोगों के नए टास्क और बग समीक्षा के लिए यहाँ दिखते हैं।"
+			},
+			"off": {
+				"title": "ट्राइएज बंद है",
+				"description": "नए टास्क और बग को बोर्ड तक पहुँचने से पहले जाँचने के लिए प्रोजेक्ट सेटिंग्स में ट्राइएज सदस्य जोड़ें।",
+				"action": "ट्राइएज सेट करें"
+			},
+			"reportedBy": "{{name}} द्वारा रिपोर्ट किया गया",
+			"accept": "स्वीकार करें",
+			"acceptLabel": "“{{title}}” स्वीकार करें",
+			"decline": "अस्वीकार करें",
+			"declineLabel": "“{{title}}” अस्वीकार करें",
+			"waiting": "ट्राइएज की प्रतीक्षा में",
+			"accepted": "स्वीकार किया गया और बोर्ड पर ले जाया गया",
+			"declined": "अस्वीकार किया गया और संग्रहित किया गया",
+			"acceptError": "यह टास्क स्वीकार नहीं किया जा सका",
+			"declineError": "यह टास्क अस्वीकार नहीं किया जा सका",
+			"declineDialog": {
+				"title": "“{{title}}” अस्वीकार करें?",
+				"description": "यह संग्रहित हो जाएगा। रिपोर्ट करने वाले को सूचना मिलेगी, और अगर आप कारण देते हैं तो वह भी।",
+				"reasonLabel": "कारण (वैकल्पिक)",
+				"reasonPlaceholder": "यह आगे क्यों नहीं बढ़ेगा?",
+				"confirm": "अस्वीकार करें",
+				"pending": "अस्वीकार किया जा रहा है…"
+			},
+			"banner": {
+				"review": "यह ट्राइएज में प्रतीक्षा कर रहा है। इसे बोर्ड पर ले जाने के लिए स्वीकार करें, या अस्वीकार करें।",
+				"waiting": "यह किसी ट्राइएज सदस्य की समीक्षा की प्रतीक्षा कर रहा है।"
+			},
+			"createNote": "यह समीक्षा के लिए ट्राइएज में जाएगा",
+			"sentToTriage": "समीक्षा के लिए ट्राइएज में भेजा गया"
 		}
 	},
 	"invitations": {

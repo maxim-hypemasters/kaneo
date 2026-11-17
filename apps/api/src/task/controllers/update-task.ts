@@ -16,6 +16,7 @@ import { boardDescription, descriptionDeferred } from "../description-pages";
 import { validateDateRange } from "../../utils/validate-dates";
 import { assertValidTaskStatus } from "../validate-task-fields";
 import { assertTaskPosition } from "./next-task-position";
+import { assertTriageTransition } from "../../triage/triage-status";
 
 async function updateTask(
   id: string,
@@ -80,6 +81,7 @@ async function updateTask(
     throw new HTTPException(400, {
       message: "Tasks and Bugs require status and priority",
     });
+  if (!feature) assertTriageTransition(existingTask.status, status);
   if (status) await assertValidTaskStatus(status, projectId);
 
   const normalizedUserId = userId?.trim() || undefined;

@@ -9,6 +9,8 @@ import TaskDescription from "./task-description";
 import { TaskRelatedContent } from "./task-related-content";
 import { FeatureWorkspace } from "./features/workspace/feature-workspace";
 import TaskTitle from "./task-title";
+import { TriageBanner } from "./triage-banner";
+import { TRIAGE_STATUS } from "@/lib/triage/triage-status";
 import { TaskDetailsSkeleton } from "./task-page-skeleton";
 
 type TaskDetailsContentProps = {
@@ -57,6 +59,8 @@ export default function TaskDetailsContent({
         {task && <FeatureBreadcrumb task={task} workspaceId={workspaceId} />}
         <TaskTitle taskId={taskId} size={variant === "page" ? "lg" : "md"} />
       </div>
+
+      {task.status === TRIAGE_STATUS ? <TriageBanner task={task} /> : null}
 
       {properties}
 

@@ -34,6 +34,10 @@ export function describeActivity(activity: WorkspaceActivity, t: Translate) {
       return t("workspace:home.activity.commented");
     case "unassigned":
       return t("activity:unassigned");
+    case "triage_accepted":
+      return t("activity:triageAccepted");
+    case "triage_declined":
+      return t("activity:triageDeclined");
     case "status_changed":
       if (eventData) {
         return t("activity:changedStatus", {

@@ -204,6 +204,9 @@ export const EXCLUDED_TOOLS: Record<string, string> = {
   move_unfinished_release_items: "Bulk moves are out of scope",
   reorder_milestones: "Reordering is out of scope",
   archive_feature: "Archiving is out of scope",
+  accept_triage_task:
+    "Triage decisions belong to the project's triage members in the triage view",
+  decline_triage_task: "Declining archives the task; archiving is out of scope",
   update_project: "Can make a project public; use update_project_details",
   update_task_comment: "Comment edits delete removed images",
   detach_label_from_task: "Removing is out of scope",

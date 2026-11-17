@@ -264,6 +264,13 @@
             "type": "string",
             "format": "date-time"
           },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The user who created the task. Null for work created by integrations or before Kaneo recorded it."
+          },
           "userId": {
             "type": [
               "string",
@@ -561,6 +568,13 @@
             "items": {
               "$ref": "#/components/schemas/BoardTask"
             }
+          },
+          "triageTasks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoardTask"
+            },
+            "description": "Tasks and Bugs waiting in Triage for a triage member to accept or decline. Always empty on public boards."
           }
         },
         "required": [
@@ -574,7 +588,8 @@
           "backgroundVersion",
           "columns",
           "archivedTasks",
-          "plannedTasks"
+          "plannedTasks",
+          "triageTasks"
         ]
       },
       "TaskDescriptionPage": {
@@ -919,6 +934,13 @@
                 },
                 "description": "Always empty."
               },
+              "triageTasks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/BoardTask"
+                },
+                "description": "Always empty."
+              },
               "columns": {
                 "type": "array",
                 "items": {
@@ -931,6 +953,7 @@
               "statistics",
               "archivedTasks",
               "plannedTasks",
+              "triageTasks",
               "columns"
             ]
           }
@@ -1223,6 +1246,13 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The user who created the task. Null for work created by integrations or before Kaneo recorded it."
           },
           "type": {
             "type": "string",
@@ -3479,7 +3509,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
+            "description": "One of: comment, task, create, status_changed, triage_accepted and triage_declined (a triage member accepted or declined new work; same { oldStatus, newStatus } payload as status_changed), priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
           },
           "createdAt": {
             "type": "string",
@@ -3728,7 +3758,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: comment, task, create, status_changed, priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
+            "description": "One of: comment, task, create, status_changed, triage_accepted and triage_declined (a triage member accepted or declined new work; same { oldStatus, newStatus } payload as status_changed), priority_changed, assignee_changed, unassigned, due_date_changed, title_changed, description_changed, feature_changed ({ projectId, oldFeatureId, oldFeatureTitle, newFeatureId, newFeatureTitle }), type_changed ({ oldType, newType }), milestone_changed ({ projectId, oldMilestoneId, oldMilestoneTitle, newMilestoneId, newMilestoneTitle }), release_changed ({ projectId, oldReleaseId, oldReleaseName, newReleaseId, newReleaseName }). Project, feature and release names from a project the viewer can't access, such as one a task was moved out of, are null."
           },
           "createdAt": {
             "type": "string",
@@ -4078,7 +4108,7 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment."
+            "description": "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason)."
           },
           "eventData": {
             "description": "Type-specific payload, e.g. { taskTitle, oldStatus, newStatus, projectId, workspaceId }."
@@ -6469,6 +6499,21 @@
           "columnId",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "TriageMembers": {
+        "type": "object",
+        "properties": {
+          "userIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Users who accept or decline new work, in the order they were added. Empty when triage is off."
+          }
+        },
+        "required": [
+          "userIds"
         ]
       },
       "PendingInvitation": {
@@ -35778,6 +35823,345 @@
           },
           "404": {
             "description": "Workflow rule not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/triage/project/{projectId}/members": {
+      "get": {
+        "operationId": "getTriageMembers",
+        "tags": [
+          "Triage"
+        ],
+        "summary": "Get triage members",
+        "description": "List the people who accept or decline new work in a project. While the list is not empty, Tasks and Bugs created by anyone else start in the Triage status.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The project's triage members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageMembers"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "replaceTriageMembers",
+        "tags": [
+          "Triage"
+        ],
+        "summary": "Replace triage members",
+        "description": "Replace a project's triage members. An empty list turns triage off; work already waiting stays in Triage until it is accepted or declined.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 100,
+                    "description": "The complete list of triage members. Each must be a workspace member with access to the project. An empty list turns triage off."
+                  }
+                },
+                "required": [
+                  "userIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated triage members",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageMembers"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A user is not a workspace member or can't access the project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, or missing project:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/triage/task/{id}/accept": {
+      "post": {
+        "operationId": "acceptTriageTask",
+        "tags": [
+          "Triage"
+        ],
+        "summary": "Accept triage task",
+        "description": "Accept a Task or Bug waiting in Triage. It moves to the To Do column, or to the project's first open column when there is no To Do, and its reporter is notified.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The accepted task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResource"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, missing update permission for the task's type, or not a triage member. With no triage members, project:update holders may triage.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The task is not waiting in Triage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/triage/task/{id}/decline": {
+      "post": {
+        "operationId": "declineTriageTask",
+        "tags": [
+          "Triage"
+        ],
+        "summary": "Decline triage task",
+        "description": "Decline a Task or Bug waiting in Triage. It moves to Archived, an optional reason is posted as a comment, and its reporter is notified.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 10000,
+                    "description": "Why the work was declined. Posted as a comment from the caller and sent to the reporter."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The declined task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskResource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project, missing update permission for the task's type, or not a triage member. With no triage members, project:update holders may triage.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The task is not waiting in Triage",
             "content": {
               "application/json": {
                 "schema": {

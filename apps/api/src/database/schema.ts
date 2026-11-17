@@ -544,6 +544,37 @@ export const workspaceMemberProjectTable = pgTable(
   ],
 );
 
+// People who accept or decline new work. An empty list turns triage off.
+export const projectTriageMemberTable = pgTable(
+  "project_triage_member",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    projectId: text("project_id").notNull(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.workspaceId, table.projectId],
+      foreignColumns: [projectTable.workspaceId, projectTable.id],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    unique("project_triage_member_project_user_unique").on(
+      table.projectId,
+      table.userId,
+    ),
+    index("project_triage_member_userId_idx").on(table.userId),
+  ],
+);
+
 export const columnTable = pgTable(
   "column",
   {
@@ -774,6 +805,10 @@ export const taskTable = pgTable(
       },
     ),
     releaseId: text("release_id"),
+    // Who reported the work. Null for integration-created and older tasks.
+    createdBy: text("created_by").references(() => userTable.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { mode: "date" })
       .default(utcNow)
       .notNull(),

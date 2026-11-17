@@ -75,6 +75,67 @@ describe("normalizeNotification", () => {
     ).toBe("Someone mentioned you");
   });
 
+  it("describes new work waiting in Triage", () => {
+    const view = (eventData: Record<string, unknown>) =>
+      normalizeNotification(raw({ type: "task_triage_new", eventData }));
+    expect(
+      view({
+        taskTitle: "Crash on save",
+        reporterName: "Grace",
+        projectId: "p1",
+        workspaceId: "ws_1",
+      }),
+    ).toMatchObject({
+      title: "New work to triage",
+      message: 'Grace reported "Crash on save"',
+      projectId: "p1",
+      taskId: "t1",
+    });
+    expect(
+      view({ taskTitle: "Crash on save", reporterName: null }).message,
+    ).toBe("Crash on save");
+  });
+
+  it("tells reporters whether their work was accepted or declined", () => {
+    expect(
+      normalizeNotification(
+        raw({
+          type: "task_triage_accepted",
+          eventData: { taskTitle: "Crash on save", actorName: "Ada" },
+        }),
+      ),
+    ).toMatchObject({
+      title: "Ada accepted your report",
+      message: "Crash on save",
+    });
+    expect(
+      normalizeNotification(
+        raw({
+          type: "task_triage_declined",
+          eventData: {
+            taskTitle: "Crash on save",
+            actorName: "Ada",
+            reason: "Duplicate of\nKAN-4",
+          },
+        }),
+      ),
+    ).toMatchObject({
+      title: "Ada declined your report",
+      message: "Crash on save: Duplicate of KAN-4",
+    });
+    expect(
+      normalizeNotification(
+        raw({
+          type: "task_triage_declined",
+          eventData: { taskTitle: "Crash on save" },
+        }),
+      ),
+    ).toMatchObject({
+      title: "Someone declined your report",
+      message: "Crash on save",
+    });
+  });
+
   it("formats reminder lead times", () => {
     expect(
       normalizeNotification(
