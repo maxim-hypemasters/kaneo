@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import {
   afterEach,
@@ -399,5 +405,69 @@ describe("AssistantChatCard", () => {
     expect(onSelectChat).toHaveBeenCalledWith("c1");
     expect(chatsButton()).toHaveAttribute("aria-expanded", "false");
     expect(composer()).toHaveFocus();
+  });
+});
+
+describe("AssistantChatCard with motion", () => {
+  const stubMotion = (reduce: boolean) =>
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: reduce && query.includes("prefers-reduced-motion: reduce"),
+        media: query,
+        onchange: null,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        dispatchEvent: () => false,
+      })),
+    );
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+  // The window that shrinks: the inert element around the composer.
+  const closingWindow = () => composer().closest("[inert]") as HTMLElement;
+
+  it("shrinks the chat into the bar before the bar takes its place", () => {
+    stubMotion(false);
+    renderCard("c2");
+    fireEvent.click(minimizeButton());
+
+    // Still shrinking: the chat is there but inert, and no bar yet.
+    expect(closingWindow()).not.toBeNull();
+    expect(queryBar()).toBeNull();
+
+    // Only the window's own height ending counts.
+    fireEvent.transitionEnd(closingWindow(), { propertyName: "opacity" });
+    fireEvent.transitionEnd(composer(), { propertyName: "height" });
+    expect(queryBar()).toBeNull();
+
+    fireEvent.transitionEnd(closingWindow(), { propertyName: "height" });
+    expect(queryChat()).toBeNull();
+    expect(bar()).toHaveFocus();
+  });
+
+  it("brings the bar back even when the transition never ends", () => {
+    stubMotion(false);
+    vi.useFakeTimers();
+    renderCard("c2");
+    fireEvent.click(minimizeButton());
+    expect(queryBar()).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(queryChat()).toBeNull();
+    expect(bar()).toHaveFocus();
+  });
+
+  it("swaps straight to the bar under reduced motion", () => {
+    stubMotion(true);
+    renderCard("c2");
+    fireEvent.click(minimizeButton());
+    expect(queryChat()).toBeNull();
+    expect(bar()).toHaveFocus();
   });
 });

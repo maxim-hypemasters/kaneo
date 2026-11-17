@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAssistantTurn } from "@/hooks/use-assistant-turn";
 import { useComposerDraft } from "../conversation/use-composer-draft";
@@ -6,6 +6,18 @@ import { AssistantBar } from "./assistant-bar";
 import { AssistantChatWindow } from "./assistant-chat-window";
 import { readMinimized, writeMinimized } from "./minimized-assistant";
 import type { SelectChatOptions } from "./select-chat-options";
+
+// The window shrinks into the bar over 220ms; this catches a transitionend
+// that never comes (the tab hidden mid-animation, for example).
+const CLOSE_FALLBACK_MS = 400;
+
+/** No animation to wait for: reduced motion, or no matchMedia (tests). */
+function skipsMotion() {
+  return (
+    typeof window.matchMedia !== "function" ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
 
 type AssistantChatCardProps = {
   workspaceId: string;
@@ -37,8 +49,8 @@ export function AssistantChatCard({
   const { t } = useTranslation();
   const headingId = useId();
   const windowId = useId();
-  const [expanded, setExpanded] = useState(
-    () => chatId !== null && !readMinimized(workspaceId),
+  const [view, setView] = useState<"bar" | "open" | "closing">(() =>
+    chatId !== null && !readMinimized(workspaceId) ? "open" : "bar",
   );
   // The open chat, for callbacks that land later. Undefined once Home is
   // gone, so a chat created or deleted meanwhile doesn't navigate back to it.
@@ -67,7 +79,7 @@ export function AssistantChatCard({
       // Typing goes on after the text already there.
       composer.setSelectionRange(composer.value.length, composer.value.length);
     }
-  }, [expanded]);
+  }, [view]);
 
   const turn = useAssistantTurn({
     workspaceId,
@@ -81,13 +93,26 @@ export function AssistantChatCard({
   const expand = () => {
     writeMinimized(workspaceId, false);
     focusAfterToggle.current = "composer";
-    setExpanded(true);
+    setView("open");
+  };
+  // The bar takes the window's place once it has shrunk to the bar's size.
+  const finishClosing = () => {
+    focusAfterToggle.current = "bar";
+    setView("bar");
   };
   const minimize = () => {
     writeMinimized(workspaceId, true);
-    focusAfterToggle.current = "bar";
-    setExpanded(false);
+    if (skipsMotion()) finishClosing();
+    else setView("closing");
   };
+  useEffect(() => {
+    if (view !== "closing") return;
+    const timer = setTimeout(() => {
+      focusAfterToggle.current = "bar";
+      setView("bar");
+    }, CLOSE_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [view]);
   // Also once the chat was minimized while its deletion was on its way.
   const leaveDeletedChat = (id: string) => {
     if (id === chatIdRef.current) onSelectChat(null, { replace: true });
@@ -95,7 +120,7 @@ export function AssistantChatCard({
 
   // One section in either state, so the assistant stays a landmark with a
   // heading while minimized.
-  if (!expanded) {
+  if (view === "bar") {
     return (
       <section aria-labelledby={headingId}>
         <h2 id={headingId} className="sr-only">
@@ -131,6 +156,8 @@ export function AssistantChatCard({
         onSelectChat={onSelectChat}
         onChatDeleted={leaveDeletedChat}
         onMinimize={minimize}
+        closing={view === "closing"}
+        onClosed={finishClosing}
       />
     </section>
   );

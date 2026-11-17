@@ -42,6 +42,9 @@ type AssistantChatWindowProps = {
   /** A chat was deleted; it may have been the open one. */
   onChatDeleted: (chatId: string) => void;
   onMinimize: () => void;
+  /** Shrinking back into the bar: inert, and `onClosed` runs once it has. */
+  closing?: boolean;
+  onClosed?: () => void;
 };
 
 /**
@@ -64,6 +67,8 @@ export function AssistantChatWindow({
   onSelectChat,
   onChatDeleted,
   onMinimize,
+  closing = false,
+  onClosed,
 }: AssistantChatWindowProps) {
   const { t } = useTranslation();
   const historyId = useId();
@@ -92,79 +97,105 @@ export function AssistantChatWindow({
   };
 
   return (
+    // Grows out of the bar's height when it opens and shrinks back into it
+    // when minimized; the content fades in behind the growth and out first.
+    // Height is animated on purpose: the page below should slide, not jump.
     <div
       id={id}
-      className="flex h-[min(40rem,72vh)] min-h-80 origin-top overflow-hidden rounded-xl border bg-card shadow-xs/5 transition-[opacity,scale,translate] duration-200 ease-out starting:-translate-y-1 starting:scale-99 starting:opacity-0 motion-reduce:transition-none"
+      inert={closing}
+      onTransitionEnd={(event) => {
+        if (
+          closing &&
+          event.target === event.currentTarget &&
+          event.propertyName === "height"
+        )
+          onClosed?.();
+      }}
+      className={cn(
+        "flex overflow-hidden rounded-xl border bg-card shadow-xs/5 transition-[height,min-height,border-color] ease-out motion-reduce:transition-none",
+        closing
+          ? "h-14 min-h-14 border-violet-500/40 duration-220 dark:border-violet-400/40"
+          : "h-[min(40rem,72vh)] min-h-80 duration-280 starting:h-14 starting:min-h-14 starting:border-violet-500/40 dark:starting:border-violet-400/40",
+      )}
     >
       <div
         className={cn(
-          "flex min-w-0 flex-1 flex-col",
-          showHistory && "max-lg:hidden",
+          "flex min-w-0 flex-1 transition-opacity ease-out motion-reduce:transition-none",
+          closing
+            ? "opacity-0 duration-100"
+            : "opacity-100 delay-100 duration-200 starting:opacity-0",
         )}
       >
-        <div className="flex h-12 shrink-0 items-center gap-2 border-border/60 border-b ps-4 pe-2.5">
-          <SparklesIcon
-            aria-hidden="true"
-            className="size-4 text-muted-foreground"
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 flex-col",
+            showHistory && "max-lg:hidden",
+          )}
+        >
+          <div className="flex h-12 shrink-0 items-center gap-2 border-border/60 border-b ps-4 pe-2.5">
+            <SparklesIcon
+              aria-hidden="true"
+              className="size-4 text-muted-foreground"
+            />
+            <h2
+              id={headingId}
+              className="flex-1 font-semibold text-foreground text-sm"
+            >
+              {t("workspace:assistant.title")}
+            </h2>
+            <Button
+              ref={chatsButtonRef}
+              variant="ghost"
+              size="xs"
+              className="lg:hidden"
+              aria-expanded={showHistory}
+              aria-controls={historyId}
+              onClick={() => toggleHistory(true, "history")}
+            >
+              <MessagesSquareIcon aria-hidden="true" />
+              {t("workspace:assistant.chats")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("workspace:assistant.minimize")}
+              title={t("workspace:assistant.minimize")}
+              onClick={onMinimize}
+            >
+              <Minimize2Icon aria-hidden="true" />
+            </Button>
+          </div>
+          {warning ? (
+            <AssistantKeyWarning reason={warning} canManage={canManage} />
+          ) : null}
+          <AssistantConversation
+            workspaceId={workspaceId}
+            workspaceSlug={workspaceSlug}
+            chatId={chatId}
+            model={model}
+            turn={turn}
+            text={text}
+            onTextChange={onTextChange}
+            onNewChat={() => selectChat(null)}
+            onMinimize={onMinimize}
+            composerRef={composerRef}
           />
-          <h2
-            id={headingId}
-            className="flex-1 font-semibold text-foreground text-sm"
-          >
-            {t("workspace:assistant.title")}
-          </h2>
-          <Button
-            ref={chatsButtonRef}
-            variant="ghost"
-            size="xs"
-            className="lg:hidden"
-            aria-expanded={showHistory}
-            aria-controls={historyId}
-            onClick={() => toggleHistory(true, "history")}
-          >
-            <MessagesSquareIcon aria-hidden="true" />
-            {t("workspace:assistant.chats")}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t("workspace:assistant.minimize")}
-            title={t("workspace:assistant.minimize")}
-            onClick={onMinimize}
-          >
-            <Minimize2Icon aria-hidden="true" />
-          </Button>
         </div>
-        {warning ? (
-          <AssistantKeyWarning reason={warning} canManage={canManage} />
-        ) : null}
-        <AssistantConversation
+        <AssistantHistory
+          ref={historyRef}
+          id={historyId}
           workspaceId={workspaceId}
-          workspaceSlug={workspaceSlug}
-          chatId={chatId}
-          model={model}
-          turn={turn}
-          text={text}
-          onTextChange={onTextChange}
+          selectedChatId={chatId}
+          onSelect={selectChat}
           onNewChat={() => selectChat(null)}
-          onMinimize={onMinimize}
-          composerRef={composerRef}
+          onBack={() => toggleHistory(false, "chats-button")}
+          onDeleted={onChatDeleted}
+          className={cn(
+            "w-full shrink-0 border-border/60 lg:flex lg:w-64 lg:border-l",
+            !showHistory && "max-lg:hidden",
+          )}
         />
       </div>
-      <AssistantHistory
-        ref={historyRef}
-        id={historyId}
-        workspaceId={workspaceId}
-        selectedChatId={chatId}
-        onSelect={selectChat}
-        onNewChat={() => selectChat(null)}
-        onBack={() => toggleHistory(false, "chats-button")}
-        onDeleted={onChatDeleted}
-        className={cn(
-          "w-full shrink-0 border-border/60 lg:flex lg:w-64 lg:border-l",
-          !showHistory && "max-lg:hidden",
-        )}
-      />
     </div>
   );
 }
