@@ -540,6 +540,13 @@
       "when": 1794657152186,
       "tag": "0076_project_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1794862275667,
+      "tag": "0077_assistant",
+      "breakpoints": true
     }
   ]
 }

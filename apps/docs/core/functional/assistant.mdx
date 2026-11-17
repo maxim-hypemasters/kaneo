@@ -1,0 +1,192 @@
+---
+title: "Assistant"
+description: "Ask about the work in your workspace on Home, and approve each change the assistant prepares."
+---
+
+The assistant is a chat at the top of your workspace's **Home** page. Ask it about Features, milestones, tasks, bugs, releases, project pages, and Feature documents, and it looks them up for you. It can also prepare new work and edits, but nothing changes until you approve each one.
+
+It answers with a model from [OpenRouter](https://openrouter.ai), using a key and model that a workspace admin sets up. Kaneo needs no other service for it.
+
+## Set it up
+
+You need permission to manage workspace settings, which owners and admins have by default.
+
+1. Create a key on [OpenRouter](https://openrouter.ai/keys) and give it a credit limit. See [Limit spending](#limit-spending).
+2. In Kaneo, go to **Settings** and open **Workspace → Assistant**.
+3. Paste the key into **OpenRouter API key**.
+4. Choose a **Model**, or keep the default.
+5. Choose **Connect**.
+
+Kaneo checks the key with OpenRouter, then stores it encrypted. After that, the page shows only the key's last four characters, and members never see it. To replace the key, enter a new one and choose **Save changes**. To keep the saved key while changing other settings, leave the field blank.
+
+Until a key is saved, admins see a setup card at the top of Home. **Not now** hides it in that browser. Other members don't see the assistant until it's set up.
+
+To turn the assistant off for the workspace, choose **Remove key**. Members can't use it until an admin adds a key again. Their chats are kept.
+
+### Choose a model
+
+**Model** lists the OpenRouter models that support tool calls, with their price per million input and output tokens. The **Recommended** group has two:
+
+| Model | When to use it |
+| --- | --- |
+| `anthropic/claude-sonnet-5.5` | The default, for most workspaces |
+| `anthropic/claude-haiku-5.5` | The budget option: cheaper and faster, for simpler questions |
+
+You can also type any model id. Kaneo refuses a model that doesn't support tool calls. If OpenRouter's model list can't be loaded, Kaneo saves the model without checking it and tells you so.
+
+### Limit spending
+
+Every member chats on the workspace's key, so OpenRouter bills every answer to it. The key's credit limit on OpenRouter is the hard ceiling on what the assistant can spend. Set one in OpenRouter's [key settings](https://openrouter.ai/settings/keys).
+
+**Credit usage** shows how much the key has used out of its limit. It warns when the key has no limit. Use a separate key for each workspace, so one workspace can't use up another's credits.
+
+Kaneo also caps how much each person can use per day. See [Limits](#limits).
+
+### Data collection
+
+**Allow providers that may store prompts** is off by default. OpenRouter then sends requests only to providers that don't store prompts or train on them. Some models are only offered by providers that do. To use one of those, turn this on.
+
+## Chat on Home
+
+The chat sits at the top of **Home**, with your chat history beside it. On a narrow screen, choose **Chats** to switch between the conversation and the list.
+
+- Press **Enter** to send and **Shift+Enter** for a new line. A message can be up to 8,000 characters.
+- The answer appears as it's written. Steps show what the assistant looked at, such as **Tasks** or **Project page**.
+- Links in an answer open the task, project, release, or document in Kaneo.
+- Choose **Stop**, or press **Esc**, to end an answer early. Choose **Continue** to pick it up again.
+- Choose **New chat** to start over. Each chat has its own link, but only you can open it.
+- One answer runs in a chat at a time. If the chat is answering in another tab or on another device, it shows **Still working in another tab…**. Until that answer ends, you can't send a message, decide its changes, or delete the chat. Its steps and answer show up here every few seconds.
+
+Each chat is named after its first message. The chat with the latest answer comes first: sending a message, or an answer that continues, moves a chat to the top, but opening it doesn't. **Show older** loads more. A dot marks a chat with changes waiting for your approval.
+
+To delete a chat, open its menu in the list and choose **Delete**. The chat and its messages are deleted for good. Work the assistant created or changed stays as it is.
+
+Dates such as "this week" follow your browser's time zone.
+
+### Your chats are private
+
+A chat belongs to the person who started it, in the workspace where they started it. Nobody else can open it in Kaneo, including workspace owners and admins.
+
+Chats are stored in Kaneo's database. The people who run your Kaneo instance can access them there and in its backups.
+
+## What it can see and change
+
+The assistant acts as you. It sees only what you can see in this workspace, so projects you can't access stay hidden from it too, and it can only make changes your role allows. It doesn't see other workspaces. With the **Viewer** role, or any role that can't make changes, it only looks things up. See [Members and roles](/core/functional/collaborate-with-team#choose-a-role).
+
+It can look up:
+
+- projects, their columns and custom fields, workspace members, and labels
+- tasks, bugs, and Features, with their descriptions, comments, relations, links, custom field values, time entries, and activity
+- a Feature's work, activity, and latest update
+- milestones and releases
+- project pages and Feature documents
+- your own tasks, recent workspace activity, and workspace search
+
+It can prepare these changes:
+
+| Area | Changes |
+| --- | --- |
+| Projects | Create a project; change a project's name or description |
+| Tasks, bugs, and Features | Create one, including a Feature with its milestones and work in one change; change the title, status, priority, assignee, estimate, or due date; turn a task into a bug or back; set its Feature, milestone, release, or custom field values; rewrite or add to its description; add a comment, link, relation, or time entry |
+| Labels | Create a workspace label; add a label to a task |
+| Milestones | Create a milestone, with new tasks; edit a milestone |
+| Releases | Create or edit a release |
+| Features | Post a Feature update; create or edit a Feature document |
+| Project pages | Create or edit a page |
+
+It can't:
+
+- delete anything
+- archive or unarchive work
+- move tasks to another project, or duplicate or reorder them
+- move work in bulk
+- remove labels from tasks
+- edit comments or time entries
+- make a project public
+
+## Approve changes
+
+The assistant never changes anything by itself. Each change it prepares appears in the chat as a card. The card shows exactly what will be written:
+
+- **What it changes.** The title names the change and the item, such as *Update KAN-12 Fix login* or *Create task in Mobile*.
+- **The fields it sets.** On an update, the old value is crossed out before the new one. An empty value reads **None**.
+- **A diff of the text.** A rewrite of, or addition to, a page, Feature document, or task description shows the changes line by line.
+- **The work it includes.** A new Feature lists its milestones with their lead, release, and priority, and under each one the tasks and bugs it creates, with their estimates. Existing work it moves into the Feature is marked **Existing**. Work outside a milestone is listed under **Not in a milestone**, with the release that new work there goes to. A new milestone lists the tasks it creates the same way.
+
+Each waiting card ends with **Runs as you**, **Reject**, and **Approve**. Choose **Approve** to make the change, or **Reject** to drop it. When two or more cards are waiting, a bar above the message box counts them and offers **Approve all** and **Reject all**. After each decision, focus moves to the next waiting card's title, or to the message box when none is left.
+
+- **The change runs as you when you approve it.** Kaneo checks your permissions again then, so it fails if you've lost the right to make it.
+- **A successful card shows the result.** It names what was created or changed, with **Open** to go to it. Open boards update live, as with any other change.
+- **A failed card says why.** It reads **This change failed and nothing was written.**, followed by the reason.
+- **A rejected card folds into one line** marked **Rejected**.
+- **The answer continues after you decide.** Once nothing is waiting, the assistant carries on. If you reloaded the page in between, choose **Continue**.
+- **A new message skips waiting cards.** While cards wait, the message box warns that sending a new message skips them. If you send one anyway, each of those cards folds into one line marked **Skipped**, and nothing in them is written.
+- **Cards wait for you.** They stay until you decide, even after a reload. If they were already decided in another tab, Kaneo says so and shows the result.
+
+Kaneo also guards text that changed after the assistant read it:
+
+- The assistant rewrites a page, Feature document, or task description only after reading its full current text. If someone edits that text before you approve, the change fails and nothing is written. Ask the assistant to read it again.
+- Before it renames a task, page, Feature document, project, milestone, or release, or changes the description of a project, milestone, or release, Kaneo checks that the old text on the card is still current. If it isn't, nothing is written.
+- Other fields, such as status or assignee, are set as approved, even if someone changed them in the meantime.
+
+When a change removes an image or file from a description, page, or document, Kaneo keeps the upload instead of deleting it.
+
+If an approved change times out, the card says **This change may or may not have been made.** Check the item before you ask again. If the connection drops while a decision is on its way, Kaneo refreshes the chat and the rest of the workspace, so the cards and your open views show what was written.
+
+## Limits
+
+| Limit | Value |
+| --- | --- |
+| Message length | 8,000 characters |
+| Model calls in one answer | 12 |
+| Tool calls in one answer, lookups and changes together | 40, at most 10 per step |
+| Changes proposed in one step | 10 |
+| Time for one answer | 5 minutes |
+| Model calls per day | 300 per person in each workspace, reset at midnight UTC |
+| Answers running at once | 2 per person, 8 per API instance |
+
+When an answer needs more steps than one answer allows, choose **Continue** to let it keep going. Stopped and retried answers count toward the daily limit, and deleting a chat doesn't reset it.
+
+In a long chat, the assistant works from roughly the last 120,000 characters, and the chat shows its latest 300 messages. Start a new chat for a new topic. It's also cheaper, because less history is sent with each question.
+
+## Privacy
+
+To answer, Kaneo sends the following to OpenRouter, which passes it to the model's provider:
+
+- your messages and the chat so far
+- what the assistant looks up, such as task, document, comment, and activity text, names, and dates
+- the workspace's name, your name, and your local date and time
+
+Kaneo removes email addresses from what the assistant looks up before sending it. It never sends other people's chats or anything you can't see.
+
+Unless an admin allows it under [Data collection](#data-collection), OpenRouter uses only providers that don't store prompts or train on them. OpenRouter's own account settings decide whether OpenRouter logs prompts. In the privacy settings of the OpenRouter account that owns the key, keep prompt logging off unless you want OpenRouter to keep them.
+
+Kaneo doesn't log chat content, and OpenRouter's error messages never reach Kaneo's logs or error reports.
+
+## Self-hosting
+
+The assistant runs inside the Kaneo API and stores chats in PostgreSQL. It needs no extra service, and a single instance works without Redis. The API server needs outbound HTTPS access to `openrouter.ai`.
+
+- **Turn it off.** Set `DISABLE_ASSISTANT=true` and restart Kaneo. This removes the assistant from Home and settings on every workspace, and its API routes answer 404. Saved keys and chats stay in the database and return when you turn it back on. See [Environment variables](/core/installation/environment-variables#assistant).
+- **Keep `AUTH_SECRET` stable.** Kaneo encrypts the OpenRouter key with a key derived from `AUTH_SECRET`. If `AUTH_SECRET` changes, an admin must enter the key again. Back up `AUTH_SECRET` with your database; see [Backups and recovery](/core/operations/backups).
+- **Let answers stream.** Answers stream from `/api/assistant/` as server-sent events. The bundled image is ready for this. A reverse proxy in front of it must not buffer these responses and must allow at least 60 seconds between reads. Kaneo sends a heartbeat every 15 seconds. See [Nginx and HTTPS](/core/reverse-proxy/nginx).
+- **Internal requests.** Lookups and approved changes are requests from the API to itself, made as the person chatting. Like the [HTTP MCP endpoint](/core/integrations/mcp-stateless#reverse-proxy-and-internal-requests), they use [`KANEO_INTERNAL_API_URL`](/core/installation/environment-variables#mcp-and-assistant).
+- **Browser only.** The assistant needs a signed-in browser session, so API keys can't use it. To work with Kaneo from your own AI client, connect it through [MCP](/core/integrations/mcp).
+
+## Troubleshooting
+
+| Problem | What to do |
+| --- | --- |
+| **OpenRouter rejected this key** when saving | Copy the full key again, or create a new one. |
+| **Key rejected** in settings, or a warning on Home | OpenRouter no longer accepts the saved key, for example because it was deleted or disabled there. Enter a new key. |
+| **Out of credits** | Add credits on OpenRouter, or raise the key's credit limit. The warning clears after the next answer that succeeds, or when you save a new key. |
+| **Re-enter key** in settings, or the assistant disappeared after a restart | `AUTH_SECRET` changed, so Kaneo can't decrypt the saved key. An admin enters the key again in **Workspace → Assistant**. Chats are kept. |
+| **The model couldn't take this request** | The chat may be too long for the model, or the model may no longer be offered with tool calls. Start a new chat, or pick another model. With **Allow providers that may store prompts** off, the model may have no provider that qualifies. |
+| **The model provider declined to answer this request** | The provider's moderation blocked it. Rephrase the question, or pick another model. |
+| OpenRouter is limiting requests, or is unavailable | Wait a moment, then choose **Retry**. |
+| **You reached today's assistant limit** | The limit resets at midnight UTC. |
+| **Too many answers are running at once** | Wait for another answer to finish, then try again. |
+| The answer appears all at once after a long wait | A proxy is buffering the stream. Turn off response buffering and compression for `/api/assistant/`. |
+| **The connection was lost before the answer finished** | A proxy closed the stream. Raise its read timeout to 60 seconds or more, then choose **Retry** or **Continue**. |
+| The assistant doesn't appear on Home | If you're a member, an admin hasn't set it up yet. If you're an admin, you may have chosen **Not now**: open **Workspace → Assistant** in Settings. If neither applies, ask your operator whether `DISABLE_ASSISTANT` is set. |
+| Models don't load in settings | Type the model id. Kaneo saves it without checking. |

@@ -2,6 +2,8 @@ import { useLocalDay } from "@/hooks/use-local-day";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { validateHomeChatSearch } from "@/components/assistant/home-chat-search";
+import { AssistantPanel } from "@/components/assistant/panel/assistant-panel";
 import { TrialExpiredCallout } from "@/components/billing/trial-expired-callout";
 import WorkspaceLayout from "@/components/common/workspace-layout";
 import { ActivityFeed } from "@/components/home/activity-feed";
@@ -22,6 +24,7 @@ import type { TaskType } from "@/types/task";
 export const Route = createFileRoute(
   "/_layout/_authenticated/dashboard/workspace/$workspaceId/",
 )({
+  validateSearch: validateHomeChatSearch,
   component: RouteComponent,
 });
 
@@ -29,6 +32,8 @@ function RouteComponent() {
   const { t } = useTranslation();
   const day = useLocalDay();
   const { workspaceId } = Route.useParams();
+  const { chat } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const {
     data: assigned,
     isLoading,
@@ -80,6 +85,18 @@ function RouteComponent() {
                 />
               )}
             </header>
+
+            <AssistantPanel
+              key={workspaceId}
+              workspaceId={workspaceId}
+              chatId={chat ?? null}
+              onSelectChat={(chatId, options) =>
+                void navigate({
+                  search: chatId ? { chat: chatId } : {},
+                  replace: options?.replace,
+                })
+              }
+            />
 
             <WeekStrip
               tasks={assigned?.tasks ?? []}

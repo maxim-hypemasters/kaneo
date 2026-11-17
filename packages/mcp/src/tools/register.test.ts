@@ -3,7 +3,10 @@ import { registerTools } from "./register.js";
 
 type RegisteredTool = {
   name: string;
-  config: { inputSchema?: { parse: (args: unknown) => unknown } };
+  config: {
+    inputSchema?: { parse: (args: unknown) => unknown };
+    annotations?: { readOnlyHint?: unknown; destructiveHint?: unknown };
+  };
   handler: (args: Record<string, unknown>) => Promise<{
     content: Array<{ type: string; text: string }>;
     isError?: boolean;
@@ -91,6 +94,25 @@ describe("registerTools", () => {
         name,
         expect.any(Object),
         expect.any(Function),
+      );
+    }
+  });
+
+  it("annotates every tool as a read or a write, and deletes as destructive", () => {
+    const { server, tools } = createServerMock();
+
+    registerTools(server as never, { client: { json: vi.fn() } as never });
+
+    expect(tools.size).toBe(81);
+    for (const [name, { config }] of tools) {
+      const isRead =
+        name === "whoami" ||
+        name === "search" ||
+        name.startsWith("list_") ||
+        name.startsWith("get_");
+      expect(config.annotations?.readOnlyHint, name).toBe(isRead);
+      expect(config.annotations?.destructiveHint ?? false, name).toBe(
+        name.startsWith("delete_"),
       );
     }
   });
@@ -239,14 +261,174 @@ describe("registerTools", () => {
     registerTools(server as never, { client: client as never });
 
     const tool = tools.get("search");
-    expect(() =>
-      tool?.config.inputSchema?.parse({ q: "checkout", type: "features" }),
-    ).not.toThrow();
-    await tool?.handler({ q: "checkout", type: "features" });
+    const args = { q: "checkout", type: "features", workspaceId: "ws 1" };
+    expect(() => tool?.config.inputSchema?.parse(args)).not.toThrow();
+    await tool?.handler(args);
     expect(client.json).toHaveBeenCalledWith(
-      "/api/search?q=checkout&type=features",
+      "/api/search?q=checkout&type=features&workspaceId=ws+1",
     );
   });
+
+  it("requires a workspace for search, as the API does", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn() };
+
+    registerTools(server as never, { client: client as never });
+
+    const result = await tools.get("search")?.handler({ q: "checkout" });
+
+    expect(result?.isError).toBe(true);
+    expect(result?.content[0]?.text).toContain("workspaceId");
+    expect(client.json).not.toHaveBeenCalled();
+  });
+
+  it("limits task activity only when a limit is given", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue([]) };
+
+    registerTools(server as never, { client: client as never });
+
+    await tools.get("list_task_activity")?.handler({ taskId: "t 1" });
+    await tools.get("list_task_activity")?.handler({ taskId: "t 1", limit: 5 });
+    const tooMany = await tools
+      .get("list_task_activity")
+      ?.handler({ taskId: "t 1", limit: 101 });
+
+    expect(client.json.mock.calls).toEqual([
+      ["/api/activity/t%201"],
+      ["/api/activity/t%201?limit=5"],
+    ]);
+    expect(tooMany?.isError).toBe(true);
+  });
+
+  it("creates a task with custom field values", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "task-1" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    const customFields = [
+      { fieldId: "points", value: "3" },
+      { fieldId: "tags", value: '["ui"]' },
+    ];
+    const result = await tools.get("create_task")?.handler({
+      projectId: "p",
+      title: "Polish",
+      description: "",
+      customFields,
+    });
+
+    expect(result?.isError).toBe(false);
+    expect(JSON.parse(client.json.mock.calls[0]?.[1].body)).toEqual({
+      title: "Polish",
+      description: "",
+      customFields,
+    });
+  });
+
+  it("creates a Feature with its milestones and work in one request", async () => {
+    const { server, tools } = createServerMock();
+    const client = { json: vi.fn().mockResolvedValue({ id: "feature-1" }) };
+
+    registerTools(server as never, { client: client as never });
+
+    const featureComposition = {
+      milestones: [
+        { key: "m1", title: "Beta", priority: "high", releaseId: "rel-1" },
+      ],
+      existingTasks: [{ id: "task-9", milestoneKey: "m1" }],
+      newTasks: [
+        { title: "Write docs", type: "bug", milestoneKey: "m1" },
+        { title: "Ship it", estimateSeconds: 3600, milestoneKey: null },
+      ],
+      unassignedReleaseId: null,
+    };
+    const result = await tools.get("create_task")?.handler({
+      projectId: "p",
+      title: "Onboarding",
+      description: "",
+      type: "feature",
+      customFields: [{ fieldId: "area", value: "growth" }],
+      featureComposition,
+    });
+
+    expect(result?.isError).toBe(false);
+    expect(client.json).toHaveBeenCalledWith("/api/task/p", {
+      method: "POST",
+      body: JSON.stringify({
+        title: "Onboarding",
+        description: "",
+        type: "feature",
+        customFields: [{ fieldId: "area", value: "growth" }],
+        featureComposition,
+      }),
+    });
+  });
+
+  it.each([
+    ["for a Task", { type: "task", featureComposition: {} }],
+    ["without a type", { featureComposition: {} }],
+    [
+      "with duplicate milestone keys",
+      {
+        type: "feature",
+        featureComposition: {
+          milestones: [
+            { key: "m", title: "A" },
+            { key: "m", title: "B" },
+          ],
+        },
+      },
+    ],
+    [
+      "with work in an unknown milestone",
+      {
+        type: "feature",
+        featureComposition: {
+          newTasks: [{ title: "Draft", milestoneKey: "missing" }],
+        },
+      },
+    ],
+    [
+      "with duplicate existing work",
+      {
+        type: "feature",
+        featureComposition: { existingTasks: [{ id: "t" }, { id: "t" }] },
+      },
+    ],
+    [
+      "with a Feature draft",
+      {
+        type: "feature",
+        featureComposition: { newTasks: [{ title: "x", type: "feature" }] },
+      },
+    ],
+    [
+      "with an unknown field",
+      {
+        type: "feature",
+        featureComposition: { milestones: [], startDate: "2026-11-16" },
+      },
+    ],
+  ])(
+    "rejects a featureComposition %s without a request",
+    async (_case, extra) => {
+      const { server, tools } = createServerMock();
+      const client = { json: vi.fn() };
+
+      registerTools(server as never, { client: client as never });
+
+      const result = await tools.get("create_task")?.handler({
+        projectId: "p",
+        title: "Onboarding",
+        description: "",
+        ...extra,
+      });
+
+      expect(result?.isError).toBe(true);
+      expect(client.json).not.toHaveBeenCalled();
+    },
+  );
 
   it("gets one task by ticket ID with an optional workspace", async () => {
     const { server, tools } = createServerMock();
@@ -309,16 +491,15 @@ describe("registerTools", () => {
     const putBody = JSON.parse(
       String((putCall?.[1] as { body?: string })?.body ?? "{}"),
     );
-    expect(putBody).toEqual(
-      expect.objectContaining({
-        title: "Draft spec",
-        description: "Write docs",
-        status: "done",
-        priority: "medium",
-        projectId: "project-1",
-        position: 4,
-      }),
-    );
+    expect(putBody).toEqual({
+      title: "Draft spec",
+      status: "done",
+      priority: "medium",
+      projectId: "project-1",
+      position: 4,
+    });
+    // Left out, the API keeps the current description.
+    expect(putBody).not.toHaveProperty("description");
     expect(result?.isError).toBe(false);
   });
 

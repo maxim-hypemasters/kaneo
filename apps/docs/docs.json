@@ -68,7 +68,8 @@
 							"core/functional/releases",
 							"core/functional/calendar-and-gantt",
 							"core/functional/configure-workflows",
-							"core/functional/manage-workspace-labels"
+							"core/functional/manage-workspace-labels",
+							"core/functional/assistant"
 						]
 					},
 					{

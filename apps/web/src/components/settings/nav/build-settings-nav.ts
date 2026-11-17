@@ -9,6 +9,7 @@ import {
   Settings,
   Shield,
   SlidersHorizontal,
+  Sparkles,
   Tag,
   User,
 } from "lucide-react";
@@ -25,6 +26,10 @@ type BuildSettingsNavInput = {
   workspaceName?: string;
   billingEnabled: boolean;
   canImport: boolean;
+  // The assistant link needs workspace:manage_settings and an instance that
+  // has not turned the assistant off (config.hasAssistant).
+  canManageSettings?: boolean;
+  hasAssistant?: boolean;
   hasAdminAccess: boolean;
   projects: { id: string; name: string; icon?: string | null }[];
 };
@@ -63,6 +68,8 @@ export function buildSettingsNav({
   workspaceName,
   billingEnabled,
   canImport,
+  canManageSettings = false,
+  hasAssistant = false,
   hasAdminAccess,
   projects,
 }: BuildSettingsNavInput): SettingsNav {
@@ -125,6 +132,16 @@ export function buildSettingsNav({
           to: "/dashboard/settings/workspace/labels",
           icon: Tag,
         },
+        ...(canManageSettings && hasAssistant
+          ? [
+              {
+                id: "workspace-assistant",
+                label: t("settings:assistantPage.title"),
+                to: "/dashboard/settings/workspace/assistant",
+                icon: Sparkles,
+              },
+            ]
+          : []),
         ...(canImport
           ? [
               {

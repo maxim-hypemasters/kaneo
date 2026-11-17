@@ -12,6 +12,7 @@ async function updateTaskDescription({
   description,
   expectedDescription,
   draftAssetIds,
+  keepRemovedAssets,
   currentUserId,
   expectedProjectId,
   expectedWorkspaceId,
@@ -20,6 +21,7 @@ async function updateTaskDescription({
   description: string;
   expectedDescription?: string;
   draftAssetIds?: string[];
+  keepRemovedAssets?: boolean;
   currentUserId: string;
   expectedProjectId?: string;
   expectedWorkspaceId?: string;
@@ -80,6 +82,7 @@ async function updateTaskDescription({
 
   await publishTaskMutation(existingTask, updatedTask, currentUserId, {
     fields: ["description"],
+    keepRemovedAssets,
   });
   return updatedTask;
 }

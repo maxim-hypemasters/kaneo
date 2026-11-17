@@ -11,6 +11,8 @@ function build(
     workspaceName: "Acme",
     billingEnabled: false,
     canImport: false,
+    canManageSettings: false,
+    hasAssistant: false,
     hasAdminAccess: false,
     projects: [],
     ...overrides,
@@ -49,6 +51,36 @@ describe("buildSettingsNav", () => {
       "/dashboard/settings/workspace/import",
       "/dashboard/settings/workspace/billing",
     ]);
+  });
+
+  it("only offers the assistant to settings managers when the instance has it", () => {
+    const linkIds = (nav: ReturnType<typeof build>) =>
+      nav.workspace.links.map((link) => link.id);
+
+    expect(linkIds(build())).not.toContain("workspace-assistant");
+    expect(linkIds(build({ canManageSettings: true }))).not.toContain(
+      "workspace-assistant",
+    );
+    expect(linkIds(build({ hasAssistant: true }))).not.toContain(
+      "workspace-assistant",
+    );
+
+    const nav = build({
+      canManageSettings: true,
+      hasAssistant: true,
+      canImport: true,
+    });
+    expect(nav.workspace.links.map((link) => link.to)).toEqual([
+      "/dashboard/settings/workspace/general",
+      "/dashboard/settings/workspace/roles",
+      "/dashboard/settings/workspace/labels",
+      "/dashboard/settings/workspace/assistant",
+      "/dashboard/settings/workspace/import",
+    ]);
+    expect(
+      nav.workspace.links.find((link) => link.id === "workspace-assistant")
+        ?.label,
+    ).toBe("settings:assistantPage.title");
   });
 
   it("only shows administration to instance admins", () => {

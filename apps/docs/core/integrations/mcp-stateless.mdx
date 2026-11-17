@@ -38,7 +38,7 @@ PostgreSQL and shared between API replicas.
 
 Forward the client’s authorization, content type, and MCP headers unchanged. Allow streaming responses for clients that use them.
 
-HTTP MCP tools reach Kaneo’s API through `KANEO_INTERNAL_API_URL`, which defaults to `http://127.0.0.1:1337`. This is a server-side address, separate from the public URL used for discovery and sign-in. Set it only when that loopback address does not reach the API from its own process.
+HTTP MCP tools reach Kaneo’s API through `KANEO_INTERNAL_API_URL`, which defaults to `http://127.0.0.1:1337`. The in-app [assistant](/core/functional/assistant) uses the same address for its tool calls. This is a server-side address, separate from the public URL used for discovery and sign-in. Set it only when that loopback address does not reach the API from its own process.
 
 ## Troubleshooting
 

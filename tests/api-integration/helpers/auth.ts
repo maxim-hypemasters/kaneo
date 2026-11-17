@@ -24,6 +24,24 @@ export function mockAuthenticatedSession(user: User) {
   });
 }
 
+/**
+ * Resolves a session only for `Authorization: Bearer token-<userId>` of one
+ * of `users`, so each request is authenticated as the user it names and
+ * loopback calls really pass a token. Anything else is anonymous.
+ */
+export function mockSessionsByToken(users: User[]) {
+  const byToken = new Map(users.map((user) => [`token-${user.id}`, user]));
+  const resolve = async (context: { headers?: HeadersInit }) => {
+    const authorization = new Headers(context?.headers).get("authorization");
+    const token = authorization?.match(/^Bearer\s+(\S+)$/i)?.[1];
+    const user = token ? byToken.get(token) : undefined;
+    return user ? { session: createSession(user.id), user } : null;
+  };
+  return vi
+    .spyOn(auth.api, "getSession")
+    .mockImplementation(resolve as unknown as typeof auth.api.getSession);
+}
+
 export function mockAnonymousSession() {
   return vi.spyOn(auth.api, "getSession").mockResolvedValue(null);
 }

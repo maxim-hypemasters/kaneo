@@ -18,6 +18,7 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import activity from "./activity";
 import admin from "./admin";
+import assistant from "./assistant";
 import { auth } from "./auth";
 import { organizationRoutes } from "./auth-openapi";
 import billing from "./billing";
@@ -95,6 +96,10 @@ import user from "./user";
 import getAvatar from "./user/controllers/get-avatar";
 import { apiKeyRejection } from "./utils/api-key-rejection";
 import { applyApiKeyHeaders } from "./utils/apply-api-key-headers";
+import {
+  ASSISTANT_WORKSPACE_HEADER,
+  parseAssistantWorkspacePin,
+} from "./utils/assistant-workspace-pin";
 import { authenticateApiRequest } from "./utils/authenticate-api-request";
 import {
   authorizeAssetAccess,
@@ -808,7 +813,10 @@ export function createApp() {
         const windowId = c.req.header("X-Kaneo-Window-Id");
         const userId = c.get("userId");
         const initiatorId = windowId ? `${userId}:${windowId}` : userId;
-        return await eventContext.run({ initiatorId }, next);
+        const pinnedWorkspaceId = parseAssistantWorkspacePin(
+          c.req.header(ASSISTANT_WORKSPACE_HEADER),
+        );
+        return await eventContext.run({ initiatorId, pinnedWorkspaceId }, next);
       } catch (error) {
         if (!(error instanceof HTTPException)) {
           console.error("API authentication failed:", error);
@@ -880,6 +888,7 @@ export function createApp() {
   const importApi = api.route("/import", importRoutes);
   const userApi = api.route("/user", user);
   const adminApi = api.route("/admin", admin);
+  const assistantApi = api.route("/assistant", assistant);
 
   app.route(
     "/",
@@ -1012,6 +1021,7 @@ export function createApp() {
     timeEntryApi,
     userApi,
     adminApi,
+    assistantApi,
     workflowRuleApi,
     workspaceApi,
     customFieldApi,
@@ -1153,6 +1163,7 @@ const {
   timeEntryApi,
   userApi,
   adminApi,
+  assistantApi,
   workflowRuleApi,
   workspaceApi,
   customFieldApi,
@@ -1169,6 +1180,8 @@ const isMainModule =
 if (isMainModule) {
   void startServer(injectWebSocket);
 }
+
+export type { AssistantStreamEvent } from "./assistant/stream-events";
 
 export type AppType =
   | typeof billingApi
@@ -1208,6 +1221,7 @@ export type AppType =
   | typeof importApi
   | typeof userApi
   | typeof adminApi
+  | typeof assistantApi
   | typeof publicProjectApi
   | typeof invitationPublicApi
   | typeof oauthApi;

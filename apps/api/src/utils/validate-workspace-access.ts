@@ -1,6 +1,7 @@
 import { and, eq, or } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db, { schema } from "../database";
+import { getPinnedWorkspaceId } from "./assistant-workspace-pin";
 import { hasInstanceAdminRole } from "./instance-admin-role";
 
 type ValidateWorkspaceAccessOptions = {
@@ -40,6 +41,13 @@ export async function validateWorkspaceAccess(
     new HTTPException(404, {
       message: options.notFoundMessage ?? "Workspace not found",
     });
+
+  // A pinned request treats every other workspace as one it is not in,
+  // instance admins included.
+  const pinnedWorkspaceId = getPinnedWorkspaceId();
+  if (pinnedWorkspaceId && workspaceId !== pinnedWorkspaceId) {
+    throw notFound();
+  }
 
   const [user] = await db
     .select({ role: schema.userTable.role })

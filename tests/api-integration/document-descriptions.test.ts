@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { beforeEach, expect, it, vi } from "vite-plus/test";
 import db, { schema } from "../../apps/api/src/database";
 import { auth } from "../../apps/api/src/auth";
@@ -19,6 +19,7 @@ const effects = vi.hoisted(() => ({
   publish: vi.fn(),
   presign: vi.fn(),
   verify: vi.fn(),
+  deleteObject: vi.fn(),
 }));
 vi.mock("../../apps/api/src/events", async (original) => ({
   ...(await original<typeof import("../../apps/api/src/events")>()),
@@ -28,6 +29,7 @@ vi.mock("../../apps/api/src/storage/s3", async (original) => ({
   ...(await original<typeof import("../../apps/api/src/storage/s3")>()),
   createTaskImageUploadUrl: effects.presign,
   verifyTaskAssetUpload: effects.verify,
+  deleteS3Object: effects.deleteObject,
 }));
 
 beforeEach(async () => {
@@ -40,6 +42,7 @@ beforeEach(async () => {
     headers: {},
   });
   effects.verify.mockResolvedValue({ size: 12, contentType: "image/png" });
+  effects.deleteObject.mockResolvedValue(undefined);
 });
 
 async function setup(
@@ -143,6 +146,56 @@ it("returns a coded conflict without claiming uploads or publishing activity", a
     }),
   ).toMatchObject({ taskId: null, surface: "draft" });
   expect(effects.publish).not.toHaveBeenCalled();
+});
+
+it("keeps uploads a save removes with keepRemovedAssets and deletes them by default", async () => {
+  const ctx = await setup();
+  const [kept, removed] = await Promise.all(
+    ["kept-upload", "removed-upload"].map((objectKey) =>
+      draftAsset(ctx, {
+        taskId: ctx.task.id,
+        surface: "description",
+        objectKey,
+      }),
+    ),
+  );
+  const image = (id: string) => `![image](/api/asset/${id})`;
+  await db
+    .update(schema.taskTable)
+    .set({ description: `${image(kept!.id)} ${image(removed!.id)}` })
+    .where(eq(schema.taskTable.id, ctx.task.id));
+  const remaining = async () =>
+    (
+      await db
+        .select({ id: schema.assetTable.id })
+        .from(schema.assetTable)
+        .where(inArray(schema.assetTable.id, [kept!.id, removed!.id]))
+    )
+      .map((asset) => asset.id)
+      .sort();
+
+  expect(
+    (
+      await put(ctx, {
+        description: image(removed!.id),
+        keepRemovedAssets: "yes",
+      })
+    ).status,
+  ).toBe(400);
+  expect(
+    (
+      await put(ctx, {
+        description: image(removed!.id),
+        keepRemovedAssets: true,
+      })
+    ).status,
+  ).toBe(200);
+  expect((await put(ctx, { description: "" })).status).toBe(200);
+  // Cleanup runs after the response; once the default save has removed its
+  // upload, the earlier save would have removed its own as well.
+  await vi.waitFor(async () => expect(await remaining()).toEqual([kept!.id]));
+  expect(effects.deleteObject).toHaveBeenCalledTimes(1);
+  expect(effects.deleteObject).toHaveBeenCalledWith("removed-upload");
 });
 
 it("serializes concurrent editors so exactly one Save succeeds", async () => {

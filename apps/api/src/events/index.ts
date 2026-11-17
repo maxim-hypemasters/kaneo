@@ -3,7 +3,11 @@ import { EventEmitter } from "node:events";
 
 const EVENTS = new EventEmitter();
 EVENTS.setMaxListeners(100);
-export const eventContext = new AsyncLocalStorage<{ initiatorId: string }>();
+export const eventContext = new AsyncLocalStorage<{
+  initiatorId: string;
+  // Set by the assistant workspace header; see utils/assistant-workspace-pin.
+  pinnedWorkspaceId?: string;
+}>();
 
 export type EventPayload<T = unknown> = {
   type: string;

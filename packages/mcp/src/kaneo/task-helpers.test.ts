@@ -46,6 +46,29 @@ describe("buildFullTaskUpdateBody", () => {
     expect(body.position).toBe(1);
   });
 
+  it("sends the description only when the patch sets it", () => {
+    const existing = {
+      title: "T",
+      description: "A shortened board copy",
+      status: "open",
+      priority: "low",
+      projectId: "p1",
+      position: 1,
+    };
+    expect(
+      buildFullTaskUpdateBody(existing, { title: "U" }),
+    ).not.toHaveProperty("description");
+    expect(
+      buildFullTaskUpdateBody({ ...existing, type: "feature" }, { title: "U" }),
+    ).not.toHaveProperty("description");
+    expect(
+      buildFullTaskUpdateBody(existing, { description: "New" }).description,
+    ).toBe("New");
+    expect(
+      buildFullTaskUpdateBody(existing, { description: null }).description,
+    ).toBe("");
+  });
+
   it("never copies read-only schedule dates back into updates", () => {
     const existing = {
       title: "Bug",
