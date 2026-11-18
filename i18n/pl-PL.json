@@ -702,7 +702,8 @@
 			"inbox": "Inbox",
 			"invitePeople": "Invite people",
 			"myTasks": "My tasks",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"workspace": "Obszar roboczy"
 		},
 		"projectList": {
 			"viewProject": "Zobacz projekt",

@@ -2659,7 +2659,8 @@
 			"inbox": "Inbox",
 			"invitePeople": "Invite people",
 			"myTasks": "My tasks",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"workspace": "Không gian làm việc"
 		},
 		"projectList": {
 			"viewProject": "Xem dự án",

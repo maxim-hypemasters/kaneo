@@ -11027,6 +11027,9 @@
 						},
 						"timeOff": {
 							"type": "string"
+						},
+						"workspace": {
+							"type": "string"
 						}
 					},
 					"required": [
@@ -11039,7 +11042,8 @@
 						"inbox",
 						"myTasks",
 						"invitePeople",
-						"timeOff"
+						"timeOff",
+						"workspace"
 					]
 				},
 				"projectList": {

@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
 import { NavSecondary } from "@/components/nav-secondary";
+import { NavWorkspace } from "@/components/nav-workspace";
 import { ThemeToggleDropdown } from "@/components/theme-toggle-dropdown";
 import { TrialCard } from "@/components/trial-card";
 import {
@@ -39,6 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent className="overflow-x-hidden gap-1 py-1">
         <NavMain />
+        <NavWorkspace />
         <NavProjects />
       </SidebarContent>
       <SidebarFooter>

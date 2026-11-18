@@ -2701,7 +2701,8 @@
 			"inbox": "Inbox",
 			"myTasks": "My tasks",
 			"invitePeople": "Invite people",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"workspace": "Workspace"
 		},
 		"projectList": {
 			"viewProject": "View Project",
