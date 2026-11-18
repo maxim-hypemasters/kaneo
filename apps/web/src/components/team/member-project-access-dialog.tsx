@@ -1,8 +1,11 @@
 import { FolderLockIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { MemberTeamAccessNote } from "@/components/teams/member-team-access-note";
+import { teamProjectsForMember } from "@/components/teams/team-projects-for-member";
 import useUpdateMemberProjectAccess from "@/hooks/mutations/workspace-user/use-update-member-project-access";
 import useGetProjects from "@/hooks/queries/project/use-get-projects";
+import { useGetTeams } from "@/hooks/queries/team/use-get-teams";
 import useGetMyProjectAccess from "@/hooks/queries/workspace-users/use-get-my-project-access";
 import { toast } from "@/lib/toast";
 import { Button } from "../ui/button";
@@ -48,6 +51,10 @@ function MemberProjectAccessDialog({
   const managerLimited =
     myAccess.isError || myAccess.data?.projectAccess === "selected";
   const { mutateAsync, isPending } = useUpdateMemberProjectAccess();
+  const teams = useGetTeams(open ? workspaceId : "");
+  const teamGranted = member
+    ? teamProjectsForMember(teams.data ?? [], member.userId)
+    : [];
 
   if (open !== wasOpen) {
     setWasOpen(open);
@@ -63,7 +70,8 @@ function MemberProjectAccessDialog({
       value,
       (projects ?? []).map((project) => project.id),
     );
-    if (!isProjectAccessComplete(request)) {
+    // Teams can be a member's only way into projects.
+    if (!isProjectAccessComplete(request) && teamGranted.length === 0) {
       setShowError(true);
       return;
     }
@@ -108,6 +116,9 @@ function MemberProjectAccessDialog({
               showError ? t("team:projectAccess.selectAtLeastOne") : undefined
             }
           />
+          {value.projectAccess === "selected" ? (
+            <MemberTeamAccessNote granted={teamGranted} />
+          ) : null}
         </DialogPanel>
         <DialogFooter>
           <DialogClose

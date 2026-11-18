@@ -29,6 +29,13 @@ export function projectAccessCondition(
             AND access_grant.user_id = ${userId}
             AND access_grant.project_id = access_project.id
         )
+        AND NOT EXISTS (
+          SELECT 1 FROM team_project AS access_team_project
+          JOIN team_member AS access_team_member
+            ON access_team_member.team_id = access_team_project.team_id
+          WHERE access_team_project.project_id = access_project.id
+            AND access_team_member.user_id = ${userId}
+        )
     )
   )`;
 }

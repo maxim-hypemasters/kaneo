@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { getApiUrl } from "@/fetchers/get-api-url";
+import { teamsKey } from "@/hooks/queries/team/team-keys";
 import { timeOffKey } from "@/hooks/queries/time-off/time-off-keys";
 import {
   evictInaccessibleWorkspaceCache,
@@ -113,9 +114,14 @@ export function useUserWebSocket() {
             evictInaccessibleWorkspaceCache(queryClient, message.workspaceIds);
             for (const workspaceId of message.workspaceIds)
               reconcileProjectAccess(queryClient, workspaceId, () => !disposed);
-            // TIME_OFF_UPDATED messages missed while disconnected.
+            // TIME_OFF_UPDATED and TEAMS_UPDATED messages missed while
+            // disconnected.
             void queryClient.invalidateQueries(
               { queryKey: ["time-off"] },
+              { cancelRefetch: false },
+            );
+            void queryClient.invalidateQueries(
+              { queryKey: ["teams"] },
               { cancelRefetch: false },
             );
             refreshOrganizationState();
@@ -153,6 +159,8 @@ export function useUserWebSocket() {
               ["workspace-activity", workspaceId],
               ["labels", workspaceId],
               ["workspace-users", workspaceId, "project-access"],
+              // Teams list only the linked projects the viewer can open.
+              teamsKey(workspaceId),
               ["notifications"],
             ])
               void queryClient.invalidateQueries({ queryKey });
@@ -166,6 +174,12 @@ export function useUserWebSocket() {
           if (message.type === "TIME_OFF_UPDATED" && message.workspaceId) {
             void queryClient.invalidateQueries(
               { queryKey: timeOffKey(message.workspaceId) },
+              { cancelRefetch: false },
+            );
+          }
+          if (message.type === "TEAMS_UPDATED" && message.workspaceId) {
+            void queryClient.invalidateQueries(
+              { queryKey: teamsKey(message.workspaceId) },
               { cancelRefetch: false },
             );
           }

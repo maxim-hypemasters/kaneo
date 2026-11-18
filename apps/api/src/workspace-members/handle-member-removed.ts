@@ -2,6 +2,7 @@ import { syncWorkspaceSeats } from "../billing/controllers/sync-seats";
 import { publishEvent } from "../events";
 import { clearMemberProjectAccess } from "../project-access/clear-member-project-access";
 import { dropTriageMemberships } from "../triage/remove-triage-memberships";
+import { clearRemovedMemberTeams } from "../team/clear-removed-member-teams";
 import { clearRemovedMemberTimeOff } from "../time-off/clear-removed-member-time-off";
 import { hasInstanceAdminRole } from "../utils/instance-admin-role";
 import { revokeWorkspaceConnections } from "../ws";
@@ -20,6 +21,9 @@ export async function handleMemberRemoved(removal: {
   });
   await clearRemovedMemberTimeOff(workspaceId, userId).catch((error) => {
     console.error("Time off cleanup failed:", error);
+  });
+  await clearRemovedMemberTeams(workspaceId, userId).catch((error) => {
+    console.error("Team cleanup failed:", error);
   });
   await publishEvent("project_members.updated", { workspaceId });
   if (!hasInstanceAdminRole(userRole)) {

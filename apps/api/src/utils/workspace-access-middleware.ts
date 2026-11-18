@@ -20,7 +20,8 @@ type LookupResource =
   | "release"
   | "workflowRule"
   | "customField"
-  | "timeOff";
+  | "timeOff"
+  | "team";
 
 type WorkspaceIdSource =
   | { type: "query"; key: string }
@@ -54,6 +55,7 @@ const RESOURCE_NOT_FOUND: Record<LookupResource, string> = {
   workflowRule: "Workflow rule not found",
   customField: "Custom field not found",
   timeOff: TIME_OFF_NOT_FOUND,
+  team: "Team not found",
 };
 
 type WorkspaceAccessMiddlewareConfig = {
@@ -421,6 +423,15 @@ async function lookupScope(
         : null;
     }
 
+    case "team": {
+      const [team] = await db
+        .select({ workspaceId: schema.teamTable.workspaceId })
+        .from(schema.teamTable)
+        .where(eq(schema.teamTable.id, id))
+        .limit(1);
+      return team ? { workspaceId: team.workspaceId, projectId: null } : null;
+    }
+
     default:
       return null;
   }
@@ -520,6 +531,11 @@ export const workspaceAccess = {
   fromTimeOff: (idKey = "id") =>
     workspaceAccessMiddleware({
       sources: [{ type: "lookup", resource: "timeOff", idKey }],
+    }),
+
+  fromTeam: (idKey = "id") =>
+    workspaceAccessMiddleware({
+      sources: [{ type: "lookup", resource: "team", idKey }],
     }),
 
   fromWorkflowRule: (idKey = "id") =>
