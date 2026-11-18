@@ -264,34 +264,47 @@ export const billingEventTable = pgTable("billing_event", {
 export const teamTable = pgTable(
   "team",
   {
-    id: text("id").primaryKey(),
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
     name: text("name").notNull(),
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => workspaceTable.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").$onUpdate(
-      () => /* @__PURE__ */ new Date(),
-    ),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (table) => [index("team_workspaceId_idx").on(table.workspaceId)],
+  (table) => [
+    index("team_workspaceId_idx").on(table.workspaceId),
+    unique("team_workspace_id_id_unique").on(table.workspaceId, table.id),
+  ],
 );
 
 export const teamMemberTable = pgTable(
   "team_member",
   {
-    id: text("id").primaryKey(),
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
     teamId: text("team_id")
       .notNull()
       .references(() => teamTable.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => userTable.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
   },
   (table) => [
     index("teamMember_teamId_idx").on(table.teamId),
     index("teamMember_userId_idx").on(table.userId),
+    unique("team_member_team_user_unique").on(table.teamId, table.userId),
   ],
 );
 
@@ -781,6 +794,38 @@ export const workspaceMemberProjectTable = pgTable(
       table.projectId,
     ),
     index("workspace_member_project_projectId_idx").on(table.projectId),
+  ],
+);
+
+// Members of a linked team can open the project even when their own project
+// access is limited to selected projects.
+export const teamProjectTable = pgTable(
+  "team_project",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    teamId: text("team_id").notNull(),
+    projectId: text("project_id").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.workspaceId, table.teamId],
+      foreignColumns: [teamTable.workspaceId, teamTable.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.workspaceId, table.projectId],
+      foreignColumns: [projectTable.workspaceId, projectTable.id],
+    }).onDelete("cascade"),
+    unique("team_project_team_project_unique").on(
+      table.teamId,
+      table.projectId,
+    ),
+    index("team_project_projectId_idx").on(table.projectId),
   ],
 );
 
@@ -2036,6 +2081,7 @@ export const verification = verificationTable;
 export const workspace = workspaceTable;
 export const team = teamTable;
 export const teamMember = teamMemberTable;
+export const teamProject = teamProjectTable;
 export const workspace_member = workspaceUserTable;
 export const invitation = invitationTable;
 export const organizationRole = workspaceRoleTable;

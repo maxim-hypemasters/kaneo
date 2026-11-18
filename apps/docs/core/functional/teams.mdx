@@ -1,0 +1,88 @@
+---
+title: "Teams"
+description: "Group workspace members into teams and give each team access to the projects it works on."
+---
+
+A team is a named group of workspace members, such as Design or Support. Link a team to the projects it works on, and everyone in the team can open them, even members whose own access is limited to [selected projects](/core/functional/collaborate-with-team#limit-a-member-to-selected-projects). A person can be in several teams, and a team can be linked to several projects.
+
+Teams are optional. Members with access to all projects see the same projects with or without them, so existing workspaces keep working as before. Teams need no extra service or configuration on a self-hosted instance.
+
+## Open Teams
+
+Open **Teams** under **Workspace** in the sidebar. Every workspace member can see the workspace's teams, sorted by name, with their members and linked projects. Linked projects you can't open yourself are left out.
+
+The page updates live when someone creates, renames, or deletes a team, or changes its members or projects.
+
+## Create a team
+
+1. Open **Teams** and select **New team**.
+2. Give it a name of up to 64 characters. Names are unique in a workspace regardless of letter case, so **Design** and **design** can't both exist.
+3. Select **Add member** on the team for each person who belongs in it. Only workspace members can join a team.
+4. Select **Link project** for each project the team works on.
+
+A new team starts with no members and no projects. Rename or delete a team from its **⋯** menu. Deleting a team doesn't delete its projects or their work.
+
+When you edit a member's project access on the **Members** page, the dialog lists the projects they can also open through their teams. With teams, a limited member can have no selected projects of their own.
+
+## Who can manage teams
+
+Managing teams uses three permissions, under **Teams** in **Settings → Workspace → Roles**:
+
+| Permission | Lets someone |
+| --- | --- |
+| **Create teams** | Create teams |
+| **Edit teams** | Rename teams, add and remove members, and link and unlink projects |
+| **Delete teams** | Delete teams |
+
+By default, owners and admins have all three, and members and viewers can only see teams. An administrator can change this, so your workspace may differ. See [Members and roles](/core/functional/collaborate-with-team#choose-a-role).
+
+## How teams give access
+
+Someone can open a project when any of these is true:
+
+- they have **All projects**, or they are an owner;
+- the project is among their own selected projects;
+- one of their teams is linked to the project.
+
+Each one is enough on its own. Removing a project from someone's selected projects doesn't take it away while one of their teams is linked to it, and unlinking the team doesn't take it away while the project is still selected for them.
+
+A team changes where its members can work, not what they can do there: their role still decides that. A limited member sees a team's projects the same way as their own selected projects, including boards, tasks, search, notifications, **My tasks**, API keys, and MCP clients.
+
+If your own project access is limited, teams follow the same rules as [selected projects](/core/functional/collaborate-with-team#limit-a-member-to-selected-projects):
+
+- You can only link projects you can open yourself.
+- Links to projects you can't open stay as they are when you change the team's projects. You don't see them on the team.
+- You can't change the members of a team, or delete it, while it's linked to a project you can't open, because that would change who can open that project. You can still rename it.
+
+## When access is taken back
+
+Removing someone from a team, unlinking a project, or deleting a team takes back the projects people could only open through that team. Anyone who can still open a project another way, through another team, their own selected projects, or **All projects**, keeps it.
+
+For each project someone loses this way, the same happens as when you remove it from their selected projects:
+
+- they leave the project's [triage](/core/functional/triage) members;
+- they are unassigned from its tasks;
+- a board of it they have open closes.
+
+## When someone leaves or a project moves
+
+Removing someone from the workspace also removes them from all of its teams.
+
+Teams belong to one workspace. Moving a project to another workspace unlinks it from every team, so people who could only open it through a team no longer can.
+
+## Use teams from other tools
+
+The API's [endpoint reference](/api-reference/introduction) lists these routes under **Teams**:
+
+| Route | What it does | Needs |
+| --- | --- | --- |
+| `GET /api/team/workspace/{workspaceId}` | Lists the teams with their members and the linked projects you can open | Workspace membership |
+| `POST /api/team/workspace/{workspaceId}` | Creates an empty team from `{ "name": "..." }` | **Create teams** |
+| `PATCH /api/team/{id}` | Renames a team with `{ "name": "..." }` | **Edit teams** |
+| `PUT /api/team/{id}/members` | Replaces the members with `{ "userIds": [...] }` | **Edit teams** |
+| `PUT /api/team/{id}/projects` | Replaces the linked projects with `{ "projectIds": [...] }` | **Edit teams** |
+| `DELETE /api/team/{id}` | Deletes a team | **Delete teams** |
+
+A name already used in the workspace returns `409`. Adding someone who isn't a workspace member, or a project from another workspace, returns `400`. Linking a project you can't open, or changing the members of or deleting a team linked to one, returns `403`.
+
+The [MCP server](/core/integrations/mcp#teams) has a read-only `list_teams` tool, and the [assistant](/core/functional/assistant) can look up teams too. Neither can change them. The CLI has no team commands.

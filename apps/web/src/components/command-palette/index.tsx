@@ -128,6 +128,20 @@ function CommandPalette() {
               navigate({ to: "/dashboard/settings/workspace/members" });
             },
           },
+          ...(workspace?.id
+            ? [
+                {
+                  value: "teams",
+                  label: t("navigation:commandPalette.teams"),
+                  onRun: () => {
+                    navigate({
+                      to: "/dashboard/workspace/$workspaceId/teams",
+                      params: { workspaceId: workspace.id },
+                    });
+                  },
+                },
+              ]
+            : []),
           ...(canOpenTimeOff && workspace?.id
             ? [
                 {

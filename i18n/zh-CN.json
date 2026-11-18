@@ -2647,7 +2647,8 @@
 			"goToReleases": "前往版本",
 			"createRelease": "创建版本",
 			"createBug": "Create bug",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"teams": "Teams"
 		},
 		"sidebar": {
 			"projects": "项目",
@@ -2660,7 +2661,8 @@
 			"invitePeople": "邀请成员",
 			"myTasks": "我的任务",
 			"timeOff": "Time off",
-			"workspace": "工作区"
+			"workspace": "工作区",
+			"teams": "Teams"
 		},
 		"projectList": {
 			"viewProject": "查看项目",
@@ -4785,7 +4787,8 @@
 				"listPendingTimeOffRequests": "Time off awaiting approval",
 				"listTimeOff": "Who is away",
 				"listTimeOffBalances": "Time off balances",
-				"listTimeOffRequests": "Time off requests"
+				"listTimeOffRequests": "Time off requests",
+				"listTeams": "Teams"
 			},
 			"warning": {
 				"keyRejected": "OpenRouter rejected the workspace's key, so answers may fail.",
@@ -5362,6 +5365,70 @@
 			"composeLinkDescription": "官方维护的 compose.yml，含持久化存储和健康检查。",
 			"startLink": "启动并检查服务",
 			"startLinkDescription": "启动整套服务，查看运行状态，确认应用可以访问。"
+		}
+	},
+	"teams": {
+		"accessNote": {
+			"description": "These projects stay open to this member through their teams, whatever you select above.",
+			"title": "Access through teams",
+			"via": "via {{teams}}"
+		},
+		"card": {
+			"actions": "Actions for {{name}}",
+			"addMember": "Add member",
+			"delete": "Delete",
+			"linkProject": "Link project",
+			"memberCount_other": "{{count}} members",
+			"members": "Members",
+			"membersSaved": "Team members updated",
+			"noMemberCandidates": "Everyone is already in this team.",
+			"noMembers": "No members yet.",
+			"noProjectCandidates": "No more projects to link.",
+			"noProjects": "No linked projects.",
+			"projectCount_other": "{{count}} projects",
+			"projects": "Projects",
+			"projectsSaved": "Team projects updated",
+			"removeMember": "Remove {{name}} from the team",
+			"rename": "Rename",
+			"saveError": "Couldn't update the team.",
+			"searchMembers": "Search members…",
+			"searchProjects": "Search projects…",
+			"unlinkProject": "Unlink {{name}}"
+		},
+		"delete": {
+			"confirm": "Delete team",
+			"deleted": "Team deleted",
+			"description": "Members keep their own project access but lose projects they could only open through this team, and are unassigned from tasks there.",
+			"error": "Couldn't delete the team.",
+			"pending": "Deleting…",
+			"title": "Delete {{name}}?"
+		},
+		"dialog": {
+			"create": "Create team",
+			"created": "Team created",
+			"createDescription": "Name the team. You can add members and link projects once it's created.",
+			"createError": "Couldn't create the team.",
+			"createTitle": "New team",
+			"nameLabel": "Name",
+			"namePlaceholder": "e.g. Design",
+			"nameRequired": "Enter a team name.",
+			"nameTaken": "A team with this name already exists.",
+			"nameTooLong": "Use {{max}} characters or fewer.",
+			"renamed": "Team renamed",
+			"renameDescription": "Team names are unique within the workspace.",
+			"renameError": "Couldn't rename the team.",
+			"renameTitle": "Rename team",
+			"save": "Save"
+		},
+		"page": {
+			"description": "Group people into teams and link each team to the projects it works on. Team members can open linked projects, even when their own project access is limited to selected projects.",
+			"emptyDescription": "Create a team to group people and give them access to projects together.",
+			"emptyReadOnly": "Admins can create teams and link them to projects.",
+			"emptyTitle": "No teams yet",
+			"loadError": "Couldn't load teams.",
+			"newTeam": "New team",
+			"retry": "Try again",
+			"title": "Teams"
 		}
 	}
 }

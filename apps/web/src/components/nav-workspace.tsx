@@ -1,4 +1,4 @@
-import { ChevronRight, TreePalm, Users } from "lucide-react";
+import { ChevronRight, TreePalm, Users, UsersRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { type NavItem, NavItemButton } from "@/components/nav-item-button";
 import {
@@ -29,6 +29,11 @@ export function NavWorkspace() {
       title: t("navigation:sidebar.members"),
       icon: Users,
       url: `${homeUrl}/members`,
+    },
+    {
+      title: t("navigation:sidebar.teams"),
+      icon: UsersRound,
+      url: `${homeUrl}/teams`,
     },
   ];
 

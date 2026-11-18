@@ -115,9 +115,10 @@ For headless or sandboxed environments where opening a browser is impractical, s
 
 ## Tools
 
-The server registers 103 tools:
+The server registers 104 tools:
 
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
+- Teams: `list_teams`
 - My work: `list_my_tasks`, `list_workspace_activity`
 - Search: `search`
 - Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `update_project_details`, `list_project_columns`, `list_custom_fields`
@@ -280,6 +281,13 @@ a year, any pending change and the deadline. In `list_time_off`, `holidays`
 lists every member's calendar days in the window; names appear only on your
 own, or on everyone's for approvers, and other members never see a country or
 region, nor does any notification. Pass `lang` for localized names.
+
+`list_teams` lists a workspace's teams by name, each with its `members` and
+linked `projects`. Any workspace member can read them, and linked projects you
+can't access are left out. Members of a team can open its linked projects even
+when their own project access is limited to selected projects. Teams are
+created and changed in the web app or through the API's Teams routes; the MCP
+server only reads them.
 
 Relations (`blocks` and `related`) link Tasks and Bugs. Features do not have
 relations, so `create_task_relation` refuses a Feature on either end. It still

@@ -10912,6 +10912,9 @@
 						"members": {
 							"type": "string"
 						},
+						"teams": {
+							"type": "string"
+						},
 						"createTask": {
 							"type": "string"
 						},
@@ -10977,6 +10980,7 @@
 						"projects",
 						"search",
 						"members",
+						"teams",
 						"createTask",
 						"createProject",
 						"createWorkspace",
@@ -11002,6 +11006,9 @@
 							"type": "string"
 						},
 						"members": {
+							"type": "string"
+						},
+						"teams": {
 							"type": "string"
 						},
 						"invitations": {
@@ -11035,6 +11042,7 @@
 					"required": [
 						"projects",
 						"members",
+						"teams",
 						"invitations",
 						"more",
 						"backToBoard",
@@ -19751,6 +19759,9 @@
 								"listHolidayCalendarRequests": {
 									"type": "string"
 								},
+								"listTeams": {
+									"type": "string"
+								},
 								"search": {
 									"type": "string"
 								},
@@ -19857,6 +19868,7 @@
 								"listHolidayCountries",
 								"getHolidayCalendar",
 								"listHolidayCalendarRequests",
+								"listTeams",
 								"search",
 								"getTaskByTicketId",
 								"getProject",
@@ -22038,6 +22050,285 @@
 				"timeOff"
 			]
 		},
+		"teams": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"page": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"newTeam": {
+							"type": "string"
+						},
+						"loadError": {
+							"type": "string"
+						},
+						"retry": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"emptyReadOnly": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"description",
+						"newTeam",
+						"loadError",
+						"retry",
+						"emptyTitle",
+						"emptyDescription",
+						"emptyReadOnly"
+					]
+				},
+				"card": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"actions": {
+							"type": "string"
+						},
+						"rename": {
+							"type": "string"
+						},
+						"delete": {
+							"type": "string"
+						},
+						"members": {
+							"type": "string"
+						},
+						"projects": {
+							"type": "string"
+						},
+						"memberCount_one": {
+							"type": "string"
+						},
+						"memberCount_zero": {
+							"type": "string"
+						},
+						"memberCount_two": {
+							"type": "string"
+						},
+						"memberCount_few": {
+							"type": "string"
+						},
+						"memberCount_many": {
+							"type": "string"
+						},
+						"memberCount_other": {
+							"type": "string"
+						},
+						"projectCount_one": {
+							"type": "string"
+						},
+						"projectCount_zero": {
+							"type": "string"
+						},
+						"projectCount_two": {
+							"type": "string"
+						},
+						"projectCount_few": {
+							"type": "string"
+						},
+						"projectCount_many": {
+							"type": "string"
+						},
+						"projectCount_other": {
+							"type": "string"
+						},
+						"noMembers": {
+							"type": "string"
+						},
+						"noProjects": {
+							"type": "string"
+						},
+						"addMember": {
+							"type": "string"
+						},
+						"linkProject": {
+							"type": "string"
+						},
+						"searchMembers": {
+							"type": "string"
+						},
+						"searchProjects": {
+							"type": "string"
+						},
+						"noMemberCandidates": {
+							"type": "string"
+						},
+						"noProjectCandidates": {
+							"type": "string"
+						},
+						"removeMember": {
+							"type": "string"
+						},
+						"unlinkProject": {
+							"type": "string"
+						},
+						"membersSaved": {
+							"type": "string"
+						},
+						"projectsSaved": {
+							"type": "string"
+						},
+						"saveError": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"actions",
+						"rename",
+						"delete",
+						"members",
+						"projects",
+						"noMembers",
+						"noProjects",
+						"addMember",
+						"linkProject",
+						"searchMembers",
+						"searchProjects",
+						"noMemberCandidates",
+						"noProjectCandidates",
+						"removeMember",
+						"unlinkProject",
+						"membersSaved",
+						"projectsSaved",
+						"saveError"
+					]
+				},
+				"dialog": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"createTitle": {
+							"type": "string"
+						},
+						"createDescription": {
+							"type": "string"
+						},
+						"renameTitle": {
+							"type": "string"
+						},
+						"renameDescription": {
+							"type": "string"
+						},
+						"nameLabel": {
+							"type": "string"
+						},
+						"namePlaceholder": {
+							"type": "string"
+						},
+						"nameRequired": {
+							"type": "string"
+						},
+						"nameTooLong": {
+							"type": "string"
+						},
+						"nameTaken": {
+							"type": "string"
+						},
+						"create": {
+							"type": "string"
+						},
+						"save": {
+							"type": "string"
+						},
+						"created": {
+							"type": "string"
+						},
+						"renamed": {
+							"type": "string"
+						},
+						"createError": {
+							"type": "string"
+						},
+						"renameError": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"createTitle",
+						"createDescription",
+						"renameTitle",
+						"renameDescription",
+						"nameLabel",
+						"namePlaceholder",
+						"nameRequired",
+						"nameTooLong",
+						"nameTaken",
+						"create",
+						"save",
+						"created",
+						"renamed",
+						"createError",
+						"renameError"
+					]
+				},
+				"delete": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"confirm": {
+							"type": "string"
+						},
+						"pending": {
+							"type": "string"
+						},
+						"deleted": {
+							"type": "string"
+						},
+						"error": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"description",
+						"confirm",
+						"pending",
+						"deleted",
+						"error"
+					]
+				},
+				"accessNote": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"via": {
+							"type": "string"
+						}
+					},
+					"required": ["title", "description", "via"]
+				}
+			},
+			"required": ["page", "card", "dialog", "delete", "accessNote"]
+		},
 		"publicProject": {
 			"type": "object",
 			"additionalProperties": false,
@@ -22995,6 +23286,7 @@
 		"invitations",
 		"workspace",
 		"team",
+		"teams",
 		"publicProject",
 		"press",
 		"landing"

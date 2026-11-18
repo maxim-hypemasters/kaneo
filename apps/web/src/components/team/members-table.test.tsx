@@ -105,6 +105,12 @@ vi.mock("@/hooks/queries/project/use-get-projects", () => ({
   }),
 }));
 
+const teams = vi.fn((): unknown[] => []);
+
+vi.mock("@/hooks/queries/team/use-get-teams", () => ({
+  useGetTeams: () => ({ data: teams() }),
+}));
+
 const canInviteUsers = vi.fn(() => true);
 
 vi.mock("@/hooks/use-workspace-permission", () => ({
@@ -132,6 +138,7 @@ vi.mock("@/components/time-off/away/use-away-labels", () => ({
 
 beforeEach(() => {
   canInviteUsers.mockReturnValue(true);
+  teams.mockReturnValue([]);
 });
 
 afterEach(() => {
@@ -340,6 +347,55 @@ describe("MembersTable project access", () => {
       await screen.findByText("team:projectAccess.selectAtLeastOne"),
     ).toBeVisible();
     expect(updateProjectAccess).not.toHaveBeenCalled();
+  });
+
+  it("shows team-granted projects and lets teams be the only way in", async () => {
+    updateProjectAccess.mockResolvedValue({});
+    teams.mockReturnValue([
+      {
+        id: "team-1",
+        name: "Design",
+        workspaceId: "workspace-1",
+        createdAt: "2026-11-18T00:00:00.000Z",
+        updatedAt: "2026-11-18T00:00:00.000Z",
+        members: [
+          {
+            id: "restricted-user",
+            name: "Riley",
+            email: "riley@example.com",
+            image: null,
+          },
+        ],
+        projects: [{ id: "project-b", name: "Beta", slug: "beta", icon: null }],
+      },
+    ]);
+    render(
+      <MembersTable
+        workspaceId="workspace-1"
+        invitations={[]}
+        users={[members[2]]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "team:projectAccess.editAria" }),
+    );
+    expect(
+      await screen.findByRole("region", { name: "teams:accessNote.title" }),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Alpha" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "team:projectAccess.save" }),
+    );
+
+    await waitFor(() =>
+      expect(updateProjectAccess).toHaveBeenCalledWith({
+        workspaceId: "workspace-1",
+        userId: "restricted-user",
+        projectAccess: "selected",
+        projectIds: [],
+      }),
+    );
   });
 });
 
