@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,12 +6,27 @@ import { Input } from "@/components/ui/input";
 import type { TestCase, UpdateTestCaseInput } from "@/fetchers/test-case/types";
 import { useUpdateTestCase } from "@/hooks/mutations/test-case/use-update-test-case";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { openMilestoneDetails } from "@/store/milestone-details";
 import { DeleteTestCaseDialog } from "./delete-test-case-dialog";
-import { TestCaseBugSelect } from "./test-case-bug-select";
-import { TestCaseMilestoneSelect } from "./test-case-milestone-select";
-import { TestCaseStatusSelect } from "./test-case-status-select";
-import { TestCaseTextField } from "./test-case-text-field";
+import { TestCaseProperties } from "./test-case-properties";
+import { TestCaseDocumentField } from "./test-case-document-field";
+
+const TEXT_FIELDS = [
+  {
+    field: "description",
+    label: "tasks:testCases.fields.description",
+    placeholder: "tasks:testCases.placeholders.description",
+  },
+  {
+    field: "steps",
+    label: "tasks:testCases.fields.steps",
+    placeholder: "tasks:testCases.placeholders.steps",
+  },
+  {
+    field: "expectedResult",
+    label: "tasks:testCases.fields.expectedResult",
+    placeholder: "tasks:testCases.placeholders.expectedResult",
+  },
+] as const;
 
 export function TestCaseDetails({
   testCase,
@@ -26,9 +40,10 @@ export function TestCaseDetails({
   onDeleted: () => void;
 }) {
   const { t } = useTranslation();
-  const { canUpdateTestCases, canDeleteTestCases, canReadMilestones } =
-    useWorkspacePermission();
+  const { canUpdateTestCases, canDeleteTestCases } = useWorkspacePermission();
   const update = useUpdateTestCase(projectId);
+  // Text fields report their own save errors beside their editor.
+  const updateText = useUpdateTestCase(projectId);
   const [title, setTitle] = useState(testCase.title);
   const [deleting, setDeleting] = useState(false);
   const readOnly = !canUpdateTestCases();
@@ -52,79 +67,29 @@ export function TestCaseDetails({
           }}
         />
       </label>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="flex flex-col gap-1.5 text-sm">
-          {t("tasks:testCases.fields.status")}
-          <TestCaseStatusSelect
-            value={testCase.status}
-            disabled={readOnly}
-            onChange={(status) => save({ status })}
-          />
-        </div>
-        {canReadMilestones() && (
-          <div className="flex min-w-0 flex-col gap-1.5 text-sm">
-            {t("tasks:testCases.fields.milestone")}
-            <TestCaseMilestoneSelect
-              projectId={projectId}
-              value={testCase.milestoneId}
-              disabled={readOnly}
-              onChange={(milestoneId) => save({ milestoneId })}
-            />
-            {testCase.milestone && (
-              <Button
-                variant="link"
-                size="sm"
-                className="h-auto justify-start p-0"
-                onClick={() =>
-                  openMilestoneDetails(projectId, testCase.milestone!.id)
-                }
-              >
-                {t("tasks:testCases.openMilestone")}
-              </Button>
-            )}
-          </div>
-        )}
-        <div className="flex min-w-0 flex-col gap-1.5 text-sm">
-          {t("tasks:testCases.fields.bug")}
-          <TestCaseBugSelect
-            projectId={projectId}
-            value={testCase.bugId}
-            currentTitle={testCase.bug?.title}
-            disabled={readOnly}
-            onChange={(bugId) => save({ bugId })}
-          />
-          {testCase.bug && (
-            <Link
-              className="text-sm text-primary underline-offset-4 hover:underline"
-              to="/dashboard/workspace/$workspaceId/project/$projectId/task/$taskId"
-              params={{ workspaceId, projectId, taskId: testCase.bug.id }}
-            >
-              {t("tasks:testCases.openBug")}
-            </Link>
-          )}
-        </div>
-      </div>
-      <TestCaseTextField
-        label={t("tasks:testCases.fields.description")}
-        value={testCase.description}
-        disabled={readOnly}
-        rows={3}
-        onSave={(description) => save({ description })}
+      <TestCaseProperties
+        testCase={testCase}
+        projectId={projectId}
+        workspaceId={workspaceId}
+        readOnly={readOnly}
+        onSave={save}
       />
-      <TestCaseTextField
-        label={t("tasks:testCases.fields.steps")}
-        value={testCase.steps}
-        disabled={readOnly}
-        rows={6}
-        onSave={(steps) => save({ steps })}
-      />
-      <TestCaseTextField
-        label={t("tasks:testCases.fields.expectedResult")}
-        value={testCase.expectedResult}
-        disabled={readOnly}
-        rows={3}
-        onSave={(expectedResult) => save({ expectedResult })}
-      />
+      {TEXT_FIELDS.map(({ field, label, placeholder }) => (
+        <TestCaseDocumentField
+          key={field}
+          documentKey={`${testCase.id}:${field}`}
+          label={t(label)}
+          placeholder={t(placeholder)}
+          value={testCase[field]}
+          canEdit={!readOnly}
+          onSave={(value) =>
+            updateText.mutateAsync({
+              id: testCase.id,
+              input: { [field]: value },
+            })
+          }
+        />
+      ))}
       {update.isError && (
         <p role="alert" className="text-sm text-destructive-foreground">
           {update.error.message || t("tasks:testCases.saveError")}

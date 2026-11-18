@@ -12,35 +12,34 @@ import {
 import { Input } from "@/components/ui/input";
 import type { TestCaseStatus } from "@/fetchers/test-case/types";
 import { useCreateTestCase } from "@/hooks/mutations/test-case/use-create-test-case";
-import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { TestCaseBugSelect } from "./test-case-bug-select";
-import { TestCaseMilestoneSelect } from "./test-case-milestone-select";
-import { TestCaseStatusSelect } from "./test-case-status-select";
-import { TestCaseTextInput } from "./test-case-text-input";
+import type { LinkChoice } from "./link-choice";
+import { TestCasePickerChips } from "./test-case-picker-chips";
+import { TestCaseEditorInput } from "./test-case-editor-input";
 
 const optional = (value: string) => (value.trim() ? value : null);
 
 export function TestCaseDialog({
   projectId,
-  initialMilestoneId = null,
-  initialBugId = null,
+  initialMilestone = null,
+  initialBug = null,
   onClose,
 }: {
   projectId: string;
-  initialMilestoneId?: string | null;
-  initialBugId?: string | null;
+  initialMilestone?: LinkChoice;
+  initialBug?: LinkChoice;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const { canReadMilestones } = useWorkspacePermission();
   const create = useCreateTestCase(projectId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [steps, setSteps] = useState("");
   const [expectedResult, setExpectedResult] = useState("");
-  const [status, setStatus] = useState<TestCaseStatus>("not_run");
-  const [milestoneId, setMilestoneId] = useState(initialMilestoneId);
-  const [bugId, setBugId] = useState(initialBugId);
+  const [choices, setChoices] = useState<{
+    status: TestCaseStatus;
+    milestone: LinkChoice;
+    bug: LinkChoice;
+  }>({ status: "not_run", milestone: initialMilestone, bug: initialBug });
   const [error, setError] = useState<string | null>(null);
   const pending = create.isPending;
   const valid = title.trim().length > 0 && title.trim().length <= 255;
@@ -64,9 +63,9 @@ export function TestCaseDialog({
                 description: optional(description),
                 steps: optional(steps),
                 expectedResult: optional(expectedResult),
-                status,
-                milestoneId,
-                bugId,
+                status: choices.status,
+                milestoneId: choices.milestone?.id ?? null,
+                bugId: choices.bug?.id ?? null,
               });
               onClose();
             } catch (cause) {
@@ -94,57 +93,33 @@ export function TestCaseDialog({
                 onChange={(event) => setTitle(event.target.value)}
               />
             </label>
-            <TestCaseTextInput
+            <TestCaseEditorInput
               label={t("tasks:testCases.fields.description")}
+              placeholder={t("tasks:testCases.placeholders.description")}
               value={description}
               onChange={setDescription}
               disabled={pending}
-              rows={2}
             />
-            <TestCaseTextInput
+            <TestCaseEditorInput
               label={t("tasks:testCases.fields.steps")}
+              placeholder={t("tasks:testCases.placeholders.steps")}
               value={steps}
               onChange={setSteps}
               disabled={pending}
-              rows={4}
             />
-            <TestCaseTextInput
+            <TestCaseEditorInput
               label={t("tasks:testCases.fields.expectedResult")}
+              placeholder={t("tasks:testCases.placeholders.expectedResult")}
               value={expectedResult}
               onChange={setExpectedResult}
               disabled={pending}
-              rows={2}
             />
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="flex flex-col gap-1.5 text-sm">
-                {t("tasks:testCases.fields.status")}
-                <TestCaseStatusSelect
-                  value={status}
-                  onChange={setStatus}
-                  disabled={pending}
-                />
-              </div>
-              {canReadMilestones() && (
-                <div className="flex min-w-0 flex-col gap-1.5 text-sm">
-                  {t("tasks:testCases.fields.milestone")}
-                  <TestCaseMilestoneSelect
-                    projectId={projectId}
-                    value={milestoneId}
-                    onChange={setMilestoneId}
-                    disabled={pending}
-                  />
-                </div>
-              )}
-              <div className="flex min-w-0 flex-col gap-1.5 text-sm">
-                {t("tasks:testCases.fields.bug")}
-                <TestCaseBugSelect
-                  projectId={projectId}
-                  value={bugId}
-                  onChange={setBugId}
-                  disabled={pending}
-                />
-              </div>
-            </div>
+            <TestCasePickerChips
+              projectId={projectId}
+              value={choices}
+              onChange={setChoices}
+              disabled={pending}
+            />
             {error && (
               <p role="alert" className="text-sm text-destructive-foreground">
                 {error}

@@ -1,4 +1,5 @@
 import type { TestCaseSummary } from "@/fetchers/test-case/types";
+import { bugLabel } from "./bug-label";
 
 export type TestCaseGroup = {
   key: string;
@@ -25,11 +26,7 @@ function bugSource(testCase: TestCaseSummary): Source | null {
   return {
     key: `bug:${testCase.bugId}`,
     kind: "bug",
-    title: bug
-      ? bug.number === null
-        ? bug.title
-        : `#${bug.number} ${bug.title}`
-      : null,
+    title: bug ? bugLabel(bug) : null,
   };
 }
 

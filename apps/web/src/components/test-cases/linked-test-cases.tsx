@@ -15,20 +15,28 @@ export function LinkedTestCases({
   heading = "section",
 }: {
   projectId: string;
-  link: { milestoneId: string } | { bugId: string };
+  // The milestone or bug, with the label a new test case's chip shows.
+  link:
+    | { milestone: { id: string; label: string } }
+    | { bug: { id: string; label: string } };
   // "sheet" matches the other headings of the milestone details panel.
   heading?: "section" | "sheet";
 }) {
   const { t } = useTranslation();
   const { canReadTestCases } = useWorkspacePermission();
   const enabled = canReadTestCases();
+  const byMilestone = "milestone" in link;
   const result = useProjectTestCases(
     projectId,
-    { ...link, limit: "100" },
+    {
+      ...("milestone" in link
+        ? { milestoneId: link.milestone.id }
+        : { bugId: link.bug.id }),
+      limit: "100",
+    },
     enabled,
   );
   if (!enabled) return null;
-  const byMilestone = "milestoneId" in link;
   const counts = result.data && (
     <TestCaseStatusCounts counts={result.data.statusCounts} />
   );
@@ -36,8 +44,8 @@ export function LinkedTestCases({
     <NewTestCaseButton
       projectId={projectId}
       variant="ghost"
-      initialMilestoneId={byMilestone ? link.milestoneId : null}
-      initialBugId={byMilestone ? null : link.bugId}
+      initialMilestone={"milestone" in link ? link.milestone : null}
+      initialBug={"bug" in link ? link.bug : null}
     />
   );
   return (

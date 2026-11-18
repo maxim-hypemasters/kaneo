@@ -1,7 +1,8 @@
-import { Bug, Flag } from "lucide-react";
+import { Bug, Diamond } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { TestCaseSummary } from "@/fetchers/test-case/types";
 import { openTestCaseDetails } from "@/store/test-case-details";
+import { bugLabel } from "./bug-label";
 import { TestCaseStatusBadge } from "./test-case-status-badge";
 
 export function TestCaseRow({
@@ -23,9 +24,7 @@ export function TestCaseRow({
   const bug =
     showBug && testCase.bugId
       ? testCase.bug
-        ? testCase.bug.number === null
-          ? testCase.bug.title
-          : `#${testCase.bug.number} ${testCase.bug.title}`
+        ? bugLabel(testCase.bug)
         : t("tasks:testCases.hiddenBug")
       : null;
   return (
@@ -41,7 +40,7 @@ export function TestCaseRow({
           <span className="mt-0.5 flex min-w-0 flex-wrap gap-x-3 text-xs text-muted-foreground">
             {milestone && (
               <span className="inline-flex min-w-0 items-center gap-1">
-                <Flag aria-hidden="true" className="size-3 shrink-0" />
+                <Diamond aria-hidden="true" className="size-3 shrink-0" />
                 <span className="sr-only">
                   {t("tasks:testCases.fields.milestone")}:
                 </span>

@@ -3,17 +3,18 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import type { LinkChoice } from "./link-choice";
 import { TestCaseDialog } from "./test-case-dialog";
 
 export function NewTestCaseButton({
   projectId,
-  initialMilestoneId,
-  initialBugId,
+  initialMilestone,
+  initialBug,
   variant = "default",
 }: {
   projectId: string;
-  initialMilestoneId?: string | null;
-  initialBugId?: string | null;
+  initialMilestone?: LinkChoice;
+  initialBug?: LinkChoice;
   variant?: "default" | "ghost";
 }) {
   const { t } = useTranslation();
@@ -34,8 +35,8 @@ export function NewTestCaseButton({
       {open && (
         <TestCaseDialog
           projectId={projectId}
-          initialMilestoneId={initialMilestoneId}
-          initialBugId={initialBugId}
+          initialMilestone={initialMilestone}
+          initialBug={initialBug}
           onClose={() => setOpen(false)}
         />
       )}

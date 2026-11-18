@@ -159,7 +159,7 @@ export function MilestoneDetails({
       </section>
       <LinkedTestCases
         projectId={projectId}
-        link={{ milestoneId: milestone.id }}
+        link={{ milestone: { id: milestone.id, label: milestone.title } }}
         heading="sheet"
       />
       {creating && (

@@ -1,3 +1,4 @@
+import { bugLabel } from "@/components/test-cases/bug-label";
 import { LinkedTestCases } from "@/components/test-cases/linked-test-cases";
 import type Task from "@/types/task";
 import TaskRelations from "./task-relations";
@@ -20,7 +21,10 @@ export function TaskRelatedContent({
       />
       <TaskResources taskId={task.id} />
       {task.type === "bug" && (
-        <LinkedTestCases projectId={task.projectId} link={{ bugId: task.id }} />
+        <LinkedTestCases
+          projectId={task.projectId}
+          link={{ bug: { id: task.id, label: bugLabel(task) } }}
+        />
       )}
     </div>
   );

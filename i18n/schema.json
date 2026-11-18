@@ -18263,6 +18263,22 @@
 								"bug"
 							]
 						},
+						"placeholders": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"description": {
+									"type": "string"
+								},
+								"steps": {
+									"type": "string"
+								},
+								"expectedResult": {
+									"type": "string"
+								}
+							},
+							"required": ["description", "steps", "expectedResult"]
+						},
 						"filters": {
 							"type": "object",
 							"additionalProperties": false,
@@ -18275,6 +18291,34 @@
 								}
 							},
 							"required": ["status", "allStatuses"]
+						},
+						"pickers": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"result": {
+									"type": "string"
+								},
+								"filterResult": {
+									"type": "string"
+								},
+								"milestone": {
+									"type": "string"
+								},
+								"bug": {
+									"type": "string"
+								},
+								"loadingBugs": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"result",
+								"filterResult",
+								"milestone",
+								"bug",
+								"loadingBugs"
+							]
 						}
 					},
 					"required": [
@@ -18306,7 +18350,9 @@
 						"deleteDescription",
 						"status",
 						"fields",
-						"filters"
+						"placeholders",
+						"filters",
+						"pickers"
 					]
 				},
 				"featureComposer": {

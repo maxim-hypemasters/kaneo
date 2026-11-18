@@ -4357,9 +4357,21 @@
 				"milestone": "Milestone",
 				"bug": "Bug"
 			},
+			"placeholders": {
+				"description": "Add preconditions…",
+				"steps": "Add the steps to follow…",
+				"expectedResult": "Add the expected result…"
+			},
 			"filters": {
 				"status": "Filter by result",
 				"allStatuses": "All results"
+			},
+			"pickers": {
+				"result": "Set result…",
+				"filterResult": "Filter by result…",
+				"milestone": "Search milestones…",
+				"bug": "Search bugs…",
+				"loadingBugs": "Loading bugs…"
 			}
 		},
 		"featureComposer": {

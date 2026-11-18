@@ -1,4 +1,4 @@
-import { Bug, Flag } from "lucide-react";
+import { Bug, Diamond } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { groupByReleaseSource } from "@/components/test-cases/group-test-cases";
@@ -45,7 +45,7 @@ export function ReleaseTestCases({
           />
         ) : groups.length ? (
           groups.map((group) => {
-            const Icon = group.kind === "milestone" ? Flag : Bug;
+            const Icon = group.kind === "milestone" ? Diamond : Bug;
             return (
               <section key={group.key} className="flex flex-col gap-2">
                 <h4 className="flex items-center gap-1.5 text-sm font-medium">

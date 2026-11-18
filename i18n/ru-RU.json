@@ -4744,7 +4744,19 @@
 				"not_run": "Not run",
 				"passed": "Passed"
 			},
-			"title": "Test cases"
+			"title": "Test cases",
+			"pickers": {
+				"bug": "Search bugs…",
+				"loadingBugs": "Loading bugs…",
+				"milestone": "Search milestones…",
+				"result": "Set result…",
+				"filterResult": "Filter by result…"
+			},
+			"placeholders": {
+				"description": "Add preconditions…",
+				"expectedResult": "Add the expected result…",
+				"steps": "Add the steps to follow…"
+			}
 		}
 	},
 	"invitations": {
