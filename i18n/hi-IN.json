@@ -2709,7 +2709,8 @@
 			"goToReleases": "रिलीज़ पर जाएँ",
 			"createRelease": "रिलीज़ बनाएँ",
 			"createBug": "Create bug",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"teams": "Teams"
 		},
 		"sidebar": {
 			"projects": "प्रोजेक्ट",
@@ -2722,7 +2723,8 @@
 			"invitePeople": "Invite people",
 			"myTasks": "My tasks",
 			"timeOff": "Time off",
-			"workspace": "वर्कस्पेस"
+			"workspace": "वर्कस्पेस",
+			"teams": "Teams"
 		},
 		"projectList": {
 			"viewProject": "प्रोजेक्ट देखें",
@@ -4951,6 +4953,7 @@
 				"listTimeOff": "Who is away",
 				"listTimeOffBalances": "Time off balances",
 				"listTimeOffRequests": "Time off requests",
+				"listTeams": "Teams",
 				"getTestCase": "Test case",
 				"listFeatureTestCases": "Feature test cases",
 				"listReleaseTestCases": "Release test cases",
@@ -5543,6 +5546,75 @@
 			"composeLinkDescription": "The maintained compose.yml with persistent storage and health checks.",
 			"startLink": "Start and verify the services",
 			"startLinkDescription": "Start the stack, inspect its status, and check that the application is available."
+		}
+	},
+	"teams": {
+		"accessNote": {
+			"description": "These projects stay open to this member through their teams, whatever you select above.",
+			"title": "Access through teams",
+			"via": "via {{teams}}"
+		},
+		"card": {
+			"actions": "Actions for {{name}}",
+			"addMember": "Add member",
+			"delete": "Delete",
+			"memberCount_one": "{{count}} member",
+			"memberCount_other": "{{count}} members",
+			"members": "Members",
+			"membersSaved": "Team members updated",
+			"noMemberCandidates": "Everyone is already in this team.",
+			"noMembers": "No members yet.",
+			"projectCount_one": "{{count}} project",
+			"projectCount_other": "{{count}} projects",
+			"removeMember": "Remove {{name}} from the team",
+			"rename": "Rename",
+			"saveError": "Couldn't update the team.",
+			"searchMembers": "Search members…"
+		},
+		"delete": {
+			"confirm": "Delete team",
+			"deleted": "Team deleted",
+			"description": "Members keep their own project access but lose projects they could only open through this team, and are unassigned from tasks there.",
+			"error": "Couldn't delete the team.",
+			"pending": "Deleting…",
+			"title": "Delete {{name}}?"
+		},
+		"dialog": {
+			"create": "Create team",
+			"created": "Team created",
+			"createDescription": "Name the team. You can add members and link projects once it's created.",
+			"createError": "Couldn't create the team.",
+			"createTitle": "New team",
+			"nameLabel": "Name",
+			"namePlaceholder": "e.g. Design",
+			"nameRequired": "Enter a team name.",
+			"nameTaken": "A team with this name already exists.",
+			"nameTooLong": "Use {{max}} characters or fewer.",
+			"renamed": "Team renamed",
+			"renameDescription": "Team names are unique within the workspace.",
+			"renameError": "Couldn't rename the team.",
+			"renameTitle": "Rename team",
+			"save": "Save"
+		},
+		"page": {
+			"description": "Group people into teams. Link a team to a project from the project's Overview, and its members can open that project even when their own access is limited to selected projects.",
+			"emptyDescription": "Create a team to group people and give them access to projects together.",
+			"emptyReadOnly": "Admins can create teams and link them to projects.",
+			"emptyTitle": "No teams yet",
+			"loadError": "Couldn't load teams.",
+			"newTeam": "New team",
+			"retry": "Try again",
+			"title": "Teams"
+		},
+		"projectTeams": {
+			"allLinked": "Every team is already linked.",
+			"linkTeam": "Link team",
+			"none": "No teams linked.",
+			"noTeams": "No teams yet. Create one on the Teams page.",
+			"saveError": "Couldn't update the project's teams.",
+			"search": "Search teams…",
+			"title": "Teams",
+			"unlink": "Unlink {{name}}"
 		}
 	}
 }

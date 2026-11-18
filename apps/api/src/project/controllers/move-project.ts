@@ -10,6 +10,7 @@ import {
   projectTable,
   taskRelationTable,
   taskTable,
+  teamProjectTable,
   userNotificationWorkspaceProjectTable,
   workspaceMemberProjectTable,
   workspaceUserTable,
@@ -113,6 +114,9 @@ async function moveProject(
     await tx
       .delete(workspaceMemberProjectTable)
       .where(eq(workspaceMemberProjectTable.projectId, id));
+
+    // Teams stay in the source workspace, so their links can't follow.
+    await tx.delete(teamProjectTable).where(eq(teamProjectTable.projectId, id));
 
     const [{ maxPosition } = { maxPosition: null }] = await tx
       .select({ maxPosition: max(projectTable.position) })

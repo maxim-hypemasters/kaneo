@@ -2690,6 +2690,7 @@
 			"projects": "Projects",
 			"search": "Search",
 			"members": "Members",
+			"teams": "Teams",
 			"createTask": "Create task",
 			"createProject": "Create project",
 			"createWorkspace": "Create workspace",
@@ -2713,6 +2714,7 @@
 		"sidebar": {
 			"projects": "Projects",
 			"members": "Members",
+			"teams": "Teams",
 			"invitations": "Invitations",
 			"more": "More",
 			"backToBoard": "Back to board",
@@ -4761,6 +4763,7 @@
 				"listHolidayCountries": "Holiday calendar countries",
 				"getHolidayCalendar": "Public holiday calendar",
 				"listHolidayCalendarRequests": "Holiday calendar requests",
+				"listTeams": "Teams",
 				"search": "Workspace search",
 				"getTaskByTicketId": "Ticket lookup",
 				"getProject": "Project details",
@@ -5294,6 +5297,75 @@
 				"optionsError": "Couldn't load the list.",
 				"weekend": "On a weekend, doesn't count"
 			}
+		}
+	},
+	"teams": {
+		"page": {
+			"title": "Teams",
+			"description": "Group people into teams. Link a team to a project from the project's Overview, and its members can open that project even when their own access is limited to selected projects.",
+			"newTeam": "New team",
+			"loadError": "Couldn't load teams.",
+			"retry": "Try again",
+			"emptyTitle": "No teams yet",
+			"emptyDescription": "Create a team to group people and give them access to projects together.",
+			"emptyReadOnly": "Admins can create teams and link them to projects."
+		},
+		"card": {
+			"actions": "Actions for {{name}}",
+			"rename": "Rename",
+			"delete": "Delete",
+			"members": "Members",
+			"memberCount_one": "{{count}} member",
+			"memberCount_other": "{{count}} members",
+			"projectCount_one": "{{count}} project",
+			"projectCount_other": "{{count}} projects",
+			"noMembers": "No members yet.",
+			"addMember": "Add member",
+			"searchMembers": "Search members…",
+			"noMemberCandidates": "Everyone is already in this team.",
+			"removeMember": "Remove {{name}} from the team",
+			"membersSaved": "Team members updated",
+			"saveError": "Couldn't update the team."
+		},
+		"dialog": {
+			"createTitle": "New team",
+			"createDescription": "Name the team. You can add members and link projects once it's created.",
+			"renameTitle": "Rename team",
+			"renameDescription": "Team names are unique within the workspace.",
+			"nameLabel": "Name",
+			"namePlaceholder": "e.g. Design",
+			"nameRequired": "Enter a team name.",
+			"nameTooLong": "Use {{max}} characters or fewer.",
+			"nameTaken": "A team with this name already exists.",
+			"create": "Create team",
+			"save": "Save",
+			"created": "Team created",
+			"renamed": "Team renamed",
+			"createError": "Couldn't create the team.",
+			"renameError": "Couldn't rename the team."
+		},
+		"delete": {
+			"title": "Delete {{name}}?",
+			"description": "Members keep their own project access but lose projects they could only open through this team, and are unassigned from tasks there.",
+			"confirm": "Delete team",
+			"pending": "Deleting…",
+			"deleted": "Team deleted",
+			"error": "Couldn't delete the team."
+		},
+		"accessNote": {
+			"title": "Access through teams",
+			"description": "These projects stay open to this member through their teams, whatever you select above.",
+			"via": "via {{teams}}"
+		},
+		"projectTeams": {
+			"title": "Teams",
+			"none": "No teams linked.",
+			"linkTeam": "Link team",
+			"search": "Search teams…",
+			"noTeams": "No teams yet. Create one on the Teams page.",
+			"allLinked": "Every team is already linked.",
+			"unlink": "Unlink {{name}}",
+			"saveError": "Couldn't update the project's teams."
 		}
 	},
 	"publicProject": {

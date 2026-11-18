@@ -5058,6 +5058,113 @@
           "holidayCalendarDeadline"
         ]
       },
+      "Team": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "members": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamMember"
+            }
+          },
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TeamProject"
+            },
+            "description": "Linked projects. Members of the team can open them even when their own project access is limited. Only projects the viewer can access are listed."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "workspaceId",
+          "createdAt",
+          "updatedAt",
+          "members",
+          "projects"
+        ]
+      },
+      "TeamMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "image"
+        ]
+      },
+      "TeamProject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "icon": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "icon"
+        ]
+      },
+      "DeletedTeam": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
       "WorkspaceActivity": {
         "type": "object",
         "properties": {
@@ -8144,6 +8251,15 @@
           "inviteUsers": {
             "type": "boolean"
           },
+          "createTeams": {
+            "type": "boolean"
+          },
+          "updateTeams": {
+            "type": "boolean"
+          },
+          "deleteTeams": {
+            "type": "boolean"
+          },
           "manageTeam": {
             "type": "boolean"
           },
@@ -8193,6 +8309,9 @@
           "manageSettings",
           "deleteWorkspace",
           "inviteUsers",
+          "createTeams",
+          "updateTeams",
+          "deleteTeams",
           "manageTeam",
           "updateMembers",
           "removeMembers"
@@ -10461,93 +10580,6 @@
         }
       }
     },
-    "/auth/organization/add-team-member": {
-      "post": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "addOrganizationTeamMember",
-        "summary": "Add Organization Team Member",
-        "description": "The newly created member",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "teamId": {
-                    "type": "string",
-                    "description": "The team the user should be a member of."
-                  },
-                  "userId": {
-                    "type": "string",
-                    "description": "The user Id which represents the user to be added as a member."
-                  },
-                  "organizationId": {
-                    "type": "string",
-                    "description": "The organization ID which the team falls under. If not provided, it will default to the user's active organization."
-                  }
-                },
-                "required": [
-                  "teamId",
-                  "userId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Unique identifier of the team member"
-                    },
-                    "userId": {
-                      "type": "string",
-                      "description": "The user ID of the team member"
-                    },
-                    "teamId": {
-                      "type": "string",
-                      "description": "The team ID of the team the team member is in"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "description": "Timestamp when the team member was created"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "userId",
-                    "teamId",
-                    "createdAt"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
     "/auth/organization/cancel-invitation": {
       "post": {
         "tags": [
@@ -10773,93 +10805,6 @@
         "responses": {
           "200": {
             "description": "Success"
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
-    "/auth/organization/create-team": {
-      "post": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "createOrganizationTeam",
-        "summary": "Create Organization Team",
-        "description": "Create a new team within an organization",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "description": "The name of the team. Eg: \"my-team\""
-                  },
-                  "organizationId": {
-                    "type": "string",
-                    "description": "The organization ID which the team will be created in. Defaults to the active organization. Eg: \"organization-id\""
-                  }
-                },
-                "required": [
-                  "name"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Unique identifier of the created team"
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "Name of the team"
-                    },
-                    "organizationId": {
-                      "type": "string",
-                      "description": "ID of the organization the team belongs to"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "description": "Timestamp when the team was created"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "description": "Timestamp when the team was last updated"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "organizationId",
-                    "createdAt",
-                    "updatedAt"
-                  ]
-                }
-              }
-            }
           },
           "401": {
             "description": "Missing or invalid credentials",
@@ -11368,19 +11313,6 @@
                     "type": "boolean",
                     "description": "Resend the invitation email, if the user is already invited. Eg: true"
                   },
-                  "teamId": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      }
-                    ]
-                  },
                   "projectAccess": {
                     "type": "string",
                     "enum": [
@@ -11750,135 +11682,6 @@
         }
       }
     },
-    "/auth/organization/list-team-members": {
-      "get": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "listOrganizationTeamMembers",
-        "summary": "List Organization Team Members",
-        "description": "List the members of the given team.",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "description": "Unique identifier of the team member"
-                      },
-                      "userId": {
-                        "type": "string",
-                        "description": "The user ID of the team member"
-                      },
-                      "teamId": {
-                        "type": "string",
-                        "description": "The team ID of the team the team member is in"
-                      },
-                      "createdAt": {
-                        "type": "string",
-                        "description": "Timestamp when the team member was created"
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "userId",
-                      "teamId",
-                      "createdAt"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
-    "/auth/organization/list-teams": {
-      "get": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "listOrganizationTeams",
-        "summary": "List Organization Teams",
-        "description": "List all teams in an organization",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "description": "Unique identifier of the team"
-                      },
-                      "name": {
-                        "type": "string",
-                        "description": "Name of the team"
-                      },
-                      "organizationId": {
-                        "type": "string",
-                        "description": "ID of the organization the team belongs to"
-                      },
-                      "createdAt": {
-                        "type": "string",
-                        "description": "Timestamp when the team was created"
-                      },
-                      "updatedAt": {
-                        "type": "string",
-                        "description": "Timestamp when the team was last updated"
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "name",
-                      "organizationId",
-                      "createdAt",
-                      "updatedAt"
-                    ]
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
     "/auth/organization/list-user-invitations": {
       "get": {
         "tags": [
@@ -11916,13 +11719,6 @@
                         "type": "string",
                         "description": "The ID of the user who created the invitation"
                       },
-                      "teamId": {
-                        "type": [
-                          "string",
-                          "null"
-                        ],
-                        "description": "The ID of the team associated with the invitation"
-                      },
                       "status": {
                         "type": "string"
                       },
@@ -11945,42 +11741,6 @@
                       "createdAt"
                     ]
                   }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
-    "/auth/organization/list-user-teams": {
-      "get": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "listOrganizationUserTeams",
-        "summary": "List Organization User Teams",
-        "description": "List all teams that the current user is a part of.",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {}
                 }
               }
             }
@@ -12154,151 +11914,6 @@
         }
       }
     },
-    "/auth/organization/remove-team": {
-      "post": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "removeOrganizationTeam",
-        "summary": "Remove Organization Team",
-        "description": "Remove a team from an organization",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "teamId": {
-                    "type": "string",
-                    "description": "The team ID of the team to remove. Eg: \"team-id\""
-                  },
-                  "organizationId": {
-                    "type": "string",
-                    "description": "The organization ID which the team falls under. If not provided, it will default to the user's active organization. Eg: \"organization-id\""
-                  }
-                },
-                "required": [
-                  "teamId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "enum": [
-                        "Team removed successfully."
-                      ],
-                      "description": "Confirmation message indicating successful removal"
-                    }
-                  },
-                  "required": [
-                    "message"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
-    "/auth/organization/remove-team-member": {
-      "post": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "removeOrganizationTeamMember",
-        "summary": "Remove Organization Team Member",
-        "description": "Remove a member from a team",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "teamId": {
-                    "type": "string",
-                    "description": "The team the user should be removed from."
-                  },
-                  "userId": {
-                    "type": "string",
-                    "description": "The user which should be removed from the team."
-                  },
-                  "organizationId": {
-                    "type": "string",
-                    "description": "The organization ID which the team falls under. If not provided, it will default to the user's active organization."
-                  }
-                },
-                "required": [
-                  "teamId",
-                  "userId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "enum": [
-                        "Team member removed successfully."
-                      ],
-                      "description": "Confirmation message indicating successful removal"
-                    }
-                  },
-                  "required": [
-                    "message"
-                  ]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
     "/auth/organization/set-active": {
       "post": {
         "tags": [
@@ -12324,58 +11939,6 @@
                   "organizationSlug": {
                     "type": "string",
                     "description": "The organization slug to set as active. It can be null to unset the active organization if organizationId is not provided. Eg: \"org-slug\""
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
-    "/auth/organization/set-active-team": {
-      "post": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "setOrganizationActiveTeam",
-        "summary": "Set Organization Active Team",
-        "description": "Set the active team for the current active organization",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "teamId": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "The team id to set as active. It can be null to unset the active team"
                   }
                 }
               }
@@ -12669,110 +12232,6 @@
         "responses": {
           "200": {
             "description": "Success"
-          },
-          "401": {
-            "description": "Missing or invalid credentials",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
-                }
-              }
-            }
-          },
-          "429": {
-            "$ref": "#/components/responses/ApiKeyRateLimited"
-          }
-        }
-      }
-    },
-    "/auth/organization/update-team": {
-      "post": {
-        "tags": [
-          "Organization Management"
-        ],
-        "operationId": "updateOrganizationTeam",
-        "summary": "Update Organization Team",
-        "description": "Update an existing team in an organization",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "teamId": {
-                    "type": "string",
-                    "description": "The ID of the team to be updated. Eg: \"team-id\""
-                  },
-                  "data": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "name": {
-                        "type": "string"
-                      },
-                      "organizationId": {
-                        "type": "string"
-                      },
-                      "createdAt": {
-                        "type": "string"
-                      },
-                      "updatedAt": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                },
-                "required": [
-                  "teamId",
-                  "data"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Unique identifier of the updated team"
-                    },
-                    "name": {
-                      "type": "string",
-                      "description": "Updated name of the team"
-                    },
-                    "organizationId": {
-                      "type": "string",
-                      "description": "ID of the organization the team belongs to"
-                    },
-                    "createdAt": {
-                      "type": "string",
-                      "description": "Timestamp when the team was created"
-                    },
-                    "updatedAt": {
-                      "type": "string",
-                      "description": "Timestamp when the team was last updated"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "name",
-                    "organizationId",
-                    "createdAt",
-                    "updatedAt"
-                  ]
-                }
-              }
-            }
           },
           "401": {
             "description": "Missing or invalid credentials",
@@ -32787,6 +32246,579 @@
           },
           "404": {
             "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/team/workspace/{workspaceId}": {
+      "get": {
+        "operationId": "listTeams",
+        "tags": [
+          "Teams"
+        ],
+        "summary": "List teams",
+        "description": "List the workspace's teams with their members and linked projects. Any workspace member can read them; linked projects the viewer can't access are left out.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Teams in the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Team"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTeam",
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Create team",
+        "description": "Create an empty team in the workspace.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "Team name, unique within the workspace regardless of letter case."
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Team created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing team:create permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A team with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/team/{id}": {
+      "patch": {
+        "operationId": "updateTeam",
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Rename team",
+        "description": "Rename a team.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "description": "Team name, unique within the workspace regardless of letter case."
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Team renamed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing team:update permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A team with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTeam",
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Delete team",
+        "description": "Delete a team. Members lose projects they could only open through it, leave those projects' triage lists, and are unassigned from tasks there.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Team deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeletedTeam"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing team:delete permission, or the team is linked to projects you can't access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/team/{id}/members": {
+      "put": {
+        "operationId": "replaceTeamMembers",
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Set team members",
+        "description": "Replace the team's members. New members can open the team's linked projects; removed members lose projects they could only open through the team.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 500,
+                    "description": "The full list of members. Each must be a workspace member; people left out are removed from the team."
+                  }
+                },
+                "required": [
+                  "userIds"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Team members updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A user is not a member of the workspace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing team:update permission, or the team is linked to projects you can't access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/team/{id}/projects/{projectId}": {
+      "put": {
+        "operationId": "linkTeamProject",
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Link team to project",
+        "description": "Link a team to a project you can access. Its members can then open the project even when their own project access is limited. Linking an already linked project changes nothing.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The team after the change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing team:update permission, or a project you can't access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team, or project in its workspace, not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unlinkTeamProject",
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Unlink team from project",
+        "description": "Unlink a team from a project you can access. Members lose the project if the team was their only way in: they leave its triage list and are unassigned from its tasks.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The team after the change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing team:update permission, or a project you can't access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team, or project in its workspace, not found",
             "content": {
               "application/json": {
                 "schema": {

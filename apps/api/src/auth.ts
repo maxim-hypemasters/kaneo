@@ -260,8 +260,6 @@ export const auth = betterAuth({
       workspace_member: schema.workspaceUserTable,
       invitation: schema.invitationTable,
       workspace_role: schema.workspaceRoleTable,
-      team: schema.teamTable,
-      teamMember: schema.teamMemberTable,
       apikey: schema.apikeyTable,
       deviceCode: schema.deviceCodeTable,
     },
@@ -416,11 +414,6 @@ export const auth = betterAuth({
         enabled: true,
         maximumRolesPerOrganization: 25,
       },
-      teams: {
-        enabled: true,
-        maximumTeams: 10,
-        allowRemovingAllTeams: false,
-      },
       schema: {
         organization: {
           modelName: "workspace",
@@ -462,12 +455,6 @@ export const auth = betterAuth({
         },
         organizationRole: {
           modelName: "workspace_role",
-          fields: {
-            organizationId: "workspaceId",
-          },
-        },
-        team: {
-          modelName: "team",
           fields: {
             organizationId: "workspaceId",
           },

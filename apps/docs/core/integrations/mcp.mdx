@@ -103,9 +103,10 @@ On the first tool call that needs Kaneo access, the MCP server:
 
 ## Available tools
 
-Both the HTTP endpoint and stdio package expose the same 110 tools:
+Both the HTTP endpoint and stdio package expose the same 111 tools:
 
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
+- Teams: `list_teams`
 - My work: `list_my_tasks`, `list_workspace_activity`
 - Search: `search`
 - Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `update_project_details`, `list_project_columns`, `list_custom_fields`
@@ -197,6 +198,10 @@ Test case tools manage a project's test cases: a title, preconditions (`descript
 - `list_holiday_countries`, `get_holiday_calendar`, `list_time_off`, `list_holiday_calendar_requests`, `approve_holiday_calendar_request` and `decline_holiday_calendar_request` take an optional `lang`, such as `de`, for holiday, country and region names.
 
 Viewing the team needs `time_off:read`. Listing holiday countries and reading your own calendar need any time-off permission. Requesting, editing or cancelling your own requests, setting your own holiday calendar, and withdrawing your own calendar change need `time_off:create`. Approving, declining, recording time off for others, reading other members' requests, balances and holiday calendars, setting allowances and the setup deadline, listing and deciding holiday calendar changes, and setting other members' holiday calendars need `time_off:approve` and workspace membership.
+
+### Teams
+
+`list_teams` takes a `workspaceId` and returns the workspace's [teams](/core/functional/teams) by name, each with its `members` (`id`, `name`, `email`, `image`) and linked `projects` (`id`, `name`, `slug`, `icon`). Any workspace member can call it. Linked projects you can't access are left out. Members of a team can open its linked projects even when their own project access is limited to selected projects. The MCP server only reads teams; create and change them on the **Teams** page or through the API.
 
 ## Debugging
 

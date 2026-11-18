@@ -130,6 +130,7 @@ function evictPrivateQueries(
       "custom-field-filter-values",
       "time-entries",
       "time-off",
+      "teams",
       "billing",
       "workspace-users",
       "workspace-user",

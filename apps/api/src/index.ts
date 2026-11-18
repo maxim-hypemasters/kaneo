@@ -57,6 +57,7 @@ import milestone from "./milestone";
 import feature from "./feature";
 import projectDocument from "./project-document";
 import testCase from "./test-case";
+import team from "./team";
 import timeOff from "./time-off";
 import { stopActiveImports } from "./import/runs/stop-active-imports";
 import getInstanceStatus from "./instance/controllers/get-instance-status";
@@ -80,6 +81,7 @@ import release from "./release";
 import projectSchedule from "./scheduling";
 import workCalendar from "./scheduling/calendars";
 import "./scheduling/events";
+import "./team/events";
 import "./time-off/events";
 import { assertProjectAccess } from "./project-access/assert-project-access";
 import { getPublicProject } from "./project/controllers/get-public-project";
@@ -850,6 +852,7 @@ export function createApp() {
   const projectDocumentApi = api.route("/project-document", projectDocument);
   const testCaseApi = api.route("/test-case", testCase);
   const timeOffApi = api.route("/time-off", timeOff);
+  const teamApi = api.route("/team", team);
   const activityApi = api.route("/activity", activity);
   const commentApi = api.route("/comment", comment);
   const timeEntryApi = api.route("/time-entry", timeEntry);
@@ -1023,6 +1026,7 @@ export function createApp() {
     projectDocumentApi,
     testCaseApi,
     timeOffApi,
+    teamApi,
     searchApi,
     mattermostIntegrationApi,
     slackIntegrationApi,
@@ -1171,6 +1175,7 @@ const {
   projectDocumentApi,
   testCaseApi,
   timeOffApi,
+  teamApi,
   searchApi,
   slackIntegrationApi,
   taskApi,
@@ -1215,6 +1220,7 @@ export type AppType =
   | typeof projectDocumentApi
   | typeof testCaseApi
   | typeof timeOffApi
+  | typeof teamApi
   | typeof activityApi
   | typeof commentApi
   | typeof timeEntryApi

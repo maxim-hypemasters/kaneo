@@ -1,5 +1,5 @@
 {
-  "id": "9db3b072-7bd8-40b6-b7a5-e531bad86c84",
+  "id": "7d7e6845-9622-4b12-8bf8-118b544628fe",
   "prevId": "c52d89f1-b3ac-487b-ac25-2e088c9d2285",
   "version": "7",
   "dialect": "postgresql",
@@ -5523,13 +5523,15 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'utc')"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'utc')"
         }
       },
       "indexes": {
@@ -5565,7 +5567,16 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "team_workspace_id_id_unique": {
+          "name": "team_workspace_id_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "workspace_id",
+            "id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -5596,7 +5607,8 @@
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'utc')"
         }
       },
       "indexes": {
@@ -5660,13 +5672,22 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "team_member_team_user_unique": {
+          "name": "team_member_team_user_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "team_id",
+            "user_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.test_case": {
-      "name": "test_case",
+    "public.team_project": {
+      "name": "team_project",
       "schema": "",
       "columns": {
         "id": {
@@ -5675,60 +5696,23 @@
           "primaryKey": true,
           "notNull": true
         },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "steps": {
-          "name": "steps",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "expected_result": {
-          "name": "expected_result",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'not_run'"
-        },
-        "milestone_id": {
-          "name": "milestone_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bug_id": {
-          "name": "bug_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -5736,139 +5720,70 @@
           "primaryKey": false,
           "notNull": true,
           "default": "(now() AT TIME ZONE 'utc')"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "(now() AT TIME ZONE 'utc')"
         }
       },
       "indexes": {
-        "test_case_project_created_idx": {
-          "name": "test_case_project_created_idx",
+        "team_project_projectId_idx": {
+          "name": "team_project_projectId_idx",
           "columns": [
             {
               "expression": "project_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "test_case_milestone_id_idx": {
-          "name": "test_case_milestone_id_idx",
-          "columns": [
-            {
-              "expression": "milestone_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"test_case\".\"milestone_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "test_case_bug_id_idx": {
-          "name": "test_case_bug_id_idx",
-          "columns": [
-            {
-              "expression": "bug_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"test_case\".\"bug_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "test_case_project_id_project_id_fk": {
-          "name": "test_case_project_id_project_id_fk",
-          "tableFrom": "test_case",
-          "tableTo": "project",
+        "team_project_workspace_id_team_id_team_workspace_id_id_fk": {
+          "name": "team_project_workspace_id_team_id_team_workspace_id_id_fk",
+          "tableFrom": "team_project",
+          "tableTo": "team",
           "columnsFrom": [
-            "project_id"
+            "workspace_id",
+            "team_id"
           ],
           "columnsTo": [
+            "workspace_id",
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "cascade"
+          "onUpdate": "no action"
         },
-        "test_case_milestone_id_milestone_id_fk": {
-          "name": "test_case_milestone_id_milestone_id_fk",
-          "tableFrom": "test_case",
-          "tableTo": "milestone",
+        "team_project_workspace_id_project_id_project_workspace_id_id_fk": {
+          "name": "team_project_workspace_id_project_id_project_workspace_id_id_fk",
+          "tableFrom": "team_project",
+          "tableTo": "project",
           "columnsFrom": [
-            "milestone_id"
+            "workspace_id",
+            "project_id"
           ],
           "columnsTo": [
+            "workspace_id",
             "id"
           ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "test_case_bug_id_task_id_fk": {
-          "name": "test_case_bug_id_task_id_fk",
-          "tableFrom": "test_case",
-          "tableTo": "task",
-          "columnsFrom": [
-            "bug_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "test_case_created_by_user_id_fk": {
-          "name": "test_case_created_by_user_id_fk",
-          "tableFrom": "test_case",
-          "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "test_case_status_check": {
-          "name": "test_case_status_check",
-          "value": "\"test_case\".\"status\" in ('not_run', 'passed', 'failed', 'blocked')"
+      "uniqueConstraints": {
+        "team_project_team_project_unique": {
+          "name": "team_project_team_project_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "team_id",
+            "project_id"
+          ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.time_entry": {

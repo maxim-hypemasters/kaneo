@@ -26,4 +26,10 @@ describe("workspaceCapabilities", () => {
       time_off: ["approve"],
     });
   });
+
+  it("maps each team capability to one team action", () => {
+    expect(workspaceCapabilities.createTeams).toEqual({ team: ["create"] });
+    expect(workspaceCapabilities.updateTeams).toEqual({ team: ["update"] });
+    expect(workspaceCapabilities.deleteTeams).toEqual({ team: ["delete"] });
+  });
 });

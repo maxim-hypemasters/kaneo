@@ -16,6 +16,7 @@ export const READ_TOOL_NAMES = [
   "list_holiday_countries",
   "get_holiday_calendar",
   "list_holiday_calendar_requests",
+  "list_teams",
   "search",
   "get_task_by_ticket_id",
   "get_project",
@@ -70,6 +71,7 @@ const READ_TOOL_LABEL_KEYS: Record<ReadToolName, string> = {
   get_holiday_calendar: "workspace:assistant.tools.getHolidayCalendar",
   list_holiday_calendar_requests:
     "workspace:assistant.tools.listHolidayCalendarRequests",
+  list_teams: "workspace:assistant.tools.listTeams",
   search: "workspace:assistant.tools.search",
   get_task_by_ticket_id: "workspace:assistant.tools.getTaskByTicketId",
   get_project: "workspace:assistant.tools.getProject",

@@ -53,7 +53,7 @@ Never use `docker compose down -v` as an upgrade or troubleshooting step. It rem
 
 ### Test cases
 
-Kaneo added [test cases](/core/functional/test-cases). Migration `0080_test_cases` only adds the `test_case` table. No existing data changes.
+Kaneo added [test cases](/core/functional/test-cases). Migration `0081_test_cases` only adds the `test_case` table. No existing data changes.
 
 Stored workspace roles replace the built-in defaults, so the first start after the upgrade grants the test case permissions once: each role gets the same **Create**, **Read**, **Update** and **Delete** actions on test cases that it has on milestones. A role that already has a test case entry is left as it is, and later role edits are kept.
 

@@ -79,6 +79,8 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
   list_holiday_countries: { pin: WORKSPACE_PIN },
   get_holiday_calendar: { pin: WORKSPACE_PIN },
   list_holiday_calendar_requests: { pin: WORKSPACE_PIN },
+  // Teams, with their members and the linked projects the caller can open.
+  list_teams: { pin: WORKSPACE_PIN },
   search: { pin: WORKSPACE_PIN },
   // The ticket lookup scopes itself and never checks the workspace pin, so
   // the pin must always reach it.
