@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTab, TabsPanel } from "@/components/ui/tabs";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import type Task from "@/types/task";
 import { FeatureMilestoneOverview } from "../../milestones/feature-milestone-overview";
 import { useMilestoneSelection } from "../../milestones/milestone-selection-context";
@@ -8,6 +9,7 @@ import { FeatureActivity } from "./feature-activity";
 import { FeatureDocuments } from "./feature-documents";
 import { FeatureOverview } from "./feature-overview";
 import { FeatureIssues } from "./feature-issues";
+import { FeatureTestCases } from "./feature-test-cases";
 import { FEATURE_TABS, type FeatureTab } from "./feature-workspace-search";
 import { useFeatureNavigation } from "./use-feature-navigation";
 
@@ -22,6 +24,12 @@ export function FeatureWorkspace({
   const { tab, featureDocumentId, featureUpdateId, open } =
     useFeatureNavigation();
   const { setFilter, registerSelection } = useMilestoneSelection();
+  const { canReadTestCases, canReadMilestones } = useWorkspacePermission();
+  // A Feature's test cases come from its milestones.
+  const showTestCases = canReadTestCases() && canReadMilestones();
+  const tabs = FEATURE_TABS.filter(
+    (value) => value !== "testCases" || showTestCases,
+  );
   useEffect(
     () =>
       registerSelection((filter) =>
@@ -39,9 +47,9 @@ export function FeatureWorkspace({
         <div className="sticky top-0 z-20 -mx-1 bg-background px-1 py-2">
           <TabsList
             aria-label={t("tasks:features.workspace.navigation")}
-            className="w-full max-w-md"
+            className="w-full max-w-lg"
           >
-            {FEATURE_TABS.map((value) => (
+            {tabs.map((value) => (
               <TabsTab
                 key={value}
                 value={value}
@@ -87,6 +95,14 @@ export function FeatureWorkspace({
               featureId={feature.id}
               projectId={feature.projectId}
               workspaceId={workspaceId}
+            />
+          </TabsPanel>
+        )}
+        {tab === "testCases" && showTestCases && (
+          <TabsPanel value="testCases">
+            <FeatureTestCases
+              featureId={feature.id}
+              projectId={feature.projectId}
             />
           </TabsPanel>
         )}

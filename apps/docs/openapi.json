@@ -3750,6 +3750,251 @@
           "updatedAt"
         ]
       },
+      "TestCaseList": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestCaseSummary"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "limit": {
+                "type": "number"
+              },
+              "totalPages": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "total",
+              "page",
+              "limit",
+              "totalPages"
+            ]
+          },
+          "statusCounts": {
+            "type": "object",
+            "properties": {
+              "not_run": {
+                "type": "number"
+              },
+              "passed": {
+                "type": "number"
+              },
+              "failed": {
+                "type": "number"
+              },
+              "blocked": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "not_run",
+              "passed",
+              "failed",
+              "blocked"
+            ],
+            "description": "Matching test cases per status, counted with every filter except status."
+          }
+        },
+        "required": [
+          "data",
+          "pagination",
+          "statusCounts"
+        ]
+      },
+      "TestCaseSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "projectId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_run",
+              "passed",
+              "failed",
+              "blocked"
+            ],
+            "description": "Latest result of running the test case: not_run, passed, failed or blocked."
+          },
+          "milestoneId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bugId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "milestone": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "featureId": {
+                "type": "string"
+              },
+              "featureTitle": {
+                "type": "string"
+              },
+              "releaseId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "featureId",
+              "featureTitle",
+              "releaseId"
+            ],
+            "description": "Null without a link or without milestone:read."
+          },
+          "bug": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "number": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "task",
+                  "bug",
+                  "feature"
+                ],
+                "description": "A linked Bug converted to a Task keeps its link."
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "releaseId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "number",
+              "title",
+              "type",
+              "status",
+              "releaseId"
+            ],
+            "description": "Null without a link or without bug:read."
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "projectId",
+          "title",
+          "status",
+          "milestoneId",
+          "bugId",
+          "milestone",
+          "bug",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "TestCase": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/TestCaseSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "steps": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "expectedResult": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "description",
+              "steps",
+              "expectedResult"
+            ]
+          }
+        ]
+      },
       "TimeOffCalendar": {
         "type": "object",
         "properties": {
@@ -7952,6 +8197,18 @@
           "deleteMilestones": {
             "type": "boolean"
           },
+          "readTestCases": {
+            "type": "boolean"
+          },
+          "createTestCases": {
+            "type": "boolean"
+          },
+          "updateTestCases": {
+            "type": "boolean"
+          },
+          "deleteTestCases": {
+            "type": "boolean"
+          },
           "readDocuments": {
             "type": "boolean"
           },
@@ -8034,6 +8291,10 @@
           "createMilestones",
           "updateMilestones",
           "deleteMilestones",
+          "readTestCases",
+          "createTestCases",
+          "updateTestCases",
+          "deleteTestCases",
           "readDocuments",
           "createDocuments",
           "updateDocuments",
@@ -28140,6 +28401,1013 @@
           },
           "409": {
             "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/test-case/project/{projectId}": {
+      "get": {
+        "operationId": "listProjectTestCases",
+        "tags": [
+          "Test cases"
+        ],
+        "summary": "List a project's test cases",
+        "description": "Oldest first. Rows leave out description, steps and expected result; read one test case for those. The linked milestone and bug are summarized only for callers with milestone:read and bug:read.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "not_run",
+                "passed",
+                "failed",
+                "blocked"
+              ],
+              "description": "Latest result of running the test case: not_run, passed, failed or blocked."
+            },
+            "required": false,
+            "description": "Latest result of running the test case: not_run, passed, failed or blocked.",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Only test cases linked to this milestone, or \"none\" for test cases without one."
+            },
+            "required": false,
+            "description": "Only test cases linked to this milestone, or \"none\" for test cases without one.",
+            "name": "milestoneId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Only test cases linked to this bug, or \"none\" for test cases without one."
+            },
+            "required": false,
+            "description": "Only test cases linked to this bug, or \"none\" for test cases without one.",
+            "name": "bugId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of test cases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid test case, or the linked task isn't a bug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project, test case, milestone or bug not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTestCase",
+        "tags": [
+          "Test cases"
+        ],
+        "summary": "Create a test case",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000,
+                    "description": "Preconditions and context."
+                  },
+                  "steps": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000
+                  },
+                  "expectedResult": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "not_run",
+                      "passed",
+                      "failed",
+                      "blocked"
+                    ],
+                    "description": "Latest result of running the test case: not_run, passed, failed or blocked."
+                  },
+                  "milestoneId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "Milestone in the same project this test case verifies. Needs milestone:read. Null unlinks it."
+                  },
+                  "bugId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "Bug in the same project this test case verifies. Needs bug:read. Null unlinks it."
+                  }
+                },
+                "required": [
+                  "title"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created test case",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCase"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid test case, or the linked task isn't a bug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project, test case, milestone or bug not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/test-case/feature/{featureId}": {
+      "get": {
+        "operationId": "listFeatureTestCases",
+        "tags": [
+          "Test cases"
+        ],
+        "summary": "List the test cases of a Feature's milestones",
+        "description": "Test cases linked to any milestone of the Feature, in milestone order. Needs test_case:read and milestone:read. Rows leave out description, steps and expected result; read one test case for those. The linked milestone and bug are summarized only for callers with milestone:read and bug:read.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "featureId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "not_run",
+                "passed",
+                "failed",
+                "blocked"
+              ],
+              "description": "Latest result of running the test case: not_run, passed, failed or blocked."
+            },
+            "required": false,
+            "description": "Latest result of running the test case: not_run, passed, failed or blocked.",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Only test cases linked to this milestone, or \"none\" for test cases without one."
+            },
+            "required": false,
+            "description": "Only test cases linked to this milestone, or \"none\" for test cases without one.",
+            "name": "milestoneId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Only test cases linked to this bug, or \"none\" for test cases without one."
+            },
+            "required": false,
+            "description": "Only test cases linked to this bug, or \"none\" for test cases without one.",
+            "name": "bugId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of test cases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid test case, or the linked task isn't a bug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project, test case, milestone or bug not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/test-case/release/{releaseId}": {
+      "get": {
+        "operationId": "listReleaseTestCases",
+        "tags": [
+          "Test cases"
+        ],
+        "summary": "List a release's test cases",
+        "description": "Test cases whose milestone is planned for the release, or whose bug is in the release and not archived. Oldest first. Rows leave out description, steps and expected result; read one test case for those. The linked milestone and bug are summarized only for callers with milestone:read and bug:read.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "releaseId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "required": false,
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "not_run",
+                "passed",
+                "failed",
+                "blocked"
+              ],
+              "description": "Latest result of running the test case: not_run, passed, failed or blocked."
+            },
+            "required": false,
+            "description": "Latest result of running the test case: not_run, passed, failed or blocked.",
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Only test cases linked to this milestone, or \"none\" for test cases without one."
+            },
+            "required": false,
+            "description": "Only test cases linked to this milestone, or \"none\" for test cases without one.",
+            "name": "milestoneId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Only test cases linked to this bug, or \"none\" for test cases without one."
+            },
+            "required": false,
+            "description": "Only test cases linked to this bug, or \"none\" for test cases without one.",
+            "name": "bugId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            },
+            "required": false,
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of test cases",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid test case, or the linked task isn't a bug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project, test case, milestone or bug not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/test-case/{id}": {
+      "get": {
+        "operationId": "getTestCase",
+        "tags": [
+          "Test cases"
+        ],
+        "summary": "Read a test case",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Test case",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCase"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid test case, or the linked task isn't a bug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project, test case, milestone or bug not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateTestCase",
+        "tags": [
+          "Test cases"
+        ],
+        "summary": "Update a test case",
+        "description": "Changes only the fields sent. Send null to clear a text field or a link.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000,
+                    "description": "Preconditions and context."
+                  },
+                  "steps": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000
+                  },
+                  "expectedResult": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 10000
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "not_run",
+                      "passed",
+                      "failed",
+                      "blocked"
+                    ],
+                    "description": "Latest result of running the test case: not_run, passed, failed or blocked."
+                  },
+                  "milestoneId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "Milestone in the same project this test case verifies. Needs milestone:read. Null unlinks it."
+                  },
+                  "bugId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1,
+                    "description": "Bug in the same project this test case verifies. Needs bug:read. Null unlinks it."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated test case",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCase"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid test case, or the linked task isn't a bug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project, test case, milestone or bug not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteTestCase",
+        "tags": [
+          "Test cases"
+        ],
+        "summary": "Delete a test case",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted test case",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid test case, or the linked task isn't a bug",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project, test case, milestone or bug not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Project changed; refresh and retry",
             "content": {
               "application/json": {
                 "schema": {

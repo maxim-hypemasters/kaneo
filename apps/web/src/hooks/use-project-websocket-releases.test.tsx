@@ -536,6 +536,8 @@ describe("release list realtime", () => {
     Socket.current.message("RELEASES_UPDATED");
     vi.advanceTimersByTime(300);
     expect(mocks.client.invalidateQueries.mock.calls).toEqual([
+      // Release test cases come from its milestones and bugs.
+      [{ queryKey: ["test-cases", "p"] }],
       [{ queryKey: ["release-link-candidates", "p"] }],
       [{ queryKey: ["feature-create-candidates", "p"] }],
       [{ queryKey: ["feature-workspace", "p"] }],

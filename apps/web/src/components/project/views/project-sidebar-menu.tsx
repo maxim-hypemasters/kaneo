@@ -1,5 +1,11 @@
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Inbox, Layers, Rocket, SquareKanban } from "lucide-react";
+import {
+  ClipboardCheck,
+  Inbox,
+  Layers,
+  Rocket,
+  SquareKanban,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   SidebarMenuSub,
@@ -8,6 +14,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useCachedTriageCount } from "@/hooks/queries/task/use-cached-triage-count";
+import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useGetTriageMembers } from "@/hooks/queries/triage/use-get-triage-members";
 import { useUserPreferencesStore } from "@/store/user-preferences";
 import { isPlainClick } from "./is-plain-click";
@@ -41,6 +48,7 @@ export function ProjectSidebarMenu({
   const triageCount = useCachedTriageCount(projectId);
   // Triage shows while the project uses it or work is still waiting there.
   const showTriage = !!triageMembers?.length || !!triageCount;
+  const { canReadTestCases } = useWorkspacePermission();
   const entries = [
     {
       scope: "tasks",
@@ -71,6 +79,16 @@ export function ProjectSidebarMenu({
       label: "tasks:view.releases",
       icon: Rocket,
     },
+    ...(canReadTestCases()
+      ? [
+          {
+            scope: "testCases" as const,
+            view: "testCases" as const,
+            label: "tasks:testCases.title",
+            icon: ClipboardCheck,
+          },
+        ]
+      : []),
   ] satisfies {
     scope: ProjectSidebarScope;
     view: ProjectView;

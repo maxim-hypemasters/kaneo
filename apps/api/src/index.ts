@@ -56,6 +56,7 @@ import importRoutes from "./import";
 import milestone from "./milestone";
 import feature from "./feature";
 import projectDocument from "./project-document";
+import testCase from "./test-case";
 import team from "./team";
 import timeOff from "./time-off";
 import { stopActiveImports } from "./import/runs/stop-active-imports";
@@ -68,6 +69,7 @@ import { migrateColumns } from "./migrations/column-migration";
 import { migrateWorkItemPermissions } from "./migrations/work-item-permissions";
 import { migrateProjectDocumentPermissions } from "./migrations/project-document-permissions";
 import { migrateTimeOffPermissions } from "./migrations/time-off-permissions";
+import { migrateTestCasePermissions } from "./migrations/test-case-permissions";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
@@ -848,6 +850,7 @@ export function createApp() {
   const milestoneApi = api.route("/milestone", milestone);
   const featureApi = api.route("/feature", feature);
   const projectDocumentApi = api.route("/project-document", projectDocument);
+  const testCaseApi = api.route("/test-case", testCase);
   const timeOffApi = api.route("/time-off", timeOff);
   const teamApi = api.route("/team", team);
   const activityApi = api.route("/activity", activity);
@@ -1021,6 +1024,7 @@ export function createApp() {
     milestoneApi,
     featureApi,
     projectDocumentApi,
+    testCaseApi,
     timeOffApi,
     teamApi,
     searchApi,
@@ -1075,6 +1079,7 @@ export async function runStartupTasks() {
   await migrateWorkItemPermissions();
   await migrateProjectDocumentPermissions();
   await migrateTimeOffPermissions();
+  await migrateTestCasePermissions();
   await seedDefaultWorkspaceRoles();
 
   initializePlugins();
@@ -1168,6 +1173,7 @@ const {
   milestoneApi,
   featureApi,
   projectDocumentApi,
+  testCaseApi,
   timeOffApi,
   teamApi,
   searchApi,
@@ -1212,6 +1218,7 @@ export type AppType =
   | typeof milestoneApi
   | typeof featureApi
   | typeof projectDocumentApi
+  | typeof testCaseApi
   | typeof timeOffApi
   | typeof teamApi
   | typeof activityApi

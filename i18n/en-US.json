@@ -1215,6 +1215,7 @@
 				"bug": "Bugs",
 				"feature": "Features",
 				"milestone": "Milestones",
+				"test_case": "Test cases",
 				"label": "Labels",
 				"workspace": "Workspace",
 				"time_off": "Time off",
@@ -1321,6 +1322,24 @@
 					"delete": {
 						"label": "Delete",
 						"description": "Can delete milestones"
+					}
+				},
+				"test_case": {
+					"create": {
+						"label": "Create",
+						"description": "Can create test cases and link them to milestones and bugs"
+					},
+					"read": {
+						"label": "Read",
+						"description": "Can view test cases and their results"
+					},
+					"update": {
+						"label": "Update",
+						"description": "Can edit test cases, their links and results"
+					},
+					"delete": {
+						"label": "Delete",
+						"description": "Can delete test cases"
 					}
 				},
 				"label": {
@@ -3840,7 +3859,8 @@
 					"overview": "Overview",
 					"activity": "Activity",
 					"documents": "Documents",
-					"issues": "Issues"
+					"issues": "Issues",
+					"testCases": "Test cases"
 				},
 				"health": {
 					"on-track": "On track",
@@ -4295,6 +4315,65 @@
 			"newTaskTitleRequired": "Enter a title for each new Task or Bug.",
 			"releaseContextError": "Could not load the release for this milestone."
 		},
+		"testCases": {
+			"title": "Test cases",
+			"singular": "Test case",
+			"pageTitle": "{{name}} – Test cases",
+			"new": "New test case",
+			"add": "Add test case",
+			"create": "Create test case",
+			"search": "Search test cases",
+			"loading": "Loading test cases…",
+			"loadError": "Could not load test cases.",
+			"saveError": "Could not save the test case.",
+			"deleteError": "Could not delete the test case.",
+			"emptyTitle": "No test cases yet",
+			"emptyDescription": "Describe how to verify your work, then link each test case to the milestone or bug it checks.",
+			"noMatches": "No test cases match these filters.",
+			"noneLinked": "No test cases yet.",
+			"featureEmpty": "No test cases are linked to this feature’s milestones yet.",
+			"releaseEmpty": "No test cases are linked to this release’s milestones or bugs yet.",
+			"noMilestone": "No milestone",
+			"noBug": "No bug",
+			"hiddenMilestone": "Milestone you can’t view",
+			"hiddenBug": "Bug you can’t view",
+			"openMilestone": "Open milestone",
+			"openBug": "Open bug",
+			"delete": "Delete test case",
+			"deleteTitle": "Delete this test case?",
+			"deleteDescription": "The test case and its steps are deleted for everyone. This can’t be undone.",
+			"status": {
+				"not_run": "Not run",
+				"passed": "Passed",
+				"failed": "Failed",
+				"blocked": "Blocked"
+			},
+			"fields": {
+				"title": "Title",
+				"description": "Preconditions",
+				"steps": "Steps",
+				"expectedResult": "Expected result",
+				"status": "Result",
+				"milestone": "Milestone",
+				"bug": "Bug"
+			},
+			"placeholders": {
+				"description": "Add preconditions…",
+				"steps": "Add the steps to follow…",
+				"expectedResult": "Add the expected result…"
+			},
+			"filters": {
+				"status": "Filter by result",
+				"allStatuses": "All results"
+			},
+			"pickers": {
+				"result": "Set result…",
+				"filterResult": "Filter by result…",
+				"milestone": "Search milestones…",
+				"bug": "Search bugs…",
+				"loadingBugs": "Loading bugs…"
+			}
+		},
 		"featureComposer": {
 			"addMilestone": "New milestone",
 			"milestoneTitle": "Milestone title {{index}}",
@@ -4722,6 +4801,10 @@
 				"listReleases": "Releases",
 				"getRelease": "Release",
 				"listReleaseMilestones": "Release milestones",
+				"listTestCases": "Test cases",
+				"listFeatureTestCases": "Feature test cases",
+				"listReleaseTestCases": "Release test cases",
+				"getTestCase": "Test case",
 				"listProjectPages": "Project pages",
 				"getProjectPage": "Project page",
 				"listFeatureDocuments": "Feature documents",
