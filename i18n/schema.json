@@ -4853,6 +4853,9 @@
 								"milestone": {
 									"type": "string"
 								},
+								"test_case": {
+									"type": "string"
+								},
 								"label": {
 									"type": "string"
 								},
@@ -4884,6 +4887,7 @@
 								"bug",
 								"feature",
 								"milestone",
+								"test_case",
 								"label",
 								"workspace",
 								"time_off",
@@ -5161,6 +5165,65 @@
 									"required": ["create", "read", "update", "delete"]
 								},
 								"milestone": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"create": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"read": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"update": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										},
+										"delete": {
+											"type": "object",
+											"additionalProperties": false,
+											"properties": {
+												"label": {
+													"type": "string"
+												},
+												"description": {
+													"type": "string"
+												}
+											},
+											"required": ["label", "description"]
+										}
+									},
+									"required": ["create", "read", "update", "delete"]
+								},
+								"test_case": {
 									"type": "object",
 									"additionalProperties": false,
 									"properties": {
@@ -5607,6 +5670,7 @@
 								"bug",
 								"feature",
 								"milestone",
+								"test_case",
 								"label",
 								"workspace",
 								"time_off",
@@ -15961,9 +16025,18 @@
 										},
 										"issues": {
 											"type": "string"
+										},
+										"testCases": {
+											"type": "string"
 										}
 									},
-									"required": ["overview", "activity", "documents", "issues"]
+									"required": [
+										"overview",
+										"activity",
+										"documents",
+										"issues",
+										"testCases"
+									]
 								},
 								"health": {
 									"type": "object",
@@ -18045,6 +18118,189 @@
 						"releaseContextError"
 					]
 				},
+				"testCases": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"singular": {
+							"type": "string"
+						},
+						"pageTitle": {
+							"type": "string"
+						},
+						"new": {
+							"type": "string"
+						},
+						"add": {
+							"type": "string"
+						},
+						"create": {
+							"type": "string"
+						},
+						"search": {
+							"type": "string"
+						},
+						"loading": {
+							"type": "string"
+						},
+						"loadError": {
+							"type": "string"
+						},
+						"saveError": {
+							"type": "string"
+						},
+						"deleteError": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"noMatches": {
+							"type": "string"
+						},
+						"noneLinked": {
+							"type": "string"
+						},
+						"featureEmpty": {
+							"type": "string"
+						},
+						"releaseEmpty": {
+							"type": "string"
+						},
+						"noMilestone": {
+							"type": "string"
+						},
+						"noBug": {
+							"type": "string"
+						},
+						"hiddenMilestone": {
+							"type": "string"
+						},
+						"hiddenBug": {
+							"type": "string"
+						},
+						"openMilestone": {
+							"type": "string"
+						},
+						"openBug": {
+							"type": "string"
+						},
+						"delete": {
+							"type": "string"
+						},
+						"deleteTitle": {
+							"type": "string"
+						},
+						"deleteDescription": {
+							"type": "string"
+						},
+						"status": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"not_run": {
+									"type": "string"
+								},
+								"passed": {
+									"type": "string"
+								},
+								"failed": {
+									"type": "string"
+								},
+								"blocked": {
+									"type": "string"
+								}
+							},
+							"required": ["not_run", "passed", "failed", "blocked"]
+						},
+						"fields": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"steps": {
+									"type": "string"
+								},
+								"expectedResult": {
+									"type": "string"
+								},
+								"status": {
+									"type": "string"
+								},
+								"milestone": {
+									"type": "string"
+								},
+								"bug": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"description",
+								"steps",
+								"expectedResult",
+								"status",
+								"milestone",
+								"bug"
+							]
+						},
+						"filters": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"status": {
+									"type": "string"
+								},
+								"allStatuses": {
+									"type": "string"
+								}
+							},
+							"required": ["status", "allStatuses"]
+						}
+					},
+					"required": [
+						"title",
+						"singular",
+						"pageTitle",
+						"new",
+						"add",
+						"create",
+						"search",
+						"loading",
+						"loadError",
+						"saveError",
+						"deleteError",
+						"emptyTitle",
+						"emptyDescription",
+						"noMatches",
+						"noneLinked",
+						"featureEmpty",
+						"releaseEmpty",
+						"noMilestone",
+						"noBug",
+						"hiddenMilestone",
+						"hiddenBug",
+						"openMilestone",
+						"openBug",
+						"delete",
+						"deleteTitle",
+						"deleteDescription",
+						"status",
+						"fields",
+						"filters"
+					]
+				},
 				"featureComposer": {
 					"type": "object",
 					"additionalProperties": false,
@@ -18722,6 +18978,7 @@
 				"releases",
 				"createMenu",
 				"milestones",
+				"testCases",
 				"featureComposer",
 				"estimate",
 				"scheduling",
@@ -19826,6 +20083,18 @@
 								"listReleaseMilestones": {
 									"type": "string"
 								},
+								"listTestCases": {
+									"type": "string"
+								},
+								"listFeatureTestCases": {
+									"type": "string"
+								},
+								"listReleaseTestCases": {
+									"type": "string"
+								},
+								"getTestCase": {
+									"type": "string"
+								},
 								"listProjectPages": {
 									"type": "string"
 								},
@@ -19882,6 +20151,10 @@
 								"listReleases",
 								"getRelease",
 								"listReleaseMilestones",
+								"listTestCases",
+								"listFeatureTestCases",
+								"listReleaseTestCases",
+								"getTestCase",
 								"listProjectPages",
 								"getProjectPage",
 								"listFeatureDocuments",

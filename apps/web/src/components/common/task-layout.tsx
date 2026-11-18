@@ -1,4 +1,5 @@
 import { MilestoneDetailsSheet } from "@/components/task/milestones/milestone-details-sheet";
+import { TestCaseDetailsSheet } from "@/components/test-cases/test-case-details-sheet";
 import { taskReleaseSearch } from "@/components/task/task-release-origin";
 import { useTaskReleaseOrigin } from "@/components/task/task-release-origin-context";
 import { ShortcutKeys } from "@/components/shortcuts/shortcut-keys";
@@ -151,6 +152,7 @@ export default function TaskLayout({
           projectId={projectId}
           workspaceId={workspaceId}
         />
+        <TestCaseDetailsSheet projectId={projectId} workspaceId={workspaceId} />
       </Layout>
     </div>
   );

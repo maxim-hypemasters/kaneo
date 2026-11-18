@@ -32,6 +32,7 @@ import type {
 import type { GitHubImportState } from "../github-integration/import-state";
 import type { ImportRunProject } from "../import/import-run-project";
 import type { TaskType } from "../task/task-type";
+import type { TestCaseStatus } from "../test-case/test-case-status";
 import type { TimeOffStatus, TimeOffType } from "../time-off/time-off-kinds";
 
 // Timestamp columns without a time zone hold UTC (Drizzle reads and writes
@@ -1160,6 +1161,66 @@ export const milestoneTable = pgTable(
       table.id,
     ),
     index("milestone_releaseId_idx").on(table.releaseId),
+  ],
+);
+
+// Links are plain columns: neither target carries a (project_id, id) key to
+// build a composite FK on, so writes check that the milestone and bug belong
+// to the test case's project, and moving a task to another project unlinks it.
+export const testCaseTable = pgTable(
+  "test_case",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    title: text("title").notNull(),
+    // Preconditions and context.
+    description: text("description"),
+    steps: text("steps"),
+    expectedResult: text("expected_result"),
+    status: text("status").$type<TestCaseStatus>().notNull().default("not_run"),
+    milestoneId: text("milestone_id").references(() => milestoneTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    bugId: text("bug_id").references((): AnyPgColumn => taskTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdBy: text("created_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "test_case_status_check",
+      sql`${table.status} in ('not_run', 'passed', 'failed', 'blocked')`,
+    ),
+    index("test_case_project_created_idx").on(
+      table.projectId,
+      table.createdAt,
+      table.id,
+    ),
+    index("test_case_milestone_id_idx")
+      .on(table.milestoneId)
+      .where(sql`${table.milestoneId} is not null`),
+    index("test_case_bug_id_idx")
+      .on(table.bugId)
+      .where(sql`${table.bugId} is not null`),
   ],
 );
 

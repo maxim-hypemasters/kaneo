@@ -1,4 +1,5 @@
 import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
+import { testCasesKey } from "@/hooks/queries/test-case/test-case-keys";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FolderInputIcon } from "lucide-react";
 import { invalidateFeatureChange } from "@/lib/invalidate-feature-change";
@@ -32,6 +33,8 @@ export function useMoveTask() {
         void queryClient.invalidateQueries({
           queryKey: ["feature-milestones", id],
         });
+        // A moved Bug or Feature leaves its project's test cases.
+        void queryClient.invalidateQueries({ queryKey: testCasesKey(id) });
       }
       void queryClient.invalidateQueries({
         queryKey: ["release-progress", result.destinationProjectId],

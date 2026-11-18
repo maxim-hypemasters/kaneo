@@ -1,4 +1,5 @@
 import { MilestoneDetailsSheet } from "@/components/task/milestones/milestone-details-sheet";
+import { TestCaseDetailsSheet } from "@/components/test-cases/test-case-details-sheet";
 import { ShortcutKeys } from "@/components/shortcuts/shortcut-keys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
@@ -83,11 +84,13 @@ export default function ProjectLayout({
           ? "features"
           : location.pathname.includes("/releases")
             ? "releases"
-            : location.pathname.includes("/calendar")
-              ? "calendar"
-              : location.pathname.includes("/gantt")
-                ? "gantt"
-                : "board");
+            : location.pathname.includes("/test-cases")
+              ? "testCases"
+              : location.pathname.includes("/calendar")
+                ? "calendar"
+                : location.pathname.includes("/gantt")
+                  ? "gantt"
+                  : "board");
   const isHome = page === "home";
   const resolvedRoute: ProjectRoute = isHome ? "board" : page;
   const currentView = resolveProjectView(resolvedRoute, viewMode);
@@ -218,6 +221,7 @@ export default function ProjectLayout({
       </Layout.Content>
 
       <MilestoneDetailsSheet projectId={projectId} workspaceId={workspaceId} />
+      <TestCaseDetailsSheet projectId={projectId} workspaceId={workspaceId} />
       <CreateProjectModal
         open={isCreateProjectModalOpen}
         onClose={() => setIsCreateProjectModalOpen(false)}

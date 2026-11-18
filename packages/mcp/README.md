@@ -115,7 +115,7 @@ For headless or sandboxed environments where opening a browser is impractical, s
 
 ## Tools
 
-The server registers 103 tools:
+The server registers 110 tools:
 
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
 - My work: `list_my_tasks`, `list_workspace_activity`
@@ -129,6 +129,7 @@ The server registers 103 tools:
 - Feature documents: `list_feature_documents`, `get_feature_document`, `create_feature_document`, `update_feature_document`
 - Milestones: `list_project_milestones`, `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`, `set_task_milestone`
 - Releases: `list_releases`, `get_release`, `list_release_milestones`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
+- Test cases: `list_test_cases`, `list_feature_test_cases`, `list_release_test_cases`, `get_test_case`, `create_test_case`, `update_test_case`, `delete_test_case`
 - Time entries: `list_task_time_entries`, `get_time_entry`, `create_time_entry`, `update_time_entry`
 - Time off: `list_time_off`, `list_time_off_requests`, `list_pending_time_off_requests`, `get_time_off_request`, `request_time_off`, `update_time_off_request`, `cancel_time_off_request`, `approve_time_off_request`, `decline_time_off_request`, `get_time_off_balance`, `list_time_off_balances`, `set_time_off_allowance`
 - Public holiday calendars: `list_holiday_countries`, `get_holiday_calendar`, `set_holiday_calendar`, `list_holiday_calendar_requests`, `approve_holiday_calendar_request`, `decline_holiday_calendar_request`, `cancel_holiday_calendar_request`, `set_holiday_calendar_deadline`

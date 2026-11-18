@@ -61,6 +61,7 @@ const otherInvalidations = () =>
           "feature-milestones",
           "columns",
           "project-features",
+          "test-cases",
           "feature-library",
           "feature-workspace",
         ].includes(options?.queryKey?.[0]) &&

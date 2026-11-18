@@ -196,6 +196,7 @@ vi.mock("@/lib/releases/use-release-today", () => ({
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({ canWorkItem: () => true }),
 }));
+vi.mock("./release-test-cases", () => ({ ReleaseTestCases: () => null }));
 vi.mock("../use-release-permissions", () => ({
   useReleasePermissions: () => ({
     canManage: true,

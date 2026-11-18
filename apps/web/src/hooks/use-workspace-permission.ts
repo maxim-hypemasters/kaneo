@@ -80,6 +80,10 @@ export function useWorkspacePermission() {
       canCreateMilestones: () => can.createMilestones,
       canUpdateMilestones: () => can.updateMilestones,
       canDeleteMilestones: () => can.deleteMilestones,
+      canReadTestCases: () => can.readTestCases,
+      canCreateTestCases: () => can.createTestCases,
+      canUpdateTestCases: () => can.updateTestCases,
+      canDeleteTestCases: () => can.deleteTestCases,
       // Tasks, bugs and features each have their own permissions; pass the
       // row's `type`.
       canWorkItem: (

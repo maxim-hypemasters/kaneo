@@ -24,6 +24,13 @@ describe("project sidebar scope", () => {
     },
   );
 
+  it("classifies the Test cases page", () => {
+    expect(projectSidebarScope(`${base}/test-cases`, "w")).toEqual({
+      projectId: "p",
+      scope: "testCases",
+    });
+  });
+
   it("keeps a release detail in Releases regardless of an open task sheet", () => {
     expect(projectSidebarScope(`${base}/releases/r`, "w", "feature")).toEqual({
       projectId: "p",

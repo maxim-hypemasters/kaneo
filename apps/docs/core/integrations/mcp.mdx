@@ -8,7 +8,7 @@ Kaneo supports the Model Context Protocol (MCP) in two ways:
 1. **Built-in HTTP endpoint**: every Kaneo instance exposes `/api/mcp` out of the box. No extra setup, no extra process.
 2. **Stdio package** ([`@kaneo/mcp`](https://www.npmjs.com/package/@kaneo/mcp)): the official Kaneo MCP package on npm, a local stdio server for clients that prefer stdio transport.
 
-Both offer the same tools for managing workspaces, projects, project pages, tasks, Features and their documents, milestones, releases, time off, comments, and labels.
+Both offer the same tools for managing workspaces, projects, project pages, tasks, Features and their documents, milestones, releases, test cases, time off, comments, and labels.
 
 To work with Kaneo from a terminal or a shell script instead, use the [Kaneo CLI](/cli).
 
@@ -103,7 +103,7 @@ On the first tool call that needs Kaneo access, the MCP server:
 
 ## Available tools
 
-Both the HTTP endpoint and stdio package expose the same 103 tools:
+Both the HTTP endpoint and stdio package expose the same 110 tools:
 
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
 - My work: `list_my_tasks`, `list_workspace_activity`
@@ -117,6 +117,7 @@ Both the HTTP endpoint and stdio package expose the same 103 tools:
 - Feature documents: `list_feature_documents`, `get_feature_document`, `create_feature_document`, `update_feature_document`
 - Milestones: `list_project_milestones`, `list_milestones`, `get_milestone`, `create_milestone`, `update_milestone`, `delete_milestone`, `reorder_milestones`, `set_task_milestone`
 - Releases: `list_releases`, `get_release`, `list_release_milestones`, `create_release`, `update_release`, `delete_release`, `set_task_release`, `move_unfinished_release_items`
+- Test cases: `list_test_cases`, `list_feature_test_cases`, `list_release_test_cases`, `get_test_case`, `create_test_case`, `update_test_case`, `delete_test_case`
 - Time entries: `list_task_time_entries`, `get_time_entry`, `create_time_entry`, `update_time_entry`
 - Time off: `list_time_off`, `list_time_off_requests`, `list_pending_time_off_requests`, `get_time_off_request`, `request_time_off`, `update_time_off_request`, `cancel_time_off_request`, `approve_time_off_request`, `decline_time_off_request`, `get_time_off_balance`, `list_time_off_balances`, `set_time_off_allowance`
 - Public holiday calendars: `list_holiday_countries`, `get_holiday_calendar`, `set_holiday_calendar`, `list_holiday_calendar_requests`, `approve_holiday_calendar_request`, `decline_holiday_calendar_request`, `cancel_holiday_calendar_request`, `set_holiday_calendar_deadline`
@@ -173,6 +174,8 @@ Releases hold milestones and Tasks/Bugs. Their summaries count Task/Bug executio
 `set_task_release` changes a Task/Bug's release. New work inherits its milestone's release only when omitted; an explicit release or null wins. Assigning existing unassigned work inherits the milestone release, while existing release choices remain. Updating a milestone's release moves only followers matching its old release, including null. Clearing/deleting membership preserves releases.
 
 `move_unfinished_release_items` handles unfinished milestones and leaf work independently, leaving completed work in its original release. Release creation/edit requires project update permission; deletion and moving unfinished items also require update permission on tasks, bugs and milestones.
+
+Test case tools manage a project's test cases: a title, preconditions (`description`), `steps`, `expectedResult` and a result `status` (`not_run`, `passed`, `failed`, `blocked`), linked to at most one milestone and one Bug of the same project. `list_feature_test_cases` lists those linked to a Feature's milestones; `list_release_test_cases` lists those whose milestone is planned for the release or whose Bug is in it and not archived. List rows leave out steps; `get_test_case` returns them. Management uses the test case permissions (`test_case:create`, `test_case:read`, `test_case:update`, `test_case:delete`), and linking also needs read access on the milestone or Bug.
 
 ### Time off
 

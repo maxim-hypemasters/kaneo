@@ -54,6 +54,9 @@ vi.mock("@/components/ui/sidebar", () => ({ SidebarTrigger: () => null }));
 vi.mock("@/components/shortcuts/shortcut-keys", () => ({
   ShortcutKeys: () => null,
 }));
+vi.mock("@/components/test-cases/test-case-details-sheet", () => ({
+  TestCaseDetailsSheet: () => null,
+}));
 vi.mock("@/components/task/milestones/milestone-details-sheet", () => ({
   MilestoneDetailsSheet: () => null,
 }));

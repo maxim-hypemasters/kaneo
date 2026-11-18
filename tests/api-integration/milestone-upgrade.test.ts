@@ -76,6 +76,8 @@ describe("milestone migration upgrade", () => {
       db.transaction(async (tx) => {
         // DDL is transactional: recreate the pre-0068 shape, then run the actual
         // generated migration. The intentional rollback restores test isolation.
+        // Test cases came later and reference milestones.
+        await tx.execute(sql`drop table test_case`);
         await tx.execute(sql`alter table task drop column milestone_id`);
         await tx.execute(sql`drop table milestone`);
         await tx.execute(sql.raw(upgradeSql));

@@ -51,6 +51,16 @@ Never use `docker compose down -v` as an upgrade or troubleshooting step. It rem
 
 ## Upgrade notes
 
+### Test cases
+
+Kaneo added [test cases](/core/functional/test-cases). Migration `0080_test_cases` only adds the `test_case` table. No existing data changes.
+
+Stored workspace roles replace the built-in defaults, so the first start after the upgrade grants the test case permissions once: each role gets the same **Create**, **Read**, **Update** and **Delete** actions on test cases that it has on milestones. A role that already has a test case entry is left as it is, and later role edits are kept.
+
+API keys created with an explicit permission list are not changed. They can't use test cases until you create a key whose list includes the test case permissions. Sessions, keys without a permission list, the CLI, and MCP clients follow each person's role.
+
+Update the API and the web app together. When they are hosted separately, an older web app doesn't show **Test cases**, and a newer one can't reach the test case routes on an older API.
+
 ### Time off
 
 Kaneo added [time off](/core/functional/time-off). Migration `0078_time_off` only adds things: the `time_off`, `time_off_policy`, `time_off_allowance`, `time_off_holiday_calendar`, `time_off_holiday_calendar_request` and `time_off_setting` tables, and a `team_time_off_enabled` column on `user_notification_preference` that defaults to on. No existing data changes.

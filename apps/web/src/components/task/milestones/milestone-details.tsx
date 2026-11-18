@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { LinkedTestCases } from "@/components/test-cases/linked-test-cases";
 import { Diamond, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -156,6 +157,11 @@ export function MilestoneDetails({
           </p>
         )}
       </section>
+      <LinkedTestCases
+        projectId={projectId}
+        link={{ milestoneId: milestone.id }}
+        heading="sheet"
+      />
       {creating && (
         <CreateTaskModal
           open

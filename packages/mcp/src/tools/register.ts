@@ -12,6 +12,7 @@ import { registerMyWorkTools } from "./my-work.js";
 import { registerProjectExtraTools } from "./project-extras.js";
 import { registerProjectPageTools } from "./project-pages.js";
 import { registerTaskExtraTools } from "./task-extras.js";
+import { registerTestCaseTools } from "./test-cases.js";
 import { registerTimeOffTools } from "./time-off.js";
 import { registerTimeOffHolidayRequestTools } from "./time-off-holiday-requests.js";
 import { registerTimeOffHolidayTools } from "./time-off-holidays.js";
@@ -109,6 +110,7 @@ export function registerTools(
 ): void {
   const { client } = ctx;
   registerMilestoneTools(server, client);
+  registerTestCaseTools(server, client);
   registerFeatureTools(server, client);
   registerTriageTools(server, client);
   registerProjectPageTools(server, client);

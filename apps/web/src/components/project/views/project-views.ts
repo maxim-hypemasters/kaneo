@@ -16,6 +16,7 @@ export type ProjectView =
   | "triage"
   | "features"
   | "releases"
+  | "testCases"
   | "calendar"
   | "gantt";
 
@@ -25,6 +26,7 @@ export type ProjectRoute =
   | "triage"
   | "features"
   | "releases"
+  | "testCases"
   | "calendar"
   | "gantt";
 
@@ -34,6 +36,7 @@ export const PROJECT_ROUTE_PATHS = {
   triage: "/dashboard/workspace/$workspaceId/project/$projectId/triage",
   features: "/dashboard/workspace/$workspaceId/project/$projectId/features",
   releases: "/dashboard/workspace/$workspaceId/project/$projectId/releases",
+  testCases: "/dashboard/workspace/$workspaceId/project/$projectId/test-cases",
   calendar: "/dashboard/workspace/$workspaceId/project/$projectId/calendar",
   gantt: "/dashboard/workspace/$workspaceId/project/$projectId/gantt",
 } as const;
@@ -92,14 +95,15 @@ export function resolveProjectView(
   return route === "board" ? viewMode : route;
 }
 
-// The views that show the project's tasks; Backlog, Triage and Releases are
-// planning pages next to them.
+// The views that show the project's tasks; Backlog, Triage, Releases and
+// Test cases are planning pages next to them.
 export function isTaskLayoutView(view: ProjectView): view is TaskLayout {
   return (
     view !== "backlog" &&
     view !== "triage" &&
     view !== "releases" &&
-    view !== "features"
+    view !== "features" &&
+    view !== "testCases"
   );
 }
 

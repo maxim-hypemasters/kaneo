@@ -16,6 +16,8 @@ export function invalidateReleaseLinks(
     "project-task-relations",
     "release-link-candidates",
     "feature-create-candidates",
+    // Release test cases come from its milestones and bugs.
+    "test-cases",
   ])
     void client.invalidateQueries({ queryKey: [prefix, projectId] });
 

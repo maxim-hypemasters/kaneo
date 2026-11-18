@@ -71,6 +71,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   bug: "Bugs",
   feature: "Features",
   milestone: "Milestones",
+  test_case: "Test cases",
   document: "Project documents",
   label: "Labels",
   workspace: "Workspace",
@@ -224,6 +225,22 @@ const PERMISSION_LABELS: Record<
   "milestone:delete": {
     label: "Delete milestones",
     description: "Permanently delete milestones.",
+  },
+  "test_case:create": {
+    label: "Create test cases",
+    description: "Add test cases and link them to milestones and bugs.",
+  },
+  "test_case:read": {
+    label: "View test cases",
+    description: "View test cases and their results.",
+  },
+  "test_case:update": {
+    label: "Edit test cases",
+    description: "Edit test cases, their links and results.",
+  },
+  "test_case:delete": {
+    label: "Delete test cases",
+    description: "Permanently delete test cases.",
   },
   "document:create": {
     label: "Create project pages",
