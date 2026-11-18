@@ -5231,7 +5231,7 @@
 	"teams": {
 		"page": {
 			"title": "Teams",
-			"description": "Group people into teams and link each team to the projects it works on. Team members can open linked projects, even when their own project access is limited to selected projects.",
+			"description": "Group people into teams. Link a team to a project from the project's Overview, and its members can open that project even when their own access is limited to selected projects.",
 			"newTeam": "New team",
 			"loadError": "Couldn't load teams.",
 			"retry": "Try again",
@@ -5244,23 +5244,16 @@
 			"rename": "Rename",
 			"delete": "Delete",
 			"members": "Members",
-			"projects": "Projects",
 			"memberCount_one": "{{count}} member",
 			"memberCount_other": "{{count}} members",
 			"projectCount_one": "{{count}} project",
 			"projectCount_other": "{{count}} projects",
 			"noMembers": "No members yet.",
-			"noProjects": "No linked projects.",
 			"addMember": "Add member",
-			"linkProject": "Link project",
 			"searchMembers": "Search members…",
-			"searchProjects": "Search projects…",
 			"noMemberCandidates": "Everyone is already in this team.",
-			"noProjectCandidates": "No more projects to link.",
 			"removeMember": "Remove {{name}} from the team",
-			"unlinkProject": "Unlink {{name}}",
 			"membersSaved": "Team members updated",
-			"projectsSaved": "Team projects updated",
 			"saveError": "Couldn't update the team."
 		},
 		"dialog": {
@@ -5292,6 +5285,16 @@
 			"title": "Access through teams",
 			"description": "These projects stay open to this member through their teams, whatever you select above.",
 			"via": "via {{teams}}"
+		},
+		"projectTeams": {
+			"title": "Teams",
+			"none": "No teams linked.",
+			"linkTeam": "Link team",
+			"search": "Search teams…",
+			"noTeams": "No teams yet. Create one on the Teams page.",
+			"allLinked": "Every team is already linked.",
+			"unlink": "Unlink {{name}}",
+			"saveError": "Couldn't update the project's teams."
 		}
 	},
 	"publicProject": {

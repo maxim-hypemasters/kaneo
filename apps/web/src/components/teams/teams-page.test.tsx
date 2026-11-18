@@ -11,9 +11,8 @@ import {
 import type { Team } from "@/fetchers/team/types";
 import { TeamsPage } from "./teams-page";
 
-const { replaceMembers, replaceProjects } = vi.hoisted(() => ({
+const { replaceMembers } = vi.hoisted(() => ({
   replaceMembers: vi.fn(async () => ({})),
-  replaceProjects: vi.fn(async () => ({})),
 }));
 let teams: Team[] = [];
 let permissions = { create: true, update: true, remove: true };
@@ -49,15 +48,6 @@ vi.mock(
     }),
   }),
 );
-vi.mock("@/hooks/queries/project/use-get-projects", () => ({
-  default: () => ({
-    data: [
-      { id: "p1", name: "Website", icon: "Layout" },
-      { id: "p2", name: "API", icon: "Layout" },
-    ],
-    isPending: false,
-  }),
-}));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({
     canCreateTeams: () => permissions.create,
@@ -69,12 +59,6 @@ vi.mock("@/hooks/use-workspace-permission", () => ({
 vi.mock("@/hooks/mutations/team/use-replace-team-members", () => ({
   useReplaceTeamMembers: () => ({
     mutateAsync: replaceMembers,
-    isPending: false,
-  }),
-}));
-vi.mock("@/hooks/mutations/team/use-replace-team-projects", () => ({
-  useReplaceTeamProjects: () => ({
-    mutateAsync: replaceProjects,
     isPending: false,
   }),
 }));
@@ -111,11 +95,11 @@ afterEach(() => {
 });
 
 describe("teams page", () => {
-  it("lists each team's members and projects", () => {
+  it("lists each team's members, and links projects elsewhere", () => {
     render(<TeamsPage workspaceId="w1" />);
     expect(screen.getByText("Design")).toBeTruthy();
     expect(screen.getByText("Ada")).toBeTruthy();
-    expect(screen.getByText("Website")).toBeTruthy();
+    expect(screen.queryByText("Website")).toBeNull();
   });
 
   it("saves the member list without the one removed", () => {
@@ -124,14 +108,6 @@ describe("teams page", () => {
       screen.getByRole("button", { name: "teams:card.removeMember:Ada" }),
     );
     expect(replaceMembers).toHaveBeenCalledWith({ id: "t1", userIds: [] });
-  });
-
-  it("saves the project list without the one unlinked", () => {
-    render(<TeamsPage workspaceId="w1" />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "teams:card.unlinkProject:Website" }),
-    );
-    expect(replaceProjects).toHaveBeenCalledWith({ id: "t1", projectIds: [] });
   });
 
   it("is read-only without team permissions", () => {

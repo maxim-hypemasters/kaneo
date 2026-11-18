@@ -18,9 +18,7 @@ export const teamMembersBody = z.object({
   }),
 });
 
-export const teamProjectsBody = z.object({
-  projectIds: z.array(z.string()).max(500).openapi({
-    description:
-      "The full list of linked projects. Links to projects you can't access are kept even when left out.",
-  }),
+export const teamProjectParam = z.object({
+  id: z.string(),
+  projectId: z.string(),
 });

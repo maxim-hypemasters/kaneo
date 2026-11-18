@@ -81,10 +81,13 @@ function setMembers(user: User, teamId: string, userIds: string[]) {
   });
 }
 
-function setProjects(user: User, teamId: string, projectIds: string[]) {
-  return as(user)(`/team/${teamId}/projects`, {
-    method: "PUT",
-    body: { projectIds },
+function link(user: User, teamId: string, projectId: string) {
+  return as(user)(`/team/${teamId}/projects/${projectId}`, { method: "PUT" });
+}
+
+function unlink(user: User, teamId: string, projectId: string) {
+  return as(user)(`/team/${teamId}/projects/${projectId}`, {
+    method: "DELETE",
   });
 }
 
@@ -183,9 +186,9 @@ describe("teams", () => {
     expect(
       (await setMembers(ctx.member, team.id, [ctx.member.id])).status,
     ).toBe(403);
-    expect(
-      (await setProjects(ctx.member, team.id, [ctx.alpha.project.id])).status,
-    ).toBe(403);
+    expect((await link(ctx.member, team.id, ctx.alpha.project.id)).status).toBe(
+      403,
+    );
     expect(
       (await as(ctx.member)(`/team/${team.id}`, { method: "DELETE" })).status,
     ).toBe(403);
@@ -205,7 +208,7 @@ describe("teams", () => {
     ).toBe(404);
   });
 
-  it("only takes workspace members and workspace projects", async () => {
+  it("only takes workspace members and links workspace projects", async () => {
     const ctx = await setup();
     const team = await createTeam(ctx.owner, ctx.workspace.id);
     const other = await createWorkspace("Other");
@@ -215,9 +218,9 @@ describe("teams", () => {
     expect((await setMembers(ctx.owner, team.id, [stranger.id])).status).toBe(
       400,
     );
-    expect(
-      (await setProjects(ctx.owner, team.id, [foreign.project.id])).status,
-    ).toBe(400);
+    expect((await link(ctx.owner, team.id, foreign.project.id)).status).toBe(
+      404,
+    );
 
     const members = await setMembers(ctx.owner, team.id, [
       ctx.owner.id,
@@ -243,9 +246,15 @@ describe("teams", () => {
     const team = await createTeam(ctx.owner, ctx.workspace.id);
     expect(await visibleProjectIds(ctx.member, ctx.workspace.id)).toEqual([]);
 
-    expect(
-      (await setProjects(ctx.owner, team.id, [ctx.alpha.project.id])).status,
-    ).toBe(200);
+    expect((await link(ctx.owner, team.id, ctx.alpha.project.id)).status).toBe(
+      200,
+    );
+    // Linking again changes nothing.
+    publish.mockClear();
+    expect((await link(ctx.owner, team.id, ctx.alpha.project.id)).status).toBe(
+      200,
+    );
+    expect(publish).not.toHaveBeenCalled();
     expect(await visibleProjectIds(ctx.member, ctx.workspace.id)).toEqual([]);
 
     publish.mockClear();
@@ -269,7 +278,9 @@ describe("teams", () => {
     ).toContain(ctx.member.id);
 
     publish.mockClear();
-    expect((await setProjects(ctx.owner, team.id, [])).status).toBe(200);
+    expect(
+      (await unlink(ctx.owner, team.id, ctx.alpha.project.id)).status,
+    ).toBe(200);
     expect(await visibleProjectIds(ctx.member, ctx.workspace.id)).toEqual([]);
     const [unassigned] = await db
       .select({ userId: schema.taskTable.userId })
@@ -281,7 +292,7 @@ describe("teams", () => {
       expect.objectContaining({ projectId: ctx.alpha.project.id }),
     );
 
-    await setProjects(ctx.owner, team.id, [ctx.beta.project.id]);
+    await link(ctx.owner, team.id, ctx.beta.project.id);
     expect(await visibleProjectIds(ctx.member, ctx.workspace.id)).toEqual([
       ctx.beta.project.id,
     ]);
@@ -308,7 +319,7 @@ describe("teams", () => {
       ctx.alpha.project.id,
     ]);
     const team = await createTeam(ctx.owner, ctx.workspace.id);
-    await setProjects(ctx.owner, team.id, [ctx.alpha.project.id]);
+    await link(ctx.owner, team.id, ctx.alpha.project.id);
     await setMembers(ctx.owner, team.id, [ctx.member.id]);
     publish.mockClear();
 
@@ -326,10 +337,8 @@ describe("teams", () => {
       ctx.alpha.project.id,
     ]);
     const hiddenTeam = await createTeam(ctx.owner, ctx.workspace.id, "Hidden");
-    await setProjects(ctx.owner, hiddenTeam.id, [
-      ctx.alpha.project.id,
-      ctx.beta.project.id,
-    ]);
+    await link(ctx.owner, hiddenTeam.id, ctx.alpha.project.id);
+    await link(ctx.owner, hiddenTeam.id, ctx.beta.project.id);
     const visibleTeam = await createTeam(ctx.owner, ctx.workspace.id, "Shown");
 
     const list = await as(admin)(`/team/workspace/${ctx.workspace.id}`);
@@ -339,7 +348,10 @@ describe("teams", () => {
     ]);
 
     expect(
-      (await setProjects(admin, visibleTeam.id, [ctx.beta.project.id])).status,
+      (await link(admin, visibleTeam.id, ctx.beta.project.id)).status,
+    ).toBe(403);
+    expect(
+      (await unlink(admin, hiddenTeam.id, ctx.beta.project.id)).status,
     ).toBe(403);
     expect(
       (await setMembers(admin, hiddenTeam.id, [ctx.member.id])).status,
@@ -349,7 +361,9 @@ describe("teams", () => {
     ).toBe(403);
 
     // Unlinking what they can see leaves the hidden link in place.
-    expect((await setProjects(admin, hiddenTeam.id, [])).status).toBe(200);
+    expect(
+      (await unlink(admin, hiddenTeam.id, ctx.alpha.project.id)).status,
+    ).toBe(200);
     const links = await db
       .select({ projectId: schema.teamProjectTable.projectId })
       .from(schema.teamProjectTable)
@@ -389,7 +403,7 @@ describe("teams", () => {
       joinedAt: new Date(),
     });
     const team = await createTeam(ctx.owner, ctx.workspace.id);
-    await setProjects(ctx.owner, team.id, [ctx.alpha.project.id]);
+    await link(ctx.owner, team.id, ctx.alpha.project.id);
 
     const moved = await as(ctx.owner)(`/project/${ctx.alpha.project.id}/move`, {
       method: "PUT",

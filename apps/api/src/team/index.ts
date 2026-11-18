@@ -10,14 +10,14 @@ import createTeam from "./controllers/create-team";
 import deleteTeam from "./controllers/delete-team";
 import listTeams from "./controllers/list-teams";
 import replaceTeamMembers from "./controllers/replace-team-members";
-import replaceTeamProjects from "./controllers/replace-team-projects";
+import setTeamProjectLink from "./controllers/set-team-project-link";
 import updateTeam from "./controllers/update-team";
 import { deletedTeamSchema, teamListSchema, teamSchema } from "./response";
 import {
   teamMembersBody,
   teamNameBody,
   teamParam,
-  teamProjectsBody,
+  teamProjectParam,
   workspaceIdParam,
 } from "./schema";
 
@@ -142,33 +142,44 @@ const replaceTeamMembersRoute = createRoute({
   },
 });
 
-const replaceTeamProjectsRoute = createRoute({
+const teamProjectResponses = {
+  200: jsonResponse("The team after the change", teamSchema),
+  403: errorResponse(
+    "Missing team:update permission, or a project you can't access",
+  ),
+  404: errorResponse("Team, or project in its workspace, not found"),
+};
+
+const linkTeamProjectRoute = createRoute({
   method: "put",
-  operationId: "replaceTeamProjects",
-  path: "/{id}/projects",
+  operationId: "linkTeamProject",
+  path: "/{id}/projects/{projectId}",
   tags: ["Teams"],
-  summary: "Set team projects",
+  summary: "Link team to project",
   description:
-    "Replace the projects linked to the team. Its members can open linked projects even when their own project access is limited. You can only link projects you can access, and links to projects you can't access are kept.",
+    "Link a team to a project you can access. Its members can then open the project even when their own project access is limited. Linking an already linked project changes nothing.",
   middleware: [
     workspaceAccess.fromTeam(),
     requireWorkspacePermission({ team: ["update"] }),
   ] as const,
-  request: {
-    params: teamParam,
-    body: {
-      required: true,
-      content: { "application/json": { schema: teamProjectsBody } },
-    },
-  },
-  responses: {
-    200: jsonResponse("Team projects updated", teamSchema),
-    400: errorResponse("A project doesn't belong to the workspace"),
-    403: errorResponse(
-      "Missing team:update permission, or a project you can't access",
-    ),
-    404: errorResponse("Team not found"),
-  },
+  request: { params: teamProjectParam },
+  responses: teamProjectResponses,
+});
+
+const unlinkTeamProjectRoute = createRoute({
+  method: "delete",
+  operationId: "unlinkTeamProject",
+  path: "/{id}/projects/{projectId}",
+  tags: ["Teams"],
+  summary: "Unlink team from project",
+  description:
+    "Unlink a team from a project you can access. Members lose the project if the team was their only way in: they leave its triage list and are unassigned from its tasks.",
+  middleware: [
+    workspaceAccess.fromTeam(),
+    requireWorkspacePermission({ team: ["update"] }),
+  ] as const,
+  request: { params: teamProjectParam },
+  responses: teamProjectResponses,
 });
 
 const team = apiRouter()
@@ -215,13 +226,25 @@ const team = apiRouter()
       200,
     );
   })
-  .openapi(replaceTeamProjectsRoute, async (c) => {
-    const { id } = c.req.valid("param");
-    const { projectIds } = c.req.valid("json");
+  .openapi(linkTeamProjectRoute, async (c) => {
+    const { id, projectId } = c.req.valid("param");
     return c.json(
-      await replaceTeamProjects({
+      await setTeamProjectLink({
         teamId: id,
-        projectIds,
+        projectId,
+        linked: true,
+        actorId: c.get("userId"),
+      }),
+      200,
+    );
+  })
+  .openapi(unlinkTeamProjectRoute, async (c) => {
+    const { id, projectId } = c.req.valid("param");
+    return c.json(
+      await setTeamProjectLink({
+        teamId: id,
+        projectId,
+        linked: false,
         actorId: c.get("userId"),
       }),
       200,

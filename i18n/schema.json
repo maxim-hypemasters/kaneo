@@ -22110,9 +22110,6 @@
 						"members": {
 							"type": "string"
 						},
-						"projects": {
-							"type": "string"
-						},
 						"memberCount_one": {
 							"type": "string"
 						},
@@ -22152,37 +22149,19 @@
 						"noMembers": {
 							"type": "string"
 						},
-						"noProjects": {
-							"type": "string"
-						},
 						"addMember": {
-							"type": "string"
-						},
-						"linkProject": {
 							"type": "string"
 						},
 						"searchMembers": {
 							"type": "string"
 						},
-						"searchProjects": {
-							"type": "string"
-						},
 						"noMemberCandidates": {
-							"type": "string"
-						},
-						"noProjectCandidates": {
 							"type": "string"
 						},
 						"removeMember": {
 							"type": "string"
 						},
-						"unlinkProject": {
-							"type": "string"
-						},
 						"membersSaved": {
-							"type": "string"
-						},
-						"projectsSaved": {
 							"type": "string"
 						},
 						"saveError": {
@@ -22194,19 +22173,12 @@
 						"rename",
 						"delete",
 						"members",
-						"projects",
 						"noMembers",
-						"noProjects",
 						"addMember",
-						"linkProject",
 						"searchMembers",
-						"searchProjects",
 						"noMemberCandidates",
-						"noProjectCandidates",
 						"removeMember",
-						"unlinkProject",
 						"membersSaved",
-						"projectsSaved",
 						"saveError"
 					]
 				},
@@ -22325,9 +22297,56 @@
 						}
 					},
 					"required": ["title", "description", "via"]
+				},
+				"projectTeams": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"none": {
+							"type": "string"
+						},
+						"linkTeam": {
+							"type": "string"
+						},
+						"search": {
+							"type": "string"
+						},
+						"noTeams": {
+							"type": "string"
+						},
+						"allLinked": {
+							"type": "string"
+						},
+						"unlink": {
+							"type": "string"
+						},
+						"saveError": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"none",
+						"linkTeam",
+						"search",
+						"noTeams",
+						"allLinked",
+						"unlink",
+						"saveError"
+					]
 				}
 			},
-			"required": ["page", "card", "dialog", "delete", "accessNote"]
+			"required": [
+				"page",
+				"card",
+				"dialog",
+				"delete",
+				"accessNote",
+				"projectTeams"
+			]
 		},
 		"publicProject": {
 			"type": "object",

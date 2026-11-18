@@ -5377,23 +5377,16 @@
 			"actions": "Actions for {{name}}",
 			"addMember": "Add member",
 			"delete": "Delete",
-			"linkProject": "Link project",
 			"memberCount_other": "{{count}} members",
 			"members": "Members",
 			"membersSaved": "Team members updated",
 			"noMemberCandidates": "Everyone is already in this team.",
 			"noMembers": "No members yet.",
-			"noProjectCandidates": "No more projects to link.",
-			"noProjects": "No linked projects.",
 			"projectCount_other": "{{count}} projects",
-			"projects": "Projects",
-			"projectsSaved": "Team projects updated",
 			"removeMember": "Remove {{name}} from the team",
 			"rename": "Rename",
 			"saveError": "Couldn't update the team.",
-			"searchMembers": "Search members…",
-			"searchProjects": "Search projects…",
-			"unlinkProject": "Unlink {{name}}"
+			"searchMembers": "Search members…"
 		},
 		"delete": {
 			"confirm": "Delete team",
@@ -5421,7 +5414,7 @@
 			"save": "Save"
 		},
 		"page": {
-			"description": "Group people into teams and link each team to the projects it works on. Team members can open linked projects, even when their own project access is limited to selected projects.",
+			"description": "Group people into teams. Link a team to a project from the project's Overview, and its members can open that project even when their own access is limited to selected projects.",
 			"emptyDescription": "Create a team to group people and give them access to projects together.",
 			"emptyReadOnly": "Admins can create teams and link them to projects.",
 			"emptyTitle": "No teams yet",
@@ -5429,6 +5422,16 @@
 			"newTeam": "New team",
 			"retry": "Try again",
 			"title": "Teams"
+		},
+		"projectTeams": {
+			"allLinked": "Every team is already linked.",
+			"linkTeam": "Link team",
+			"none": "No teams linked.",
+			"noTeams": "No teams yet. Create one on the Teams page.",
+			"saveError": "Couldn't update the project's teams.",
+			"search": "Search teams…",
+			"title": "Teams",
+			"unlink": "Unlink {{name}}"
 		}
 	}
 }

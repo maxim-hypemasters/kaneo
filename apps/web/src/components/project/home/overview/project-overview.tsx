@@ -5,6 +5,7 @@ import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import type { Project } from "@/types/project";
 import { ProjectDescriptionField } from "./project-description-field";
 import { ProjectNameField } from "./project-name-field";
+import { ProjectPropertiesRail } from "./project-properties-rail";
 
 // Saves as people type, like the project's general settings.
 export function ProjectOverview({
@@ -28,35 +29,48 @@ export function ProjectOverview({
   const nameError = form.formState.errors.name?.message;
 
   return (
-    <div className="mx-auto flex w-full max-w-225 flex-col gap-6 px-4 pt-8 pb-16 sm:px-12 sm:pt-14">
-      <ProjectNameField
-        value={canEdit ? (name ?? "") : project.name}
-        readOnly={!canEdit}
-        error={
-          nameError ? t("tasks:projectHome.overview.nameRequired") : undefined
-        }
-        onChange={(value) =>
-          form.setValue("name", value, {
-            shouldDirty: true,
-            shouldValidate: true,
-          })
-        }
+    <div className="flex min-h-full flex-col lg:flex-row">
+      <div className="min-w-0 lg:flex-1">
+        <div className="mx-auto flex w-full max-w-225 flex-col gap-6 px-4 pt-8 pb-8 sm:px-12 sm:pt-14 lg:pb-16">
+          <ProjectNameField
+            value={canEdit ? (name ?? "") : project.name}
+            readOnly={!canEdit}
+            error={
+              nameError
+                ? t("tasks:projectHome.overview.nameRequired")
+                : undefined
+            }
+            onChange={(value) =>
+              form.setValue("name", value, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
+          />
+          <section aria-labelledby="project-description-heading">
+            <h2
+              id="project-description-heading"
+              className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
+            >
+              {t("tasks:projectHome.overview.description")}
+            </h2>
+            <ProjectDescriptionField
+              value={
+                canEdit ? (description ?? "") : (project.description ?? "")
+              }
+              readOnly={!canEdit}
+              onChange={(value) =>
+                form.setValue("description", value, { shouldDirty: true })
+              }
+            />
+          </section>
+        </div>
+      </div>
+      <ProjectPropertiesRail
+        projectId={project.id}
+        workspaceId={workspaceId}
+        className="px-4 pb-16 sm:px-12 lg:w-80 lg:shrink-0 lg:pt-14 lg:pr-6 lg:pl-0"
       />
-      <section aria-labelledby="project-description-heading">
-        <h2
-          id="project-description-heading"
-          className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wide"
-        >
-          {t("tasks:projectHome.overview.description")}
-        </h2>
-        <ProjectDescriptionField
-          value={canEdit ? (description ?? "") : (project.description ?? "")}
-          readOnly={!canEdit}
-          onChange={(value) =>
-            form.setValue("description", value, { shouldDirty: true })
-          }
-        />
-      </section>
     </div>
   );
 }

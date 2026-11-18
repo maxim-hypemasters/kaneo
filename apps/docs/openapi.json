@@ -31421,14 +31421,14 @@
         }
       }
     },
-    "/team/{id}/projects": {
+    "/team/{id}/projects/{projectId}": {
       "put": {
-        "operationId": "replaceTeamProjects",
+        "operationId": "linkTeamProject",
         "tags": [
           "Teams"
         ],
-        "summary": "Set team projects",
-        "description": "Replace the projects linked to the team. Its members can open linked projects even when their own project access is limited. You can only link projects you can access, and links to projects you can't access are kept.",
+        "summary": "Link team to project",
+        "description": "Link a team to a project you can access. Its members can then open the project even when their own project access is limited. Linking an already linked project changes nothing.",
         "parameters": [
           {
             "schema": {
@@ -31437,48 +31437,23 @@
             "required": true,
             "name": "id",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "projectIds": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "maxItems": 500,
-                    "description": "The full list of linked projects. Links to projects you can't access are kept even when left out."
-                  }
-                },
-                "required": [
-                  "projectIds"
-                ]
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": "Team projects updated",
+            "description": "The team after the change",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Team"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "A project doesn't belong to the workspace",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiError"
                 }
               }
             }
@@ -31504,7 +31479,78 @@
             }
           },
           "404": {
-            "description": "Team not found",
+            "description": "Team, or project in its workspace, not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unlinkTeamProject",
+        "tags": [
+          "Teams"
+        ],
+        "summary": "Unlink team from project",
+        "description": "Unlink a team from a project you can access. Members lose the project if the team was their only way in: they leave its triage list and are unassigned from its tasks.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The team after the change",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Team"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing team:update permission, or a project you can't access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Team, or project in its workspace, not found",
             "content": {
               "application/json": {
                 "schema": {

@@ -6,7 +6,6 @@ import { SettingsCard } from "@/components/settings/settings-card";
 import { SettingsEmpty } from "@/components/settings/settings-empty";
 import { Button } from "@/components/ui/button";
 import type { Team } from "@/fetchers/team/types";
-import useGetProjects from "@/hooks/queries/project/use-get-projects";
 import { useGetTeams } from "@/hooks/queries/team/use-get-teams";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
 import { DeleteTeamDialog } from "./delete-team-dialog";
@@ -20,7 +19,6 @@ export function TeamsPage({ workspaceId }: { workspaceId: string }) {
   const teams = useGetTeams(workspaceId);
   const { canCreate, canUpdate, canDelete } = useTeamPermissions();
   const workspaceMembers = useGetActiveWorkspaceUsers(workspaceId);
-  const projects = useGetProjects({ workspaceId, enabled: canUpdate });
   // Each dialog keeps its team after closing, for the exit animation.
   const [nameOpen, setNameOpen] = useState(false);
   const [renaming, setRenaming] = useState<Team | null>(null);
@@ -84,8 +82,6 @@ export function TeamsPage({ workspaceId }: { workspaceId: string }) {
             workspaceId={workspaceId}
             workspaceMembers={workspaceMembers.data?.members ?? []}
             membersLoading={workspaceMembers.isPending}
-            projects={projects.data ?? []}
-            projectsLoading={projects.isPending}
             canUpdate={canUpdate}
             canDelete={canDelete}
             onRename={() => {
