@@ -2659,7 +2659,8 @@
 			"inbox": "收件箱",
 			"invitePeople": "邀请成员",
 			"myTasks": "我的任务",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"workspace": "工作区"
 		},
 		"projectList": {
 			"viewProject": "查看项目",

@@ -2659,7 +2659,8 @@
 			"inbox": "Inbox",
 			"invitePeople": "Invite people",
 			"myTasks": "My tasks",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"workspace": "워크스페이스"
 		},
 		"projectList": {
 			"viewProject": "프로젝트 보기",

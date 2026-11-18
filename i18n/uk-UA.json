@@ -2788,7 +2788,8 @@
 			"inbox": "Inbox",
 			"invitePeople": "Invite people",
 			"myTasks": "My tasks",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"workspace": "Робочий простір"
 		},
 		"projectList": {
 			"viewProject": "Переглянути проєкт",
