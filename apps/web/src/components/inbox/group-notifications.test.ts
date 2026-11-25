@@ -27,10 +27,15 @@ describe("filterNotifications", () => {
   const notifications = [
     notification("unread-comment"),
     notification("read-mention", { type: "task_mention", isRead: true }),
+    notification("test-case-mention", {
+      type: "test_case_mention",
+      resourceType: "test_case",
+      isRead: true,
+    }),
   ];
 
   it("keeps everything for the all filter", () => {
-    expect(filterNotifications(notifications, "all")).toHaveLength(2);
+    expect(filterNotifications(notifications, "all")).toHaveLength(3);
   });
 
   it("narrows to unread or to mentions", () => {
@@ -39,7 +44,7 @@ describe("filterNotifications", () => {
     ).toEqual(["unread-comment"]);
     expect(
       filterNotifications(notifications, "mentions").map((item) => item.id),
-    ).toEqual(["read-mention"]);
+    ).toEqual(["read-mention", "test-case-mention"]);
   });
 
   it("counts a mention in a document comment as a mention", () => {
@@ -52,7 +57,7 @@ describe("filterNotifications", () => {
         ],
         "mentions",
       ).map((item) => item.id),
-    ).toEqual(["read-mention", "document-mention"]);
+    ).toEqual(["read-mention", "test-case-mention", "document-mention"]);
   });
 });
 

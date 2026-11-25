@@ -28,7 +28,12 @@ describe("@kaneo/permissions statement surface", () => {
       "delete",
       "assign",
     ]);
-    for (const resource of ["bug", "feature", "milestone"] as const) {
+    for (const resource of [
+      "bug",
+      "feature",
+      "milestone",
+      "test_case",
+    ] as const) {
       expect(statement[resource]).toEqual([
         "create",
         "read",
@@ -68,6 +73,7 @@ describe("built-in role privileges", () => {
     expect(viewer.statements.bug).toEqual(["read"]);
     expect(viewer.statements.feature).toEqual(["read"]);
     expect(viewer.statements.milestone).toEqual(["read"]);
+    expect(viewer.statements.test_case).toEqual(["read"]);
     expect(viewer.statements.time_off).toEqual(["read"]);
   });
 
@@ -77,7 +83,7 @@ describe("built-in role privileges", () => {
     expect(owner.statements.time_off).toEqual(["create", "read", "approve"]);
   });
 
-  it("gives bugs, features and milestones the same defaults as tasks", () => {
+  it("gives bugs, features, milestones and test cases the same defaults as tasks", () => {
     for (const role of [member, admin, owner]) {
       const taskCrud = role.statements.task.filter(
         (action) => action !== "assign",
@@ -85,6 +91,7 @@ describe("built-in role privileges", () => {
       expect(role.statements.bug).toEqual(taskCrud);
       expect(role.statements.feature).toEqual(taskCrud);
       expect(role.statements.milestone).toEqual(taskCrud);
+      expect(role.statements.test_case).toEqual(taskCrud);
     }
   });
 

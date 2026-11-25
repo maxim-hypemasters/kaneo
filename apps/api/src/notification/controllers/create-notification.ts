@@ -46,6 +46,7 @@ export async function persistNotification(
       ? "taskAssignmentEnabled"
       : type === "task_comment" ||
           type === "task_mention" ||
+          type === "test_case_mention" ||
           (type !== undefined && isDocumentCommentNotificationType(type))
         ? "taskCommentEnabled"
         : type === "task_status_changed" ||

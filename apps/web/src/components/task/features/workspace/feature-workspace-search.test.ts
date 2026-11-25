@@ -36,6 +36,12 @@ describe("Feature workspace URL state", () => {
     expect(validateFeatureWorkspaceSearch({ featureTab: "overview" })).toEqual({
       featureTab: "overview",
     });
+    expect(
+      validateFeatureWorkspaceSearch({
+        featureTab: "testCases",
+        featureUpdateId: "report",
+      }),
+    ).toEqual({ featureTab: "testCases" });
   });
   it("rejects malformed, repeated, and overlong document IDs", () => {
     for (const featureDocumentId of [

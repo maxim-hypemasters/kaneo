@@ -17,6 +17,7 @@ type LookupResource =
   | "column"
   | "milestone"
   | "projectDocument"
+  | "testCase"
   | "release"
   | "workflowRule"
   | "customField"
@@ -52,6 +53,7 @@ const RESOURCE_NOT_FOUND: Record<LookupResource, string> = {
   release: "Release not found",
   milestone: "Milestone not found",
   projectDocument: "Document not found",
+  testCase: "Test case not found",
   workflowRule: "Workflow rule not found",
   customField: "Custom field not found",
   timeOff: TIME_OFF_NOT_FOUND,
@@ -247,6 +249,22 @@ async function lookupScope(
         .where(eq(schema.projectDocumentTable.id, id))
         .limit(1);
       return document ?? null;
+    }
+
+    case "testCase": {
+      const [testCase] = await db
+        .select({
+          workspaceId: schema.projectTable.workspaceId,
+          projectId: schema.projectTable.id,
+        })
+        .from(schema.testCaseTable)
+        .innerJoin(
+          schema.projectTable,
+          eq(schema.testCaseTable.projectId, schema.projectTable.id),
+        )
+        .where(eq(schema.testCaseTable.id, id))
+        .limit(1);
+      return testCase ?? null;
     }
 
     case "label": {
@@ -521,6 +539,11 @@ export const workspaceAccess = {
   fromProjectDocument: (idKey = "id") =>
     workspaceAccessMiddleware({
       sources: [{ type: "lookup", resource: "projectDocument", idKey }],
+    }),
+
+  fromTestCase: (idKey = "id") =>
+    workspaceAccessMiddleware({
+      sources: [{ type: "lookup", resource: "testCase", idKey }],
     }),
 
   fromRelease: (idKey = "id") =>

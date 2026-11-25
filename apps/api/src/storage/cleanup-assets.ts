@@ -8,6 +8,7 @@ import {
   projectDocumentTable,
   projectTable,
   taskTable,
+  testCaseCommentTable,
 } from "../database/schema";
 import { deleteS3Object } from "./s3";
 
@@ -31,6 +32,15 @@ export function extractAssetIds(
   return ids;
 }
 
+// Uploads the old content referenced that the new content no longer does.
+export function removedAssetIds(
+  oldContent: string | null | undefined,
+  newContent: string | null | undefined,
+): string[] {
+  const kept = extractAssetIds(newContent);
+  return [...extractAssetIds(oldContent)].filter((id) => !kept.has(id));
+}
+
 export function contentReferencesAsset(
   content: string | null | undefined,
   assetId: string,
@@ -43,15 +53,18 @@ export const PROJECT_DESCRIPTION_SURFACE = "project-description";
 
 // Task uploads are shared by the task's description, comments, activity and
 // Feature documents. A project document's uploads belong to that page alone,
-// and a project description's to that description.
+// a project description's to that description, and a test case's to its
+// comments.
 export type AssetCleanupScope =
   | { taskId: string }
   | { documentId: string }
-  | { projectId: string };
+  | { projectId: string }
+  | { testCaseId: string };
 
 function assetOwnerFilter(scope: AssetCleanupScope) {
   if ("taskId" in scope) return eq(assetTable.taskId, scope.taskId);
   if ("documentId" in scope) return eq(assetTable.documentId, scope.documentId);
+  if ("testCaseId" in scope) return eq(assetTable.testCaseId, scope.testCaseId);
   return and(
     eq(assetTable.projectId, scope.projectId),
     eq(assetTable.surface, PROJECT_DESCRIPTION_SURFACE),
@@ -67,7 +80,28 @@ async function isAssetReferencedElsewhere(
     return isAssetReferencedByTask(assetId, scope.taskId, executor);
   if ("documentId" in scope)
     return isAssetReferencedByDocument(assetId, scope.documentId, executor);
+  if ("testCaseId" in scope)
+    return isAssetReferencedByTestCase(assetId, scope.testCaseId, executor);
   return isAssetReferencedByProject(assetId, scope.projectId, executor);
+}
+
+async function isAssetReferencedByTestCase(
+  assetId: string,
+  testCaseId: string,
+  executor: Pick<typeof db, "select">,
+): Promise<boolean> {
+  const comments = await executor
+    .select({ content: testCaseCommentTable.content })
+    .from(testCaseCommentTable)
+    .where(
+      and(
+        eq(testCaseCommentTable.testCaseId, testCaseId),
+        like(testCaseCommentTable.content, `%/api/asset/${assetId}%`),
+      ),
+    );
+  return comments.some((comment) =>
+    contentReferencesAsset(comment.content, assetId),
+  );
 }
 
 async function isAssetReferencedByProject(
@@ -159,10 +193,7 @@ export async function deleteOrphanedAssets(
   newContent: string | null | undefined,
   scope: AssetCleanupScope,
 ): Promise<void> {
-  const oldIds = extractAssetIds(oldContent);
-  const newIds = extractAssetIds(newContent);
-
-  const removedIds = [...oldIds].filter((id) => !newIds.has(id));
+  const removedIds = removedAssetIds(oldContent, newContent);
   if (removedIds.length === 0) return;
 
   const assets = await db

@@ -6,6 +6,7 @@ import {
   notificationTable,
   projectTable,
   taskTable,
+  testCaseTable,
   userNotificationPreferenceTable,
   userNotificationWorkspaceRuleTable,
   userTable,
@@ -40,6 +41,7 @@ type ResolvedNotificationContext = {
     featureId: string | null;
     url: string;
   } | null;
+  testCase: { id: string; title: string; url: string } | null;
 };
 
 type DeliveryContent = {
@@ -53,6 +55,15 @@ function getClientUrl() {
 
 function buildTaskUrl(workspaceId: string, projectId: string, taskId: string) {
   return `${getClientUrl()}/dashboard/workspace/${workspaceId}/project/${projectId}/task/${taskId}`;
+}
+
+// The Test cases page opens the one its link names.
+function buildTestCaseUrl(
+  workspaceId: string,
+  projectId: string,
+  testCaseId: string,
+) {
+  return `${getClientUrl()}/dashboard/workspace/${workspaceId}/project/${projectId}/test-cases?testCaseId=${encodeURIComponent(testCaseId)}`;
 }
 
 function buildTimeOffUrl(workspaceId: string) {
@@ -231,6 +242,24 @@ function buildDeliveryContent(notification: {
           : "You were mentioned in a Kaneo task.",
       };
     }
+    case "test_case_mention": {
+      const testCaseTitle = getStringValue(
+        notification.eventData,
+        "testCaseTitle",
+      );
+      const mentionerName = getStringValue(
+        notification.eventData,
+        "mentionerName",
+      );
+      return {
+        title: mentionerName
+          ? `${mentionerName} mentioned you`
+          : "You were mentioned",
+        body: testCaseTitle
+          ? `You were mentioned in the test case ${testCaseTitle}.`
+          : "You were mentioned in a Kaneo test case.",
+      };
+    }
     case "task_comment": {
       const taskTitle = getStringValue(notification.eventData, "taskTitle");
       const commenterName = getStringValue(
@@ -392,6 +421,7 @@ async function resolveNotificationContext(notification: {
       taskTitle: task.taskTitle,
       taskUrl: buildTaskUrl(task.workspaceId, task.projectId, task.taskId),
       document: null,
+      testCase: null,
     };
   }
 
@@ -416,6 +446,7 @@ async function resolveNotificationContext(notification: {
       taskId: null,
       taskTitle: null,
       taskUrl: null,
+      testCase: null,
       document: {
         id: resolved.documentId,
         kind: resolved.kind,
@@ -428,6 +459,50 @@ async function resolveNotificationContext(notification: {
           featureId: resolved.featureId,
           threadId: getStringValue(eventData, "threadId"),
         }),
+      },
+    };
+  }
+
+  if (notification.resourceType === "test_case") {
+    const [testCase] = await db
+      .select({
+        id: testCaseTable.id,
+        title: testCaseTable.title,
+        projectId: projectTable.id,
+        projectName: projectTable.name,
+        workspaceId: workspaceTable.id,
+        workspaceName: workspaceTable.name,
+      })
+      .from(testCaseTable)
+      .innerJoin(projectTable, eq(testCaseTable.projectId, projectTable.id))
+      .innerJoin(
+        workspaceTable,
+        eq(projectTable.workspaceId, workspaceTable.id),
+      )
+      .where(eq(testCaseTable.id, notification.resourceId))
+      .limit(1);
+
+    if (!testCase) {
+      return null;
+    }
+
+    return {
+      workspaceId: testCase.workspaceId,
+      workspaceName: testCase.workspaceName,
+      projectId: testCase.projectId,
+      projectName: testCase.projectName,
+      taskId: null,
+      taskTitle: null,
+      taskUrl: null,
+      document: null,
+      testCase: {
+        id: testCase.id,
+        title: testCase.title,
+        url: buildTestCaseUrl(
+          testCase.workspaceId,
+          testCase.projectId,
+          testCase.id,
+        ),
       },
     };
   }
@@ -455,6 +530,7 @@ async function resolveNotificationContext(notification: {
       taskTitle: null,
       taskUrl: null,
       document: null,
+      testCase: null,
     };
   }
 
@@ -644,6 +720,7 @@ export async function deliverNotification(
   const actionUrl =
     context.taskUrl ??
     context.document?.url ??
+    context.testCase?.url ??
     (isTimeOffNotificationType(notification.type)
       ? buildTimeOffUrl(context.workspaceId)
       : null);
@@ -684,6 +761,7 @@ export async function deliverNotification(
           url: context.document.url,
         }
       : null,
+    testCase: context.testCase,
     user: {
       id: notification.userId,
       email: user.email,

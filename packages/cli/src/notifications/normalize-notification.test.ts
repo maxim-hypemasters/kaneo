@@ -113,6 +113,23 @@ describe("normalizeNotification", () => {
     });
   });
 
+  it("describes a mention in a test case comment", () => {
+    expect(
+      normalizeNotification(
+        raw({
+          type: "test_case_mention",
+          resourceType: "test_case",
+          resourceId: "tc-1",
+          eventData: { mentionerName: "Ada", testCaseTitle: "Checks out" },
+        }),
+      ),
+    ).toMatchObject({
+      title: "Ada mentioned you",
+      message: "Checks out",
+      taskId: null,
+    });
+  });
+
   it("describes new work waiting in Triage", () => {
     const view = (eventData: Record<string, unknown>) =>
       normalizeNotification(raw({ type: "task_triage_new", eventData }));

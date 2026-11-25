@@ -61,6 +61,8 @@ const otherInvalidations = () =>
           "feature-milestones",
           "columns",
           "project-features",
+          "test-cases",
+          "test-case-comments",
           "feature-library",
           "feature-workspace",
           "document-comments",

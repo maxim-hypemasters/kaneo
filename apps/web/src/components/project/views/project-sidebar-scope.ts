@@ -5,7 +5,8 @@ export type ProjectSidebarScope =
   | "backlog"
   | "triage"
   | "features"
-  | "releases";
+  | "releases"
+  | "testCases";
 
 export function projectSidebarRoute(pathname: string, workspaceId: string) {
   const match = pathname.match(
@@ -33,6 +34,9 @@ export function projectSidebarScope(
     case "triage":
     case "releases":
       scope = route.section;
+      break;
+    case "test-cases":
+      scope = "testCases";
       break;
     case "board":
     case "calendar":

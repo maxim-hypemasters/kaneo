@@ -32,6 +32,7 @@ import type {
 import type { GitHubImportState } from "../github-integration/import-state";
 import type { ImportRunProject } from "../import/import-run-project";
 import type { TaskType } from "../task/task-type";
+import type { TestCaseStatus } from "../test-case/test-case-status";
 import type { TimeOffStatus, TimeOffType } from "../time-off/time-off-kinds";
 
 // Timestamp columns without a time zone hold UTC (Drizzle reads and writes
@@ -1208,6 +1209,101 @@ export const milestoneTable = pgTable(
   ],
 );
 
+// Links are plain columns: neither target carries a (project_id, id) key to
+// build a composite FK on, so writes check that the milestone and bug belong
+// to the test case's project, and moving a task to another project unlinks it.
+export const testCaseTable = pgTable(
+  "test_case",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    title: text("title").notNull(),
+    // Preconditions and context.
+    description: text("description"),
+    steps: text("steps"),
+    expectedResult: text("expected_result"),
+    status: text("status").$type<TestCaseStatus>().notNull().default("not_run"),
+    milestoneId: text("milestone_id").references(() => milestoneTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    bugId: text("bug_id").references((): AnyPgColumn => taskTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdBy: text("created_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "test_case_status_check",
+      sql`${table.status} in ('not_run', 'passed', 'failed', 'blocked')`,
+    ),
+    index("test_case_project_created_idx").on(
+      table.projectId,
+      table.createdAt,
+      table.id,
+    ),
+    index("test_case_milestone_id_idx")
+      .on(table.milestoneId)
+      .where(sql`${table.milestoneId} is not null`),
+    index("test_case_bug_id_idx")
+      .on(table.bugId)
+      .where(sql`${table.bugId} is not null`),
+  ],
+);
+
+export const testCaseCommentTable = pgTable(
+  "test_case_comment",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    testCaseId: text("test_case_id")
+      .notNull()
+      .references(() => testCaseTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    // Null once the author's account is deleted.
+    userId: text("user_id").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("test_case_comment_thread_idx").on(
+      table.testCaseId,
+      table.createdAt,
+      table.id,
+    ),
+  ],
+);
+
 export const billingReminderSentTable = pgTable(
   "billing_reminder_sent",
   {
@@ -1579,6 +1675,11 @@ export const assetTable = pgTable(
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
+    // Uploads in a test case's comments.
+    testCaseId: text("test_case_id").references(() => testCaseTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     objectKey: text("object_key").notNull().unique(),
     filename: text("filename").notNull(),
     mimeType: text("mime_type").notNull(),
@@ -1599,6 +1700,9 @@ export const assetTable = pgTable(
     index("asset_taskId_idx").on(table.taskId),
     index("asset_activityId_idx").on(table.activityId),
     index("asset_documentId_idx").on(table.documentId),
+    index("asset_testCaseId_idx")
+      .on(table.testCaseId)
+      .where(sql`${table.testCaseId} is not null`),
     index("asset_createdBy_idx").on(table.createdBy),
     index("asset_draft_expiry_idx")
       .on(table.createdAt, table.id)

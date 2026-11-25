@@ -26,9 +26,14 @@ Kaneo sends a JSON POST with these fields:
 | `project` | Project ID and name, or `null` |
 | `task` | Task ID, title, and URL, or `null` |
 | `document` | For a document comment notification: document ID, `kind` (`page` or `feature`), title, and a URL that opens the comment thread. Otherwise `null` |
+| `testCase` | Test case ID, title, and URL, or `null` |
 | `user` | Your user ID, name, and email |
 
 A notification needs a resolvable workspace context for external delivery. It must also pass the active workspace rule and project selection.
+
+### Test case mentions
+
+A mention in a comment on a [test case](/core/functional/test-cases#comment-on-a-test-case) sends `notification.type` `test_case_mention`, with `testCaseTitle`, `mentionerName`, `projectId` and `workspaceId` in `eventData`. `resourceType` is `test_case` and `resourceId` is the test case ID; `testCase` is filled and `task` is `null`. Its URL opens the test case over the project's Test cases page.
 
 ### Time-off notifications
 

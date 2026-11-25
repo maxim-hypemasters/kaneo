@@ -22,6 +22,10 @@ import { featureWorkspaceKey } from "@/hooks/queries/feature/use-feature-workspa
 import { projectDocumentCommentsKey } from "@/hooks/queries/document-comment/document-comment-keys";
 import { projectDocumentsKey } from "@/hooks/queries/project-document/project-document-keys";
 import { projectLinksKey } from "@/hooks/queries/project-link/project-links-key";
+import {
+  testCaseCommentThreadsKey,
+  testCasesKey,
+} from "@/hooks/queries/test-case/test-case-keys";
 import type { ProjectWithTasks } from "@/types/project";
 import {
   hasSyncTaskSample,
@@ -154,6 +158,19 @@ export function useProjectWebSocket(projectId: string) {
         if (!disposed)
           void queryClient.invalidateQueries({
             queryKey: projectDocumentCommentsKey(projectId),
+          });
+      }, RELEASES_REFRESH_DELAY_MS);
+    }
+    // Test case lists show linked milestones and bugs, so their changes
+    // refresh them too. Only lists on screen refetch.
+    let testCasesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+    function refreshTestCases() {
+      if (testCasesRefreshTimer !== null) return;
+      testCasesRefreshTimer = setTimeout(() => {
+        testCasesRefreshTimer = null;
+        if (!disposed)
+          void queryClient.invalidateQueries({
+            queryKey: testCasesKey(projectId),
           });
       }, RELEASES_REFRESH_DELAY_MS);
     }
@@ -388,6 +405,14 @@ export function useProjectWebSocket(projectId: string) {
         if (offlineSince !== null) {
           reconcileReleases(offlineSince);
           reconcileMilestoneDetails();
+          void queryClient.invalidateQueries(
+            { queryKey: testCasesKey(projectId) },
+            { cancelRefetch: false },
+          );
+          void queryClient.invalidateQueries(
+            { queryKey: testCaseCommentThreadsKey(projectId) },
+            { cancelRefetch: false },
+          );
           invalidateWorkLinkCandidates(queryClient, projectId, {
             cancelRefetch: false,
           });
@@ -447,6 +472,26 @@ export function useProjectWebSocket(projectId: string) {
             refreshDocumentComments();
             return;
           }
+          if (message.type === "TEST_CASES_UPDATED") {
+            refreshTestCases();
+            return;
+          }
+          if (message.type === "TEST_CASE_COMMENTS_UPDATED") {
+            void queryClient.invalidateQueries({
+              queryKey: testCaseCommentThreadsKey(projectId),
+            });
+            return;
+          }
+          if (
+            [
+              "MILESTONES_UPDATED",
+              "RELEASES_UPDATED",
+              "TASK_UPDATED",
+              "TASK_MOVED",
+              "TASK_DELETED",
+            ].includes(message.type)
+          )
+            refreshTestCases();
           if (message.type === "TRIAGE_MEMBERS_UPDATED") {
             void queryClient.invalidateQueries({
               queryKey: ["triage-members", projectId],
@@ -1026,6 +1071,7 @@ export function useProjectWebSocket(projectId: string) {
         clearTimeout(projectDocumentsRefreshTimer);
       if (documentCommentsRefreshTimer !== null)
         clearTimeout(documentCommentsRefreshTimer);
+      if (testCasesRefreshTimer !== null) clearTimeout(testCasesRefreshTimer);
       if (retryTimeout !== null) {
         clearTimeout(retryTimeout);
       }

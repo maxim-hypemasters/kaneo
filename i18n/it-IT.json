@@ -1050,7 +1050,8 @@
 				"bug": "Bugs",
 				"feature": "Features",
 				"milestone": "Milestones",
-				"time_off": "Time off"
+				"time_off": "Time off",
+				"test_case": "Test cases"
 			},
 			"permissions": {
 				"project": {
@@ -1265,6 +1266,24 @@
 					"read": {
 						"description": "See who is away and when.",
 						"label": "View time off"
+					}
+				},
+				"test_case": {
+					"create": {
+						"description": "Can create test cases and link them to milestones and bugs",
+						"label": "Create"
+					},
+					"delete": {
+						"description": "Can delete test cases",
+						"label": "Delete"
+					},
+					"read": {
+						"description": "Can view test cases and their results",
+						"label": "Read"
+					},
+					"update": {
+						"description": "Can edit test cases, their links and results",
+						"label": "Update"
 					}
 				}
 			},
@@ -3071,6 +3090,10 @@
 				"content": "«{{taskTitle}}» è stato rifiutato",
 				"contentWithReason": "«{{taskTitle}}» è stato rifiutato: {{reason}}"
 			},
+			"test_case_mention": {
+				"content": "{{mentionerName}} mentioned you in the test case: {{testCaseTitle}}",
+				"title": "{{mentionerName}} mentioned you"
+			},
 			"document_comment_reply": {
 				"content": "In {{documentTitle}}",
 				"contentWithPreview": "{{documentTitle}}: {{commentPreview}}",
@@ -3118,6 +3141,7 @@
 				"requestedBy": "Requested by",
 				"hintHolidayCalendarDecided": "Your public holidays are on the My time off tab."
 			},
+			"openTestCase": "Open test case",
 			"commentedText": "Commented text",
 			"openDocument": "Open document"
 		}
@@ -3942,7 +3966,8 @@
 					"overview": "Overview",
 					"activity": "Activity",
 					"documents": "Documents",
-					"issues": "Issues"
+					"issues": "Issues",
+					"testCases": "Test cases"
 				},
 				"health": {
 					"on-track": "On track",
@@ -4607,6 +4632,75 @@
 			},
 			"createNote": "Andrà nel triage per essere valutato",
 			"sentToTriage": "Inviato al triage per la valutazione"
+		},
+		"testCases": {
+			"add": "Add test case",
+			"comments": {
+				"delete": "Delete comment",
+				"deleteDescription": "The comment and the files attached to it are deleted. This can't be undone.",
+				"deleteTitle": "Delete this comment?",
+				"empty": "No comments yet.",
+				"loadError": "Couldn't load the comments.",
+				"loading": "Loading comments…",
+				"post": "Post comment",
+				"title": "Comments"
+			},
+			"create": "Create test case",
+			"delete": "Delete test case",
+			"deleteDescription": "The test case and its steps are deleted for everyone. This can’t be undone.",
+			"deleteError": "Could not delete the test case.",
+			"deleteTitle": "Delete this test case?",
+			"emptyDescription": "Describe how to verify your work, then link each test case to the milestone or bug it checks.",
+			"emptyTitle": "No test cases yet",
+			"featureEmpty": "No test cases are linked to this feature’s milestones yet.",
+			"fields": {
+				"bug": "Bug",
+				"description": "Preconditions",
+				"expectedResult": "Expected result",
+				"milestone": "Milestone",
+				"status": "Result",
+				"steps": "Steps",
+				"title": "Title"
+			},
+			"filters": {
+				"allStatuses": "All results",
+				"status": "Filter by result"
+			},
+			"hiddenBug": "Bug you can’t view",
+			"hiddenMilestone": "Milestone you can’t view",
+			"loadError": "Could not load test cases.",
+			"loading": "Loading test cases…",
+			"new": "New test case",
+			"noBug": "No bug",
+			"noMatches": "No test cases match these filters.",
+			"noMilestone": "No milestone",
+			"noneLinked": "No test cases yet.",
+			"openBug": "Open bug",
+			"openMilestone": "Open milestone",
+			"pageTitle": "{{name}} – Test cases",
+			"pickers": {
+				"bug": "Search bugs…",
+				"filterResult": "Filter by result…",
+				"loadingBugs": "Loading bugs…",
+				"milestone": "Search milestones…",
+				"result": "Set result…"
+			},
+			"placeholders": {
+				"description": "Add preconditions…",
+				"expectedResult": "Add the expected result…",
+				"steps": "Add the steps to follow…"
+			},
+			"releaseEmpty": "No test cases are linked to this release’s milestones or bugs yet.",
+			"saveError": "Could not save the test case.",
+			"search": "Search test cases",
+			"singular": "Test case",
+			"status": {
+				"blocked": "Blocked",
+				"failed": "Failed",
+				"not_run": "Not run",
+				"passed": "Passed"
+			},
+			"title": "Test cases"
 		}
 	},
 	"invitations": {
@@ -5062,7 +5156,12 @@
 				"listTimeOffBalances": "Time off balances",
 				"listTimeOffRequests": "Time off requests",
 				"listTeams": "Teams",
-				"listProjectLinks": "Project links"
+				"listProjectLinks": "Project links",
+				"getTestCase": "Test case",
+				"listFeatureTestCases": "Feature test cases",
+				"listReleaseTestCases": "Release test cases",
+				"listTestCaseComments": "Test case comments",
+				"listTestCases": "Test cases"
 			},
 			"warning": {
 				"keyRejected": "OpenRouter rejected the workspace's key, so answers may fail.",

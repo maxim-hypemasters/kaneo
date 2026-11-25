@@ -1,5 +1,5 @@
 {
-  "id": "5fb36b2a-07c7-4ab9-b833-35915c4a4dba",
+  "id": "e3444103-f552-4987-87e2-3502f81f0b28",
   "prevId": "03d462df-b4ea-4c2f-863b-a3ff7d1805e0",
   "version": "7",
   "dialect": "postgresql",
@@ -581,6 +581,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "test_case_id": {
+          "name": "test_case_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "object_key": {
           "name": "object_key",
           "type": "text",
@@ -709,6 +715,22 @@
           "method": "btree",
           "with": {}
         },
+        "asset_testCaseId_idx": {
+          "name": "asset_testCaseId_idx",
+          "columns": [
+            {
+              "expression": "test_case_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"asset\".\"test_case_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "asset_createdBy_idx": {
           "name": "asset_createdBy_idx",
           "columns": [
@@ -806,6 +828,19 @@
           "tableTo": "project_document",
           "columnsFrom": [
             "document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "asset_test_case_id_test_case_id_fk": {
+          "name": "asset_test_case_id_test_case_id_fk",
+          "tableFrom": "asset",
+          "tableTo": "test_case",
+          "columnsFrom": [
+            "test_case_id"
           ],
           "columnsTo": [
             "id"
@@ -2120,261 +2155,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.document_comment": {
-      "name": "document_comment",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "project_document_id": {
-          "name": "project_document_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "feature_document_id": {
-          "name": "feature_document_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "parent_id": {
-          "name": "parent_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "anchor_quote": {
-          "name": "anchor_quote",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "anchor_prefix": {
-          "name": "anchor_prefix",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "anchor_suffix": {
-          "name": "anchor_suffix",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "resolved_by": {
-          "name": "resolved_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "(now() AT TIME ZONE 'utc')"
-        },
-        "edited_at": {
-          "name": "edited_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "document_comment_project_document_idx": {
-          "name": "document_comment_project_document_idx",
-          "columns": [
-            {
-              "expression": "project_document_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"document_comment\".\"project_document_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "document_comment_feature_document_idx": {
-          "name": "document_comment_feature_document_idx",
-          "columns": [
-            {
-              "expression": "feature_document_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"document_comment\".\"feature_document_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "document_comment_parent_idx": {
-          "name": "document_comment_parent_idx",
-          "columns": [
-            {
-              "expression": "parent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"document_comment\".\"parent_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "document_comment_user_idx": {
-          "name": "document_comment_user_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "document_comment_project_document_id_project_document_id_fk": {
-          "name": "document_comment_project_document_id_project_document_id_fk",
-          "tableFrom": "document_comment",
-          "tableTo": "project_document",
-          "columnsFrom": [
-            "project_document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "document_comment_feature_document_id_feature_document_id_fk": {
-          "name": "document_comment_feature_document_id_feature_document_id_fk",
-          "tableFrom": "document_comment",
-          "tableTo": "feature_document",
-          "columnsFrom": [
-            "feature_document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "document_comment_parent_id_document_comment_id_fk": {
-          "name": "document_comment_parent_id_document_comment_id_fk",
-          "tableFrom": "document_comment",
-          "tableTo": "document_comment",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "document_comment_user_id_user_id_fk": {
-          "name": "document_comment_user_id_user_id_fk",
-          "tableFrom": "document_comment",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "document_comment_resolved_by_user_id_fk": {
-          "name": "document_comment_resolved_by_user_id_fk",
-          "tableFrom": "document_comment",
-          "tableTo": "user",
-          "columnsFrom": [
-            "resolved_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "document_comment_target_check": {
-          "name": "document_comment_target_check",
-          "value": "(\"document_comment\".\"project_document_id\" is null) <> (\"document_comment\".\"feature_document_id\" is null)"
-        },
-        "document_comment_shape_check": {
-          "name": "document_comment_shape_check",
-          "value": "(\"document_comment\".\"parent_id\" is null and \"document_comment\".\"anchor_quote\" is not null and \"document_comment\".\"anchor_prefix\" is not null and \"document_comment\".\"anchor_suffix\" is not null) or (\"document_comment\".\"parent_id\" is not null and \"document_comment\".\"anchor_quote\" is null and \"document_comment\".\"anchor_prefix\" is null and \"document_comment\".\"anchor_suffix\" is null and \"document_comment\".\"resolved_at\" is null and \"document_comment\".\"resolved_by\" is null)"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.external_link": {
@@ -6126,6 +5906,318 @@
       },
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.test_case_comment": {
+      "name": "test_case_comment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "test_case_id": {
+          "name": "test_case_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'utc')"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'utc')"
+        }
+      },
+      "indexes": {
+        "test_case_comment_thread_idx": {
+          "name": "test_case_comment_thread_idx",
+          "columns": [
+            {
+              "expression": "test_case_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "test_case_comment_test_case_id_test_case_id_fk": {
+          "name": "test_case_comment_test_case_id_test_case_id_fk",
+          "tableFrom": "test_case_comment",
+          "tableTo": "test_case",
+          "columnsFrom": [
+            "test_case_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "test_case_comment_user_id_user_id_fk": {
+          "name": "test_case_comment_user_id_user_id_fk",
+          "tableFrom": "test_case_comment",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.test_case": {
+      "name": "test_case",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "steps": {
+          "name": "steps",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expected_result": {
+          "name": "expected_result",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'not_run'"
+        },
+        "milestone_id": {
+          "name": "milestone_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bug_id": {
+          "name": "bug_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'utc')"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'utc')"
+        }
+      },
+      "indexes": {
+        "test_case_project_created_idx": {
+          "name": "test_case_project_created_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "test_case_milestone_id_idx": {
+          "name": "test_case_milestone_id_idx",
+          "columns": [
+            {
+              "expression": "milestone_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"test_case\".\"milestone_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "test_case_bug_id_idx": {
+          "name": "test_case_bug_id_idx",
+          "columns": [
+            {
+              "expression": "bug_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"test_case\".\"bug_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "test_case_project_id_project_id_fk": {
+          "name": "test_case_project_id_project_id_fk",
+          "tableFrom": "test_case",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        },
+        "test_case_milestone_id_milestone_id_fk": {
+          "name": "test_case_milestone_id_milestone_id_fk",
+          "tableFrom": "test_case",
+          "tableTo": "milestone",
+          "columnsFrom": [
+            "milestone_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "test_case_bug_id_task_id_fk": {
+          "name": "test_case_bug_id_task_id_fk",
+          "tableFrom": "test_case",
+          "tableTo": "task",
+          "columnsFrom": [
+            "bug_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        },
+        "test_case_created_by_user_id_fk": {
+          "name": "test_case_created_by_user_id_fk",
+          "tableFrom": "test_case",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "test_case_status_check": {
+          "name": "test_case_status_check",
+          "value": "\"test_case\".\"status\" in ('not_run', 'passed', 'failed', 'blocked')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.time_entry": {

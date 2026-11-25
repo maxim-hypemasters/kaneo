@@ -11,6 +11,16 @@ const state = vi.hoisted(() => ({
   tab: "overview",
   open: vi.fn(),
   featureDocumentId: undefined as string | undefined,
+  canReadTestCases: true,
+}));
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({
+    canReadTestCases: () => state.canReadTestCases,
+    canReadMilestones: () => true,
+  }),
+}));
+vi.mock("./feature-test-cases", () => ({
+  FeatureTestCases: () => <p>Test cases content</p>,
 }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -63,11 +73,12 @@ afterEach(() => {
   cleanup();
   state.tab = "overview";
   state.featureDocumentId = undefined;
+  state.canReadTestCases = true;
   state.open.mockReset();
 });
 it("mounts only the active tab and restores a document from URL state", () => {
   const { rerender } = render(view());
-  expect(screen.getAllByRole("tab")).toHaveLength(4);
+  expect(screen.getAllByRole("tab")).toHaveLength(5);
   expect(screen.getByText("Overview content")).toBeInTheDocument();
   expect(screen.queryByText("Activity content")).not.toBeInTheDocument();
   expect(screen.queryByText("Issues content")).not.toBeInTheDocument();
@@ -93,4 +104,19 @@ it("changes the milestone filter only after draft navigation is allowed", () => 
     undefined,
     expect.any(Function),
   );
+});
+
+it("shows the Test cases tab only to people who can read test cases", () => {
+  state.tab = "testCases";
+  const { rerender } = render(view());
+  expect(
+    screen.getByRole("tab", {
+      name: "tasks:features.workspace.tabs.testCases",
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByText("Test cases content")).toBeInTheDocument();
+  state.canReadTestCases = false;
+  rerender(view());
+  expect(screen.getAllByRole("tab")).toHaveLength(4);
+  expect(screen.queryByText("Test cases content")).not.toBeInTheDocument();
 });

@@ -21,6 +21,12 @@ const mocks = vi.hoisted(() => ({
   closeMobile: vi.fn(),
   triageMembers: [] as string[],
   triageCount: undefined as number | undefined,
+  canReadTestCases: false,
+}));
+vi.mock("@/hooks/use-workspace-permission", () => ({
+  useWorkspacePermission: () => ({
+    canReadTestCases: () => mocks.canReadTestCases,
+  }),
 }));
 vi.mock("@/hooks/queries/triage/use-get-triage-members", () => ({
   useGetTriageMembers: () => ({ data: mocks.triageMembers }),
@@ -60,6 +66,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.triageMembers = [];
   mocks.triageCount = undefined;
+  mocks.canReadTestCases = false;
   useUserPreferencesStore.setState({ taskLayout: "board", viewMode: "board" });
 });
 afterEach(() => {
@@ -74,6 +81,7 @@ function menu(
     | "triage"
     | "features"
     | "releases"
+    | "testCases"
     | null = "tasks",
   projectId = "p",
 ) {
@@ -114,6 +122,25 @@ describe("project sidebar triage entry", () => {
 });
 
 describe("project sidebar destinations", () => {
+  it("lists Test cases after Releases for people who can read them", () => {
+    mocks.canReadTestCases = true;
+    menu("testCases");
+    const link = screen.getByRole("link", { name: "tasks:testCases.title" });
+    expect(link.getAttribute("href")).toBe(
+      "/dashboard/workspace/w/project/p/test-cases",
+    );
+    expect(link.getAttribute("aria-current")).toBe("page");
+    const nav = screen.getByRole("navigation", {
+      name: "navigation:projectList.navigationLabel: Alpha",
+    });
+    expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((item) => item.textContent)
+        .slice(-2),
+    ).toEqual(["tasks:view.releases", "tasks:testCases.title"]);
+  });
+
   it("renders the three destinations in order with the current destination marked", () => {
     menu("features");
     const nav = screen.getByRole("navigation", {

@@ -76,6 +76,13 @@ function describe(
       const who = field(data, "mentionerName") ?? "Someone";
       return { title: `${who} mentioned you`, message: named };
     }
+    case "test_case_mention": {
+      const who = field(data, "mentionerName") ?? "Someone";
+      return {
+        title: `${who} mentioned you`,
+        message: field(data, "testCaseTitle") ?? "a test case",
+      };
+    }
     case "task_comment": {
       const who = field(data, "commenterName") ?? "Someone";
       const preview = field(data, "commentPreview");

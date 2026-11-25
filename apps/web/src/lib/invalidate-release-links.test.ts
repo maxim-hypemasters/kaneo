@@ -37,6 +37,6 @@ it("refreshes both releases and cached followers once without invalidating anoth
     client.getQueryState(["release-link-candidates", "other", "r"])
       ?.isInvalidated,
   ).toBe(false);
-  expect(spy).toHaveBeenCalledTimes(12);
+  expect(spy).toHaveBeenCalledTimes(13);
   client.clear();
 });

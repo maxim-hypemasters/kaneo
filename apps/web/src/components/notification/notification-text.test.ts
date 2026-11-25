@@ -25,6 +25,12 @@ const t = (key: string, options?: Record<string, unknown>) => {
   if (key === "notifications:events.task_comment.content") {
     return `New comment on ${options?.taskTitle}: ${options?.commentPreview}`;
   }
+  if (key === "notifications:events.test_case_mention.title") {
+    return `${options?.mentionerName} mentioned you`;
+  }
+  if (key === "notifications:events.test_case_mention.content") {
+    return `${options?.mentionerName} mentioned you in the test case: ${options?.testCaseTitle}`;
+  }
   if (key === "common:people.someone") return "Someone";
   if (key === "tasks:projectHome.documents.untitled") return "Untitled";
   if (key === "notifications:events.document_mention.title") {
@@ -102,6 +108,18 @@ describe("notification display content", () => {
     );
     expect(getNotificationContent(item, t)).toBe(
       "Launch website is due in 2 days",
+    );
+  });
+
+  it("renders a mention in a test case comment", () => {
+    const item = notification("test_case_mention", {
+      testCaseTitle: "Checks out",
+      mentionerName: "Mina",
+    });
+
+    expect(getNotificationTitle(item, t)).toBe("Mina mentioned you");
+    expect(getNotificationContent(item, t)).toBe(
+      "Mina mentioned you in the test case: Checks out",
     );
   });
 
