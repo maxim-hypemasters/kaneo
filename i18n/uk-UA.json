@@ -986,8 +986,6 @@
 			"keyLabel": "Ключ",
 			"keyHint": "З нього починається кожен ID завдання, наприклад {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Опис",
-			"descriptionPlaceholder": "Для чого цей проєкт?",
 			"dangerZone": "Небезпечна зона",
 			"deleteProject": "Видалити проєкт",
 			"deleteProjectDescription": "Остаточно видаляє проєкт {{name}} і всі його завдання.",
@@ -1001,7 +999,8 @@
 				"nameRequired": "Назва проєкту є обов'язковою",
 				"keyRequired": "Ключ є обов'язковим",
 				"keyMax": "Ключ може містити не більше 8 символів",
-				"iconRequired": "Іконка є обов'язковою"
+				"iconRequired": "Іконка є обов'язковою",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Зображення за дошкою. Кожен може вимкнути фони для себе.",
 			"backgroundUnavailable": "Завантаження зображень не налаштовано на цьому екземплярі.",
@@ -4566,7 +4565,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

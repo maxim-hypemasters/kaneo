@@ -1277,8 +1277,6 @@
 			"keyLabel": "代號",
 			"keyHint": "每個任務 ID 的開頭，例如 {{slug}}-123。",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "說明",
-			"descriptionPlaceholder": "這個專案的用途是什麼？",
 			"dangerZone": "危險區域",
 			"deleteProject": "刪除專案",
 			"deleteProjectDescription": "永久刪除 {{name}} 及其所有任務。",
@@ -1292,7 +1290,8 @@
 				"nameRequired": "請輸入專案名稱",
 				"keyRequired": "請輸入代號",
 				"keyMax": "代號最多 8 個字元",
-				"iconRequired": "請選擇圖示"
+				"iconRequired": "請選擇圖示",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "顯示在看板後方的圖片。每個人都可以自行關閉。",
 			"backgroundUnavailable": "此執行個體尚未設定圖片上傳。",
@@ -4296,7 +4295,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

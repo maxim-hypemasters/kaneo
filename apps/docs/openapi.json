@@ -983,6 +983,47 @@
           "dueDate"
         ]
       },
+      "TaskImageUpload": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "description": "Object key to send back to the finalize route."
+          },
+          "uploadUrl": {
+            "type": "string",
+            "description": "Presigned URL to PUT the image bytes to."
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Headers that must accompany the upload request, including Content-Type."
+          }
+        },
+        "required": [
+          "key",
+          "uploadUrl",
+          "headers"
+        ]
+      },
+      "TaskImageAsset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "description": "Where the stored image can be read back from."
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ]
+      },
       "ProjectBackgroundUpload": {
         "type": "object",
         "properties": {
@@ -1576,47 +1617,6 @@
         "required": [
           "success",
           "updatedCount"
-        ]
-      },
-      "TaskImageUpload": {
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string",
-            "description": "Object key to send back to the finalize route."
-          },
-          "uploadUrl": {
-            "type": "string",
-            "description": "Presigned URL to PUT the image bytes to."
-          },
-          "headers": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            },
-            "description": "Headers that must accompany the upload request, including Content-Type."
-          }
-        },
-        "required": [
-          "key",
-          "uploadUrl",
-          "headers"
-        ]
-      },
-      "TaskImageAsset": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string",
-            "description": "Where the stored image can be read back from."
-          }
-        },
-        "required": [
-          "id",
-          "url"
         ]
       },
       "TaskByTicketId": {
@@ -13181,7 +13181,7 @@
           "Projects"
         ],
         "summary": "Update project name and description",
-        "description": "Change a project's name, description, or both. Needs project:edit_details, which covers nothing else about the project.",
+        "description": "Change a project's name, Markdown description, or both. Referenced staged uploads are claimed atomically, and uploads the description no longer references are deleted. Needs project:edit_details, which covers nothing else about the project.",
         "parameters": [
           {
             "schema": {
@@ -13206,7 +13206,16 @@
                   },
                   "description": {
                     "type": "string",
-                    "maxLength": 10000
+                    "maxLength": 10000,
+                    "description": "Markdown. Uploads it no longer references are deleted after the save."
+                  },
+                  "draftAssetIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "maxItems": 100,
+                    "description": "Staged description uploads to claim. Only ids the description references are claimed."
                   }
                 },
                 "additionalProperties": false
@@ -13267,6 +13276,266 @@
           },
           "429": {
             "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project/{id}/description/draft-upload": {
+      "post": {
+        "operationId": "stageProjectDescriptionAsset",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Stage an upload for the project description",
+        "description": "Upload an image or file before the details save that references it. Staged assets are private to the uploader and expire after 24 hours unless a save claims them.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string"
+                  },
+                  "contentType": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "number"
+                  },
+                  "surface": {
+                    "type": "string",
+                    "enum": [
+                      "description"
+                    ]
+                  }
+                },
+                "required": [
+                  "filename",
+                  "contentType",
+                  "size",
+                  "surface"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Presigned upload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskImageUpload"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid upload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project or missing project:edit_details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/project/{id}/description/draft-upload/finalize": {
+      "post": {
+        "operationId": "finalizeProjectDescriptionAsset",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Finalize a staged upload for the project description",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "key": {
+                    "type": "string",
+                    "description": "The key returned when the URL was issued."
+                  },
+                  "filename": {
+                    "type": "string"
+                  },
+                  "contentType": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "number"
+                  },
+                  "surface": {
+                    "type": "string",
+                    "enum": [
+                      "description"
+                    ]
+                  }
+                },
+                "required": [
+                  "key",
+                  "filename",
+                  "contentType",
+                  "size",
+                  "surface"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Staged attachment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskImageAsset"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid upload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the project or missing project:edit_details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "Storage unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
           }
         }
       }

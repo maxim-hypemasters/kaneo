@@ -1047,8 +1047,6 @@
 			"keyLabel": "Schlüssel",
 			"keyHint": "Steht am Anfang jeder Aufgaben-ID, z. B. {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Beschreibung",
-			"descriptionPlaceholder": "Wofür ist dieses Projekt?",
 			"dangerZone": "Gefahrenbereich",
 			"deleteProject": "Projekt löschen",
 			"deleteProjectDescription": "Löscht {{name}} und alle zugehörigen Aufgaben dauerhaft.",
@@ -1062,7 +1060,8 @@
 				"nameRequired": "Projektname ist erforderlich",
 				"keyRequired": "Schlüssel ist erforderlich",
 				"keyMax": "Der Schlüssel darf höchstens 8 Zeichen lang sein",
-				"iconRequired": "Symbol ist erforderlich"
+				"iconRequired": "Symbol ist erforderlich",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Ein Bild hinter dem Board. Jede Person kann Hintergründe ausblenden.",
 			"backgroundUnavailable": "Bild-Uploads sind auf dieser Instanz nicht eingerichtet.",
@@ -4384,7 +4383,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

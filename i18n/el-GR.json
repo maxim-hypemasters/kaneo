@@ -970,8 +970,6 @@
 			"keyLabel": "Κλειδί",
 			"keyHint": "Το πρόθεμα κάθε ID εργασίας, π.χ. {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Περιγραφή",
-			"descriptionPlaceholder": "Ποιος είναι ο σκοπός αυτού του έργου;",
 			"dangerZone": "Ζώνη κινδύνου",
 			"deleteProject": "Διαγραφή έργου",
 			"deleteProjectDescription": "Διαγράφει οριστικά το {{name}} και όλες τις εργασίες του.",
@@ -985,7 +983,8 @@
 				"nameRequired": "Το όνομα έργου είναι υποχρεωτικό",
 				"keyRequired": "Το κλειδί είναι υποχρεωτικό",
 				"keyMax": "Το κλειδί πρέπει να έχει το πολύ 8 χαρακτήρες",
-				"iconRequired": "Το εικονίδιο είναι υποχρεωτικό"
+				"iconRequired": "Το εικονίδιο είναι υποχρεωτικό",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Μια εικόνα πίσω από τον πίνακα. Κάθε χρήστης μπορεί να απενεργοποιήσει τις εικόνες φόντου.",
 			"backgroundUnavailable": "Οι μεταφορτώσεις εικόνων δεν έχουν ρυθμιστεί σε αυτήν την εγκατάσταση.",
@@ -4384,7 +4383,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

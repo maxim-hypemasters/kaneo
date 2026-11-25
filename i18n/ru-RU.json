@@ -986,8 +986,6 @@
 			"keyLabel": "Ключ",
 			"keyHint": "С него начинается каждый ID задачи, например {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Описание",
-			"descriptionPlaceholder": "Для чего этот проект?",
 			"dangerZone": "Опасная зона",
 			"deleteProject": "Удалить проект",
 			"deleteProjectDescription": "Безвозвратно удаляет проект {{name}} и все его задачи.",
@@ -1001,7 +999,8 @@
 				"nameRequired": "Название проекта обязательно",
 				"keyRequired": "Ключ обязателен",
 				"keyMax": "Ключ должен содержать не более 8 символов",
-				"iconRequired": "Иконка обязательна"
+				"iconRequired": "Иконка обязательна",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Изображение за доской. Каждый может отключить фоны у себя.",
 			"backgroundUnavailable": "Загрузка изображений не настроена на этом экземпляре.",
@@ -4618,7 +4617,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

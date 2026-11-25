@@ -970,8 +970,6 @@
 			"keyLabel": "Клуч",
 			"keyHint": "Со него почнува секој ID на задача, на пр. {{slug}}-123.",
 			"keyPlaceholder": "ПРО",
-			"descriptionLabel": "Опис",
-			"descriptionPlaceholder": "За што е овој проект?",
 			"dangerZone": "Опасна зона",
 			"deleteProject": "Избриши проект",
 			"deleteProjectDescription": "Трајно ги брише {{name}} и сите негови задачи.",
@@ -985,7 +983,8 @@
 				"nameRequired": "Името на проектот е задолжително",
 				"keyRequired": "Клучот е задолжителен",
 				"keyMax": "Клучот мора да има најмногу 8 знаци",
-				"iconRequired": "Иконата е задолжителна"
+				"iconRequired": "Иконата е задолжителна",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Слика зад таблата. Секој може да ги исклучи позадините за себе.",
 			"backgroundUnavailable": "Прикачувањето слики не е поставено на оваа инстанца.",
@@ -4384,7 +4383,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

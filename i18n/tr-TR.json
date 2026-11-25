@@ -970,8 +970,6 @@
 			"keyLabel": "Anahtar",
 			"keyHint": "Her talep kimliğinin başında yer alır, örneğin {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Açıklama",
-			"descriptionPlaceholder": "Bu proje ne için?",
 			"dangerZone": "Tehlikeli bölge",
 			"deleteProject": "Projeyi sil",
 			"deleteProjectDescription": "{{name}} projesini ve tüm taleplerini kalıcı olarak siler.",
@@ -985,7 +983,8 @@
 				"nameRequired": "Proje adı gereklidir",
 				"keyRequired": "Anahtar gereklidir",
 				"keyMax": "Anahtar en fazla 8 karakter olmalıdır",
-				"iconRequired": "Simge gereklidir"
+				"iconRequired": "Simge gereklidir",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Panonun arkasında görünen bir görsel. Herkes bunu kendisi için kapatabilir.",
 			"backgroundUnavailable": "Bu örnekte görsel yükleme ayarlanmamış.",
@@ -4384,7 +4383,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

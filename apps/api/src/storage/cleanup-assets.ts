@@ -6,6 +6,7 @@ import {
   commentTable,
   featureDocumentTable,
   projectDocumentTable,
+  projectTable,
   taskTable,
 } from "../database/schema";
 import { deleteS3Object } from "./s3";
@@ -37,14 +38,24 @@ export function contentReferencesAsset(
   return extractAssetIds(content).has(assetId);
 }
 
+// Uploads a project's description claimed. They have no task or document.
+export const PROJECT_DESCRIPTION_SURFACE = "project-description";
+
 // Task uploads are shared by the task's description, comments, activity and
-// Feature documents. A project document's uploads belong to that page alone.
-export type AssetCleanupScope = { taskId: string } | { documentId: string };
+// Feature documents. A project document's uploads belong to that page alone,
+// and a project description's to that description.
+export type AssetCleanupScope =
+  | { taskId: string }
+  | { documentId: string }
+  | { projectId: string };
 
 function assetOwnerFilter(scope: AssetCleanupScope) {
-  return "taskId" in scope
-    ? eq(assetTable.taskId, scope.taskId)
-    : eq(assetTable.documentId, scope.documentId);
+  if ("taskId" in scope) return eq(assetTable.taskId, scope.taskId);
+  if ("documentId" in scope) return eq(assetTable.documentId, scope.documentId);
+  return and(
+    eq(assetTable.projectId, scope.projectId),
+    eq(assetTable.surface, PROJECT_DESCRIPTION_SURFACE),
+  );
 }
 
 async function isAssetReferencedElsewhere(
@@ -52,9 +63,24 @@ async function isAssetReferencedElsewhere(
   scope: AssetCleanupScope,
   executor: Pick<typeof db, "select"> = db,
 ): Promise<boolean> {
-  return "taskId" in scope
-    ? isAssetReferencedByTask(assetId, scope.taskId, executor)
-    : isAssetReferencedByDocument(assetId, scope.documentId, executor);
+  if ("taskId" in scope)
+    return isAssetReferencedByTask(assetId, scope.taskId, executor);
+  if ("documentId" in scope)
+    return isAssetReferencedByDocument(assetId, scope.documentId, executor);
+  return isAssetReferencedByProject(assetId, scope.projectId, executor);
+}
+
+async function isAssetReferencedByProject(
+  assetId: string,
+  projectId: string,
+  executor: Pick<typeof db, "select">,
+): Promise<boolean> {
+  const [project] = await executor
+    .select({ description: projectTable.description })
+    .from(projectTable)
+    .where(eq(projectTable.id, projectId))
+    .limit(1);
+  return contentReferencesAsset(project?.description, assetId);
 }
 
 async function isAssetReferencedByDocument(

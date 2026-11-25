@@ -21,6 +21,10 @@ import {
   isImageContentType,
   validateProjectBackgroundUploadInput,
 } from "../storage/s3";
+import {
+  finalizeStagedTaskAsset,
+  stageTaskAssetUpload,
+} from "../task/controllers/stage-task-asset";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
 import {
   hasWorkspacePermission,
@@ -38,6 +42,10 @@ import reorderProjectsCtrl from "./controllers/reorder-projects";
 import unarchiveProjectCtrl from "./controllers/unarchive-project";
 import updateProjectCtrl from "./controllers/update-project";
 import updateProjectDetailsCtrl from "./controllers/update-project-details";
+import {
+  finalizeProjectDescriptionAssetRoute,
+  stageProjectDescriptionAssetRoute,
+} from "./description-upload-routes";
 import {
   movedProjectSchema,
   projectBackgroundFinalizeSchema,
@@ -192,7 +200,7 @@ const updateProjectDetailsRoute = createRoute({
   tags: ["Projects"],
   summary: "Update project name and description",
   description:
-    "Change a project's name, description, or both. Needs project:edit_details, which covers nothing else about the project.",
+    "Change a project's name, Markdown description, or both. Referenced staged uploads are claimed atomically, and uploads the description no longer references are deleted. Needs project:edit_details, which covers nothing else about the project.",
   middleware: [
     workspaceAccess.fromProject(),
     requireWorkspacePermission({ project: ["edit_details"] }),
@@ -561,10 +569,32 @@ const project = apiRouter<BaseVariables & { workspaceId: string }>()
     const project = await updateProjectDetailsCtrl(
       id,
       c.get("workspaceId"),
+      c.get("userId"),
       c.req.valid("json"),
     );
     await publishEvent("project.updated", { projectId: id });
     return c.json(toPublicProject(project), 200);
+  })
+  .openapi(stageProjectDescriptionAssetRoute, async (c) =>
+    c.json(
+      await stageTaskAssetUpload(
+        c.req.valid("param").id,
+        c.get("userId"),
+        c.req.valid("json"),
+      ),
+      200,
+    ),
+  )
+  .openapi(finalizeProjectDescriptionAssetRoute, async (c) => {
+    const asset = await finalizeStagedTaskAsset(
+      c.req.valid("param").id,
+      c.get("userId"),
+      c.req.valid("json"),
+    );
+    const base = normalizeApiServerUrl(
+      process.env.KANEO_API_URL || new URL(c.req.url).origin,
+    );
+    return c.json({ id: asset.id, url: `${base}/asset/${asset.id}` }, 200);
   })
   .openapi(updateProjectRoute, async (c) => {
     const { id } = c.req.valid("param");

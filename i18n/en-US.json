@@ -1893,8 +1893,6 @@
 			"keyLabel": "Key",
 			"keyHint": "Starts every task ID, like {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Description",
-			"descriptionPlaceholder": "What is this project for?",
 			"backgroundLabel": "Board background",
 			"backgroundHint": "An image behind the board. Each person can turn these off.",
 			"backgroundUnavailable": "Image uploads aren't set up on this instance.",
@@ -1918,7 +1916,8 @@
 				"nameRequired": "Project name is required",
 				"keyRequired": "Key is required",
 				"keyMax": "Key must be at most 8 characters",
-				"iconRequired": "Icon is required"
+				"iconRequired": "Icon is required",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"moveProject": "Move to another workspace",
 			"moveProjectDescription": "Tasks, columns, and labels move with it.",
@@ -4369,7 +4368,6 @@
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"noDescription": "No description yet."
 			},
 			"documents": {

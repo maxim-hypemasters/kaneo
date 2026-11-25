@@ -1278,8 +1278,6 @@
 			"keyLabel": "Mã",
 			"keyHint": "Đứng đầu mọi mã công việc, ví dụ {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Mô tả",
-			"descriptionPlaceholder": "Dự án này dùng để làm gì?",
 			"dangerZone": "Vùng nguy hiểm",
 			"deleteProject": "Xóa dự án",
 			"deleteProjectDescription": "Xóa vĩnh viễn {{name}} và toàn bộ công việc của dự án.",
@@ -1293,7 +1291,8 @@
 				"nameRequired": "Cần có tên dự án",
 				"keyRequired": "Cần có mã",
 				"keyMax": "Mã tối đa 8 ký tự",
-				"iconRequired": "Cần có biểu tượng"
+				"iconRequired": "Cần có biểu tượng",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Hình ảnh phía sau bảng. Mỗi người có thể tắt hình này.",
 			"backgroundUnavailable": "Tính năng tải ảnh lên chưa được thiết lập trên phiên bản này.",
@@ -4296,7 +4295,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

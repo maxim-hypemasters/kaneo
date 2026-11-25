@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getPublicProjectDescription } from "@/fetchers/task/get-description-pages";
+import { descriptionExcerpt } from "./description-excerpt";
 
 export function PublicProjectDescription({
   project,
@@ -39,7 +40,9 @@ export function PublicProjectDescription({
         </button>
       </p>
     );
-  const text = project.descriptionDeferred ? query.data : project.description;
+  const text = descriptionExcerpt(
+    project.descriptionDeferred ? query.data : project.description,
+  );
   return text ? (
     <p className="text-xs text-muted-foreground truncate">{text}</p>
   ) : null;

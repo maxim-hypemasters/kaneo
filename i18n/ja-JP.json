@@ -1278,8 +1278,6 @@
 			"keyLabel": "キー",
 			"keyHint": "すべてのタスク ID の先頭に付きます（例: {{slug}}-123）。",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "説明",
-			"descriptionPlaceholder": "このプロジェクトの目的は？",
 			"dangerZone": "危険な操作",
 			"deleteProject": "プロジェクトを削除",
 			"deleteProjectDescription": "{{name}} とそのすべてのタスクを完全に削除します。",
@@ -1293,7 +1291,8 @@
 				"nameRequired": "プロジェクト名は必須です",
 				"keyRequired": "キーは必須です",
 				"keyMax": "キーは8文字以内で入力してください",
-				"iconRequired": "アイコンは必須です"
+				"iconRequired": "アイコンは必須です",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "ボードの背景画像です。各ユーザーが非表示にできます。",
 			"backgroundUnavailable": "このインスタンスでは画像のアップロードが設定されていません。",
@@ -4296,7 +4295,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

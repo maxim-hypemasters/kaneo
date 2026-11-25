@@ -70,25 +70,6 @@ export function ProjectDetailsSection({
                 </SettingsFormRow>
               )}
             />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <SettingsFormRow
-                  label={t("settings:projectGeneral.descriptionLabel")}
-                >
-                  <Input
-                    size="sm"
-                    className="sm:w-64"
-                    placeholder={t(
-                      "settings:projectGeneral.descriptionPlaceholder",
-                    )}
-                    disabled={!canEdit}
-                    {...field}
-                  />
-                </SettingsFormRow>
-              )}
-            />
             <SettingsRow
               title={t("settings:projectGeneral.iconLabel")}
               description={t("settings:projectGeneral.iconHint")}

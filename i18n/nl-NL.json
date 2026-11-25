@@ -846,8 +846,6 @@
 			"keyLabel": "Sleutel",
 			"keyHint": "Staat vooraan in elk taak-ID, zoals {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Beschrijving",
-			"descriptionPlaceholder": "Waar is dit project voor?",
 			"dangerZone": "Gevarenzone",
 			"deleteProject": "Project verwijderen",
 			"deleteProjectDescription": "Verwijdert {{name}} en alle bijbehorende taken permanent.",
@@ -861,7 +859,8 @@
 				"nameRequired": "Projectnaam is verplicht",
 				"keyRequired": "Sleutel is verplicht",
 				"keyMax": "Sleutel mag maximaal 8 tekens bevatten",
-				"iconRequired": "Icoon is verplicht"
+				"iconRequired": "Icoon is verplicht",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Een afbeelding achter het bord. Iedereen kan deze voor zichzelf uitzetten.",
 			"backgroundUnavailable": "Uploaden van afbeeldingen is niet ingesteld op deze instantie.",
@@ -4384,7 +4383,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

@@ -1,9 +1,12 @@
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { type RefObject, useCallback, useEffect, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { createProjectFormSchema } from "@/components/settings/project-general/create-project-form-schema";
+import {
+  createProjectFormSchema,
+  PROJECT_DESCRIPTION_MAX,
+} from "@/components/settings/project-general/create-project-form-schema";
 import {
   getProjectFieldChanges,
   hasProjectFieldChanges,
@@ -13,6 +16,7 @@ import {
 } from "@/components/settings/project-general/project-form-values";
 import updateProjectDetails from "@/fetchers/project/update-project-details";
 import useUpdateProject from "@/hooks/mutations/project/use-update-project";
+import { extractAssetIds } from "@/lib/extract-asset-ids";
 import { toast } from "@/lib/toast";
 import type { Project } from "@/types/project";
 
@@ -30,6 +34,9 @@ type UseProjectAutosaveOptions = {
   // Saves only the name and description, which project:edit_details allows,
   // instead of replacing the whole project.
   detailsOnly?: boolean;
+  // Uploads staged for the description; a details save claims the ones the
+  // description references.
+  stagedAssetIds?: RefObject<string[]>;
 };
 
 export function useProjectAutosave({
@@ -37,11 +44,19 @@ export function useProjectAutosave({
   workspaceId,
   canEdit,
   detailsOnly = false,
+  stagedAssetIds,
 }: UseProjectAutosaveOptions) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { mutateAsync: updateProject } = useUpdateProject();
-  const schema = useMemo(() => createProjectFormSchema(t), [t]);
+  const schema = useMemo(
+    () =>
+      createProjectFormSchema(t, {
+        // Only the details route caps the description, so only it is checked.
+        descriptionMax: detailsOnly ? PROJECT_DESCRIPTION_MAX : undefined,
+      }),
+    [t, detailsOnly],
+  );
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSavingRef = useRef(false);
   const queuedSaveRef = useRef<ProjectFormValues | null>(null);
@@ -101,16 +116,30 @@ export function useProjectAutosave({
       const runSave = async (): Promise<boolean> => {
         let succeeded = false;
 
+        let claimed: string[] = [];
         try {
-          if (detailsOnly)
+          if (detailsOnly) {
+            if (changes.description) {
+              const referenced = extractAssetIds(normalizedData.description);
+              claimed = (stagedAssetIds?.current ?? []).filter((id) =>
+                referenced.has(id),
+              );
+            }
             await updateProjectDetails({
               id: project.id,
               ...(changes.name ? { name: normalizedData.name } : {}),
               ...(changes.description
-                ? { description: normalizedData.description }
+                ? {
+                    description: normalizedData.description,
+                    ...(claimed.length ? { draftAssetIds: claimed } : {}),
+                  }
                 : {}),
             });
-          else
+            if (stagedAssetIds && claimed.length)
+              stagedAssetIds.current = stagedAssetIds.current.filter(
+                (id) => !claimed.includes(id),
+              );
+          } else
             await updateProject({
               id: project.id,
               name: changes.name ? normalizedData.name : project.name,
@@ -124,7 +153,17 @@ export function useProjectAutosave({
               isPublic: !!project.isPublic,
             });
 
-          form.reset(normalizedData, { keepDirty: false });
+          // Text typed while this save ran stays in the form, still dirty,
+          // for the save its change already scheduled.
+          if (
+            !hasProjectFieldChanges(
+              getProjectFieldChanges(
+                normalizedData,
+                normalizeProjectValues(form.getValues()),
+              ),
+            )
+          )
+            form.reset(normalizedData, { keepDirty: false });
           lastSavedRef.current = normalizedData;
           queuedSaveRef.current = null;
 
@@ -176,6 +215,7 @@ export function useProjectAutosave({
       project?.description,
       project?.icon,
       detailsOnly,
+      stagedAssetIds,
       updateProject,
       queryClient,
       workspaceId,
