@@ -1,5 +1,5 @@
 import { MilestoneDetailsSheet } from "@/components/task/milestones/milestone-details-sheet";
-import { TestCaseDetailsSheet } from "@/components/test-cases/test-case-details-sheet";
+import { TestCaseDetailsDialog } from "@/components/test-cases/test-case-details-dialog";
 import { ShortcutKeys } from "@/components/shortcuts/shortcut-keys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useState } from "react";
@@ -221,7 +221,7 @@ export default function ProjectLayout({
       </Layout.Content>
 
       <MilestoneDetailsSheet projectId={projectId} workspaceId={workspaceId} />
-      <TestCaseDetailsSheet projectId={projectId} workspaceId={workspaceId} />
+      <TestCaseDetailsDialog projectId={projectId} workspaceId={workspaceId} />
       <CreateProjectModal
         open={isCreateProjectModalOpen}
         onClose={() => setIsCreateProjectModalOpen(false)}

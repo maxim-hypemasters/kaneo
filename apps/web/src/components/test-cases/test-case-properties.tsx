@@ -1,11 +1,14 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { ArrowUpRight, Bug, Diamond } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { PropertyRow } from "@/components/task/properties/property-row";
 import { PropertyValue } from "@/components/task/properties/property-value";
 import type { TestCase, UpdateTestCaseInput } from "@/fetchers/test-case/types";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { openMilestoneDetails } from "@/store/milestone-details";
+import {
+  openMilestoneDetails,
+  useMilestoneDetailsStore,
+} from "@/store/milestone-details";
 import { bugLabel } from "./bug-label";
 import type { LinkChoice } from "./link-choice";
 import { TestCaseBugMenu } from "./test-case-bug-menu";
@@ -35,6 +38,12 @@ export function TestCaseProperties({
 }) {
   const { t } = useTranslation();
   const { canReadMilestones } = useWorkspacePermission();
+  // The test case covers the page, so a link to what is already open behind
+  // it would do nothing visible.
+  const { taskId: pageTaskId } = useParams({ strict: false });
+  const milestoneOpenBehind = useMilestoneDetailsStore(
+    (state) => state.milestoneId !== null,
+  );
   const milestone: LinkChoice = testCase.milestoneId
     ? {
         id: testCase.milestoneId,
@@ -102,7 +111,7 @@ export function TestCaseProperties({
               />
             )}
           </TestCasePicker>
-          {testCase.milestone && (
+          {testCase.milestone && !milestoneOpenBehind && (
             <button
               type="button"
               className={openClass}
@@ -140,7 +149,7 @@ export function TestCaseProperties({
             />
           )}
         </TestCasePicker>
-        {testCase.bug && (
+        {testCase.bug && testCase.bug.id !== pageTaskId && (
           <Link
             className={openClass}
             aria-label={t("tasks:testCases.openBug")}

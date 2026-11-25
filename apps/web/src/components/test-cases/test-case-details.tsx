@@ -1,14 +1,12 @@
-import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TestCase, UpdateTestCaseInput } from "@/fetchers/test-case/types";
 import { useUpdateTestCase } from "@/hooks/mutations/test-case/use-update-test-case";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import { DeleteTestCaseDialog } from "./delete-test-case-dialog";
-import { TestCaseProperties } from "./test-case-properties";
+import { cn } from "@/lib/cn";
 import { TestCaseDocumentField } from "./test-case-document-field";
+import { TestCaseProperties } from "./test-case-properties";
 
 const TEXT_FIELDS = [
   {
@@ -28,30 +26,38 @@ const TEXT_FIELDS = [
   },
 ] as const;
 
+// A reading column; from `lg` it sits left of the properties rail.
+const column =
+  "w-full min-w-0 max-w-3xl justify-self-center lg:col-start-1 lg:px-9";
+
+// Stacked on a phone: title, properties, texts. From `lg` the properties move
+// to a rail on the right, as on a task.
 export function TestCaseDetails({
   testCase,
   projectId,
   workspaceId,
-  onDeleted,
 }: {
   testCase: TestCase;
   projectId: string;
   workspaceId: string;
-  onDeleted: () => void;
 }) {
   const { t } = useTranslation();
-  const { canUpdateTestCases, canDeleteTestCases } = useWorkspacePermission();
+  const { canUpdateTestCases } = useWorkspacePermission();
   const update = useUpdateTestCase(projectId);
   // Text fields report their own save errors beside their editor.
   const updateText = useUpdateTestCase(projectId);
   const [title, setTitle] = useState(testCase.title);
-  const [deleting, setDeleting] = useState(false);
   const readOnly = !canUpdateTestCases();
   const save = (input: UpdateTestCaseInput) =>
     update.mutate({ id: testCase.id, input });
   return (
-    <div className="flex flex-col gap-5">
-      <label className="flex flex-col gap-1.5 text-sm">
+    <div className="grid min-h-full grid-cols-1 content-start gap-y-5 px-4 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_18.25rem] lg:grid-rows-[auto_1fr] lg:p-0">
+      <label
+        className={cn(
+          column,
+          "flex flex-col gap-1.5 text-sm lg:row-start-1 lg:pt-7",
+        )}
+      >
         {t("tasks:testCases.fields.title")}
         <Input
           type="text"
@@ -67,49 +73,45 @@ export function TestCaseDetails({
           }}
         />
       </label>
-      <TestCaseProperties
-        testCase={testCase}
-        projectId={projectId}
-        workspaceId={workspaceId}
-        readOnly={readOnly}
-        onSave={save}
-      />
-      {TEXT_FIELDS.map(({ field, label, placeholder }) => (
-        <TestCaseDocumentField
-          key={field}
-          documentKey={`${testCase.id}:${field}`}
-          label={t(label)}
-          placeholder={t(placeholder)}
-          value={testCase[field]}
-          canEdit={!readOnly}
-          onSave={(value) =>
-            updateText.mutateAsync({
-              id: testCase.id,
-              input: { [field]: value },
-            })
-          }
-        />
-      ))}
-      {update.isError && (
-        <p role="alert" className="text-sm text-destructive-foreground">
-          {update.error.message || t("tasks:testCases.saveError")}
-        </p>
-      )}
-      {canDeleteTestCases() && (
-        <div>
-          <Button variant="outline" size="sm" onClick={() => setDeleting(true)}>
-            <Trash2 aria-hidden="true" />
-            {t("tasks:testCases.delete")}
-          </Button>
-          <DeleteTestCaseDialog
+      <aside
+        aria-label={t("tasks:properties.title")}
+        className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:border-l"
+      >
+        <div className="lg:sticky lg:top-0 lg:px-3 lg:pt-4 lg:pb-6">
+          <TestCaseProperties
+            testCase={testCase}
             projectId={projectId}
-            testCaseId={testCase.id}
-            open={deleting}
-            onOpenChange={setDeleting}
-            onDeleted={onDeleted}
+            workspaceId={workspaceId}
+            readOnly={readOnly}
+            onSave={save}
           />
         </div>
-      )}
+      </aside>
+      <div
+        className={cn(column, "flex flex-col gap-5 lg:row-start-2 lg:pb-10")}
+      >
+        {TEXT_FIELDS.map(({ field, label, placeholder }) => (
+          <TestCaseDocumentField
+            key={field}
+            documentKey={`${testCase.id}:${field}`}
+            label={t(label)}
+            placeholder={t(placeholder)}
+            value={testCase[field]}
+            canEdit={!readOnly}
+            onSave={(value) =>
+              updateText.mutateAsync({
+                id: testCase.id,
+                input: { [field]: value },
+              })
+            }
+          />
+        ))}
+        {update.isError && (
+          <p role="alert" className="text-sm text-destructive-foreground">
+            {update.error.message || t("tasks:testCases.saveError")}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

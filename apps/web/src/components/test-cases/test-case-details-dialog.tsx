@@ -1,13 +1,13 @@
 import { DocumentDraftGuardProvider } from "@/components/editor/document-draft-guard";
-import { TestCaseDetailsSheetView } from "./test-case-details-sheet-view";
+import { TestCaseDetailsDialogView } from "./test-case-details-dialog-view";
 
-export function TestCaseDetailsSheet(props: {
+export function TestCaseDetailsDialog(props: {
   projectId: string;
   workspaceId: string;
 }) {
   return (
     <DocumentDraftGuardProvider>
-      <TestCaseDetailsSheetView {...props} />
+      <TestCaseDetailsDialogView {...props} />
     </DocumentDraftGuardProvider>
   );
 }
