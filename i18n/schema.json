@@ -18384,6 +18384,90 @@
 								"noDescription"
 							]
 						},
+						"resources": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"none": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								},
+								"add": {
+									"type": "string"
+								},
+								"edit": {
+									"type": "string"
+								},
+								"editTitle": {
+									"type": "string"
+								},
+								"dialogDescription": {
+									"type": "string"
+								},
+								"url": {
+									"type": "string"
+								},
+								"urlPlaceholder": {
+									"type": "string"
+								},
+								"linkTitle": {
+									"type": "string"
+								},
+								"titlePlaceholder": {
+									"type": "string"
+								},
+								"invalidUrl": {
+									"type": "string"
+								},
+								"titleRequired": {
+									"type": "string"
+								},
+								"save": {
+									"type": "string"
+								},
+								"actions": {
+									"type": "string"
+								},
+								"drag": {
+									"type": "string"
+								},
+								"saveError": {
+									"type": "string"
+								},
+								"removeError": {
+									"type": "string"
+								},
+								"reorderError": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"none",
+								"loadError",
+								"add",
+								"edit",
+								"editTitle",
+								"dialogDescription",
+								"url",
+								"urlPlaceholder",
+								"linkTitle",
+								"titlePlaceholder",
+								"invalidUrl",
+								"titleRequired",
+								"save",
+								"actions",
+								"drag",
+								"saveError",
+								"removeError",
+								"reorderError"
+							]
+						},
 						"documents": {
 							"type": "object",
 							"additionalProperties": false,
@@ -18507,7 +18591,7 @@
 							]
 						}
 					},
-					"required": ["tabs", "overview", "documents"]
+					"required": ["tabs", "overview", "resources", "documents"]
 				},
 				"triage": {
 					"type": "object",
@@ -19754,6 +19838,9 @@
 								"listTeams": {
 									"type": "string"
 								},
+								"listProjectLinks": {
+									"type": "string"
+								},
 								"search": {
 									"type": "string"
 								},
@@ -19861,6 +19948,7 @@
 								"getHolidayCalendar",
 								"listHolidayCalendarRequests",
 								"listTeams",
+								"listProjectLinks",
 								"search",
 								"getTaskByTicketId",
 								"getProject",

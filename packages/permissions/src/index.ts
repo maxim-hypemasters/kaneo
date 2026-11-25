@@ -8,7 +8,8 @@ import {
 
 export const statement = {
   ...defaultStatements,
-  // edit_details: rename a project and edit its description, nothing else.
+  // edit_details: rename a project, edit its description, and manage the
+  // links in its Resources, nothing else.
   project: ["create", "read", "update", "delete", "share", "edit_details"],
   task: ["create", "read", "update", "delete", "assign"],
   bug: ["create", "read", "update", "delete"],

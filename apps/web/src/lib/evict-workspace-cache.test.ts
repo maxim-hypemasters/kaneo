@@ -158,3 +158,25 @@ it("evicts a revoked workspace's time off and keeps another workspace's", () => 
   ).toBeUndefined();
   client.clear();
 });
+
+it("evicts a revoked workspace's project links and keeps another workspace's", () => {
+  const client = new QueryClient();
+  client.setQueryData(
+    ["projects", "active"],
+    [{ id: "active-project", workspaceId: "active" }],
+  );
+  const kept = [{ id: "kept-link", projectId: "active-project" }];
+  client.setQueryData(["project-links", "active-project"], kept);
+  client.setQueryData(
+    ["project-links", "revoked-project"],
+    [{ id: "link", projectId: "revoked-project", title: "Private spec" }],
+  );
+  evictWorkspaceCache(client, "revoked");
+  expect(client.getQueryData(["project-links", "active-project"])).toEqual(
+    kept,
+  );
+  expect(
+    client.getQueryData(["project-links", "revoked-project"]),
+  ).toBeUndefined();
+  client.clear();
+});

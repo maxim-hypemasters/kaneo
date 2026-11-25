@@ -115,13 +115,13 @@ For headless or sandboxed environments where opening a browser is impractical, s
 
 ## Tools
 
-The server registers 104 tools:
+The server registers 105 tools:
 
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
 - Teams: `list_teams`
 - My work: `list_my_tasks`, `list_workspace_activity`
 - Search: `search`
-- Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `update_project_details`, `list_project_columns`, `list_custom_fields`
+- Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `update_project_details`, `list_project_columns`, `list_custom_fields`, `list_project_links`
 - Project pages: `list_project_pages`, `get_project_page`, `create_project_page`, `update_project_page`
 - Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_estimate`, `update_task_due_date`, `list_task_activity`
 - Task details: `get_task_description`, `update_task_description`, `get_task_custom_fields`, `set_task_custom_field_value`, `list_task_external_links`, `create_task_external_link`
@@ -288,6 +288,12 @@ can't access are left out. Members of a team can open its linked projects even
 when their own project access is limited to selected projects. Teams are
 created and changed in the web app or through the API's Teams routes; the MCP
 server only reads them.
+
+`list_project_links` lists the links in a project's Resources, each with its
+`title`, `url` and `position`, in the order people arranged them. Anyone with
+access to the project can read them. Links are added and changed on the
+project's Overview or through the API's Project links routes; the MCP server
+only reads them.
 
 Relations (`blocks` and `related`) link Tasks and Bugs. Features do not have
 relations, so `create_task_relation` refuses a Feature on either end. It still
