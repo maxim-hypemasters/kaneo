@@ -10,11 +10,13 @@ export function OpenFeatureDocument({
   projectId,
   featureId,
   documentId,
+  commentId,
   onBack,
 }: {
   projectId: string;
   featureId: string;
   documentId: string;
+  commentId?: string;
   onBack: () => void;
 }) {
   const { t } = useTranslation();
@@ -26,6 +28,7 @@ export function OpenFeatureDocument({
         featureId={featureId}
         projectId={projectId}
         document={document.data}
+        commentId={commentId}
         onBack={onBack}
         refresh={() => document.refetch({ throwOnError: true })}
       />

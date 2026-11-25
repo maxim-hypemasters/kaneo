@@ -597,3 +597,64 @@ describe("Feature document autosave", () => {
     expect(m.update).not.toHaveBeenCalled();
   });
 });
+
+describe("Feature document autosave with comment threads", () => {
+  const commentsKey = ["document-comments", "project", "document"];
+  const thread = {
+    id: "thread",
+    anchor: { quote: "Original", prefix: "", suffix: "" },
+  };
+  const moved = [{ id: "thread", quote: "AB", prefix: "", suffix: "" }];
+
+  function withThreads() {
+    const client = new QueryClient();
+    client.setQueryData(commentsKey, [thread]);
+    return client;
+  }
+
+  it("sends the anchors taken from the text being saved and records them", async () => {
+    server();
+    const client = withThreads();
+    const commentAnchors = { current: { body: "AB", updates: moved } };
+    const { result } = setup({ commentAnchors }, { client });
+    act(() => result.current.changeBody("AB"));
+    await advance(1000);
+    expect(m.update).toHaveBeenCalledWith("feature", "document", {
+      body: "AB",
+      expectedRevision: 1,
+      keepRemovedAssets: true,
+      commentAnchors: moved,
+    });
+    expect(client.getQueryData(commentsKey)).toEqual([
+      { id: "thread", anchor: { quote: "AB", prefix: "", suffix: "" } },
+    ]);
+  });
+
+  it("sends no anchors taken from other text, or with a title alone", async () => {
+    server();
+    const client = withThreads();
+    const commentAnchors = { current: { body: "AB", updates: moved } };
+    const { result } = setup({ commentAnchors }, { client });
+    act(() => result.current.changeBody("ABC"));
+    await advance(1000);
+    act(() => result.current.changeTitle("Renamed"));
+    await advance(1000);
+    expect(m.update).toHaveBeenCalledTimes(2);
+    for (const [, , input] of m.update.mock.calls)
+      expect(input).not.toHaveProperty("commentAnchors");
+    expect(client.getQueryData(commentsKey)).toEqual([thread]);
+  });
+
+  it("leaves the threads alone when the save is refused", async () => {
+    m.update.mockRejectedValueOnce(
+      new HttpError(409, "Changed", { code: "DOCUMENT_CONFLICT" }),
+    );
+    const client = withThreads();
+    const commentAnchors = { current: { body: "AB", updates: moved } };
+    const { result } = setup({ commentAnchors }, { client });
+    act(() => result.current.changeBody("AB"));
+    await advance(1000);
+    expect(m.update).toHaveBeenCalledOnce();
+    expect(client.getQueryData(commentsKey)).toEqual([thread]);
+  });
+});

@@ -8,6 +8,7 @@ import {
   commentTable,
   customFieldDefinitionTable,
   customFieldValueTable,
+  documentCommentTable,
   externalLinkTable,
   featureDocumentTable,
   githubIntegrationTable,
@@ -230,6 +231,38 @@ export const projectDocumentTableRelations = relations(
       relationName: "projectDocumentChildren",
     }),
     assets: many(assetTable),
+  }),
+);
+
+export const documentCommentTableRelations = relations(
+  documentCommentTable,
+  ({ one, many }) => ({
+    projectDocument: one(projectDocumentTable, {
+      fields: [documentCommentTable.projectDocumentId],
+      references: [projectDocumentTable.id],
+    }),
+    featureDocument: one(featureDocumentTable, {
+      fields: [documentCommentTable.featureDocumentId],
+      references: [featureDocumentTable.id],
+    }),
+    parent: one(documentCommentTable, {
+      fields: [documentCommentTable.parentId],
+      references: [documentCommentTable.id],
+      relationName: "documentCommentReplies",
+    }),
+    replies: many(documentCommentTable, {
+      relationName: "documentCommentReplies",
+    }),
+    author: one(userTable, {
+      fields: [documentCommentTable.userId],
+      references: [userTable.id],
+      relationName: "documentCommentAuthor",
+    }),
+    resolver: one(userTable, {
+      fields: [documentCommentTable.resolvedBy],
+      references: [userTable.id],
+      relationName: "documentCommentResolver",
+    }),
   }),
 );
 

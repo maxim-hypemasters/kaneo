@@ -1,4 +1,4 @@
-import { and, desc, eq, notInArray } from "drizzle-orm";
+import { and, desc, eq, notInArray, sql } from "drizzle-orm";
 import db from "../../database";
 import {
   notificationTable,
@@ -7,6 +7,7 @@ import {
   workspaceTable,
 } from "../../database/schema";
 
+import { documentResourceProjectId } from "../document-resource";
 import { notificationResourceAccess } from "../resource-access";
 import { notificationWorkspaceFilter } from "../workspace-filter";
 
@@ -32,7 +33,18 @@ async function getNotifications(
         eq(notificationTable.resourceType, "task"),
       ),
     )
-    .leftJoin(projectTable, eq(taskTable.projectId, projectTable.id))
+    // A task's project, or the project of the page or Feature document a
+    // comment notification points at.
+    .leftJoin(
+      projectTable,
+      eq(
+        projectTable.id,
+        sql`coalesce(${taskTable.projectId}, ${documentResourceProjectId(
+          notificationTable.resourceId,
+          notificationTable.resourceType,
+        )})`,
+      ),
+    )
     .leftJoin(workspaceTable, eq(projectTable.workspaceId, workspaceTable.id))
     .where(
       and(

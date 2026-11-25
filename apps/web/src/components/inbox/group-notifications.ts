@@ -3,8 +3,12 @@ import type { Notification } from "@/types/notification";
 
 export type InboxFilter = "all" | "unread" | "mentions";
 
-// Mentions arrive from comments on tasks and on test cases.
-const MENTION_TYPES = new Set(["task_mention", "test_case_mention"]);
+// Mentions arrive from comments on tasks, test cases and documents.
+const MENTION_TYPES = new Set([
+  "task_mention",
+  "test_case_mention",
+  "document_mention",
+]);
 
 export function filterNotifications(
   notifications: Notification[],

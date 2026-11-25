@@ -36,6 +36,10 @@ const milestoneHandler = vi
   .mocked(subscribeToEvent)
   .mock.calls.find(([event]) => event === "milestone.changed")![1];
 
+const documentCommentHandler = vi
+  .mocked(subscribeToEvent)
+  .mock.calls.find(([event]) => event === "document.comment.changed")![1];
+
 function makeFakeWs() {
   return {
     send: vi.fn(),
@@ -338,6 +342,100 @@ describe("broadcastToProject", () => {
       messages.filter((message) => message.type === "MILESTONES_UPDATED"),
     ).toHaveLength(2);
     removeConnection("proj-1", connection);
+  });
+
+  it("delivers updates to two documents that share a batch window", async () => {
+    const ws = makeFakeWs();
+    const conn = addConnection("proj-1", ws, "user-1", "init-1", "workspace");
+    for (const documentId of ["doc-1", "doc-2"])
+      broadcastToProject("proj-1", {
+        type: "PROJECT_DOCUMENTS_UPDATED",
+        projectId: "proj-1",
+        documentId,
+      });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(
+      (ws as { send: ReturnType<typeof vi.fn> }).send.mock.calls
+        .map(([payload]) => JSON.parse(payload).documentId)
+        .sort(),
+    ).toEqual(["doc-1", "doc-2"]);
+    removeConnection("proj-1", conn);
+  });
+
+  it("coalesces repeated updates to one document in a batch window", async () => {
+    const ws = makeFakeWs();
+    const conn = addConnection("proj-1", ws, "user-1", "init-1", "workspace");
+    for (let update = 0; update < 3; update += 1)
+      broadcastToProject("proj-1", {
+        type: "DOCUMENT_COMMENTS_UPDATED",
+        projectId: "proj-1",
+        documentId: "doc-1",
+      });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(
+      (ws as { send: ReturnType<typeof vi.fn> }).send,
+    ).toHaveBeenCalledTimes(1);
+    removeConnection("proj-1", conn);
+  });
+
+  it("forwards document comment changes as ids only, except to the window that made them", async () => {
+    const author = makeFakeWs();
+    const reader = makeFakeWs();
+    const authorConn = addConnection(
+      "proj-1",
+      author,
+      "user-1",
+      "init-author",
+      "workspace",
+    );
+    const readerConn = addConnection(
+      "proj-1",
+      reader,
+      "user-2",
+      "init-reader",
+      "workspace",
+    );
+    await documentCommentHandler({
+      projectId: "proj-1",
+      documentId: "page-1",
+      documentKind: "page",
+      threadId: "thread-1",
+      commentId: "comment-1",
+      change: "created",
+      userId: "user-1",
+      initiatorId: "init-author",
+    });
+    await documentCommentHandler({
+      projectId: "proj-1",
+      documentId: "doc-1",
+      documentKind: "feature",
+      featureId: "feature-1",
+      threadId: "thread-2",
+      change: "resolved",
+      userId: "user-1",
+      initiatorId: "init-author",
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    const sent = (ws: unknown) =>
+      (ws as { send: ReturnType<typeof vi.fn> }).send.mock.calls.map(
+        ([payload]) => JSON.parse(payload),
+      );
+    expect(sent(reader)).toEqual([
+      {
+        type: "DOCUMENT_COMMENTS_UPDATED",
+        projectId: "proj-1",
+        documentId: "page-1",
+      },
+      {
+        type: "DOCUMENT_COMMENTS_UPDATED",
+        projectId: "proj-1",
+        documentId: "doc-1",
+        featureId: "feature-1",
+      },
+    ]);
+    expect(sent(author)).toEqual([]);
+    removeConnection("proj-1", authorConn);
+    removeConnection("proj-1", readerConn);
   });
 
   it("warns when called before adapter initialization", async () => {

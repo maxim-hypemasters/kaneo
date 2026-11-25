@@ -498,6 +498,57 @@ input:-webkit-autofill:active {
     margin: 0 0.15rem;
   }
 
+  /* Comment highlights are ProseMirror decorations: where threads overlap they
+     share one element and its classes, so a later rule here wins over an
+     earlier one. The tints are translucent to read on both themes. */
+  .kaneo-comment-highlight {
+    border-bottom: 2px solid color-mix(in srgb, var(--warning) 55%, transparent);
+    background: color-mix(in srgb, var(--warning) 16%, transparent);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  /* A resolved thread keeps its place but shows nothing until it is opened. */
+  .kaneo-comment-highlight-resolved:not(.kaneo-comment-highlight-active) {
+    border-bottom-color: transparent;
+    background: transparent;
+  }
+
+  .kaneo-comment-highlight-draft {
+    border-bottom-color: color-mix(in srgb, var(--info) 60%, transparent);
+    background: color-mix(in srgb, var(--info) 18%, transparent);
+  }
+
+  .kaneo-comment-highlight-active {
+    border-bottom-color: var(--warning);
+    background: color-mix(in srgb, var(--warning) 34%, transparent);
+    animation: kaneo-comment-highlight-flash 0.6s var(--ease-out);
+  }
+
+  /* While editing, a click places the caret; only readers get the pointer. */
+  .ProseMirror[contenteditable="false"] .kaneo-comment-highlight {
+    cursor: pointer;
+  }
+
+  @keyframes kaneo-comment-highlight-flash {
+    from {
+      background: color-mix(in srgb, var(--warning) 62%, transparent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kaneo-comment-highlight {
+      transition: none;
+    }
+
+    .kaneo-comment-highlight-active {
+      animation: none;
+    }
+  }
+
   .kaneo-codeblock-language {
     position: fixed;
     z-index: 40;

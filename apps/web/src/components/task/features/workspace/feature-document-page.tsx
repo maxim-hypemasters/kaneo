@@ -1,6 +1,10 @@
 import { Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { CommentAnchorSnapshot } from "@/components/documents/comments/comment-anchor-snapshot";
+import { DocumentCommentsAside } from "@/components/documents/comments/document-comments-aside";
+import { DocumentCommentsButton } from "@/components/documents/comments/document-comments-button";
+import { useDocumentComments } from "@/components/documents/comments/use-document-comments";
 import { DocumentSaveIndicator } from "@/components/documents/document-save-indicator";
 import { DocumentTitle } from "@/components/documents/document-title";
 import { DocumentWindow } from "@/components/documents/document-window";
@@ -22,6 +26,7 @@ export function FeatureDocumentPage({
   projectId,
   document,
   focusTitle = false,
+  commentId,
   onBack,
   refresh,
 }: {
@@ -30,6 +35,8 @@ export function FeatureDocumentPage({
   document: FeatureDocument;
   // Set for a document just created, so its title can be typed over.
   focusTitle?: boolean;
+  // A comment thread to show, from a link to it.
+  commentId?: string;
   onBack: () => void;
   refresh: () => Promise<unknown>;
 }) {
@@ -38,12 +45,30 @@ export function FeatureDocumentPage({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const editor = useRef<DocumentEditorHandle>(null);
+  const commentAnchors = useRef<CommentAnchorSnapshot | null>(null);
   const draft = useFeatureDocumentAutosave({
     featureId,
     projectId,
     document,
     canEdit: canUpdateFeatures(),
     refresh,
+    commentAnchors,
+  });
+  // Commenting needs the same right as editing the document.
+  const comments = useDocumentComments({
+    document: {
+      kind: "feature",
+      projectId,
+      featureId,
+      documentId: document.id,
+    },
+    canComment: draft.editable,
+    conflict: draft.conflict,
+    flush: draft.flush,
+    onAnchorsChange: (snapshot) => {
+      commentAnchors.current = snapshot;
+    },
+    initialCommentId: commentId,
   });
   const remove = useFeatureWorkspaceMutation(projectId, featureId, () =>
     deleteFeatureDocument(featureId, document.id),
@@ -66,6 +91,7 @@ export function FeatureDocumentPage({
       title={title}
       onClose={onBack}
       closeDisabled={pending}
+      aside={<DocumentCommentsAside comments={comments} />}
       actions={
         <>
           {draft.editable && (
@@ -74,6 +100,13 @@ export function FeatureDocumentPage({
               onRetry={draft.retry}
             />
           )}
+          <DocumentCommentsButton
+            ref={comments.toggle}
+            open={comments.open}
+            count={comments.openCount}
+            controls={comments.panelId}
+            onToggle={comments.toggleOpen}
+          />
           {canDeleteFeatures() && (
             <Button
               type="button"
@@ -108,7 +141,11 @@ export function FeatureDocumentPage({
         className="mt-6"
         documentKey={document.id}
         value={draft.value.body}
-        onChange={draft.changeBody}
+        onChange={(body) => {
+          draft.changeBody(body);
+          comments.bodyChanged(body);
+        }}
+        comments={comments.editor}
         ariaLabel={title}
         placeholder={
           draft.editable

@@ -11,12 +11,15 @@ export function DocumentWindow({
   onClose,
   closeDisabled = false,
   actions,
+  aside,
   children,
 }: {
   title: string;
   onClose: () => void;
   closeDisabled?: boolean;
   actions?: ReactNode;
+  // A panel beside the document, such as its comments.
+  aside?: ReactNode;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -50,14 +53,20 @@ export function DocumentWindow({
             <div className="ml-auto flex items-center gap-1">{actions}</div>
           )}
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {/* A ~900px reading column that fills the height, so the page
-              continues below the text. */}
-          <div className="flex min-h-full flex-col px-4 pt-8 sm:px-12 sm:pt-14">
-            <div className="mx-auto flex w-full min-w-0 max-w-225 flex-1 flex-col">
-              {children}
+        <div className="relative flex min-h-0 flex-1">
+          <div
+            data-slot="document-window-scroll"
+            className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"
+          >
+            {/* A ~900px reading column that fills the height, so the page
+                continues below the text. */}
+            <div className="flex min-h-full flex-col px-4 pt-8 sm:px-12 sm:pt-14">
+              <div className="mx-auto flex w-full min-w-0 max-w-225 flex-1 flex-col">
+                {children}
+              </div>
             </div>
           </div>
+          {aside}
         </div>
       </DialogPopup>
     </Dialog>

@@ -35,7 +35,7 @@ const listNotificationsRoute = createRoute({
   summary: "List notifications",
   request: { query: notificationWorkspaceQuery },
   description:
-    "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit. A scoped API key sees time off notifications only with time_off:read, and new time off and holiday calendar requests only with time_off:approve as well.",
+    "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit. A scoped API key sees time off notifications only with time_off:read, and new time off and holiday calendar requests only with time_off:approve as well; it sees document comment notifications only with both document:read and feature:read.",
   responses: {
     200: jsonResponse("List of notifications", notificationListSchema),
   },

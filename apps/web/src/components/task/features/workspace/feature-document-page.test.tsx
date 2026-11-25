@@ -36,6 +36,8 @@ const m = vi.hoisted(() => ({
   canEdit: true,
   editor: undefined as DocumentEditorProps | undefined,
   focus: vi.fn(),
+  comments: undefined as Record<string, unknown> | undefined,
+  commentsBody: vi.fn(),
 }));
 vi.mock("@/fetchers/feature/feature-workspace", () => ({
   updateFeatureDocument: m.update,
@@ -81,6 +83,24 @@ vi.mock("@/components/editor/document-editor", () => ({
       </div>
     );
   },
+}));
+// Comments have their own tests; the page only has to hand them the document.
+vi.mock("@/components/documents/comments/use-document-comments", () => ({
+  useDocumentComments: (options: Record<string, unknown>) => {
+    m.comments = options;
+    return {
+      editor: undefined,
+      bodyChanged: m.commentsBody,
+      panelId: "comments",
+      toggle: { current: null },
+      open: false,
+      toggleOpen: () => {},
+      openCount: 2,
+    };
+  },
+}));
+vi.mock("@/components/documents/comments/document-comments-aside", () => ({
+  DocumentCommentsAside: () => null,
 }));
 vi.mock("./workspace-delete-dialog", () => ({
   WorkspaceDeleteDialog: ({
@@ -282,6 +302,34 @@ describe("Feature document page", () => {
       await m.guard?.finish?.();
     });
     expect(m.prune).toHaveBeenCalledWith("feature", ["a"]);
+  });
+
+  it("opens the document's comments for people who can edit it", () => {
+    renderPage({ commentId: "thread" });
+    expect(m.comments).toMatchObject({
+      document: {
+        kind: "feature",
+        projectId: "project",
+        featureId: "feature",
+        documentId: "document",
+      },
+      canComment: true,
+      initialCommentId: "thread",
+    });
+    expect(
+      screen.getByRole("button", { name: "common:documentComments.toggle" }),
+    ).toHaveTextContent("2");
+    type("Changed");
+    expect(m.commentsBody).toHaveBeenCalledWith("Changed");
+  });
+
+  it("lets people who cannot edit read comments without adding any", () => {
+    m.canEdit = false;
+    renderPage();
+    expect(m.comments).toMatchObject({ canComment: false });
+    expect(
+      screen.getByRole("button", { name: "common:documentComments.toggle" }),
+    ).toBeTruthy();
   });
 
   it("shows people who cannot edit a heading and the text only", () => {

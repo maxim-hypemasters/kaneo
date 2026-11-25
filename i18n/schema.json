@@ -1003,6 +1003,180 @@
 						"keepEditing",
 						"autoDetect"
 					]
+				},
+				"documentComments": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"toggle_one": {
+							"type": "string"
+						},
+						"toggle_zero": {
+							"type": "string"
+						},
+						"toggle_two": {
+							"type": "string"
+						},
+						"toggle_few": {
+							"type": "string"
+						},
+						"toggle_many": {
+							"type": "string"
+						},
+						"toggle_other": {
+							"type": "string"
+						},
+						"add": {
+							"type": "string"
+						},
+						"newThread": {
+							"type": "string"
+						},
+						"filterOpen": {
+							"type": "string"
+						},
+						"filterResolved": {
+							"type": "string"
+						},
+						"loading": {
+							"type": "string"
+						},
+						"loadFailed": {
+							"type": "string"
+						},
+						"emptyOpen": {
+							"type": "string"
+						},
+						"emptyOpenHint": {
+							"type": "string"
+						},
+						"emptyResolved": {
+							"type": "string"
+						},
+						"placeholder": {
+							"type": "string"
+						},
+						"replyPlaceholder": {
+							"type": "string"
+						},
+						"submit": {
+							"type": "string"
+						},
+						"reply": {
+							"type": "string"
+						},
+						"save": {
+							"type": "string"
+						},
+						"edit": {
+							"type": "string"
+						},
+						"edited": {
+							"type": "string"
+						},
+						"actions": {
+							"type": "string"
+						},
+						"resolve": {
+							"type": "string"
+						},
+						"reopen": {
+							"type": "string"
+						},
+						"resolvedBy": {
+							"type": "string"
+						},
+						"showInDocument": {
+							"type": "string"
+						},
+						"showQuote": {
+							"type": "string"
+						},
+						"detached": {
+							"type": "string"
+						},
+						"selectionEmpty": {
+							"type": "string"
+						},
+						"selectionTruncated": {
+							"type": "string"
+						},
+						"draftLost": {
+							"type": "string"
+						},
+						"conflictBlocked": {
+							"type": "string"
+						},
+						"saveFirstFailed": {
+							"type": "string"
+						},
+						"postFailed": {
+							"type": "string"
+						},
+						"updateFailed": {
+							"type": "string"
+						},
+						"resolveFailed": {
+							"type": "string"
+						},
+						"deleteThreadTitle": {
+							"type": "string"
+						},
+						"deleteThreadDescription": {
+							"type": "string"
+						},
+						"deleteCommentTitle": {
+							"type": "string"
+						},
+						"deleteCommentDescription": {
+							"type": "string"
+						},
+						"notFound": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"add",
+						"newThread",
+						"filterOpen",
+						"filterResolved",
+						"loading",
+						"loadFailed",
+						"emptyOpen",
+						"emptyOpenHint",
+						"emptyResolved",
+						"placeholder",
+						"replyPlaceholder",
+						"submit",
+						"reply",
+						"save",
+						"edit",
+						"edited",
+						"actions",
+						"resolve",
+						"reopen",
+						"resolvedBy",
+						"showInDocument",
+						"showQuote",
+						"detached",
+						"selectionEmpty",
+						"selectionTruncated",
+						"draftLost",
+						"conflictBlocked",
+						"saveFirstFailed",
+						"postFailed",
+						"updateFailed",
+						"resolveFailed",
+						"deleteThreadTitle",
+						"deleteThreadDescription",
+						"deleteCommentTitle",
+						"deleteCommentDescription",
+						"notFound"
+					]
 				}
 			},
 			"required": [
@@ -1018,7 +1192,8 @@
 				"error",
 				"modals",
 				"editor",
-				"documentEditor"
+				"documentEditor",
+				"documentComments"
 			]
 		},
 		"auth": {
@@ -11628,6 +11803,9 @@
 								"editorLink": {
 									"type": "string"
 								},
+								"editorComment": {
+									"type": "string"
+								},
 								"editorQuote": {
 									"type": "string"
 								},
@@ -11748,6 +11926,7 @@
 								"editorAttach",
 								"editorInlineCode",
 								"editorLink",
+								"editorComment",
 								"editorQuote",
 								"editorParagraph",
 								"editorHeading1",
@@ -12017,6 +12196,38 @@
 							},
 							"required": ["title", "content"]
 						},
+						"document_mention": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								},
+								"contentWithPreview": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content", "contentWithPreview"]
+						},
+						"document_comment_reply": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								},
+								"contentWithPreview": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content", "contentWithPreview"]
+						},
 						"due_date_reminder": {
 							"type": "object",
 							"additionalProperties": false,
@@ -12246,6 +12457,8 @@
 						"task_mention",
 						"test_case_mention",
 						"task_comment",
+						"document_mention",
+						"document_comment_reply",
 						"due_date_reminder",
 						"task_overdue",
 						"time_entry_created",
@@ -12329,6 +12542,12 @@
 						"featureLoadError": {
 							"type": "string"
 						},
+						"openDocument": {
+							"type": "string"
+						},
+						"commentedText": {
+							"type": "string"
+						},
 						"actionError": {
 							"type": "string"
 						},
@@ -12399,6 +12618,8 @@
 						"openFeature",
 						"featureUnavailable",
 						"featureLoadError",
+						"openDocument",
+						"commentedText",
 						"actionError",
 						"readCleared",
 						"openTimeOff",

@@ -163,6 +163,7 @@ export const SHORTCUTS = {
   editorAttach: { keys: ["mod+shift+u"], ...editor },
   editorInlineCode: { keys: ["mod+e"], ...editor },
   editorLink: { keys: ["mod+k"], ...editor },
+  editorComment: { keys: ["mod+alt+m"], ...editor },
   editorQuote: { keys: ["alt+shift+."], ...editor },
   editorParagraph: { keys: ["mod+alt+0"], ...editor },
   editorHeading1: { keys: ["mod+alt+1"], ...editor },

@@ -104,6 +104,13 @@ export function getNotificationTitle(
           ...eventData,
           defaultValue: notification.title ?? notification.type,
         });
+      case "document_mention":
+      case "document_comment_reply":
+        return t(`notifications:events.${notification.type}.title`, {
+          ...eventData,
+          actorName: nameOr(eventData.actorName, t("common:people.someone")),
+          defaultValue: notification.title ?? notification.type,
+        });
       case "due_date_reminder":
         return t("notifications:events.due_date_reminder.title", {
           ...eventData,
@@ -247,6 +254,21 @@ export function getNotificationContent(
           ...eventData,
           defaultValue: notification.content ?? "",
         });
+      case "document_mention":
+      case "document_comment_reply":
+        return t(
+          eventData.commentPreview
+            ? `notifications:events.${notification.type}.contentWithPreview`
+            : `notifications:events.${notification.type}.content`,
+          {
+            ...eventData,
+            documentTitle: nameOr(
+              eventData.documentTitle,
+              t("tasks:projectHome.documents.untitled"),
+            ),
+            defaultValue: notification.content ?? "",
+          },
+        );
       case "due_date_reminder":
         return t("notifications:events.due_date_reminder.content", {
           ...eventData,

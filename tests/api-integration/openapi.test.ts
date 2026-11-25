@@ -112,6 +112,18 @@ describe("Kaneo API OpenAPI spec", () => {
       "POST /time-off/{id}/cancel",
       "POST /time-off/{id}/approve",
       "POST /time-off/{id}/decline",
+      "GET /project-document/{id}/comments",
+      "POST /project-document/{id}/comments",
+      "POST /project-document/{id}/comments/{commentId}/replies",
+      "PUT /project-document/{id}/comments/{commentId}",
+      "DELETE /project-document/{id}/comments/{commentId}",
+      "PUT /project-document/{id}/comments/{commentId}/resolution",
+      "GET /feature/{id}/documents/{documentId}/comments",
+      "POST /feature/{id}/documents/{documentId}/comments",
+      "POST /feature/{id}/documents/{documentId}/comments/{commentId}/replies",
+      "PUT /feature/{id}/documents/{documentId}/comments/{commentId}",
+      "DELETE /feature/{id}/documents/{documentId}/comments/{commentId}",
+      "PUT /feature/{id}/documents/{documentId}/comments/{commentId}/resolution",
       "POST /auth/organization/create",
     ]) {
       expect(keys.has(op), `missing operation ${op}`).toBe(true);
@@ -176,8 +188,54 @@ describe("Kaneo API OpenAPI spec", () => {
         "HolidayCalendarRequest",
         "PendingHolidayCalendarRequestList",
         "TimeOffSettings",
+        "DocumentComment",
+        "DocumentCommentThread",
       ]),
     );
+  });
+
+  it("names the document comment operations for generated clients", () => {
+    const ids = new Set(
+      operations(spec).map(([, , operation]) => operation.operationId),
+    );
+    for (const subject of ["ProjectDocument", "FeatureDocument"])
+      for (const id of [
+        `list${subject}Comments`,
+        `create${subject}Comment`,
+        `replyTo${subject}Comment`,
+        `update${subject}Comment`,
+        `delete${subject}Comment`,
+        `set${subject}CommentResolution`,
+      ])
+        expect(ids.has(id), `missing operationId ${id}`).toBe(true);
+  });
+
+  it("describes re-anchoring on both document saves", () => {
+    for (const path of [
+      "/project-document/{id}",
+      "/feature/{id}/documents/{documentId}",
+    ]) {
+      const body = (
+        spec.paths[path]!.put as unknown as {
+          requestBody: {
+            content: {
+              "application/json": {
+                schema: {
+                  properties: Record<
+                    string,
+                    { maxItems?: number; description?: string }
+                  >;
+                };
+              };
+            };
+          };
+        }
+      ).requestBody.content["application/json"].schema;
+      expect(body.properties.commentAnchors, path).toMatchObject({
+        maxItems: 200,
+        description: expect.stringContaining("comment threads"),
+      });
+    }
   });
 
   it("documents Kaneo errors as ApiError JSON", () => {

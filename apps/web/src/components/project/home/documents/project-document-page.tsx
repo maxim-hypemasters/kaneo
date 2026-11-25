@@ -1,6 +1,10 @@
 import { Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { CommentAnchorSnapshot } from "@/components/documents/comments/comment-anchor-snapshot";
+import { DocumentCommentsAside } from "@/components/documents/comments/document-comments-aside";
+import { DocumentCommentsButton } from "@/components/documents/comments/document-comments-button";
+import { useDocumentComments } from "@/components/documents/comments/use-document-comments";
 import { DocumentSaveIndicator } from "@/components/documents/document-save-indicator";
 import { DocumentTitle } from "@/components/documents/document-title";
 import { DocumentWindow } from "@/components/documents/document-window";
@@ -21,6 +25,7 @@ export function ProjectDocumentPage({
   document,
   subPageCount,
   focusTitle = false,
+  commentId,
   onBack,
   refresh,
 }: {
@@ -29,6 +34,8 @@ export function ProjectDocumentPage({
   subPageCount: number;
   // Set for a page just created, so its title can be typed over.
   focusTitle?: boolean;
+  // A comment thread to show, from a link to it.
+  commentId?: string;
   onBack: () => void;
   refresh: () => Promise<unknown>;
 }) {
@@ -37,11 +44,24 @@ export function ProjectDocumentPage({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const editor = useRef<DocumentEditorHandle>(null);
+  const commentAnchors = useRef<CommentAnchorSnapshot | null>(null);
   const draft = useProjectDocumentAutosave({
     projectId,
     document,
     canEdit: canUpdateDocuments(),
     refresh,
+    commentAnchors,
+  });
+  // Commenting needs the same right as editing the page.
+  const comments = useDocumentComments({
+    document: { kind: "page", projectId, documentId: document.id },
+    canComment: draft.editable,
+    conflict: draft.conflict,
+    flush: draft.flush,
+    onAnchorsChange: (snapshot) => {
+      commentAnchors.current = snapshot;
+    },
+    initialCommentId: commentId,
   });
   const remove = useDeleteProjectDocument(projectId);
   const pending = draft.uploading || remove.isPending;
@@ -65,6 +85,7 @@ export function ProjectDocumentPage({
       title={title}
       onClose={onBack}
       closeDisabled={pending}
+      aside={<DocumentCommentsAside comments={comments} />}
       actions={
         <>
           {draft.editable && (
@@ -73,6 +94,13 @@ export function ProjectDocumentPage({
               onRetry={draft.retry}
             />
           )}
+          <DocumentCommentsButton
+            ref={comments.toggle}
+            open={comments.open}
+            count={comments.openCount}
+            controls={comments.panelId}
+            onToggle={comments.toggleOpen}
+          />
           {canDeleteDocuments() && (
             <Button
               type="button"
@@ -107,7 +135,11 @@ export function ProjectDocumentPage({
         className="mt-6"
         documentKey={document.id}
         value={draft.value.body}
-        onChange={draft.changeBody}
+        onChange={(body) => {
+          draft.changeBody(body);
+          comments.bodyChanged(body);
+        }}
+        comments={comments.editor}
         ariaLabel={title}
         placeholder={
           draft.editable

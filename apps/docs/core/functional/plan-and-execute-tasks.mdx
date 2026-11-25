@@ -97,6 +97,16 @@ Project pages nest: any page can have sub-pages. **New page** adds a page at the
 
 Project pages have their own permissions under **Project documents** in the role editor: **View**, **Create**, **Edit** (which also covers uploads and moving pages), and **Delete**. People without **View** don't see the Documents tab or find pages in search. Feature documents listed on the tab follow feature permissions. When you upgrade, existing roles get the page permissions their task permissions used to give, and roles that could update projects can also edit project names and descriptions. Changes appear for everyone viewing the project without a reload.
 
+### Comment on a document
+
+In a project page or a Feature document, select some text and choose **Comment** in the formatting bar, or press ⌘⌥M (Ctrl+Alt+M on Windows and Linux). The comment is attached to the selected text, which stays highlighted for everyone who can view the document. Type `@` to mention a project member.
+
+**Comments** in the document's header opens a panel with every thread and shows how many are open. Click a highlight to find its thread, or a thread's quote to scroll to its text. Reply in the thread, and **Resolve** it when it is settled: its highlight disappears and the thread moves to **Resolved**, where **Reopen** brings it back. Replying to a resolved thread also reopens it. You can edit or delete your own comments; deleting the first comment of a thread deletes its replies too.
+
+Highlights follow the text as it is edited. If the commented text is rewritten or deleted, for example when an MCP client replaces the page, the thread stays in the panel with the original text quoted and a note that it is no longer in the document.
+
+Commenting needs the right to edit the document: **Project documents: Edit** for a page, **Features: Update** for a Feature document. People who can only view a document see its highlights and threads. A mention notifies the person mentioned and a reply notifies the people already in the thread, under **Comments and mentions** in your [notification settings](/core/functional/account-notifications). New comments appear for everyone viewing the document without a reload.
+
 ## Group work into features
 
 A Feature is a durable knowledge record for a part of your product. Keep its documentation, labels, custom fields, resources, comments, implementation history, milestones, and linked Tasks/Bugs together. Features retain their identifiers and links but have no workflow status, priority, assignee, start/end dates, or release.

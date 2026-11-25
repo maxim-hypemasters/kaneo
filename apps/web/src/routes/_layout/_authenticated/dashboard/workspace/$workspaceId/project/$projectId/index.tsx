@@ -39,7 +39,7 @@ export const Route = createFileRoute(
 
 function RouteComponent() {
   const { projectId, workspaceId } = Route.useParams();
-  const { tab, documentId, documentFeatureId } = Route.useSearch();
+  const { tab, documentId, documentFeatureId, commentId } = Route.useSearch();
   const navigate = Route.useNavigate();
 
   return (
@@ -48,7 +48,9 @@ function RouteComponent() {
       projectId={projectId}
       tab={tab ?? "overview"}
       openDocument={
-        documentId ? { id: documentId, featureId: documentFeatureId } : null
+        documentId
+          ? { id: documentId, featureId: documentFeatureId, commentId }
+          : null
       }
       onTabChange={(next) =>
         void navigate({

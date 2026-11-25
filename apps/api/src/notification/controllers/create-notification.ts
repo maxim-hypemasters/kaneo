@@ -5,6 +5,7 @@ import { publishEvent } from "../../events";
 import { deliverNotification } from "../../notification-preferences/delivery";
 
 import { safeOutboundError } from "../../utils/outbound-request";
+import { isDocumentCommentNotificationType } from "../document-comment/document-comment-notification-types";
 import { canReceiveResourceNotification } from "../resource-access";
 
 export async function persistNotification(
@@ -45,7 +46,8 @@ export async function persistNotification(
       ? "taskAssignmentEnabled"
       : type === "task_comment" ||
           type === "task_mention" ||
-          type === "test_case_mention"
+          type === "test_case_mention" ||
+          (type !== undefined && isDocumentCommentNotificationType(type))
         ? "taskCommentEnabled"
         : type === "task_status_changed" ||
             type === "task_triage_accepted" ||

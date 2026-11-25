@@ -19,6 +19,7 @@ import {
   normalizeUrl,
 } from "@/lib/editor-url-utils";
 import { pasteMarkdown } from "@/lib/paste-markdown";
+import { CommentHighlights } from "./comments/comment-highlights";
 import { insertUploadedAsset } from "./insert-uploaded-asset";
 import { createEditorExtensions } from "./extensions";
 import { DOCUMENT_END_LINE_META } from "./focus-document-end";
@@ -131,7 +132,16 @@ export function useDocumentEditor(
             >
           )[language] ?? language,
         image: ResizableImage,
-        extra: [KaneoMention],
+        extra: props.comments
+          ? [
+              KaneoMention,
+              CommentHighlights.configure({
+                onThreadClick: (threadId) =>
+                  current.current.props.comments?.onThreadClick(threadId),
+                onAdd: () => current.current.props.comments?.onAdd?.(),
+              }),
+            ]
+          : [KaneoMention],
       }),
       editorProps: {
         attributes: {

@@ -44,7 +44,10 @@ export const notificationPreferenceSchema = z
     webhookSecretConfigured: z.boolean(),
     maskedWebhookSecret: z.string().nullable(),
     taskAssignmentEnabled: z.boolean(),
-    taskCommentEnabled: z.boolean(),
+    taskCommentEnabled: z.boolean().openapi({
+      description:
+        "Whether comments and mentions notify me: comments on my tasks, mentions, and replies and mentions in comment threads on pages and Feature documents.",
+    }),
     taskStatusChangeEnabled: z.boolean(),
     dueDateReminderEnabled: z.boolean(),
     teamTimeOffEnabled: z.boolean().openapi({

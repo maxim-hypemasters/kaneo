@@ -1548,6 +1548,74 @@ export const projectDocumentTable = pgTable(
   ],
 );
 
+// Comments on a part of a project page or a Feature document. A row without
+// parent_id is a thread: it holds the quoted text the thread is attached to
+// and whether it is resolved. Other rows are its replies, one level deep. The
+// database cannot check that a reply is on its parent's document; the reply
+// controller copies the document from the thread.
+export const documentCommentTable = pgTable(
+  "document_comment",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    projectDocumentId: text("project_document_id").references(
+      () => projectDocumentTable.id,
+      { onDelete: "cascade", onUpdate: "cascade" },
+    ),
+    featureDocumentId: text("feature_document_id").references(
+      () => featureDocumentTable.id,
+      { onDelete: "cascade", onUpdate: "cascade" },
+    ),
+    parentId: text("parent_id").references(
+      (): AnyPgColumn => documentCommentTable.id,
+      { onDelete: "cascade", onUpdate: "cascade" },
+    ),
+    userId: text("user_id").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    content: text("content").notNull(),
+    // The commented text as the reader sees it, with a little of the text on
+    // each side to tell repeated phrases apart. Document bodies never mention
+    // comments, so adding one cannot conflict with someone's unsaved edits.
+    anchorQuote: text("anchor_quote"),
+    anchorPrefix: text("anchor_prefix"),
+    anchorSuffix: text("anchor_suffix"),
+    resolvedAt: timestamp("resolved_at", { mode: "date" }),
+    resolvedBy: text("resolved_by").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    // Set only when the author changes the text. A document save that moves
+    // the anchor must not make the comment look edited.
+    editedAt: timestamp("edited_at", { mode: "date" }),
+  },
+  (table) => [
+    check(
+      "document_comment_target_check",
+      sql`(${table.projectDocumentId} is null) <> (${table.featureDocumentId} is null)`,
+    ),
+    check(
+      "document_comment_shape_check",
+      sql`(${table.parentId} is null and ${table.anchorQuote} is not null and ${table.anchorPrefix} is not null and ${table.anchorSuffix} is not null) or (${table.parentId} is not null and ${table.anchorQuote} is null and ${table.anchorPrefix} is null and ${table.anchorSuffix} is null and ${table.resolvedAt} is null and ${table.resolvedBy} is null)`,
+    ),
+    index("document_comment_project_document_idx")
+      .on(table.projectDocumentId, table.createdAt, table.id)
+      .where(sql`${table.projectDocumentId} is not null`),
+    index("document_comment_feature_document_idx")
+      .on(table.featureDocumentId, table.createdAt, table.id)
+      .where(sql`${table.featureDocumentId} is not null`),
+    index("document_comment_parent_idx")
+      .on(table.parentId)
+      .where(sql`${table.parentId} is not null`),
+    index("document_comment_user_idx").on(table.userId),
+  ],
+);
+
 // The Resources list on a project's Overview. Task links live in
 // `external_link`.
 export const projectLinkTable = pgTable(

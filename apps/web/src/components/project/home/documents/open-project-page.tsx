@@ -9,12 +9,14 @@ export function OpenProjectPage({
   documentId,
   subPageCount,
   focusTitle,
+  commentId,
   onBack,
 }: {
   projectId: string;
   documentId: string;
   subPageCount: number;
   focusTitle: boolean;
+  commentId?: string;
   onBack: () => void;
 }) {
   const { t } = useTranslation();
@@ -27,6 +29,7 @@ export function OpenProjectPage({
         document={document.data}
         subPageCount={subPageCount}
         focusTitle={focusTitle}
+        commentId={commentId}
         onBack={onBack}
         refresh={() => document.refetch({ throwOnError: true })}
       />

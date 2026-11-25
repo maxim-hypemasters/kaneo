@@ -65,6 +65,7 @@ const otherInvalidations = () =>
           "test-case-comments",
           "feature-library",
           "feature-workspace",
+          "document-comments",
         ].includes(options?.queryKey?.[0]) &&
         !(
           options?.predicate &&
