@@ -28,6 +28,13 @@ export type UpdateTestCaseInput = InferRequestType<
   TestCaseApi[":id"]["$patch"]
 >["json"];
 
+export type TestCaseCommentList = InferResponseType<
+  TestCaseApi[":id"]["comments"]["$get"],
+  200
+>;
+
+export type TestCaseComment = TestCaseCommentList["data"][number];
+
 // Every test case of a Feature or release, with counts for the whole set.
 export type TestCaseCollection = {
   data: TestCaseSummary[];

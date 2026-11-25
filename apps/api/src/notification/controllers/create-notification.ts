@@ -43,7 +43,9 @@ export async function persistNotification(
     type === "task_created" ||
     type === "task_triage_new"
       ? "taskAssignmentEnabled"
-      : type === "task_comment" || type === "task_mention"
+      : type === "task_comment" ||
+          type === "task_mention" ||
+          type === "test_case_mention"
         ? "taskCommentEnabled"
         : type === "task_status_changed" ||
             type === "task_triage_accepted" ||

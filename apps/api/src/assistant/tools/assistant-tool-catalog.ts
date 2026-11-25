@@ -117,6 +117,7 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
   list_feature_test_cases: {},
   list_release_test_cases: {},
   get_test_case: {},
+  list_test_case_comments: {},
   list_project_milestones: {},
   list_releases: {},
   get_release: {},
@@ -234,6 +235,9 @@ export const EXCLUDED_TOOLS: Record<string, string> = {
   delete_test_case: "Destructive: deletes are out of scope",
   create_test_case: "Test cases are written on the Test cases page",
   update_test_case: "Test cases are written on the Test cases page",
+  create_test_case_comment: "Test cases are discussed on the Test cases page",
+  update_test_case_comment: "Comment edits delete removed images",
+  delete_test_case_comment: "Destructive: deletes are out of scope",
 
   move_task: "Moves between projects are out of scope",
   duplicate_task: "Bulk copying is out of scope",

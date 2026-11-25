@@ -2936,6 +2936,10 @@
 				"title": "{{mentionerName}} mentioned you",
 				"content": "{{mentionerName}} mentioned you in: {{taskTitle}}"
 			},
+			"test_case_mention": {
+				"title": "{{mentionerName}} mentioned you",
+				"content": "{{mentionerName}} mentioned you in the test case: {{testCaseTitle}}"
+			},
 			"task_comment": {
 				"title": "{{commenterName}} commented on your task",
 				"content": "New comment on {{taskTitle}}: {{commentPreview}}"
@@ -3023,6 +3027,7 @@
 			"actionError": "Couldn't update your inbox. Try again.",
 			"readCleared": "Deleted read notifications",
 			"openTimeOff": "Open time off",
+			"openTestCase": "Open test case",
 			"timeOff": {
 				"requestedBy": "Requested by",
 				"approvedBy": "Approved by",
@@ -4372,6 +4377,16 @@
 				"milestone": "Search milestones…",
 				"bug": "Search bugs…",
 				"loadingBugs": "Loading bugs…"
+			},
+			"comments": {
+				"title": "Comments",
+				"empty": "No comments yet.",
+				"loading": "Loading comments…",
+				"loadError": "Couldn't load the comments.",
+				"post": "Post comment",
+				"delete": "Delete comment",
+				"deleteTitle": "Delete this comment?",
+				"deleteDescription": "The comment and the files attached to it are deleted. This can't be undone."
 			}
 		},
 		"featureComposer": {
@@ -4805,6 +4820,7 @@
 				"listFeatureTestCases": "Feature test cases",
 				"listReleaseTestCases": "Release test cases",
 				"getTestCase": "Test case",
+				"listTestCaseComments": "Test case comments",
 				"listProjectPages": "Project pages",
 				"getProjectPage": "Project page",
 				"listFeatureDocuments": "Feature documents",

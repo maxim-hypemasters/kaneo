@@ -5,6 +5,7 @@ import type { TestCase, UpdateTestCaseInput } from "@/fetchers/test-case/types";
 import { useUpdateTestCase } from "@/hooks/mutations/test-case/use-update-test-case";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
+import { TestCaseComments } from "./comments/test-case-comments";
 import { TestCaseDocumentField } from "./test-case-document-field";
 import { TestCaseProperties } from "./test-case-properties";
 
@@ -111,6 +112,11 @@ export function TestCaseDetails({
             {update.error.message || t("tasks:testCases.saveError")}
           </p>
         )}
+        <TestCaseComments
+          testCaseId={testCase.id}
+          projectId={projectId}
+          className="mt-3 border-t pt-6"
+        />
       </div>
     </div>
   );

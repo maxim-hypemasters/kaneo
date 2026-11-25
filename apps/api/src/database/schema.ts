@@ -1269,6 +1269,41 @@ export const testCaseTable = pgTable(
   ],
 );
 
+export const testCaseCommentTable = pgTable(
+  "test_case_comment",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    testCaseId: text("test_case_id")
+      .notNull()
+      .references(() => testCaseTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    // Null once the author's account is deleted.
+    userId: text("user_id").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("test_case_comment_thread_idx").on(
+      table.testCaseId,
+      table.createdAt,
+      table.id,
+    ),
+  ],
+);
+
 export const billingReminderSentTable = pgTable(
   "billing_reminder_sent",
   {
@@ -1543,6 +1578,11 @@ export const assetTable = pgTable(
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
+    // Uploads in a test case's comments.
+    testCaseId: text("test_case_id").references(() => testCaseTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
     objectKey: text("object_key").notNull().unique(),
     filename: text("filename").notNull(),
     mimeType: text("mime_type").notNull(),
@@ -1563,6 +1603,9 @@ export const assetTable = pgTable(
     index("asset_taskId_idx").on(table.taskId),
     index("asset_activityId_idx").on(table.activityId),
     index("asset_documentId_idx").on(table.documentId),
+    index("asset_testCaseId_idx")
+      .on(table.testCaseId)
+      .where(sql`${table.testCaseId} is not null`),
     index("asset_createdBy_idx").on(table.createdBy),
     index("asset_draft_expiry_idx")
       .on(table.createdAt, table.id)

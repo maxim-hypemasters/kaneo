@@ -53,11 +53,15 @@ type StorageConfig = {
   presignTtlSeconds: number;
 };
 
-type TaskImageUploadContext = {
+// An upload belongs to a task or, for comments on a test case, to that test
+// case.
+type UploadScope = ({ taskId: string } | { testCaseId: string }) & {
   workspaceId: string;
   projectId: string;
-  taskId: string;
   surface: UploadSurface;
+};
+
+type TaskImageUploadContext = UploadScope & {
   filename: string;
   contentType: string;
 };
@@ -246,19 +250,20 @@ export function getFileExtension(filename: string) {
   return sanitizePathSegment(extension).slice(0, 12);
 }
 
-export function buildObjectKeyPrefix(
-  context: Omit<TaskImageUploadContext, "filename" | "contentType">,
-) {
+export function buildObjectKeyPrefix(context: UploadScope) {
   const surfaceFolder =
     context.surface === "comment" ? "comments" : "descriptions";
+  const owner =
+    "taskId" in context
+      ? ["task", sanitizePathSegment(context.taskId)]
+      : ["test-case", sanitizePathSegment(context.testCaseId)];
 
   return [
     "workspace",
     sanitizePathSegment(context.workspaceId),
     "project",
     sanitizePathSegment(context.projectId),
-    "task",
-    sanitizePathSegment(context.taskId),
+    ...owner,
     surfaceFolder,
   ].join("/");
 }
@@ -497,7 +502,7 @@ export function isStorageConfigured() {
 
 export function assertTaskImageKeyMatchesContext(
   key: string,
-  context: Omit<TaskImageUploadContext, "filename" | "contentType">,
+  context: UploadScope,
 ) {
   const config = getStorageConfig();
   const objectPrefix = buildObjectKeyPrefix(context);

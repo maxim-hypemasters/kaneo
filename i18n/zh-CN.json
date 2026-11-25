@@ -2946,6 +2946,10 @@
 				"title": "你的报告已被拒绝",
 				"content": "“{{taskTitle}}”已被拒绝",
 				"contentWithReason": "“{{taskTitle}}”已被拒绝：{{reason}}"
+			},
+			"test_case_mention": {
+				"content": "{{mentionerName}} mentioned you in the test case: {{testCaseTitle}}",
+				"title": "{{mentionerName}} mentioned you"
 			}
 		},
 		"inbox": {
@@ -2982,7 +2986,8 @@
 				"member": "Member",
 				"requestedBy": "Requested by",
 				"hintHolidayCalendarDecided": "Your public holidays are on the My time off tab."
-			}
+			},
+			"openTestCase": "Open test case"
 		}
 	},
 	"activity": {
@@ -4428,6 +4433,16 @@
 				"description": "Add preconditions…",
 				"expectedResult": "Add the expected result…",
 				"steps": "Add the steps to follow…"
+			},
+			"comments": {
+				"delete": "Delete comment",
+				"deleteDescription": "The comment and the files attached to it are deleted. This can't be undone.",
+				"deleteTitle": "Delete this comment?",
+				"empty": "No comments yet.",
+				"loadError": "Couldn't load the comments.",
+				"loading": "Loading comments…",
+				"post": "Post comment",
+				"title": "Comments"
 			}
 		}
 	},
@@ -4871,7 +4886,8 @@
 				"getTestCase": "Test case",
 				"listFeatureTestCases": "Feature test cases",
 				"listReleaseTestCases": "Release test cases",
-				"listTestCases": "Test cases"
+				"listTestCases": "Test cases",
+				"listTestCaseComments": "Test case comments"
 			},
 			"warning": {
 				"keyRejected": "OpenRouter rejected the workspace's key, so answers may fail.",

@@ -13,12 +13,14 @@ import {
 } from "../utils/require-workspace-permission";
 import type { PermissionMap } from "../utils/role-permissions";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
+import commentRoutes from "./comments/routes";
 import { createTestCase } from "./create-test-case";
 import { deleteTestCase } from "./delete-test-case";
 import { getTestCase } from "./get-test-case";
 import { listFeatureTestCases } from "./list-feature-test-cases";
 import { listProjectTestCases } from "./list-project-test-cases";
 import { listReleaseTestCases } from "./list-release-test-cases";
+import { testCaseScope } from "./request-scope";
 import {
   createTestCaseBody,
   deletedTestCaseSchema,
@@ -26,7 +28,6 @@ import {
   projectParams,
   releaseParams,
   type TestCaseReadAccess,
-  type TestCaseScope,
   testCaseListQuery,
   testCaseListSchema,
   testCaseParams,
@@ -88,13 +89,6 @@ const errors = {
   409: errorResponse("Project changed; refresh and retry"),
 };
 const tags = ["Test cases"];
-const scope = (c: {
-  get: (key: "userId" | "authorizedProjectId" | "workspaceId") => string;
-}): TestCaseScope => ({
-  projectId: c.get("authorizedProjectId"),
-  workspaceId: c.get("workspaceId"),
-  userId: c.get("userId"),
-});
 const readAccess = async (c: Context): Promise<TestCaseReadAccess> => {
   const can = await workspacePermissionChecker(c);
   return {
@@ -128,7 +122,7 @@ const testCase = apiRouter()
     async (c) =>
       c.json(
         await listProjectTestCases(
-          scope(c),
+          testCaseScope(c),
           c.req.valid("query"),
           await readAccess(c),
         ),
@@ -152,7 +146,7 @@ const testCase = apiRouter()
     async (c) =>
       c.json(
         await createTestCase(
-          scope(c),
+          testCaseScope(c),
           c.req.valid("json"),
           await readAccess(c),
         ),
@@ -177,7 +171,7 @@ const testCase = apiRouter()
     async (c) =>
       c.json(
         await listFeatureTestCases(
-          scope(c),
+          testCaseScope(c),
           c.req.valid("param").featureId,
           c.req.valid("query"),
           await readAccess(c),
@@ -203,7 +197,7 @@ const testCase = apiRouter()
     async (c) =>
       c.json(
         await listReleaseTestCases(
-          scope(c),
+          testCaseScope(c),
           c.req.valid("param").releaseId,
           c.req.valid("query"),
           await readAccess(c),
@@ -228,7 +222,7 @@ const testCase = apiRouter()
     async (c) =>
       c.json(
         await getTestCase(
-          scope(c),
+          testCaseScope(c),
           c.req.valid("param").id,
           await readAccess(c),
         ),
@@ -254,7 +248,7 @@ const testCase = apiRouter()
     async (c) =>
       c.json(
         await updateTestCase(
-          scope(c),
+          testCaseScope(c),
           c.req.valid("param").id,
           c.req.valid("json"),
           await readAccess(c),
@@ -277,7 +271,11 @@ const testCase = apiRouter()
       },
     }),
     async (c) =>
-      c.json(await deleteTestCase(scope(c), c.req.valid("param").id), 200),
-  );
+      c.json(
+        await deleteTestCase(testCaseScope(c), c.req.valid("param").id),
+        200,
+      ),
+  )
+  .route("/", commentRoutes);
 
 export default testCase;

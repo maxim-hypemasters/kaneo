@@ -13,6 +13,7 @@ import { registerProjectExtraTools } from "./project-extras.js";
 import { registerProjectPageTools } from "./project-pages.js";
 import { registerTaskExtraTools } from "./task-extras.js";
 import { registerTeamTools } from "./teams.js";
+import { registerTestCaseCommentTools } from "./test-case-comments.js";
 import { registerTestCaseTools } from "./test-cases.js";
 import { registerTimeOffTools } from "./time-off.js";
 import { registerTimeOffHolidayRequestTools } from "./time-off-holiday-requests.js";
@@ -112,6 +113,7 @@ export function registerTools(
   const { client } = ctx;
   registerMilestoneTools(server, client);
   registerTestCaseTools(server, client);
+  registerTestCaseCommentTools(server, client);
   registerFeatureTools(server, client);
   registerTriageTools(server, client);
   registerProjectPageTools(server, client);

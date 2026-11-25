@@ -11995,6 +11995,19 @@
 							},
 							"required": ["title", "content"]
 						},
+						"test_case_mention": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"content": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "content"]
+						},
 						"task_comment": {
 							"type": "object",
 							"additionalProperties": false,
@@ -12235,6 +12248,7 @@
 						"task_status_changed",
 						"task_assignee_changed",
 						"task_mention",
+						"test_case_mention",
 						"task_comment",
 						"due_date_reminder",
 						"task_overdue",
@@ -12328,6 +12342,9 @@
 						"openTimeOff": {
 							"type": "string"
 						},
+						"openTestCase": {
+							"type": "string"
+						},
 						"timeOff": {
 							"type": "object",
 							"additionalProperties": false,
@@ -12389,6 +12406,7 @@
 						"actionError",
 						"readCleared",
 						"openTimeOff",
+						"openTestCase",
 						"timeOff"
 					]
 				}
@@ -18319,6 +18337,46 @@
 								"bug",
 								"loadingBugs"
 							]
+						},
+						"comments": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"empty": {
+									"type": "string"
+								},
+								"loading": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								},
+								"post": {
+									"type": "string"
+								},
+								"delete": {
+									"type": "string"
+								},
+								"deleteTitle": {
+									"type": "string"
+								},
+								"deleteDescription": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"empty",
+								"loading",
+								"loadError",
+								"post",
+								"delete",
+								"deleteTitle",
+								"deleteDescription"
+							]
 						}
 					},
 					"required": [
@@ -18352,7 +18410,8 @@
 						"fields",
 						"placeholders",
 						"filters",
-						"pickers"
+						"pickers",
+						"comments"
 					]
 				},
 				"featureComposer": {
@@ -20152,6 +20211,9 @@
 								"getTestCase": {
 									"type": "string"
 								},
+								"listTestCaseComments": {
+									"type": "string"
+								},
 								"listProjectPages": {
 									"type": "string"
 								},
@@ -20213,6 +20275,7 @@
 								"listFeatureTestCases",
 								"listReleaseTestCases",
 								"getTestCase",
+								"listTestCaseComments",
 								"listProjectPages",
 								"getProjectPage",
 								"listFeatureDocuments",

@@ -933,6 +933,19 @@ subscribeToEvent<{ projectId: string; initiatorId?: string }>(
   },
 );
 
+// Only an open thread refetches, so one message per project is enough.
+subscribeToEvent<{ projectId: string; initiatorId?: string }>(
+  "test-case.comment.changed",
+  async ({ projectId, initiatorId }) => {
+    if (projectId)
+      broadcastToProject(
+        projectId,
+        { type: "TEST_CASE_COMMENTS_UPDATED", projectId },
+        initiatorId,
+      );
+  },
+);
+
 for (const eventName of taskUpdateEvents) {
   subscribeToEvent<TaskEvent>(eventName, async (data) => {
     const { projectId, initiatorId } = data;

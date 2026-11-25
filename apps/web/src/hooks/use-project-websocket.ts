@@ -20,7 +20,10 @@ import { patchBoardTask } from "@/lib/patch-board-task";
 import { releasesKey } from "@/hooks/queries/release/use-get-releases";
 import { featureWorkspaceKey } from "@/hooks/queries/feature/use-feature-workspace";
 import { projectDocumentsKey } from "@/hooks/queries/project-document/project-document-keys";
-import { testCasesKey } from "@/hooks/queries/test-case/test-case-keys";
+import {
+  testCaseCommentThreadsKey,
+  testCasesKey,
+} from "@/hooks/queries/test-case/test-case-keys";
 import type { ProjectWithTasks } from "@/types/project";
 import {
   hasSyncTaskSample,
@@ -390,6 +393,10 @@ export function useProjectWebSocket(projectId: string) {
             { queryKey: testCasesKey(projectId) },
             { cancelRefetch: false },
           );
+          void queryClient.invalidateQueries(
+            { queryKey: testCaseCommentThreadsKey(projectId) },
+            { cancelRefetch: false },
+          );
           invalidateWorkLinkCandidates(queryClient, projectId, {
             cancelRefetch: false,
           });
@@ -443,6 +450,12 @@ export function useProjectWebSocket(projectId: string) {
           }
           if (message.type === "TEST_CASES_UPDATED") {
             refreshTestCases();
+            return;
+          }
+          if (message.type === "TEST_CASE_COMMENTS_UPDATED") {
+            void queryClient.invalidateQueries({
+              queryKey: testCaseCommentThreadsKey(projectId),
+            });
             return;
           }
           if (

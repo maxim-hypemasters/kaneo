@@ -531,6 +531,15 @@ describe("release list realtime", () => {
     expectReleaseMilestonesInvalidated();
     expectCandidatesInvalidated();
   });
+  it("refreshes only comment threads when a test case is commented on", () => {
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("TEST_CASE_COMMENTS_UPDATED");
+    vi.advanceTimersByTime(300);
+    expect(mocks.client.invalidateQueries.mock.calls).toEqual([
+      [{ queryKey: ["test-case-comments", "p"] }],
+    ]);
+    expect(mocks.client.setQueryData).not.toHaveBeenCalled();
+  });
   it("refreshes release metadata and chart without loading the board", () => {
     renderHook(() => useProjectWebSocket("p"));
     Socket.current.message("RELEASES_UPDATED");

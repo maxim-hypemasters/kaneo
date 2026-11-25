@@ -18,3 +18,12 @@ export const releaseTestCasesKey = (projectId: string, releaseId: string) =>
 
 export const testCaseKey = (projectId: string, id: string) =>
   [...testCasesKey(projectId), "detail", id] as const;
+
+// Comment threads sit outside the test cases prefix: task and milestone
+// messages refresh every test case list, and an open thread has no reason to
+// refetch with them. The project id lets losing access to it evict them.
+export const testCaseCommentThreadsKey = (projectId: string) =>
+  ["test-case-comments", projectId] as const;
+
+export const testCaseCommentsKey = (projectId: string, testCaseId: string) =>
+  [...testCaseCommentThreadsKey(projectId), testCaseId] as const;

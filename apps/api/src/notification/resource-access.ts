@@ -4,7 +4,7 @@ import { userTable } from "../database/schema";
 import { projectAccessCondition } from "../project-access/project-access-condition";
 
 // Membership, rather than public visibility or global admin privileges, defines
-// who may be subscribed to private task activity. Use the same predicate when
+// who may be subscribed to private task and test case activity. Use the same predicate when
 // creating, reading and delivering notifications, including historical rows.
 export function notificationResourceAccess(
   userId: string,
@@ -18,6 +18,13 @@ export function notificationResourceAccess(
       JOIN project AS notification_project ON notification_project.id = notification_task.project_id
       JOIN workspace_member AS notification_member ON notification_member.workspace_id = notification_project.workspace_id
       WHERE notification_task.id = ${resourceId} AND notification_member.user_id = ${userId}
+        AND ${projectAccessCondition(userId, sql`notification_project.id`)}
+    ))
+    OR (${resourceType}::text = 'test_case' AND EXISTS (
+      SELECT 1 FROM test_case AS notification_test_case
+      JOIN project AS notification_project ON notification_project.id = notification_test_case.project_id
+      JOIN workspace_member AS notification_member ON notification_member.workspace_id = notification_project.workspace_id
+      WHERE notification_test_case.id = ${resourceId} AND notification_member.user_id = ${userId}
         AND ${projectAccessCondition(userId, sql`notification_project.id`)}
     ))
     OR (${resourceType}::text = 'workspace' AND EXISTS (
