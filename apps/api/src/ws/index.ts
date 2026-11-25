@@ -933,6 +933,33 @@ for (const eventName of [
   });
 }
 
+// Clients refetch the project's test case lists, so changes coalesce into one
+// message per project.
+subscribeToEvent<{ projectId: string; initiatorId?: string }>(
+  "test-case.changed",
+  async ({ projectId, initiatorId }) => {
+    if (projectId)
+      broadcastToProject(
+        projectId,
+        { type: "TEST_CASES_UPDATED", projectId },
+        initiatorId,
+      );
+  },
+);
+
+// Only an open thread refetches, so one message per project is enough.
+subscribeToEvent<{ projectId: string; initiatorId?: string }>(
+  "test-case.comment.changed",
+  async ({ projectId, initiatorId }) => {
+    if (projectId)
+      broadcastToProject(
+        projectId,
+        { type: "TEST_CASE_COMMENTS_UPDATED", projectId },
+        initiatorId,
+      );
+  },
+);
+
 for (const eventName of taskUpdateEvents) {
   subscribeToEvent<TaskEvent>(eventName, async (data) => {
     const { projectId, initiatorId } = data;

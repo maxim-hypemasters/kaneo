@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { ReleaseTestCases } from "./release-test-cases";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ProjectLayout from "@/components/common/project-layout";
@@ -203,6 +204,7 @@ export function ReleaseDetailPage({
           today={today}
         />
         {items}
+        <ReleaseTestCases projectId={projectId} releaseId={release.id} />
       </div>
     );
   } else if (releasesQuery.data) {

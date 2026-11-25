@@ -12,7 +12,7 @@ export const notificationSchema = z
     }),
     type: z.string().openapi({
       description:
-        "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason), time_off_requested, time_off_approved, time_off_declined, time_off_member_away, time_off_holiday_calendar_requested, time_off_holiday_calendar_approved, time_off_holiday_calendar_declined.",
+        "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, test_case_mention (mentioned in a comment on a test case), task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason), time_off_requested, time_off_approved, time_off_declined, time_off_member_away, time_off_holiday_calendar_requested, time_off_holiday_calendar_approved, time_off_holiday_calendar_declined.",
     }),
     eventData: z.unknown().openapi({
       description:
@@ -21,10 +21,10 @@ export const notificationSchema = z
     isRead: z.boolean().nullable(),
     resourceId: z.string().nullable().openapi({
       description:
-        "The id of the task or workspace the notification points at.",
+        "The id of the task, test case or workspace the notification points at.",
     }),
     resourceType: z.string().nullable().openapi({
-      description: "`task` or `workspace`.",
+      description: "`task`, `test_case` or `workspace`.",
     }),
     createdAt: responseTimestamp,
     updatedAt: responseTimestamp,

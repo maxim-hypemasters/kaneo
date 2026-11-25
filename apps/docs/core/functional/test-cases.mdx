@@ -1,0 +1,52 @@
+---
+title: "Test cases"
+description: "Write test cases, link them to the milestones and Bugs they verify, and follow results on Features and releases."
+---
+
+A test case describes how to check that work behaves as intended: a title, its **Preconditions**, the **Steps** to follow, and the **Expected result**. Each one records its latest **Result**: **Not run**, **Passed**, **Failed** or **Blocked**.
+
+## Create a test case
+
+Open a project and choose **Test cases** in the sidebar, then **New test case**. Give it a title and fill in what you need; only the title is required. New test cases start as **Not run** unless you pick another result.
+
+You can also add one where the work is:
+
+- In a milestone's details panel, use **+** in its **Test cases** section. The new test case is linked to that milestone.
+- On a Bug, use **+** in its **Test cases** section. The new test case is linked to that Bug.
+
+## Link to a milestone or Bug
+
+A test case can be linked to one milestone and one Bug of its project, or to neither. Choose them under **Milestone** and **Bug** when creating it or in its details. Milestones are grouped under their Feature. Choose **No milestone** or **No bug** to remove a link.
+
+Links stay inside the project. Moving a Bug to another project removes it from its test cases, and so does moving a Feature for the test cases linked to its milestones. Deleting a milestone, Bug or Feature keeps the test cases and only clears the link. Converting a Bug to a Task keeps the link.
+
+## Record results
+
+Select a test case to open it. It takes the whole screen: its texts and comments on the left, and its **Result**, **Milestone** and **Bug** on the right. Close it to return to the page you were on. Change **Result** after each run. **Preconditions**, **Steps** and **Expected result** use the same editor as a task description: click one to edit it, then **Save** or **Cancel**. The project's **Test cases** page can be searched by title and filtered by result, and shows how many test cases have each result.
+
+## Comment on a test case
+
+**Comments**, below the texts, holds the discussion about a test case, oldest first. Write in the box and send it with the arrow button. You can edit or delete your own comments. New comments appear for everyone who has the test case open.
+
+Type **@** to mention a member of the project. They get a notification in their inbox that opens the test case, and through their own [notification channels](/core/functional/account-notifications), unless they turned off **Comments and mentions**. Only members who can read test cases are notified, and a mention added by editing a comment doesn't notify.
+
+Use the attachment button, paste, or drag a file into a comment to add images and files. On self-hosted instances, an operator must [configure file storage](/core/installation/object-storage-and-image-uploads) first. A file is deleted once no comment on the test case uses it, and all of them with the test case.
+
+## See them on Features and releases
+
+A Feature's **Test cases** tab lists every test case linked to its milestones, grouped by milestone in milestone order, with result counts.
+
+A release page lists its test cases below its work, with result counts:
+
+- test cases linked to a milestone planned for the release, grouped by milestone;
+- test cases linked to a Bug in the release, grouped by Bug. Archived Bugs are left out.
+
+A milestone that appears on the release only because some of its work is in the release doesn't bring its test cases along. Plan the milestone for the release to include them.
+
+## Permissions
+
+Test cases have their own **Create**, **Read**, **Update** and **Delete** permissions. Viewers can read test cases, members can also create and edit them, and admins and owners can delete them. Linking a test case to a milestone or Bug also needs permission to view it. People who can't view a linked milestone or Bug see that a link exists, but not its name. A Feature's **Test cases** tab also needs permission to view milestones.
+
+Everyone who can read test cases can read their comments. Commenting needs **Update**, and only a comment's author can edit or delete it.
+
+Test cases and their comments are available through the API and [MCP](/core/integrations/mcp#available-tools). The workspace assistant can read them but doesn't create or change them.

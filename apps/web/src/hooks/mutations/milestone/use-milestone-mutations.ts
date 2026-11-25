@@ -11,6 +11,7 @@ import {
 } from "@/fetchers/milestone/milestones";
 import { HttpError } from "@/lib/http-error";
 import { milestonesKey } from "@/hooks/queries/milestone/use-get-milestones";
+import { testCasesKey } from "@/hooks/queries/test-case/test-case-keys";
 export function useMilestoneMutations(projectId: string, featureId: string) {
   const client = useQueryClient();
   const refresh = () => {
@@ -29,6 +30,8 @@ export function useMilestoneMutations(projectId: string, featureId: string) {
     void client.invalidateQueries({
       queryKey: milestonesKey(projectId),
     });
+    // Test cases show their milestone and follow its release.
+    void client.invalidateQueries({ queryKey: testCasesKey(projectId) });
   };
   return {
     create: useMutation({

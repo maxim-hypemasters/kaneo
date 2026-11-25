@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFeatureIndex } from "@/lib/features/feature-index";
 import { invalidateFeatureChange } from "@/lib/invalidate-feature-change";
 import { invalidateMyWork } from "@/lib/invalidate-my-work";
+import { testCasesKey } from "@/hooks/queries/test-case/test-case-keys";
 import deleteTask from "@/fetchers/task/delete-task";
 import useProjectStore from "@/store/project";
 import type { ProjectWithTasks } from "@/types/project";
@@ -27,6 +28,10 @@ export function useDeleteTask() {
         queryKey: ["project-features", deletedTask.projectId],
       });
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
+      // Test cases linked to the deleted Bug or Feature lose that link.
+      void queryClient.invalidateQueries({
+        queryKey: testCasesKey(deletedTask.projectId),
+      });
       const boardKey = ["tasks", deletedTask.projectId];
       // The task's feature lost a task; a deleted feature's tasks left it.
       const featureTasks =

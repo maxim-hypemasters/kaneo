@@ -78,6 +78,9 @@ vi.mock("@/components/shared/modals/create-task-modal", () => ({
     return props.open ? <div role="dialog">{props.type}</div> : null;
   },
 }));
+vi.mock("@/components/test-cases/test-case-details-dialog", () => ({
+  TestCaseDetailsDialog: () => null,
+}));
 vi.mock("@/components/task/milestones/milestone-details-sheet", () => ({
   MilestoneDetailsSheet: () => null,
 }));

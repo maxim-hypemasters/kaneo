@@ -87,6 +87,9 @@ vi.mock("@/components/shared/modals/create-task-modal", () => ({
   ),
 }));
 vi.mock("@/lib/toast", () => ({ toast: { error: vi.fn() } }));
+vi.mock("@/components/test-cases/linked-test-cases", () => ({
+  LinkedTestCases: () => null,
+}));
 afterEach(() => {
   cleanup();
   useMilestoneDetailsStore.getState().close();

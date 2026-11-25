@@ -3,6 +3,7 @@ export const FEATURE_TABS = [
   "activity",
   "documents",
   "issues",
+  "testCases",
 ] as const;
 export type FeatureTab = (typeof FEATURE_TABS)[number];
 export type FeatureWorkspaceSearch = {

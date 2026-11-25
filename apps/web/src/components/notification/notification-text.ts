@@ -94,6 +94,11 @@ export function getNotificationTitle(
           ...eventData,
           defaultValue: notification.title ?? notification.type,
         });
+      case "test_case_mention":
+        return t("notifications:events.test_case_mention.title", {
+          ...eventData,
+          defaultValue: notification.title ?? notification.type,
+        });
       case "task_comment":
         return t("notifications:events.task_comment.title", {
           ...eventData,
@@ -229,6 +234,11 @@ export function getNotificationContent(
             });
       case "task_mention":
         return t("notifications:events.task_mention.content", {
+          ...eventData,
+          defaultValue: notification.content ?? "",
+        });
+      case "test_case_mention":
+        return t("notifications:events.test_case_mention.content", {
           ...eventData,
           defaultValue: notification.content ?? "",
         });

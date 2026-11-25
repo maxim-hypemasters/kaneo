@@ -26,6 +26,7 @@ it("keeps Backlog and Releases out of the task layouts", () => {
   expect(isTaskLayoutView("gantt")).toBe(true);
   expect(isTaskLayoutView("backlog")).toBe(false);
   expect(isTaskLayoutView("releases")).toBe(false);
+  expect(isTaskLayoutView("testCases")).toBe(false);
   expect(TASK_LAYOUTS.map((layout) => layout.id)).toEqual([
     "board",
     "list",

@@ -3,6 +3,9 @@ import type { Notification } from "@/types/notification";
 
 export type InboxFilter = "all" | "unread" | "mentions";
 
+// Mentions arrive from comments on tasks and on test cases.
+const MENTION_TYPES = new Set(["task_mention", "test_case_mention"]);
+
 export function filterNotifications(
   notifications: Notification[],
   filter: InboxFilter,
@@ -11,8 +14,8 @@ export function filterNotifications(
     return notifications.filter((notification) => !notification.isRead);
   }
   if (filter === "mentions") {
-    return notifications.filter(
-      (notification) => notification.type === "task_mention",
+    return notifications.filter((notification) =>
+      MENTION_TYPES.has(notification.type),
     );
   }
   return notifications;

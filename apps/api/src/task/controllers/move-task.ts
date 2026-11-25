@@ -22,6 +22,7 @@ import { recordReleaseChange } from "../../release/membership/record-release-cha
 import { claimTaskNumber } from "./claim-task-numbers";
 import { nextTaskPosition } from "./next-task-position";
 import { TRIAGE_STATUS } from "../../triage/triage-status";
+import { unlinkMovedTestCases } from "../../test-case/unlink-moved-test-cases";
 
 function assertNotInTriage(status: string | null) {
   if (status === TRIAGE_STATUS)
@@ -283,6 +284,8 @@ async function moveTask({
           );
       }
     }
+
+    await unlinkMovedTestCases(tx, updatedTask);
 
     await recordMilestoneChange(tx, {
       taskIds: [taskId],
