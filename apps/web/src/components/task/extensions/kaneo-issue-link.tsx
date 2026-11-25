@@ -10,6 +10,10 @@ import {
 } from "@/components/ui/preview-card";
 import getProject from "@/fetchers/project/get-project";
 import getTask from "@/fetchers/task/get-task";
+import {
+  extractIssueKeyFromUrl,
+  extractTaskIdFromUrl,
+} from "@/lib/editor-url-utils";
 import { escapeHtml, isValidUrl } from "./url-safety";
 
 function parseTaskRouteFromUrl(url: string) {
@@ -120,6 +124,18 @@ function KaneoIssueLinkView({ node }: NodeViewProps) {
   );
 }
 
+function firstAttribute(...names: string[]) {
+  return (element: HTMLElement) => {
+    for (const name of names) {
+      const value = element.getAttribute(name);
+      if (value) return value;
+    }
+    return "";
+  };
+}
+
+const readUrl = firstAttribute("url", "data-url");
+
 export const KaneoIssueLink = Node.create({
   name: "kaneoIssueLink",
   group: "inline",
@@ -127,11 +143,29 @@ export const KaneoIssueLink = Node.create({
   atom: true,
   selectable: false,
 
+  // Each attribute is read under every name it is written with. Without
+  // this, TipTap looks for `issuekey` and `taskid`, which saved Markdown never
+  // has (it writes `issue-key` and `task-id`), and the span form has no bare
+  // `url` at all: the key and task were dropped each time a document loaded.
+  // Links saved while that was so have them empty, so an empty one is read
+  // from the URL again, which is where pasting a link takes them from.
   addAttributes() {
     return {
-      url: { default: "" },
-      issueKey: { default: "" },
-      taskId: { default: "" },
+      url: { default: "", parseHTML: readUrl },
+      issueKey: {
+        default: "",
+        parseHTML: (element) =>
+          firstAttribute("issue-key", "data-issue-key", "issuekey")(element) ||
+          extractIssueKeyFromUrl(readUrl(element)) ||
+          "",
+      },
+      taskId: {
+        default: "",
+        parseHTML: (element) =>
+          firstAttribute("task-id", "data-task-id", "taskid")(element) ||
+          extractTaskIdFromUrl(readUrl(element)) ||
+          "",
+      },
     };
   },
 
