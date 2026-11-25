@@ -91,6 +91,13 @@ export function DocumentEditor(props: DocumentEditorProps) {
     [editor],
   );
 
+  const onCommentEditor = props.comments?.onEditor;
+  useEffect(() => {
+    if (!editor || !onCommentEditor) return;
+    onCommentEditor(editor);
+    return () => onCommentEditor(null);
+  }, [editor, onCommentEditor]);
+
   useLayoutEffect(() => {
     if (!editor?.isEditable || editPosition.current === null) return;
     const position = editPosition.current;
@@ -258,7 +265,11 @@ export function DocumentEditor(props: DocumentEditorProps) {
                 )}
                 {editable && !locked && (
                   <>
-                    <DocumentFormattingMenu editor={editor} onLink={openLink} />
+                    <DocumentFormattingMenu
+                      editor={editor}
+                      onLink={openLink}
+                      onComment={props.comments?.onAdd}
+                    />
                     <DocumentSlashMenu
                       editor={editor}
                       shell={shell}

@@ -219,6 +219,38 @@ describe("release list realtime", () => {
     vi.advanceTimersByTime(300);
     expect(featureWorkspaceCalls()).toHaveLength(0);
   });
+  it("refreshes the project's comment threads once per burst, and never a document's text", async () => {
+    const comments = ["document-comments", "p", "doc"];
+    const otherProject = ["document-comments", "other", "doc"];
+    const pages = ["project-documents", "p"];
+    const page = ["project-documents", "p", "document", "doc"];
+    for (const key of [comments, otherProject, pages, page])
+      milestoneCache.setQueryData(key, []);
+    const invalidated = (key: unknown[]) =>
+      milestoneCache.getQueryState(key)?.isInvalidated;
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("DOCUMENT_COMMENTS_UPDATED", { documentId: "doc" });
+    Socket.current.message("DOCUMENT_COMMENTS_UPDATED", { documentId: "doc" });
+    expect(invalidated(comments)).toBe(false);
+    await vi.advanceTimersByTimeAsync(300);
+    expect(invalidated(comments)).toBe(true);
+    expect(invalidated(otherProject)).toBe(false);
+    expect(invalidated(pages)).toBe(false);
+    expect(invalidated(page)).toBe(false);
+    expect(
+      mocks.client.invalidateQueries.mock.calls.filter(
+        ([filters]) => filters?.queryKey?.[0] === "document-comments",
+      ),
+    ).toHaveLength(1);
+  });
+  it("leaves comment threads alone when a page's text is saved", async () => {
+    const comments = ["document-comments", "p", "doc"];
+    milestoneCache.setQueryData(comments, []);
+    renderHook(() => useProjectWebSocket("p"));
+    Socket.current.message("PROJECT_DOCUMENTS_UPDATED", { documentId: "doc" });
+    await vi.advanceTimersByTimeAsync(300);
+    expect(milestoneCache.getQueryState(comments)?.isInvalidated).toBe(false);
+  });
   it("refetches mounted Masterplanning summaries once for a coalesced remote burst", async () => {
     const key = ["feature-milestones", "p", "project", "UTC"];
     const changed = [

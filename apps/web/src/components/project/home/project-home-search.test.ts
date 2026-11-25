@@ -24,6 +24,26 @@ describe("validateProjectHomeSearch", () => {
     ).toEqual({ tab: "documents", documentId: "d", documentFeatureId: "f" });
   });
 
+  it("keeps a comment thread only with its document", () => {
+    expect(
+      validateProjectHomeSearch({
+        tab: "documents",
+        documentId: "d",
+        commentId: "c",
+      }),
+    ).toEqual({ tab: "documents", documentId: "d", commentId: "c" });
+    expect(
+      validateProjectHomeSearch({ tab: "documents", commentId: "c" }),
+    ).toEqual({ tab: "documents" });
+    expect(
+      validateProjectHomeSearch({
+        tab: "documents",
+        documentId: "d",
+        commentId: "../c",
+      }),
+    ).toEqual({ tab: "documents", documentId: "d" });
+  });
+
   it("drops malformed ids and a Feature without a document", () => {
     expect(
       validateProjectHomeSearch({

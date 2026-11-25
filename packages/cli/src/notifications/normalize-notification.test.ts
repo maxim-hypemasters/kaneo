@@ -75,6 +75,44 @@ describe("normalizeNotification", () => {
     ).toBe("Someone mentioned you");
   });
 
+  it("describes mentions and replies in document comments", () => {
+    expect(
+      normalizeNotification(
+        raw({
+          type: "document_mention",
+          resourceType: "project_document",
+          resourceId: "doc-1",
+          eventData: {
+            documentTitle: "Release plan",
+            actorName: "Grace",
+            commentPreview: "@Ada can you\ncheck?",
+            projectId: "project-1",
+            workspaceId: "workspace-1",
+          },
+        }),
+      ),
+    ).toMatchObject({
+      title: "Grace mentioned you in a comment",
+      message: "Release plan: @Ada can you check?",
+      projectId: "project-1",
+      workspaceId: "workspace-1",
+      taskId: null,
+    });
+    expect(
+      normalizeNotification(
+        raw({
+          type: "document_comment_reply",
+          resourceType: "feature_document",
+          resourceId: "doc-2",
+          eventData: {},
+        }),
+      ),
+    ).toMatchObject({
+      title: "Someone replied to a comment",
+      message: "a document",
+    });
+  });
+
   it("describes new work waiting in Triage", () => {
     const view = (eventData: Record<string, unknown>) =>
       normalizeNotification(raw({ type: "task_triage_new", eventData }));

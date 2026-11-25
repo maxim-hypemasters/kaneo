@@ -1,4 +1,5 @@
 import { client } from "@kaneo/libs";
+import type { CommentAnchorUpdate } from "@/components/editor/comments/comment-anchor";
 import { HttpError } from "@/lib/http-error";
 import type {
   FeatureActivityItem,
@@ -105,6 +106,8 @@ export async function updateFeatureDocument(
     draftAssetIds?: string[];
     // Autosaves keep uploads they removed; pruneFeatureAssets releases them.
     keepRemovedAssets?: boolean;
+    // Comment threads whose quoted text this save moved or changed.
+    commentAnchors?: CommentAnchorUpdate[];
   },
 ) {
   return result<FeatureDocument>(

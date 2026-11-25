@@ -41,6 +41,19 @@ describe("filterNotifications", () => {
       filterNotifications(notifications, "mentions").map((item) => item.id),
     ).toEqual(["read-mention"]);
   });
+
+  it("counts a mention in a document comment as a mention", () => {
+    expect(
+      filterNotifications(
+        [
+          ...notifications,
+          notification("document-mention", { type: "document_mention" }),
+          notification("document-reply", { type: "document_comment_reply" }),
+        ],
+        "mentions",
+      ).map((item) => item.id),
+    ).toEqual(["read-mention", "document-mention"]);
+  });
 });
 
 describe("groupNotifications", () => {

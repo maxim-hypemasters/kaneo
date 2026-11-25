@@ -2,10 +2,13 @@ import { and, eq, type SQLWrapper, sql } from "drizzle-orm";
 import db from "../database";
 import { userTable } from "../database/schema";
 import { projectAccessCondition } from "../project-access/project-access-condition";
+import { documentResourceProjectId } from "./document-resource";
 
 // Membership, rather than public visibility or global admin privileges, defines
 // who may be subscribed to private task activity. Use the same predicate when
 // creating, reading and delivering notifications, including historical rows.
+// Role permissions are not part of it: whoever creates a notification picks
+// recipients who may read the resource.
 export function notificationResourceAccess(
   userId: string,
   resourceId: string | null | SQLWrapper,
@@ -23,6 +26,13 @@ export function notificationResourceAccess(
     OR (${resourceType}::text = 'workspace' AND EXISTS (
       SELECT 1 FROM workspace_member AS notification_member
       WHERE notification_member.workspace_id = ${resourceId} AND notification_member.user_id = ${userId}
+    ))
+    OR (${resourceType}::text IN ('project_document', 'feature_document') AND EXISTS (
+      SELECT 1 FROM project AS notification_project
+      JOIN workspace_member AS notification_member ON notification_member.workspace_id = notification_project.workspace_id
+      WHERE notification_project.id = ${documentResourceProjectId(resourceId, resourceType)}
+        AND notification_member.user_id = ${userId}
+        AND ${projectAccessCondition(userId, sql`notification_project.id`)}
     ))
   )`;
 }

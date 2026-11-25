@@ -3575,6 +3575,138 @@
           "externalUrl"
         ]
       },
+      "DocumentCommentThread": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/DocumentComment"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "anchor": {
+                "type": "object",
+                "properties": {
+                  "quote": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "description": "The commented text as the reader sees it, without Markdown syntax. Up to 2,000 characters, kept exactly as sent."
+                  },
+                  "prefix": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "The text just before the quote, to tell repeated phrases apart. May be empty."
+                  },
+                  "suffix": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "The text just after the quote. May be empty."
+                  }
+                },
+                "required": [
+                  "quote",
+                  "prefix",
+                  "suffix"
+                ],
+                "additionalProperties": false,
+                "description": "The part of the document the thread is attached to. Document bodies carry no comment markers, so clients find this text in the current body and treat the thread as detached when it is gone."
+              },
+              "resolvedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "resolvedBy": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "resolvedByName": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "replies": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/DocumentComment"
+                },
+                "description": "Replies, oldest first. Replies cannot be replied to."
+              }
+            },
+            "required": [
+              "anchor",
+              "resolvedAt",
+              "resolvedBy",
+              "resolvedByName",
+              "replies"
+            ]
+          }
+        ]
+      },
+      "DocumentComment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The thread's root comment for a reply; null for the root itself."
+          },
+          "userId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The author. Null once their account is deleted."
+          },
+          "userName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "userImage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "editedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When the author last changed the text. Null if never; resolving, replying and document saves leave it alone."
+          }
+        },
+        "required": [
+          "id",
+          "parentId",
+          "userId",
+          "userName",
+          "userImage",
+          "content",
+          "createdAt",
+          "editedAt"
+        ]
+      },
       "ProjectDocumentTree": {
         "type": "object",
         "properties": {
@@ -5171,10 +5303,10 @@
           },
           "type": {
             "type": "string",
-            "description": "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason), time_off_requested, time_off_approved, time_off_declined, time_off_member_away, time_off_holiday_calendar_requested, time_off_holiday_calendar_approved, time_off_holiday_calendar_declined."
+            "description": "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason), time_off_requested, time_off_approved, time_off_declined, time_off_member_away, time_off_holiday_calendar_requested, time_off_holiday_calendar_approved, time_off_holiday_calendar_declined, document_mention (mentioned in a comment on a project page or Feature document), document_comment_reply (a reply in a document comment thread you started or replied in)."
           },
           "eventData": {
-            "description": "Type-specific payload, e.g. { taskTitle, oldStatus, newStatus, projectId, workspaceId }. Time off notifications carry ids, names, dates and the working-day count, never the time off type or note. Holiday calendar request notifications carry ids and names only, never the country or region."
+            "description": "Type-specific payload, e.g. { taskTitle, oldStatus, newStatus, projectId, workspaceId }. Time off notifications carry ids, names, dates and the working-day count, never the time off type or note. Holiday calendar request notifications carry ids and names only, never the country or region. Document comment notifications carry { documentKind (page or feature), documentId, documentTitle, featureId, threadId, commentId, actorId, actorName, commentPreview, quote, projectId, workspaceId }."
           },
           "isRead": {
             "type": [
@@ -5187,14 +5319,14 @@
               "string",
               "null"
             ],
-            "description": "The id of the task or workspace the notification points at."
+            "description": "The id of the task, workspace, project page or Feature document the notification points at."
           },
           "resourceType": {
             "type": [
               "string",
               "null"
             ],
-            "description": "`task` or `workspace`."
+            "description": "`task`, `workspace`, `project_document` or `feature_document`."
           },
           "createdAt": {
             "type": "string",
@@ -5314,7 +5446,8 @@
             "type": "boolean"
           },
           "taskCommentEnabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether comments and mentions notify me: comments on my tasks, mentions, and replies and mentions in comment threads on pages and Feature documents."
           },
           "taskStatusChangeEnabled": {
             "type": "boolean"
@@ -26758,6 +26891,43 @@
                   "keepRemovedAssets": {
                     "type": "boolean",
                     "description": "Keep uploads this save removes from the body instead of deleting them right away, so autosaves can survive cut and paste or undo. Release them later with POST /feature/{id}/assets/prune; uploads that are never pruned are deleted with the Feature."
+                  },
+                  "commentAnchors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "quote": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2000,
+                          "description": "The commented text as the reader sees it, without Markdown syntax. Up to 2,000 characters, kept exactly as sent."
+                        },
+                        "prefix": {
+                          "type": "string",
+                          "maxLength": 200,
+                          "description": "The text just before the quote, to tell repeated phrases apart. May be empty."
+                        },
+                        "suffix": {
+                          "type": "string",
+                          "maxLength": 200,
+                          "description": "The text just after the quote. May be empty."
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "quote",
+                        "prefix",
+                        "suffix",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 200,
+                    "description": "New anchors for comment threads whose quoted text this save moved or changed, by thread id. Only this document's threads are updated; ids of replies, other documents or deleted threads are skipped and the save still succeeds. Comment text and editedAt are untouched. Nothing is applied when the save is refused."
                   }
                 },
                 "required": [
@@ -27585,6 +27755,795 @@
         }
       }
     },
+    "/feature/{id}/documents/{documentId}/comments": {
+      "get": {
+        "operationId": "listFeatureDocumentComments",
+        "tags": [
+          "Features"
+        ],
+        "summary": "List comments on a Feature document",
+        "description": "Returns every comment thread on the Feature document, open and resolved, oldest first. A thread is a root comment, the text it is attached to (anchor) and its replies in order. The anchor is the commented text as the reader sees it plus a little of the text on each side; the body itself carries no comment markers, so clients find the anchor in the current text and show the thread as detached when it is gone. Needs feature:read.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comment threads, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentCommentThread"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "The read took too long; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createFeatureDocumentComment",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Comment on part of a Feature document",
+        "description": "Starts a thread on a part of the Feature document. anchor.quote is the selected text as rendered; anchor.prefix and anchor.suffix are the text just before and after it. The anchor is stored as sent. The body and its revision do not change, so commenting never conflicts with someone's unsaved edits. Returns the new thread. Needs feature:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000,
+                    "description": "The comment as Markdown, up to 10,000 characters. It may mention people with kaneo-mention tags. Comments take no uploads."
+                  },
+                  "anchor": {
+                    "type": "object",
+                    "properties": {
+                      "quote": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2000,
+                        "description": "The commented text as the reader sees it, without Markdown syntax. Up to 2,000 characters, kept exactly as sent."
+                      },
+                      "prefix": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "The text just before the quote, to tell repeated phrases apart. May be empty."
+                      },
+                      "suffix": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "The text just after the quote. May be empty."
+                      }
+                    },
+                    "required": [
+                      "quote",
+                      "prefix",
+                      "suffix"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "content",
+                  "anchor"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New thread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCommentThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/documents/{documentId}/comments/{commentId}/replies": {
+      "post": {
+        "operationId": "replyToFeatureDocumentComment",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Reply to a comment thread on a Feature document",
+        "description": "Adds a reply to a thread. commentId must be the thread's root comment on this Feature document: replies cannot be replied to, and a reply id or a comment of another document returns 404. Replying to a resolved thread reopens it. Returns the whole thread. Needs feature:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000,
+                    "description": "The comment as Markdown, up to 10,000 characters. It may mention people with kaneo-mention tags. Comments take no uploads."
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread with the new reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCommentThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/documents/{documentId}/comments/{commentId}": {
+      "put": {
+        "operationId": "updateFeatureDocumentComment",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Edit a comment on a Feature document",
+        "description": "Changes the text of a root comment or a reply and sets its editedAt. Only the author may edit; anyone else gets 403. The anchor and resolution stay as they are. Returns the whole thread. Needs feature:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000,
+                    "description": "The comment as Markdown, up to 10,000 characters. It may mention people with kaneo-mention tags. Comments take no uploads."
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread with the edited comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCommentThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteFeatureDocumentComment",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Delete a comment on a Feature document",
+        "description": "Only the author may delete; anyone else gets 403. Deleting a thread's root comment deletes the whole thread, including replies written by other people; deletedCount counts every comment removed. Needs feature:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deletedCount": {
+                      "type": "integer",
+                      "description": "Comments deleted: the comment itself plus, for a thread's root, its replies."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "parentId",
+                    "deletedCount"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/feature/{id}/documents/{documentId}/comments/{commentId}/resolution": {
+      "put": {
+        "operationId": "setFeatureDocumentCommentResolution",
+        "tags": [
+          "Features"
+        ],
+        "summary": "Resolve or reopen a comment thread on a Feature document",
+        "description": "Resolves the thread or reopens it. Anyone who may edit the Feature document can do either, not only the author. commentId must be the thread's root comment; a reply id returns 404. Asking for the state the thread already has changes nothing. Returns the whole thread. Needs feature:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "documentId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resolved": {
+                    "type": "boolean",
+                    "description": "true resolves the thread, false reopens it."
+                  }
+                },
+                "required": [
+                  "resolved"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread in its new state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCommentThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
     "/project-document/project/{projectId}": {
       "get": {
         "operationId": "listProjectDocuments",
@@ -28241,6 +29200,43 @@
                   "keepRemovedAssets": {
                     "type": "boolean",
                     "description": "Keep uploads this save removes from the body instead of deleting them right away, so autosaves can survive cut and paste or undo. Release them later with POST /project-document/{id}/assets/prune; uploads that are never pruned are deleted with the page."
+                  },
+                  "commentAnchors": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "quote": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2000,
+                          "description": "The commented text as the reader sees it, without Markdown syntax. Up to 2,000 characters, kept exactly as sent."
+                        },
+                        "prefix": {
+                          "type": "string",
+                          "maxLength": 200,
+                          "description": "The text just before the quote, to tell repeated phrases apart. May be empty."
+                        },
+                        "suffix": {
+                          "type": "string",
+                          "maxLength": 200,
+                          "description": "The text just after the quote. May be empty."
+                        },
+                        "id": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "quote",
+                        "prefix",
+                        "suffix",
+                        "id"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "maxItems": 200,
+                    "description": "New anchors for comment threads whose quoted text this save moved or changed, by thread id. Only this document's threads are updated; ids of replies, other documents or deleted threads are skipped and the save still succeeds. Comment text and editedAt are untouched. Nothing is applied when the save is refused."
                   }
                 },
                 "required": [
@@ -28681,6 +29677,741 @@
           },
           "409": {
             "description": "Content changed; refresh and retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-document/{id}/comments": {
+      "get": {
+        "operationId": "listProjectDocumentComments",
+        "tags": [
+          "Project documents"
+        ],
+        "summary": "List comments on a project page",
+        "description": "Returns every comment thread on the project page, open and resolved, oldest first. A thread is a root comment, the text it is attached to (anchor) and its replies in order. The anchor is the commented text as the reader sees it plus a little of the text on each side; the body itself carries no comment markers, so clients find the anchor in the current text and show the thread as detached when it is gone. Needs document:read.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comment threads, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentCommentThread"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          },
+          "503": {
+            "description": "The read took too long; retry later",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProjectDocumentComment",
+        "tags": [
+          "Project documents"
+        ],
+        "summary": "Comment on part of a project page",
+        "description": "Starts a thread on a part of the project page. anchor.quote is the selected text as rendered; anchor.prefix and anchor.suffix are the text just before and after it. The anchor is stored as sent. The body and its revision do not change, so commenting never conflicts with someone's unsaved edits. Returns the new thread. Needs document:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000,
+                    "description": "The comment as Markdown, up to 10,000 characters. It may mention people with kaneo-mention tags. Comments take no uploads."
+                  },
+                  "anchor": {
+                    "type": "object",
+                    "properties": {
+                      "quote": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 2000,
+                        "description": "The commented text as the reader sees it, without Markdown syntax. Up to 2,000 characters, kept exactly as sent."
+                      },
+                      "prefix": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "The text just before the quote, to tell repeated phrases apart. May be empty."
+                      },
+                      "suffix": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "description": "The text just after the quote. May be empty."
+                      }
+                    },
+                    "required": [
+                      "quote",
+                      "prefix",
+                      "suffix"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "content",
+                  "anchor"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New thread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCommentThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-document/{id}/comments/{commentId}/replies": {
+      "post": {
+        "operationId": "replyToProjectDocumentComment",
+        "tags": [
+          "Project documents"
+        ],
+        "summary": "Reply to a comment thread on a project page",
+        "description": "Adds a reply to a thread. commentId must be the thread's root comment on this project page: replies cannot be replied to, and a reply id or a comment of another document returns 404. Replying to a resolved thread reopens it. Returns the whole thread. Needs document:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000,
+                    "description": "The comment as Markdown, up to 10,000 characters. It may mention people with kaneo-mention tags. Comments take no uploads."
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread with the new reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCommentThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-document/{id}/comments/{commentId}": {
+      "put": {
+        "operationId": "updateProjectDocumentComment",
+        "tags": [
+          "Project documents"
+        ],
+        "summary": "Edit a comment on a project page",
+        "description": "Changes the text of a root comment or a reply and sets its editedAt. Only the author may edit; anyone else gets 403. The anchor and resolution stay as they are. Returns the whole thread. Needs document:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000,
+                    "description": "The comment as Markdown, up to 10,000 characters. It may mention people with kaneo-mention tags. Comments take no uploads."
+                  }
+                },
+                "required": [
+                  "content"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread with the edited comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCommentThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteProjectDocumentComment",
+        "tags": [
+          "Project documents"
+        ],
+        "summary": "Delete a comment on a project page",
+        "description": "Only the author may delete; anyone else gets 403. Deleting a thread's root comment deletes the whole thread, including replies written by other people; deletedCount counts every comment removed. Needs document:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "parentId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "deletedCount": {
+                      "type": "integer",
+                      "description": "Comments deleted: the comment itself plus, for a thread's root, its replies."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "parentId",
+                    "deletedCount"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/project-document/{id}/comments/{commentId}/resolution": {
+      "put": {
+        "operationId": "setProjectDocumentCommentResolution",
+        "tags": [
+          "Project documents"
+        ],
+        "summary": "Resolve or reopen a comment thread on a project page",
+        "description": "Resolves the thread or reopens it. Anyone who may edit the project page can do either, not only the author. commentId must be the thread's root comment; a reply id returns 404. Asking for the state the thread already has changes nothing. Returns the whole thread. Needs document:update.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "commentId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resolved": {
+                    "type": "boolean",
+                    "description": "true resolves the thread, false reopens it."
+                  }
+                },
+                "required": [
+                  "resolved"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread in its new state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentCommentThread"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access, missing permission, or not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document or comment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Changed at the same time as another edit; retry",
             "content": {
               "application/json": {
                 "schema": {
@@ -33372,7 +35103,7 @@
           "Notifications"
         ],
         "summary": "List notifications",
-        "description": "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit. A scoped API key sees time off notifications only with time_off:read, and new time off and holiday calendar requests only with time_off:approve as well.",
+        "description": "Get up to 50 notifications for the current user, read and unread. Optionally limit them to one workspace before applying the limit. A scoped API key sees time off notifications only with time_off:read, and new time off and holiday calendar requests only with time_off:approve as well; it sees document comment notifications only with both document:read and feature:read.",
         "parameters": [
           {
             "schema": {
@@ -33454,11 +35185,11 @@
                   },
                   "relatedEntityId": {
                     "type": "string",
-                    "description": "Stored as resourceId: the task or workspace being pointed at."
+                    "description": "Stored as resourceId: the task, workspace, project page or Feature document being pointed at."
                   },
                   "relatedEntityType": {
                     "type": "string",
-                    "description": "Stored as resourceType: `task` or `workspace`."
+                    "description": "Stored as resourceType: `task`, `workspace`, `project_document` or `feature_document`."
                   }
                 },
                 "required": [
@@ -33930,7 +35661,8 @@
                     "type": "boolean"
                   },
                   "taskCommentEnabled": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "description": "Notify me about comments on my tasks, mentions, and replies and mentions in comment threads on pages and Feature documents."
                   },
                   "taskStatusChangeEnabled": {
                     "type": "boolean"

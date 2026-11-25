@@ -1,13 +1,11 @@
-import { requireEntitlement } from "../billing/require-entitlement-middleware";
 import {
   apiRouter,
   createRoute,
   errorResponse,
   jsonResponse,
 } from "../openapi";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
 import { pruneFeatureAssets } from "./assets";
+import documentCommentRoutes from "./document-comment-routes";
 import {
   createFeatureDocument,
   deleteFeatureDocument,
@@ -16,6 +14,7 @@ import {
   updateFeatureDocument,
 } from "./documents";
 import { readFeatureIssues } from "./issues";
+import { read, removeDocument, write } from "./route-middleware";
 import {
   activityPageSchema,
   createDocumentBody,
@@ -43,20 +42,6 @@ import {
   readFeatureActivity,
 } from "./updates";
 
-const read = [
-  workspaceAccess.fromTask("id"),
-  requireWorkspacePermission({ feature: ["read"] }),
-] as const;
-const write = [
-  workspaceAccess.fromTask("id"),
-  requireWorkspacePermission({ feature: ["update"] }),
-  requireEntitlement,
-] as const;
-const removeDocument = [
-  workspaceAccess.fromTask("id"),
-  requireWorkspacePermission({ feature: ["delete"] }),
-  requireEntitlement,
-] as const;
 const errors = {
   400: errorResponse("Invalid Feature content"),
   403: errorResponse("No access or missing permission"),
@@ -388,5 +373,6 @@ const feature = apiRouter()
     }),
     async (c) =>
       c.json(await readFeatureIssues(scope(c), c.req.valid("query")), 200),
-  );
+  )
+  .route("/", documentCommentRoutes);
 export default feature;

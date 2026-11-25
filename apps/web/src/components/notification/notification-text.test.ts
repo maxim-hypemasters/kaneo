@@ -26,6 +26,19 @@ const t = (key: string, options?: Record<string, unknown>) => {
     return `New comment on ${options?.taskTitle}: ${options?.commentPreview}`;
   }
   if (key === "common:people.someone") return "Someone";
+  if (key === "tasks:projectHome.documents.untitled") return "Untitled";
+  if (key === "notifications:events.document_mention.title") {
+    return `${options?.actorName} mentioned you in a comment`;
+  }
+  if (key === "notifications:events.document_mention.contentWithPreview") {
+    return `${options?.documentTitle}: ${options?.commentPreview}`;
+  }
+  if (key === "notifications:events.document_comment_reply.title") {
+    return `${options?.actorName} replied to a comment`;
+  }
+  if (key === "notifications:events.document_comment_reply.content") {
+    return `In ${options?.documentTitle}`;
+  }
   if (key === "notifications:events.time_off_requested.title") {
     return `${options?.requesterName} requested time off`;
   }
@@ -103,6 +116,32 @@ describe("notification display content", () => {
     expect(getNotificationContent(item, t)).toBe(
       "New comment on Launch website: Ready for review",
     );
+  });
+
+  it("renders a mention in a document comment with its preview", () => {
+    const item = notification("document_mention", {
+      documentTitle: "Release plan",
+      actorName: "Mina",
+      commentPreview: "@Ana can you check?",
+    });
+
+    expect(getNotificationTitle(item, t)).toBe(
+      "Mina mentioned you in a comment",
+    );
+    expect(getNotificationContent(item, t)).toBe(
+      "Release plan: @Ana can you check?",
+    );
+  });
+
+  it("falls back for a deleted author, an untitled document and no preview", () => {
+    const item = notification("document_comment_reply", {
+      documentTitle: "",
+      actorName: null,
+      commentPreview: null,
+    });
+
+    expect(getNotificationTitle(item, t)).toBe("Someone replied to a comment");
+    expect(getNotificationContent(item, t)).toBe("In Untitled");
   });
 
   describe("time off", () => {

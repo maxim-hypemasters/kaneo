@@ -1,6 +1,8 @@
 import { eq } from "drizzle-orm";
 import db from "../database";
 import { projectDocumentTable } from "../database/schema";
+import { applyCommentAnchors } from "../document-comment/apply-comment-anchors";
+import { publishDocumentCommentEvent } from "../document-comment/publish-document-comment-event";
 import { ApiError } from "../errors/api-error";
 import { lockAuthorizedProject } from "../milestone/access-scope";
 import type { z } from "../openapi";
@@ -17,7 +19,7 @@ export async function updateProjectDocument(
   id: string,
   body: z.infer<typeof updateProjectDocumentBody>,
 ) {
-  const { row, oldContent } = await retryTransaction(() =>
+  const { row, oldContent, anchorsMoved } = await retryTransaction(() =>
     db.transaction(async (tx) => {
       await lockAuthorizedProject(tx, scope.projectId, scope.workspaceId);
       const before = await findProjectDocument(tx, scope, id, true);
@@ -45,10 +47,20 @@ export async function updateProjectDocument(
         })
         .where(eq(projectDocumentTable.id, id))
         .returning();
-      return { row: row!, oldContent: before.body };
+      const anchorsMoved = await applyCommentAnchors(
+        tx,
+        { kind: "page", documentId: id },
+        body.commentAnchors,
+      );
+      return { row: row!, oldContent: before.body, anchorsMoved };
     }),
   );
   await publishProjectDocumentEvent(scope, "project.document.updated", id);
+  if (anchorsMoved)
+    await publishDocumentCommentEvent(
+      { ...scope, kind: "page", documentId: id },
+      "anchors",
+    );
   if (!body.keepRemovedAssets)
     void deleteOrphanedAssets(oldContent, row.body, { documentId: id }).catch(
       () => {},

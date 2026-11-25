@@ -12,7 +12,9 @@ export function filterNotifications(
   }
   if (filter === "mentions") {
     return notifications.filter(
-      (notification) => notification.type === "task_mention",
+      (notification) =>
+        notification.type === "task_mention" ||
+        notification.type === "document_mention",
     );
   }
   return notifications;

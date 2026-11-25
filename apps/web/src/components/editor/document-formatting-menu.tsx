@@ -5,6 +5,7 @@ import {
   Code,
   Italic,
   Link2,
+  MessageSquarePlus,
   Strikethrough,
   Underline,
 } from "lucide-react";
@@ -17,9 +18,11 @@ import { TableToolbar } from "./table-toolbar";
 export function DocumentFormattingMenu({
   editor,
   onLink,
+  onComment,
 }: {
   editor: Editor;
   onLink: () => void;
+  onComment?: () => void;
 }) {
   const { t } = useTranslation();
   const actions = [
@@ -90,6 +93,23 @@ export function DocumentFormattingMenu({
             <action.icon className="size-3.5" />
           </Button>
         ))}
+        {onComment && (
+          <>
+            <span className="kaneo-tiptap-bubble-separator" />
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              aria-label={t("common:documentComments.add")}
+              title={t("common:documentComments.add")}
+              className="kaneo-tiptap-bubble-btn"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={onComment}
+            >
+              <MessageSquarePlus className="size-3.5" />
+            </Button>
+          </>
+        )}
       </BubbleMenu>
       <BubbleMenu
         editor={editor}

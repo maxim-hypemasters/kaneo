@@ -16,7 +16,10 @@ export const updatePreferencesBody = z.object({
   webhookUrl: z.string().nullable().optional(),
   webhookSecret: z.string().nullable().optional(),
   taskAssignmentEnabled: z.boolean().optional(),
-  taskCommentEnabled: z.boolean().optional(),
+  taskCommentEnabled: z.boolean().optional().openapi({
+    description:
+      "Notify me about comments on my tasks, mentions, and replies and mentions in comment threads on pages and Feature documents.",
+  }),
   taskStatusChangeEnabled: z.boolean().optional(),
   dueDateReminderEnabled: z.boolean().optional(),
   teamTimeOffEnabled: z.boolean().optional().openapi({

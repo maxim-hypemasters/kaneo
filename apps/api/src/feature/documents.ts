@@ -2,6 +2,8 @@ import { and, count, desc, eq, ilike } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../database";
 import { featureDocumentTable, userTable } from "../database/schema";
+import { applyCommentAnchors } from "../document-comment/apply-comment-anchors";
+import { publishDocumentCommentEvent } from "../document-comment/publish-document-comment-event";
 import { ApiError } from "../errors/api-error";
 import { escapeLikePattern } from "../search/like-pattern";
 import { deleteOrphanedAssets } from "../storage/cleanup-assets";
@@ -114,7 +116,7 @@ export async function updateFeatureDocument(
   id: string,
   body: z.infer<typeof updateDocumentBody>,
 ) {
-  const { row, oldContent } = await retryTransaction(() =>
+  const { row, oldContent, anchorsMoved } = await retryTransaction(() =>
     db.transaction(async (tx) => {
       await featureOwner(tx, scope, true);
       const [before] = await tx
@@ -156,10 +158,20 @@ export async function updateFeatureDocument(
         })
         .where(eq(featureDocumentTable.id, id))
         .returning();
-      return { row: row!, oldContent: before.body };
+      const anchorsMoved = await applyCommentAnchors(
+        tx,
+        { kind: "feature", documentId: id },
+        body.commentAnchors,
+      );
+      return { row: row!, oldContent: before.body, anchorsMoved };
     }),
   );
   await publishFeatureContent(scope, "feature.document.updated", id);
+  if (anchorsMoved)
+    await publishDocumentCommentEvent(
+      { ...scope, kind: "feature", documentId: id },
+      "anchors",
+    );
   if (!body.keepRemovedAssets)
     void deleteOrphanedAssets(oldContent, row.body, {
       taskId: scope.featureId,

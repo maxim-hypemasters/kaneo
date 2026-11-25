@@ -609,7 +609,7 @@ export function broadcastToProject(
     projectBroadcastQueues.set(projectId, new Map());
   }
 
-  const messageKey = `${message.type === "TASKS_REORDERED" ? `${message.type}:${crypto.randomUUID()}` : message.type}:${message.taskId ?? ""}:${message.sourceTaskId ?? ""}:${message.targetTaskId ?? ""}:${message.featureId ?? ""}`;
+  const messageKey = `${message.type === "TASKS_REORDERED" ? `${message.type}:${crypto.randomUUID()}` : message.type}:${message.taskId ?? ""}:${message.sourceTaskId ?? ""}:${message.targetTaskId ?? ""}:${message.featureId ?? ""}:${message.documentId ?? ""}`;
   const previous = projectBroadcastQueues.get(projectId)?.get(messageKey);
   projectBroadcastQueues.get(projectId)?.set(messageKey, {
     message: {
@@ -918,6 +918,31 @@ for (const eventName of [
       );
   });
 }
+
+// Its own message, so a comment never makes clients refetch a document body.
+// Only ids are forwarded: comment text is read through the API, which checks
+// the reader's permissions.
+subscribeToEvent<{
+  projectId: string;
+  documentId: string;
+  featureId?: string;
+  initiatorId?: string;
+}>(
+  "document.comment.changed",
+  async ({ projectId, documentId, featureId, initiatorId }) => {
+    if (projectId)
+      broadcastToProject(
+        projectId,
+        {
+          type: "DOCUMENT_COMMENTS_UPDATED",
+          projectId,
+          documentId,
+          ...(featureId ? { featureId } : {}),
+        },
+        initiatorId,
+      );
+  },
+);
 
 for (const eventName of taskUpdateEvents) {
   subscribeToEvent<TaskEvent>(eventName, async (data) => {

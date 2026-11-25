@@ -25,6 +25,7 @@ Kaneo sends a JSON POST with these fields:
 | `workspace` | Workspace ID and name |
 | `project` | Project ID and name, or `null` |
 | `task` | Task ID, title, and URL, or `null` |
+| `document` | For a document comment notification: document ID, `kind` (`page` or `feature`), title, and a URL that opens the comment thread. Otherwise `null` |
 | `user` | Your user ID, name, and email |
 
 A notification needs a resolvable workspace context for external delivery. It must also pass the active workspace rule and project selection.
@@ -46,6 +47,19 @@ A notification needs a resolvable workspace context for external delivery. It mu
 Dates are inclusive `YYYY-MM-DD` days, and `days` counts the working days: Monday to Friday, except the person's [public holidays](/core/functional/time-off#public-holidays). The event data never includes the type of time off, its note, or a holiday calendar's country or region. `resourceType` is `workspace` and `resourceId` is the workspace ID; `project` and `task` are `null`.
 
 Time-off notifications ignore the project selection and follow only the workspace rule, so a rule set to selected projects still forwards them. **Team time off** in your event preferences turns off `time_off_member_away`; the other six can't be turned off.
+
+### Document comment notifications
+
+[Comments on documents](/core/functional/plan-and-execute-tasks#comment-on-a-document) send two notification types:
+
+| `notification.type` | Sent to |
+| --- | --- |
+| `document_mention` | People mentioned in a comment on a project page or Feature document |
+| `document_comment_reply` | The person who started the thread and those who replied in it before, unless the reply mentions them |
+
+The author of the comment is never notified, and only members who can view the document are. `eventData` carries `workspaceId`, `projectId`, `documentKind`, `documentId`, `documentTitle`, `featureId` (for a Feature document), `threadId`, `commentId`, `actorId`, `actorName`, `commentPreview` (plain text, up to 240 characters), and `quote` (the commented text, up to 240 characters). `resourceType` is `project_document` or `feature_document` and `resourceId` is the document ID; `task` is `null`.
+
+Both types follow the project selection of your workspace rule, and **Comments and mentions** in your event preferences turns them off.
 
 ## Verify requests
 

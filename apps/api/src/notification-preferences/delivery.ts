@@ -11,13 +11,16 @@ import {
   userTable,
   workspaceTable,
 } from "../database/schema";
+import { isDocumentResourceType } from "../notification/document-resource";
 import { canReceiveResourceNotification } from "../notification/resource-access";
 import { isTimeOffNotificationType } from "../time-off/time-off-notification-types";
 import {
   safeOutboundError,
   sendOutboundRequest,
 } from "../utils/outbound-request";
+import { buildDocumentUrl } from "./build-document-url";
 import { formatDayRange } from "./format-day-range";
+import { resolveDocumentContext } from "./resolve-document-context";
 import { resolveEmailTask } from "./resolve-email-task";
 import { decryptSecret } from "./secrets";
 
@@ -29,6 +32,14 @@ type ResolvedNotificationContext = {
   taskId: string | null;
   taskTitle: string | null;
   taskUrl: string | null;
+  // The page or Feature document a comment notification points at.
+  document: {
+    id: string;
+    kind: "page" | "feature";
+    title: string;
+    featureId: string | null;
+    url: string;
+  } | null;
 };
 
 type DeliveryContent = {
@@ -235,6 +246,36 @@ function buildDeliveryContent(notification: {
           : "A new comment was added to a Kaneo task.",
       };
     }
+    // Like task comments, the body names the document but leaves the comment
+    // text out of email and push messages.
+    case "document_mention": {
+      const documentTitle = getStringValue(
+        notification.eventData,
+        "documentTitle",
+      );
+      const actorName = getStringValue(notification.eventData, "actorName");
+      return {
+        title: actorName ? `${actorName} mentioned you` : "You were mentioned",
+        body: documentTitle
+          ? `You were mentioned in a comment on ${documentTitle}.`
+          : "You were mentioned in a comment on a Kaneo document.",
+      };
+    }
+    case "document_comment_reply": {
+      const documentTitle = getStringValue(
+        notification.eventData,
+        "documentTitle",
+      );
+      const actorName = getStringValue(notification.eventData, "actorName");
+      return {
+        title: actorName
+          ? `${actorName} replied to a comment`
+          : "New reply to a comment",
+        body: documentTitle
+          ? `There is a new reply in a comment thread on ${documentTitle}.`
+          : "There is a new reply in a comment thread on a Kaneo document.",
+      };
+    }
     case "time_off_requested": {
       const requesterName = getStringValue(
         notification.eventData,
@@ -313,6 +354,7 @@ function buildDeliveryContent(notification: {
 async function resolveNotificationContext(notification: {
   resourceType: string | null;
   resourceId: string | null;
+  eventData: unknown;
 }): Promise<ResolvedNotificationContext | null> {
   if (!notification.resourceType || !notification.resourceId) {
     return null;
@@ -349,6 +391,44 @@ async function resolveNotificationContext(notification: {
       taskId: task.taskId,
       taskTitle: task.taskTitle,
       taskUrl: buildTaskUrl(task.workspaceId, task.projectId, task.taskId),
+      document: null,
+    };
+  }
+
+  if (isDocumentResourceType(notification.resourceType)) {
+    const resolved = await resolveDocumentContext(
+      notification.resourceType,
+      notification.resourceId,
+    );
+    if (!resolved) {
+      return null;
+    }
+
+    const eventData =
+      notification.eventData && typeof notification.eventData === "object"
+        ? (notification.eventData as Record<string, unknown>)
+        : null;
+    return {
+      workspaceId: resolved.workspaceId,
+      workspaceName: resolved.workspaceName,
+      projectId: resolved.projectId,
+      projectName: resolved.projectName,
+      taskId: null,
+      taskTitle: null,
+      taskUrl: null,
+      document: {
+        id: resolved.documentId,
+        kind: resolved.kind,
+        title: resolved.documentTitle,
+        featureId: resolved.featureId,
+        url: buildDocumentUrl(getClientUrl(), {
+          workspaceId: resolved.workspaceId,
+          projectId: resolved.projectId,
+          documentId: resolved.documentId,
+          featureId: resolved.featureId,
+          threadId: getStringValue(eventData, "threadId"),
+        }),
+      },
     };
   }
 
@@ -374,6 +454,7 @@ async function resolveNotificationContext(notification: {
       taskId: null,
       taskTitle: null,
       taskUrl: null,
+      document: null,
     };
   }
 
@@ -562,6 +643,7 @@ export async function deliverNotification(
 
   const actionUrl =
     context.taskUrl ??
+    context.document?.url ??
     (isTimeOffNotificationType(notification.type)
       ? buildTimeOffUrl(context.workspaceId)
       : null);
@@ -592,6 +674,14 @@ export async function deliverNotification(
           id: context.taskId,
           title: context.taskTitle,
           url: context.taskUrl,
+        }
+      : null,
+    document: context.document
+      ? {
+          id: context.document.id,
+          kind: context.document.kind,
+          title: context.document.title,
+          url: context.document.url,
         }
       : null,
     user: {

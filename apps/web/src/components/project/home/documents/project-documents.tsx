@@ -23,7 +23,12 @@ import { OpenProjectPage } from "./open-project-page";
 import { DocumentTree } from "./tree/document-tree";
 import { ancestorIds, descendantIds, type TreePage } from "./tree/page-tree";
 
-export type OpenDocument = { id: string; featureId?: string };
+export type OpenDocument = {
+  id: string;
+  featureId?: string;
+  // A comment thread to show in the document, from a link to it.
+  commentId?: string;
+};
 
 // Moving a page with the dialog puts it after its new siblings.
 const LAST = 100_000;
@@ -132,6 +137,7 @@ export function ProjectDocuments({
             projectId={projectId}
             featureId={openDocument.featureId}
             documentId={openDocument.id}
+            commentId={openDocument.commentId}
             onBack={back}
           />
         ) : (
@@ -140,6 +146,7 @@ export function ProjectDocuments({
             documentId={openDocument.id}
             subPageCount={descendantIds(pages, openDocument.id).size}
             focusTitle={createdId === openDocument.id}
+            commentId={openDocument.commentId}
             onBack={back}
           />
         ))}

@@ -7,6 +7,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatDateTime, formatRelativeTime } from "@/lib/format";
 import type { Notification } from "@/types/notification";
+import { documentCommentTarget } from "./document-comment-target";
+import { InboxDocumentComment } from "./inbox-document-comment";
 import { InboxFeature } from "./inbox-feature";
 import { InboxTask } from "./inbox-task";
 import { InboxTimeOff } from "./inbox-time-off";
@@ -28,6 +30,7 @@ export function InboxDetail({
   const taskId =
     notification.resourceType === "task" ? notification.resourceId : null;
   const content = getNotificationContent(notification, t);
+  const documentComment = documentCommentTarget(notification);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -71,6 +74,13 @@ export function InboxDetail({
               type={notification.type}
               eventData={notification.eventData}
               workspaceId={workspaceId}
+            />
+          )}
+
+          {documentComment && (
+            <InboxDocumentComment
+              key={notification.id}
+              target={documentComment}
             />
           )}
 

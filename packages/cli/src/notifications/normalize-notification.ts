@@ -84,6 +84,19 @@ function describe(
         message: preview ? `${named}: ${preview}` : named,
       };
     }
+    case "document_mention":
+    case "document_comment_reply": {
+      const who = field(data, "actorName") ?? "Someone";
+      const document = field(data, "documentTitle") ?? "a document";
+      const preview = field(data, "commentPreview");
+      return {
+        title:
+          raw.type === "document_mention"
+            ? `${who} mentioned you in a comment`
+            : `${who} replied to a comment`,
+        message: preview ? `${document}: ${preview}` : document,
+      };
+    }
     case "task_triage_new": {
       const who = field(data, "reporterName");
       return {

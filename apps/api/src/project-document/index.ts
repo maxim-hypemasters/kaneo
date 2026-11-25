@@ -1,4 +1,3 @@
-import { requireEntitlement } from "../billing/require-entitlement-middleware";
 import {
   apiRouter,
   createRoute,
@@ -15,17 +14,22 @@ import {
   stagedImageUploadBody,
 } from "../task/schema";
 import { normalizeApiServerUrl } from "../utils/openapi-spec";
-import {
-  hasWorkspacePermission,
-  requireWorkspacePermission,
-} from "../utils/require-workspace-permission";
-import { workspaceAccess } from "../utils/workspace-access-middleware";
+import { hasWorkspacePermission } from "../utils/require-workspace-permission";
+import commentRoutes from "./comment-routes";
 import { createProjectDocument } from "./create-project-document";
 import { deleteProjectDocument } from "./delete-project-document";
 import { getProjectDocument } from "./get-project-document";
 import { listProjectDocuments } from "./list-project-documents";
 import { moveProjectDocument } from "./move-project-document";
 import { pruneProjectDocumentAssets } from "./prune-project-document-assets";
+import {
+  projectCreate,
+  projectRead,
+  projectUpload,
+  read,
+  remove,
+  write,
+} from "./route-middleware";
 import {
   createProjectDocumentBody,
   deletedProjectDocumentSchema,
@@ -41,37 +45,6 @@ import {
 } from "./schema";
 import { updateProjectDocument } from "./update-project-document";
 
-// Project pages have their own `document` permissions; the Feature documents
-// listed beside them follow `feature`.
-const projectRead = [
-  workspaceAccess.fromProject("projectId"),
-  requireWorkspacePermission({ document: ["read"] }),
-] as const;
-const projectCreate = [
-  workspaceAccess.fromProject("projectId"),
-  requireWorkspacePermission({ document: ["create"] }),
-  requireEntitlement,
-] as const;
-// Uploads are staged before the save that claims them.
-const projectUpload = [
-  workspaceAccess.fromProject("projectId"),
-  requireWorkspacePermission({ document: ["update"] }),
-  requireEntitlement,
-] as const;
-const read = [
-  workspaceAccess.fromProjectDocument("id"),
-  requireWorkspacePermission({ document: ["read"] }),
-] as const;
-const write = [
-  workspaceAccess.fromProjectDocument("id"),
-  requireWorkspacePermission({ document: ["update"] }),
-  requireEntitlement,
-] as const;
-const remove = [
-  workspaceAccess.fromProjectDocument("id"),
-  requireWorkspacePermission({ document: ["delete"] }),
-  requireEntitlement,
-] as const;
 const errors = {
   400: errorResponse("Invalid page"),
   402: errorResponse("Workspace plan expired"),
@@ -328,6 +301,7 @@ const projectDocument = apiRouter()
         ),
         200,
       ),
-  );
+  )
+  .route("/", commentRoutes);
 
 export default projectDocument;

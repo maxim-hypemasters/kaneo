@@ -19,6 +19,7 @@ import type { ResumePreview } from "@/fetchers/integration-sync/types";
 import { patchBoardTask } from "@/lib/patch-board-task";
 import { releasesKey } from "@/hooks/queries/release/use-get-releases";
 import { featureWorkspaceKey } from "@/hooks/queries/feature/use-feature-workspace";
+import { projectDocumentCommentsKey } from "@/hooks/queries/document-comment/document-comment-keys";
 import { projectDocumentsKey } from "@/hooks/queries/project-document/project-document-keys";
 import type { ProjectWithTasks } from "@/types/project";
 import {
@@ -138,6 +139,20 @@ export function useProjectWebSocket(projectId: string) {
         if (!disposed)
           void queryClient.invalidateQueries({
             queryKey: projectDocumentsKey(projectId),
+          });
+      }, RELEASES_REFRESH_DELAY_MS);
+    }
+    // Comment threads have their own key, so a new comment refetches the
+    // threads of the documents that are open and never a document's text.
+    let documentCommentsRefreshTimer: ReturnType<typeof setTimeout> | null =
+      null;
+    function refreshDocumentComments() {
+      if (documentCommentsRefreshTimer !== null) return;
+      documentCommentsRefreshTimer = setTimeout(() => {
+        documentCommentsRefreshTimer = null;
+        if (!disposed)
+          void queryClient.invalidateQueries({
+            queryKey: projectDocumentCommentsKey(projectId),
           });
       }, RELEASES_REFRESH_DELAY_MS);
     }
@@ -387,6 +402,10 @@ export function useProjectWebSocket(projectId: string) {
             { queryKey: ["release-progress", projectId] },
             { cancelRefetch: false },
           );
+          void queryClient.invalidateQueries(
+            { queryKey: projectDocumentCommentsKey(projectId) },
+            { cancelRefetch: false },
+          );
         }
         offlineSince = null;
         needsReconcile = true;
@@ -421,6 +440,10 @@ export function useProjectWebSocket(projectId: string) {
           }
           if (message.type === "PROJECT_DOCUMENTS_UPDATED") {
             refreshProjectDocuments();
+            return;
+          }
+          if (message.type === "DOCUMENT_COMMENTS_UPDATED") {
+            refreshDocumentComments();
             return;
           }
           if (message.type === "TRIAGE_MEMBERS_UPDATED") {
@@ -994,6 +1017,8 @@ export function useProjectWebSocket(projectId: string) {
         clearTimeout(featureContentRefreshTimer);
       if (projectDocumentsRefreshTimer !== null)
         clearTimeout(projectDocumentsRefreshTimer);
+      if (documentCommentsRefreshTimer !== null)
+        clearTimeout(documentCommentsRefreshTimer);
       if (retryTimeout !== null) {
         clearTimeout(retryTimeout);
       }

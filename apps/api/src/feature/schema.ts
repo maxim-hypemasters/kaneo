@@ -1,4 +1,5 @@
 import { activitySchema } from "../activity/response";
+import { commentAnchorUpdates } from "../document-comment/anchor-schema";
 import {
   nullableResponseTimestamp,
   pagingNumber,
@@ -91,6 +92,10 @@ export const updateDocumentBody = z
     keepRemovedAssets: z.boolean().optional().openapi({
       description:
         "Keep uploads this save removes from the body instead of deleting them right away, so autosaves can survive cut and paste or undo. Release them later with POST /feature/{id}/assets/prune; uploads that are never pruned are deleted with the Feature.",
+    }),
+    commentAnchors: commentAnchorUpdates.optional().openapi({
+      description:
+        "New anchors for comment threads whose quoted text this save moved or changed, by thread id. Only this document's threads are updated; ids of replies, other documents or deleted threads are skipped and the save still succeeds. Comment text and editedAt are untouched. Nothing is applied when the save is refused.",
     }),
   })
   .strict();

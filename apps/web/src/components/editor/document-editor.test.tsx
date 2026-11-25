@@ -17,8 +17,13 @@ import {
   it,
   vi,
 } from "vite-plus/test";
+import {
+  commentHighlightsKey,
+  setTrackedThreads,
+} from "./comments/comment-highlights";
 import { DocumentEditor } from "./document-editor";
 import type {
+  DocumentEditorComments,
   DocumentEditorHandle,
   UploadedDocumentAsset,
 } from "./document-editor-types";
@@ -618,6 +623,127 @@ describe("DocumentEditor", () => {
       act(() => ref.current?.focus("end"));
       await new Promise((resolve) => requestAnimationFrame(resolve));
       expect(document.activeElement).not.toBe(editor.view.dom);
+    });
+  });
+
+  describe("comments", () => {
+    const hasHighlights = (editor: Editor) =>
+      editor.extensionManager.extensions.some(
+        (extension) => extension.name === "commentHighlights",
+      );
+    const selectText = (editor: Editor) =>
+      act(() => {
+        editor.chain().focus().setTextSelection({ from: 1, to: 9 }).run();
+      });
+    const commentButton = () =>
+      screen.queryByRole("button", { name: "common:documentComments.add" });
+
+    it("adds nothing to an editor that was not asked for comments", async () => {
+      render(
+        <DocumentEditor
+          ariaLabel="Document"
+          value="Original text"
+          onChange={vi.fn()}
+        />,
+      );
+      const editor = await getEditor();
+      expect(hasHighlights(editor)).toBe(false);
+      selectText(editor);
+      expect(
+        await screen.findByRole("button", {
+          name: "common:documentEditor.link",
+        }),
+      ).toBeVisible();
+      expect(commentButton()).toBeNull();
+      expect(
+        document.querySelector(".kaneo-tiptap-bubble-separator"),
+      ).toBeNull();
+    });
+
+    it("hands over the editor and offers Comment on a selection", async () => {
+      const comments: DocumentEditorComments = {
+        onEditor: vi.fn(),
+        onThreadClick: vi.fn(),
+        onAdd: vi.fn(),
+      };
+      const changed = vi.fn();
+      const view = render(
+        <DocumentEditor
+          ariaLabel="Document"
+          value="Original text"
+          onChange={changed}
+          comments={comments}
+        />,
+      );
+      const editor = await getEditor();
+      expect(hasHighlights(editor)).toBe(true);
+      await waitFor(() =>
+        expect(comments.onEditor).toHaveBeenLastCalledWith(editor),
+      );
+
+      selectText(editor);
+      const button = await screen.findByRole("button", {
+        name: "common:documentComments.add",
+      });
+      expect(button.previousElementSibling).toHaveClass(
+        "kaneo-tiptap-bubble-separator",
+      );
+      // The selection must survive the press, so the button takes no focus.
+      expect(fireEvent.mouseDown(button)).toBe(false);
+      fireEvent.click(button);
+      expect(comments.onAdd).toHaveBeenCalledOnce();
+
+      act(() => {
+        setTrackedThreads(editor, [
+          {
+            id: "thread-1",
+            anchor: { quote: "Original text", prefix: "", suffix: "" },
+            visible: true,
+          },
+        ]);
+      });
+      expect(
+        editor.view.dom.querySelector("[data-comment-thread='thread-1']"),
+      ).toHaveTextContent("Original text");
+      expect(changed).not.toHaveBeenCalled();
+
+      view.unmount();
+      expect(comments.onEditor).toHaveBeenLastCalledWith(null);
+    });
+
+    it("follows the latest callbacks and hides Comment from people who cannot comment", async () => {
+      const onEditor = vi.fn();
+      const first = { onEditor, onThreadClick: vi.fn(), onAdd: vi.fn() };
+      const second = { onEditor, onThreadClick: vi.fn() };
+      const props = {
+        ariaLabel: "Document",
+        value: "Original text",
+        onChange: vi.fn(),
+      };
+      const view = render(<DocumentEditor {...props} comments={first} />);
+      const editor = await getEditor();
+      view.rerender(<DocumentEditor {...props} comments={second} />);
+      expect(onEditor).toHaveBeenCalledExactlyOnceWith(editor);
+
+      selectText(editor);
+      await screen.findByRole("button", { name: "common:documentEditor.link" });
+      expect(commentButton()).toBeNull();
+
+      act(() => {
+        setTrackedThreads(editor, [
+          {
+            id: "thread-1",
+            anchor: { quote: "Original", prefix: "", suffix: "text" },
+            visible: true,
+          },
+        ]);
+      });
+      const plugin = commentHighlightsKey.get(editor.state);
+      plugin?.props.handleClick?.call(plugin, editor.view, 3, {
+        target: editor.view.dom.querySelector("[data-comment-thread]"),
+      } as unknown as MouseEvent);
+      expect(second.onThreadClick).toHaveBeenCalledExactlyOnceWith("thread-1");
+      expect(first.onThreadClick).not.toHaveBeenCalled();
     });
   });
 

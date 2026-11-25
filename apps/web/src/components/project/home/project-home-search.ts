@@ -6,6 +6,8 @@ export type ProjectHomeSearch = {
   // its Feature.
   documentId?: string;
   documentFeatureId?: string;
+  // A comment thread to show in the open document.
+  commentId?: string;
 };
 
 const contentId = (value: unknown) =>
@@ -22,10 +24,12 @@ export function validateProjectHomeSearch(
   const documentFeatureId = documentId
     ? contentId(search.documentFeatureId)
     : undefined;
+  const commentId = documentId ? contentId(search.commentId) : undefined;
   return {
     tab: "documents",
     ...(documentId ? { documentId } : {}),
     ...(documentFeatureId ? { documentFeatureId } : {}),
+    ...(commentId ? { commentId } : {}),
   };
 }
 

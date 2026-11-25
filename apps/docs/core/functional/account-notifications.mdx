@@ -11,6 +11,8 @@ Your inbox in Kaneo keeps working whether or not you enable external delivery. F
 
 Use the event preferences at the top of the page to control task assignments, comments and mentions, status changes, due-date reminders, and team time off. These categories are enabled by default. Turning one off stops new notifications in that category, including in the Kaneo inbox.
 
+**Comments and mentions** also covers [comments on documents](/core/functional/plan-and-execute-tasks#comment-on-a-document): a mention in a comment on a project page or Feature document, and a reply in a comment thread you started or replied in.
+
 [Time off](/core/functional/time-off) creates seven notifications: a request waiting for your approval, your time off approved, your time off declined, a teammate's time off approved, a [holiday calendar change](/core/functional/time-off#holiday-calendar-changes) waiting for your approval, and your holiday calendar change approved or declined. **Team time off** controls only a teammate's time off. The other six always notify you.
 
 Due-date reminders default to one day before the deadline. Choose a whole number of hours (1–720) or days (1–30), then save. External delivery still needs a channel and workspace rule below.
@@ -45,6 +47,8 @@ Below the channel settings, add or edit a workspace delivery rule:
 For example, you can receive email for the website launch and use ntfy for another workspace. Configuring a channel alone is not enough; its workspace rule must also allow delivery.
 
 Time-off notifications belong to the workspace rather than a project. They ignore the project selection and follow only the workspace rule, so a rule set to **Selected projects** still forwards them. Email, ntfy, and Gotify messages for them link to the workspace's **Time off** page.
+
+Document comment notifications belong to the document's project and follow the project selection. Their messages link to the document with the comment thread open.
 
 ## Pause or stop delivery
 

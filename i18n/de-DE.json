@@ -254,6 +254,47 @@
 			"keepEditing": "Weiter bearbeiten",
 			"autoDetect": "Automatisch erkennen",
 			"slashHint": "Type / for commands…"
+		},
+		"documentComments": {
+			"actions": "Actions for {{name}}’s comment",
+			"add": "Comment",
+			"conflictBlocked": "Choose which version of the document to keep before commenting.",
+			"deleteCommentDescription": "The comment will be deleted for everyone.",
+			"deleteCommentTitle": "Delete this comment?",
+			"deleteThreadDescription": "The comment and all of its replies will be deleted.",
+			"deleteThreadTitle": "Delete this thread?",
+			"detached": "The commented text is no longer in the document",
+			"draftLost": "The selected text changed. Select it again to comment.",
+			"edit": "Edit",
+			"edited": "edited",
+			"emptyOpen": "No open comments",
+			"emptyOpenHint": "Select text in the document and choose Comment.",
+			"emptyResolved": "No resolved comments",
+			"filterOpen": "Open",
+			"filterResolved": "Resolved",
+			"loadFailed": "Comments couldn’t be loaded.",
+			"loading": "Loading comments…",
+			"newThread": "New comment",
+			"notFound": "That comment is no longer available.",
+			"placeholder": "Add a comment…",
+			"postFailed": "The comment couldn’t be posted. Try again.",
+			"reopen": "Reopen",
+			"reply": "Reply",
+			"replyPlaceholder": "Reply…",
+			"resolve": "Resolve",
+			"resolvedBy": "Resolved by {{name}}",
+			"resolveFailed": "The thread couldn’t be updated.",
+			"save": "Save",
+			"saveFirstFailed": "The document couldn’t be saved, so the comment wasn’t posted.",
+			"selectionEmpty": "Select some text to comment on.",
+			"selectionTruncated": "Only the first part of a long selection is highlighted.",
+			"showInDocument": "Show in document",
+			"showQuote": "Show in document: {{quote}}",
+			"submit": "Comment",
+			"title": "Comments",
+			"toggle_one": "Comments, {{count}} open thread",
+			"toggle_other": "Comments, {{count}} open threads",
+			"updateFailed": "The comment couldn’t be saved."
 		}
 	},
 	"auth": {
@@ -2867,7 +2908,8 @@
 				"editorUndo": "Rückgängig",
 				"editorRedo": "Wiederholen",
 				"goToReleases": "Zu den Releases",
-				"setRelease": "Release festlegen"
+				"setRelease": "Release festlegen",
+				"editorComment": "Comment on selected text"
 			},
 			"title": "Tastenkürzel",
 			"searchPlaceholder": "Nach Aktion oder Taste suchen",
@@ -2976,6 +3018,16 @@
 				"title": "Deine Meldung wurde abgelehnt",
 				"content": "„{{taskTitle}}“ wurde abgelehnt",
 				"contentWithReason": "„{{taskTitle}}“ wurde abgelehnt: {{reason}}"
+			},
+			"document_comment_reply": {
+				"content": "In {{documentTitle}}",
+				"contentWithPreview": "{{documentTitle}}: {{commentPreview}}",
+				"title": "{{actorName}} replied to a comment"
+			},
+			"document_mention": {
+				"content": "In {{documentTitle}}",
+				"contentWithPreview": "{{documentTitle}}: {{commentPreview}}",
+				"title": "{{actorName}} mentioned you in a comment"
 			}
 		},
 		"inbox": {
@@ -3012,7 +3064,9 @@
 				"member": "Member",
 				"requestedBy": "Requested by",
 				"hintHolidayCalendarDecided": "Your public holidays are on the My time off tab."
-			}
+			},
+			"commentedText": "Commented text",
+			"openDocument": "Open document"
 		}
 	},
 	"activity": {
