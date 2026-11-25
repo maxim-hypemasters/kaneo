@@ -1278,8 +1278,6 @@
 			"keyLabel": "标识",
 			"keyHint": "每个任务 ID 的前缀，例如 {{slug}}-123。",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "描述",
-			"descriptionPlaceholder": "这个项目是做什么的？",
 			"dangerZone": "危险操作",
 			"deleteProject": "删除项目",
 			"deleteProjectDescription": "永久删除 {{name}} 及其所有任务。",
@@ -1293,7 +1291,8 @@
 				"nameRequired": "项目名称不能为空",
 				"keyRequired": "标识不能为空",
 				"keyMax": "标识最多 8 个字符",
-				"iconRequired": "图标不能为空"
+				"iconRequired": "图标不能为空",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "显示在看板后面的图片。每个人都可以关闭。",
 			"backgroundUnavailable": "此实例未配置图片上传。",
@@ -4296,7 +4295,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

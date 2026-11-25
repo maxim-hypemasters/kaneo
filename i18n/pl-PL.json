@@ -2470,8 +2470,6 @@
 			"deleteModalTitle": "Usunąć projekt?",
 			"deleteProject": "Usuń projekt",
 			"deleteProjectDescription": "Trwale usuwa projekt {{name}} i wszystkie jego zadania.",
-			"descriptionLabel": "Opis",
-			"descriptionPlaceholder": "Do czego służy ten projekt?",
 			"iconHint": "Wyświetlana na pasku bocznym i na listach projektów.",
 			"iconLabel": "Ikona",
 			"keyHint": "Rozpoczyna każdy identyfikator zadania, np. {{slug}}-123.",
@@ -2492,7 +2490,8 @@
 				"iconRequired": "Ikona jest wymagana",
 				"keyMax": "Klucz może mieć maksymalnie 8 znaków",
 				"keyRequired": "Klucz jest wymagany",
-				"nameRequired": "Nazwa projektu jest wymagana"
+				"nameRequired": "Nazwa projektu jest wymagana",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Obraz za tablicą. Każdy może wyłączyć tła u siebie.",
 			"backgroundUnavailable": "Przesyłanie obrazów nie jest skonfigurowane w tej instancji.",
@@ -5430,7 +5429,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

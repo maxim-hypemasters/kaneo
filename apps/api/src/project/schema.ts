@@ -29,7 +29,14 @@ export const updateProjectBody = z.object({
 export const updateProjectDetailsBody = z
   .object({
     name: z.string().trim().min(1).max(255).optional(),
-    description: z.string().max(10_000).optional(),
+    description: z.string().max(10_000).optional().openapi({
+      description:
+        "Markdown. Uploads it no longer references are deleted after the save.",
+    }),
+    draftAssetIds: z.array(z.string()).max(100).optional().openapi({
+      description:
+        "Staged description uploads to claim. Only ids the description references are claimed.",
+    }),
   })
   .strict();
 

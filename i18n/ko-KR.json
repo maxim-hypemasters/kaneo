@@ -962,8 +962,6 @@
 			"keyLabel": "키",
 			"keyHint": "모든 작업 ID의 앞부분입니다(예: {{slug}}-123).",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "설명",
-			"descriptionPlaceholder": "이 프로젝트는 무엇을 위한 건가요?",
 			"dangerZone": "위험 영역",
 			"deleteProject": "프로젝트 삭제",
 			"deleteProjectDescription": "{{name}}과(와) 모든 작업을 영구적으로 삭제합니다.",
@@ -977,7 +975,8 @@
 				"nameRequired": "프로젝트 이름은 필수입니다",
 				"keyRequired": "키는 필수입니다",
 				"keyMax": "키는 8자 이하여야 합니다",
-				"iconRequired": "아이콘은 필수입니다"
+				"iconRequired": "아이콘은 필수입니다",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "보드 뒤에 표시되는 이미지입니다. 각 사용자가 끌 수 있습니다.",
 			"backgroundUnavailable": "이 인스턴스에는 이미지 업로드가 설정되어 있지 않습니다.",
@@ -4296,7 +4295,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

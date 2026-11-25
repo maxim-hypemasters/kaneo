@@ -1296,8 +1296,6 @@
 			"keyLabel": "Chave",
 			"keyHint": "Inicia todo ID de tarefa, como {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Descrição",
-			"descriptionPlaceholder": "Para que serve este projeto?",
 			"dangerZone": "Zona de perigo",
 			"deleteProject": "Excluir projeto",
 			"deleteProjectDescription": "Exclui permanentemente {{name}} e todas as suas tarefas.",
@@ -1311,7 +1309,8 @@
 				"nameRequired": "O nome do projeto é obrigatório",
 				"keyRequired": "A chave é obrigatória",
 				"keyMax": "A chave deve ter no máximo 8 caracteres",
-				"iconRequired": "O ícone é obrigatório"
+				"iconRequired": "O ícone é obrigatório",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Uma imagem atrás do quadro. Cada pessoa pode desativar essas imagens.",
 			"backgroundUnavailable": "O envio de imagens não está configurado nesta instância.",
@@ -4475,7 +4474,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

@@ -851,8 +851,6 @@
 			"keyLabel": "Identificador",
 			"keyHint": "Encabeza el ID de cada tarea, como {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Descripción",
-			"descriptionPlaceholder": "¿Para qué es este proyecto?",
 			"dangerZone": "Zona peligrosa",
 			"deleteProject": "Eliminar proyecto",
 			"deleteProjectDescription": "Elimina permanentemente {{name}} y todas sus tareas.",
@@ -866,7 +864,8 @@
 				"nameRequired": "El nombre del proyecto es obligatorio",
 				"keyRequired": "El identificador es obligatorio",
 				"keyMax": "El identificador debe contener como máximo 8 caracteres",
-				"iconRequired": "El icono es obligatorio"
+				"iconRequired": "El icono es obligatorio",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Una imagen detrás del tablero. Cada persona puede desactivarlas.",
 			"backgroundUnavailable": "La subida de imágenes no está configurada en esta instancia.",
@@ -4475,7 +4474,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

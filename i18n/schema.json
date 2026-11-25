@@ -7690,12 +7690,6 @@
 						"keyPlaceholder": {
 							"type": "string"
 						},
-						"descriptionLabel": {
-							"type": "string"
-						},
-						"descriptionPlaceholder": {
-							"type": "string"
-						},
 						"backgroundLabel": {
 							"type": "string"
 						},
@@ -7768,13 +7762,17 @@
 								},
 								"iconRequired": {
 									"type": "string"
+								},
+								"descriptionMax": {
+									"type": "string"
 								}
 							},
 							"required": [
 								"nameRequired",
 								"keyRequired",
 								"keyMax",
-								"iconRequired"
+								"iconRequired",
+								"descriptionMax"
 							]
 						},
 						"moveProject": {
@@ -7834,8 +7832,6 @@
 						"keyLabel",
 						"keyHint",
 						"keyPlaceholder",
-						"descriptionLabel",
-						"descriptionPlaceholder",
 						"backgroundLabel",
 						"backgroundHint",
 						"backgroundUnavailable",
@@ -18377,9 +18373,6 @@
 								"description": {
 									"type": "string"
 								},
-								"descriptionPlaceholder": {
-									"type": "string"
-								},
 								"noDescription": {
 									"type": "string"
 								}
@@ -18388,7 +18381,6 @@
 								"name",
 								"nameRequired",
 								"description",
-								"descriptionPlaceholder",
 								"noDescription"
 							]
 						},

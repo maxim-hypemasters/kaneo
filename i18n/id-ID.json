@@ -962,8 +962,6 @@
 			"keyLabel": "Key",
 			"keyHint": "Awalan setiap ID tugas, seperti {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Deskripsi",
-			"descriptionPlaceholder": "Untuk apa proyek ini?",
 			"dangerZone": "Zona berbahaya",
 			"deleteProject": "Hapus proyek",
 			"deleteProjectDescription": "Menghapus {{name}} dan semua tugasnya secara permanen.",
@@ -977,7 +975,8 @@
 				"nameRequired": "Nama proyek wajib diisi",
 				"keyRequired": "Key wajib diisi",
 				"keyMax": "Key maksimal 8 karakter",
-				"iconRequired": "Ikon wajib diisi"
+				"iconRequired": "Ikon wajib diisi",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Gambar di belakang papan. Setiap orang dapat mematikannya.",
 			"backgroundUnavailable": "Unggahan gambar belum disiapkan di instans ini.",
@@ -4296,7 +4295,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

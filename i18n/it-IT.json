@@ -1296,8 +1296,6 @@
 			"keyLabel": "Chiave",
 			"keyHint": "Prefisso di ogni ID attività, come {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Descrizione",
-			"descriptionPlaceholder": "A cosa serve questo progetto?",
 			"dangerZone": "Zona pericolosa",
 			"deleteProject": "Elimina progetto",
 			"deleteProjectDescription": "Elimina definitivamente {{name}} e tutte le sue attività.",
@@ -1311,7 +1309,8 @@
 				"nameRequired": "Il nome del progetto è obbligatorio",
 				"keyRequired": "La chiave è obbligatoria",
 				"keyMax": "La chiave deve essere al massimo di 8 caratteri",
-				"iconRequired": "L'icona è obbligatoria"
+				"iconRequired": "L'icona è obbligatoria",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Un'immagine dietro la board. Ognuno può scegliere di nascondere gli sfondi.",
 			"backgroundUnavailable": "Il caricamento delle immagini non è configurato su questa istanza.",
@@ -4475,7 +4474,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

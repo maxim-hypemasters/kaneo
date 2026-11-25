@@ -978,8 +978,6 @@
 			"keyLabel": "Clé",
 			"keyHint": "Préfixe de chaque identifiant de tâche, comme {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Description",
-			"descriptionPlaceholder": "À quoi sert ce projet ?",
 			"dangerZone": "Zone dangereuse",
 			"deleteProject": "Supprimer le projet",
 			"deleteProjectDescription": "Supprime définitivement {{name}} et toutes ses tâches.",
@@ -993,7 +991,8 @@
 				"nameRequired": "Le nom du projet est requis",
 				"keyRequired": "La clé est requise",
 				"keyMax": "La clé doit contenir au plus 8 caractères",
-				"iconRequired": "L'icône est requise"
+				"iconRequired": "L'icône est requise",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Une image derrière le tableau. Chacun peut désactiver ces images.",
 			"backgroundUnavailable": "Le téléversement d'images n'est pas configuré sur cette instance.",
@@ -4475,7 +4474,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

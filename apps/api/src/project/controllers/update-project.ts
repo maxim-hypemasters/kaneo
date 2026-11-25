@@ -2,6 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import { projectTable } from "../../database/schema";
+import { deleteOrphanedAssets } from "../../storage/cleanup-assets";
 import {
   findProjectKeyConflict,
   isSameProjectKey,
@@ -18,7 +19,7 @@ async function updateProject(
   workspaceId: string,
   canShare: boolean,
 ) {
-  return db.transaction(async (tx) => {
+  const saved = await db.transaction(async (tx) => {
     await tx.execute(
       sql`SELECT pg_advisory_xact_lock(1524, hashtext(${workspaceId}))`,
     );
@@ -68,8 +69,15 @@ async function updateProject(
       .where(eq(projectTable.id, id))
       .returning();
 
-    return updatedProject;
+    return { updatedProject, oldDescription: existingProject.description };
   });
+  // Uploads the description no longer references go, as on a details save.
+  void deleteOrphanedAssets(
+    saved.oldDescription,
+    saved.updatedProject?.description,
+    { projectId: id },
+  ).catch(() => {});
+  return saved.updatedProject;
 }
 
 export default updateProject;

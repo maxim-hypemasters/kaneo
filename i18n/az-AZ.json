@@ -1287,8 +1287,6 @@
 			"keyLabel": "Açar",
 			"keyHint": "Hər tapşırıq identifikatorunun əvvəlində olur, məs., {{slug}}-123.",
 			"keyPlaceholder": "LAY",
-			"descriptionLabel": "Təsvir",
-			"descriptionPlaceholder": "Bu layihə nə üçündür?",
 			"dangerZone": "Təhlükəli bölmə",
 			"deleteProject": "Layihəni sil",
 			"deleteProjectDescription": "{{name}} layihəsini və onun bütün tapşırıqlarını həmişəlik silir.",
@@ -1302,7 +1300,8 @@
 				"nameRequired": "Layihənin adı tələb olunur",
 				"keyRequired": "Açar tələb olunur",
 				"keyMax": "Açar ən çox 8 simvoldan ibarət olmalıdır",
-				"iconRequired": "Nişan tələb olunur"
+				"iconRequired": "Nişan tələb olunur",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Lövhənin arxasındakı şəkil. Hər kəs bunu özü üçün söndürə bilər.",
 			"backgroundUnavailable": "Bu serverdə şəkil yükləmələri qurulmayıb.",
@@ -4384,7 +4383,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."

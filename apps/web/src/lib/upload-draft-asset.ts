@@ -107,3 +107,19 @@ export async function uploadProjectDocumentAsset(
     file,
   );
 }
+
+// The project description stages uploads under project:edit_details.
+export async function uploadProjectDescriptionAsset(
+  projectId: string,
+  file: File,
+) {
+  const route = client.project[":id"].description["draft-upload"];
+  return uploadThrough(
+    {
+      stage: (json) => route.$post({ param: { id: projectId }, json }),
+      finalize: (json) =>
+        route.finalize.$post({ param: { id: projectId }, json }),
+    },
+    file,
+  );
+}
