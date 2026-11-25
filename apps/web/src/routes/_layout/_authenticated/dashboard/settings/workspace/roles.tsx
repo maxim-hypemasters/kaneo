@@ -162,7 +162,7 @@ const PERMISSION_LABELS: Record<
   "project:edit_details": {
     label: "Edit project name and description",
     description:
-      "Rename projects and edit their descriptions from the project home page.",
+      "Rename projects, edit their descriptions, and manage their Resources links from the project home page.",
   },
   "task:create": {
     label: "Create tasks",

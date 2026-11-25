@@ -1,7 +1,14 @@
 import type { TFunction } from "i18next";
 import { z } from "zod";
 
-export function createProjectFormSchema(t: TFunction) {
+// The longest description the details route accepts.
+export const PROJECT_DESCRIPTION_MAX = 10_000;
+
+export function createProjectFormSchema(
+  t: TFunction,
+  { descriptionMax }: { descriptionMax?: number } = {},
+) {
+  const description = z.string();
   return z.object({
     name: z
       .string()
@@ -12,7 +19,15 @@ export function createProjectFormSchema(t: TFunction) {
       .trim()
       .min(1, t("settings:projectGeneral.validation.keyRequired"))
       .max(8, t("settings:projectGeneral.validation.keyMax")),
-    description: z.string().optional(),
+    description: (descriptionMax
+      ? description.max(
+          descriptionMax,
+          t("settings:projectGeneral.validation.descriptionMax", {
+            max: descriptionMax,
+          }),
+        )
+      : description
+    ).optional(),
     icon: z
       .string()
       .min(1, t("settings:projectGeneral.validation.iconRequired")),

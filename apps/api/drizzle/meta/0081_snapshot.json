@@ -1,5 +1,5 @@
 {
-  "id": "6ea457b0-63d1-41c7-9fdb-2ac9059b63d6",
+  "id": "03d462df-b4ea-4c2f-863b-a3ff7d1805e0",
   "prevId": "7d7e6845-9622-4b12-8bf8-118b544628fe",
   "version": "7",
   "dialect": "postgresql",
@@ -3967,6 +3967,93 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.project_link": {
+      "name": "project_link",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "(now() AT TIME ZONE 'utc')"
+        }
+      },
+      "indexes": {
+        "project_link_projectId_position_idx": {
+          "name": "project_link_projectId_position_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "position",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "project_link_project_id_project_id_fk": {
+          "name": "project_link_project_id_project_id_fk",
+          "tableFrom": "project_link",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.project_plan": {
       "name": "project_plan",
       "schema": "",
@@ -5784,212 +5871,6 @@
       },
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.test_case": {
-      "name": "test_case",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "steps": {
-          "name": "steps",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "expected_result": {
-          "name": "expected_result",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'not_run'"
-        },
-        "milestone_id": {
-          "name": "milestone_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bug_id": {
-          "name": "bug_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "(now() AT TIME ZONE 'utc')"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "(now() AT TIME ZONE 'utc')"
-        }
-      },
-      "indexes": {
-        "test_case_project_created_idx": {
-          "name": "test_case_project_created_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "test_case_milestone_id_idx": {
-          "name": "test_case_milestone_id_idx",
-          "columns": [
-            {
-              "expression": "milestone_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"test_case\".\"milestone_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "test_case_bug_id_idx": {
-          "name": "test_case_bug_id_idx",
-          "columns": [
-            {
-              "expression": "bug_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "where": "\"test_case\".\"bug_id\" is not null",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "test_case_project_id_project_id_fk": {
-          "name": "test_case_project_id_project_id_fk",
-          "tableFrom": "test_case",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "cascade"
-        },
-        "test_case_milestone_id_milestone_id_fk": {
-          "name": "test_case_milestone_id_milestone_id_fk",
-          "tableFrom": "test_case",
-          "tableTo": "milestone",
-          "columnsFrom": [
-            "milestone_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "test_case_bug_id_task_id_fk": {
-          "name": "test_case_bug_id_task_id_fk",
-          "tableFrom": "test_case",
-          "tableTo": "task",
-          "columnsFrom": [
-            "bug_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        },
-        "test_case_created_by_user_id_fk": {
-          "name": "test_case_created_by_user_id_fk",
-          "tableFrom": "test_case",
-          "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "test_case_status_check": {
-          "name": "test_case_status_check",
-          "value": "\"test_case\".\"status\" in ('not_run', 'passed', 'failed', 'blocked')"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.time_entry": {

@@ -90,6 +90,8 @@ export const ASSISTANT_TOOL_CATALOG: Record<string, CatalogEntry> = {
   get_project: {},
   list_project_columns: {},
   list_custom_fields: {},
+  // The Resources on the project's Overview.
+  list_project_links: {},
 
   // Tasks, Bugs and Features.
   list_tasks: {},

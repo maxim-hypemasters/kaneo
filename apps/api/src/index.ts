@@ -57,6 +57,7 @@ import milestone from "./milestone";
 import feature from "./feature";
 import projectDocument from "./project-document";
 import testCase from "./test-case";
+import projectLink from "./project-link";
 import team from "./team";
 import timeOff from "./time-off";
 import { stopActiveImports } from "./import/runs/stop-active-imports";
@@ -851,6 +852,7 @@ export function createApp() {
   const featureApi = api.route("/feature", feature);
   const projectDocumentApi = api.route("/project-document", projectDocument);
   const testCaseApi = api.route("/test-case", testCase);
+  const projectLinkApi = api.route("/project-link", projectLink);
   const timeOffApi = api.route("/time-off", timeOff);
   const teamApi = api.route("/team", team);
   const activityApi = api.route("/activity", activity);
@@ -1025,6 +1027,7 @@ export function createApp() {
     featureApi,
     projectDocumentApi,
     testCaseApi,
+    projectLinkApi,
     timeOffApi,
     teamApi,
     searchApi,
@@ -1174,6 +1177,7 @@ const {
   featureApi,
   projectDocumentApi,
   testCaseApi,
+  projectLinkApi,
   timeOffApi,
   teamApi,
   searchApi,
@@ -1219,6 +1223,7 @@ export type AppType =
   | typeof featureApi
   | typeof projectDocumentApi
   | typeof testCaseApi
+  | typeof projectLinkApi
   | typeof timeOffApi
   | typeof teamApi
   | typeof activityApi

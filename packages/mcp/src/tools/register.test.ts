@@ -110,6 +110,7 @@ describe("registerTools", () => {
       "cancel_holiday_calendar_request",
       "set_holiday_calendar_deadline",
       "list_teams",
+      "list_project_links",
     ]) {
       expect(server.registerTool).toHaveBeenCalledWith(
         name,
@@ -124,7 +125,7 @@ describe("registerTools", () => {
 
     registerTools(server as never, { client: { json: vi.fn() } as never });
 
-    expect(tools.size).toBe(115);
+    expect(tools.size).toBe(116);
     for (const [name, { config }] of tools) {
       const isRead =
         name === "whoami" ||

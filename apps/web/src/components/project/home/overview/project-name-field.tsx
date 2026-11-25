@@ -13,11 +13,14 @@ export function ProjectNameField({
   readOnly,
   error,
   onChange,
+  onEnterBody,
 }: {
   value: string;
   readOnly: boolean;
   error?: string;
   onChange: (value: string) => void;
+  // Moves the caret into the description, like Enter at the end of a line.
+  onEnterBody?: () => void;
 }) {
   const { t } = useTranslation();
   const ref = useAutoGrowTextarea(value, !readOnly);
@@ -39,8 +42,9 @@ export function ProjectNameField({
         )}
         onChange={(event) => onChange(stripLineBreaks(event.target.value))}
         onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.nativeEvent.isComposing)
-            event.preventDefault();
+          if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+          event.preventDefault();
+          onEnterBody?.();
         }}
       />
       {error && (

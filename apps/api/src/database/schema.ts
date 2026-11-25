@@ -1548,6 +1548,35 @@ export const projectDocumentTable = pgTable(
   ],
 );
 
+// The Resources list on a project's Overview. Task links live in
+// `external_link`.
+export const projectLinkTable = pgTable(
+  "project_link",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    url: text("url").notNull(),
+    title: text("title").notNull(),
+    position: integer("position").notNull().default(0),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    index("project_link_projectId_position_idx").on(
+      table.projectId,
+      table.position,
+    ),
+  ],
+);
+
 export const assetTable = pgTable(
   "asset",
   {

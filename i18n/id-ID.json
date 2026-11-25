@@ -962,8 +962,6 @@
 			"keyLabel": "Key",
 			"keyHint": "Awalan setiap ID tugas, seperti {{slug}}-123.",
 			"keyPlaceholder": "PRO",
-			"descriptionLabel": "Deskripsi",
-			"descriptionPlaceholder": "Untuk apa proyek ini?",
 			"dangerZone": "Zona berbahaya",
 			"deleteProject": "Hapus proyek",
 			"deleteProjectDescription": "Menghapus {{name}} dan semua tugasnya secara permanen.",
@@ -977,7 +975,8 @@
 				"nameRequired": "Nama proyek wajib diisi",
 				"keyRequired": "Key wajib diisi",
 				"keyMax": "Key maksimal 8 karakter",
-				"iconRequired": "Ikon wajib diisi"
+				"iconRequired": "Ikon wajib diisi",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Gambar di belakang papan. Setiap orang dapat mematikannya.",
 			"backgroundUnavailable": "Unggahan gambar belum disiapkan di instans ini.",
@@ -4321,7 +4320,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."
@@ -4330,6 +4328,27 @@
 				"documents": "Documents",
 				"label": "Project home",
 				"overview": "Overview"
+			},
+			"resources": {
+				"actions": "Actions for {{title}}",
+				"add": "Add link",
+				"dialogDescription": "Everyone with access to this project can open it.",
+				"drag": "Drag {{title}}",
+				"edit": "Edit",
+				"editTitle": "Edit link",
+				"invalidUrl": "Enter a web address, like https://example.com.",
+				"linkTitle": "Title",
+				"loadError": "Couldn't load the links.",
+				"none": "No links yet.",
+				"removeError": "Couldn't remove the link.",
+				"reorderError": "Couldn't reorder the links.",
+				"save": "Save",
+				"saveError": "Couldn't save the link.",
+				"title": "Resources",
+				"titlePlaceholder": "Design file",
+				"titleRequired": "Give the link a title.",
+				"url": "URL",
+				"urlPlaceholder": "https://"
 			}
 		},
 		"assigneeAway": {
@@ -4378,6 +4397,16 @@
 		},
 		"testCases": {
 			"add": "Add test case",
+			"comments": {
+				"delete": "Delete comment",
+				"deleteDescription": "The comment and the files attached to it are deleted. This can't be undone.",
+				"deleteTitle": "Delete this comment?",
+				"empty": "No comments yet.",
+				"loadError": "Couldn't load the comments.",
+				"loading": "Loading comments…",
+				"post": "Post comment",
+				"title": "Comments"
+			},
 			"create": "Create test case",
 			"delete": "Delete test case",
 			"deleteDescription": "The test case and its steps are deleted for everyone. This can’t be undone.",
@@ -4411,6 +4440,18 @@
 			"openBug": "Open bug",
 			"openMilestone": "Open milestone",
 			"pageTitle": "{{name}} – Test cases",
+			"pickers": {
+				"bug": "Search bugs…",
+				"filterResult": "Filter by result…",
+				"loadingBugs": "Loading bugs…",
+				"milestone": "Search milestones…",
+				"result": "Set result…"
+			},
+			"placeholders": {
+				"description": "Add preconditions…",
+				"expectedResult": "Add the expected result…",
+				"steps": "Add the steps to follow…"
+			},
 			"releaseEmpty": "No test cases are linked to this release’s milestones or bugs yet.",
 			"saveError": "Could not save the test case.",
 			"search": "Search test cases",
@@ -4421,29 +4462,7 @@
 				"not_run": "Not run",
 				"passed": "Passed"
 			},
-			"title": "Test cases",
-			"pickers": {
-				"bug": "Search bugs…",
-				"loadingBugs": "Loading bugs…",
-				"milestone": "Search milestones…",
-				"result": "Set result…",
-				"filterResult": "Filter by result…"
-			},
-			"placeholders": {
-				"description": "Add preconditions…",
-				"expectedResult": "Add the expected result…",
-				"steps": "Add the steps to follow…"
-			},
-			"comments": {
-				"delete": "Delete comment",
-				"deleteDescription": "The comment and the files attached to it are deleted. This can't be undone.",
-				"deleteTitle": "Delete this comment?",
-				"empty": "No comments yet.",
-				"loadError": "Couldn't load the comments.",
-				"loading": "Loading comments…",
-				"post": "Post comment",
-				"title": "Comments"
-			}
+			"title": "Test cases"
 		}
 	},
 	"invitations": {
@@ -4883,11 +4902,12 @@
 				"listTimeOffBalances": "Time off balances",
 				"listTimeOffRequests": "Time off requests",
 				"listTeams": "Teams",
+				"listProjectLinks": "Project links",
 				"getTestCase": "Test case",
 				"listFeatureTestCases": "Feature test cases",
 				"listReleaseTestCases": "Release test cases",
-				"listTestCases": "Test cases",
-				"listTestCaseComments": "Test case comments"
+				"listTestCaseComments": "Test case comments",
+				"listTestCases": "Test cases"
 			},
 			"warning": {
 				"keyRejected": "OpenRouter rejected the workspace's key, so answers may fail.",
