@@ -21,6 +21,7 @@ import { releasesKey } from "@/hooks/queries/release/use-get-releases";
 import { featureWorkspaceKey } from "@/hooks/queries/feature/use-feature-workspace";
 import { projectDocumentCommentsKey } from "@/hooks/queries/document-comment/document-comment-keys";
 import { projectDocumentsKey } from "@/hooks/queries/project-document/project-document-keys";
+import { projectLinksKey } from "@/hooks/queries/project-link/project-links-key";
 import type { ProjectWithTasks } from "@/types/project";
 import {
   hasSyncTaskSample,
@@ -449,6 +450,12 @@ export function useProjectWebSocket(projectId: string) {
           if (message.type === "TRIAGE_MEMBERS_UPDATED") {
             void queryClient.invalidateQueries({
               queryKey: ["triage-members", projectId],
+            });
+            return;
+          }
+          if (message.type === "PROJECT_LINKS_UPDATED") {
+            void queryClient.invalidateQueries({
+              queryKey: projectLinksKey(projectId),
             });
             return;
           }

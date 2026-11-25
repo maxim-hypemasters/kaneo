@@ -12,6 +12,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { canFormatSelection, isEditing } from "./formatting-menu-visibility";
 import { selectionStartAnchor } from "./selection-start-anchor";
 import { TableToolbar } from "./table-toolbar";
 
@@ -70,8 +71,10 @@ export function DocumentFormattingMenu({
         className="kaneo-tiptap-bubble"
         pluginKey="document-formatting"
         getReferencedVirtualElement={() => selectionStartAnchor(editor)}
-        shouldShow={({ from, to }) =>
-          editor.isEditable && from !== to && !editor.isActive("codeBlock")
+        shouldShow={({ view, element, state }) =>
+          editor.isEditable &&
+          isEditing(view, element) &&
+          canFormatSelection(state.selection, editor.isActive("codeBlock"))
         }
       >
         {actions.map((action) => (
@@ -115,7 +118,11 @@ export function DocumentFormattingMenu({
         editor={editor}
         className="kaneo-tiptap-bubble"
         pluginKey="document-table"
-        shouldShow={() => editor.isEditable && editor.isActive("table")}
+        shouldShow={({ view, element }) =>
+          editor.isEditable &&
+          isEditing(view, element) &&
+          editor.isActive("table")
+        }
       >
         <TableToolbar
           editor={editor}

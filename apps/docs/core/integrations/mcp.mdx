@@ -103,12 +103,13 @@ On the first tool call that needs Kaneo access, the MCP server:
 
 ## Available tools
 
-Both the HTTP endpoint and stdio package expose the same 103 tools:
+Both the HTTP endpoint and stdio package expose the same 105 tools:
 
 - Session: `whoami`, `list_workspaces`, `list_workspace_members`, `list_notifications`
+- Teams: `list_teams`
 - My work: `list_my_tasks`, `list_workspace_activity`
 - Search: `search`
-- Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `update_project_details`, `list_project_columns`, `list_custom_fields`
+- Projects: `list_projects`, `get_project`, `create_project`, `update_project`, `update_project_details`, `list_project_columns`, `list_custom_fields`, `list_project_links`
 - Project pages: `list_project_pages`, `get_project_page`, `create_project_page`, `update_project_page`
 - Tasks: `list_tasks`, `get_task`, `get_task_by_ticket_id`, `create_task`, `duplicate_task`, `update_task`, `delete_task`, `move_task`, `update_task_status`, `update_task_assignee`, `update_task_estimate`, `update_task_due_date`, `list_task_activity`
 - Triage: `accept_triage_task`, `decline_triage_task`
@@ -194,6 +195,14 @@ Releases hold milestones and Tasks/Bugs. Their summaries count Task/Bug executio
 - `list_holiday_countries`, `get_holiday_calendar`, `list_time_off`, `list_holiday_calendar_requests`, `approve_holiday_calendar_request` and `decline_holiday_calendar_request` take an optional `lang`, such as `de`, for holiday, country and region names.
 
 Viewing the team needs `time_off:read`. Listing holiday countries and reading your own calendar need any time-off permission. Requesting, editing or cancelling your own requests, setting your own holiday calendar, and withdrawing your own calendar change need `time_off:create`. Approving, declining, recording time off for others, reading other members' requests, balances and holiday calendars, setting allowances and the setup deadline, listing and deciding holiday calendar changes, and setting other members' holiday calendars need `time_off:approve` and workspace membership.
+
+### Teams
+
+`list_teams` takes a `workspaceId` and returns the workspace's [teams](/core/functional/teams) by name, each with its `members` (`id`, `name`, `email`, `image`) and linked `projects` (`id`, `name`, `slug`, `icon`). Any workspace member can call it. Linked projects you can't access are left out. Members of a team can open its linked projects even when their own project access is limited to selected projects. The MCP server only reads teams; create and change them on the **Teams** page or through the API.
+
+### Project links
+
+`list_project_links` takes a `projectId` and returns the links in the project's [Resources](/core/functional/plan-and-execute-tasks#project-home), each with its `id`, `title`, `url`, and `position`, in the order people arranged them. Anyone with access to the project can call it. The MCP server only reads links; add and change them on the project's **Overview** or through the API.
 
 ## Debugging
 

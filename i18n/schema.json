@@ -7865,12 +7865,6 @@
 						"keyPlaceholder": {
 							"type": "string"
 						},
-						"descriptionLabel": {
-							"type": "string"
-						},
-						"descriptionPlaceholder": {
-							"type": "string"
-						},
 						"backgroundLabel": {
 							"type": "string"
 						},
@@ -7943,13 +7937,17 @@
 								},
 								"iconRequired": {
 									"type": "string"
+								},
+								"descriptionMax": {
+									"type": "string"
 								}
 							},
 							"required": [
 								"nameRequired",
 								"keyRequired",
 								"keyMax",
-								"iconRequired"
+								"iconRequired",
+								"descriptionMax"
 							]
 						},
 						"moveProject": {
@@ -8009,8 +8007,6 @@
 						"keyLabel",
 						"keyHint",
 						"keyPlaceholder",
-						"descriptionLabel",
-						"descriptionPlaceholder",
 						"backgroundLabel",
 						"backgroundHint",
 						"backgroundUnavailable",
@@ -11087,6 +11083,9 @@
 						"members": {
 							"type": "string"
 						},
+						"teams": {
+							"type": "string"
+						},
 						"createTask": {
 							"type": "string"
 						},
@@ -11152,6 +11151,7 @@
 						"projects",
 						"search",
 						"members",
+						"teams",
 						"createTask",
 						"createProject",
 						"createWorkspace",
@@ -11177,6 +11177,9 @@
 							"type": "string"
 						},
 						"members": {
+							"type": "string"
+						},
+						"teams": {
 							"type": "string"
 						},
 						"invitations": {
@@ -11210,6 +11213,7 @@
 					"required": [
 						"projects",
 						"members",
+						"teams",
 						"invitations",
 						"more",
 						"backToBoard",
@@ -18590,9 +18594,6 @@
 								"description": {
 									"type": "string"
 								},
-								"descriptionPlaceholder": {
-									"type": "string"
-								},
 								"noDescription": {
 									"type": "string"
 								}
@@ -18601,8 +18602,91 @@
 								"name",
 								"nameRequired",
 								"description",
-								"descriptionPlaceholder",
 								"noDescription"
+							]
+						},
+						"resources": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"none": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								},
+								"add": {
+									"type": "string"
+								},
+								"edit": {
+									"type": "string"
+								},
+								"editTitle": {
+									"type": "string"
+								},
+								"dialogDescription": {
+									"type": "string"
+								},
+								"url": {
+									"type": "string"
+								},
+								"urlPlaceholder": {
+									"type": "string"
+								},
+								"linkTitle": {
+									"type": "string"
+								},
+								"titlePlaceholder": {
+									"type": "string"
+								},
+								"invalidUrl": {
+									"type": "string"
+								},
+								"titleRequired": {
+									"type": "string"
+								},
+								"save": {
+									"type": "string"
+								},
+								"actions": {
+									"type": "string"
+								},
+								"drag": {
+									"type": "string"
+								},
+								"saveError": {
+									"type": "string"
+								},
+								"removeError": {
+									"type": "string"
+								},
+								"reorderError": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"none",
+								"loadError",
+								"add",
+								"edit",
+								"editTitle",
+								"dialogDescription",
+								"url",
+								"urlPlaceholder",
+								"linkTitle",
+								"titlePlaceholder",
+								"invalidUrl",
+								"titleRequired",
+								"save",
+								"actions",
+								"drag",
+								"saveError",
+								"removeError",
+								"reorderError"
 							]
 						},
 						"documents": {
@@ -18728,7 +18812,7 @@
 							]
 						}
 					},
-					"required": ["tabs", "overview", "documents"]
+					"required": ["tabs", "overview", "resources", "documents"]
 				},
 				"triage": {
 					"type": "object",
@@ -19972,6 +20056,12 @@
 								"listHolidayCalendarRequests": {
 									"type": "string"
 								},
+								"listTeams": {
+									"type": "string"
+								},
+								"listProjectLinks": {
+									"type": "string"
+								},
 								"search": {
 									"type": "string"
 								},
@@ -20078,6 +20168,8 @@
 								"listHolidayCountries",
 								"getHolidayCalendar",
 								"listHolidayCalendarRequests",
+								"listTeams",
+								"listProjectLinks",
 								"search",
 								"getTaskByTicketId",
 								"getProject",
@@ -22259,6 +22351,304 @@
 				"timeOff"
 			]
 		},
+		"teams": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"page": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"newTeam": {
+							"type": "string"
+						},
+						"loadError": {
+							"type": "string"
+						},
+						"retry": {
+							"type": "string"
+						},
+						"emptyTitle": {
+							"type": "string"
+						},
+						"emptyDescription": {
+							"type": "string"
+						},
+						"emptyReadOnly": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"description",
+						"newTeam",
+						"loadError",
+						"retry",
+						"emptyTitle",
+						"emptyDescription",
+						"emptyReadOnly"
+					]
+				},
+				"card": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"actions": {
+							"type": "string"
+						},
+						"rename": {
+							"type": "string"
+						},
+						"delete": {
+							"type": "string"
+						},
+						"members": {
+							"type": "string"
+						},
+						"memberCount_one": {
+							"type": "string"
+						},
+						"memberCount_zero": {
+							"type": "string"
+						},
+						"memberCount_two": {
+							"type": "string"
+						},
+						"memberCount_few": {
+							"type": "string"
+						},
+						"memberCount_many": {
+							"type": "string"
+						},
+						"memberCount_other": {
+							"type": "string"
+						},
+						"projectCount_one": {
+							"type": "string"
+						},
+						"projectCount_zero": {
+							"type": "string"
+						},
+						"projectCount_two": {
+							"type": "string"
+						},
+						"projectCount_few": {
+							"type": "string"
+						},
+						"projectCount_many": {
+							"type": "string"
+						},
+						"projectCount_other": {
+							"type": "string"
+						},
+						"noMembers": {
+							"type": "string"
+						},
+						"addMember": {
+							"type": "string"
+						},
+						"searchMembers": {
+							"type": "string"
+						},
+						"noMemberCandidates": {
+							"type": "string"
+						},
+						"removeMember": {
+							"type": "string"
+						},
+						"membersSaved": {
+							"type": "string"
+						},
+						"saveError": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"actions",
+						"rename",
+						"delete",
+						"members",
+						"noMembers",
+						"addMember",
+						"searchMembers",
+						"noMemberCandidates",
+						"removeMember",
+						"membersSaved",
+						"saveError"
+					]
+				},
+				"dialog": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"createTitle": {
+							"type": "string"
+						},
+						"createDescription": {
+							"type": "string"
+						},
+						"renameTitle": {
+							"type": "string"
+						},
+						"renameDescription": {
+							"type": "string"
+						},
+						"nameLabel": {
+							"type": "string"
+						},
+						"namePlaceholder": {
+							"type": "string"
+						},
+						"nameRequired": {
+							"type": "string"
+						},
+						"nameTooLong": {
+							"type": "string"
+						},
+						"nameTaken": {
+							"type": "string"
+						},
+						"create": {
+							"type": "string"
+						},
+						"save": {
+							"type": "string"
+						},
+						"created": {
+							"type": "string"
+						},
+						"renamed": {
+							"type": "string"
+						},
+						"createError": {
+							"type": "string"
+						},
+						"renameError": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"createTitle",
+						"createDescription",
+						"renameTitle",
+						"renameDescription",
+						"nameLabel",
+						"namePlaceholder",
+						"nameRequired",
+						"nameTooLong",
+						"nameTaken",
+						"create",
+						"save",
+						"created",
+						"renamed",
+						"createError",
+						"renameError"
+					]
+				},
+				"delete": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"confirm": {
+							"type": "string"
+						},
+						"pending": {
+							"type": "string"
+						},
+						"deleted": {
+							"type": "string"
+						},
+						"error": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"description",
+						"confirm",
+						"pending",
+						"deleted",
+						"error"
+					]
+				},
+				"accessNote": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"description": {
+							"type": "string"
+						},
+						"via": {
+							"type": "string"
+						}
+					},
+					"required": ["title", "description", "via"]
+				},
+				"projectTeams": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"none": {
+							"type": "string"
+						},
+						"linkTeam": {
+							"type": "string"
+						},
+						"search": {
+							"type": "string"
+						},
+						"noTeams": {
+							"type": "string"
+						},
+						"allLinked": {
+							"type": "string"
+						},
+						"unlink": {
+							"type": "string"
+						},
+						"saveError": {
+							"type": "string"
+						}
+					},
+					"required": [
+						"title",
+						"none",
+						"linkTeam",
+						"search",
+						"noTeams",
+						"allLinked",
+						"unlink",
+						"saveError"
+					]
+				}
+			},
+			"required": [
+				"page",
+				"card",
+				"dialog",
+				"delete",
+				"accessNote",
+				"projectTeams"
+			]
+		},
 		"publicProject": {
 			"type": "object",
 			"additionalProperties": false,
@@ -23216,6 +23606,7 @@
 		"invitations",
 		"workspace",
 		"team",
+		"teams",
 		"publicProject",
 		"press",
 		"landing"

@@ -8,6 +8,8 @@ async function updateProjectDetails({
   id: string;
   name?: string;
   description?: string;
+  // Staged uploads the description references, claimed by this save.
+  draftAssetIds?: string[];
 }) {
   const response = await client.project[":id"].details.$patch({
     param: { id },

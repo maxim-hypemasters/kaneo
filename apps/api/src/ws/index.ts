@@ -847,6 +847,20 @@ subscribeToEvent<{ projectId: string; initiatorId?: string }>(
   },
 );
 
+// The Resources list on the project's Overview. Unrelated to `linksChanged`
+// on PROJECT_UPDATED, which is about task links.
+subscribeToEvent<{ projectId: string; initiatorId?: string }>(
+  "project.links_updated",
+  async ({ projectId, initiatorId }) => {
+    if (!projectId) return;
+    broadcastToProject(
+      projectId,
+      { type: "PROJECT_LINKS_UPDATED", projectId },
+      initiatorId,
+    );
+  },
+);
+
 // Its own message rather than PROJECT_UPDATED, which refetches the board.
 subscribeToEvent<{ projectId: string; initiatorId?: string }>(
   "release.changed",

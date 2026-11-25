@@ -78,6 +78,7 @@
 						"pages": [
 							"core/functional/collaborate-with-team",
 							"core/functional/time-off",
+							"core/functional/teams",
 							"core/functional/account-notifications",
 							"core/functional/personalize-your-workspace",
 							"core/functional/manage-your-account"

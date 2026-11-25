@@ -10,8 +10,10 @@ import { getCurrentUser } from "./get-current-user.js";
 import { registerMilestoneTools } from "./milestones.js";
 import { registerMyWorkTools } from "./my-work.js";
 import { registerProjectExtraTools } from "./project-extras.js";
+import { registerProjectLinkTools } from "./project-links.js";
 import { registerProjectPageTools } from "./project-pages.js";
 import { registerTaskExtraTools } from "./task-extras.js";
+import { registerTeamTools } from "./teams.js";
 import { registerTimeOffTools } from "./time-off.js";
 import { registerTimeOffHolidayRequestTools } from "./time-off-holiday-requests.js";
 import { registerTimeOffHolidayTools } from "./time-off-holidays.js";
@@ -120,6 +122,8 @@ export function registerTools(
   registerTimeOffTools(server, client);
   registerTimeOffHolidayTools(server, client);
   registerTimeOffHolidayRequestTools(server, client);
+  registerTeamTools(server, client);
+  registerProjectLinkTools(server, client);
   const registerTool = <S extends z.ZodObject>(
     name: string,
     config: {

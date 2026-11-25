@@ -1328,8 +1328,6 @@
 			"keyLabel": "Açar",
 			"keyHint": "Hər tapşırıq identifikatorunun əvvəlində olur, məs., {{slug}}-123.",
 			"keyPlaceholder": "LAY",
-			"descriptionLabel": "Təsvir",
-			"descriptionPlaceholder": "Bu layihə nə üçündür?",
 			"dangerZone": "Təhlükəli bölmə",
 			"deleteProject": "Layihəni sil",
 			"deleteProjectDescription": "{{name}} layihəsini və onun bütün tapşırıqlarını həmişəlik silir.",
@@ -1343,7 +1341,8 @@
 				"nameRequired": "Layihənin adı tələb olunur",
 				"keyRequired": "Açar tələb olunur",
 				"keyMax": "Açar ən çox 8 simvoldan ibarət olmalıdır",
-				"iconRequired": "Nişan tələb olunur"
+				"iconRequired": "Nişan tələb olunur",
+				"descriptionMax": "The description can be at most {{max, number}} characters."
 			},
 			"backgroundHint": "Lövhənin arxasındakı şəkil. Hər kəs bunu özü üçün söndürə bilər.",
 			"backgroundUnavailable": "Bu serverdə şəkil yükləmələri qurulmayıb.",
@@ -2731,7 +2730,8 @@
 			"goToReleases": "Buraxılışlara keç",
 			"createRelease": "Buraxılış yarat",
 			"createBug": "Create bug",
-			"timeOff": "Time off"
+			"timeOff": "Time off",
+			"teams": "Teams"
 		},
 		"sidebar": {
 			"projects": "Layihələr",
@@ -2744,7 +2744,8 @@
 			"invitePeople": "Invite people",
 			"myTasks": "My tasks",
 			"timeOff": "Time off",
-			"workspace": "İş sahəsi"
+			"workspace": "İş sahəsi",
+			"teams": "Teams"
 		},
 		"projectList": {
 			"viewProject": "Layihəyə bax",
@@ -4436,7 +4437,6 @@
 			},
 			"overview": {
 				"description": "Description",
-				"descriptionPlaceholder": "Add a description…",
 				"name": "Project name",
 				"nameRequired": "A project needs a name.",
 				"noDescription": "No description yet."
@@ -4445,6 +4445,27 @@
 				"documents": "Documents",
 				"label": "Project home",
 				"overview": "Overview"
+			},
+			"resources": {
+				"actions": "Actions for {{title}}",
+				"add": "Add link",
+				"dialogDescription": "Everyone with access to this project can open it.",
+				"drag": "Drag {{title}}",
+				"edit": "Edit",
+				"editTitle": "Edit link",
+				"invalidUrl": "Enter a web address, like https://example.com.",
+				"linkTitle": "Title",
+				"loadError": "Couldn't load the links.",
+				"none": "No links yet.",
+				"removeError": "Couldn't remove the link.",
+				"reorderError": "Couldn't reorder the links.",
+				"save": "Save",
+				"saveError": "Couldn't save the link.",
+				"title": "Resources",
+				"titlePlaceholder": "Design file",
+				"titleRequired": "Give the link a title.",
+				"url": "URL",
+				"urlPlaceholder": "https://"
 			}
 		},
 		"assigneeAway": {
@@ -4937,7 +4958,9 @@
 				"listPendingTimeOffRequests": "Time off awaiting approval",
 				"listTimeOff": "Who is away",
 				"listTimeOffBalances": "Time off balances",
-				"listTimeOffRequests": "Time off requests"
+				"listTimeOffRequests": "Time off requests",
+				"listTeams": "Teams",
+				"listProjectLinks": "Project links"
 			},
 			"warning": {
 				"keyRejected": "OpenRouter rejected the workspace's key, so answers may fail.",
@@ -5526,6 +5549,75 @@
 			"composeLinkDescription": "The maintained compose.yml with persistent storage and health checks.",
 			"startLink": "Start and verify the services",
 			"startLinkDescription": "Start the stack, inspect its status, and check that the application is available."
+		}
+	},
+	"teams": {
+		"accessNote": {
+			"description": "These projects stay open to this member through their teams, whatever you select above.",
+			"title": "Access through teams",
+			"via": "via {{teams}}"
+		},
+		"card": {
+			"actions": "Actions for {{name}}",
+			"addMember": "Add member",
+			"delete": "Delete",
+			"memberCount_one": "{{count}} member",
+			"memberCount_other": "{{count}} members",
+			"members": "Members",
+			"membersSaved": "Team members updated",
+			"noMemberCandidates": "Everyone is already in this team.",
+			"noMembers": "No members yet.",
+			"projectCount_one": "{{count}} project",
+			"projectCount_other": "{{count}} projects",
+			"removeMember": "Remove {{name}} from the team",
+			"rename": "Rename",
+			"saveError": "Couldn't update the team.",
+			"searchMembers": "Search members…"
+		},
+		"delete": {
+			"confirm": "Delete team",
+			"deleted": "Team deleted",
+			"description": "Members keep their own project access but lose projects they could only open through this team, and are unassigned from tasks there.",
+			"error": "Couldn't delete the team.",
+			"pending": "Deleting…",
+			"title": "Delete {{name}}?"
+		},
+		"dialog": {
+			"create": "Create team",
+			"created": "Team created",
+			"createDescription": "Name the team. You can add members and link projects once it's created.",
+			"createError": "Couldn't create the team.",
+			"createTitle": "New team",
+			"nameLabel": "Name",
+			"namePlaceholder": "e.g. Design",
+			"nameRequired": "Enter a team name.",
+			"nameTaken": "A team with this name already exists.",
+			"nameTooLong": "Use {{max}} characters or fewer.",
+			"renamed": "Team renamed",
+			"renameDescription": "Team names are unique within the workspace.",
+			"renameError": "Couldn't rename the team.",
+			"renameTitle": "Rename team",
+			"save": "Save"
+		},
+		"page": {
+			"description": "Group people into teams. Link a team to a project from the project's Overview, and its members can open that project even when their own access is limited to selected projects.",
+			"emptyDescription": "Create a team to group people and give them access to projects together.",
+			"emptyReadOnly": "Admins can create teams and link them to projects.",
+			"emptyTitle": "No teams yet",
+			"loadError": "Couldn't load teams.",
+			"newTeam": "New team",
+			"retry": "Try again",
+			"title": "Teams"
+		},
+		"projectTeams": {
+			"allLinked": "Every team is already linked.",
+			"linkTeam": "Link team",
+			"none": "No teams linked.",
+			"noTeams": "No teams yet. Create one on the Teams page.",
+			"saveError": "Couldn't update the project's teams.",
+			"search": "Search teams…",
+			"title": "Teams",
+			"unlink": "Unlink {{name}}"
 		}
 	}
 }

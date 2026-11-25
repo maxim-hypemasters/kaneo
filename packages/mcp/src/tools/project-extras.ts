@@ -15,7 +15,7 @@ export function registerProjectExtraTools(
     "update_project_details",
     {
       description:
-        "Change a project's name, description, or both. Needs only project:edit_details; other project settings stay as they are.",
+        "Change a project's name, description, or both. The description is Markdown, shown as a document on the project's Overview. Needs only project:edit_details; other project settings stay as they are.",
       inputSchema: z
         .strictObject({
           projectId: id,

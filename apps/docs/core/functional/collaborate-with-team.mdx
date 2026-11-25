@@ -38,7 +38,7 @@ These are the starting permissions. An administrator can edit the **Viewer**, **
 | --- | --- |
 | Viewer | Read projects, tasks, bugs, features, milestones, project pages, labels, and workspace details; see who is away |
 | Member | Create projects; create and update tasks, bugs, features, milestones, and project pages; manage labels; request time off |
-| Admin | Manage projects, tasks, bugs, features, milestones, project pages, members, and workspace settings, including project names and descriptions; approve time off and set allowances |
+| Admin | Manage projects, tasks, bugs, features, milestones, project pages, members, teams, and workspace settings, including project names and descriptions; approve time off and set allowances |
 | Owner | Full workspace control, including deleting the workspace |
 
 Tasks, Bugs, Features, and Milestones each have their own **Create**, **Read**, **Update**, and **Delete** permissions, so a role can, for example, report bugs without creating tasks, or plan milestones without deleting features. Editing an item, including its comments, time entries, links, and custom fields, uses the update permission for its kind. Assignment stays one permission, **Assign** under Tasks, for every kind of work and for milestone leads.
@@ -60,6 +60,8 @@ If a limited member opens a link to another project, they see **You don't have a
 A limited member only sees those projects: their boards, tasks, comments, activity, search results, notifications, and **My tasks**. The same limit applies to their API keys and MCP clients, and a board they have open closes as soon as you remove the project.
 
 Project access works alongside roles. The role decides what someone can do; project access decides where. A limited member who can create projects keeps access to the projects they create.
+
+A limited member can also open the projects linked to their [teams](/core/functional/teams), even ones not among their selected projects. Removing a project from their selection doesn't take it away while one of their teams is linked to it.
 
 Some rules keep this predictable:
 

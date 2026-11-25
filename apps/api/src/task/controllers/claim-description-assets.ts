@@ -2,7 +2,10 @@ import { asc, eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import type db from "../../database";
 import { assetTable, projectTable } from "../../database/schema";
-import { extractAssetIds } from "../../storage/cleanup-assets";
+import {
+  extractAssetIds,
+  PROJECT_DESCRIPTION_SURFACE,
+} from "../../storage/cleanup-assets";
 
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -13,9 +16,12 @@ type ClaimInput = {
   draftAssetIds?: string[];
 };
 
-// A staged upload belongs either to a task (its description, comments and
-// Feature documents) or to one project document.
-type ClaimTarget = { taskId: string } | { documentId: string };
+// A staged upload belongs to a task (its description, comments and Feature
+// documents), to one project document, or to its project's description.
+type ClaimTarget =
+  | { taskId: string }
+  | { documentId: string }
+  | { projectDescription: true };
 
 async function claimStagedAssets(
   tx: Transaction,
@@ -62,11 +68,16 @@ async function claimStagedAssets(
             surface: "description",
             workspaceId: project.workspaceId,
           }
-        : {
-            documentId: target.documentId,
-            surface: "document",
-            workspaceId: project.workspaceId,
-          },
+        : "documentId" in target
+          ? {
+              documentId: target.documentId,
+              surface: "document",
+              workspaceId: project.workspaceId,
+            }
+          : {
+              surface: PROJECT_DESCRIPTION_SURFACE,
+              workspaceId: project.workspaceId,
+            },
     )
     .where(inArray(assetTable.id, ids));
 }
@@ -83,4 +94,13 @@ export async function claimDocumentAssets(
   { documentId, ...input }: ClaimInput & { documentId: string },
 ) {
   await claimStagedAssets(tx, { documentId }, input);
+}
+
+// Project description uploads keep only their projectId; the surface tells
+// them apart from staged drafts and from task or page uploads.
+export async function claimProjectDescriptionAssets(
+  tx: Transaction,
+  input: ClaimInput,
+) {
+  await claimStagedAssets(tx, { projectDescription: true }, input);
 }
