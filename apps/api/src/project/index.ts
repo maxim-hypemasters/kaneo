@@ -200,7 +200,7 @@ const updateProjectDetailsRoute = createRoute({
   tags: ["Projects"],
   summary: "Update project name and description",
   description:
-    "Change a project's name, Markdown description, or both. Referenced staged uploads are claimed atomically, and uploads the description no longer references are deleted. Needs project:edit_details, which covers nothing else about the project.",
+    "Change a project's name, Markdown description, or both. Referenced staged uploads are claimed atomically, and uploads the description no longer references are deleted. Needs project:edit_details, which otherwise covers only the links in the project's Resources.",
   middleware: [
     workspaceAccess.fromProject(),
     requireWorkspacePermission({ project: ["edit_details"] }),

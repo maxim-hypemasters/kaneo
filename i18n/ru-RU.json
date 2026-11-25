@@ -4625,6 +4625,27 @@
 				"documents": "Documents",
 				"label": "Project home",
 				"overview": "Overview"
+			},
+			"resources": {
+				"actions": "Actions for {{title}}",
+				"add": "Add link",
+				"dialogDescription": "Everyone with access to this project can open it.",
+				"drag": "Drag {{title}}",
+				"edit": "Edit",
+				"editTitle": "Edit link",
+				"invalidUrl": "Enter a web address, like https://example.com.",
+				"linkTitle": "Title",
+				"loadError": "Couldn't load the links.",
+				"none": "No links yet.",
+				"removeError": "Couldn't remove the link.",
+				"reorderError": "Couldn't reorder the links.",
+				"save": "Save",
+				"saveError": "Couldn't save the link.",
+				"title": "Resources",
+				"titlePlaceholder": "Design file",
+				"titleRequired": "Give the link a title.",
+				"url": "URL",
+				"urlPlaceholder": "https://"
 			}
 		},
 		"assigneeAway": {
@@ -5138,7 +5159,8 @@
 				"listTimeOff": "Who is away",
 				"listTimeOffBalances": "Time off balances",
 				"listTimeOffRequests": "Time off requests",
-				"listTeams": "Teams"
+				"listTeams": "Teams",
+				"listProjectLinks": "Project links"
 			},
 			"warning": {
 				"keyRejected": "OpenRouter rejected the workspace's key, so answers may fail.",

@@ -46,6 +46,7 @@ import {
   activityTable,
   featureDocumentTable,
   projectDocumentTable,
+  projectLinkTable,
   apikeyTable,
   assetTable,
   billingEventTable,
@@ -110,6 +111,7 @@ config();
 export const schema = {
   featureDocumentTable,
   projectDocumentTable,
+  projectLinkTable,
   workCalendarTable,
   projectPlanTable,
   dataMigrationTable,
