@@ -15,10 +15,11 @@ export async function openPullRequest(
     branch: string;
     title: string;
     body: string;
+    token: string;
     signal: AbortSignal;
   },
 ): Promise<string> {
-  const env = ghEnv(config);
+  const env = ghEnv(config, input.token);
   const existing = await runCommand(
     config.ghBin,
     [

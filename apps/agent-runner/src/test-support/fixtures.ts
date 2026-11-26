@@ -64,7 +64,7 @@ export function testConfig(root: string, overrides: Partial<RunnerConfig>) {
   return {
     apiUrl: "http://kaneo/api",
     runnerToken: "kar_test",
-    githubToken: "ghp_testtokentesttokentesttoken",
+    github: { kind: "token", token: "ghp_testtokentesttokentesttoken" },
     githubHost: "github.com",
     gitRemoteBase: `file://${path.join(root, "remotes")}`,
     ghBin: "gh",

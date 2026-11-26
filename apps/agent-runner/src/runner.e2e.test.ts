@@ -1,8 +1,14 @@
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vite-plus/test";
 import { runAssess } from "./assess/run-assess";
+import {
+  createGitHubTokens,
+  GitHubAuthError,
+  type GitHubAccess,
+} from "./github/github-tokens";
+import { runCommand } from "./process/run-command";
 import { createRedactor } from "./redact";
 import { runShip } from "./ship/run-ship";
 import {
@@ -25,7 +31,7 @@ async function setup(hermesBody: (root: string) => string) {
   const gh = await script(
     root,
     "gh",
-    `echo "$@ token=\${GH_TOKEN:+set}" >> ${root}/gh.log
+    `echo "$@ token=\${GH_TOKEN}" >> ${root}/gh.log
 case "$2" in list) echo "[]";; create) echo "https://github.com/acme/app/pull/12";; esac`,
   );
   const config = testConfig(root, { hermesBin: hermes, ghBin: gh });
@@ -33,7 +39,11 @@ case "$2" in list) echo "[]";; create) echo "https://github.com/acme/app/pull/12
   const deps = {
     config,
     kaneo: kaneo.client,
-    redact: createRedactor([config.githubToken, config.runnerToken]),
+    redact: createRedactor([
+      "ghp_testtokentesttokentesttoken",
+      config.runnerToken,
+    ]),
+    github: createGitHubTokens(config.github, config.githubHost),
     shutdown: new AbortController().signal,
     log: () => {},
   };
@@ -100,7 +110,7 @@ echo '{"type":"result","exit_code":0,"text":"Fixed the login form."}'`,
     expect(ghLog).toContain(
       "pr create --repo acme/app --base main --head hub-7",
     );
-    expect(ghLog).toContain("token=set");
+    expect(ghLog).toContain("token=ghp_testtokentesttokentesttoken");
 
     const events = eventMessages(ctx);
     expect(events).toContain("terminal: pnpm test");
@@ -184,6 +194,82 @@ printf '%s\\n' '{"type":"result","exit_code":0,"text":"Two forms exist.\\n\`\`\`
     expect(await ctx.remote.branches()).toEqual(["main"]);
   });
 
+  it("asks for a write token for the repository at each step, as an app's can expire", async () => {
+    const ctx = await setup(
+      () => `${FIND_DIR}
+cat > /dev/null
+echo fixed > "$dir/login.txt"
+echo '{"type":"result","exit_code":0,"text":"Fixed it."}'`,
+    );
+    const asked: Array<[string, GitHubAccess]> = [];
+    ctx.deps.github = async (repository, access) => {
+      asked.push([repository, access]);
+      return `ghs_apptoken${asked.length}apptokenapptoken`;
+    };
+    // Logs the token each git call gets; the runner's git takes PATH then.
+    const realGit = (
+      await runCommand("sh", ["-c", "command -v git"])
+    ).stdout.trim();
+    const bin = path.join(ctx.root, "bin");
+    await mkdir(bin);
+    await writeFile(
+      path.join(bin, "git"),
+      `#!/bin/sh\necho "\${KANEO_GIT_TOKEN:-none} $*" >> ${ctx.root}/git.log\nexec ${realGit} "$@"\n`,
+      { mode: 0o755 },
+    );
+    const path0 = process.env.PATH;
+    process.env.PATH = `${bin}:${path0}`;
+    try {
+      await runShip(ctx.deps, claimFor("ship"));
+    } finally {
+      process.env.PATH = path0;
+    }
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    expect(await ctx.remote.branches()).toContain("hub-7");
+    // Before the checkout, the push and the pull request.
+    expect(asked).toEqual([
+      ["acme/app", "write"],
+      ["acme/app", "write"],
+      ["acme/app", "write"],
+    ]);
+    const lines = (await readFile(path.join(ctx.root, "git.log"), "utf8"))
+      .split("\n")
+      .filter(Boolean);
+    const withToken = lines.filter((line) => !line.startsWith("none "));
+    // The mirror's clone with the first token, the push with the second;
+    // nothing else, Hermes's git included, gets one.
+    expect(withToken).toHaveLength(2);
+    expect(withToken[0]).toMatch(/^ghs_apptoken1\S* .* clone --mirror /);
+    expect(withToken[1]).toMatch(/^ghs_apptoken2\S* .* push --quiet /);
+    const ghLog = await readFile(path.join(ctx.root, "gh.log"), "utf8");
+    expect(ghLog).toContain("pr create");
+    expect(ghLog).not.toMatch(/token=(?!ghs_apptoken3)/);
+  });
+
+  it("fails as a git failure, before Hermes runs, when the app can't get write access", async () => {
+    const ctx = await setup(
+      (root) => `touch ${root}/hermes-ran
+echo '{"type":"result","exit_code":0,"text":"done"}'`,
+    );
+    ctx.deps.github = async () => {
+      throw new GitHubAuthError(
+        "The GitHub App can't get write access to acme/app: Resource not accessible by integration. It needs Contents and Pull requests write access on that repository.",
+      );
+    };
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toMatchObject([
+      "fail",
+      "run-ship",
+      {
+        code: "git_failed",
+        message: expect.stringContaining("can't get write access to acme/app"),
+      },
+    ]);
+    expect(existsSync(path.join(ctx.root, "hermes-ran"))).toBe(false);
+  });
+
   it("reports no changes when Hermes commits nothing", async () => {
     const ctx = await setup(
       () => `cat > /dev/null
@@ -200,6 +286,28 @@ echo '{"type":"result","exit_code":0,"text":"Nothing to do."}'`,
 });
 
 describe("runAssess", () => {
+  it("asks only for read access, and reads a public repository without a token", async () => {
+    const ctx = await setup(
+      (root) => `${FIND_DIR}
+cat > /dev/null
+ls "$dir" > ${root}/listing.txt
+echo '{"type":"result","exit_code":0,"text":"{\\"score\\": 85}"}'`,
+    );
+    const asked: GitHubAccess[] = [];
+    ctx.deps.github = async (_repository, access) => {
+      asked.push(access);
+      throw new GitHubAuthError("The GitHub App isn't installed on acme/app");
+    };
+    await runAssess(ctx.deps, claimFor("assess"));
+
+    expect(asked).toEqual(["read"]);
+    expect(called(ctx, "fail")).toBeUndefined();
+    // The checkout still happened, without a token.
+    expect(
+      await readFile(path.join(ctx.root, "listing.txt"), "utf8"),
+    ).toContain("README.md");
+  });
+
   it("submits the JSON reply, repairing it once when the API rejects it", async () => {
     const ctx = await setup(
       (root) => `cat >> ${root}/prompts.txt

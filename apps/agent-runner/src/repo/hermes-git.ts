@@ -32,7 +32,7 @@ export async function hermesGit(
       signal,
       check: true,
       user: config.hermesUser ?? undefined,
-      env: { ...gitEnv(config, false), HOME: hermesHomeDir(paths.hermes) },
+      env: { ...gitEnv(config, null), HOME: hermesHomeDir(paths.hermes) },
     },
   );
   return result.stdout.trim();

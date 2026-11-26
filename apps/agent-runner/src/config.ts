@@ -1,9 +1,11 @@
+import { type GitHubAuth, loadGitHubAuth } from "./github/github-auth";
 import type { HermesUser } from "./isolation/hermes-user";
 
 export type RunnerConfig = {
   apiUrl: string;
   runnerToken: string;
-  githubToken: string | null;
+  // GH_TOKEN or a GitHub App; null, and the runner only checks readiness.
+  github: GitHubAuth | null;
   githubHost: string;
   // Where repositories are cloned from and pushed to: https://<githubHost>.
   gitRemoteBase: string;
@@ -87,7 +89,7 @@ export function loadConfig(
   return {
     apiUrl: normalizeApiUrl(required(env, "KANEO_API_URL")),
     runnerToken: required(env, "KANEO_RUNNER_TOKEN"),
-    githubToken: env.GH_TOKEN?.trim() || env.GITHUB_TOKEN?.trim() || null,
+    github: loadGitHubAuth(env),
     githubHost: env.GITHUB_HOST?.trim() || "github.com",
     gitRemoteBase: `https://${env.GITHUB_HOST?.trim() || "github.com"}`,
     ghBin: env.GH_BIN?.trim() || "gh",

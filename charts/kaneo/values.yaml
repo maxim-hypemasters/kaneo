@@ -185,11 +185,14 @@ gateway:
 # Optional AI agent runner (Hermes Agent). It polls Kaneo for readiness
 # checks and Ship runs; nothing reaches it from outside. Create a runner token
 # in Workspace settings → AI agent, then put it in a Secret with the GitHub
-# token that pushes branches and the model provider key, for example:
+# credentials that push branches and the model provider key, for example:
 #   kubectl create secret generic kaneo-agent-runner \
 #     --from-literal=KANEO_RUNNER_TOKEN=kar_... \
 #     --from-literal=GH_TOKEN=github_pat_... \
 #     --from-literal=OPENROUTER_API_KEY=sk-or-...
+# To push as a GitHub App instead of GH_TOKEN, put GITHUB_APP_ID and
+# GITHUB_PRIVATE_KEY_BASE64 in the Secret, and GITHUB_APP_INSTALLATION_ID to
+# keep the runner to one installation of the app.
 agentRunner:
   enabled: false
   image:

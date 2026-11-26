@@ -12,12 +12,13 @@ import { mirrorPath, runPaths } from "./work-paths";
 async function updateMirror(
   config: RunnerConfig,
   repository: string,
+  token: string | null,
   signal?: AbortSignal,
 ) {
   const mirror = mirrorPath(config.workDir, repository);
   if (existsSync(mirror))
     await git(config, ["--git-dir", mirror, "fetch", "--prune", "origin"], {
-      auth: true,
+      token,
       signal,
     });
   else {
@@ -31,7 +32,7 @@ async function updateMirror(
         repositoryUrl(config, repository),
         mirror,
       ],
-      { auth: true, signal },
+      { token, signal },
     );
   }
   return mirror;
@@ -51,6 +52,8 @@ export async function prepareCheckout(
     repository: string;
     baseBranch: string;
     branch?: string;
+    // For the mirror's fetch; null fetches without one, as for a public repository.
+    token: string | null;
     signal?: AbortSignal;
   },
 ) {
@@ -61,7 +64,12 @@ export async function prepareCheckout(
   // The clone stays under the lock too, so another run's fetch can't repack
   // the mirror while it is copied.
   await withRepoLock(input.repository, async () => {
-    const mirror = await updateMirror(config, input.repository, input.signal);
+    const mirror = await updateMirror(
+      config,
+      input.repository,
+      input.token,
+      input.signal,
+    );
     // Copies, not hard links: the checkout becomes Hermes's, the mirror never.
     await git(
       config,
