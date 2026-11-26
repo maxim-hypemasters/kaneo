@@ -4103,7 +4103,7 @@
 				"backToReleases": "Επιστροφή στις εκδόσεις",
 				"standaloneHeading": "Εργασίες χωρίς δυνατότητα",
 				"empty": "Δεν υπάρχει ακόμα τίποτα σε αυτή την έκδοση",
-				"emptyHint": "Ορίστε την έκδοση μιας εργασίας ή δυνατότητας ή προσθέστε μια εργασία εδώ.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Προσθήκη εργασίας",
 				"featureElsewhere": "Η δυνατότητα δεν ανήκει σε αυτή την έκδοση",
 				"tasksElsewhere_one": "{{count}} ακόμα εργασία εκτός αυτής της έκδοσης",
@@ -4158,6 +4158,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

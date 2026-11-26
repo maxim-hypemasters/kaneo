@@ -30,9 +30,7 @@ const m = vi.hoisted(() => ({
     isFetching: false,
   },
   today: "2026-10-17",
-  canCreateTasks: true,
   canMoveItems: true,
-  createTask: vi.fn(),
   progressSection: vi.fn(),
   milestones: {
     data: [] as ReleaseMilestone[] | undefined,
@@ -106,27 +104,6 @@ vi.mock("@/components/task/task-details-sheet", () => ({
       <div role="dialog" aria-label={`sheet-${props.taskId}`} />
     ) : null,
 }));
-vi.mock("@/components/shared/modals/create-task-modal", () => ({
-  default: (props: {
-    open: boolean;
-    type?: string;
-    projectId?: string;
-    releaseId?: string;
-    originReleaseId?: string;
-  }) => {
-    if (props.open) {
-      m.createTask({
-        type: props.type,
-        projectId: props.projectId,
-        releaseId: props.releaseId,
-        originReleaseId: props.originReleaseId,
-      });
-    }
-    return props.open ? (
-      <div role="dialog" aria-label={`create-${props.type}`} />
-    ) : null;
-  },
-}));
 vi.mock("../dialog/release-dialog", () => ({ ReleaseDialog: () => null }));
 vi.mock("../planning/release-plan-dialog", () => ({
   ReleasePlanDialog: ({ canPlan }: { canPlan: boolean }) =>
@@ -193,16 +170,12 @@ vi.mock("@/hooks/queries/column/use-get-columns", () => ({
 vi.mock("@/lib/releases/use-release-today", () => ({
   useReleaseToday: () => m.today,
 }));
-vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canWorkItem: () => true }),
-}));
 vi.mock("./release-test-cases", () => ({ ReleaseTestCases: () => null }));
 vi.mock("../use-release-permissions", () => ({
   useReleasePermissions: () => ({
     canManage: true,
     canMoveItems: m.canMoveItems,
     canDelete: true,
-    canCreateTasks: m.canCreateTasks,
   }),
 }));
 
@@ -298,9 +271,7 @@ beforeEach(() => {
     isFetching: false,
   };
   m.today = "2026-10-17";
-  m.canCreateTasks = true;
   m.canMoveItems = true;
-  m.createTask.mockClear();
   m.progressSection.mockClear();
   m.milestones = { data: [], isError: false, isFetching: false };
   m.workflow = {
@@ -561,95 +532,22 @@ describe("ReleaseDetailPage", () => {
     ).toBeInTheDocument();
   });
 
-  it.each([
-    ["task", "newTask"],
-    ["feature", "newFeature"],
-    ["bug", "newBug"],
-  ])("creates a %s in the release from the toolbar", async (type, item) => {
-    renderPage();
-
-    fireEvent.click(
-      within(screen.getByTestId("toolbar")).getByRole("button", {
-        name: "tasks:createMenu.label",
-      }),
-    );
-    fireEvent.click(
-      await screen.findByRole("menuitem", { name: `tasks:createMenu.${item}` }),
-    );
-    expect(m.createTask).toHaveBeenCalledWith({
-      type,
-      projectId: "project-1",
-      releaseId: type === "feature" ? undefined : "r1",
-      originReleaseId: "r1",
-    });
-    expect(
-      screen.getByRole("dialog", { name: `create-${type}` }),
-    ).toBeInTheDocument();
-  });
-
-  it.each([
-    ["task", "newTask"],
-    ["feature", "newFeature"],
-    ["bug", "newBug"],
-  ])("creates a %s from the empty release action", async (type, item) => {
-    m.board = {
-      ...m.board,
-      data: {
-        ...board,
-        columns: board.columns.map((c) => ({ ...c, tasks: [] })),
-      },
-    };
-    renderPage();
-
-    expect(screen.getByText("tasks:releases.detail.empty")).toBeInTheDocument();
-    const [toolbarButton, emptyButton] = screen.getAllByRole("button", {
-      name: "tasks:createMenu.label",
-    });
-    expect(toolbarButton).toBeInTheDocument();
-    fireEvent.click(emptyButton);
-    fireEvent.click(
-      await screen.findByRole("menuitem", { name: `tasks:createMenu.${item}` }),
-    );
-    expect(m.createTask).toHaveBeenCalledWith({
-      type,
-      projectId: "project-1",
-      releaseId: type === "feature" ? undefined : "r1",
-      originReleaseId: "r1",
-    });
-  });
-
-  it("doesn't offer to add tasks without permission", () => {
-    m.canCreateTasks = false;
-    m.canMoveItems = false;
-    m.board = {
-      ...m.board,
-      data: {
-        ...board,
-        columns: board.columns.map((c) => ({ ...c, tasks: [] })),
-      },
-    };
-    renderPage();
-
-    expect(
-      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
-    ).toBeNull();
-  });
-
   it.each(["task", "milestone"] as const)(
-    "opens the %s linking dialog from the toolbar without create permission",
+    "opens the %s linking dialog from the toolbar",
     async (kind) => {
-      m.canCreateTasks = false;
       renderPage();
       fireEvent.click(
         within(screen.getByTestId("toolbar")).getByRole("button", {
-          name: "tasks:createMenu.label",
+          name: "tasks:releases.link.menu",
         }),
       );
-      expect(
-        screen.queryByRole("menuitem", { name: "tasks:createMenu.newTask" }),
-      ).not.toBeInTheDocument();
+      const options = await screen.findAllByRole("menuitem");
+      expect(options.map((option) => option.textContent)).toEqual([
+        "tasks:releases.link.milestoneAction",
+        "tasks:releases.link.taskAction",
+      ]);
       fireEvent.click(
-        await screen.findByRole("menuitem", {
+        screen.getByRole("menuitem", {
           name:
             kind === "task"
               ? "tasks:releases.link.taskAction"
@@ -659,12 +557,10 @@ describe("ReleaseDetailPage", () => {
       expect(
         screen.getByRole("dialog", { name: `link-${kind}-r1` }),
       ).toBeInTheDocument();
-      expect(m.createTask).not.toHaveBeenCalled();
     },
   );
 
-  it("offers linking in the empty state independently of creation", async () => {
-    m.canCreateTasks = false;
+  it("offers linking from the empty release", async () => {
     m.board = {
       ...m.board,
       data: {
@@ -673,8 +569,10 @@ describe("ReleaseDetailPage", () => {
       },
     };
     renderPage();
+
+    expect(screen.getByText("tasks:releases.detail.empty")).toBeInTheDocument();
     const [, emptyButton] = screen.getAllByRole("button", {
-      name: "tasks:createMenu.label",
+      name: "tasks:releases.link.menu",
     });
     fireEvent.click(emptyButton);
     fireEvent.click(
@@ -687,20 +585,27 @@ describe("ReleaseDetailPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("keeps creation available without offering links to users lacking update permission", async () => {
+  it("doesn't offer to link work without permission", () => {
     m.canMoveItems = false;
+    m.board = {
+      ...m.board,
+      data: {
+        ...board,
+        columns: board.columns.map((column) => ({ ...column, tasks: [] })),
+      },
+    };
     renderPage();
-    fireEvent.click(
-      within(screen.getByTestId("toolbar")).getByRole("button", {
-        name: "tasks:createMenu.label",
-      }),
-    );
-    expect(await screen.findAllByRole("menuitem")).toHaveLength(3);
+
     expect(
-      screen.queryByRole("menuitem", {
-        name: "tasks:releases.link.taskAction",
-      }),
-    ).not.toBeInTheDocument();
+      screen.queryByRole("button", { name: "tasks:releases.link.menu" }),
+    ).toBeNull();
+  });
+
+  it("offers no way to create work in the release", () => {
+    renderPage();
+    expect(
+      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
+    ).toBeNull();
   });
 
   it("waits for the board before showing the items", () => {

@@ -78,36 +78,6 @@ describe("NewWorkMenu", () => {
     expect(trigger).toBeDisabled();
   });
 
-  it.each([
-    ["milestone", "milestoneAction"],
-    ["task", "taskAction"],
-  ])("offers linking %s after creation actions", async (kind, key) => {
-    const onLink = vi.fn();
-    render(<NewWorkMenu onSelect={vi.fn()} onLink={onLink} />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:createMenu.label" }),
-    );
-    expect(await screen.findAllByRole("menuitem")).toHaveLength(5);
-    expect(screen.getByRole("separator")).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole("menuitem", { name: `tasks:releases.link.${key}` }),
-    );
-    expect(onLink).toHaveBeenCalledExactlyOnceWith(kind);
-  });
-
-  it("supports linking without creation permission", async () => {
-    render(<NewWorkMenu onLink={vi.fn()} />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "tasks:createMenu.label" }),
-    );
-    const options = await screen.findAllByRole("menuitem");
-    expect(options.map((item) => item.textContent)).toEqual([
-      "tasks:releases.link.milestoneAction",
-      "tasks:releases.link.taskAction",
-    ]);
-    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
-  });
-
   it("offers only the kinds of work it is limited to", async () => {
     render(<NewWorkMenu types={["task", "bug"]} onSelect={vi.fn()} />);
     fireEvent.click(

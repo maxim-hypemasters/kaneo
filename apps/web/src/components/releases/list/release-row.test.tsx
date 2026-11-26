@@ -125,7 +125,6 @@ const permissions: RowProps["permissions"] = {
   canManage: false,
   canMoveItems: false,
   canDelete: false,
-  canCreateTasks: false,
 };
 function Harness({ overrides = {} }: { overrides?: Partial<RowProps> }) {
   return (

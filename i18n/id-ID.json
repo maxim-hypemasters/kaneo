@@ -4017,7 +4017,7 @@
 				"backToReleases": "Kembali ke rilis",
 				"standaloneHeading": "Tugas tanpa fitur",
 				"empty": "Belum ada apa pun di rilis ini",
-				"emptyHint": "Atur rilis untuk tugas atau fitur, atau tambahkan tugas di sini.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Tambah tugas",
 				"featureElsewhere": "Fitur tidak ada di rilis ini",
 				"tasksElsewhere_other": "{{count}} tugas lainnya di luar rilis ini",
@@ -4071,6 +4071,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

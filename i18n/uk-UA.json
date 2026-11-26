@@ -4277,7 +4277,7 @@
 				"backToReleases": "Назад до релізів",
 				"standaloneHeading": "Завдання без функції",
 				"empty": "У цьому релізі ще нічого немає",
-				"emptyHint": "Вкажіть реліз для завдання чи функції або додайте завдання тут.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Додати завдання",
 				"featureElsewhere": "Функція поза цим релізом",
 				"tasksElsewhere_one": "Ще {{count}} завдання поза цим релізом",
@@ -4336,6 +4336,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

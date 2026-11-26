@@ -4103,7 +4103,7 @@
 				"backToReleases": "Sürümlere dön",
 				"standaloneHeading": "Epiği olmayan talepler",
 				"empty": "Bu sürümde henüz bir şey yok",
-				"emptyHint": "Bir talebin veya epiğin sürümünü belirleyin ya da buraya bir talep ekleyin.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Talep ekle",
 				"featureElsewhere": "Epik bu sürümde değil",
 				"tasksElsewhere_one": "Bu sürümün dışında {{count}} talep daha",
@@ -4158,6 +4158,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

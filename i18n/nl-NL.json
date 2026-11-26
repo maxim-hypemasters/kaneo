@@ -4103,7 +4103,7 @@
 				"backToReleases": "Terug naar releases",
 				"standaloneHeading": "Taken zonder feature",
 				"empty": "Nog niets in deze release",
-				"emptyHint": "Stel de release van een taak of feature in, of voeg hier een taak toe.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Taak toevoegen",
 				"featureElsewhere": "Feature niet in deze release",
 				"tasksElsewhere_one": "Nog {{count}} taak buiten deze release",
@@ -4158,6 +4158,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

@@ -34,7 +34,6 @@ const m = vi.hoisted(() => ({
     canManage: true,
     canMoveItems: true,
     canDelete: true,
-    canCreateTasks: true,
   },
 }));
 
@@ -197,7 +196,6 @@ beforeEach(() => {
     canManage: true,
     canMoveItems: true,
     canDelete: true,
-    canCreateTasks: true,
   };
   Object.defineProperty(Element.prototype, "getAnimations", {
     configurable: true,
@@ -274,7 +272,6 @@ describe("ReleaseListPage", () => {
       canManage: false,
       canMoveItems: false,
       canDelete: false,
-      canCreateTasks: false,
     };
     renderPage();
     expect(
@@ -428,7 +425,6 @@ describe("ReleaseListPage", () => {
       canManage: false,
       canMoveItems: false,
       canDelete: false,
-      canCreateTasks: true,
     };
     m.releases.data = [active];
     renderPage();

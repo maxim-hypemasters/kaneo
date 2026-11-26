@@ -1,16 +1,10 @@
-import { ChevronDown, Diamond, Link, Plus } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { type ReactElement, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { TaskTypeGlyph } from "@/components/task-chips/task-type-glyph";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { Button, type ButtonProps } from "@/components/ui/button";
-import {
-  Menu,
-  MenuItem,
-  MenuPopup,
-  MenuSeparator,
-  MenuTrigger,
-} from "@/components/ui/menu";
+import { Menu, MenuItem, MenuPopup, MenuTrigger } from "@/components/ui/menu";
 import type { TaskType } from "@/types/task";
 
 const OPTIONS = [
@@ -20,10 +14,9 @@ const OPTIONS = [
 ] as const;
 
 type NewWorkMenuProps = {
-  onSelect?: (type: TaskType) => void;
+  onSelect: (type: TaskType) => void;
   // Limits the offered kinds of work; all kinds by default.
   types?: readonly TaskType[];
-  onLink?: (kind: "task" | "milestone") => void;
   children?: ReactElement;
   disabled?: boolean;
   className?: string;
@@ -35,7 +28,6 @@ type NewWorkMenuProps = {
 export function NewWorkMenu({
   onSelect,
   types,
-  onLink,
   children,
   disabled,
   className,
@@ -76,46 +68,22 @@ export function NewWorkMenu({
       </MenuTrigger>
       <MenuPopup
         align={align}
-        className={onLink ? "w-64" : "w-44"}
+        className="w-44"
         // Selection opens a dialog or inline input that owns focus; Escape returns it.
         finalFocus={() => !selected.current}
       >
-        {onSelect &&
-          options.map(({ type, label }) => (
-            <MenuItem
-              key={type}
-              onClick={() => {
-                selected.current = true;
-                onSelect(type);
-              }}
-            >
-              <TaskTypeGlyph type={type} decorative />
-              {t(label)}
-            </MenuItem>
-          ))}
-        {onSelect && options.length > 0 && onLink && <MenuSeparator />}
-        {onLink && (
-          <>
-            <MenuItem
-              onClick={() => {
-                selected.current = true;
-                onLink("milestone");
-              }}
-            >
-              <Diamond aria-hidden="true" />
-              {t("tasks:releases.link.milestoneAction")}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                selected.current = true;
-                onLink("task");
-              }}
-            >
-              <Link aria-hidden="true" />
-              {t("tasks:releases.link.taskAction")}
-            </MenuItem>
-          </>
-        )}
+        {options.map(({ type, label }) => (
+          <MenuItem
+            key={type}
+            onClick={() => {
+              selected.current = true;
+              onSelect(type);
+            }}
+          >
+            <TaskTypeGlyph type={type} decorative />
+            {t(label)}
+          </MenuItem>
+        ))}
       </MenuPopup>
     </Menu>
   );

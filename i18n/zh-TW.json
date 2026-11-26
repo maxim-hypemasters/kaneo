@@ -4017,7 +4017,7 @@
 				"backToReleases": "返回版本列表",
 				"standaloneHeading": "不屬於任何功能的任務",
 				"empty": "此版本尚無內容",
-				"emptyHint": "為任務或功能設定版本，或在此新增任務。",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "新增任務",
 				"featureElsewhere": "此功能不在這個版本中",
 				"tasksElsewhere_other": "另有 {{count}} 個任務不在此版本中",
@@ -4071,6 +4071,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

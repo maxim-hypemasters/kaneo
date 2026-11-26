@@ -7,7 +7,6 @@ export type ReleasePermissions = {
   canMoveItems: boolean;
   // Deleting unlinks every item, so it needs both.
   canDelete: boolean;
-  canCreateTasks: boolean;
 };
 
 // What the release pages offer. Nothing shows while the check runs, so
@@ -18,7 +17,6 @@ export function useReleasePermissions(): ReleasePermissions {
     canUpdateTasks,
     canUpdateBugs,
     canUpdateMilestones,
-    canCreateWorkItems,
     isCheckingPermissions,
   } = useWorkspacePermission();
   const ready = !isCheckingPermissions;
@@ -30,6 +28,5 @@ export function useReleasePermissions(): ReleasePermissions {
     canManage,
     canMoveItems,
     canDelete: canManage && canMoveItems,
-    canCreateTasks: ready && canCreateWorkItems(),
   };
 }

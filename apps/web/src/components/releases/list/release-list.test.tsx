@@ -161,7 +161,6 @@ function Timeline({
         canManage: false,
         canMoveItems: false,
         canDelete: false,
-        canCreateTasks: false,
       }}
       onEdit={vi.fn()}
       onDelete={vi.fn()}

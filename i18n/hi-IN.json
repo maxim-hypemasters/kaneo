@@ -4103,7 +4103,7 @@
 				"backToReleases": "रिलीज़ पर वापस जाएँ",
 				"standaloneHeading": "बिना फ़ीचर वाले कार्य",
 				"empty": "इस रिलीज़ में अभी कुछ नहीं है",
-				"emptyHint": "किसी कार्य या फ़ीचर की रिलीज़ सेट करें, या यहाँ कार्य जोड़ें।",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "कार्य जोड़ें",
 				"featureElsewhere": "फ़ीचर इस रिलीज़ में नहीं है",
 				"tasksElsewhere_one": "इस रिलीज़ के बाहर {{count}} और कार्य",
@@ -4158,6 +4158,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

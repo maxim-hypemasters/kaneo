@@ -4017,7 +4017,7 @@
 				"backToReleases": "リリースに戻る",
 				"standaloneHeading": "機能に属さないタスク",
 				"empty": "このリリースにはまだ何もありません",
-				"emptyHint": "タスクや機能にリリースを設定するか、ここでタスクを追加してください。",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "タスクを追加",
 				"featureElsewhere": "このリリースに含まれていない機能",
 				"tasksElsewhere_other": "このリリース外のタスクがほかに {{count}} 件",
@@ -4071,6 +4071,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

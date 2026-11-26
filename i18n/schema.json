@@ -17298,7 +17298,7 @@
 								"empty": {
 									"type": "string"
 								},
-								"emptyHint": {
+								"emptyLinkHint": {
 									"type": "string"
 								},
 								"addTask": {
@@ -17350,7 +17350,7 @@
 								"backToReleases",
 								"standaloneHeading",
 								"empty",
-								"emptyHint",
+								"emptyLinkHint",
 								"addTask",
 								"featureElsewhere",
 								"today",
@@ -17429,6 +17429,9 @@
 								"taskAction": {
 									"type": "string"
 								},
+								"menu": {
+									"type": "string"
+								},
 								"milestonesTitle": {
 									"type": "string"
 								},
@@ -17505,6 +17508,7 @@
 							"required": [
 								"milestoneAction",
 								"taskAction",
+								"menu",
 								"milestonesTitle",
 								"tasksTitle",
 								"searchMilestones",
