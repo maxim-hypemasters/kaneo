@@ -21,6 +21,11 @@ export function buildHermesConfig(): string {
     '    - "gh *"',
     "gateway:",
     "  unmanaged_idle_exit_seconds: 60",
+    // The runner recognises an abnormal ending by Hermes's English
+    // explanation of it.
+    "display:",
+    "  language: en",
+    "  turn_completion_explainer: true",
     "",
   ].join("\n");
 }

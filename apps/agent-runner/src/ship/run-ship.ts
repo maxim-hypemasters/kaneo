@@ -98,8 +98,14 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
       });
       return;
     }
-    if (outcome.exitCode !== 0 && !summary) {
-      await fail("agent_failed", redact(outcome.error ?? "Hermes failed"));
+    if (!outcome.finished) {
+      // What Hermes left is unfinished work, so none of it leaves the runner.
+      const why = redact(outcome.error ?? "Hermes didn't finish");
+      deps.log(`Ship ${run.id} pushed nothing: ${why}`);
+      await fail(
+        "agent_failed",
+        `Hermes didn't finish, so nothing was pushed: ${why}`,
+      );
       return;
     }
 

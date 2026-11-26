@@ -12,9 +12,32 @@ import {
   toProgressEvent,
 } from "./parse-stream-json";
 
+// Hermes's explanation of an abnormal ending ("explainer.no_reply_prefix"
+// in its English locale, which the runner pins, as it keeps the explainer
+// on): a paragraph of its own, alone or after the fragment of a stream that
+// broke off.
+const NO_REPLY = /(^|\n\n)⚠️ No reply: (.*)/;
+
 export type HermesOutcome = {
+  // A completed turn with a real answer. `hermes chat` (not -z) exits 0 for
+  // any turn that didn't fail or stop partway, also when the model gave no
+  // reply and Hermes ended the turn with text of its own: an explanation,
+  // narration recovered from earlier, an error notice. So a real answer is
+  // also one the model streamed after Hermes's last tool round, which the
+  // result's text starts with (Hermes may add a footer), without Hermes's
+  // explanation of an abnormal ending. Exit 1 is a turn stopped partway, its
+  // turn limit included, or failed; 130 an interrupted one. A killed client
+  // writes no result at all.
+  finished: boolean;
+  // An answer worth reading even if the work stopped, as Hermes's summary
+  // at its turn limit (exit code 1): a real answer from a turn that wasn't
+  // interrupted and has no error.
+  answered: boolean;
   exitCode: number;
+  // The final answer, from the result record. Never what Hermes said along
+  // the way, which is narration.
   text: string;
+  // Why it didn't finish; null when it did.
   error: string | null;
 };
 
@@ -41,11 +64,12 @@ export async function runHermes(
     onEvent?: (event: ProgressEvent) => void;
   },
 ): Promise<HermesOutcome> {
-  // Filled from the stdout callback while the process runs.
+  // Filled from the stdout callback while the process runs: the result, and
+  // what the model streamed since Hermes's last tool round.
   const seen: {
     result: Extract<HermesRecord, { type: "result" }> | null;
-    text: string;
-  } = { result: null, text: "" };
+    afterTools: string;
+  } = { result: null, afterTools: "" };
   const args = [
     "chat",
     "--query-file",
@@ -81,6 +105,10 @@ export async function runHermes(
         .filter(Boolean)
         .join(":"),
       HERMES_HOME: input.hermesHome,
+      // English, with its explainer on, so an abnormal ending carries the
+      // NO_REPLY paragraph.
+      HERMES_LANGUAGE: "en",
+      HERMES_TURN_COMPLETION_EXPLAINER: "1",
       // The image's runtime directory belongs to its own hermes user.
       XDG_RUNTIME_DIR: hermesRuntimeDir(input.hermesHome),
       TMPDIR: hermesTmpDir(input.hermesHome),
@@ -96,8 +124,10 @@ export async function runHermes(
       const record = parseRecord(line);
       if (!record) return;
       if (record.type === "result") seen.result = record;
-      else if (record.type === "text") seen.text += record.text;
+      else if (record.type === "text") seen.afterTools += record.text;
       else {
+        if (record.type === "tool_use" || record.type === "tool_result")
+          seen.afterTools = "";
         const event = toProgressEvent(record);
         if (event) input.onEvent?.(event);
       }
@@ -107,15 +137,38 @@ export async function runHermes(
   }).finally(() => endHermes(config, input.hermesHome).catch(() => {}));
   const final = seen.result;
   const exitCode = final?.exit_code ?? command.code;
+  const text = (final?.text ?? "").trim();
+  const streamed = seen.afterTools.trim();
+  const real =
+    streamed !== "" && text.startsWith(streamed) && !NO_REPLY.test(text);
+  const finished = final !== null && final.exit_code === 0 && real;
   return {
+    finished,
+    answered: final !== null && final.exit_code !== 130 && !final.error && real,
     exitCode,
-    text: (final?.text || seen.text).trim(),
-    error:
-      final?.error ??
-      (exitCode === 0
-        ? null
-        : command.stderr.trim().split("\n").slice(-3).join(" ")),
+    text,
+    error: finished ? null : whyUnfinished(final, text, command),
   };
+}
+
+// Hermes's own error when it gave one; otherwise what its ending means.
+function whyUnfinished(
+  final: Extract<HermesRecord, { type: "result" }> | null,
+  text: string,
+  command: { code: number; stderr: string },
+) {
+  if (final?.error) return final.error;
+  if (final?.exit_code === 130) return "Hermes was interrupted (exit code 130)";
+  if (final?.exit_code === 1)
+    return "Hermes stopped before finishing its turn, for example at its turn limit (exit code 1)";
+  if (final?.exit_code === 0) {
+    // Hermes's explanation if it gave one, else the start of its own text.
+    const detail = NO_REPLY.exec(text)?.[2] ?? text.split("\n")[0];
+    return `Hermes ended its turn without a final answer from the model${detail ? `: ${detail.slice(0, 300)}` : ""}`;
+  }
+  if (final) return `Hermes ended with exit code ${final.exit_code}`;
+  const stderr = command.stderr.trim().split("\n").slice(-3).join(" ");
+  return `Hermes's session ended before its result, with exit code ${command.code}${stderr ? `: ${stderr}` : ""}`;
 }
 
 // What Hermes left running: with an isolated slot, every process of its user;

@@ -79,23 +79,25 @@ export async function runAssess(deps: RunDeps, claim: RunClaim) {
       return parsed ? kaneo.assessment(run, parsed) : Promise.resolve(NOT_JSON);
     };
 
+    // Only an answer is submitted, if need be the one Hermes gives at its
+    // turn limit: an interrupted or failed session's text is not one.
     let reply = await ask(buildAssessPrompt(context, { hasCode }), cwd);
     if (await reportStop(kaneo, run, session)) return;
-    let rejection = await submit(reply.text);
-    if (rejection !== null && !reply.error) {
+    let rejection = reply.answered ? await submit(reply.text) : null;
+    if (reply.answered && rejection !== null) {
       reply = await ask(
         buildRepairPrompt(reply.text, rejection),
         paths.scratch,
       );
       if (await reportStop(kaneo, run, session)) return;
-      rejection = await submit(reply.text);
+      rejection = reply.answered ? await submit(reply.text) : null;
     }
-    if (rejection !== null)
+    if (!reply.answered || rejection !== null)
       await kaneo.fail(run, {
         code: "agent_failed",
         message: redact(
-          reply.error
-            ? `Hermes failed: ${reply.error}`
+          !reply.answered
+            ? `Hermes failed: ${reply.error ?? "it didn't finish"}`
             : `Hermes did not return a valid assessment: ${rejection}`,
         ).slice(0, 2000),
       });

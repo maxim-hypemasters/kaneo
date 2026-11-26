@@ -71,6 +71,7 @@ echo fixed > login.txt
 git add -A && git commit -q -m "Fix the login form"
 echo '{"type":"system","subtype":"init"}'
 echo '{"type":"tool_use","name":"terminal","input":{"command":"pnpm test"}}'
+echo '{"type":"text","text":"Fixed the login form."}'
 echo '{"type":"result","exit_code":0,"text":"Fixed the login form."}'`,
     );
     await runShip(ctx.deps, claimFor("ship"));
@@ -126,6 +127,7 @@ echo '{"type":"result","exit_code":0,"text":"Fixed the login form."}'`,
       () => `${FIND_DIR}
 cat > /dev/null
 echo fixed > "$dir/login.txt"
+echo '{"type":"text","text":"Fixed it."}'
 echo '{"type":"result","exit_code":0,"text":"Fixed it."}'`,
     );
     await runShip(ctx.deps, claimFor("ship"));
@@ -136,6 +138,7 @@ echo '{"type":"result","exit_code":0,"text":"Fixed it."}'`,
   it("opens the pull request for work an earlier run pushed", async () => {
     const ctx = await setup(
       () => `cat > /dev/null
+echo '{"type":"text","text":"Already done."}'
 echo '{"type":"result","exit_code":0,"text":"Already done."}'`,
     );
     await ctx.remote.pushBranch("hub-7", "Earlier work");
@@ -159,6 +162,7 @@ cd "$dir"
 git reset -q --hard HEAD~1
 echo other > other.txt
 git add -A && git commit -q -m "Replace the earlier work"
+echo '{"type":"text","text":"Started over."}'
 echo '{"type":"result","exit_code":0,"text":"Started over."}'`,
     );
     await ctx.remote.pushBranch("hub-7", "Earlier work");
@@ -179,6 +183,7 @@ echo '{"type":"result","exit_code":0,"text":"Started over."}'`,
     const ctx = await setup(
       () => `${FIND_DIR}
 cat > /dev/null
+printf '%s\\n' '{"type":"text","text":"Two forms exist.\\n\`\`\`json\\n{\\"needs_input\\": [{\\"text\\": \\"Which form?\\", \\"options\\": [\\"Both\\"], \\"blocking\\": true}]}\\n\`\`\`"}'
 printf '%s\\n' '{"type":"result","exit_code":0,"text":"Two forms exist.\\n\`\`\`json\\n{\\"needs_input\\": [{\\"text\\": \\"Which form?\\", \\"options\\": [\\"Both\\"], \\"blocking\\": true}]}\\n\`\`\`"}'`,
     );
     await runShip(ctx.deps, claimFor("ship"));
@@ -199,6 +204,7 @@ printf '%s\\n' '{"type":"result","exit_code":0,"text":"Two forms exist.\\n\`\`\`
       () => `${FIND_DIR}
 cat > /dev/null
 echo fixed > "$dir/login.txt"
+echo '{"type":"text","text":"Fixed it."}'
 echo '{"type":"result","exit_code":0,"text":"Fixed it."}'`,
     );
     const asked: Array<[string, GitHubAccess]> = [];
@@ -250,6 +256,7 @@ echo '{"type":"result","exit_code":0,"text":"Fixed it."}'`,
   it("fails as a git failure, before Hermes runs, when the app can't get write access", async () => {
     const ctx = await setup(
       (root) => `touch ${root}/hermes-ran
+echo '{"type":"text","text":"done"}'
 echo '{"type":"result","exit_code":0,"text":"done"}'`,
     );
     ctx.deps.github = async () => {
@@ -270,9 +277,133 @@ echo '{"type":"result","exit_code":0,"text":"done"}'`,
     expect(existsSync(path.join(ctx.root, "hermes-ran"))).toBe(false);
   });
 
+  it("pushes nothing when Hermes's session dies after it worked and narrated", async () => {
+    const ctx = await setup(
+      () => `${FIND_DIR}
+cat > /dev/null
+cd "$dir"
+echo half > login.txt
+git add -A && git commit -q -m "Half the fix"
+echo '{"type":"text","text":"Now i18n, store test, and route wiring."}'
+echo 'killed' >&2
+exit 137`,
+    );
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toEqual([
+      "fail",
+      "run-ship",
+      {
+        code: "agent_failed",
+        message:
+          "Hermes didn't finish, so nothing was pushed: Hermes's session ended before its result, with exit code 137: killed",
+      },
+    ]);
+    expect(called(ctx, "shipResult")).toBeUndefined();
+    expect(await ctx.remote.branches()).toEqual(["main"]);
+    expect(existsSync(path.join(ctx.root, "gh.log"))).toBe(false);
+  });
+
+  it("pushes nothing when Hermes stopped its turn at its turn limit", async () => {
+    const ctx = await setup(
+      () => `${FIND_DIR}
+cat > /dev/null
+echo half > "$dir/login.txt"
+echo '{"type":"text","text":"I ran out of steps; the store and routes are left."}'
+echo '{"type":"result","exit_code":1,"text":"I ran out of steps; the store and routes are left."}'
+exit 1`,
+    );
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toEqual([
+      "fail",
+      "run-ship",
+      {
+        code: "agent_failed",
+        message:
+          "Hermes didn't finish, so nothing was pushed: Hermes stopped before finishing its turn, for example at its turn limit (exit code 1)",
+      },
+    ]);
+    expect(await ctx.remote.branches()).toEqual(["main"]);
+  });
+
+  it("pushes nothing for a completed turn without a real answer", async () => {
+    // Hermes settles these as completed (exit code 0): a stream cut short,
+    // with its explanation after the fragment; a model that gave up after a
+    // tool call; Hermes's own error notice; narration recovered after an
+    // empty reply; an empty reply with Hermes's file-edit footer.
+    const endings: Array<[streamed: string, text: string]> = [
+      [
+        "Now i18n, store test",
+        "Now i18n, store test\\n\\n⚠️ No reply: the stream stopped early and only a partial response was recovered.",
+      ],
+      ["", ""],
+      ["", "(empty)"],
+      [
+        "Done with the store.",
+        "Hermes hit an internal error while handling the reply and stopped this turn.",
+      ],
+      ["", "Now i18n, store test, and route wiring."],
+      [
+        "",
+        "(empty)\\n\\n⚠️ File-mutation verifier: 1 file edit(s) FAILED this turn",
+      ],
+    ];
+    for (const [streamed, text] of endings) {
+      const ctx = await setup(
+        () => `${FIND_DIR}
+cat > /dev/null
+echo half > "$dir/login.txt"
+echo '{"type":"text","text":"Now i18n, store test, and route wiring."}'
+echo '{"type":"tool_use","name":"todo_list"}'
+echo '{"type":"tool_result","name":"todo_list","output":"ok"}'
+echo '{"type":"text","text":"${streamed}"}'
+echo '{"type":"result","exit_code":0,"text":"${text}"}'`,
+      );
+      await runShip(ctx.deps, claimFor("ship"));
+
+      expect(called(ctx, "fail")?.[2]).toMatchObject({
+        code: "agent_failed",
+        message: expect.stringContaining(
+          "Hermes didn't finish, so nothing was pushed: Hermes ended its turn without a final answer from the model",
+        ),
+      });
+      expect(await ctx.remote.branches()).toEqual(["main"]);
+    }
+  });
+
+  it("ships a real answer, though it quotes Hermes's wording or Hermes adds a footer", async () => {
+    const answers: Array<[streamed: string, text: string]> = [
+      [
+        'Added NO_REPLY = \\"⚠️ No reply: \\" to run-hermes.ts.',
+        'Added NO_REPLY = \\"⚠️ No reply: \\" to run-hermes.ts.',
+      ],
+      [
+        "Fixed the login form.",
+        "Fixed the login form.\\n\\n⚠️ File-mutation verifier: 1 file edit(s) FAILED this turn",
+      ],
+    ];
+    for (const [streamed, text] of answers) {
+      const ctx = await setup(
+        () => `${FIND_DIR}
+cat > /dev/null
+echo fixed > "$dir/login.txt"
+echo '{"type":"tool_use","name":"patch"}'
+echo '{"type":"tool_result","name":"patch","output":"ok"}'
+echo '{"type":"text","text":"\\n\\n${streamed}"}'
+echo '{"type":"result","exit_code":0,"text":"${text}"}'`,
+      );
+      await runShip(ctx.deps, claimFor("ship"));
+
+      expect(called(ctx, "fail")).toBeUndefined();
+      expect(called(ctx, "shipResult")).toBeDefined();
+    }
+  });
+
   it("reports no changes when Hermes commits nothing", async () => {
     const ctx = await setup(
       () => `cat > /dev/null
+echo '{"type":"text","text":"Nothing to do."}'
 echo '{"type":"result","exit_code":0,"text":"Nothing to do."}'`,
     );
     await runShip(ctx.deps, claimFor("ship"));
@@ -291,6 +422,7 @@ describe("runAssess", () => {
       (root) => `${FIND_DIR}
 cat > /dev/null
 ls "$dir" > ${root}/listing.txt
+echo '{"type":"text","text":"{\\"score\\": 85}"}'
 echo '{"type":"result","exit_code":0,"text":"{\\"score\\": 85}"}'`,
     );
     const asked: GitHubAccess[] = [];
@@ -312,9 +444,11 @@ echo '{"type":"result","exit_code":0,"text":"{\\"score\\": 85}"}'`,
     const ctx = await setup(
       (root) => `cat >> ${root}/prompts.txt
 if [ -f ${root}/asked ]; then
+  echo '{"type":"text","text":"{\\"score\\": 85}"}'
   echo '{"type":"result","exit_code":0,"text":"{\\"score\\": 85}"}'
 else
   touch ${root}/asked
+  echo '{"type":"text","text":"Here: {\\"score\\": 200}"}'
   echo '{"type":"result","exit_code":0,"text":"Here: {\\"score\\": 200}"}'
 fi`,
     );
@@ -334,6 +468,7 @@ fi`,
   it("removes secrets from the assessment it submits", async () => {
     const ctx = await setup(
       () => `cat > /dev/null
+echo '{"type":"text","text":"{\\"summary\\": \\"Use ghp_testtokentesttokentesttoken\\"}"}'
 echo '{"type":"result","exit_code":0,"text":"{\\"summary\\": \\"Use ghp_testtokentesttokentesttoken\\"}"}'`,
     );
     await runAssess(ctx.deps, claimFor("assess"));
@@ -342,6 +477,48 @@ echo '{"type":"result","exit_code":0,"text":"{\\"summary\\": \\"Use ghp_testtoke
       "run-assess",
       { summary: "Use [redacted]" },
     ]);
+  });
+
+  it("submits nothing from a session that didn't finish, though its narration holds JSON", async () => {
+    const ctx = await setup(
+      (root) => `cat > /dev/null
+echo asked >> ${root}/asked.txt
+echo '{"type":"text","text":"Draft: {\\"score\\": 90}"}'
+exit 1`,
+    );
+    await runAssess(ctx.deps, claimFor("assess"));
+
+    expect(called(ctx, "assessment")).toBeUndefined();
+    expect(called(ctx, "fail")).toEqual([
+      "fail",
+      "run-assess",
+      {
+        code: "agent_failed",
+        message:
+          "Hermes failed: Hermes's session ended before its result, with exit code 1",
+      },
+    ]);
+    // No repair round for an unfinished session.
+    expect(await readFile(path.join(ctx.root, "asked.txt"), "utf8")).toBe(
+      "asked\n",
+    );
+  });
+
+  it("submits the answer Hermes gives at its turn limit", async () => {
+    const ctx = await setup(
+      () => `cat > /dev/null
+echo '{"type":"text","text":"{\\"score\\": 70}"}'
+echo '{"type":"result","exit_code":1,"text":"{\\"score\\": 70}"}'
+exit 1`,
+    );
+    await runAssess(ctx.deps, claimFor("assess"));
+
+    expect(called(ctx, "assessment")).toEqual([
+      "assessment",
+      "run-assess",
+      { score: 70 },
+    ]);
+    expect(called(ctx, "fail")).toBeUndefined();
   });
 
   it("fails the run when Hermes errors", async () => {
