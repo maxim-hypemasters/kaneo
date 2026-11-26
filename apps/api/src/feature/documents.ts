@@ -5,6 +5,7 @@ import { featureDocumentTable, userTable } from "../database/schema";
 import { applyCommentAnchors } from "../document-comment/apply-comment-anchors";
 import { publishDocumentCommentEvent } from "../document-comment/publish-document-comment-event";
 import { ApiError } from "../errors/api-error";
+import { notifyDocumentMentions } from "../notification/document-mention/notify-document-mentions";
 import { escapeLikePattern } from "../search/like-pattern";
 import { deleteOrphanedAssets } from "../storage/cleanup-assets";
 import { boundedTaskRead } from "../task/bounded-read";
@@ -109,6 +110,19 @@ export async function createFeatureDocument(
     }),
   );
   await publishFeatureContent(scope, "feature.document.created", row.id);
+  await notifyDocumentMentions({
+    document: {
+      kind: "feature",
+      id: row.id,
+      title: row.title,
+      featureId: scope.featureId,
+    },
+    projectId: scope.projectId,
+    workspaceId: scope.workspaceId,
+    authorId: scope.userId,
+    before: null,
+    after: row.body,
+  });
   return row;
 }
 export async function updateFeatureDocument(
@@ -167,6 +181,19 @@ export async function updateFeatureDocument(
     }),
   );
   await publishFeatureContent(scope, "feature.document.updated", id);
+  await notifyDocumentMentions({
+    document: {
+      kind: "feature",
+      id,
+      title: row.title,
+      featureId: scope.featureId,
+    },
+    projectId: scope.projectId,
+    workspaceId: scope.workspaceId,
+    authorId: scope.userId,
+    before: oldContent,
+    after: row.body,
+  });
   if (anchorsMoved)
     await publishDocumentCommentEvent(
       { ...scope, kind: "feature", documentId: id },

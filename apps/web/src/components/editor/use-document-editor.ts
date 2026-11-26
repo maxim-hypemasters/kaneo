@@ -11,6 +11,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { ResizableImage } from "@/components/task/extensions/resizable-image";
 import { KaneoMention } from "@/components/task/extensions/kaneo-mention";
+import { MentionSuggestion } from "@/components/task/extensions/mention-suggestion";
 import { SHIKI_CODEBLOCK_REFRESH_META } from "@/components/task/extensions/shiki-code-block";
 import {
   extractIssueKeyFromUrl,
@@ -132,16 +133,25 @@ export function useDocumentEditor(
             >
           )[language] ?? language,
         image: ResizableImage,
-        extra: props.comments
-          ? [
-              KaneoMention,
-              CommentHighlights.configure({
-                onThreadClick: (threadId) =>
-                  current.current.props.comments?.onThreadClick(threadId),
-                onAdd: () => current.current.props.comments?.onAdd?.(),
-              }),
-            ]
-          : [KaneoMention],
+        extra: [
+          KaneoMention,
+          ...(props.mentionMembers
+            ? [
+                MentionSuggestion.configure({
+                  getMembers: () => current.current.props.mentionMembers ?? [],
+                }),
+              ]
+            : []),
+          ...(props.comments
+            ? [
+                CommentHighlights.configure({
+                  onThreadClick: (threadId) =>
+                    current.current.props.comments?.onThreadClick(threadId),
+                  onAdd: () => current.current.props.comments?.onAdd?.(),
+                }),
+              ]
+            : []),
+        ],
       }),
       editorProps: {
         attributes: {

@@ -32,7 +32,10 @@ vi.mock("@/fetchers/feature/feature-workspace", () => ({
   getFeatureDocument: m.get,
 }));
 vi.mock("@/hooks/use-workspace-permission", () => ({
-  useWorkspacePermission: () => ({ canUpdateFeatures: () => m.canEdit }),
+  useWorkspacePermission: () => ({
+    canUpdateFeatures: () => m.canEdit,
+    canReadDocuments: () => false,
+  }),
 }));
 vi.mock("@/components/editor/document-draft-guard", () => ({
   useDocumentDraftNavigation: () => async (action: () => void) => {
@@ -82,6 +85,7 @@ function renderDocuments() {
     const [selected, setSelected] = useState<string>();
     return (
       <FeatureDocuments
+        workspaceId="workspace"
         featureId="feature"
         projectId="project"
         selectedDocumentId={selected}

@@ -27,6 +27,10 @@ const mocks = vi.hoisted(() => ({
     { id: string; projectId: string; description: string }
   >(),
 }));
+// Who an @ can name is read from the project, which these tests leave out.
+vi.mock("@/components/editor/use-project-mention-members", () => ({
+  useProjectMentionMembers: () => [],
+}));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));

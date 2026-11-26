@@ -81,6 +81,7 @@ export function FeatureWorkspace({
         {tab === "documents" && (
           <TabsPanel value="documents">
             <FeatureDocuments
+              workspaceId={workspaceId}
               featureId={feature.id}
               projectId={feature.projectId}
               selectedDocumentId={featureDocumentId}

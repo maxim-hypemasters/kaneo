@@ -69,6 +69,8 @@ Feature, Task, and Bug descriptions open in reading mode. Click the description 
 
 Use the compact toolbar for headings, bold, italic, lists, and links. **Insert** offers checklists, tables, quotes, code blocks, images, files, and embeds. You can also type `/` to insert a block or use Markdown shortcuts. Tables have row and column controls, and images can be resized.
 
+Type `@` to mention a member of the project. When the description is saved, or the task created, each person newly mentioned gets a notification under **Comments and mentions** in their [notification settings](/core/functional/account-notifications). Saving again doesn't notify the same people twice.
+
 Choose **Expand document** for fullscreen reading or writing. Returning to the description keeps your draft and undo history. In creation forms, the description stays in the form until you create the Feature, Task, or Bug. Uploaded draft files become part of an existing description when you save it.
 
 <Frame caption="The full task page keeps the description, properties, and conversation together.">
@@ -94,6 +96,10 @@ Clicking a project's name in the sidebar, in search, or with a project shortcut 
 - **Documents** lists the project's own pages and, below them, the documents of every active Feature grouped under that Feature. Feature documents keep their place and order; open one to edit it as you would on the Feature, or use the arrow next to the Feature to open it.
 
 Project pages nest: any page can have sub-pages. **New page** adds a page at the top level, and **Add sub-page** in a page's menu adds one inside it. Drag a page by its handle to reorder it; drag it right to nest it under the page above, or left to move it out. **Move to…** in the menu does the same without dragging: choose **Top level** or a parent page, and the page moves there with its sub-pages, after the pages already in place. Pages open full screen and save automatically, like Feature documents, including uploads and the review when someone else saves first. Deleting a page also deletes its sub-pages and their uploads; the confirmation says how many sub-pages will go.
+
+An open page or Feature document keeps the project's documents in a panel on its left, so you can move to another one without closing it. The panel works like the Documents tab: create, nest, move, and delete pages there too. Changes you haven't saved yet are saved first. Hide or show the panel with the button at the start of the document's header; Kaneo remembers your choice in this browser. On a narrow window the panel covers the document until you pick one, and Escape closes it. A Feature document opened from its Feature shows the same panel when you can view project documents.
+
+Type `@` in a page or Feature document to mention a member of the project. The person is notified once, when the save that adds the mention goes through, and only if they can view the document.
 
 Project pages have their own permissions under **Project documents** in the role editor: **View**, **Create**, **Edit** (which also covers uploads and moving pages), and **Delete**. People without **View** don't see the Documents tab or find pages in search. Feature documents listed on the tab follow feature permissions. When you upgrade, existing roles get the page permissions their task permissions used to give, and roles that could update projects can also edit project names and descriptions. Changes appear for everyone viewing the project without a reload.
 

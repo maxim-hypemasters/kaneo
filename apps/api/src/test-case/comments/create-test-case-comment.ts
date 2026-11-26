@@ -4,6 +4,7 @@ import { testCaseCommentTable } from "../../database/schema";
 import { lockAuthorizedProject } from "../../milestone/access-scope";
 import { retryTransaction } from "../../utils/retry-transaction";
 import { findTestCase } from "../access";
+import { parseMentionIds } from "../../utils/parse-mentions";
 import type { TestCaseScope } from "../schema";
 import { notifyMentionedMembers } from "./notify-mentioned-members";
 import { publishTestCaseCommentChange } from "./publish-test-case-comment-change";
@@ -33,7 +34,7 @@ export async function createTestCaseComment(
   await notifyMentionedMembers(
     scope,
     { id: testCaseId, title: created.title },
-    content,
+    parseMentionIds(content),
   );
   return comment;
 }

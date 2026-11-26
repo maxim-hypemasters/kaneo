@@ -2,7 +2,9 @@ import db from "../database";
 import { testCaseTable } from "../database/schema";
 import { lockAuthorizedProject } from "../milestone/access-scope";
 import type { z } from "../openapi";
+import { newMentionIds } from "../utils/new-mention-ids";
 import { retryTransaction } from "../utils/retry-transaction";
+import { notifyMentionedMembers } from "./comments/notify-mentioned-members";
 import { getTestCase } from "./get-test-case";
 import { lockTestCaseLinks } from "./lock-test-case-links";
 import { publishTestCaseChange } from "./publish-test-case-change";
@@ -39,5 +41,14 @@ export async function createTestCase(
     }),
   );
   await publishTestCaseChange(scope, id);
+  await notifyMentionedMembers(
+    scope,
+    { id, title: body.title },
+    newMentionIds(
+      null,
+      [body.description, body.steps, body.expectedResult],
+      scope.userId,
+    ),
+  );
   return getTestCase(scope, id, access);
 }

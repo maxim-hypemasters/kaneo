@@ -140,6 +140,7 @@ export function ProjectDocumentPage({
           comments.bodyChanged(body);
         }}
         comments={comments.editor}
+        mentionMembers={comments.members}
         ariaLabel={title}
         placeholder={
           draft.editable

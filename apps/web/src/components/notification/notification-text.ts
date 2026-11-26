@@ -106,11 +106,17 @@ export function getNotificationTitle(
         });
       case "document_mention":
       case "document_comment_reply":
-        return t(`notifications:events.${notification.type}.title`, {
-          ...eventData,
-          actorName: nameOr(eventData.actorName, t("common:people.someone")),
-          defaultValue: notification.title ?? notification.type,
-        });
+        return t(
+          // A mention in the document's own text comes with no comment.
+          notification.type === "document_mention" && !eventData.commentId
+            ? "notifications:events.document_mention.titleInDocument"
+            : `notifications:events.${notification.type}.title`,
+          {
+            ...eventData,
+            actorName: nameOr(eventData.actorName, t("common:people.someone")),
+            defaultValue: notification.title ?? notification.type,
+          },
+        );
       case "due_date_reminder":
         return t("notifications:events.due_date_reminder.title", {
           ...eventData,

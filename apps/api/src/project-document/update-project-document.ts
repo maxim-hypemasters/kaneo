@@ -5,6 +5,7 @@ import { applyCommentAnchors } from "../document-comment/apply-comment-anchors";
 import { publishDocumentCommentEvent } from "../document-comment/publish-document-comment-event";
 import { ApiError } from "../errors/api-error";
 import { lockAuthorizedProject } from "../milestone/access-scope";
+import { notifyDocumentMentions } from "../notification/document-mention/notify-document-mentions";
 import type { z } from "../openapi";
 import { deleteOrphanedAssets } from "../storage/cleanup-assets";
 import { claimDocumentAssets } from "../task/controllers/claim-description-assets";
@@ -56,6 +57,14 @@ export async function updateProjectDocument(
     }),
   );
   await publishProjectDocumentEvent(scope, "project.document.updated", id);
+  await notifyDocumentMentions({
+    document: { kind: "page", id, title: row.title },
+    projectId: scope.projectId,
+    workspaceId: scope.workspaceId,
+    authorId: scope.userId,
+    before: oldContent,
+    after: row.body,
+  });
   if (anchorsMoved)
     await publishDocumentCommentEvent(
       { ...scope, kind: "page", documentId: id },

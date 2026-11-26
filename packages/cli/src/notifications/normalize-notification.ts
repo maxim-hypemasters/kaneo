@@ -96,10 +96,12 @@ function describe(
       const who = field(data, "actorName") ?? "Someone";
       const document = field(data, "documentTitle") ?? "a document";
       const preview = field(data, "commentPreview");
+      // A mention in the document's own text comes with no comment.
+      const inComment = field(data, "commentId") !== null;
       return {
         title:
           raw.type === "document_mention"
-            ? `${who} mentioned you in a comment`
+            ? `${who} mentioned you${inComment ? " in a comment" : ""}`
             : `${who} replied to a comment`,
         message: preview ? `${document}: ${preview}` : document,
       };

@@ -85,6 +85,7 @@ describe("normalizeNotification", () => {
           eventData: {
             documentTitle: "Release plan",
             actorName: "Grace",
+            commentId: "comment-1",
             commentPreview: "@Ada can you\ncheck?",
             projectId: "project-1",
             workspaceId: "workspace-1",
@@ -110,6 +111,27 @@ describe("normalizeNotification", () => {
     ).toMatchObject({
       title: "Someone replied to a comment",
       message: "a document",
+    });
+  });
+
+  it("describes a mention in a document's own text", () => {
+    expect(
+      normalizeNotification(
+        raw({
+          type: "document_mention",
+          resourceType: "project_document",
+          resourceId: "doc-1",
+          eventData: {
+            documentTitle: "Release plan",
+            actorName: "Grace",
+            commentId: null,
+            commentPreview: null,
+          },
+        }),
+      ),
+    ).toMatchObject({
+      title: "Grace mentioned you",
+      message: "Release plan",
     });
   });
 

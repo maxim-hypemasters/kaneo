@@ -7,7 +7,10 @@ import {
 import { useDocumentAutosave } from "@/components/documents/use-document-autosave";
 import type { DocumentCommentThread } from "@/fetchers/document-comment/types";
 import { pruneProjectDocumentAssets } from "@/fetchers/project-document/prune-project-document-assets";
-import type { ProjectDocument } from "@/fetchers/project-document/types";
+import type {
+  ProjectDocument,
+  ProjectDocumentTree,
+} from "@/fetchers/project-document/types";
 import { updateProjectDocument } from "@/fetchers/project-document/update-project-document";
 import { withAnchors } from "@/hooks/mutations/document-comment/thread-cache";
 import { documentCommentsKey } from "@/hooks/queries/document-comment/document-comment-keys";
@@ -15,6 +18,7 @@ import {
   projectDocumentKey,
   projectDocumentsKey,
 } from "@/hooks/queries/project-document/project-document-keys";
+import { withDocumentTitle } from "@/hooks/queries/project-document/with-document-title";
 import { uploadProjectDocumentAsset } from "@/lib/upload-draft-asset";
 
 // Uploads are staged on the project under document permissions and claimed
@@ -56,12 +60,18 @@ export function useProjectDocumentAutosave({
       },
       prune: (assetIds) => pruneProjectDocumentAssets(document.id, assetIds),
       upload: (file) => uploadProjectDocumentAsset(projectId, file),
-      onSaved: (value) =>
+      onSaved: (value) => {
         queryClient.setQueryData<ProjectDocument>(
           projectDocumentKey(projectId, value.id),
           (cached) =>
             cached && cached.revision > value.revision ? cached : value,
-        ),
+        );
+        // The documents panel shows the title while the page is open.
+        queryClient.setQueryData<ProjectDocumentTree>(
+          projectDocumentsKey(projectId),
+          (tree) => tree && withDocumentTitle(tree, value.id, value.title),
+        );
+      },
       onListStale: () =>
         void queryClient.invalidateQueries({
           queryKey: projectDocumentsKey(projectId),

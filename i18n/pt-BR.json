@@ -296,6 +296,10 @@
 			"toggle_one": "Comments, {{count}} open thread",
 			"toggle_other": "Comments, {{count}} open threads",
 			"updateFailed": "The comment couldn’t be saved."
+		},
+		"documentWindow": {
+			"hideDocuments": "Hide documents",
+			"navLabel": "Project documents"
 		}
 	},
 	"auth": {
@@ -3102,7 +3106,8 @@
 			"document_mention": {
 				"content": "In {{documentTitle}}",
 				"contentWithPreview": "{{documentTitle}}: {{commentPreview}}",
-				"title": "{{actorName}} mentioned you in a comment"
+				"title": "{{actorName}} mentioned you in a comment",
+				"titleInDocument": "{{actorName}} mencionou você"
 			}
 		},
 		"newCount_many": "{{count}} novas",

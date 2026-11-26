@@ -17,6 +17,9 @@ type MentionSuggestionOptions = {
 // own keyboard/menu handling.
 export const MentionSuggestion = Extension.create<MentionSuggestionOptions>({
   name: "kaneoMentionSuggestion",
+  // Ahead of checklist and list items, so Enter there picks the member
+  // instead of splitting the item.
+  priority: 101,
 
   addOptions() {
     return { getMembers: () => [] };
@@ -78,7 +81,12 @@ export const MentionSuggestion = Extension.create<MentionSuggestionOptions>({
             place(props.clientRect);
           },
           onKeyDown: (props) => {
-            if (props.event.key === "Escape") return false;
+            // Escape closes the list, and nothing more: not the dialog or
+            // the edit the editor sits in.
+            if (props.event.key === "Escape") {
+              props.event.stopPropagation();
+              return true;
+            }
             return component?.ref?.onKeyDown(props) ?? false;
           },
           onExit: () => {
