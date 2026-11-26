@@ -41,7 +41,12 @@ export function useGanttAway(
     () =>
       rangeStartTime === undefined
         ? NO_RUNS_BY_USER
-        : awayRunsByUser(byUser, new Date(rangeStartTime), dayCount, hideWeekends),
+        : awayRunsByUser(
+            byUser,
+            new Date(rangeStartTime),
+            dayCount,
+            hideWeekends,
+          ),
     [byUser, rangeStartTime, dayCount, hideWeekends],
   );
 

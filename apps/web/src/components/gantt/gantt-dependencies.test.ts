@@ -7,6 +7,7 @@ import {
   isDependencyBroken,
   planDependencyMoves,
 } from "./gantt-dependencies";
+import { isWeekendDay, spanLength } from "./weekend-columns";
 
 const span = (start: string, end: string): GanttSpan => ({
   start: parseISO(start),
@@ -406,6 +407,214 @@ describe("planDependencyMoves for planned and finished work", () => {
 
     expect(plan.moves.map((move) => [move.taskId, dates(move.to)])).toEqual([
       ["b", ["2026-03-01", "2026-03-03"]],
+    ]);
+  });
+});
+
+// September 2026: the 7th and 14th are Mondays, the 12th and 13th a weekend.
+describe("planDependencyMoves with weekends hidden", () => {
+  const movedTo = (plan: ReturnType<typeof planDependencyMoves>) =>
+    Object.fromEntries(plan.moves.map((m) => [m.taskId, dates(m.to)]));
+  const hidden = (
+    spans: ReadonlyMap<string, GanttSpan>,
+    dependencies: readonly GanttDependency[],
+    taskId: string,
+    next: GanttSpan,
+  ) => planDependencyMoves(spans, dependencies, taskId, next, new Set(), true);
+
+  it("pushes a blocked task by working days and keeps its working days", () => {
+    const spans = new Map([
+      ["a", span("2026-09-07", "2026-09-09")],
+      // Fri-Mon: two working days.
+      ["b", span("2026-09-11", "2026-09-14")],
+    ]);
+    const edit = span("2026-09-14", "2026-09-16");
+
+    expect(movedTo(hidden(spans, [dep("a", "b")], "a", edit))).toEqual({
+      b: ["2026-09-16", "2026-09-17"],
+    });
+    // Shown weekends still move it by calendar days.
+    expect(
+      movedTo(planDependencyMoves(spans, [dep("a", "b")], "a", edit)),
+    ).toEqual({ b: ["2026-09-16", "2026-09-19"] });
+  });
+
+  it.each([
+    {
+      blocker: ["2026-09-07", "2026-09-09"],
+      edit: ["2026-09-09", "2026-09-11"],
+      blocked: ["2026-09-09", "2026-09-11"],
+      to: ["2026-09-11", "2026-09-15"],
+    },
+    {
+      blocker: ["2026-09-07", "2026-09-09"],
+      edit: ["2026-09-09", "2026-09-11"],
+      blocked: ["2026-09-10", "2026-09-11"],
+      to: ["2026-09-11", "2026-09-14"],
+    },
+    {
+      blocker: ["2026-09-07", "2026-09-14"],
+      edit: ["2026-09-07", "2026-09-15"],
+      blocked: ["2026-09-14", "2026-09-18"],
+      to: ["2026-09-15", "2026-09-21"],
+    },
+  ])(
+    "pushes $blocked past a weekend to $to",
+    ({ blocker, edit, blocked, to }) => {
+      const plan = hidden(
+        new Map([
+          ["a", span(blocker[0], blocker[1])],
+          ["b", span(blocked[0], blocked[1])],
+        ]),
+        [dep("a", "b")],
+        "a",
+        span(edit[0], edit[1]),
+      );
+
+      expect(movedTo(plan)).toEqual({ b: to });
+    },
+  );
+
+  it("pulls a blocker earlier by working days", () => {
+    const plan = hidden(
+      new Map([
+        ["a", span("2026-09-07", "2026-09-09")],
+        ["b", span("2026-09-09", "2026-09-11")],
+      ]),
+      [dep("a", "b")],
+      "b",
+      span("2026-09-08", "2026-09-10"),
+    );
+
+    // Not Sun-Tue: a keeps its three working days.
+    expect(movedTo(plan)).toEqual({ a: ["2026-09-04", "2026-09-08"] });
+  });
+
+  it("ends a pulled blocker on the Friday before a weekend start", () => {
+    const plan = hidden(
+      new Map([
+        ["a", span("2026-09-09", "2026-09-14")],
+        ["b", span("2026-09-14", "2026-09-16")],
+      ]),
+      [dep("a", "b")],
+      "b",
+      // b now starts on Saturday, as set outside the Gantt.
+      span("2026-09-12", "2026-09-16"),
+    );
+
+    expect(movedTo(plan)).toEqual({ a: ["2026-09-08", "2026-09-11"] });
+  });
+
+  it("lands a blocked task's weekend dates on the working days it is drawn on", () => {
+    const edit = span("2026-09-07", "2026-09-14");
+    const plan = hidden(
+      new Map([
+        ["a", span("2026-09-07", "2026-09-11")],
+        // Drawn Mon-Tue, and on Monday alone.
+        ["b", span("2026-09-12", "2026-09-15")],
+        ["c", span("2026-09-12", "2026-09-13")],
+      ]),
+      [dep("a", "b"), dep("a", "c")],
+      "a",
+      edit,
+    );
+
+    expect(movedTo(plan)).toEqual({
+      b: ["2026-09-14", "2026-09-15"],
+      c: ["2026-09-14", "2026-09-14"],
+    });
+    for (const move of plan.moves) {
+      expect(isDependencyBroken(edit, move.to)).toBe(false);
+    }
+  });
+
+  it("passes on only the working days a move adds", () => {
+    const plan = hidden(
+      new Map([
+        ["a", span("2026-09-07", "2026-09-08")],
+        ["b", span("2026-09-08", "2026-09-11")],
+        // Starts a working day before b ends already.
+        ["c", span("2026-09-10", "2026-09-14")],
+      ]),
+      [dep("a", "b"), dep("b", "c")],
+      "a",
+      span("2026-09-07", "2026-09-09"),
+    );
+
+    expect(movedTo(plan)).toEqual({
+      b: ["2026-09-09", "2026-09-14"],
+      // Still starts a working day before b ends.
+      c: ["2026-09-11", "2026-09-15"],
+    });
+  });
+
+  it("never moves a date onto a weekend or changes a working-day length", () => {
+    const spans = new Map([
+      ["z", span("2026-09-03", "2026-09-07")],
+      ["a", span("2026-09-07", "2026-09-09")],
+      ["b", span("2026-09-09", "2026-09-11")],
+      ["c", span("2026-09-11", "2026-09-14")],
+    ]);
+    const chain = [dep("z", "a"), dep("a", "b"), dep("b", "c")];
+    const edit = span("2026-09-04", "2026-09-10");
+    const plan = hidden(spans, chain, "a", edit);
+
+    expect(movedTo(plan)).toEqual({
+      b: ["2026-09-10", "2026-09-14"],
+      c: ["2026-09-14", "2026-09-15"],
+      z: ["2026-09-02", "2026-09-04"],
+    });
+    for (const { from, to } of plan.moves) {
+      expect(isWeekendDay(to.start) || isWeekendDay(to.end)).toBe(false);
+      expect(spanLength(to.start, to.end, true)).toBe(
+        spanLength(from.start, from.end, true),
+      );
+    }
+    const after = new Map(spans).set("a", edit);
+    for (const move of plan.moves) after.set(move.taskId, move.to);
+    for (const { blockerId, blockedId } of chain) {
+      const blocker = after.get(blockerId);
+      const blocked = after.get(blockedId);
+      if (!blocker || !blocked) throw new Error("missing span");
+      expect(isDependencyBroken(blocker, blocked)).toBe(false);
+    }
+  });
+
+  it("moves planned work past a weekend, keeping its hours", () => {
+    const planned = (start: string, end: string): GanttSpan => ({
+      ...span(start, end),
+      precise: true,
+    });
+    const times = (value: GanttSpan | undefined) =>
+      value && [
+        format(value.start, "yyyy-MM-dd HH:mm"),
+        format(value.end, "yyyy-MM-dd HH:mm"),
+      ];
+    const pushed = hidden(
+      new Map([
+        ["a", planned("2026-09-10T09:00", "2026-09-10T17:00")],
+        ["b", planned("2026-09-11T09:00", "2026-09-11T13:00")],
+      ]),
+      [dep("a", "b")],
+      "a",
+      planned("2026-09-11T09:00", "2026-09-11T11:00"),
+    );
+    const pulled = hidden(
+      new Map([
+        ["a", planned("2026-09-14T09:00", "2026-09-14T17:00")],
+        ["b", planned("2026-09-15T09:00", "2026-09-15T13:00")],
+      ]),
+      [dep("a", "b")],
+      "b",
+      planned("2026-09-14T09:00", "2026-09-14T13:00"),
+    );
+
+    expect(pushed.moves.map((m) => [m.taskId, times(m.to)])).toEqual([
+      ["b", ["2026-09-14 09:00", "2026-09-14 13:00"]],
+    ]);
+    // Not Sunday, the day a calendar move would give.
+    expect(pulled.moves.map((m) => [m.taskId, times(m.to)])).toEqual([
+      ["a", ["2026-09-11 09:00", "2026-09-11 17:00"]],
     ]);
   });
 });

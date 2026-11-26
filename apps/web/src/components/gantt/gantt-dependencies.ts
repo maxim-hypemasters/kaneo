@@ -1,4 +1,12 @@
 import { addDays, differenceInCalendarDays } from "date-fns";
+import { lastScheduledInstant } from "./schedule-geometry";
+import {
+  dayColumn,
+  nextWorkingDay,
+  previousWorkingDay,
+  shiftWorkingDays,
+  spanLength,
+} from "./weekend-columns";
 
 // "A blocks B": B can't start before A ends.
 export type GanttDependency = {
@@ -52,11 +60,42 @@ export function isDependencyBroken(blocker: GanttSpan, blocked: GanttSpan) {
     : differenceInCalendarDays(blocked.start, blocker.end) < 0;
 }
 
-function shiftSpan(span: GanttSpan, days: number): GanttSpan {
+// With weekends hidden a span is drawn from the working day it starts on (or
+// the next one) for `length` more columns. Planned work ends at an exclusive
+// instant.
+function drawnSpan(span: GanttSpan) {
+  const end = span.precise
+    ? lastScheduledInstant(span.start, span.end)
+    : span.end;
+  return {
+    end,
+    first: nextWorkingDay(span.start),
+    length: spanLength(span.start, end, true),
+  };
+}
+
+// `span` moved by whole columns. With weekends hidden it moves from the
+// working days it is drawn on, so both ends land on working days and it keeps
+// its working-day length, even when it moves no columns.
+function shiftSpan(
+  span: GanttSpan,
+  columns: number,
+  hideWeekends: boolean,
+): GanttSpan {
+  if (!hideWeekends) {
+    return {
+      ...span,
+      start: addDays(span.start, columns),
+      end: addDays(span.end, columns),
+    };
+  }
+  const drawn = drawnSpan(span);
+  const start = shiftWorkingDays(drawn.first, columns);
+  const last = shiftWorkingDays(start, drawn.length);
   return {
     ...span,
-    start: addDays(span.start, days),
-    end: addDays(span.end, days),
+    start,
+    end: addDays(span.end, differenceInCalendarDays(last, drawn.end)),
   };
 }
 
@@ -72,6 +111,32 @@ function overlapDays(blocker: GanttSpan, blocked: GanttSpan) {
     return overlap > 0 ? Math.ceil(overlap / DAY_MS) : 0;
   }
   return differenceInCalendarDays(blocker.end, blocked.start);
+}
+
+// How far `blocked` must move later (or `blocker` earlier, when `later` is
+// false) to start no earlier than `blocker` ends; null when they are in order.
+// With weekends hidden it counts working-day columns from where the mover is
+// drawn. A clash between dates on hidden days can then take 0 columns: the
+// move only lands the mover's dates on the working days it is drawn on.
+function clearance(
+  blocker: GanttSpan,
+  blocked: GanttSpan,
+  later: boolean,
+  hideWeekends: boolean,
+) {
+  const days = overlapDays(blocker, blocked);
+  if (days <= 0) return null;
+  if (!hideWeekends) return days;
+  if (later) {
+    return dayColumn(addDays(blocked.start, days), blocked.start, true);
+  }
+  const drawn = drawnSpan(blocker);
+  const latestEnd = previousWorkingDay(addDays(drawn.end, -days));
+  return dayColumn(
+    shiftWorkingDays(drawn.first, drawn.length),
+    latestEnd,
+    true,
+  );
 }
 
 function groupBy(
@@ -99,13 +164,17 @@ function groupBy(
 //   overlap a move adds is passed on, so older overlaps stay as they are;
 // - `cycle`: the moves run into a loop of tasks blocking each other, so no
 //   order satisfies them and `moves` is empty.
-// Only tasks in `spans` (scheduled ones) take part.
+// Only tasks in `spans` (scheduled ones) take part. With `hideWeekends`,
+// overlaps count working days and tasks move by whole working-day columns,
+// like a dragged bar: their dates land on working days and each keeps its
+// working-day length.
 export function planDependencyMoves(
   spans: ReadonlyMap<string, GanttSpan>,
   dependencies: readonly GanttDependency[],
   taskId: string,
   next: GanttSpan,
   heldBrokenIds: ReadonlySet<string> = new Set(),
+  hideWeekends = false,
 ) {
   // The edited task keeps what it is (planned, finished), only moved.
   const spanAfter = (id: string): GanttSpan | undefined =>
@@ -154,16 +223,17 @@ export function planDependencyMoves(
         const own = current(id);
         const other = current(otherId);
         if (!own || !other) continue;
-        const now = later ? overlapDays(own, other) : overlapDays(other, own);
-        let shift = now;
-        if (id !== taskId) {
-          const blockerBefore = spans.get(dependency.blockerId);
-          const blockedBefore = spans.get(dependency.blockedId);
-          if (blockerBefore && blockedBefore) {
-            shift -= Math.max(0, overlapDays(blockerBefore, blockedBefore));
-          }
-        }
-        if (shift <= 0) continue;
+        const now = later
+          ? clearance(own, other, true, hideWeekends)
+          : clearance(other, own, false, hideWeekends);
+        const blockerBefore = spans.get(dependency.blockerId);
+        const blockedBefore = spans.get(dependency.blockedId);
+        const before =
+          id !== taskId && blockerBefore && blockedBefore
+            ? clearance(blockerBefore, blockedBefore, later, hideWeekends)
+            : null;
+        if (now === null || (before !== null && now <= before)) continue;
+        const shift = now - (before ?? 0);
         const count = (moveCounts.get(otherId) ?? 0) + 1;
         const earlier = moved.get(otherId);
         if (
@@ -176,7 +246,7 @@ export function planDependencyMoves(
         }
         moveCounts.set(otherId, count);
         moved.set(otherId, {
-          span: shiftSpan(other, later ? shift : -shift),
+          span: shiftSpan(other, later ? shift : -shift, hideWeekends),
           later,
         });
         queue.push(otherId);

@@ -432,7 +432,9 @@ describe("useGanttRange", () => {
 
   describe("with weekends hidden", () => {
     const columnAtLeft = (hook: Hook, element: HTMLElement) =>
-      hook.result.current.timeline?.days[Math.round(element.scrollLeft / DAY_PX)];
+      hook.result.current.timeline?.days[
+        Math.round(element.scrollLeft / DAY_PX)
+      ];
 
     it("renders working days only and keeps the visible day when growing the start", () => {
       const { hook, element } = setup({

@@ -69,7 +69,11 @@ export function rangeForZoomAnchor(
       dayPx,
       hideWeekends,
     );
-    const dayCount = dayColumn(addDays(range.end, 1), range.start, hideWeekends);
+    const dayCount = dayColumn(
+      addDays(range.end, 1),
+      range.start,
+      hideWeekends,
+    );
     const maxLeft = Math.max(0, dayCount * dayPx - visiblePx);
     const side = left < 0 ? "start" : left > maxLeft ? "end" : null;
     if (!side) return range;

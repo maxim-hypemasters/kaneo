@@ -1,6 +1,7 @@
 import { startOfDay } from "date-fns";
 import type { ScheduledTask } from "./gantt-types";
 import { lastScheduledInstant } from "./schedule-geometry";
+import { nextWorkingDay, previousWorkingDay } from "./weekend-columns";
 
 // Where each task sat in the last layout, and the days it covered then.
 export type CompactTrackMemory = ReadonlyMap<
@@ -21,8 +22,17 @@ function lastBarDay(task: ScheduledTask) {
   ).getTime();
 }
 
-function barDays(task: ScheduledTask): [number, number] {
-  return [startOfDay(task.scheduleStart).getTime(), lastBarDay(task)];
+// The days a task's bar is drawn on. Hidden weekend days have no column: a
+// bar runs from the next working day to the previous one, and covers at least
+// one column, so a weekend-only bar sits on the following Monday (see
+// getBarGridColumns).
+function barDays(task: ScheduledTask, hideWeekends: boolean): [number, number] {
+  const first = startOfDay(task.scheduleStart);
+  const last = lastBarDay(task);
+  if (!hideWeekends) return [first.getTime(), last];
+  const drawnFirst = nextWorkingDay(first).getTime();
+  const drawnLast = previousWorkingDay(new Date(last)).getTime();
+  return [drawnFirst, Math.max(drawnLast, drawnFirst)];
 }
 
 // Compact rows: tasks whose bars cover no common day share a track. Packing
@@ -36,6 +46,7 @@ export function compactTaskTracks(
   tasks: readonly ScheduledTask[],
   isMobile: boolean,
   previous?: CompactTrackMemory,
+  hideWeekends = false,
 ): ScheduledTask[][] {
   const sorted = [...tasks].sort(
     (left, right) =>
@@ -70,19 +81,19 @@ export function compactTaskTracks(
   const added: ScheduledTask[] = [];
   for (const task of sorted) {
     const before = previous?.get(task.id);
-    const days = barDays(task);
+    const days = barDays(task, hideWeekends);
     if (!before) added.push(task);
     else if (before.firstDay === days[0] && before.lastDay === days[1])
       place(task, trackAt(before.track), days);
     else edited.push(task);
   }
   for (const task of edited) {
-    const days = barDays(task);
+    const days = barDays(task, hideWeekends);
     const own = trackAt(previous!.get(task.id)!.track);
     if (fits(own, days)) place(task, own, days);
     else placeFirstFree(task, days);
   }
-  for (const task of added) placeFirstFree(task, barDays(task));
+  for (const task of added) placeFirstFree(task, barDays(task, hideWeekends));
 
   // A track left empty (its tasks moved lane, or are filtered out) closes up.
   return tracks
@@ -97,6 +108,7 @@ export function compactTaskTracks(
 
 export function rememberTracks(
   tracks: readonly (readonly ScheduledTask[])[],
+  hideWeekends = false,
 ): CompactTrackMemory {
   const memory = new Map<
     string,
@@ -104,7 +116,7 @@ export function rememberTracks(
   >();
   tracks.forEach((tasks, track) => {
     for (const task of tasks) {
-      const [firstDay, lastDay] = barDays(task);
+      const [firstDay, lastDay] = barDays(task, hideWeekends);
       memory.set(task.id, { track, firstDay, lastDay });
     }
   });

@@ -201,12 +201,22 @@ export function GanttTaskBar({
   const resizable = canMoveDates && !isMobile;
   const segments = isMilestone ? undefined : task.scheduleSegments;
   // Planned segments only follow a whole-bar move; a resize sets exact dates.
+  // Each moves by columns from the day it starts on, as the bar's ends do.
   const displaySegments =
-    dragShift && startDays && segments
-      ? segments.map((segment) => ({
-          start: addDays(segment.start, startDays),
-          end: addDays(segment.end, startDays),
-        }))
+    dragShift && segments
+      ? segments.map((segment) => {
+          const { startDays: days } = columnShifts(
+            segment.start,
+            segment.end,
+            dragShift,
+            0,
+            hideWeekends,
+          );
+          return {
+            start: addDays(segment.start, days),
+            end: addDays(segment.end, days),
+          };
+        })
       : segments;
 
   const trackCount = timeline.days.length;
@@ -515,25 +525,24 @@ export function GanttTaskBar({
     );
     // Planned work keeps its time of day, so a bar shrunk to one day could
     // otherwise start a few hours after it ends; the moved end stops at the
-    // other one.
-    const start =
-      edge === "start"
-        ? new Date(
-            Math.min(
-              addDays(current.scheduleStart, startDays).getTime(),
-              current.scheduleEnd.getTime(),
-            ),
-          )
-        : current.scheduleStart;
-    const end =
-      edge === "end"
-        ? new Date(
-            Math.max(
-              addDays(current.scheduleEnd, endDays).getTime(),
-              current.scheduleStart.getTime(),
-            ),
-          )
-        : current.scheduleEnd;
+    // other one. Widening a bar on weekend days alone from its start moves
+    // its end too, onto the working day it is drawn on.
+    const start = startDays
+      ? new Date(
+          Math.min(
+            addDays(current.scheduleStart, startDays).getTime(),
+            current.scheduleEnd.getTime(),
+          ),
+        )
+      : current.scheduleStart;
+    const end = endDays
+      ? new Date(
+          Math.max(
+            addDays(current.scheduleEnd, endDays).getTime(),
+            current.scheduleStart.getTime(),
+          ),
+        )
+      : current.scheduleEnd;
     return {
       start,
       end,
@@ -634,7 +643,10 @@ export function GanttTaskBar({
   }
 
   // Planned work split by days without work (a weekend, time off) draws one
-  // block per run of working days, each inset like a whole bar.
+  // block per run of working days, each inset like a whole bar. So does a
+  // single run that leaves part of the bar bare, as when the rest of the work
+  // sits on a hidden weekend. A resize leaves the segments where they were,
+  // so its preview keeps the plain fill.
   const barDays = lineEnd - lineStart;
   const dayBlocks =
     plannedWork && displaySegments
@@ -645,7 +657,14 @@ export function GanttTaskBar({
           hideWeekends,
         )
       : [];
-  const workBlocks = dayBlocks.length > 1 ? dayBlocks : null;
+  const workBlocks =
+    dayBlocks.length > 1 ||
+    (!resize &&
+      dayBlocks.some(
+        ({ from, to }) => from > lineStart - 1 || to < lineEnd - 1,
+      ))
+      ? dayBlocks
+      : null;
 
   // Short bars on phones leave no room for the title inside them, so it's
   // drawn just after the bar instead (when the timeline has room for it).

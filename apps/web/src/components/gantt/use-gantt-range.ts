@@ -318,7 +318,9 @@ export function useGanttRange({
           visiblePx,
           Math.max(
             GANTT_MAX_DAYS,
-            Math.ceil(calendarDays(visibleDays, current.timeline.hideWeekends)) +
+            Math.ceil(
+              calendarDays(visibleDays, current.timeline.hideWeekends),
+            ) +
               2 * (GANTT_CHUNK_DAYS + EDGE_DAYS),
           ),
           current.timeline.hideWeekends,
@@ -404,7 +406,8 @@ export function useGanttRange({
     // The span grows and trims in calendar days, the scroll position counts
     // rendered columns.
     const hide = shown.hideWeekends;
-    const addedColumns = side === "start" ? dayColumn(current.start, grown.range.start, hide) : 0;
+    const addedColumns =
+      side === "start" ? dayColumn(current.start, grown.range.start, hide) : 0;
     const trimmedColumns =
       grown.trimmed === 0
         ? 0
@@ -416,7 +419,8 @@ export function useGanttRange({
             )
           : dayColumn(grown.range.start, current.start, hide);
     const otherSideDays = side === "start" ? daysRight : daysLeft;
-    if (trimmedColumns > 0 && otherSideDays - trimmedColumns < EDGE_DAYS) return;
+    if (trimmedColumns > 0 && otherSideDays - trimmedColumns < EDGE_DAYS)
+      return;
     pendingShiftPxRef.current =
       side === "start" ? addedColumns * dayPx : -trimmedColumns * dayPx;
     setState({ projectId, range: grown.range });

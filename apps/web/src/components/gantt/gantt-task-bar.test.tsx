@@ -514,6 +514,111 @@ describe("GanttTaskBar", () => {
         }),
       );
     });
+
+    it("widens a bar on weekend days alone from its start instead of moving it", () => {
+      const { bar, onCommit } = showWeekdays(task("2026-09-05", "2026-09-06"));
+      const start = bar!.querySelector<HTMLElement>(
+        '[data-gantt-resize="start"]',
+      )!;
+      fireEvent.pointerDown(start, { button: 0, clientX: 500, clientY: 300 });
+      fireEvent.pointerMove(window, {
+        clientX: 500 - DAY_PX,
+        clientY: 300,
+        buttons: 1,
+      });
+      // Friday and the Monday it was drawn on.
+      expect(bar?.style.gridColumn).toBe("4 / 6");
+      fireEvent.pointerUp(window, { clientX: 500 - DAY_PX, clientY: 300 });
+      fireEvent.keyDown(start, { key: "ArrowLeft" });
+
+      const widened = expect.objectContaining({
+        start: parseISO("2026-09-04"),
+        end: parseISO("2026-09-07"),
+        exact: true,
+      });
+      expect(onCommit).toHaveBeenNthCalledWith(1, widened);
+      expect(onCommit).toHaveBeenNthCalledWith(2, widened);
+    });
+
+    // Planned work from 9 to 5 on each of the given days.
+    const workOn = (first: string, ...rest: string[]) =>
+      task(`${first}T09:00:00`, `${rest.at(-1) ?? first}T17:00:00`, {
+        scheduleApplied: true,
+        scheduleSegments: [first, ...rest].map((day) => ({
+          start: parseISO(`${day}T09:00:00`),
+          end: parseISO(`${day}T17:00:00`),
+        })),
+      });
+    const blockPlaces = (bar: HTMLElement | null) =>
+      Array.from(
+        bar?.querySelectorAll<HTMLElement>("[data-gantt-work-segment]") ?? [],
+        (block) => [block.style.left, block.style.width],
+      );
+
+    it("moves planned work's blocks by columns, like the bar's ends", () => {
+      // Monday, Wednesday and Friday.
+      const { bar, onCommit } = showWeekdays(
+        workOn("2026-09-07", "2026-09-09", "2026-09-11"),
+      );
+      const places = [
+        ["calc(0% + 4px)", "calc(20% - 8px)"],
+        ["calc(40% + 4px)", "calc(20% - 8px)"],
+        ["calc(80% + 4px)", "calc(20% - 8px)"],
+      ];
+      expect(bar?.style.gridColumn).toBe("5 / 10");
+      expect(blockPlaces(bar)).toEqual(places);
+
+      const button = screen.getByRole("button", {
+        name: "tasks:gantt.taskAriaLabelMovable(title=Checkout)",
+      });
+      fireEvent.pointerDown(button, { button: 0, clientX: 500, clientY: 300 });
+      fireEvent.pointerMove(window, {
+        clientX: 500 + DAY_PX,
+        clientY: 300,
+        buttons: 1,
+      });
+      // Tuesday, Thursday and the next Monday.
+      expect(bar?.style.gridColumn).toBe("6 / 11");
+      expect(blockPlaces(bar)).toEqual(places);
+      fireEvent.pointerUp(window, { clientX: 500 + DAY_PX, clientY: 300 });
+
+      expect(onCommit).toHaveBeenCalledWith({
+        start: parseISO("2026-09-08T09:00:00"),
+        end: parseISO("2026-09-14T17:00:00"),
+        userId: "u1",
+        featureId: null,
+        milestoneId: null,
+      });
+    });
+
+    it("leaves a gap beside the only block when the rest of the work is on a weekend", () => {
+      // Thursday and Saturday: drawn Thursday to Friday, with Friday off.
+      const late = showWeekdays(workOn("2026-09-03", "2026-09-05"));
+      expect(late.bar?.style.gridColumn).toBe("3 / 5");
+      expect(blockPlaces(late.bar)).toEqual([
+        ["calc(0% + 4px)", "calc(50% - 8px)"],
+      ]);
+      expect(
+        screen.getByRole("button", {
+          name: "tasks:gantt.taskAriaLabelMovable(title=Checkout)",
+        }).firstElementChild,
+      ).toHaveClass("hidden");
+      cleanup();
+
+      // Saturday and Tuesday: drawn Monday to Tuesday, with Monday off.
+      const early = showWeekdays(workOn("2026-09-05", "2026-09-08"));
+      expect(early.bar?.style.gridColumn).toBe("5 / 7");
+      expect(blockPlaces(early.bar)).toEqual([
+        ["calc(50% + 4px)", "calc(50% - 8px)"],
+      ]);
+    });
+
+    it("fills a bar whose only block covers it", () => {
+      const { bar } = showWeekdays(workOn("2026-09-04", "2026-09-07"));
+      // Friday and Monday run together without the weekend between them.
+      expect(bar?.style.gridColumn).toBe("4 / 6");
+      expect(blockPlaces(bar)).toEqual([]);
+    });
   });
 
   describe("resize handles", () => {

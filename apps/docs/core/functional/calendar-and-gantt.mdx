@@ -3,7 +3,7 @@ title: "Calendar and Gantt"
 description: "See when work is due and how scheduled tasks fit together."
 ---
 
-Open a project, choose **Tasks**, then open **Display** and pick **Calendar** or **Gantt** as the layout. Both views show the published schedule. Search and filters change what you see; they never change the inputs used to plan the project. **Display** also sets the first day of the week.
+Open a project, choose **Tasks**, then open **Display** and pick **Calendar** or **Gantt** as the layout. Both views show the published schedule. Search and filters change what you see; they never change the inputs used to plan the project. **Display** also sets the first day of the week and, for Gantt, can turn on **Hide weekends**.
 
 ## Estimate and plan work
 
@@ -45,6 +45,8 @@ Task/Bug cards fill each day they have work on and nearly the full height of the
 Drag a Task/Bug bar sideways to move it; this needs update permission for that kind of work. Planned work keeps its planned assignee and remaining effort and is laid out again through working hours (Monday–Friday, 09:00–17:00 in the planning timezone) from the day you drop it on, at the same time of day, skipping its planned assignee's approved time off and public holidays as Apply does. Work dropped on a weekend or on one of those days starts the next working morning. Work without a plan keeps its length. A moved item stays where you put it, and other releases' plans work around it, until the next Apply of its own release plans it again. Bars can also be resized: drag the handle at either end, or focus the handle and press the left or right arrow key, to change the start or due date. A resized bar takes exactly the dates you give it; planned work then stops following its estimate until the next Apply of its release. Work without a plan, and resized bars, can't start or end on a day the assignee is away, though they may span such days; pending requests never block. While you drag, a hint names who is away and on which day, and dropping there puts the bar back and says why. An arrow key steps past those days to the next day the date can take. See [Time off and public holidays](#time-off-and-public-holidays). **Esc** cancels a drag. On touch screens a drag scrolls the timeline instead.
 
 Rows stay where they are while bars are moved or resized, by you or by others, so the chart doesn't reshuffle under you; reopen the Gantt or reload the page to sort them by start date again. With **Compact rows**, a bar that no longer fits beside its neighbours moves to the first row with room, and the other bars stay put.
+
+**Hide weekends** in **Display** removes the Saturday and Sunday columns from the Gantt. It's off until you turn it on, and the choice is saved in your browser and only affects your view. Dates don't change: a bar across a weekend is drawn without the gap, and one whose dates are all on a weekend is drawn one day wide on the following Monday. Dragging moves a bar by working days and keeps its working-day length, resizing and **Move N related tasks** never put a start or due date on a hidden weekend day, and today and release dates that fall on a weekend are marked between Friday and Monday. The Calendar and the release plan preview still show every day.
 
 Dates and status answer different questions. Reaching a due date does not finish a task; move it to a done column when the work is complete.
 

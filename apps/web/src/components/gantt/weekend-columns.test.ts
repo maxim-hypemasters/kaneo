@@ -124,9 +124,36 @@ describe("columnShifts", () => {
     ).toEqual({ startDays: 3, endDays: 2 });
   });
 
+  it("grows a span on weekend days alone from the column it is drawn on", () => {
+    // Sat to Sun is drawn on Monday; its start moved a column left is Friday,
+    // and its end stays on Monday.
+    expect(
+      columnShifts(day("2026-09-05"), day("2026-09-06"), -1, 0, true),
+    ).toEqual({ startDays: -1, endDays: 1 });
+  });
+
+  it("leaves an untouched end put when the span has a working day", () => {
+    // Fri 22:00 to Sat 06:00 is drawn on Friday, so it isn't weekend-only.
+    expect(
+      columnShifts(
+        new Date(2026, 8, 4, 22),
+        new Date(2026, 8, 5, 6),
+        -1,
+        0,
+        true,
+      ),
+    ).toEqual({ startDays: -1, endDays: 0 });
+    expect(
+      columnShifts(day("2026-09-03"), day("2026-09-06"), -1, 0, true),
+    ).toEqual({ startDays: -1, endDays: 0 });
+  });
+
   it("is plain calendar days while weekends are shown", () => {
     expect(
       columnShifts(day("2026-09-07"), day("2026-09-11"), 3, -1, false),
     ).toEqual({ startDays: 3, endDays: -1 });
+    expect(
+      columnShifts(day("2026-09-05"), day("2026-09-06"), -1, 0, false),
+    ).toEqual({ startDays: -1, endDays: 0 });
   });
 });

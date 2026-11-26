@@ -26,11 +26,7 @@ function workingDaysBefore(position: number) {
 // `rangeStart`. A hidden weekend day has no column of its own and takes the
 // next working day's, so spans starting on it begin there. Dates before
 // `rangeStart` are negative.
-export function dayColumn(
-  date: Date,
-  rangeStart: Date,
-  hideWeekends = false,
-) {
+export function dayColumn(date: Date, rangeStart: Date, hideWeekends = false) {
   const days = differenceInCalendarDays(date, rangeStart);
   if (!hideWeekends) return days;
   const offset = mondayOffset(rangeStart);
@@ -101,12 +97,17 @@ export function columnShifts(
   if (!hideWeekends) return { startDays: startColumns, endDays: endColumns };
   const first = nextWorkingDay(start);
   const lastDrawn = previousWorkingDay(end);
-  const last = lastDrawn < first ? first : lastDrawn;
+  const weekendOnly = differenceInCalendarDays(lastDrawn, first) < 0;
+  const last = weekendOnly ? first : lastDrawn;
+  // A span on weekend days alone is drawn on `first`, not on its hidden end,
+  // so once its start moves its end has to land on that column too, or the
+  // bar would jump instead of growing.
+  const movesEnd = endColumns !== 0 || (weekendOnly && startColumns !== 0);
   return {
     startDays: startColumns
       ? differenceInCalendarDays(shiftWorkingDays(first, startColumns), start)
       : 0,
-    endDays: endColumns
+    endDays: movesEnd
       ? differenceInCalendarDays(shiftWorkingDays(last, endColumns), end)
       : 0,
   };

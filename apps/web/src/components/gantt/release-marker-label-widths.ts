@@ -19,7 +19,9 @@ export function releaseMarkerLabelWidths(
   return days.map((day, position) => {
     const next = days[position + 1];
     const line = releaseMarkerLinePosition(day);
-    const roomDays = next ? releaseMarkerLinePosition(next) - line : dayCount - line;
+    const roomDays = next
+      ? releaseMarkerLinePosition(next) - line
+      : dayCount - line;
     return { roomDays, iconOnly: roomDays < MIN_NAME_ROOM_DAYS };
   });
 }

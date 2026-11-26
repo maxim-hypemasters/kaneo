@@ -1,6 +1,7 @@
 import { addDays, differenceInCalendarDays } from "date-fns";
 import type { GanttTaskEdit, ScheduledTask } from "./gantt-types";
 import { toIsoDay } from "./timeline";
+import { columnShifts, dayColumn } from "./weekend-columns";
 
 // A saved-but-not-yet-refetched drag. The route shows it in place of the
 // server data so a bar doesn't snap back (or jump lanes twice) while the
@@ -39,6 +40,7 @@ export function classifyEdit(task: ScheduledTask, edit: GanttTaskEdit) {
 export function applyPendingEdit(
   task: ScheduledTask,
   pending: PendingTaskEdit,
+  hideWeekends = false,
 ): ScheduledTask {
   if (task.entityKind === "milestone") {
     return {
@@ -51,8 +53,17 @@ export function applyPendingEdit(
     };
   }
   // Planned work moves as a whole; the server may still lay it out on other
-  // days (e.g. past a weekend), which the refetch then shows.
+  // days (e.g. past a weekend), which the refetch then shows. With weekends
+  // hidden it moves by working-day columns, as the drag preview did, so no
+  // block lands on a hidden day meanwhile.
   const shift = differenceInCalendarDays(pending.start, task.scheduleStart);
+  const columns = hideWeekends
+    ? dayColumn(pending.start, task.scheduleStart, true)
+    : shift;
+  const segmentShift = (segment: { start: Date; end: Date }) =>
+    hideWeekends
+      ? columnShifts(segment.start, segment.end, columns, 0, true).startDays
+      : shift;
   return {
     ...task,
     scheduleStart: pending.start,
@@ -61,11 +72,11 @@ export function applyPendingEdit(
     scheduleApplied: pending.exact ? false : task.scheduleApplied,
     scheduleSegments: pending.exact
       ? undefined
-      : shift === 0
+      : columns === 0
         ? task.scheduleSegments
         : task.scheduleSegments?.map((segment) => ({
-            start: addDays(segment.start, shift),
-            end: addDays(segment.end, shift),
+            start: addDays(segment.start, segmentShift(segment)),
+            end: addDays(segment.end, segmentShift(segment)),
           })),
     startDate: pending.hasStartDate ? toIsoDay(pending.start) : null,
     dueDate: pending.hasDueDate ? toIsoDay(pending.end) : null,

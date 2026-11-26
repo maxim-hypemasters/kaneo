@@ -56,7 +56,6 @@ export function GanttReleaseMarkerLabels({
     >
       {days.map((day, position) => {
         const { roomDays, iconOnly } = widths[position];
-        const date = formatReleaseDate(day.date, { today });
         return (
           <li
             key={day.date}
@@ -66,7 +65,7 @@ export function GanttReleaseMarkerLabels({
               maxWidth: `${roomDays * dayColumnWidthRem}rem`,
             }}
           >
-            {day.releases.map((release) => {
+            {day.releases.map((release, entry) => {
               const label = t("tasks:releases.gantt.markerAria", {
                 name: release.name,
                 kind: formatReleaseKinds(
@@ -75,10 +74,13 @@ export function GanttReleaseMarkerLabels({
                   ),
                   locale,
                 ),
-                date,
+                date: formatReleaseDate(release.date, { today }),
               });
+              // A release with dates on both days of a pinned weekend gets a
+              // link per date; its name shows once, after the last.
+              const nameFollows = day.releases[entry + 1]?.id === release.id;
               return (
-                <Tooltip key={release.id}>
+                <Tooltip key={`${release.id}:${release.date}`}>
                   <TooltipTrigger
                     render={
                       <Link
@@ -104,7 +106,7 @@ export function GanttReleaseMarkerLabels({
                         />
                       );
                     })}
-                    {iconOnly ? null : (
+                    {iconOnly || nameFollows ? null : (
                       <span className="truncate">{release.name}</span>
                     )}
                   </TooltipTrigger>

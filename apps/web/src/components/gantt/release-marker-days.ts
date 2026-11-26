@@ -13,10 +13,17 @@ export type ReleaseMarkerDay = {
   // A date on a hidden weekend has no column: its line is pinned to the left
   // edge of the next working day's, the Friday/Monday boundary.
   pinned: boolean;
+  // The first date placed here. A pinned marker holds both weekend days, so
+  // each release entry carries its own date.
   date: string;
-  // Each release with a date on this day, in the order given, with its kinds
-  // of date in date order.
-  releases: { id: string; name: string; kinds: ReleaseDateKind[] }[];
+  // Each release with a date on this day, in the order given, one entry per
+  // date, with its kinds of date in date order.
+  releases: {
+    id: string;
+    name: string;
+    date: string;
+    kinds: ReleaseDateKind[];
+  }[];
 };
 
 // The rendered days that hold a release date, in day order.
@@ -44,13 +51,16 @@ export function releaseMarkerDays(
         releases: [],
       };
       byPosition.set(key, day);
-      const entry = day.releases.find((item) => item.id === release.id);
+      const entry = day.releases.find(
+        (item) => item.id === release.id && item.date === date,
+      );
       if (entry) {
         entry.kinds.push(kind);
       } else {
         day.releases.push({
           id: release.id,
           name: release.name,
+          date,
           kinds: [kind],
         });
       }

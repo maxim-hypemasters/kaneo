@@ -102,6 +102,8 @@ import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-projec
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
+import { formatDate } from "@/lib/format";
+import { parseReleaseDate } from "@/lib/releases/release-date";
 import { releaseSummaries } from "@/lib/releases/release-summaries";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import { toast } from "@/lib/toast";
@@ -436,9 +438,10 @@ function RouteComponent() {
               assigneeName: task.assigneeName,
               assigneeImage: task.assigneeImage ?? null,
             },
+        hideWeekends,
       );
     });
-  }, [parsedTasks, pendingEdits]);
+  }, [parsedTasks, pendingEdits, hideWeekends]);
   const savedTasksById = useMemo(
     () => new Map(savedTasks.map((task) => [task.id, task])),
     [savedTasks],
@@ -477,9 +480,10 @@ function RouteComponent() {
             heldEdit.taskId,
             heldDraft.edit,
             heldEdit.brokenIds,
+            hideWeekends,
           )
         : null,
-    [heldEdit, heldDraft, savedSpans, dependencies],
+    [heldEdit, heldDraft, savedSpans, dependencies, hideWeekends],
   );
   const heldMoves = useMemo(
     () =>
@@ -495,17 +499,21 @@ function RouteComponent() {
     if (!heldEdit || !heldDraft || heldEdit.saved) return savedTasks;
     return savedTasks.map((task) =>
       task.id === heldEdit.taskId
-        ? applyPendingEdit(task, {
-            ...heldDraft.edit,
-            seq: -1,
-            assigneeName: heldDraft.assignee.name,
-            assigneeImage: heldDraft.assignee.image,
-            hasStartDate: Boolean(task.startDate),
-            hasDueDate: Boolean(task.dueDate),
-          })
+        ? applyPendingEdit(
+            task,
+            {
+              ...heldDraft.edit,
+              seq: -1,
+              assigneeName: heldDraft.assignee.name,
+              assigneeImage: heldDraft.assignee.image,
+              hasStartDate: Boolean(task.startDate),
+              hasDueDate: Boolean(task.dueDate),
+            },
+            hideWeekends,
+          )
         : task,
     );
-  }, [savedTasks, heldEdit, heldDraft]);
+  }, [savedTasks, heldEdit, heldDraft, hideWeekends]);
   const spans = useMemo(
     () => spansOf(displayedTasks, completedStatuses),
     [displayedTasks, completedStatuses],
@@ -922,17 +930,22 @@ function RouteComponent() {
   // Today's column, or on a hidden weekend the next working day's, whose left
   // edge is where today is pinned. -1 when it isn't rendered; "Jump to today"
   // re-centres the span first then.
+  // The viewer's day changes at midnight, so the pin follows it.
+  const todayDate = useMemo(
+    () => parseReleaseDate(releaseToday),
+    [releaseToday],
+  );
   const todayColumn = useMemo(() => {
     if (!timeline) return -1;
     const column = dayColumn(
-      startOfToday(),
+      todayDate,
       timeline.rangeStart,
       timeline.hideWeekends,
     );
     return column >= 0 && column < timeline.days.length ? column : -1;
-  }, [timeline]);
+  }, [timeline, todayDate]);
   const todayInRange = todayColumn !== -1;
-  const todayPinned = hideWeekends && isWeekend(new Date());
+  const todayPinned = hideWeekends && isWeekend(todayDate);
   // Opening the view only centres on today when today is near the project's
   // work. The rendered span is padded to a minimum width, so today can be in
   // it while the work sits months away.
@@ -1271,7 +1284,9 @@ function RouteComponent() {
                         <div
                           key={day.toISOString()}
                           ref={
-                            isCurrentDay || isTodayPin ? todayCellRef : undefined
+                            isCurrentDay || isTodayPin
+                              ? todayCellRef
+                              : undefined
                           }
                           data-gantt-today-pin={isTodayPin ? "" : undefined}
                           aria-current={isCurrentDay ? "date" : undefined}
@@ -1295,6 +1310,15 @@ function RouteComponent() {
                           >
                             {format(day, "d")}
                           </div>
+                          {isTodayPin ? (
+                            <span className="sr-only">
+                              {t("tasks:gantt.todayOnHiddenWeekend", {
+                                date: formatDate(todayDate, {
+                                  dateStyle: "long",
+                                }),
+                              })}
+                            </span>
+                          ) : null}
                         </div>
                       );
                     })}
