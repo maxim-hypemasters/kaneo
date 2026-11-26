@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import useGetTask from "@/hooks/queries/task/use-get-task";
 import { cn } from "@/lib/cn";
+import { AiAgentSection } from "./ai-agent/ai-agent-section";
 import { FeatureBreadcrumb } from "./features/feature-breadcrumb";
 import { TaskActivity } from "./task-activity";
 import TaskDescription from "./task-description";
@@ -72,6 +73,7 @@ export default function TaskDetailsContent({
         />
       ) : (
         <>
+          <AiAgentSection key={taskId} task={task} />
           <TaskDescription taskId={taskId} />
           {task && (
             <div className="mt-6">

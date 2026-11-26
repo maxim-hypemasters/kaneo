@@ -51,6 +51,9 @@ async function createTask(
       currentUserId: input.currentUserId,
       type: "created",
       content: null,
+      // Drafts created with the Feature; the AI agent does not assess these
+      // on creation.
+      ...(created === task ? {} : { bulk: true }),
     });
   await notifyTaskDescriptionMentions(task, null, input.currentUserId);
   if (graph) {

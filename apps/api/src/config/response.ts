@@ -30,5 +30,9 @@ export const configSchema = z
       description:
         "Whether the workspace assistant is available on this instance. False when DISABLE_ASSISTANT is true. Each workspace still needs an admin to save an OpenRouter key before members can chat.",
     }),
+    hasAiAgent: z.boolean().openapi({
+      description:
+        "Whether the AI agent (readiness checks and Ship) is available on this instance. False when DISABLE_AI_AGENT is true. Each project still needs an admin to enable it, and the workspace a connected runner.",
+    }),
   })
   .openapi("Config");

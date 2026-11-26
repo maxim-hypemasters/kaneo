@@ -60,6 +60,11 @@
         "type": "http",
         "scheme": "bearer",
         "description": "API key or session token (Bearer)"
+      },
+      "runnerToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Workspace AI agent runner token (Bearer kar_...)"
       }
     },
     "schemas": {
@@ -614,6 +619,457 @@
           "nextOffset"
         ]
       },
+      "AgentRunClaim": {
+        "type": "object",
+        "properties": {
+          "run": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "assess",
+                  "ship"
+                ]
+              },
+              "attempt": {
+                "type": "integer",
+                "description": "Send as X-Kaneo-Run-Attempt on every request about this run; a later claim of the same run supersedes it"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "attempt"
+            ]
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "task": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "ticketId": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "priority": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "status": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "labels": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "ticketId",
+                  "type",
+                  "title",
+                  "description",
+                  "priority",
+                  "status",
+                  "labels",
+                  "url"
+                ]
+              },
+              "comments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "author": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "author",
+                    "content",
+                    "createdAt"
+                  ]
+                }
+              },
+              "clarifications": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "question": {
+                      "type": "string"
+                    },
+                    "answer": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "question",
+                    "answer"
+                  ]
+                }
+              },
+              "relatedTasks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "ticketId": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "relation": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ticketId",
+                    "title",
+                    "relation"
+                  ]
+                }
+              },
+              "project": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "repository": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "baseBranch": {
+                    "type": "string"
+                  },
+                  "instructions": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "name",
+                  "repository",
+                  "baseBranch",
+                  "instructions"
+                ]
+              },
+              "branchName": {
+                "type": "string"
+              },
+              "resultSchema": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "additionalProperties": {},
+                "description": "For assess runs, the JSON Schema the assessment must match"
+              }
+            },
+            "required": [
+              "task",
+              "comments",
+              "clarifications",
+              "relatedTasks",
+              "project",
+              "branchName",
+              "resultSchema"
+            ]
+          }
+        },
+        "required": [
+          "run",
+          "context"
+        ]
+      },
+      "AgentRunnerClaimInput": {
+        "type": "object",
+        "properties": {
+          "kinds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "assess",
+                "ship"
+              ]
+            },
+            "minItems": 1
+          },
+          "runnerVersion": {
+            "type": "string",
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "kinds"
+        ]
+      },
+      "AgentRunEventsInput": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "step",
+                    "tool",
+                    "log"
+                  ]
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              },
+              "required": [
+                "kind",
+                "message"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 20
+          }
+        },
+        "required": [
+          "events"
+        ]
+      },
+      "AgentAssessmentResult": {
+        "type": "object",
+        "properties": {
+          "score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "met",
+                    "partial",
+                    "missing"
+                  ]
+                },
+                "note": {
+                  "type": "string",
+                  "maxLength": 500
+                }
+              },
+              "required": [
+                "key",
+                "label",
+                "status"
+              ]
+            },
+            "maxItems": 12
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "maxItems": 4,
+                  "description": "Answer options, the recommended one first"
+                },
+                "blocking": {
+                  "type": "boolean",
+                  "description": "True when the agent cannot do the work without the answer"
+                }
+              },
+              "required": [
+                "text",
+                "options",
+                "blocking"
+              ]
+            },
+            "maxItems": 8
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                },
+                "markdown": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "required": [
+                "title",
+                "markdown"
+              ]
+            },
+            "maxItems": 5
+          }
+        },
+        "required": [
+          "score",
+          "summary",
+          "checklist",
+          "questions",
+          "suggestions"
+        ]
+      },
+      "AgentShipResultInput": {
+        "type": "object",
+        "properties": {
+          "prUrl": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "uri"
+          },
+          "branch": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 250
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 8000
+          }
+        },
+        "required": [
+          "prUrl",
+          "branch",
+          "summary"
+        ]
+      },
+      "AgentRunFailureInput": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "needs_input",
+              "no_changes",
+              "agent_failed",
+              "timeout",
+              "git_failed",
+              "cancelled",
+              "internal"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "maxItems": 4,
+                  "description": "Answer options, the recommended one first"
+                },
+                "blocking": {
+                  "type": "boolean",
+                  "description": "True when the agent cannot do the work without the answer"
+                }
+              },
+              "required": [
+                "text",
+                "options",
+                "blocking"
+              ]
+            },
+            "maxItems": 8
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ]
+      },
       "Config": {
         "type": "object",
         "properties": {
@@ -682,6 +1138,10 @@
           "hasAssistant": {
             "type": "boolean",
             "description": "Whether the workspace assistant is available on this instance. False when DISABLE_ASSISTANT is true. Each workspace still needs an admin to save an OpenRouter key before members can chat."
+          },
+          "hasAiAgent": {
+            "type": "boolean",
+            "description": "Whether the AI agent (readiness checks and Ship) is available on this instance. False when DISABLE_AI_AGENT is true. Each project still needs an admin to enable it, and the workspace a connected runner."
           }
         },
         "required": [
@@ -703,7 +1163,8 @@
           "customOAuthAutoLogin",
           "customOAuthLogoutUrl",
           "billingEnabled",
-          "hasAssistant"
+          "hasAssistant",
+          "hasAiAgent"
         ]
       },
       "McpClientRegistration": {
@@ -10132,6 +10593,635 @@
           "pendingCount",
           "resumable"
         ]
+      },
+      "TaskAgent": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the project turned the AI agent on"
+          },
+          "autoAssess": {
+            "type": "boolean",
+            "description": "Whether the project checks readiness on its own after edits; when false, checks run only on request"
+          },
+          "assessment": {
+            "$ref": "#/components/schemas/AgentAssessment"
+          },
+          "stale": {
+            "type": "boolean",
+            "description": "The task text or answers changed since the assessment was made"
+          },
+          "assessing": {
+            "type": "boolean"
+          },
+          "assessScheduledAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When a check queued after recent edits will start; null when none is waiting or it may start now"
+          },
+          "lastAssessFailure": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "code": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "message": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "sameInput": {
+                "type": "boolean",
+                "description": "The task text and answers are unchanged since the failed check, so checking again automatically would likely fail the same way"
+              }
+            },
+            "required": [
+              "code",
+              "message",
+              "at",
+              "sameInput"
+            ],
+            "description": "Set when the most recent finished readiness check failed, for example because the runner's model key is wrong"
+          },
+          "clarifications": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "question": {
+                  "type": "string"
+                },
+                "answer": {
+                  "type": "string"
+                },
+                "answeredBy": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "id",
+                "question",
+                "answer",
+                "answeredBy",
+                "createdAt"
+              ]
+            }
+          },
+          "runner": {
+            "type": "object",
+            "properties": {
+              "configured": {
+                "type": "boolean"
+              },
+              "online": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "configured",
+              "online"
+            ]
+          },
+          "ship": {
+            "type": "object",
+            "properties": {
+              "canShip": {
+                "type": "boolean"
+              },
+              "blockers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "agent_disabled",
+                    "no_repository",
+                    "runner_missing",
+                    "archived",
+                    "not_assessed",
+                    "assessment_outdated",
+                    "open_questions",
+                    "not_ready",
+                    "ship_in_progress"
+                  ]
+                }
+              },
+              "repository": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "baseBranch": {
+                "type": "string"
+              },
+              "branchName": {
+                "type": "string"
+              },
+              "activeRun": {
+                "$ref": "#/components/schemas/AgentRun"
+              },
+              "lastRun": {
+                "$ref": "#/components/schemas/AgentRun"
+              },
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "step",
+                        "tool",
+                        "log"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "kind",
+                    "message",
+                    "createdAt"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "canShip",
+              "blockers",
+              "repository",
+              "baseBranch",
+              "branchName",
+              "activeRun",
+              "lastRun",
+              "events"
+            ]
+          }
+        },
+        "required": [
+          "enabled",
+          "autoAssess",
+          "assessment",
+          "stale",
+          "assessing",
+          "assessScheduledAt",
+          "lastAssessFailure",
+          "clarifications",
+          "runner",
+          "ship"
+        ]
+      },
+      "AgentAssessment": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "score": {
+            "type": "integer"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "not_ready",
+              "needs_clarification",
+              "ready"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "checklist": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "met",
+                    "partial",
+                    "missing"
+                  ]
+                },
+                "note": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "key",
+                "label",
+                "status"
+              ]
+            }
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "text": {
+                  "type": "string"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "blocking": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "text",
+                "options",
+                "blocking"
+              ]
+            }
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "markdown": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "markdown"
+              ]
+            }
+          },
+          "assessedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "score",
+          "verdict",
+          "summary",
+          "checklist",
+          "questions",
+          "suggestions",
+          "assessedAt"
+        ]
+      },
+      "AgentRun": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "requestedBy": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "cancelRequested": {
+            "type": "boolean"
+          },
+          "result": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "prUrl": {
+                "type": "string"
+              },
+              "branch": {
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "prUrl",
+              "branch",
+              "summary"
+            ]
+          },
+          "errorCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "requestedBy",
+          "cancelRequested",
+          "result",
+          "errorCode",
+          "error",
+          "createdAt",
+          "startedAt",
+          "finishedAt"
+        ]
+      },
+      "AgentAnswersInput": {
+        "type": "object",
+        "properties": {
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "questionId": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "answer": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              },
+              "required": [
+                "questionId",
+                "answer"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 8
+          }
+        },
+        "required": [
+          "answers"
+        ]
+      },
+      "ProjectAgentSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "autoAssess": {
+            "type": "boolean"
+          },
+          "repository": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "suggestedRepository": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The repository of the project's GitHub integration"
+          },
+          "baseBranch": {
+            "type": "string"
+          },
+          "instructions": {
+            "type": "string"
+          },
+          "readyThreshold": {
+            "type": "integer"
+          },
+          "runnerConfigured": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "autoAssess",
+          "repository",
+          "suggestedRepository",
+          "baseBranch",
+          "instructions",
+          "readyThreshold",
+          "runnerConfigured"
+        ]
+      },
+      "ProjectAgentSettingsInput": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "autoAssess": {
+            "type": "boolean"
+          },
+          "repository": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200,
+            "pattern": "^[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+$"
+          },
+          "baseBranch": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "^(?!-)(?!.*\\.\\.)[A-Za-z0-9._/-]+$"
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "readyThreshold": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "enabled",
+          "autoAssess",
+          "repository",
+          "baseBranch",
+          "instructions",
+          "readyThreshold"
+        ]
+      },
+      "AgentRunnerStatus": {
+        "type": "object",
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "tokenPrefix": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "lastSeenAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "runnerVersion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "configured",
+          "tokenPrefix",
+          "online",
+          "lastSeenAt",
+          "runnerVersion",
+          "createdAt"
+        ]
+      },
+      "AgentRunnerToken": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Shown only once; Kaneo keeps a hash"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AgentRunnerStatus"
+          }
+        },
+        "required": [
+          "token",
+          "status"
+        ]
       }
     },
     "parameters": {}
@@ -10603,6 +11693,600 @@
           },
           "404": {
             "description": "Calendar feed not found or revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent-runner/claim": {
+      "post": {
+        "operationId": "claimAgentRun",
+        "tags": [
+          "AI agent runner"
+        ],
+        "security": [
+          {
+            "runnerToken": []
+          }
+        ],
+        "summary": "Claim the next agent run",
+        "description": "Takes the next due run of the given kinds in the runner's workspace, with the task context it needs. 204 when there is nothing to do. The runner must heartbeat while it works, and send `run.attempt` as X-Kaneo-Run-Attempt on every request about the run.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRunnerClaimInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A claimed run and its context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunClaim"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No run is due"
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AI_AGENT_RUNNER_UNAUTHORIZED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI_AGENT_DISABLED on this instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent-runner/runs/{runId}/heartbeat": {
+      "post": {
+        "operationId": "heartbeatAgentRun",
+        "tags": [
+          "AI agent runner"
+        ],
+        "security": [
+          {
+            "runnerToken": []
+          }
+        ],
+        "summary": "Keep a run claimed",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "runId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+              "example": "1"
+            },
+            "required": true,
+            "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+            "name": "x-kaneo-run-attempt",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whether to stop",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cancelRequested": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "cancelRequested"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AI_AGENT_RUNNER_UNAUTHORIZED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI_AGENT_RUN_NOT_FOUND, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_RUN_NOT_RUNNING when the run was cancelled or expired, or another claim superseded this attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent-runner/runs/{runId}/events": {
+      "post": {
+        "operationId": "appendAgentRunEvents",
+        "tags": [
+          "AI agent runner"
+        ],
+        "security": [
+          {
+            "runnerToken": []
+          }
+        ],
+        "summary": "Report run progress",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "runId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+              "example": "1"
+            },
+            "required": true,
+            "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+            "name": "x-kaneo-run-attempt",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRunEventsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AI_AGENT_RUNNER_UNAUTHORIZED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI_AGENT_RUN_NOT_FOUND, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_RUN_NOT_RUNNING when the run was cancelled or expired, or another claim superseded this attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent-runner/runs/{runId}/assessment": {
+      "post": {
+        "operationId": "completeAgentAssessment",
+        "tags": [
+          "AI agent runner"
+        ],
+        "security": [
+          {
+            "runnerToken": []
+          }
+        ],
+        "summary": "Report an assessment",
+        "description": "Finishes an assess run. A 400 lists the validation issues so the runner can ask the model to correct its answer.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "runId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+              "example": "1"
+            },
+            "required": true,
+            "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+            "name": "x-kaneo-run-attempt",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentAssessmentResult"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The assessment does not match the schema",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AI_AGENT_RUNNER_UNAUTHORIZED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI_AGENT_RUN_NOT_FOUND, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_RUN_NOT_RUNNING when the run was cancelled or expired, or another claim superseded this attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent-runner/runs/{runId}/ship-result": {
+      "post": {
+        "operationId": "completeAgentShip",
+        "tags": [
+          "AI agent runner"
+        ],
+        "security": [
+          {
+            "runnerToken": []
+          }
+        ],
+        "summary": "Report an opened pull request",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "runId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+              "example": "1"
+            },
+            "required": true,
+            "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+            "name": "x-kaneo-run-attempt",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentShipResultInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AI_AGENT_RUNNER_UNAUTHORIZED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI_AGENT_RUN_NOT_FOUND, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_RUN_NOT_RUNNING when the run was cancelled or expired, or another claim superseded this attempt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent-runner/runs/{runId}/fail": {
+      "post": {
+        "operationId": "failAgentRun",
+        "tags": [
+          "AI agent runner"
+        ],
+        "security": [
+          {
+            "runnerToken": []
+          }
+        ],
+        "summary": "Report a run that could not finish",
+        "description": "Ends the run. Questions sent with it are added to the task's open questions.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "runId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+              "example": "1"
+            },
+            "required": true,
+            "description": "The `run.attempt` from the claim. A missing or malformed value, or one a later claim has superseded, gets 409 AI_AGENT_RUN_NOT_RUNNING.",
+            "name": "x-kaneo-run-attempt",
+            "in": "header"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentRunFailureInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "AI_AGENT_RUNNER_UNAUTHORIZED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "AI_AGENT_RUN_NOT_FOUND, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_RUN_NOT_RUNNING when the run was cancelled or expired, or another claim superseded this attempt",
             "content": {
               "application/json": {
                 "schema": {
@@ -48773,6 +50457,1045 @@
           },
           "413": {
             "description": "Request body is too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}": {
+      "get": {
+        "operationId": "getTaskAgent",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Get a task's AI readiness",
+        "description": "The latest readiness assessment, open questions and suggestions, answered decisions, and the state of Ship for a task or bug.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AI agent state of the task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskAgent"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, or AI_AGENT_DISABLED on this instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}/assess": {
+      "post": {
+        "operationId": "requestTaskAssessment",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Assess AI readiness now",
+        "description": "Queues a readiness assessment. An assessment already waiting is moved up instead of duplicated.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, or AI_AGENT_DISABLED on this instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_NOT_ENABLED for the task's project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}/answers": {
+      "post": {
+        "operationId": "answerTaskAgentQuestions",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Answer the agent's questions",
+        "description": "Saves the answers as decisions, removes those questions, and assesses the task again.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentAnswersInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, AI_AGENT_QUESTION_NOT_FOUND, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_NOT_ENABLED for the task's project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}/suggestions/{suggestionId}/apply": {
+      "post": {
+        "operationId": "applyTaskAgentSuggestion",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Add a suggestion to the description",
+        "description": "Appends the suggestion's Markdown to the task description as an ordinary edit by the caller.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "suggestionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, AI_AGENT_SUGGESTION_NOT_FOUND, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_NOT_ENABLED, DESCRIPTION_CONFLICT when the description changed since it was read, or the task moved to another project or workspace meanwhile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}/suggestions/{suggestionId}": {
+      "delete": {
+        "operationId": "dismissTaskAgentSuggestion",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Dismiss a suggestion",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "suggestionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, AI_AGENT_SUGGESTION_NOT_FOUND, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_NOT_ENABLED for the task's project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}/ship": {
+      "post": {
+        "operationId": "shipTask",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Ship the task to the AI agent",
+        "description": "Queues the agent to implement the task in the project's repository and open a pull request. Refused with AI_AGENT_NOT_SHIPPABLE, listing the blockers in issues, unless the current assessment is ready.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, or AI_AGENT_DISABLED on this instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_NOT_ENABLED or AI_AGENT_NOT_SHIPPABLE",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}/cancel": {
+      "post": {
+        "operationId": "cancelTaskShip",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Stop the agent working on the task",
+        "description": "Cancels a queued Ship, or a running one whose runner stopped reporting, at once. A live run is asked to stop and ends at the runner's next heartbeat.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, or AI_AGENT_DISABLED on this instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_NO_ACTIVE_RUN",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/project/{projectId}/settings": {
+      "get": {
+        "operationId": "getProjectAgentSettings",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Get a project's AI agent settings",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAgentSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateProjectAgentSettings",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Update a project's AI agent settings",
+        "description": "Turning the agent off cancels its queued work in the project and asks running work to stop.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "projectId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectAgentSettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectAgentSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/workspace/{workspaceId}/runner": {
+      "get": {
+        "operationId": "getAgentRunner",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Get the workspace's agent runner",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Runner status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunnerStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED, or missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "revokeAgentRunner",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Revoke the runner token",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Done",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED, or missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or AI_AGENT_DISABLED",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/workspace/{workspaceId}/runner/token": {
+      "post": {
+        "operationId": "rotateAgentRunnerToken",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Create or replace the runner token",
+        "description": "Returns a new token once. The previous token stops working immediately.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "workspaceId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "New token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentRunnerToken"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "SESSION_REQUIRED, or missing workspace:manage_settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workspace not found, or AI_AGENT_DISABLED",
             "content": {
               "application/json": {
                 "schema": {

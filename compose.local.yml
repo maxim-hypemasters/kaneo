@@ -45,6 +45,42 @@ services:
       - api
     restart: unless-stopped
 
+  # Optional: `docker compose -f compose.local.yml --env-file .env.local
+  # --profile agent up -d`, with KANEO_RUNNER_TOKEN and the AGENT_* settings
+  # in .env.local. Only these reach the runner, never the server's secrets.
+  agent-runner:
+    build:
+      context: .
+      dockerfile: apps/agent-runner/Dockerfile
+    profiles: ["agent"]
+    environment:
+      KANEO_API_URL: http://api:1337
+      KANEO_RUNNER_TOKEN: ${KANEO_RUNNER_TOKEN:-}
+      GH_TOKEN: ${AGENT_GH_TOKEN:-}
+      OPENROUTER_API_KEY: ${AGENT_OPENROUTER_API_KEY:-}
+      ANTHROPIC_API_KEY: ${AGENT_ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${AGENT_OPENAI_API_KEY:-}
+      NOUS_API_KEY: ${AGENT_NOUS_API_KEY:-}
+      GEMINI_API_KEY: ${AGENT_GEMINI_API_KEY:-}
+      GOOGLE_API_KEY: ${AGENT_GOOGLE_API_KEY:-}
+      HERMES_MODEL: ${AGENT_HERMES_MODEL:-}
+      HERMES_PROVIDER: ${AGENT_HERMES_PROVIDER:-}
+      GITHUB_HOST: ${AGENT_GITHUB_HOST:-}
+      GIT_AUTHOR_NAME: ${AGENT_GIT_AUTHOR_NAME:-}
+      GIT_AUTHOR_EMAIL: ${AGENT_GIT_AUTHOR_EMAIL:-}
+      ASSESS_CONCURRENCY: ${AGENT_ASSESS_CONCURRENCY:-}
+      SHIP_CONCURRENCY: ${AGENT_SHIP_CONCURRENCY:-}
+      ASSESS_TIMEOUT_MS: ${AGENT_ASSESS_TIMEOUT_MS:-}
+      SHIP_TIMEOUT_MS: ${AGENT_SHIP_TIMEOUT_MS:-}
+      ASSESS_MAX_TURNS: ${AGENT_ASSESS_MAX_TURNS:-}
+      SHIP_MAX_TURNS: ${AGENT_SHIP_MAX_TURNS:-}
+      SHIP_TOOLSETS: ${AGENT_SHIP_TOOLSETS:-}
+    volumes:
+      - agent_runner_work:/work
+    depends_on:
+      - api
+    restart: unless-stopped
+
   docs:
     image: node:24.19.0-alpine
     working_dir: /app/apps/docs
@@ -57,3 +93,4 @@ services:
 
 volumes:
   postgres_data:
+  agent_runner_work:

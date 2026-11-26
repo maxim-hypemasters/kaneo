@@ -22,6 +22,7 @@ import { featureWorkspaceKey } from "@/hooks/queries/feature/use-feature-workspa
 import { projectDocumentCommentsKey } from "@/hooks/queries/document-comment/document-comment-keys";
 import { projectDocumentsKey } from "@/hooks/queries/project-document/project-document-keys";
 import { projectLinksKey } from "@/hooks/queries/project-link/project-links-key";
+import { agentKeys } from "@/hooks/queries/agent/agent-keys";
 import {
   testCaseCommentThreadsKey,
   testCasesKey,
@@ -432,6 +433,10 @@ export function useProjectWebSocket(projectId: string) {
             { queryKey: projectDocumentCommentsKey(projectId) },
             { cancelRefetch: false },
           );
+          void queryClient.invalidateQueries(
+            { queryKey: agentKeys.tasks },
+            { cancelRefetch: false },
+          );
         }
         offlineSince = null;
         needsReconcile = true;
@@ -479,6 +484,16 @@ export function useProjectWebSocket(projectId: string) {
           if (message.type === "TEST_CASE_COMMENTS_UPDATED") {
             void queryClient.invalidateQueries({
               queryKey: testCaseCommentThreadsKey(projectId),
+            });
+            return;
+          }
+          // Without a taskId the project's agent settings changed, which
+          // every open task view reflects.
+          if (message.type === "TASK_AGENT_UPDATED") {
+            void queryClient.invalidateQueries({
+              queryKey: message.taskId
+                ? agentKeys.task(message.taskId)
+                : agentKeys.tasks,
             });
             return;
           }

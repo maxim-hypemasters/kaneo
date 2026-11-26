@@ -1408,7 +1408,9 @@
 			"statusPaused": "Đã tạm dừng",
 			"connect": "Kết nối",
 			"configure": "Cấu hình",
-			"done": "Xong"
+			"done": "Xong",
+			"aiAgentSectionSubtitle": "Check tasks for AI readiness, and let Hermes implement them and open pull requests.",
+			"aiAgentSectionTitle": "AI agent (Hermes)"
 		},
 		"projectVisibility": {
 			"pageTitle": "Chế độ hiển thị dự án",
@@ -2682,6 +2684,96 @@
 				"title": "Credit usage",
 				"unlimited": "{{used}} used on this key"
 			}
+		},
+		"aiAgentPage": {
+			"disabledDescription": "This Kaneo instance turned the AI agent off with DISABLE_AI_AGENT.",
+			"disabledTitle": "The AI agent is turned off",
+			"loadError": "Could not load the runner status.",
+			"membersDescription": "Ask a workspace admin to set up the runner.",
+			"membersTitle": "Only admins manage the AI agent",
+			"pageTitle": "AI agent",
+			"project": {
+				"autoAssessDescription": "Check a task again shortly after someone creates or edits it.",
+				"autoAssessTitle": "Check readiness automatically",
+				"baseBranchLabel": "Base branch",
+				"enabledDescription": "Check tasks and bugs for AI readiness, and let people ship ready ones to Hermes.",
+				"enabledTitle": "Use Hermes in this project",
+				"errors": {
+					"baseBranch": "Enter a valid branch name.",
+					"readyThreshold": "Enter a whole number from 1 to 100.",
+					"repository": "Use owner/name, like acme/web."
+				},
+				"instructionsHint": "Added to every check and Ship in this project.",
+				"instructionsLabel": "Instructions for Hermes",
+				"instructionsPlaceholder": "Run pnpm test before opening a pull request.",
+				"loadError": "Could not load the AI agent settings.",
+				"repositoryFromGithub": "Uses {{repository}} from GitHub.",
+				"repositoryHint": "The GitHub repository Hermes works in, as owner/name.",
+				"repositoryLabel": "Repository",
+				"repositoryPlaceholder": "owner/name",
+				"runnerMissing": "This workspace has no runner yet, so tasks can't be checked or shipped.",
+				"runnerMissingLink": "Set up the runner",
+				"save": "Save",
+				"thresholdHint": "Tasks scoring at least this (1–100), with no blocking questions, can ship.",
+				"thresholdLabel": "Ready threshold"
+			},
+			"runner": {
+				"copied": "Copied",
+				"copy": "Copy",
+				"copyFailed": "Could not copy to the clipboard.",
+				"env": {
+					"copyLabel": "Copy runner environment",
+					"description": "Set these variables on the runner container.",
+					"title": "Runner environment",
+					"tokenPlaceholder": "<runner-token>"
+				},
+				"note": "The runner is a container you host. It asks Kaneo for work, runs Hermes, and pushes branches with its own Git credentials.",
+				"revoke": {
+					"button": "Revoke token",
+					"description": "The runner stops getting work. Tasks can't be checked or shipped until you create a new token.",
+					"dialogDescription": "The runner disconnects immediately. Work it is doing stops when it next checks in.",
+					"dialogTitle": "Revoke the runner token?",
+					"revoking": "Revoking…",
+					"sectionTitle": "Revoke runner",
+					"title": "Revoke the runner token"
+				},
+				"sectionTitle": "Runner",
+				"status": {
+					"lastSeen": "Last seen",
+					"neverConnectedDescription": "No runner has connected with this token yet.",
+					"notSetUp": "Not set up",
+					"notSetUpDescription": "Create a token and start the runner with it.",
+					"offline": "Offline",
+					"offlineDescription": "Last checked in {{lastSeen}}. Queued work waits until it reconnects.",
+					"online": "Online",
+					"onlineDescription": "Last checked in {{lastSeen}}.",
+					"title": "Runner status",
+					"token": "Token",
+					"version": "Version"
+				},
+				"token": {
+					"copyLabel": "Copy runner token",
+					"create": "Create token",
+					"createDescription": "The runner signs in with this token. It is shown once.",
+					"replace": "Replace token",
+					"replaceDescription": "A new token disconnects the current runner until it uses the new one.",
+					"replaceDialogDescription": "The current token stops working immediately. Give the runner the new token to reconnect it.",
+					"replaceDialogTitle": "Replace the runner token?",
+					"replacing": "Replacing…",
+					"sectionTitle": "Token",
+					"shownOnce": "Copy this token now. Kaneo keeps only a hash, so it can't be shown again.",
+					"title": "Runner token"
+				}
+			},
+			"subtitle": "Connect the runner that lets Hermes check tasks and open pull requests in this workspace.",
+			"title": "AI agent",
+			"toast": {
+				"revoked": "Runner token revoked",
+				"revokeFailed": "Could not revoke the runner token.",
+				"saved": "AI agent settings saved",
+				"saveFailed": "Could not save the AI agent settings.",
+				"tokenFailed": "Could not create a runner token."
+			}
 		}
 	},
 	"navigation": {
@@ -3157,7 +3249,8 @@
 			},
 			"importedFrom": "Imported from {{source}}",
 			"importedBy": "Imported by {{name}}",
-			"commentedOnForge": "đã bình luận trên {{forge}}"
+			"commentedOnForge": "đã bình luận trên {{forge}}",
+			"aiAgent": "AI agent"
 		},
 		"movedFromOtherProject": "moved task from another project to \"{{to}}\"",
 		"addedToFeature": "đã thêm công việc vào tính năng \"{{feature}}\"",
@@ -4523,6 +4616,106 @@
 				"passed": "Passed"
 			},
 			"title": "Test cases"
+		},
+		"aiAgent": {
+			"assessing": "Assessing…",
+			"blockers": {
+				"agentDisabled": "The AI agent is off for this project.",
+				"archived": "Archived tasks can't be shipped.",
+				"assessmentOutdated": "The task changed since the last check.",
+				"noRepository": "Set a repository in the project's AI agent settings.",
+				"notAssessed": "Hermes hasn't checked this task yet.",
+				"notReady": "The readiness score is below the project's threshold.",
+				"openQuestions": "Answer the blocking questions.",
+				"runnerMissing": "Set up a runner in workspace settings.",
+				"shipInProgress": "Hermes is already working on this task.",
+				"title": "Before Hermes can ship this"
+			},
+			"checkAgain": "Check again",
+			"checklist": {
+				"met": "Met",
+				"missing": "Missing",
+				"partial": "Partial",
+				"title": "Checklist"
+			},
+			"checkNow": "Check now",
+			"decisions": {
+				"answeredBy": "Answered by {{name}}",
+				"title": "Decisions ({{count}})"
+			},
+			"details": "Details",
+			"errors": {
+				"answers": "Couldn't save your answers",
+				"apply": "Couldn't add the suggestion to the description",
+				"assess": "Couldn't ask Hermes to check this task",
+				"cancel": "Couldn't stop Hermes",
+				"dismiss": "Couldn't dismiss the suggestion",
+				"notShippable": "This task isn't ready for Hermes anymore",
+				"ship": "Couldn't send the task to Hermes"
+			},
+			"meterLabel": "AI readiness score",
+			"notAssessed": "Not checked yet",
+			"outdated": "Outdated",
+			"questionCount_other": "{{count}} questions",
+			"questions": {
+				"answered": "{{answered}} of {{total}} answered",
+				"blocking": "Blocking",
+				"other": "Other…",
+				"otherLabel": "Your answer",
+				"otherPlaceholder": "Describe what you want",
+				"recommended": "Recommended",
+				"submit": "Submit answers",
+				"title": "Open questions"
+			},
+			"readiness": "AI readiness {{score}}%",
+			"readinessTitle": "AI readiness",
+			"run": {
+				"cancel": "Cancel",
+				"cancelled": "Hermes stopped before finishing, as requested.",
+				"failed": "Hermes couldn't finish this task.",
+				"failedFallback": "The run stopped without an error message.",
+				"logLabel": "Hermes progress",
+				"queued": "Queued for Hermes…",
+				"stopping": "Stopping…",
+				"succeeded": "Hermes opened a pull request.",
+				"viewPullRequest": "View pull request",
+				"working": "Hermes is working…"
+			},
+			"runnerOffline": "The runner is offline. Work starts when it reconnects.",
+			"sectionLabel": "AI agent",
+			"ship": "Ship",
+			"shipDialog": {
+				"baseBranch": "Base branch",
+				"confirm": "Ship",
+				"description": "Hermes works from the task text and the decisions answered here, then opens a pull request for review.",
+				"newBranch": "New branch",
+				"pending": "Shipping…",
+				"repository": "Repository",
+				"title": "Ship to Hermes?"
+			},
+			"suggestions": {
+				"apply": "Add to description",
+				"dismiss": "Dismiss",
+				"dismissLabel": "Dismiss \"{{title}}\"",
+				"title": "Suggested additions"
+			},
+			"summaryTitle": "Hermes' summary",
+			"toast": {
+				"applied": "Added to the description",
+				"shipped": "Sent to Hermes"
+			},
+			"verdict": {
+				"needsClarification": "Needs clarification",
+				"notReady": "Not ready",
+				"ready": "Ready for AI"
+			},
+			"checkFailed": "The last check failed: {{reason}}",
+			"unknownError": "unknown error",
+			"assessScheduled": "Check starts shortly",
+			"runnerMissing": "No runner is set up for this workspace, so Hermes can't check or ship tasks.",
+			"runnerMissingAskAdmin": "Ask a workspace admin to set one up.",
+			"runnerMissingLink": "Set up the runner",
+			"panelLabel": "AI readiness details"
 		}
 	},
 	"invitations": {

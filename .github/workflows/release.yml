@@ -234,7 +234,7 @@ jobs:
           fi
           major="${BASH_REMATCH[1]}"
           minor="${major}.${BASH_REMATCH[2]}"
-          for image in kaneo web api; do
+          for image in kaneo web api agent-runner; do
             ref="ghcr.io/${OWNER,,}/${image}"
             docker buildx imagetools create \
               --tag "${ref}:latest" \

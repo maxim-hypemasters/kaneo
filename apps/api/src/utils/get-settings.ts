@@ -1,5 +1,6 @@
 import { isSmtpConfigured } from "@kaneo/email";
 import { config } from "dotenv-mono";
+import { isAiAgentEnabled } from "../agent/agent-enabled";
 import { isAssistantEnabled } from "../assistant/assistant-enabled";
 import { isBillingEnabled } from "../billing/config";
 import { isStorageConfigured } from "../storage/s3";
@@ -42,6 +43,7 @@ function getSettings() {
     customOAuthLogoutUrl: process.env.CUSTOM_OAUTH_LOGOUT_URL || null,
     billingEnabled: isBillingEnabled(),
     hasAssistant: isAssistantEnabled(),
+    hasAiAgent: isAiAgentEnabled(),
   };
 }
 

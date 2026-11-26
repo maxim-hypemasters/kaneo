@@ -96,7 +96,9 @@ export default function CommentCard({
               ? "Linear"
               : externalSource === "kaneo"
                 ? "Kaneo"
-                : externalSource;
+                : externalSource === "hermes"
+                  ? "Hermes Agent"
+                  : externalSource;
   // Gitea and GitLab profile URLs depend on the instance.
   const githubProfileUrl =
     forge?.name === "GitHub" && user?.name
@@ -216,7 +218,9 @@ export default function CommentCard({
 
           {sourceName && (
             <span className="rounded border px-1.5 py-0.5 text-xs text-muted-foreground">
-              {t("activity:comment.importedFrom", { source: sourceName })}
+              {externalSource === "hermes"
+                ? t("activity:comment.aiAgent")
+                : t("activity:comment.importedFrom", { source: sourceName })}
               {importedBy &&
                 ` · ${t("activity:comment.importedBy", { name: importedBy })}`}
             </span>

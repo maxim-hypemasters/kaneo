@@ -1,0 +1,61 @@
+{{- if .Values.agentRunner.enabled }}
+{{- if not .Values.agentRunner.existingSecret }}
+{{- fail "agentRunner.existingSecret must name a Secret holding KANEO_RUNNER_TOKEN" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kaneo.fullname" . }}-agent-runner
+  labels:
+    {{- include "kaneo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "kaneo.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: agent-runner
+  template:
+    metadata:
+      labels:
+        {{- include "kaneo.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: agent-runner
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      enableServiceLinks: false
+      # The runner never calls the Kubernetes API, and Hermes's users could
+      # read a mounted service account token.
+      automountServiceAccountToken: false
+      containers:
+        - name: agent-runner
+          securityContext:
+            {{- toYaml .Values.agentRunner.securityContext | nindent 12 }}
+          image: "{{ .Values.agentRunner.image.repository }}:{{ .Values.agentRunner.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.agentRunner.image.pullPolicy }}
+          env:
+            - name: KANEO_API_URL
+              value: {{ .Values.agentRunner.apiUrl | default (printf "http://%s-kaneo:%v" (include "kaneo.fullname" .) .Values.kaneo.service.port) | quote }}
+            - name: HERMES_MODEL
+              value: {{ .Values.agentRunner.model | quote }}
+            - name: HERMES_PROVIDER
+              value: {{ .Values.agentRunner.provider | quote }}
+            {{- with .Values.agentRunner.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.agentRunner.existingSecret }}
+          volumeMounts:
+            - name: work
+              mountPath: /work
+          {{- with .Values.agentRunner.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: work
+          emptyDir: {}
+{{- end }}

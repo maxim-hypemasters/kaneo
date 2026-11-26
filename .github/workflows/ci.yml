@@ -401,7 +401,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name: [api, web]
+        name: [api, web, agent-runner]
     steps:
       - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a # v1
         with:

@@ -1,0 +1,30 @@
+import { type RefObject, useEffect } from "react";
+
+/**
+ * Answering a question or handling a suggestion removes the control that had
+ * focus. When that drops focus to the page, move it to the container so
+ * keyboard and screen reader users stay where they were working.
+ */
+export function useFocusRescue(ref: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    let lastFocused: Element | null = null;
+    const onFocusIn = (event: FocusEvent) => {
+      lastFocused = event.target instanceof Element ? event.target : null;
+    };
+    const observer = new MutationObserver(() => {
+      if (!lastFocused || lastFocused.isConnected) return;
+      lastFocused = null;
+      const active = document.activeElement;
+      if ((active === null || active === document.body) && root.isConnected)
+        root.focus();
+    });
+    root.addEventListener("focusin", onFocusIn);
+    observer.observe(root, { childList: true, subtree: true });
+    return () => {
+      root.removeEventListener("focusin", onFocusIn);
+      observer.disconnect();
+    };
+  }, [ref]);
+}

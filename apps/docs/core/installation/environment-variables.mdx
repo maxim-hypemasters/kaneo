@@ -75,6 +75,14 @@ Name | Description | Default |
 --- | --- | --- |
 | `DISABLE_ASSISTANT` | Set to `true` to turn the assistant off on every workspace. Home and settings no longer show it, and its API routes return 404. Saved keys and chats stay in the database. | `false` |
 
+### AI agent
+
+The [AI agent](/core/integrations/ai-agent) is off until a project admin turns it on and a workspace connects an agent runner. The runner is a separate service with its own settings; Kaneo needs no extra configuration.
+
+Name | Description | Default |
+--- | --- | --- |
+| `DISABLE_AI_AGENT` | Set to `true` to turn the AI agent off on every workspace. Task views and settings no longer show it, its API routes return 404, and runners can't claim work. Assessments and run history stay in the database. | `false` |
+
 ### Object Storage
 
 Kaneo uses S3-compatible object storage for private uploads in task descriptions and task comments.

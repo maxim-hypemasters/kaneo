@@ -32,6 +32,44 @@ services:
       start_period: 60s
       retries: 3
 
+  # Optional AI agent runner (Hermes Agent). Start it with
+  # `docker compose --profile agent up -d` after creating a runner token in
+  # Workspace settings → AI agent. In .env, set KANEO_RUNNER_TOKEN and the
+  # runner's other variables with an AGENT_ prefix (AGENT_HERMES_PROVIDER for
+  # HERMES_PROVIDER); empty ones keep the runner's defaults, and nothing else
+  # in .env reaches it. It starts as root and runs Hermes as unprivileged
+  # users itself, one per run at a time. See the AI agent docs.
+  agent-runner:
+    image: ghcr.io/usekaneo/agent-runner:latest
+    profiles: ["agent"]
+    environment:
+      KANEO_API_URL: http://kaneo:5173
+      KANEO_RUNNER_TOKEN: ${KANEO_RUNNER_TOKEN:-}
+      GH_TOKEN: ${AGENT_GH_TOKEN:-}
+      OPENROUTER_API_KEY: ${AGENT_OPENROUTER_API_KEY:-}
+      ANTHROPIC_API_KEY: ${AGENT_ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${AGENT_OPENAI_API_KEY:-}
+      NOUS_API_KEY: ${AGENT_NOUS_API_KEY:-}
+      GEMINI_API_KEY: ${AGENT_GEMINI_API_KEY:-}
+      GOOGLE_API_KEY: ${AGENT_GOOGLE_API_KEY:-}
+      HERMES_MODEL: ${AGENT_HERMES_MODEL:-}
+      HERMES_PROVIDER: ${AGENT_HERMES_PROVIDER:-}
+      GITHUB_HOST: ${AGENT_GITHUB_HOST:-}
+      GIT_AUTHOR_NAME: ${AGENT_GIT_AUTHOR_NAME:-}
+      GIT_AUTHOR_EMAIL: ${AGENT_GIT_AUTHOR_EMAIL:-}
+      ASSESS_CONCURRENCY: ${AGENT_ASSESS_CONCURRENCY:-}
+      SHIP_CONCURRENCY: ${AGENT_SHIP_CONCURRENCY:-}
+      ASSESS_TIMEOUT_MS: ${AGENT_ASSESS_TIMEOUT_MS:-}
+      SHIP_TIMEOUT_MS: ${AGENT_SHIP_TIMEOUT_MS:-}
+      ASSESS_MAX_TURNS: ${AGENT_ASSESS_MAX_TURNS:-}
+      SHIP_MAX_TURNS: ${AGENT_SHIP_MAX_TURNS:-}
+      SHIP_TOOLSETS: ${AGENT_SHIP_TOOLSETS:-}
+    volumes:
+      - agent_runner_work:/work
+    depends_on:
+      - kaneo
+    restart: unless-stopped
+
 #  Optional for HA Setup
 #  redis:
 #    image: valkey/valkey
@@ -40,3 +78,4 @@ services:
 
 volumes:
   postgres_data:
+  agent_runner_work:

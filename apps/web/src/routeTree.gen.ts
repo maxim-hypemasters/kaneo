@@ -47,6 +47,7 @@ import { Route as LayoutAuthenticatedDashboardSettingsAccountPreferencesRouteImp
 import { Route as LayoutAuthenticatedDashboardSettingsAccountSecurityRouteImport } from './routes/_layout/_authenticated/dashboard/settings/account/security'
 import { Route as LayoutAuthenticatedDashboardSettingsAdminUsersRouteImport } from './routes/_layout/_authenticated/dashboard/settings/admin/users'
 import { Route as LayoutAuthenticatedDashboardSettingsAdminWorkspacesRouteImport } from './routes/_layout/_authenticated/dashboard/settings/admin/workspaces'
+import { Route as LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRouteImport } from './routes/_layout/_authenticated/dashboard/settings/workspace/ai-agent'
 import { Route as LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRouteImport } from './routes/_layout/_authenticated/dashboard/settings/workspace/assistant'
 import { Route as LayoutAuthenticatedDashboardSettingsWorkspaceBillingRouteImport } from './routes/_layout/_authenticated/dashboard/settings/workspace/billing'
 import { Route as LayoutAuthenticatedDashboardSettingsWorkspaceGeneralRouteImport } from './routes/_layout/_authenticated/dashboard/settings/workspace/general'
@@ -292,6 +293,12 @@ const LayoutAuthenticatedDashboardSettingsAdminWorkspacesRoute =
     id: '/workspaces',
     path: '/workspaces',
     getParentRoute: () => LayoutAuthenticatedDashboardSettingsAdminRoute,
+  } as any)
+const LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRoute =
+  LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRouteImport.update({
+    id: '/ai-agent',
+    path: '/ai-agent',
+    getParentRoute: () => LayoutAuthenticatedDashboardSettingsWorkspaceRoute,
   } as any)
 const LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRoute =
   LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRouteImport.update({
@@ -576,6 +583,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/settings/account/security': typeof LayoutAuthenticatedDashboardSettingsAccountSecurityRoute
   '/dashboard/settings/admin/users': typeof LayoutAuthenticatedDashboardSettingsAdminUsersRoute
   '/dashboard/settings/admin/workspaces': typeof LayoutAuthenticatedDashboardSettingsAdminWorkspacesRoute
+  '/dashboard/settings/workspace/ai-agent': typeof LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRoute
   '/dashboard/settings/workspace/assistant': typeof LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRoute
   '/dashboard/settings/workspace/billing': typeof LayoutAuthenticatedDashboardSettingsWorkspaceBillingRoute
   '/dashboard/settings/workspace/general': typeof LayoutAuthenticatedDashboardSettingsWorkspaceGeneralRoute
@@ -644,6 +652,7 @@ export interface FileRoutesByTo {
   '/dashboard/settings/account/security': typeof LayoutAuthenticatedDashboardSettingsAccountSecurityRoute
   '/dashboard/settings/admin/users': typeof LayoutAuthenticatedDashboardSettingsAdminUsersRoute
   '/dashboard/settings/admin/workspaces': typeof LayoutAuthenticatedDashboardSettingsAdminWorkspacesRoute
+  '/dashboard/settings/workspace/ai-agent': typeof LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRoute
   '/dashboard/settings/workspace/assistant': typeof LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRoute
   '/dashboard/settings/workspace/billing': typeof LayoutAuthenticatedDashboardSettingsWorkspaceBillingRoute
   '/dashboard/settings/workspace/general': typeof LayoutAuthenticatedDashboardSettingsWorkspaceGeneralRoute
@@ -718,6 +727,7 @@ export interface FileRoutesById {
   '/_layout/_authenticated/dashboard/settings/account/security': typeof LayoutAuthenticatedDashboardSettingsAccountSecurityRoute
   '/_layout/_authenticated/dashboard/settings/admin/users': typeof LayoutAuthenticatedDashboardSettingsAdminUsersRoute
   '/_layout/_authenticated/dashboard/settings/admin/workspaces': typeof LayoutAuthenticatedDashboardSettingsAdminWorkspacesRoute
+  '/_layout/_authenticated/dashboard/settings/workspace/ai-agent': typeof LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRoute
   '/_layout/_authenticated/dashboard/settings/workspace/assistant': typeof LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRoute
   '/_layout/_authenticated/dashboard/settings/workspace/billing': typeof LayoutAuthenticatedDashboardSettingsWorkspaceBillingRoute
   '/_layout/_authenticated/dashboard/settings/workspace/general': typeof LayoutAuthenticatedDashboardSettingsWorkspaceGeneralRoute
@@ -791,6 +801,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/account/security'
     | '/dashboard/settings/admin/users'
     | '/dashboard/settings/admin/workspaces'
+    | '/dashboard/settings/workspace/ai-agent'
     | '/dashboard/settings/workspace/assistant'
     | '/dashboard/settings/workspace/billing'
     | '/dashboard/settings/workspace/general'
@@ -859,6 +870,7 @@ export interface FileRouteTypes {
     | '/dashboard/settings/account/security'
     | '/dashboard/settings/admin/users'
     | '/dashboard/settings/admin/workspaces'
+    | '/dashboard/settings/workspace/ai-agent'
     | '/dashboard/settings/workspace/assistant'
     | '/dashboard/settings/workspace/billing'
     | '/dashboard/settings/workspace/general'
@@ -932,6 +944,7 @@ export interface FileRouteTypes {
     | '/_layout/_authenticated/dashboard/settings/account/security'
     | '/_layout/_authenticated/dashboard/settings/admin/users'
     | '/_layout/_authenticated/dashboard/settings/admin/workspaces'
+    | '/_layout/_authenticated/dashboard/settings/workspace/ai-agent'
     | '/_layout/_authenticated/dashboard/settings/workspace/assistant'
     | '/_layout/_authenticated/dashboard/settings/workspace/billing'
     | '/_layout/_authenticated/dashboard/settings/workspace/general'
@@ -1246,6 +1259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsAdminWorkspacesRouteImport
       parentRoute: typeof LayoutAuthenticatedDashboardSettingsAdminRoute
     }
+    '/_layout/_authenticated/dashboard/settings/workspace/ai-agent': {
+      id: '/_layout/_authenticated/dashboard/settings/workspace/ai-agent'
+      path: '/ai-agent'
+      fullPath: '/dashboard/settings/workspace/ai-agent'
+      preLoaderRoute: typeof LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRouteImport
+      parentRoute: typeof LayoutAuthenticatedDashboardSettingsWorkspaceRoute
+    }
     '/_layout/_authenticated/dashboard/settings/workspace/assistant': {
       id: '/_layout/_authenticated/dashboard/settings/workspace/assistant'
       path: '/assistant'
@@ -1559,6 +1579,7 @@ const LayoutAuthenticatedDashboardSettingsProjectsRouteWithChildren =
   )
 
 interface LayoutAuthenticatedDashboardSettingsWorkspaceRouteChildren {
+  LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRoute: typeof LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRoute
   LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRoute: typeof LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRoute
   LayoutAuthenticatedDashboardSettingsWorkspaceBillingRoute: typeof LayoutAuthenticatedDashboardSettingsWorkspaceBillingRoute
   LayoutAuthenticatedDashboardSettingsWorkspaceGeneralRoute: typeof LayoutAuthenticatedDashboardSettingsWorkspaceGeneralRoute
@@ -1570,6 +1591,8 @@ interface LayoutAuthenticatedDashboardSettingsWorkspaceRouteChildren {
 
 const LayoutAuthenticatedDashboardSettingsWorkspaceRouteChildren: LayoutAuthenticatedDashboardSettingsWorkspaceRouteChildren =
   {
+    LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRoute:
+      LayoutAuthenticatedDashboardSettingsWorkspaceAiAgentRoute,
     LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRoute:
       LayoutAuthenticatedDashboardSettingsWorkspaceAssistantRoute,
     LayoutAuthenticatedDashboardSettingsWorkspaceBillingRoute:

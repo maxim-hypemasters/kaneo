@@ -1,5 +1,6 @@
 import {
   Bell,
+  Bot,
   Building2,
   Code,
   CreditCard,
@@ -31,6 +32,8 @@ type BuildSettingsNavInput = {
   // has not turned the assistant off (config.hasAssistant).
   canManageSettings?: boolean;
   hasAssistant?: boolean;
+  // The AI agent's runner link has the same needs, with config.hasAiAgent.
+  hasAiAgent?: boolean;
   // time_off:approve; false while permissions load.
   canManageTimeOff: boolean;
   hasAdminAccess: boolean;
@@ -74,6 +77,7 @@ export function buildSettingsNav({
   canImport,
   canManageSettings = false,
   hasAssistant = false,
+  hasAiAgent = false,
   canManageTimeOff,
   hasAdminAccess,
   projects,
@@ -144,6 +148,16 @@ export function buildSettingsNav({
                 label: t("settings:assistantPage.title"),
                 to: "/dashboard/settings/workspace/assistant",
                 icon: Sparkles,
+              },
+            ]
+          : []),
+        ...(canManageSettings && hasAiAgent
+          ? [
+              {
+                id: "workspace-ai-agent",
+                label: t("settings:aiAgentPage.title"),
+                to: "/dashboard/settings/workspace/ai-agent",
+                icon: Bot,
               },
             ]
           : []),
