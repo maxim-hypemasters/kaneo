@@ -1,7 +1,13 @@
+import { useNavigate } from "@tanstack/react-router";
 import { FileText, Plus } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { DocumentWindow } from "@/components/documents/document-window";
+import { DocumentWindowFrame } from "@/components/documents/document-window-frame";
 import { useDocumentDraftNavigation } from "@/components/editor/document-draft-guard";
+import { documentRoute } from "@/components/project/home/documents/document-route";
+import { DocumentsNavigator } from "@/components/project/home/documents/documents-navigator";
+import type { OpenDocument } from "@/components/project/home/documents/open-document";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCreateFeatureDocument } from "@/hooks/mutations/feature/use-create-feature-document";
@@ -12,24 +18,26 @@ import {
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { formatRelativeTime } from "@/lib/format";
 import { FeatureDocumentPage } from "./feature-document-page";
-import { DocumentWindow } from "@/components/documents/document-window";
 import { WorkspacePagination } from "./workspace-pagination";
 import { WorkspaceQueryState } from "./workspace-query-state";
 
 export function FeatureDocuments({
+  workspaceId,
   featureId,
   projectId,
   selectedDocumentId,
   onDocumentChange,
 }: {
+  workspaceId: string;
   featureId: string;
   projectId: string;
   selectedDocumentId?: string;
   onDocumentChange: (id?: string) => void;
 }) {
   const { t } = useTranslation();
-  const { canUpdateFeatures } = useWorkspacePermission();
+  const { canUpdateFeatures, canReadDocuments } = useWorkspacePermission();
   const requestLeave = useDocumentDraftNavigation();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   // The document just created opens with its title selected.
@@ -50,29 +58,54 @@ export function FeatureDocuments({
       onDocumentChange(undefined);
     });
   }, [requestLeave, onDocumentChange]);
+  // Another document of this Feature opens here; any other one in the
+  // project's Documents tab, which saves or asks about this draft first.
+  const openFromList = (next: OpenDocument) => {
+    if (next.featureId === featureId)
+      void requestLeave(() => {
+        setCreatedId(undefined);
+        onDocumentChange(next.id);
+      });
+    else void navigate(documentRoute(workspaceId, projectId, next));
+  };
   // The open page covers the screen; the list stays underneath it.
   const openPage = selectedDocumentId ? (
-    document.data ? (
-      <FeatureDocumentPage
-        key={selectedDocumentId}
-        featureId={featureId}
-        projectId={projectId}
-        document={document.data}
-        focusTitle={createdId === selectedDocumentId}
-        onBack={back}
-        refresh={() => document.refetch({ throwOnError: true })}
-      />
-    ) : (
-      <DocumentWindow
-        title={t("tasks:features.workspace.documentBody")}
-        onClose={back}
-      >
-        <WorkspaceQueryState
-          error={document.isError}
-          onRetry={() => void document.refetch()}
+    <DocumentWindowFrame
+      documentKey={selectedDocumentId}
+      nav={
+        canReadDocuments() ? (
+          <DocumentsNavigator
+            workspaceId={workspaceId}
+            projectId={projectId}
+            openDocument={{ id: selectedDocumentId, featureId }}
+            onOpen={openFromList}
+          />
+        ) : undefined
+      }
+      onClose={back}
+    >
+      {document.data ? (
+        <FeatureDocumentPage
+          key={selectedDocumentId}
+          featureId={featureId}
+          projectId={projectId}
+          document={document.data}
+          focusTitle={createdId === selectedDocumentId}
+          onBack={back}
+          refresh={() => document.refetch({ throwOnError: true })}
         />
-      </DocumentWindow>
-    )
+      ) : (
+        <DocumentWindow
+          title={t("tasks:features.workspace.documentBody")}
+          onClose={back}
+        >
+          <WorkspaceQueryState
+            error={document.isError}
+            onRetry={() => void document.refetch()}
+          />
+        </DocumentWindow>
+      )}
+    </DocumentWindowFrame>
   ) : null;
   return (
     <section className="space-y-4">

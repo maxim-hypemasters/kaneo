@@ -283,11 +283,15 @@ function buildDeliveryContent(notification: {
         "documentTitle",
       );
       const actorName = getStringValue(notification.eventData, "actorName");
+      // A mention in the document's own text comes with no comment.
+      const where = getStringValue(notification.eventData, "commentId")
+        ? "a comment on "
+        : "";
       return {
         title: actorName ? `${actorName} mentioned you` : "You were mentioned",
         body: documentTitle
-          ? `You were mentioned in a comment on ${documentTitle}.`
-          : "You were mentioned in a comment on a Kaneo document.",
+          ? `You were mentioned in ${where}${documentTitle}.`
+          : `You were mentioned in ${where}a Kaneo document.`,
       };
     }
     case "document_comment_reply": {

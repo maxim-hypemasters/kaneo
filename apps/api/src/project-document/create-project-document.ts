@@ -1,6 +1,7 @@
 import { and, eq, isNull, max } from "drizzle-orm";
 import db from "../database";
 import { projectDocumentTable } from "../database/schema";
+import { notifyDocumentMentions } from "../notification/document-mention/notify-document-mentions";
 import type { z } from "../openapi";
 import { claimDocumentAssets } from "../task/controllers/claim-description-assets";
 import { retryTransaction } from "../utils/retry-transaction";
@@ -55,5 +56,13 @@ export async function createProjectDocument(
     }),
   );
   await publishProjectDocumentEvent(scope, "project.document.created", row.id);
+  await notifyDocumentMentions({
+    document: { kind: "page", id: row.id, title: row.title },
+    projectId: scope.projectId,
+    workspaceId: scope.workspaceId,
+    authorId: scope.userId,
+    before: null,
+    after: row.body,
+  });
   return row;
 }

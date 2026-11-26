@@ -36,6 +36,12 @@ const t = (key: string, options?: Record<string, unknown>) => {
   if (key === "notifications:events.document_mention.title") {
     return `${options?.actorName} mentioned you in a comment`;
   }
+  if (key === "notifications:events.document_mention.titleInDocument") {
+    return `${options?.actorName} mentioned you`;
+  }
+  if (key === "notifications:events.document_mention.content") {
+    return `In ${options?.documentTitle}`;
+  }
   if (key === "notifications:events.document_mention.contentWithPreview") {
     return `${options?.documentTitle}: ${options?.commentPreview}`;
   }
@@ -140,6 +146,7 @@ describe("notification display content", () => {
     const item = notification("document_mention", {
       documentTitle: "Release plan",
       actorName: "Mina",
+      commentId: "comment-1",
       commentPreview: "@Ana can you check?",
     });
 
@@ -149,6 +156,18 @@ describe("notification display content", () => {
     expect(getNotificationContent(item, t)).toBe(
       "Release plan: @Ana can you check?",
     );
+  });
+
+  it("renders a mention in a document's own text", () => {
+    const item = notification("document_mention", {
+      documentTitle: "Release plan",
+      actorName: "Mina",
+      commentId: null,
+      commentPreview: null,
+    });
+
+    expect(getNotificationTitle(item, t)).toBe("Mina mentioned you");
+    expect(getNotificationContent(item, t)).toBe("In Release plan");
   });
 
   it("falls back for a deleted author, an untitled document and no preview", () => {

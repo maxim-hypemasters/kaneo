@@ -25,8 +25,8 @@ import type { CommentAnchorSnapshot } from "./comment-anchor-snapshot";
 import type { ThreadActions } from "./comment-thread-card";
 import { sortThreads, type ThreadFilter } from "./sort-threads";
 import { useCommentHighlights } from "./use-comment-highlights";
-import { useCommentsDocked } from "./use-comments-docked";
-import { useProjectMentionMembers } from "./use-project-mention-members";
+import { usePanelsDocked } from "../use-panels-docked";
+import { useProjectMentionMembers } from "@/components/editor/use-project-mention-members";
 
 const NO_THREADS: DocumentCommentThread[] = [];
 
@@ -65,7 +65,7 @@ export function useDocumentComments({
   const { user } = useAuth();
   const panelId = useId();
   const toggle = useRef<HTMLButtonElement>(null);
-  const docked = useCommentsDocked();
+  const docked = usePanelsDocked();
   const query = useDocumentCommentThreads(document);
   const threads = query.data ?? NO_THREADS;
   const members = useProjectMentionMembers(document.projectId);
@@ -281,6 +281,8 @@ export function useDocumentComments({
   return {
     editor: editorComments,
     bodyChanged: recordAnchors,
+    // Who an @ can name, in a comment or in the document itself.
+    members,
     panelId,
     toggle,
     open,

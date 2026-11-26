@@ -1,5 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import type { ReactNode, Ref } from "react";
+import type { MentionMember } from "@/components/task/extensions/mention-list";
 import type { uploadTaskImage } from "@/lib/upload-task-image";
 
 export type UploadedDocumentAsset = Awaited<ReturnType<typeof uploadTaskImage>>;
@@ -40,4 +41,7 @@ export type DocumentEditorProps = {
   // Comment highlights are an editor extension, and extensions are fixed when
   // the editor is created: pass this from the first render or never.
   comments?: DocumentEditorComments;
+  // The people an @ can name. Like comments, the picker is offered only when
+  // this is passed from the first render; the list itself may change.
+  mentionMembers?: MentionMember[];
 };

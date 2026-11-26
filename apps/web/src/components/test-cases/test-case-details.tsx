@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useProjectMentionMembers } from "@/components/editor/use-project-mention-members";
 import { Input } from "@/components/ui/input";
 import type { TestCase, UpdateTestCaseInput } from "@/fetchers/test-case/types";
 import { useUpdateTestCase } from "@/hooks/mutations/test-case/use-update-test-case";
@@ -43,6 +44,7 @@ export function TestCaseDetails({
   workspaceId: string;
 }) {
   const { t } = useTranslation();
+  const mentionMembers = useProjectMentionMembers(projectId);
   const { canUpdateTestCases } = useWorkspacePermission();
   const update = useUpdateTestCase(projectId);
   // Text fields report their own save errors beside their editor.
@@ -99,6 +101,7 @@ export function TestCaseDetails({
             placeholder={t(placeholder)}
             value={testCase[field]}
             canEdit={!readOnly}
+            mentionMembers={mentionMembers}
             onSave={(value) =>
               updateText.mutateAsync({
                 id: testCase.id,

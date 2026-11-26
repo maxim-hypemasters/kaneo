@@ -1004,6 +1004,19 @@
 						"autoDetect"
 					]
 				},
+				"documentWindow": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"navLabel": {
+							"type": "string"
+						},
+						"hideDocuments": {
+							"type": "string"
+						}
+					},
+					"required": ["navLabel", "hideDocuments"]
+				},
 				"documentComments": {
 					"type": "object",
 					"additionalProperties": false,
@@ -1193,6 +1206,7 @@
 				"modals",
 				"editor",
 				"documentEditor",
+				"documentWindow",
 				"documentComments"
 			]
 		},
@@ -12203,6 +12217,9 @@
 								"title": {
 									"type": "string"
 								},
+								"titleInDocument": {
+									"type": "string"
+								},
 								"content": {
 									"type": "string"
 								},
@@ -12210,7 +12227,12 @@
 									"type": "string"
 								}
 							},
-							"required": ["title", "content", "contentWithPreview"]
+							"required": [
+								"title",
+								"titleInDocument",
+								"content",
+								"contentWithPreview"
+							]
 						},
 						"document_comment_reply": {
 							"type": "object",

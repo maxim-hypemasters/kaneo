@@ -44,6 +44,10 @@ vi.mock("./extensions/task-item-with-checkbox", () => ({
   TaskItemWithCheckbox: TaskItem,
 }));
 
+// Who an @ can name is read from the project, which these tests leave out.
+vi.mock("@/components/editor/use-project-mention-members", () => ({
+  useProjectMentionMembers: () => [],
+}));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: mocks.t }),
   initReactI18next: { type: "3rdParty", init: () => {} },

@@ -7,9 +7,8 @@ import {
   userTable,
 } from "../../database/schema";
 import { publishEvent } from "../../events";
-import createNotification from "../../notification/controllers/create-notification";
 import { deleteOrphanedAssets } from "../../storage/cleanup-assets";
-import { parseMentionIds } from "../../utils/parse-mentions";
+import { notifyTaskDescriptionMentions } from "./notify-task-description-mentions";
 
 type Task = typeof taskTable.$inferSelect;
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -159,31 +158,6 @@ export async function publishTaskMutation(
       deleteOrphanedAssets(before.description, after.description, {
         taskId: after.id,
       }).catch(() => {});
-    const oldMentions = new Set(parseMentionIds(before.description));
-    const newlyMentioned = parseMentionIds(after.description).filter(
-      (id) => id !== userId && !oldMentions.has(id),
-    );
-    if (newlyMentioned.length) {
-      const editor = userId
-        ? (
-            await db
-              .select({ name: userTable.name })
-              .from(userTable)
-              .where(eq(userTable.id, userId))
-              .limit(1)
-          )[0]
-        : undefined;
-      for (const mentionedId of newlyMentioned)
-        await createNotification({
-          userId: mentionedId,
-          type: "task_mention",
-          eventData: {
-            taskTitle: after.title,
-            mentionerName: editor?.name ?? null,
-          },
-          resourceId: after.id,
-          resourceType: "task",
-        });
-    }
+    await notifyTaskDescriptionMentions(after, before.description, userId);
   }
 }

@@ -6,10 +6,8 @@ import { WorkspaceQueryState } from "@/components/task/features/workspace/worksp
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import useGetProject from "@/hooks/queries/project/use-get-project";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
-import {
-  type OpenDocument,
-  ProjectDocuments,
-} from "./documents/project-documents";
+import type { OpenDocument } from "./documents/open-document";
+import { ProjectDocuments } from "./documents/project-documents";
 import { ProjectOverview } from "./overview/project-overview";
 import type { ProjectHomeTab } from "./project-home-search";
 

@@ -11,9 +11,12 @@ import {
   updateFeatureDocument,
 } from "@/fetchers/feature/feature-workspace";
 import type { FeatureDocument } from "@/fetchers/feature/types";
+import type { ProjectDocumentTree } from "@/fetchers/project-document/types";
 import { withAnchors } from "@/hooks/mutations/document-comment/thread-cache";
 import { documentCommentsKey } from "@/hooks/queries/document-comment/document-comment-keys";
 import { featureWorkspaceKey } from "@/hooks/queries/feature/use-feature-workspace";
+import { projectDocumentsKey } from "@/hooks/queries/project-document/project-document-keys";
+import { withDocumentTitle } from "@/hooks/queries/project-document/with-document-title";
 import { uploadDraftAsset } from "@/lib/upload-draft-asset";
 
 // Not useFeatureWorkspaceMutation: refreshing the whole workspace, task and
@@ -59,12 +62,18 @@ export function useFeatureDocumentAutosave({
       },
       prune: (assetIds) => pruneFeatureAssets(featureId, assetIds),
       upload: (file) => uploadDraftAsset(projectId, file, featureId),
-      onSaved: (value) =>
+      onSaved: (value) => {
         queryClient.setQueryData<FeatureDocument>(
           [...key, "document", value.id],
           (cached) =>
             cached && cached.revision > value.revision ? cached : value,
-        ),
+        );
+        // The documents panel shows the title while the document is open.
+        queryClient.setQueryData<ProjectDocumentTree>(
+          projectDocumentsKey(projectId),
+          (tree) => tree && withDocumentTitle(tree, value.id, value.title),
+        );
+      },
       onListStale: () =>
         void queryClient.invalidateQueries({ queryKey: [...key, "documents"] }),
     },

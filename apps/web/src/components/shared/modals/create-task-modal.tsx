@@ -1035,6 +1035,7 @@ function CreateTaskModalContent({
               <div className="min-h-[200px]">
                 <TaskDescriptionEditor
                   key={editorVersion}
+                  projectId={resolvedProjectId}
                   value={description}
                   onChange={(next) => {
                     if (!submittingRef.current) setDescription(next);

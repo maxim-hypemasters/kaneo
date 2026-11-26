@@ -12,7 +12,7 @@ export const notificationSchema = z
     }),
     type: z.string().openapi({
       description:
-        "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, test_case_mention (mentioned in a comment on a test case), task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason), time_off_requested, time_off_approved, time_off_declined, time_off_member_away, time_off_holiday_calendar_requested, time_off_holiday_calendar_approved, time_off_holiday_calendar_declined, document_mention (mentioned in a comment on a project page or Feature document), document_comment_reply (a reply in a document comment thread you started or replied in).",
+        "One of: info, task_created, workspace_created, task_status_changed, task_assignee_changed, time_entry_created, due_date_reminder, task_overdue, task_mention, task_comment, test_case_mention (mentioned in a comment on a test case), task_triage_new (new work waiting in Triage), task_triage_accepted, task_triage_declined (eventData may carry reason), time_off_requested, time_off_approved, time_off_declined, time_off_member_away, time_off_holiday_calendar_requested, time_off_holiday_calendar_approved, time_off_holiday_calendar_declined, document_mention (mentioned in a project page or Feature document, or in a comment on one; commentId is null for a mention in the text itself), document_comment_reply (a reply in a document comment thread you started or replied in).",
     }),
     eventData: z.unknown().openapi({
       description:

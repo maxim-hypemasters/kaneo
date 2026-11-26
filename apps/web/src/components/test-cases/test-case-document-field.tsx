@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDocumentDraftGuard } from "@/components/editor/document-draft-guard";
 import { DocumentEditor } from "@/components/editor/document-editor";
+import type { MentionMember } from "@/components/task/extensions/mention-list";
 import { Button } from "@/components/ui/button";
 
 // A test case text, shown like a task description: read until clicked, then
@@ -12,6 +13,7 @@ export function TestCaseDocumentField({
   placeholder,
   value,
   canEdit,
+  mentionMembers,
   onSave,
 }: {
   documentKey: string;
@@ -19,6 +21,7 @@ export function TestCaseDocumentField({
   placeholder: string;
   value: string | null;
   canEdit: boolean;
+  mentionMembers?: MentionMember[];
   onSave: (value: string | null) => Promise<unknown>;
 }) {
   const { t } = useTranslation();
@@ -71,6 +74,7 @@ export function TestCaseDocumentField({
         placeholder={placeholder}
         readOnly={!editing || !canEdit}
         disabled={saving}
+        mentionMembers={mentionMembers}
         footer={
           editing ? (
             <div className="space-y-3">

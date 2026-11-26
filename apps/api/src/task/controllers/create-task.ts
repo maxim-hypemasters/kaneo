@@ -8,6 +8,7 @@ import {
   type CreateTaskInput,
 } from "./create-task-in-transaction";
 import { createFeatureCompositionInTransaction } from "./create-feature-composition-in-transaction";
+import { notifyTaskDescriptionMentions } from "./notify-task-description-mentions";
 import {
   featureCompositionSchema,
   type FeatureCompositionInput,
@@ -51,6 +52,7 @@ async function createTask(
       type: "created",
       content: null,
     });
+  await notifyTaskDescriptionMentions(task, null, input.currentUserId);
   if (graph) {
     for (const milestone of graph.milestones)
       await publishEvent("milestone.changed", {

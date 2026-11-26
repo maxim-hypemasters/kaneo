@@ -9,6 +9,7 @@ import {
   DialogPopup,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useProjectMentionMembers } from "@/components/editor/use-project-mention-members";
 import { Input } from "@/components/ui/input";
 import type { TestCaseStatus } from "@/fetchers/test-case/types";
 import { useCreateTestCase } from "@/hooks/mutations/test-case/use-create-test-case";
@@ -30,6 +31,7 @@ export function TestCaseDialog({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const mentionMembers = useProjectMentionMembers(projectId);
   const create = useCreateTestCase(projectId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -99,6 +101,7 @@ export function TestCaseDialog({
               value={description}
               onChange={setDescription}
               disabled={pending}
+              mentionMembers={mentionMembers}
             />
             <TestCaseEditorInput
               label={t("tasks:testCases.fields.steps")}
@@ -106,6 +109,7 @@ export function TestCaseDialog({
               value={steps}
               onChange={setSteps}
               disabled={pending}
+              mentionMembers={mentionMembers}
             />
             <TestCaseEditorInput
               label={t("tasks:testCases.fields.expectedResult")}
@@ -113,6 +117,7 @@ export function TestCaseDialog({
               value={expectedResult}
               onChange={setExpectedResult}
               disabled={pending}
+              mentionMembers={mentionMembers}
             />
             <TestCasePickerChips
               projectId={projectId}

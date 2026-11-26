@@ -2,21 +2,19 @@ import { eq } from "drizzle-orm";
 import db from "../../database";
 import { userTable } from "../../database/schema";
 import createNotification from "../../notification/controllers/create-notification";
-import { parseMentionIds } from "../../utils/parse-mentions";
 import { workspaceMembersWithPermission } from "../../utils/workspace-members-with-permission";
 import type { TestCaseScope } from "../schema";
 
-// Members @mentioned in a new comment, other than its author. The
-// notification names the test case, so it only goes to members who may read
-// test cases; createNotification drops anyone without access to the project.
+// Members @mentioned in a new comment or newly in the test case's text,
+// other than the author. The notification names the test case, so it only
+// goes to members who may read test cases; createNotification drops anyone
+// without access to the project.
 export async function notifyMentionedMembers(
   scope: TestCaseScope,
   testCase: { id: string; title: string },
-  content: string,
+  mentionedIds: string[],
 ) {
-  const mentioned = parseMentionIds(content).filter(
-    (id) => id !== scope.userId,
-  );
+  const mentioned = mentionedIds.filter((id) => id !== scope.userId);
   if (mentioned.length === 0) return;
 
   const readers = new Set(

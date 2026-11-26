@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { DocumentEditor } from "@/components/editor/document-editor";
 import { useDocumentDraftGuard } from "@/components/editor/document-draft-guard";
+import { useProjectMentionMembers } from "@/components/editor/use-project-mention-members";
 import { Button } from "@/components/ui/button";
 import { DescriptionConflict } from "./description-conflict";
 import { useDescriptionDraft } from "./use-description-draft";
@@ -26,6 +27,7 @@ export function TaskDescriptionDocument({
     canEdit,
     refresh,
   });
+  const mentionMembers = useProjectMentionMembers(projectId);
   useDocumentDraftGuard({
     dirty: draft.dirty,
     saving: draft.saving || draft.uploading,
@@ -38,6 +40,7 @@ export function TaskDescriptionDocument({
         documentKey={`${taskId}:${draft.session}`}
         value={draft.value}
         onChange={draft.change}
+        mentionMembers={mentionMembers}
         onRequestEdit={!draft.editing && canEdit ? draft.edit : undefined}
         ariaLabel={t("common:documentEditor.description")}
         placeholder={t("tasks:detail.addDescription")}
