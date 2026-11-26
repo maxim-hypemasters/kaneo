@@ -4,6 +4,7 @@ import {
   getIntegrationStatus,
 } from "@/components/project/integrations/get-integration-status";
 import type { IntegrationId } from "@/components/project/integrations/integration-definitions";
+import { useProjectAgentSettings } from "@/hooks/queries/agent/use-project-agent-settings";
 import useGetDiscordIntegration from "@/hooks/queries/discord-integration/use-get-discord-integration";
 import useGetGenericWebhookIntegration from "@/hooks/queries/generic-webhook-integration/use-get-generic-webhook-integration";
 import useGetGiteaIntegration from "@/hooks/queries/gitea-integration/use-get-gitea-integration";
@@ -14,8 +15,12 @@ import useGetSlackIntegration from "@/hooks/queries/slack-integration/use-get-sl
 import useGetTelegramIntegration from "@/hooks/queries/telegram-integration/use-get-telegram-integration";
 
 // Shares query keys with the per-integration settings panels, so opening a
-// panel reuses what the list already loaded.
-export function useIntegrationStatuses(projectId: string) {
+// panel reuses what the list already loaded. `hasAiAgent` must be false for
+// people who cannot manage workspace settings: the API refuses them.
+export function useIntegrationStatuses(
+  projectId: string,
+  { hasAiAgent = false }: { hasAiAgent?: boolean } = {},
+) {
   const github = useGetGithubIntegration(projectId);
   const gitea = useGetGiteaIntegration(projectId);
   const gitlab = useGetGitlabIntegration(projectId);
@@ -24,6 +29,7 @@ export function useIntegrationStatuses(projectId: string) {
   const mattermost = useGetMattermostIntegration(projectId);
   const telegram = useGetTelegramIntegration(projectId);
   const webhook = useGetGenericWebhookIntegration(projectId);
+  const aiAgent = useProjectAgentSettings(projectId, { enabled: hasAiAgent });
 
   const statuses = {
     github: getIntegrationStatus({
@@ -87,6 +93,13 @@ export function useIntegrationStatuses(projectId: string) {
       configured: Boolean(webhook.data?.webhookConfigured),
       isActive: webhook.data?.isActive,
     }),
+    "ai-agent": getIntegrationStatus({
+      queryStatus: aiAgent.status,
+      hasData: aiAgent.data !== undefined,
+      configured: Boolean(aiAgent.data?.enabled),
+      isActive: aiAgent.data?.enabled,
+      detail: aiAgent.data?.repository ?? aiAgent.data?.suggestedRepository,
+    }),
   };
   const queries = {
     github,
@@ -97,6 +110,7 @@ export function useIntegrationStatuses(projectId: string) {
     mattermost,
     telegram,
     webhook,
+    "ai-agent": aiAgent,
   };
 
   return {

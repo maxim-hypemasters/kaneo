@@ -51,6 +51,9 @@ jobs:
           - name: api
             dockerfile: ./apps/api/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/api
+          - name: agent-runner
+            dockerfile: ./apps/agent-runner/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/agent-runner
 
     steps:
       - name: Checkout repository

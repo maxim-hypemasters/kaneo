@@ -7788,6 +7788,370 @@
 						"toast"
 					]
 				},
+				"aiAgentPage": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"title": {
+							"type": "string"
+						},
+						"pageTitle": {
+							"type": "string"
+						},
+						"subtitle": {
+							"type": "string"
+						},
+						"disabledTitle": {
+							"type": "string"
+						},
+						"disabledDescription": {
+							"type": "string"
+						},
+						"membersTitle": {
+							"type": "string"
+						},
+						"membersDescription": {
+							"type": "string"
+						},
+						"loadError": {
+							"type": "string"
+						},
+						"toast": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"saved": {
+									"type": "string"
+								},
+								"saveFailed": {
+									"type": "string"
+								},
+								"tokenFailed": {
+									"type": "string"
+								},
+								"revoked": {
+									"type": "string"
+								},
+								"revokeFailed": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"saved",
+								"saveFailed",
+								"tokenFailed",
+								"revoked",
+								"revokeFailed"
+							]
+						},
+						"runner": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"sectionTitle": {
+									"type": "string"
+								},
+								"note": {
+									"type": "string"
+								},
+								"copy": {
+									"type": "string"
+								},
+								"copied": {
+									"type": "string"
+								},
+								"copyFailed": {
+									"type": "string"
+								},
+								"status": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"title": {
+											"type": "string"
+										},
+										"notSetUp": {
+											"type": "string"
+										},
+										"notSetUpDescription": {
+											"type": "string"
+										},
+										"online": {
+											"type": "string"
+										},
+										"onlineDescription": {
+											"type": "string"
+										},
+										"offline": {
+											"type": "string"
+										},
+										"offlineDescription": {
+											"type": "string"
+										},
+										"neverConnectedDescription": {
+											"type": "string"
+										},
+										"token": {
+											"type": "string"
+										},
+										"version": {
+											"type": "string"
+										},
+										"lastSeen": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"title",
+										"notSetUp",
+										"notSetUpDescription",
+										"online",
+										"onlineDescription",
+										"offline",
+										"offlineDescription",
+										"neverConnectedDescription",
+										"token",
+										"version",
+										"lastSeen"
+									]
+								},
+								"token": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"sectionTitle": {
+											"type": "string"
+										},
+										"title": {
+											"type": "string"
+										},
+										"createDescription": {
+											"type": "string"
+										},
+										"replaceDescription": {
+											"type": "string"
+										},
+										"create": {
+											"type": "string"
+										},
+										"replace": {
+											"type": "string"
+										},
+										"replacing": {
+											"type": "string"
+										},
+										"replaceDialogTitle": {
+											"type": "string"
+										},
+										"replaceDialogDescription": {
+											"type": "string"
+										},
+										"shownOnce": {
+											"type": "string"
+										},
+										"copyLabel": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"sectionTitle",
+										"title",
+										"createDescription",
+										"replaceDescription",
+										"create",
+										"replace",
+										"replacing",
+										"replaceDialogTitle",
+										"replaceDialogDescription",
+										"shownOnce",
+										"copyLabel"
+									]
+								},
+								"env": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"title": {
+											"type": "string"
+										},
+										"description": {
+											"type": "string"
+										},
+										"tokenPlaceholder": {
+											"type": "string"
+										},
+										"copyLabel": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"title",
+										"description",
+										"tokenPlaceholder",
+										"copyLabel"
+									]
+								},
+								"revoke": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"sectionTitle": {
+											"type": "string"
+										},
+										"title": {
+											"type": "string"
+										},
+										"description": {
+											"type": "string"
+										},
+										"button": {
+											"type": "string"
+										},
+										"revoking": {
+											"type": "string"
+										},
+										"dialogTitle": {
+											"type": "string"
+										},
+										"dialogDescription": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"sectionTitle",
+										"title",
+										"description",
+										"button",
+										"revoking",
+										"dialogTitle",
+										"dialogDescription"
+									]
+								}
+							},
+							"required": [
+								"sectionTitle",
+								"note",
+								"copy",
+								"copied",
+								"copyFailed",
+								"status",
+								"token",
+								"env",
+								"revoke"
+							]
+						},
+						"project": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"enabledTitle": {
+									"type": "string"
+								},
+								"enabledDescription": {
+									"type": "string"
+								},
+								"autoAssessTitle": {
+									"type": "string"
+								},
+								"autoAssessDescription": {
+									"type": "string"
+								},
+								"repositoryLabel": {
+									"type": "string"
+								},
+								"repositoryPlaceholder": {
+									"type": "string"
+								},
+								"repositoryFromGithub": {
+									"type": "string"
+								},
+								"repositoryHint": {
+									"type": "string"
+								},
+								"baseBranchLabel": {
+									"type": "string"
+								},
+								"thresholdLabel": {
+									"type": "string"
+								},
+								"thresholdHint": {
+									"type": "string"
+								},
+								"instructionsLabel": {
+									"type": "string"
+								},
+								"instructionsPlaceholder": {
+									"type": "string"
+								},
+								"instructionsHint": {
+									"type": "string"
+								},
+								"save": {
+									"type": "string"
+								},
+								"loadError": {
+									"type": "string"
+								},
+								"runnerMissing": {
+									"type": "string"
+								},
+								"runnerMissingLink": {
+									"type": "string"
+								},
+								"errors": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"repository": {
+											"type": "string"
+										},
+										"baseBranch": {
+											"type": "string"
+										},
+										"readyThreshold": {
+											"type": "string"
+										}
+									},
+									"required": ["repository", "baseBranch", "readyThreshold"]
+								}
+							},
+							"required": [
+								"enabledTitle",
+								"enabledDescription",
+								"autoAssessTitle",
+								"autoAssessDescription",
+								"repositoryLabel",
+								"repositoryPlaceholder",
+								"repositoryFromGithub",
+								"repositoryHint",
+								"baseBranchLabel",
+								"thresholdLabel",
+								"thresholdHint",
+								"instructionsLabel",
+								"instructionsPlaceholder",
+								"instructionsHint",
+								"save",
+								"loadError",
+								"runnerMissing",
+								"runnerMissingLink",
+								"errors"
+							]
+						}
+					},
+					"required": [
+						"title",
+						"pageTitle",
+						"subtitle",
+						"disabledTitle",
+						"disabledDescription",
+						"membersTitle",
+						"membersDescription",
+						"loadError",
+						"toast",
+						"runner",
+						"project"
+					]
+				},
 				"workspaceTimeOff": {
 					"type": "object",
 					"additionalProperties": false,
@@ -8152,6 +8516,12 @@
 						"gitlabSectionSubtitle": {
 							"type": "string"
 						},
+						"aiAgentSectionTitle": {
+							"type": "string"
+						},
+						"aiAgentSectionSubtitle": {
+							"type": "string"
+						},
 						"discordSectionTitle": {
 							"type": "string"
 						},
@@ -8214,6 +8584,8 @@
 						"giteaSectionSubtitle",
 						"gitlabSectionTitle",
 						"gitlabSectionSubtitle",
+						"aiAgentSectionTitle",
+						"aiAgentSectionSubtitle",
 						"discordSectionTitle",
 						"discordSectionSubtitle",
 						"genericWebhookSectionTitle",
@@ -11106,6 +11478,7 @@
 				"workspaceLabels",
 				"workspaceImport",
 				"assistantPage",
+				"aiAgentPage",
 				"workspaceTimeOff",
 				"projectGeneral",
 				"projectIntegrations",
@@ -13087,6 +13460,9 @@
 								"mermaid"
 							]
 						},
+						"aiAgent": {
+							"type": "string"
+						},
 						"importedFrom": {
 							"type": "string"
 						},
@@ -13110,6 +13486,7 @@
 						"attachFile",
 						"submitShortcut",
 						"editor",
+						"aiAgent",
 						"importedFrom",
 						"importedBy"
 					]
@@ -19364,6 +19741,428 @@
 						"createNote",
 						"sentToTriage"
 					]
+				},
+				"aiAgent": {
+					"type": "object",
+					"additionalProperties": false,
+					"properties": {
+						"sectionLabel": {
+							"type": "string"
+						},
+						"readinessTitle": {
+							"type": "string"
+						},
+						"readiness": {
+							"type": "string"
+						},
+						"meterLabel": {
+							"type": "string"
+						},
+						"notAssessed": {
+							"type": "string"
+						},
+						"assessing": {
+							"type": "string"
+						},
+						"assessScheduled": {
+							"type": "string"
+						},
+						"outdated": {
+							"type": "string"
+						},
+						"checkAgain": {
+							"type": "string"
+						},
+						"checkNow": {
+							"type": "string"
+						},
+						"details": {
+							"type": "string"
+						},
+						"questionCount_one": {
+							"type": "string"
+						},
+						"questionCount_zero": {
+							"type": "string"
+						},
+						"questionCount_two": {
+							"type": "string"
+						},
+						"questionCount_few": {
+							"type": "string"
+						},
+						"questionCount_many": {
+							"type": "string"
+						},
+						"questionCount_other": {
+							"type": "string"
+						},
+						"ship": {
+							"type": "string"
+						},
+						"runnerOffline": {
+							"type": "string"
+						},
+						"runnerMissing": {
+							"type": "string"
+						},
+						"runnerMissingLink": {
+							"type": "string"
+						},
+						"runnerMissingAskAdmin": {
+							"type": "string"
+						},
+						"checkFailed": {
+							"type": "string"
+						},
+						"panelLabel": {
+							"type": "string"
+						},
+						"unknownError": {
+							"type": "string"
+						},
+						"summaryTitle": {
+							"type": "string"
+						},
+						"verdict": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"notReady": {
+									"type": "string"
+								},
+								"needsClarification": {
+									"type": "string"
+								},
+								"ready": {
+									"type": "string"
+								}
+							},
+							"required": ["notReady", "needsClarification", "ready"]
+						},
+						"checklist": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"met": {
+									"type": "string"
+								},
+								"partial": {
+									"type": "string"
+								},
+								"missing": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "met", "partial", "missing"]
+						},
+						"questions": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"blocking": {
+									"type": "string"
+								},
+								"recommended": {
+									"type": "string"
+								},
+								"other": {
+									"type": "string"
+								},
+								"otherLabel": {
+									"type": "string"
+								},
+								"otherPlaceholder": {
+									"type": "string"
+								},
+								"answered": {
+									"type": "string"
+								},
+								"submit": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"blocking",
+								"recommended",
+								"other",
+								"otherLabel",
+								"otherPlaceholder",
+								"answered",
+								"submit"
+							]
+						},
+						"suggestions": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"apply": {
+									"type": "string"
+								},
+								"dismiss": {
+									"type": "string"
+								},
+								"dismissLabel": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "apply", "dismiss", "dismissLabel"]
+						},
+						"decisions": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"title_zero": {
+									"type": "string"
+								},
+								"title_one": {
+									"type": "string"
+								},
+								"title_two": {
+									"type": "string"
+								},
+								"title_few": {
+									"type": "string"
+								},
+								"title_many": {
+									"type": "string"
+								},
+								"title_other": {
+									"type": "string"
+								},
+								"answeredBy": {
+									"type": "string"
+								}
+							},
+							"required": ["answeredBy"]
+						},
+						"blockers": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"agentDisabled": {
+									"type": "string"
+								},
+								"noRepository": {
+									"type": "string"
+								},
+								"runnerMissing": {
+									"type": "string"
+								},
+								"archived": {
+									"type": "string"
+								},
+								"notAssessed": {
+									"type": "string"
+								},
+								"assessmentOutdated": {
+									"type": "string"
+								},
+								"openQuestions": {
+									"type": "string"
+								},
+								"notReady": {
+									"type": "string"
+								},
+								"shipInProgress": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"agentDisabled",
+								"noRepository",
+								"runnerMissing",
+								"archived",
+								"notAssessed",
+								"assessmentOutdated",
+								"openQuestions",
+								"notReady",
+								"shipInProgress"
+							]
+						},
+						"shipDialog": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"repository": {
+									"type": "string"
+								},
+								"baseBranch": {
+									"type": "string"
+								},
+								"newBranch": {
+									"type": "string"
+								},
+								"confirm": {
+									"type": "string"
+								},
+								"pending": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"title",
+								"description",
+								"repository",
+								"baseBranch",
+								"newBranch",
+								"confirm",
+								"pending"
+							]
+						},
+						"run": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"queued": {
+									"type": "string"
+								},
+								"working": {
+									"type": "string"
+								},
+								"cancel": {
+									"type": "string"
+								},
+								"stopping": {
+									"type": "string"
+								},
+								"logLabel": {
+									"type": "string"
+								},
+								"succeeded": {
+									"type": "string"
+								},
+								"viewPullRequest": {
+									"type": "string"
+								},
+								"failed": {
+									"type": "string"
+								},
+								"failedFallback": {
+									"type": "string"
+								},
+								"cancelled": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"queued",
+								"working",
+								"cancel",
+								"stopping",
+								"logLabel",
+								"succeeded",
+								"viewPullRequest",
+								"failed",
+								"failedFallback",
+								"cancelled"
+							]
+						},
+						"toast": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"applied": {
+									"type": "string"
+								},
+								"shipped": {
+									"type": "string"
+								}
+							},
+							"required": ["applied", "shipped"]
+						},
+						"errors": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"assess": {
+									"type": "string"
+								},
+								"answers": {
+									"type": "string"
+								},
+								"apply": {
+									"type": "string"
+								},
+								"dismiss": {
+									"type": "string"
+								},
+								"ship": {
+									"type": "string"
+								},
+								"notShippable": {
+									"type": "string"
+								},
+								"cancel": {
+									"type": "string"
+								}
+							},
+							"required": [
+								"assess",
+								"answers",
+								"apply",
+								"dismiss",
+								"ship",
+								"notShippable",
+								"cancel"
+							]
+						}
+					},
+					"required": [
+						"sectionLabel",
+						"readinessTitle",
+						"readiness",
+						"meterLabel",
+						"notAssessed",
+						"assessing",
+						"assessScheduled",
+						"outdated",
+						"checkAgain",
+						"checkNow",
+						"details",
+						"ship",
+						"runnerOffline",
+						"runnerMissing",
+						"runnerMissingLink",
+						"runnerMissingAskAdmin",
+						"checkFailed",
+						"panelLabel",
+						"unknownError",
+						"summaryTitle",
+						"verdict",
+						"checklist",
+						"questions",
+						"suggestions",
+						"decisions",
+						"blockers",
+						"shipDialog",
+						"run",
+						"toast",
+						"errors"
+					]
 				}
 			},
 			"required": [
@@ -19423,7 +20222,8 @@
 				"estimate",
 				"scheduling",
 				"projectHome",
-				"triage"
+				"triage",
+				"aiAgent"
 			]
 		},
 		"invitations": {

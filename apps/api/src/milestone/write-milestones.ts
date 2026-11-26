@@ -152,6 +152,8 @@ export async function createMilestone(
       currentUserId: userId,
       type: "created",
       content: null,
+      // Milestone drafts; the AI agent does not assess these on creation.
+      bulk: true,
     });
   }
   await publishMilestoneChange(

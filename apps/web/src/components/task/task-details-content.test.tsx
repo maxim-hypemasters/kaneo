@@ -17,6 +17,9 @@ vi.mock("./features/feature-breadcrumb", () => ({
 }));
 vi.mock("./task-title", () => ({ default: () => null }));
 vi.mock("./task-description", () => ({ default: () => <p>Description</p> }));
+vi.mock("./ai-agent/ai-agent-section", () => ({
+  AiAgentSection: () => <p>AI agent</p>,
+}));
 vi.mock("./task-related-content", () => ({ TaskRelatedContent: () => null }));
 vi.mock("./task-activity", () => ({
   TaskActivity: () => <p>Legacy activity</p>,
@@ -41,10 +44,12 @@ it("waits for the entity type before mounting tab or legacy activity queries", (
   rerender(<TaskDetailsContent taskId="f" projectId="p" workspaceId="w" />);
   expect(screen.getByText("Feature workspace")).toBeInTheDocument();
   expect(screen.queryByText("Legacy activity")).not.toBeInTheDocument();
+  expect(screen.queryByText("AI agent")).not.toBeInTheDocument();
 });
 it("retains the existing Task/Bug description and activity", () => {
   state.task = { id: "b", type: "bug", projectId: "p" };
   render(<TaskDetailsContent taskId="b" projectId="p" workspaceId="w" />);
   expect(screen.getByText("Description")).toBeInTheDocument();
   expect(screen.getByText("Legacy activity")).toBeInTheDocument();
+  expect(screen.getByText("AI agent")).toBeInTheDocument();
 });

@@ -30,6 +30,7 @@ function config(overrides: Partial<GetConfigResponse> = {}) {
     customOAuthLogoutUrl: null,
     billingEnabled: false,
     hasAssistant: true,
+    hasAiAgent: false,
     ...overrides,
   } satisfies GetConfigResponse;
 }

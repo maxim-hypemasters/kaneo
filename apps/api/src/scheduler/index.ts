@@ -1,3 +1,4 @@
+import { pruneAgentRuns } from "../agent/prune-agent-runs";
 import { retryStorageCleanup } from "../storage/cleanup-queue";
 import { cleanupDraftUploads } from "./draft-upload-cleanup";
 import { replayDeferredIssueEdits } from "../plugins/github/services/deferred-issue-edits";
@@ -88,6 +89,13 @@ export function initializeScheduler(): void {
   );
   jobs.push(
     new Cron("23 * * * *", withCheckIn("trial-reminders", checkTrialReminders)),
+  );
+  jobs.push(
+    new Cron(
+      "41 * * * *",
+      { protect: true },
+      withCheckIn("agent-run-prune", pruneAgentRuns),
+    ),
   );
   console.log(
     "⏰ Scheduler started (deferred integration edits every minute, reminders every 5 minutes, seat reconciliation and trial reminders hourly)",

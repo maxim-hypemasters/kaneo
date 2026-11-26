@@ -1,0 +1,27 @@
+{
+  "name": "@kaneo/agent-runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Runs Kaneo AI agent work (readiness assessments and Ship) with Hermes Agent",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --format=esm --outfile=dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "lint": "vp check .",
+    "typecheck": "vp run check:types",
+    "test": "vp run test:run"
+  },
+  "dependencies": {
+    "hono": "^4.13.12"
+  },
+  "devDependencies": {
+    "@kaneo/api": "workspace:*",
+    "@kaneo/typescript-config": "workspace:*",
+    "@types/node": "^26.6.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

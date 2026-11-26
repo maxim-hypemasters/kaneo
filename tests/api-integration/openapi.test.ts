@@ -319,6 +319,16 @@ describe("Kaneo API OpenAPI spec", () => {
       const isPublic =
         Array.isArray(operation.security) && operation.security.length === 0;
       if (isPublic) continue;
+      // Agent runners send a runner token, never an API key.
+      const runnerOnly =
+        Array.isArray(operation.security) &&
+        (operation.security as Array<Record<string, unknown>>).every((scheme) =>
+          Object.keys(scheme).every((name) => name === "runnerToken"),
+        );
+      if (runnerOnly) {
+        expect(operation.responses["429"], path).toBeUndefined();
+        continue;
+      }
       if (!operation.responses["429"])
         missing.push(`${method.toUpperCase()} ${path}`);
     }

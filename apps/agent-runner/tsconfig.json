@@ -1,0 +1,16 @@
+{
+	"extends": "../../packages/typescript-config/base.json",
+	"compilerOptions": {
+		"noEmit": true,
+		"module": "ESNext",
+		"moduleResolution": "Bundler",
+		"lib": ["es2022", "DOM"],
+		"declaration": false,
+		"declarationMap": false,
+		"types": ["node"],
+		"paths": {
+			"hono/client": ["../api/node_modules/hono/dist/types/client/index.d.ts"]
+		}
+	},
+	"include": ["src/**/*.ts"]
+}

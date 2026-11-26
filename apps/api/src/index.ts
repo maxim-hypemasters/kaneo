@@ -18,6 +18,8 @@ import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import activity from "./activity";
 import admin from "./admin";
+import agent from "./agent";
+import agentRunner from "./agent-runner";
 import assistant from "./assistant";
 import { auth } from "./auth";
 import { organizationRoutes } from "./auth-openapi";
@@ -446,6 +448,9 @@ export function createApp() {
 
   api.post("/github-integration/webhook", handleGithubWebhookRoute);
 
+  // Agent runners authenticate with a workspace runner token, not a user.
+  const agentRunnerApi = api.route("/agent-runner", agentRunner);
+
   api.post(
     "/gitea-integration/webhook/:integrationId",
     handleGiteaWebhookRoute,
@@ -639,6 +644,11 @@ export function createApp() {
     scheme: "bearer",
     description: "API key or session token (Bearer)",
   });
+  api.openAPIRegistry.registerComponent("securitySchemes", "runnerToken", {
+    type: "http",
+    scheme: "bearer",
+    description: "Workspace AI agent runner token (Bearer kar_...)",
+  });
   api.openAPIRegistry.register("ApiError", apiErrorSchema);
   organizationRoutes(api.openAPIRegistry);
 
@@ -665,7 +675,8 @@ export function createApp() {
     // Every authenticated route sits behind the same app-wide
     // authenticateApiRequest middleware, so the shared 401 and 429 are injected
     // here rather than repeated on all ~120 route definitions. Routes that opt
-    // out of auth declare `security: []` and are skipped.
+    // out of auth declare `security: []`, and routes with their own scheme
+    // (agent runner tokens) declare it; both are skipped.
     const httpMethods = [
       "get",
       "post",
@@ -688,7 +699,12 @@ export function createApp() {
         if (!httpMethods.includes(method) || !operation.responses) continue;
         if (
           Array.isArray(operation.security) &&
-          operation.security.length === 0
+          !operation.security.some(
+            (scheme) =>
+              typeof scheme === "object" &&
+              scheme !== null &&
+              "bearerAuth" in scheme,
+          )
         ) {
           continue;
         }
@@ -903,6 +919,7 @@ export function createApp() {
   const userApi = api.route("/user", user);
   const adminApi = api.route("/admin", admin);
   const assistantApi = api.route("/assistant", assistant);
+  const agentApi = api.route("/agent", agent);
 
   app.route(
     "/",
@@ -1040,6 +1057,8 @@ export function createApp() {
     userApi,
     adminApi,
     assistantApi,
+    agentApi,
+    agentRunnerApi,
     workflowRuleApi,
     triageApi,
     workspaceApi,
@@ -1189,6 +1208,8 @@ const {
   userApi,
   adminApi,
   assistantApi,
+  agentApi,
+  agentRunnerApi,
   workflowRuleApi,
   triageApi,
   workspaceApi,
@@ -1253,8 +1274,12 @@ export type AppType =
   | typeof userApi
   | typeof adminApi
   | typeof assistantApi
+  | typeof agentApi
   | typeof publicProjectApi
   | typeof invitationPublicApi
   | typeof oauthApi;
+
+// The typed client of the separate agent runner service.
+export type AgentRunnerAppType = typeof agentRunnerApi;
 
 export default app;

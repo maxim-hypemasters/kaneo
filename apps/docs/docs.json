@@ -186,7 +186,7 @@
 					},
 					{
 						"group": "AI assistants",
-						"pages": ["core/integrations/mcp"]
+						"pages": ["core/integrations/mcp", "core/integrations/ai-agent"]
 					}
 				]
 			},

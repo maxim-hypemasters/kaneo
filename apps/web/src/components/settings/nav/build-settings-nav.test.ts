@@ -13,6 +13,7 @@ function build(
     canImport: false,
     canManageSettings: false,
     hasAssistant: false,
+    hasAiAgent: false,
     canManageTimeOff: false,
     hasAdminAccess: false,
     projects: [],
@@ -91,6 +92,35 @@ describe("buildSettingsNav", () => {
       nav.workspace.links.find((link) => link.id === "workspace-assistant")
         ?.label,
     ).toBe("settings:assistantPage.title");
+  });
+
+  it("only offers the AI agent's runner to settings managers when the instance has it", () => {
+    const linkIds = (nav: ReturnType<typeof build>) =>
+      nav.workspace.links.map((link) => link.id);
+
+    expect(linkIds(build({ canManageSettings: true }))).not.toContain(
+      "workspace-ai-agent",
+    );
+    expect(linkIds(build({ hasAiAgent: true }))).not.toContain(
+      "workspace-ai-agent",
+    );
+
+    const nav = build({
+      canManageSettings: true,
+      hasAssistant: true,
+      hasAiAgent: true,
+    });
+    expect(nav.workspace.links.map((link) => link.to)).toEqual([
+      "/dashboard/settings/workspace/general",
+      "/dashboard/settings/workspace/roles",
+      "/dashboard/settings/workspace/labels",
+      "/dashboard/settings/workspace/assistant",
+      "/dashboard/settings/workspace/ai-agent",
+    ]);
+    expect(
+      nav.workspace.links.find((link) => link.id === "workspace-ai-agent")
+        ?.label,
+    ).toBe("settings:aiAgentPage.title");
   });
 
   it("only offers time off settings to people who can approve time off", () => {

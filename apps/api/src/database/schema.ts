@@ -29,6 +29,16 @@ import type {
   AssistantToolCall,
   ReadReceipt,
 } from "../assistant/message-types";
+import type {
+  AgentRunEventKind,
+  AgentRunKind,
+  AgentRunStatus,
+  ReadinessChecklistItem,
+  ReadinessQuestion,
+  ReadinessSuggestion,
+  ReadinessVerdict,
+  ShipResult,
+} from "../agent/agent-types";
 import type { GitHubImportState } from "../github-integration/import-state";
 import type { ImportRunProject } from "../import/import-run-project";
 import type { TaskType } from "../task/task-type";
@@ -2620,5 +2630,221 @@ export const assistantUsageTable = pgTable(
       name: "assistant_usage_pk",
       columns: [table.workspaceId, table.userId, table.day],
     }),
+  ],
+);
+
+// The AI agent is off until an admin enables it for a project. Repository is
+// "owner/name"; the runner, not Kaneo, holds the credentials to push there.
+export const projectAgentSettingTable = pgTable(
+  "project_agent_setting",
+  {
+    projectId: text("project_id")
+      .primaryKey()
+      .references(() => projectTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    enabled: boolean("enabled").notNull().default(false),
+    autoAssess: boolean("auto_assess").notNull().default(true),
+    repository: text("repository"),
+    baseBranch: text("base_branch").notNull().default("main"),
+    instructions: text("instructions").notNull().default(""),
+    readyThreshold: integer("ready_threshold").notNull().default(80),
+    updatedByUserId: text("updated_by_user_id").references(() => userTable.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date" })
+      .default(utcNow)
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "project_agent_setting_ready_threshold_check",
+      sql`${table.readyThreshold} between 1 and 100`,
+    ),
+  ],
+);
+
+// One runner credential per workspace. Only the sha256 of the token is kept;
+// the plaintext is shown once when it is created.
+export const workspaceAgentRunnerTable = pgTable("workspace_agent_runner", {
+  workspaceId: text("workspace_id")
+    .primaryKey()
+    .references(() => workspaceTable.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
+  tokenHash: text("token_hash").notNull().unique(),
+  tokenPrefix: text("token_prefix").notNull(),
+  lastSeenAt: timestamp("last_seen_at", { mode: "date" }),
+  runnerVersion: text("runner_version"),
+  createdByUserId: text("created_by_user_id").references(() => userTable.id, {
+    onDelete: "set null",
+    onUpdate: "cascade",
+  }),
+  createdAt: timestamp("created_at", { mode: "date" })
+    .default(utcNow)
+    .notNull(),
+});
+
+// The latest readiness assessment of a task or bug. input_hash fingerprints
+// the task text and answers it was made from, so edits show it as outdated.
+export const taskAgentAssessmentTable = pgTable(
+  "task_agent_assessment",
+  {
+    taskId: text("task_id")
+      .primaryKey()
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    runId: text("run_id"),
+    score: integer("score").notNull(),
+    verdict: text("verdict").$type<ReadinessVerdict>().notNull(),
+    summary: text("summary").notNull().default(""),
+    checklist: jsonb("checklist")
+      .$type<ReadinessChecklistItem[]>()
+      .notNull()
+      .default([]),
+    questions: jsonb("questions")
+      .$type<ReadinessQuestion[]>()
+      .notNull()
+      .default([]),
+    suggestions: jsonb("suggestions")
+      .$type<ReadinessSuggestion[]>()
+      .notNull()
+      .default([]),
+    inputHash: text("input_hash").notNull(),
+    assessedAt: timestamp("assessed_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "task_agent_assessment_score_check",
+      sql`${table.score} between 0 and 100`,
+    ),
+    check(
+      "task_agent_assessment_verdict_check",
+      sql`${table.verdict} in ('not_ready', 'needs_clarification', 'ready')`,
+    ),
+  ],
+);
+
+// Answered questions. They outlive assessments and go to every later
+// assessment and Ship run as decisions.
+export const taskAgentClarificationTable = pgTable(
+  "task_agent_clarification",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    question: text("question").notNull(),
+    answer: text("answer").notNull(),
+    answeredByUserId: text("answered_by_user_id").references(
+      () => userTable.id,
+      { onDelete: "set null", onUpdate: "cascade" },
+    ),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    index("task_agent_clarification_task_idx").on(
+      table.taskId,
+      table.createdAt,
+    ),
+  ],
+);
+
+// The queue the runner claims from. Workspace and project are always read
+// through the task, so a task that moves takes its runs with it.
+export const agentRunTable = pgTable(
+  "agent_run",
+  {
+    id: text("id")
+      .$defaultFn(() => createId())
+      .primaryKey(),
+    taskId: text("task_id")
+      .notNull()
+      .references(() => taskTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    kind: text("kind").$type<AgentRunKind>().notNull(),
+    status: text("status").$type<AgentRunStatus>().notNull().default("queued"),
+    notBefore: timestamp("not_before", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    inputHash: text("input_hash").notNull(),
+    requestedByUserId: text("requested_by_user_id").references(
+      () => userTable.id,
+      { onDelete: "set null", onUpdate: "cascade" },
+    ),
+    attempts: integer("attempts").notNull().default(0),
+    leaseExpiresAt: timestamp("lease_expires_at", { mode: "date" }),
+    cancelRequestedAt: timestamp("cancel_requested_at", { mode: "date" }),
+    result: jsonb("result").$type<ShipResult>(),
+    errorCode: text("error_code"),
+    error: text("error"),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+    startedAt: timestamp("started_at", { mode: "date" }),
+    finishedAt: timestamp("finished_at", { mode: "date" }),
+  },
+  (table) => [
+    index("agent_run_claim_idx").on(table.status, table.notBefore),
+    index("agent_run_task_idx").on(table.taskId, table.kind, table.createdAt),
+    uniqueIndex("agent_run_queued_assess_uidx")
+      .on(table.taskId)
+      .where(sql`${table.kind} = 'assess' and ${table.status} = 'queued'`),
+    uniqueIndex("agent_run_active_ship_uidx")
+      .on(table.taskId)
+      .where(
+        sql`${table.kind} = 'ship' and ${table.status} in ('queued', 'running')`,
+      ),
+    check("agent_run_kind_check", sql`${table.kind} in ('assess', 'ship')`),
+    check(
+      "agent_run_status_check",
+      sql`${table.status} in ('queued', 'running', 'succeeded', 'failed', 'cancelled')`,
+    ),
+  ],
+);
+
+// Progress lines a run reports while it works, shown live on the task.
+export const agentRunEventTable = pgTable(
+  "agent_run_event",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    runId: text("run_id")
+      .notNull()
+      .references(() => agentRunTable.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+    kind: text("kind").$type<AgentRunEventKind>().notNull(),
+    message: text("message").notNull(),
+    createdAt: timestamp("created_at", { mode: "date" })
+      .default(utcNow)
+      .notNull(),
+  },
+  (table) => [
+    index("agent_run_event_run_idx").on(table.runId, table.id),
+    check(
+      "agent_run_event_kind_check",
+      sql`${table.kind} in ('step', 'tool', 'log')`,
+    ),
   ],
 );

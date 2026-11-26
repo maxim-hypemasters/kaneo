@@ -706,6 +706,7 @@ const taskUpdateEvents = [
   "comment.created",
   "comment.deleted",
   "comment.updated",
+  "agent.comment_created",
 ];
 
 subscribeToEvent<{
@@ -958,6 +959,29 @@ subscribeToEvent<{
   },
 );
 
+// Open task views refetch the task's AI agent state. Runners report progress
+// every few seconds, so these coalesce like other project broadcasts.
+subscribeToEvent<{ projectId: string; taskId: string; initiatorId?: string }>(
+  "agent.updated",
+  async ({ projectId, taskId }) => {
+    if (projectId)
+      broadcastToProject(projectId, {
+        type: "TASK_AGENT_UPDATED",
+        projectId,
+        taskId,
+      });
+  },
+);
+
+// Settings changed for the whole project: every open task view refetches.
+subscribeToEvent<{ projectId: string }>(
+  "agent.settings_changed",
+  async ({ projectId }) => {
+    if (projectId)
+      broadcastToProject(projectId, { type: "TASK_AGENT_UPDATED", projectId });
+  },
+);
+
 // Clients refetch the project's test case lists, so changes coalesce into one
 // message per project.
 subscribeToEvent<{ projectId: string; initiatorId?: string }>(
@@ -1013,6 +1037,7 @@ for (const eventName of taskUpdateEvents) {
       case "comment.created":
       case "comment.deleted":
       case "comment.updated":
+      case "agent.comment_created":
         type = "COMMENT_UPDATED";
         break;
       default:

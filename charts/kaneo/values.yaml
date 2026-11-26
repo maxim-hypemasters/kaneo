@@ -181,3 +181,32 @@ gateway:
       backendRefs:
         - service: kaneo
           port: 5173
+
+# Optional AI agent runner (Hermes Agent). It polls Kaneo for readiness
+# checks and Ship runs; nothing reaches it from outside. Create a runner token
+# in Workspace settings → AI agent, then put it in a Secret with the GitHub
+# token that pushes branches and the model provider key, for example:
+#   kubectl create secret generic kaneo-agent-runner \
+#     --from-literal=KANEO_RUNNER_TOKEN=kar_... \
+#     --from-literal=GH_TOKEN=github_pat_... \
+#     --from-literal=OPENROUTER_API_KEY=sk-or-...
+agentRunner:
+  enabled: false
+  image:
+    repository: ghcr.io/usekaneo/agent-runner
+    # Defaults to Chart.appVersion when empty.
+    tag: ""
+    pullPolicy: IfNotPresent
+  # Name of the Secret above; its keys become environment variables.
+  existingSecret: ""
+  # Defaults to the in-cluster Kaneo service.
+  apiUrl: ""
+  model: anthropic/claude-sonnet-5.5
+  provider: openrouter
+  extraEnv: []
+  resources: {}
+  # The container must start as root: the runner stays root and runs Hermes
+  # as unprivileged users (uid 10001 and up, one per concurrent run), so
+  # Hermes can't read the runner's tokens. Don't set runAsUser or
+  # runAsNonRoot here.
+  securityContext: {}
