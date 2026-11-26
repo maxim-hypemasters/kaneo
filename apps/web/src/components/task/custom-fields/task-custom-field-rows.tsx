@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { RailCard } from "@/components/common/rail-card";
 import { CustomFieldRow } from "@/components/custom-fields/custom-field-row";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { useTaskCustomFields } from "./use-task-custom-fields";
@@ -24,15 +25,10 @@ export function TaskCustomFieldRows({
   if (fields.length === 0) return null;
 
   return (
-    <section
-      aria-label={t("tasks:customFields.fields")}
-      className="flex flex-col gap-0.5 border-border border-t pt-3.5"
-    >
-      <div className="flex h-6 items-center justify-between pr-1 pb-1 pl-2">
-        <span className="font-medium text-muted-foreground text-xs">
-          {t("tasks:customFields.fields")}
-        </span>
-        {canUpdateProjects() && (
+    <RailCard
+      title={t("tasks:customFields.fields")}
+      action={
+        canUpdateProjects() && (
           <Link
             to="/dashboard/settings/projects/$projectId/custom-fields"
             params={{ projectId }}
@@ -42,17 +38,20 @@ export function TaskCustomFieldRows({
           >
             <SlidersHorizontal className="size-3.25" />
           </Link>
-        )}
+        )
+      }
+    >
+      <div className="flex flex-col gap-0.5">
+        {fields.map((field) => (
+          <CustomFieldRow
+            key={field.id}
+            field={field}
+            value={values[field.id] ?? ""}
+            onChange={(value) => void save(field, value)}
+            disabled={!canEdit}
+          />
+        ))}
       </div>
-      {fields.map((field) => (
-        <CustomFieldRow
-          key={field.id}
-          field={field}
-          value={values[field.id] ?? ""}
-          onChange={(value) => void save(field, value)}
-          disabled={!canEdit}
-        />
-      ))}
-    </section>
+    </RailCard>
   );
 }

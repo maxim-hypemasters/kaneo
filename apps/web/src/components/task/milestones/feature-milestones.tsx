@@ -18,6 +18,7 @@ import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import type { Milestone } from "@/fetchers/milestone/milestones";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/cn";
+import { RailCard } from "@/components/common/rail-card";
 import { SectionHeader } from "../sections/section-header";
 import { SectionAddButton } from "../sections/section-add-button";
 import { MilestoneDialog } from "./milestone-dialog";
@@ -29,11 +30,14 @@ export function FeatureMilestones({
   featureId,
   filter,
   onFilter,
+  variant = "section",
 }: {
   projectId: string;
   featureId: string;
   filter: MilestoneFilter;
   onFilter: (filter: MilestoneFilter) => void;
+  // "card" is the properties rail's card; "section" sits in the page body.
+  variant?: "section" | "card";
 }) {
   const { t } = useTranslation();
   const { canCreateMilestones, canUpdateMilestones, canDeleteMilestones } =
@@ -59,22 +63,14 @@ export function FeatureMilestones({
       toast.error(t("tasks:milestones.saveError"));
     }
   };
-  return (
-    <section
-      aria-label={t("tasks:milestones.title")}
-      className="flex flex-col gap-1"
-    >
-      <SectionHeader
-        title={t("tasks:milestones.title")}
-        action={
-          canCreateMilestones() && (
-            <SectionAddButton
-              aria-label={t("tasks:milestones.add")}
-              onClick={() => setEditing("new")}
-            />
-          )
-        }
-      />
+  const addButton = canCreateMilestones() && (
+    <SectionAddButton
+      aria-label={t("tasks:milestones.add")}
+      onClick={() => setEditing("new")}
+    />
+  );
+  const body = (
+    <>
       {isPending && (
         <p role="status" className="px-2 text-xs text-muted-foreground">
           {t("tasks:milestones.loading")}
@@ -202,6 +198,25 @@ export function FeatureMilestones({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </>
+  );
+  if (variant === "card")
+    return (
+      <RailCard
+        title={t("tasks:milestones.title")}
+        count={data.length}
+        action={addButton}
+      >
+        <div className="flex flex-col gap-1">{body}</div>
+      </RailCard>
+    );
+  return (
+    <section
+      aria-label={t("tasks:milestones.title")}
+      className="flex flex-col gap-1"
+    >
+      <SectionHeader title={t("tasks:milestones.title")} action={addButton} />
+      {body}
     </section>
   );
 }

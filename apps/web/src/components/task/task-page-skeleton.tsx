@@ -1,3 +1,4 @@
+import { railCardClassName } from "@/components/common/rail-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
 
@@ -50,13 +51,26 @@ export function TaskDetailsSkeleton({ className }: TaskDetailsSkeletonProps) {
   );
 }
 
+// Matches the Properties and Planning cards of PropertiesRail.
+const RAIL_CARDS = [
+  { id: "properties", rows: [0, 1, 2, 3, 4, 5] },
+  { id: "planning", rows: [0, 1, 2, 3, 4] },
+];
+
 export function TaskPropertiesRailSkeleton() {
   return (
-    <div className="flex w-80 shrink-0 flex-col gap-0.5 px-3 pt-4">
-      {[0, 1, 2, 3, 4, 5].map((row) => (
-        <div key={row} className="flex h-8 items-center gap-3 pl-2">
-          <Skeleton className="h-3 w-14" />
-          <Skeleton className="h-4 w-28" />
+    <div className="flex w-80 shrink-0 flex-col gap-3 px-2.5 pt-3">
+      {RAIL_CARDS.map((card) => (
+        <div key={card.id} className={cn(railCardClassName, "flex flex-col")}>
+          <div className="flex h-7 items-center px-2">
+            <Skeleton className="h-2.5 w-16" />
+          </div>
+          {card.rows.map((row) => (
+            <div key={row} className="flex h-8 items-center gap-3 pl-2">
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+          ))}
         </div>
       ))}
     </div>

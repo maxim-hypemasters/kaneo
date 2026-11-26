@@ -3427,7 +3427,8 @@
 			"startDate": "Ημερομηνία έναρξης",
 			"noDate": "Χωρίς ημερομηνία",
 			"dates": "Ημερομηνίες",
-			"project": "Έργο"
+			"project": "Έργο",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Μετακίνηση εργασίας",

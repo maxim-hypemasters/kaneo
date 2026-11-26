@@ -3427,7 +3427,8 @@
 			"startDate": "Başlangıç tarihi",
 			"noDate": "Tarih yok",
 			"dates": "Tarihler",
-			"project": "Proje"
+			"project": "Proje",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Talebi taşı",

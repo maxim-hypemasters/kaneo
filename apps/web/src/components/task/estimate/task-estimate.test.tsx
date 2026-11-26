@@ -84,6 +84,20 @@ describe("task estimate shorthand", () => {
     expect(mocks.save).toHaveBeenCalledTimes(2);
   });
 
+  it("shows the rail's property value, opening the editor when editable", () => {
+    render(<TaskEstimate task={task} variant="property" />);
+    fireEvent.click(screen.getByRole("button", { name: "1d" }));
+    expect(
+      screen.getByRole("textbox", { name: "tasks:estimate.label" }),
+    ).toHaveValue("1d");
+
+    cleanup();
+    mocks.canEdit = false;
+    render(<TaskEstimate task={task} variant="property" />);
+    expect(screen.getByText("1d")).toBeVisible();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
   it("clears invalid local shorthand before saving an empty estimate", async () => {
     mocks.save.mockResolvedValue({});
     render(<TaskEstimate task={{ ...task, estimateSeconds: null }} />);

@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { PropertiesRail } from "./properties-rail";
@@ -186,6 +186,36 @@ describe("PropertiesRail", () => {
       expect(
         document.querySelector(`[data-task-action="${property}"]`),
       ).not.toBeInTheDocument();
+  });
+
+  it("groups a task's state and its planning into two cards", () => {
+    renderRail({});
+
+    const properties = screen.getByRole("region", {
+      name: "tasks:properties.title",
+    });
+    const planning = screen.getByRole("region", {
+      name: "tasks:properties.planning",
+    });
+    for (const action of [
+      "status",
+      "priority",
+      "assignee",
+      "dueDate",
+      "labels",
+    ])
+      expect(
+        properties.querySelector(`[data-task-action="${action}"]`),
+      ).toBeInTheDocument();
+    expect(within(properties).getByText("Estimate")).toBeInTheDocument();
+    expect(
+      within(planning).getByText("tasks:properties.project"),
+    ).toBeInTheDocument();
+    for (const action of ["feature", "release"])
+      expect(
+        planning.querySelector(`[data-task-action="${action}"]`),
+      ).toBeInTheDocument();
+    expect(within(planning).getByTestId("milestone-property")).toBeVisible();
   });
 
   it("names a release the project doesn't list as unknown", () => {

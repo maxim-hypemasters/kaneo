@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { useState } from "react";
 import {
   afterEach,
@@ -150,6 +156,29 @@ function view() {
   return onFilter;
 }
 describe("Feature milestones", () => {
+  it("renders as the rail's card with a count and the add button", () => {
+    mocks.data = [milestone("Alpha"), milestone("Beta")];
+    render(
+      <FeatureMilestones
+        projectId="p"
+        featureId="f"
+        filter="all"
+        onFilter={vi.fn()}
+        variant="card"
+      />,
+    );
+    const card = screen.getByRole("region", {
+      name: "tasks:milestones.title",
+    });
+    expect(
+      within(card).getByRole("heading", { name: "tasks:milestones.title" }),
+    ).toBeVisible();
+    expect(within(card).getByText("2")).toBeVisible();
+    expect(
+      within(card).getByRole("button", { name: "tasks:milestones.add" }),
+    ).toBeVisible();
+    expect(within(card).getByRole("button", { name: /Alpha/ })).toBeVisible();
+  });
   it("shows the linked release beside the milestone name without planning metadata", () => {
     mocks.releases = [{ id: "r", name: "Release 0.70" }];
     mocks.members = [{ id: "lead", name: "Milestone lead" }];

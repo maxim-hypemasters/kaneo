@@ -4680,7 +4680,8 @@
 			"startDate": "Data rozpoczęcia",
 			"title": "Właściwości",
 			"dates": "Daty",
-			"project": "Projekt"
+			"project": "Projekt",
+			"planning": "Planning"
 		},
 		"relations": {
 			"blocks": "Blokuje",
