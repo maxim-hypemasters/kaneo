@@ -19,6 +19,7 @@ export function FeatureMilestoneOverview({
       featureId={featureId}
       filter={filter}
       onFilter={selectFilter}
+      variant={placement === "rail" ? "card" : "section"}
     />
   );
 }

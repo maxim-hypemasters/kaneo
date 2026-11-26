@@ -3380,7 +3380,8 @@
 			"startDate": "Ngày bắt đầu",
 			"noDate": "Không có ngày",
 			"dates": "Ngày",
-			"project": "Dự án"
+			"project": "Dự án",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Di chuyển công việc",

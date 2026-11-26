@@ -3380,7 +3380,8 @@
 			"startDate": "開始日期",
 			"noDate": "無日期",
 			"dates": "日期",
-			"project": "專案"
+			"project": "專案",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "移動任務",

@@ -3484,7 +3484,8 @@
 			"startDate": "Date de début",
 			"noDate": "Pas de date",
 			"dates": "Dates",
-			"project": "Projet"
+			"project": "Projet",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Déplacer la tâche",

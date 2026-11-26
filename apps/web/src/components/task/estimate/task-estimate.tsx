@@ -9,12 +9,21 @@ import {
 } from "@/components/ui/popover";
 import { useUpdateTask } from "@/hooks/mutations/task/use-update-task";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
+import { cn } from "@/lib/cn";
 import { toast } from "@/lib/toast";
 import type Task from "@/types/task";
+import { PropertyStaticValue } from "../properties/property-static-value";
+import { PropertyValue } from "../properties/property-value";
 import { EstimateInput } from "./estimate-input";
 import { formatEstimate } from "./effort";
 
-export function TaskEstimate({ task }: { task: Task }) {
+type TaskEstimateProps = {
+  task: Task;
+  // "property" matches the other rows of the properties rail.
+  variant?: "button" | "property";
+};
+
+export function TaskEstimate({ task, variant = "button" }: TaskEstimateProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<number | null>(
@@ -28,8 +37,26 @@ export function TaskEstimate({ task }: { task: Task }) {
     task.estimateSeconds == null
       ? t("tasks:estimate.empty")
       : formatEstimate(task.estimateSeconds);
+  const property = variant === "property";
+  const propertyValue = (
+    <>
+      <Timer aria-hidden="true" className="text-muted-foreground" />
+      <span
+        className={cn(
+          "truncate",
+          task.estimateSeconds == null && "text-muted-foreground",
+        )}
+      >
+        {label}
+      </span>
+    </>
+  );
   if (!canWorkItem(task.type, "update"))
-    return <span className="text-sm text-muted-foreground">{label}</span>;
+    return property ? (
+      <PropertyStaticValue>{propertyValue}</PropertyStaticValue>
+    ) : (
+      <span className="text-sm text-muted-foreground">{label}</span>
+    );
   return (
     <Popover
       open={open}
@@ -43,12 +70,18 @@ export function TaskEstimate({ task }: { task: Task }) {
         setOpen(next);
       }}
     >
-      <PopoverTrigger
-        render={<Button type="button" variant="outline" size="sm" />}
-      >
-        <Timer aria-hidden="true" />
-        {label}
-      </PopoverTrigger>
+      {property ? (
+        <PopoverTrigger render={<PropertyValue />}>
+          {propertyValue}
+        </PopoverTrigger>
+      ) : (
+        <PopoverTrigger
+          render={<Button type="button" variant="outline" size="sm" />}
+        >
+          <Timer aria-hidden="true" />
+          {label}
+        </PopoverTrigger>
+      )}
       <PopoverContent className="w-72 max-w-[calc(100vw-2rem)]" align="start">
         <div className="flex flex-col gap-3 p-3">
           <p className="text-sm font-medium">{t("tasks:estimate.label")}</p>

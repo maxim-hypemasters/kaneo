@@ -3432,7 +3432,8 @@
 			"startDate": "Başlama tarixi",
 			"noDate": "Tarix yoxdur",
 			"dates": "Tarixlər",
-			"project": "Layihə"
+			"project": "Layihə",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Tapşırığı köçür",

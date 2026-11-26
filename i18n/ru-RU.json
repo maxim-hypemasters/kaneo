@@ -3544,7 +3544,8 @@
 			"startDate": "Дата начала",
 			"noDate": "Без даты",
 			"dates": "Даты",
-			"project": "Проект"
+			"project": "Проект",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Переместить задачу",

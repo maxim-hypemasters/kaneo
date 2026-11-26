@@ -3432,7 +3432,8 @@
 			"startDate": "Почетен датум",
 			"noDate": "Без датум",
 			"dates": "Датуми",
-			"project": "Проект"
+			"project": "Проект",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Премести задача",

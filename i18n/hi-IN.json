@@ -3432,7 +3432,8 @@
 			"startDate": "शुरू की तारीख",
 			"noDate": "कोई तारीख नहीं",
 			"dates": "तारीखें",
-			"project": "प्रोजेक्ट"
+			"project": "प्रोजेक्ट",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "कार्य ले जाएँ",

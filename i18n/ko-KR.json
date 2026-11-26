@@ -3380,7 +3380,8 @@
 			"startDate": "시작일",
 			"noDate": "날짜 없음",
 			"dates": "날짜",
-			"project": "프로젝트"
+			"project": "프로젝트",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "작업 이동",

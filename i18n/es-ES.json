@@ -3484,7 +3484,8 @@
 			"startDate": "Fecha de inicio",
 			"noDate": "Sin fecha",
 			"dates": "Fechas",
-			"project": "Proyecto"
+			"project": "Proyecto",
+			"planning": "Planning"
 		},
 		"popover": {
 			"assignee": {
