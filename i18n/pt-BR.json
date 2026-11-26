@@ -3479,7 +3479,8 @@
 			"startDate": "Data de início",
 			"noDate": "Sem data",
 			"dates": "Datas",
-			"project": "Projeto"
+			"project": "Projeto",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Mover tarefa",

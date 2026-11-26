@@ -3531,7 +3531,8 @@
 			"startDate": "Дата початку",
 			"noDate": "Немає дати",
 			"dates": "Дати",
-			"project": "Проєкт"
+			"project": "Проєкт",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Перемістити завдання",

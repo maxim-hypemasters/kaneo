@@ -3427,7 +3427,8 @@
 			"startDate": "Startdatum",
 			"noDate": "Kein Datum",
 			"dates": "Termine",
-			"project": "Projekt"
+			"project": "Projekt",
+			"planning": "Planning"
 		},
 		"move": {
 			"title": "Aufgabe verschieben",

@@ -13953,6 +13953,9 @@
 						"dates": {
 							"type": "string"
 						},
+						"planning": {
+							"type": "string"
+						},
 						"project": {
 							"type": "string"
 						}
@@ -13969,6 +13972,7 @@
 						"startDate",
 						"noDate",
 						"dates",
+						"planning",
 						"project"
 					]
 				},

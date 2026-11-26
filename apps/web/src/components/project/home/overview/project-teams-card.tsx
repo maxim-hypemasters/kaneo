@@ -1,5 +1,5 @@
-import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { RailCard } from "@/components/common/rail-card";
 import { useSetTeamProjectLink } from "@/hooks/mutations/team/use-set-team-project-link";
 import { useGetTeams } from "@/hooks/queries/team/use-get-teams";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
@@ -18,7 +18,6 @@ export function ProjectTeamsCard({
   workspaceId: string;
 }) {
   const { t } = useTranslation();
-  const headingId = useId();
   const teams = useGetTeams(workspaceId);
   const { canUpdateTeams, isCheckingPermissions } = useWorkspacePermission();
   const canEdit = !isCheckingPermissions && canUpdateTeams();
@@ -40,23 +39,7 @@ export function ProjectTeamsCard({
   };
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="rounded-xl border border-border/70 bg-muted/40 p-1.5"
-    >
-      <div className="flex h-7 items-center justify-between px-2">
-        <h2
-          id={headingId}
-          className="font-medium text-muted-foreground text-xs uppercase tracking-wide"
-        >
-          {t("teams:projectTeams.title")}
-        </h2>
-        {linked.length > 0 ? (
-          <span className="text-muted-foreground text-xs tabular-nums">
-            {linked.length}
-          </span>
-        ) : null}
-      </div>
+    <RailCard title={t("teams:projectTeams.title")} count={linked.length}>
       {linked.length > 0 ? (
         <ul className="flex flex-col">
           {linked.map((team) => (
@@ -83,6 +66,6 @@ export function ProjectTeamsCard({
           onLink={(teamId) => void save(teamId, true)}
         />
       ) : null}
-    </section>
+    </RailCard>
   );
 }

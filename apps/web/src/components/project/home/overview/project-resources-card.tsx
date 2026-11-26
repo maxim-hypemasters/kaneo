@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { RailCard } from "@/components/common/rail-card";
 import { errorMessage } from "@/components/project/error-message";
 import { toPositions } from "@/components/project/sortable/apply-order";
 import { SortableList } from "@/components/project/sortable/sortable-list";
@@ -21,7 +22,6 @@ const NO_LINKS: ProjectLink[] = [];
 // them; whoever may edit the name and description manages them.
 export function ProjectResourcesCard({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
-  const headingId = useId();
   const links = useProjectLinks(projectId);
   const { canEditProjectDetails, isCheckingPermissions } =
     useWorkspacePermission();
@@ -61,23 +61,10 @@ export function ProjectResourcesCard({ projectId }: { projectId: string }) {
   };
 
   return (
-    <section
-      aria-labelledby={headingId}
-      className="rounded-xl border border-border/70 bg-muted/40 p-1.5"
+    <RailCard
+      title={t("tasks:projectHome.resources.title")}
+      count={ordered.length}
     >
-      <div className="flex h-7 items-center justify-between px-2">
-        <h2
-          id={headingId}
-          className="font-medium text-muted-foreground text-xs uppercase tracking-wide"
-        >
-          {t("tasks:projectHome.resources.title")}
-        </h2>
-        {ordered.length > 0 ? (
-          <span className="text-muted-foreground text-xs tabular-nums">
-            {ordered.length}
-          </span>
-        ) : null}
-      </div>
       {ordered.length > 0 ? (
         <ul className="flex flex-col">
           <SortableList ids={ordered.map((link) => link.id)} onMove={move}>
@@ -122,6 +109,6 @@ export function ProjectResourcesCard({ projectId }: { projectId: string }) {
           />
         </>
       ) : null}
-    </section>
+    </RailCard>
   );
 }
