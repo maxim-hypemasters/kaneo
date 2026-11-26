@@ -3907,7 +3907,8 @@
 				"none": "कोई नहीं",
 				"feature": "फ़ीचर"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "सक्रिय फ़िल्टर",

@@ -1,4 +1,4 @@
-import { addDays, differenceInCalendarDays, startOfToday } from "date-fns";
+import { addDays, startOfToday } from "date-fns";
 import {
   useCallback,
   useEffect,
@@ -27,6 +27,7 @@ import {
   ganttRangeAround,
   initialGanttRange,
 } from "./timeline";
+import { columnDay, dayColumn } from "./weekend-columns";
 
 // Grow the span once less than this many days are left beyond the viewport.
 const EDGE_DAYS = 21;
@@ -53,6 +54,8 @@ type UseGanttRangeOptions = {
   ready: boolean;
   showEmptyTimeline?: boolean;
   weekStartsOn: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  // Renders Monday to Friday only.
+  hideWeekends?: boolean;
   dayColumnWidthRem: number;
   // Width of the sticky task rail covering the left of the scroll viewport.
   railWidthRem: number;
@@ -63,6 +66,11 @@ function prefersReducedMotion() {
   return (
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
   );
+}
+
+// The calendar days that `columns` rendered days take up.
+function calendarDays(columns: number, hideWeekends: boolean) {
+  return hideWeekends ? (columns * 7) / 5 : columns;
 }
 
 function clampDay(date: Date) {
@@ -85,6 +93,7 @@ export function useGanttRange({
   ready,
   showEmptyTimeline = false,
   weekStartsOn,
+  hideWeekends = false,
   dayColumnWidthRem: defaultDayColumnWidthRem,
   railWidthRem,
   scrollElement,
@@ -127,8 +136,9 @@ export function useGanttRange({
   const frozen = state?.projectId === projectId;
   const range = frozen ? state.range : initialRange;
   const timeline = useMemo(
-    () => (range ? buildGanttTimeline(range, dayColumnWidthRem) : null),
-    [range, dayColumnWidthRem],
+    () =>
+      range ? buildGanttTimeline(range, dayColumnWidthRem, hideWeekends) : null,
+    [range, dayColumnWidthRem, hideWeekends],
   );
   const [viewport] = useState(createGanttViewportStore);
 
@@ -157,6 +167,7 @@ export function useGanttRange({
     null,
   );
   const mountedElementRef = useRef<HTMLElement | null>(null);
+  const hideWeekendsRef = useRef(hideWeekends);
   const latestRef = useRef({
     projectId,
     range,
@@ -277,6 +288,7 @@ export function useGanttRange({
             current.timeline.rangeStart,
             prior.offsetPx,
             oldDayPx,
+            current.timeline.hideWeekends,
           )
         : element.scrollLeft;
       const anchor = ganttZoomAnchor(
@@ -284,6 +296,7 @@ export function useGanttRange({
         oldLeft,
         offsetPx,
         oldDayPx,
+        current.timeline.hideWeekends,
       );
       pendingZoomRef.current = {
         projectId,
@@ -305,8 +318,10 @@ export function useGanttRange({
           visiblePx,
           Math.max(
             GANTT_MAX_DAYS,
-            Math.ceil(visibleDays) + 2 * (GANTT_CHUNK_DAYS + EDGE_DAYS),
+            Math.ceil(calendarDays(visibleDays, current.timeline.hideWeekends)) +
+              2 * (GANTT_CHUNK_DAYS + EDGE_DAYS),
           ),
+          current.timeline.hideWeekends,
         );
         // A newer wheel gesture also supersedes a date jump queued before
         // React committed it, even when this range needs no extension.
@@ -381,14 +396,29 @@ export function useGanttRange({
     const visibleDays = (element.clientWidth - remToPx(rail)) / dayPx;
     const maxDays = Math.max(
       GANTT_MAX_DAYS,
-      Math.ceil(visibleDays) + 2 * (GANTT_CHUNK_DAYS + EDGE_DAYS),
+      Math.ceil(calendarDays(visibleDays, shown.hideWeekends)) +
+        2 * (GANTT_CHUNK_DAYS + EDGE_DAYS),
     );
     const grown = extendGanttRange(current, side, maxDays);
     if (!grown) return;
+    // The span grows and trims in calendar days, the scroll position counts
+    // rendered columns.
+    const hide = shown.hideWeekends;
+    const addedColumns = side === "start" ? dayColumn(current.start, grown.range.start, hide) : 0;
+    const trimmedColumns =
+      grown.trimmed === 0
+        ? 0
+        : side === "start"
+          ? dayColumn(
+              addDays(current.end, 1),
+              addDays(grown.range.end, 1),
+              hide,
+            )
+          : dayColumn(grown.range.start, current.start, hide);
     const otherSideDays = side === "start" ? daysRight : daysLeft;
-    if (grown.trimmed > 0 && otherSideDays - grown.trimmed < EDGE_DAYS) return;
+    if (trimmedColumns > 0 && otherSideDays - trimmedColumns < EDGE_DAYS) return;
     pendingShiftPxRef.current =
-      side === "start" ? grown.added * dayPx : -grown.trimmed * dayPx;
+      side === "start" ? addedColumns * dayPx : -trimmedColumns * dayPx;
     setState({ projectId, range: grown.range });
   }, [projectId, scrollElement]);
 
@@ -407,8 +437,12 @@ export function useGanttRange({
     )
       pendingZoomRef.current = null;
     const remembered = firstVisibleRef.current;
+    // Columns change meaning when weekends are shown or hidden, so the same
+    // pixel position is not the same date: keep the first visible day.
+    const weekendsToggled = hideWeekendsRef.current !== timeline.hideWeekends;
+    hideWeekendsRef.current = timeline.hideWeekends;
     if (
-      remounted &&
+      (remounted || weekendsToggled) &&
       remembered?.projectId === projectId &&
       !pendingScrollRef.current
     ) {
@@ -424,6 +458,7 @@ export function useGanttRange({
         timeline.rangeStart,
         pending.offsetPx,
         remToPx(dayColumnWidthRem),
+        timeline.hideWeekends,
       );
       shiftScrollLeft(element, left - element.scrollLeft);
     } else if (pendingShiftPxRef.current !== 0) {
@@ -433,7 +468,11 @@ export function useGanttRange({
     const pending = pendingScrollRef.current;
     if (pending) {
       pendingScrollRef.current = null;
-      const index = differenceInCalendarDays(pending.date, timeline.rangeStart);
+      const index = dayColumn(
+        pending.date,
+        timeline.rangeStart,
+        timeline.hideWeekends,
+      );
       scrollToIndex(
         element,
         Math.min(Math.max(index, 0), timeline.days.length - 1),
@@ -503,7 +542,7 @@ export function useGanttRange({
         setState({ projectId, range: ganttRangeAround(target, weekStartsOn) });
         return;
       }
-      const index = differenceInCalendarDays(target, shown.rangeStart);
+      const index = dayColumn(target, shown.rangeStart, shown.hideWeekends);
       const dayPx = remToPx(day);
       const visiblePx = element.clientWidth - remToPx(rail);
       const left =
@@ -545,7 +584,11 @@ export function useGanttRange({
       );
       const firstIndex = Math.round(element.scrollLeft / dayPx);
       scrollToDate(
-        addDays(shown.rangeStart, firstIndex + direction * pageDays),
+        columnDay(
+          shown.rangeStart,
+          firstIndex + direction * pageDays,
+          shown.hideWeekends,
+        ),
         "start",
       );
     },

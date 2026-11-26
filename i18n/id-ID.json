@@ -3840,7 +3840,8 @@
 				"none": "Tidak ada",
 				"feature": "Fitur"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Filter aktif",

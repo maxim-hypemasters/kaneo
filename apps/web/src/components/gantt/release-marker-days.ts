@@ -1,4 +1,3 @@
-import { differenceInCalendarDays } from "date-fns";
 import {
   RELEASE_DATE_KIND_ORDER,
   RELEASE_DATE_KINDS,
@@ -6,10 +5,14 @@ import {
 import { parseReleaseDate } from "@/lib/releases/release-date";
 import type { ReleaseDateKind, ReleaseDates } from "@/types/release";
 import type { GanttTimeline } from "./timeline";
+import { dayColumn, isWeekendDay } from "./weekend-columns";
 
 export type ReleaseMarkerDay = {
   // The day's column in the rendered days.
   index: number;
+  // A date on a hidden weekend has no column: its line is pinned to the left
+  // edge of the next working day's, the Friday/Monday boundary.
+  pinned: boolean;
   date: string;
   // Each release with a date on this day, in the order given, with its kinds
   // of date in date order.
@@ -19,19 +22,28 @@ export type ReleaseMarkerDay = {
 // The rendered days that hold a release date, in day order.
 export function releaseMarkerDays(
   releases: readonly (ReleaseDates & { id: string; name: string })[],
-  timeline: Pick<GanttTimeline, "rangeStart" | "days">,
+  timeline: Pick<GanttTimeline, "rangeStart" | "days" | "hideWeekends">,
 ): ReleaseMarkerDay[] {
-  const byIndex = new Map<number, ReleaseMarkerDay>();
+  const byPosition = new Map<string, ReleaseMarkerDay>();
   for (const release of releases) {
     for (const kind of RELEASE_DATE_KIND_ORDER) {
       const date = release[RELEASE_DATE_KINDS[kind].field];
-      const index = differenceInCalendarDays(
-        parseReleaseDate(date),
+      const releaseDate = parseReleaseDate(date);
+      const index = dayColumn(
+        releaseDate,
         timeline.rangeStart,
+        timeline.hideWeekends,
       );
       if (index < 0 || index >= timeline.days.length) continue;
-      const day = byIndex.get(index) ?? { index, date, releases: [] };
-      byIndex.set(index, day);
+      const pinned = timeline.hideWeekends && isWeekendDay(releaseDate);
+      const key = `${index}:${pinned}`;
+      const day = byPosition.get(key) ?? {
+        index,
+        pinned,
+        date,
+        releases: [],
+      };
+      byPosition.set(key, day);
       const entry = day.releases.find((item) => item.id === release.id);
       if (entry) {
         entry.kinds.push(kind);
@@ -44,5 +56,9 @@ export function releaseMarkerDays(
       }
     }
   }
-  return [...byIndex.values()].sort((left, right) => left.index - right.index);
+  // A pinned marker sits left of the working day's own.
+  return [...byPosition.values()].sort(
+    (left, right) =>
+      left.index - right.index || Number(right.pinned) - Number(left.pinned),
+  );
 }

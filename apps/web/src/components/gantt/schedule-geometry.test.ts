@@ -56,4 +56,21 @@ describe("scheduleDayBlocks", () => {
       ),
     ).toEqual([{ from: 0, to: 1 }]);
   });
+
+  it("joins work either side of hidden weekends", () => {
+    // Friday afternoon, a Saturday, and Monday morning: Sep 4 is column 3
+    // and Mon Sep 7 column 4 with weekends hidden.
+    expect(
+      scheduleDayBlocks(
+        [
+          { start: at(4, 13), end: at(4, 17) },
+          { start: at(5, 9), end: at(5, 13) },
+          { start: at(7, 9), end: at(7, 13) },
+        ],
+        rangeStart,
+        30,
+        true,
+      ),
+    ).toEqual([{ from: 3, to: 5 }]);
+  });
 });

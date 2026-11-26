@@ -4041,7 +4041,8 @@
 				"none": "Без групування",
 				"feature": "Функція"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Активні фільтри",

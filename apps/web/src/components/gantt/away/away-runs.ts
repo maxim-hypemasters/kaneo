@@ -1,8 +1,8 @@
-import { addDays, differenceInCalendarDays } from "date-fns";
+import { dayColumn, columnDay, isWeekendDay } from "../weekend-columns";
 import { parseReleaseDate, toReleaseDate } from "@/lib/releases/release-date";
 import type { AwayDaysByUser, AwayKind } from "@/lib/time-off/away-days";
 
-// Consecutive days away that show the same thing, as 0-based day indexes
+// Consecutive days away that show the same thing, as 0-based column indexes
 // from the timeline's first day; `to` is exclusive.
 export type AwayRun = {
   from: number;
@@ -19,12 +19,16 @@ export function awayRunsByUser(
   byUser: AwayDaysByUser,
   rangeStart: Date,
   dayCount: number,
+  hideWeekends = false,
 ): ReadonlyMap<string, readonly AwayRun[]> {
   const runsByUser = new Map<string, AwayRun[]>();
   for (const [userId, days] of byUser) {
     const indexed = [...days]
-      .map(([date, day]) => ({
-        index: differenceInCalendarDays(parseReleaseDate(date), rangeStart),
+      .map(([date, day]) => ({ date: parseReleaseDate(date), ...day }))
+      // Hidden weekend days are clipped away.
+      .filter(({ date }) => !hideWeekends || !isWeekendDay(date))
+      .map(({ date, ...day }) => ({
+        index: dayColumn(date, rangeStart, hideWeekends),
         ...day,
       }))
       .filter(({ index }) => index >= 0 && index < dayCount)
@@ -61,9 +65,13 @@ export function runsWithin(
 }
 
 // A run's first and last day (YYYY-MM-DD).
-export function runDates(run: AwayRun, rangeStart: Date) {
+export function runDates(
+  run: AwayRun,
+  timeline: { rangeStart: Date; hideWeekends?: boolean },
+) {
+  const { rangeStart, hideWeekends } = timeline;
   return {
-    startDate: toReleaseDate(addDays(rangeStart, run.from)),
-    endDate: toReleaseDate(addDays(rangeStart, run.to - 1)),
+    startDate: toReleaseDate(columnDay(rangeStart, run.from, hideWeekends)),
+    endDate: toReleaseDate(columnDay(rangeStart, run.to - 1, hideWeekends)),
   };
 }

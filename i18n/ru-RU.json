@@ -4093,7 +4093,8 @@
 				"none": "Без группировки",
 				"feature": "Фича"
 			},
-			"ganttCompactRows": "Компактные строки"
+			"ganttCompactRows": "Компактные строки",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Активные фильтры",

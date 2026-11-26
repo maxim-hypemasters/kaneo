@@ -38,7 +38,7 @@ export function GanttReleaseMarkers({
         );
         return (
           <div
-            key={day.date}
+            key={`${day.date}:${day.pinned}`}
             className="relative"
             style={{ gridColumn: day.index + 1, gridRow: 1 }}
           >
@@ -47,7 +47,8 @@ export function GanttReleaseMarkers({
                 key={`${line.releaseId}:${line.kind}`}
                 data-release-line={line.kind}
                 className={cn(
-                  "absolute inset-y-0 left-1/2 border-l-2",
+                  "absolute inset-y-0 border-l-2",
+                  day.pinned ? "left-0" : "left-1/2",
                   RELEASE_DATE_KINDS[line.kind].lineClassName,
                 )}
                 style={{

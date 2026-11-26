@@ -3907,7 +3907,8 @@
 				"none": "Χωρίς ομαδοποίηση",
 				"feature": "Δυνατότητα"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Ενεργά φίλτρα",

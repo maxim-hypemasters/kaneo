@@ -433,6 +433,89 @@ describe("GanttTaskBar", () => {
     expect(bar?.style.gridColumn).toBe("3 / 5");
   });
 
+  describe("with weekends hidden", () => {
+    // Sep 1 (Tue) to Sep 30: Fri Sep 4 is grid line 4, Mon Sep 7 line 5.
+    const weekdays = buildGanttTimeline(
+      { start: parseISO("2026-09-01"), end: parseISO("2026-09-30") },
+      2.75,
+      true,
+    );
+    const showWeekdays = (scheduled: ScheduledTask) =>
+      show(scheduled, { timeline: weekdays, canMoveDates: true });
+
+    it("draws a bar over a weekend contiguous and shorter", () => {
+      const { bar } = showWeekdays(task("2026-09-04", "2026-09-08"));
+      // Fri, Mon and Tue: three columns, none for the weekend.
+      expect(bar?.style.gridColumn).toBe("4 / 7");
+    });
+
+    it("draws a bar on weekend days alone one column wide, on the next working day", () => {
+      const { bar } = showWeekdays(task("2026-09-05", "2026-09-06"));
+      expect(bar?.style.gridColumn).toBe("5 / 6");
+    });
+
+    it("moves a bar by columns and keeps its working-day length", () => {
+      const { bar, onCommit } = showWeekdays(task("2026-09-07", "2026-09-11"));
+      const button = screen.getByRole("button", {
+        name: "tasks:gantt.taskAriaLabelMovable(title=Checkout)",
+      });
+      fireEvent.pointerDown(button, { button: 0, clientX: 500, clientY: 300 });
+      fireEvent.pointerMove(window, {
+        clientX: 500 + 2 * DAY_PX,
+        clientY: 300,
+        buttons: 1,
+      });
+      // Wednesday to Tuesday, over the weekend.
+      expect(bar?.style.gridColumn).toBe("7 / 12");
+      fireEvent.pointerUp(window, { clientX: 500 + 2 * DAY_PX, clientY: 300 });
+
+      expect(onCommit).toHaveBeenCalledWith({
+        start: parseISO("2026-09-09"),
+        end: parseISO("2026-09-15"),
+        userId: "u1",
+        featureId: null,
+        milestoneId: null,
+      });
+    });
+
+    it("snaps a bar that starts on a weekend to a working day when moved", () => {
+      const { onCommit } = showWeekdays(task("2026-09-05", "2026-09-08"));
+      drag(
+        screen.getByRole("button", {
+          name: "tasks:gantt.taskAriaLabelMovable(title=Checkout)",
+        }),
+        DAY_PX,
+      );
+
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-08"),
+          end: parseISO("2026-09-09"),
+        }),
+      );
+    });
+
+    it("resizes an end over a weekend onto a working day", () => {
+      const { bar, onCommit } = showWeekdays(task("2026-09-02", "2026-09-04"));
+      const end = bar!.querySelector<HTMLElement>('[data-gantt-resize="end"]')!;
+      fireEvent.pointerDown(end, { button: 0, clientX: 500, clientY: 300 });
+      fireEvent.pointerMove(window, {
+        clientX: 500 + DAY_PX,
+        clientY: 300,
+        buttons: 1,
+      });
+      fireEvent.pointerUp(window, { clientX: 500 + DAY_PX, clientY: 300 });
+
+      expect(onCommit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          start: parseISO("2026-09-02"),
+          end: parseISO("2026-09-07"),
+          exact: true,
+        }),
+      );
+    });
+  });
+
   describe("resize handles", () => {
     const handle = (bar: HTMLElement | null, edge: "start" | "end") =>
       bar!.querySelector<HTMLElement>(`[data-gantt-resize="${edge}"]`);

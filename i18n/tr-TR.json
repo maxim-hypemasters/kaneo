@@ -3907,7 +3907,8 @@
 				"none": "Yok",
 				"feature": "Epik"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Etkin filtreler",

@@ -3840,7 +3840,8 @@
 				"none": "Không có",
 				"feature": "Tính năng"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Bộ lọc đang áp dụng",

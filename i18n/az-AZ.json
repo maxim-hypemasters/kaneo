@@ -3907,7 +3907,8 @@
 				"none": "Heç biri",
 				"feature": "İmkan"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Aktiv süzgəclər",

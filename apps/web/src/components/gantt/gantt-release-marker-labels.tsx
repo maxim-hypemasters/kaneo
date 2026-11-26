@@ -9,7 +9,10 @@ import {
 import { cn } from "@/lib/cn";
 import { formatReleaseDate } from "@/lib/releases/release-date";
 import { formatReleaseKinds } from "./format-release-kinds";
-import { releaseMarkerLabelWidths } from "./release-marker-label-widths";
+import {
+  releaseMarkerLabelWidths,
+  releaseMarkerLinePosition,
+} from "./release-marker-label-widths";
 import type { ReleaseMarkerDay } from "./release-marker-days";
 import type { GanttTimeline } from "./timeline";
 
@@ -59,7 +62,7 @@ export function GanttReleaseMarkerLabels({
             key={day.date}
             className="absolute inset-y-0 flex items-center gap-0.5"
             style={{
-              left: `${(day.index + 0.5) * dayColumnWidthRem - ICON_CENTRE_REM}rem`,
+              left: `${releaseMarkerLinePosition(day) * dayColumnWidthRem - ICON_CENTRE_REM}rem`,
               maxWidth: `${roomDays * dayColumnWidthRem}rem`,
             }}
           >

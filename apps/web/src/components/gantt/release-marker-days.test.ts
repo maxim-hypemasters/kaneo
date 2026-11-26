@@ -9,6 +9,7 @@ const timeline = {
     start: new Date(2026, 9, 1),
     end: new Date(2026, 9, 31),
   }),
+  hideWeekends: false,
 };
 
 const release = (
@@ -27,16 +28,19 @@ describe("releaseMarkerDays", () => {
       ),
     ).toEqual([
       {
+        pinned: false,
         index: 4,
         date: "2026-10-05",
         releases: [{ id: "a", name: "Release a", kinds: ["start"] }],
       },
       {
+        pinned: false,
         index: 19,
         date: "2026-10-20",
         releases: [{ id: "a", name: "Release a", kinds: ["codeFreeze"] }],
       },
       {
+        pinned: false,
         index: 24,
         date: "2026-10-25",
         releases: [{ id: "a", name: "Release a", kinds: ["submission"] }],
@@ -55,6 +59,7 @@ describe("releaseMarkerDays", () => {
 
     expect(days).toEqual([
       {
+        pinned: false,
         index: 19,
         date: "2026-10-20",
         releases: [
@@ -77,6 +82,35 @@ describe("releaseMarkerDays", () => {
     ).toEqual([
       [0, [["start"]]],
       [30, [["codeFreeze", "submission"]]],
+    ]);
+  });
+
+  it("pins a date on a hidden weekend to the next working day's left edge", () => {
+    const weekdays = {
+      rangeStart: new Date(2026, 9, 1), // Thursday
+      days: eachDayOfInterval({
+        start: new Date(2026, 9, 1),
+        end: new Date(2026, 9, 31),
+      }).filter((day) => day.getDay() % 6 !== 0),
+      hideWeekends: true,
+    };
+    const days = releaseMarkerDays(
+      [
+        release("a", "2026-10-02", "2026-10-03", "2026-10-04"),
+        release("b", "2026-10-05", "2026-10-05", "2026-10-05"),
+      ],
+      weekdays,
+    );
+
+    // Fri Oct 2 is column 1; Sat and Sun share Mon Oct 5's column 2, pinned
+    // before the Monday's own marker.
+    expect(days.map((day) => [day.index, day.pinned])).toEqual([
+      [1, false],
+      [2, true],
+      [2, false],
+    ]);
+    expect(days[1].releases).toEqual([
+      { id: "a", name: "Release a", kinds: ["codeFreeze", "submission"] },
     ]);
   });
 });

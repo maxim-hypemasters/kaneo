@@ -5,7 +5,7 @@ import { getBarGridColumns, type GanttTimeline } from "./timeline";
 // separate tracks so every bar keeps its own open, drag and resize targets.
 export function assigneeMilestoneTracks(
   tasks: readonly ScheduledTask[],
-  timeline: Pick<GanttTimeline, "rangeStart" | "days">,
+  timeline: Pick<GanttTimeline, "rangeStart" | "days" | "hideWeekends">,
   isMobile: boolean,
 ): ScheduledMilestone[][] {
   const milestones = tasks
@@ -19,6 +19,7 @@ export function assigneeMilestoneTracks(
           task.scheduleEnd,
           timeline.rangeStart,
           timeline.days.length,
+          timeline.hideWeekends,
         ).barInView,
     )
     .sort(

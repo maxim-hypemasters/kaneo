@@ -34,14 +34,15 @@ export function useGanttAway(
 
   const rangeStart = timeline?.rangeStart;
   const dayCount = timeline?.days.length ?? 0;
+  const hideWeekends = timeline?.hideWeekends ?? false;
   // Zooming changes neither, so it never recomputes the runs.
   const rangeStartTime = rangeStart?.getTime();
   const runsByUser = useMemo(
     () =>
       rangeStartTime === undefined
         ? NO_RUNS_BY_USER
-        : awayRunsByUser(byUser, new Date(rangeStartTime), dayCount),
-    [byUser, rangeStartTime, dayCount],
+        : awayRunsByUser(byUser, new Date(rangeStartTime), dayCount, hideWeekends),
+    [byUser, rangeStartTime, dayCount, hideWeekends],
   );
 
   const nameOf = useCallback(

@@ -3840,7 +3840,8 @@
 				"none": "无",
 				"feature": "功能"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "已应用的筛选",

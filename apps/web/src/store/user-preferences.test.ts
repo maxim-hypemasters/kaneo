@@ -17,6 +17,7 @@ afterEach(() => {
   useUserPreferencesStore.setState({
     ganttGroupBy: "none",
     ganttCompactRows: false,
+    ganttHideWeekends: false,
     weekStartsOn: 0,
     releaseViews: {},
   });
@@ -98,6 +99,23 @@ describe("user preferences", () => {
       JSON.parse(localStorage.getItem("user-preferences") ?? "{}").state
         .ganttGroupBy,
     ).toBe("assignee");
+  });
+});
+
+describe("Gantt hide weekends", () => {
+  it("is off by default and persists once turned on", () => {
+    expect(useUserPreferencesStore.getState().ganttHideWeekends).toBe(false);
+    useUserPreferencesStore.getState().setGanttHideWeekends(true);
+    expect(
+      JSON.parse(localStorage.getItem("user-preferences") ?? "{}").state
+        .ganttHideWeekends,
+    ).toBe(true);
+  });
+
+  it("turns off when the stored value is not a boolean", async () => {
+    storePreferences({ ganttHideWeekends: "yes" });
+    await useUserPreferencesStore.persist.rehydrate();
+    expect(useUserPreferencesStore.getState().ganttHideWeekends).toBe(false);
   });
 });
 

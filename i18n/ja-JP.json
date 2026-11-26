@@ -3840,7 +3840,8 @@
 				"none": "なし",
 				"feature": "機能"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "適用中のフィルター",

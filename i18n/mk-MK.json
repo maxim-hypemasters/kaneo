@@ -3907,7 +3907,8 @@
 				"none": "Без групирање",
 				"feature": "Функционалност"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Активни филтри",

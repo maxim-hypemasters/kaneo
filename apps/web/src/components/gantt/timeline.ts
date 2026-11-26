@@ -8,6 +8,7 @@ import {
   startOfWeek,
   subDays,
 } from "date-fns";
+import { daySpanColumns, isWeekendDay } from "./weekend-columns";
 
 // The timeline grows and shrinks in chunks of this many days as it scrolls.
 export const GANTT_CHUNK_DAYS = 91;
@@ -153,10 +154,16 @@ export function extendGanttRange(
 export function buildGanttTimeline(
   range: GanttRange,
   dayColumnWidthRem: number,
+  hideWeekends = false,
 ) {
-  const days = eachDayOfInterval({ start: range.start, end: range.end });
+  const days = eachDayOfInterval({ start: range.start, end: range.end }).filter(
+    (day) => !hideWeekends || !isWeekendDay(day),
+  );
   return {
     days,
+    // Saturdays and Sundays have no column. Every date-to-column conversion
+    // must pass this on (see weekend-columns).
+    hideWeekends,
     rangeStart: range.start,
     rangeEnd: range.end,
     hasPrevious: range.start > GANTT_FIRST_DAY,
@@ -174,15 +181,20 @@ export function toIsoDay(date: Date) {
 
 // Maps a date span onto 1-based CSS grid lines of the visible window. Spans
 // that run past either edge are clipped to it; `clippedStart`/`clippedEnd`
-// say which side continues off-screen.
+// say which side continues off-screen. A span on hidden weekend days only
+// still gets one column, the next working day's.
 export function getBarGridColumns(
   start: Date,
   end: Date,
   rangeStart: Date,
   trackCount: number,
+  hideWeekends = false,
 ) {
-  const startIndex = differenceInCalendarDays(start, rangeStart);
-  const endIndex = differenceInCalendarDays(end, rangeStart);
+  const span = daySpanColumns(start, end, rangeStart, hideWeekends);
+  const startIndex = span.from;
+  const endIndex = hideWeekends
+    ? Math.max(span.to - 1, span.from)
+    : span.to - 1;
   const barInView = endIndex >= 0 && startIndex < trackCount && trackCount > 0;
   if (!barInView) {
     return {

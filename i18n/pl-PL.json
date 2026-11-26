@@ -4911,7 +4911,8 @@
 				"none": "Bez grupowania",
 				"feature": "Funkcja"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Aktywne filtry",

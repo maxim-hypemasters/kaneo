@@ -1,4 +1,3 @@
-import { differenceInCalendarDays } from "date-fns";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import {
   type GanttDependency,
@@ -9,6 +8,7 @@ import { dependencyPath } from "./gantt-dependency-path";
 import { lastScheduledInstant } from "./schedule-geometry";
 import { remToPx } from "./gantt-scroll";
 import type { GanttTimeline } from "./timeline";
+import { daySpanColumns } from "./weekend-columns";
 
 type GanttDependencyLinesProps = {
   dependencies: readonly GanttDependency[];
@@ -101,10 +101,17 @@ export function GanttDependencyLines({
       span.precise && edge === "end"
         ? lastScheduledInstant(span.start, span.end)
         : span[edge];
-    const index = differenceInCalendarDays(date, timeline.rangeStart);
+    // A span on hidden weekend days only is drawn one column wide.
+    const { from, to } = daySpanColumns(
+      span.start,
+      date,
+      timeline.rangeStart,
+      timeline.hideWeekends,
+    );
+    const columnEnd = timeline.hideWeekends ? Math.max(to, from + 1) : to;
     return edge === "start"
-      ? railPx + index * dayPx + barInsetPx
-      : railPx + (index + 1) * dayPx - barInsetPx;
+      ? railPx + from * dayPx + barInsetPx
+      : railPx + columnEnd * dayPx - barInsetPx;
   };
 
   const lines = dependencies.flatMap((dependency) => {

@@ -3900,6 +3900,7 @@
 			"checklistProgress": "Checklist progress",
 			"projectBackground": "Project background",
 			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends",
 			"layout": "Layout",
 			"groupBy": "Group by",
 			"groupByOptions": {

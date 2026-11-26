@@ -5,7 +5,10 @@ type GanttLaneSummaryLineProps = {
   // Earliest start and latest end of the lane's tasks.
   start: Date | null;
   end: Date | null;
-  timeline: Pick<GanttTimeline, "days" | "rangeStart" | "gridTemplateColumns">;
+  timeline: Pick<
+    GanttTimeline,
+    "days" | "rangeStart" | "gridTemplateColumns" | "hideWeekends"
+  >;
 };
 
 // A lane's work at a glance, along the bottom of its header: earliest start
@@ -22,6 +25,7 @@ export function GanttLaneSummaryLine({
     end,
     timeline.rangeStart,
     timeline.days.length,
+    timeline.hideWeekends,
   );
   if (!summary.barInView) return null;
 

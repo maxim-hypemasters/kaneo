@@ -79,6 +79,7 @@ type Props = {
   projectId?: string;
   defaultWidth?: number;
   railWidth?: number;
+  hideWeekends?: boolean;
 };
 
 function setup(initial: Props, viewportPx?: number) {
@@ -92,12 +93,14 @@ function setup(initial: Props, viewportPx?: number) {
       projectId = "project",
       defaultWidth = 2.75,
       railWidth = 20,
+      hideWeekends = false,
     }: Props) => {
       const result = useGanttRange({
         projectId,
         tasks,
         ready,
         weekStartsOn: 1,
+        hideWeekends,
         dayColumnWidthRem: defaultWidth,
         railWidthRem: railWidth,
         scrollElement,
@@ -425,6 +428,61 @@ describe("useGanttRange", () => {
     // Trimming the start moved the scroll back by the trimmed days, so the
     // same day is still at the left of the viewport.
     expect(leftmostVisible(hook, element)).toEqual(visibleAtTarget);
+  });
+
+  describe("with weekends hidden", () => {
+    const columnAtLeft = (hook: Hook, element: HTMLElement) =>
+      hook.result.current.timeline?.days[Math.round(element.scrollLeft / DAY_PX)];
+
+    it("renders working days only and keeps the visible day when growing the start", () => {
+      const { hook, element } = setup({
+        tasks: [task("2026-09-14", "2026-09-18")],
+        element: null,
+        hideWeekends: true,
+      });
+
+      const days = hook.result.current.timeline?.days ?? [];
+      expect(days.length).toBeGreaterThan(0);
+      expect(days.every((day) => day.getDay() % 6 !== 0)).toBe(true);
+      expect(columnAtLeft(hook, element)).toEqual(parseISO("2026-09-07"));
+    });
+
+    it("keeps the visible day when growing the end trims the start", () => {
+      const { hook, element } = setup({
+        tasks: [task("2026-09-14", "2026-09-18")],
+        element: null,
+        hideWeekends: true,
+      });
+      const nearEnd = () =>
+        element.scrollWidth - element.clientWidth - 5 * DAY_PX;
+      scrollTo(element, nearEnd());
+      const before = firstDay(hook);
+      const target = nearEnd();
+      const visibleAtTarget =
+        hook.result.current.timeline?.days[Math.round(target / DAY_PX)];
+      scrollTo(element, target);
+
+      expect(differenceInCalendarDays(firstDay(hook), before)).toBe(
+        GANTT_CHUNK_DAYS,
+      );
+      expect(columnAtLeft(hook, element)).toEqual(visibleAtTarget);
+    });
+
+    it("keeps the first visible day when weekends are toggled", () => {
+      const { hook, element, props } = setup({
+        tasks: [task("2026-09-14", "2026-09-18")],
+        element: null,
+      });
+      scrollTo(element, element.scrollLeft + 30 * DAY_PX);
+      const visible = leftmostVisible(hook, element);
+      expect(visible.getDay() % 6).not.toBe(0);
+
+      hook.rerender({ ...props, hideWeekends: true });
+      expect(columnAtLeft(hook, element)).toEqual(visible);
+
+      hook.rerender({ ...props, hideWeekends: false });
+      expect(leftmostVisible(hook, element)).toEqual(visible);
+    });
   });
 
   it("reports the visible days to its viewport store", () => {

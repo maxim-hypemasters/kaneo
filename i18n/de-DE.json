@@ -3907,7 +3907,8 @@
 				"none": "Keine",
 				"feature": "Feature"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Aktive Filter",
