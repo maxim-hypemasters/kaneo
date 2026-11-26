@@ -33,4 +33,8 @@ describe("buildHermesConfig", () => {
     expect(config).toContain('"*git push*"');
     expect(config).toContain('"gh *"');
   });
+
+  it("keeps Hermes in English, whose wording marks an abnormal ending", () => {
+    expect(buildHermesConfig()).toContain("display:\n  language: en\n");
+  });
 });
