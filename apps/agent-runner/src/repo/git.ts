@@ -11,7 +11,7 @@ export function repositoryUrl(config: RunnerConfig, repository: string) {
 }
 
 /** The runner's git ignores global and system config, so nothing outside the repository steers it. */
-export function gitEnv(config: RunnerConfig, withToken: boolean) {
+export function gitEnv(config: RunnerConfig, token: string | null) {
   return {
     PATH: process.env.PATH,
     HOME: process.env.HOME,
@@ -23,9 +23,7 @@ export function gitEnv(config: RunnerConfig, withToken: boolean) {
     GIT_AUTHOR_EMAIL: config.gitAuthorEmail,
     GIT_COMMITTER_NAME: config.gitAuthorName,
     GIT_COMMITTER_EMAIL: config.gitAuthorEmail,
-    ...(withToken && config.githubToken
-      ? { KANEO_GIT_TOKEN: config.githubToken }
-      : {}),
+    ...(token ? { KANEO_GIT_TOKEN: token } : {}),
   };
 }
 
@@ -53,15 +51,19 @@ function gitArgs(config: RunnerConfig, args: readonly string[], auth: boolean) {
 export async function git(
   config: RunnerConfig,
   args: readonly string[],
-  options: { cwd?: string; auth?: boolean; signal?: AbortSignal } = {},
+  options: { cwd?: string; token?: string | null; signal?: AbortSignal } = {},
 ) {
-  const auth = Boolean(options.auth && config.githubToken);
-  const result = await runCommand("git", gitArgs(config, args, auth), {
-    cwd: options.cwd,
-    env: gitEnv(config, auth),
-    signal: options.signal,
-    check: true,
-  });
+  const token = options.token ?? null;
+  const result = await runCommand(
+    "git",
+    gitArgs(config, args, Boolean(token)),
+    {
+      cwd: options.cwd,
+      env: gitEnv(config, token),
+      signal: options.signal,
+      check: true,
+    },
+  );
   return result.stdout.trim();
 }
 
@@ -73,7 +75,7 @@ export async function gitSucceeds(
 ): Promise<boolean> {
   const result = await runCommand("git", gitArgs(config, args, false), {
     cwd: options.cwd,
-    env: gitEnv(config, false),
+    env: gitEnv(config, null),
   });
   return result.code === 0;
 }

@@ -83,6 +83,7 @@ export async function pushBranch(
     repository: string;
     paths: RunPaths;
     branch: string;
+    token: string;
     signal?: AbortSignal;
   },
 ) {
@@ -97,6 +98,6 @@ export async function pushBranch(
       repositoryUrl(config, input.repository),
       `${OUT_REF}:refs/heads/${input.branch}`,
     ],
-    { auth: true, signal: input.signal },
+    { token: input.token, signal: input.signal },
   );
 }

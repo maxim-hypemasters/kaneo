@@ -42,6 +42,13 @@ AGENT_GH_TOKEN=github_pat_...
 AGENT_OPENROUTER_API_KEY=sk-or-...
 ```
 
+To push as a [GitHub App](#push-as-a-github-app) instead of with a token, set these in place of `AGENT_GH_TOKEN`:
+
+```bash .env
+AGENT_GITHUB_APP_ID=123456
+AGENT_GITHUB_PRIVATE_KEY_BASE64=LS0tLS1CRUdJTi...
+```
+
 ```bash
 docker compose --profile agent up -d
 ```
@@ -89,11 +96,13 @@ With Docker Compose, set these in `.env` with an `AGENT_` prefix, such as `AGENT
 | --- | --- | --- |
 | `KANEO_API_URL` | required | Kaneo's URL. `/api` is added when missing. |
 | `KANEO_RUNNER_TOKEN` | required | The workspace's runner token. |
-| `GH_TOKEN` | none | Pushes branches and opens pull requests. Without it the runner only checks readiness. |
+| `GH_TOKEN` | none | A token that pushes branches and opens pull requests. Without it or a GitHub App, the runner only checks readiness. |
+| `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY` or `GITHUB_PRIVATE_KEY_BASE64` | none | A [GitHub App](#push-as-a-github-app) to push and open pull requests as, instead of `GH_TOKEN`. The key is the app's PEM private key, or the PEM in base64. Set these or `GH_TOKEN`, not both. |
+| `GITHUB_APP_INSTALLATION_ID` | none | Keeps a GitHub App to one of its installations: repositories of its other installations are refused. |
 | `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `NOUS_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY` | none | Model provider keys. Hermes uses the one for `HERMES_PROVIDER`. Compose passes on only these; for another provider, add its key to the runner's `environment` in a Compose override file. |
 | `HERMES_MODEL` | `anthropic/claude-sonnet-5.5` | The model Hermes uses. |
 | `HERMES_PROVIDER` | `openrouter` | The Hermes inference provider. |
-| `GITHUB_HOST` | `github.com` | For GitHub Enterprise Server. The runner gives `GH_TOKEN` to git and to the GitHub CLI, which reads it as `GH_ENTERPRISE_TOKEN` there. |
+| `GITHUB_HOST` | `github.com` | For GitHub Enterprise Server. The runner gives its token to git and to the GitHub CLI, which reads it as `GH_ENTERPRISE_TOKEN` there. |
 | `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL` | `Hermes Agent` | The author of Hermes's commits. |
 | `ASSESS_CONCURRENCY`, `SHIP_CONCURRENCY` | `2`, `1` | Runs at once of each kind. |
 | `ASSESS_TIMEOUT_MS`, `SHIP_TIMEOUT_MS` | 10 minutes, 60 minutes | Longer runs are stopped and reported. |
@@ -103,12 +112,23 @@ With Docker Compose, set these in `.env` with an `AGENT_` prefix, such as `AGENT
 
 One runner serves one workspace. Run another with its own token for each workspace.
 
+### Push as a GitHub App
+
+Instead of a personal token, the runner can push branches and open pull requests as a GitHub App, and its pull requests then come from the app's bot account. The runner keeps the app's private key, which doesn't expire, and uses it to get short-lived tokens from GitHub. Each covers one repository and only the access a step needs, lasts an hour, and is reused for that repository until it nears expiry.
+
+1. Create a GitHub App for the agent, with **Contents** and **Pull requests** read and write access.
+2. Install it only on the repositories this workspace's agent works on. The runner can get a token for any repository the app is installed on, and anyone who can change a project's AI agent settings chooses the repository.
+3. Give the runner the app's ID and private key as `GITHUB_APP_ID` and `GITHUB_PRIVATE_KEY_BASE64` (or `GITHUB_PRIVATE_KEY`). With Docker Compose, prefix them with `AGENT_`.
+4. If the app is installed more widely, set `GITHUB_APP_INSTALLATION_ID` to the installation this workspace uses. The runner then refuses repositories of the app's other installations.
+
+Don't reuse the app of Kaneo's [GitHub integration](/core/integrations/github/setup) where more than one workspace uses it: this runner could then reach the other workspaces' repositories, and Kaneo's server, which holds the same key, would get write access it doesn't need. Readiness checks ask only for read access to the repository's contents. When the app isn't installed on a public repository, the runner reads it without a token.
+
 ## Security
 
 Hermes runs commands that it decides on from task text, comments and repository content. Treat a runner like a CI job that anyone who can edit tasks can trigger.
 
-- **Use a fine-grained GitHub token** limited to the repositories the agent works on, with **Contents** and **Pull requests** read and write access. Kaneo never stores it.
-- **Hermes runs as a separate user.** The runner runs as root in its container and starts Hermes, and every git command in Hermes's checkout, as an unprivileged user, a different one for each run at the same time. That user can't read the runner's environment, which holds the GitHub and runner tokens, or the runner's git mirrors. Run users are separate from root, from the image's own `hermes` user and from each other, so none of them can read another user's process environment. No process gets the tokens on a run's behalf either: the image doesn't run the Hermes dashboard or its supervised gateway, which would run as the image's `hermes` user with the container's environment, and it runs Hermes's startup setup without the tokens. Hermes's own environment has neither token, and its config refuses `git push` and `gh` even in unattended mode.
+- **Limit the runner's GitHub access** to the repositories the agent works on, with **Contents** and **Pull requests** read and write access: a fine-grained token, or a GitHub App installed only there or kept to one installation. The runner works in whichever repository a project's AI agent settings name, so its credentials decide what a workspace's admins can reach with it. An app's tokens each cover one repository and expire within the hour, but its private key doesn't expire. Kaneo never receives the runner's credentials.
+- **Hermes runs as a separate user.** The runner runs as root in its container and starts Hermes, and every git command in Hermes's checkout, as an unprivileged user, a different one for each run at the same time. That user can't read the runner's environment, which holds its GitHub credentials and runner token, or the runner's git mirrors. Run users are separate from root, from the image's own `hermes` user and from each other, so none of them can read another user's process environment. No process gets the tokens on a run's behalf either: the image doesn't run the Hermes dashboard or its supervised gateway, which would run as the image's `hermes` user with the container's environment, and it runs Hermes's startup setup without the tokens. Hermes's own environment has neither token, and its config refuses `git push` and `gh` even in unattended mode.
 - **Only the runner pushes, to the task's branch.** When Hermes finishes, its commits are packed into a git bundle as the run's user. The runner fetches that bundle into a fresh copy of the repository that only it can write, checks that the commits build on the branch the run started from, and pushes from there to the repository's GitHub URL. Hooks or git configuration that Hermes left in its checkout never run with the token.
 - **Readiness checks are read-only.** Hermes gets file tools that can't write outside a scratch directory, and no shell or web access. Tasks synced from public issue trackers can contain prompt injection, which is why only a person's Ship starts code changes.
 - **The container is the sandbox.** Ship runs Hermes without command approvals inside the runner container. Don't mount the Docker socket or host directories into the runner.
@@ -124,6 +144,11 @@ To turn the agent off for the whole instance, set `DISABLE_AI_AGENT=true` on Kan
 - **Runner shows Offline**: check its logs. A `401` means the token was replaced or revoked. Create a new one and restart the runner.
 - **The runner exits with "The runner must start as root" or "HERMES_UID is set, but the runner runs as uid …"**: the container was started as a non-root user, with `--user` or `runAsUser`. Start it as root.
 - **The runner logs "credential isolation is off"**: it runs outside the image, without `HERMES_UID`, so Hermes runs as the runner's user and can read its tokens. Use the image.
-- **Ship stays queued**: the runner may be offline, or have no `GH_TOKEN`, in which case it only checks readiness.
+- **Ship stays queued**: the runner may be offline, or have no GitHub credentials, in which case it only checks readiness.
+- **Ship fails with "The GitHub App isn't installed on …"**: install the app on that repository, or add the repository to its installation.
+- **Ship fails with "The GitHub App can't get write access to …"**: the message ends with GitHub's reason. When it says the app needs Contents and Pull requests access, give it those with read and write, then accept the new permissions on its installation.
+- **Ship fails with "… belongs to another installation of the GitHub App"**: the repository isn't in the installation `GITHUB_APP_INSTALLATION_ID` names.
+- **Ship fails with "Can't reach the GitHub API at …"**: the runner can't connect to GitHub. For GitHub Enterprise Server with a certificate from your own CA, give the runner `NODE_EXTRA_CA_CERTS` pointing to it.
+- **The runner exits with "Set GH_TOKEN or a GitHub App …, not both"**: keep one of them.
 - **"Hermes failed: credentials or agent init failed"**: the provider key is missing or wrong for `HERMES_PROVIDER`.
 - **A run failed after "The runner stopped reporting progress"**: the runner restarted twice during the same run. Ship the task again.

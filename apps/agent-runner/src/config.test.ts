@@ -14,7 +14,7 @@ describe("loadConfig", () => {
   it("applies defaults", () => {
     expect(loadConfig(env)).toMatchObject({
       apiUrl: "http://kaneo:5173/api",
-      githubToken: null,
+      github: null,
       assessConcurrency: 2,
       shipConcurrency: 1,
       hermesModel: "anthropic/claude-sonnet-5.5",
@@ -22,19 +22,21 @@ describe("loadConfig", () => {
   });
 
   it("reads the GitHub token from either variable", () => {
-    expect(loadConfig({ ...env, GITHUB_TOKEN: "ghp_a" }).githubToken).toBe(
-      "ghp_a",
-    );
+    expect(loadConfig({ ...env, GITHUB_TOKEN: "ghp_a" }).github).toEqual({
+      kind: "token",
+      token: "ghp_a",
+    });
     expect(
-      loadConfig({ ...env, GH_TOKEN: "ghp_b", GITHUB_TOKEN: "ghp_a" })
-        .githubToken,
-    ).toBe("ghp_b");
+      loadConfig({ ...env, GH_TOKEN: "ghp_b", GITHUB_TOKEN: "ghp_a" }).github,
+    ).toEqual({ kind: "token", token: "ghp_b" });
   });
 
   it("treats empty values, as Compose passes unset ones, as defaults", () => {
     const config = loadConfig({
       ...env,
       GH_TOKEN: "",
+      GITHUB_APP_ID: "",
+      GITHUB_PRIVATE_KEY_BASE64: "",
       HERMES_PROVIDER: "",
       HERMES_MODEL: "",
       GITHUB_HOST: "",
@@ -44,7 +46,7 @@ describe("loadConfig", () => {
       GIT_AUTHOR_NAME: "",
     });
     expect(config).toMatchObject({
-      githubToken: null,
+      github: null,
       hermesProvider: "openrouter",
       hermesModel: "anthropic/claude-sonnet-5.5",
       githubHost: "github.com",

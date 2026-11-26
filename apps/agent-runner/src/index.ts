@@ -1,5 +1,6 @@
 import { runAssess } from "./assess/run-assess";
 import { loadConfig } from "./config";
+import { createGitHubTokens } from "./github/github-tokens";
 import { createKaneoClient } from "./kaneo/client";
 import { pollLoop } from "./loop/poll-loop";
 import { ensureSlotUsers, slotUser } from "./isolation/slot-users";
@@ -22,7 +23,14 @@ async function main() {
   const config = loadConfig();
   const redact = createRedactor([
     config.runnerToken,
-    config.githubToken,
+    config.github?.kind === "token" ? config.github.token : null,
+    ...(config.github?.kind === "app"
+      ? [
+          config.github.privateKey,
+          process.env.GITHUB_PRIVATE_KEY ?? null,
+          process.env.GITHUB_PRIVATE_KEY_BASE64 ?? null,
+        ]
+      : []),
     ...PROVIDER_KEYS.map((key) => process.env[key] ?? null),
   ]);
   const log = (message: string) =>
@@ -37,7 +45,7 @@ async function main() {
     );
   } else
     log(
-      `WARNING: credential isolation is off. Hermes runs as this process's user (uid ${process.getuid?.() ?? "unknown"}) and can read the runner token and GH_TOKEN. Run the runner as root with HERMES_UID set, as the image does.`,
+      `WARNING: credential isolation is off. Hermes runs as this process's user (uid ${process.getuid?.() ?? "unknown"}) and can read the runner token and the GitHub credentials. Run the runner as root with HERMES_UID set, as the image does.`,
     );
   // From here on, what the runner and the programs it starts create is
   // private to its owner unless set otherwise, in shared /tmp too. Not
@@ -55,6 +63,7 @@ async function main() {
   const deps: RunDeps = {
     config,
     kaneo: createKaneoClient(config.apiUrl, config.runnerToken),
+    github: createGitHubTokens(config.github, config.githubHost),
     redact,
     shutdown: shutdown.signal,
     log,
@@ -92,14 +101,20 @@ async function main() {
     }
   };
   start(config.assessConcurrency, "assess");
-  if (config.githubToken) start(config.shipConcurrency, "ship");
-  else
+  if (config.github) {
+    start(config.shipConcurrency, "ship");
     log(
-      "No GH_TOKEN: assessing only; Ship runs wait for a runner that can push",
+      config.github.kind === "app"
+        ? `Pushes as GitHub App ${config.github.appId}, with a token per repository`
+        : "Pushes with GH_TOKEN",
+    );
+  } else
+    log(
+      "No GitHub credentials: assessing only; Ship runs wait for a runner that can push",
     );
 
   log(
-    `v${RUNNER_VERSION} polling ${config.apiUrl} with ${config.hermesProvider}/${config.hermesModel} (${config.assessConcurrency} assess, ${config.githubToken ? config.shipConcurrency : 0} ship)`,
+    `v${RUNNER_VERSION} polling ${config.apiUrl} with ${config.hermesProvider}/${config.hermesModel} (${config.assessConcurrency} assess, ${config.github ? config.shipConcurrency : 0} ship)`,
   );
   await Promise.all(loops);
 }

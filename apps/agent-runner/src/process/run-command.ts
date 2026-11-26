@@ -108,9 +108,14 @@ export function runCommand(
     // the result settles shortly after the program exits all the same.
     child.once("exit", (code, signal) => {
       drain = setTimeout(() => {
-        child.stdout.destroy();
-        child.stderr.destroy();
-        finish(code, signal);
+        // After the I/O already waiting: a busy event loop can run this timer
+        // before it reads output the program wrote before exiting.
+        setImmediate(() => {
+          if (settled) return;
+          child.stdout.destroy();
+          child.stderr.destroy();
+          finish(code, signal);
+        });
       }, 2_000);
     });
     child.on("close", finish);

@@ -32,10 +32,22 @@ export async function runAssess(deps: RunDeps, claim: RunClaim) {
     let hasCode = false;
     if (context.project.repository) {
       try {
+        const repository = context.project.repository;
+        // Without a token a public repository still clones.
+        const token = await deps
+          .github(repository, "read", session.signal)
+          .catch((error: Error) => {
+            if (session.stopReason()) throw error;
+            deps.log(
+              `No GitHub token for ${repository}: ${redact(error.message)}`,
+            );
+            return null;
+          });
         const checkout = await prepareCheckout(config, {
           runId: workId,
-          repository: context.project.repository,
+          repository,
           baseBranch: context.project.baseBranch,
+          token,
           signal: session.signal,
         });
         cwd = checkout.dir;

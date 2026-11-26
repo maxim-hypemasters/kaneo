@@ -6,9 +6,9 @@ import type { RunnerConfig } from "../config";
  */
 export function ghEnv(
   config: RunnerConfig,
+  token: string,
   env: NodeJS.ProcessEnv = process.env,
 ) {
-  const token = config.githubToken ?? "";
   return {
     PATH: env.PATH,
     HOME: env.HOME,

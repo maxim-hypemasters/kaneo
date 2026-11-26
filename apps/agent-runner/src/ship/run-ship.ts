@@ -2,6 +2,7 @@ import { runHermes } from "../hermes/run-hermes";
 import type { FailureCode, RunClaim } from "../kaneo/client";
 import { reportStop } from "../loop/report-stop";
 import { startRunSession } from "../loop/run-session";
+import { GitHubAuthError } from "../github/github-tokens";
 import { CommandError } from "../process/run-command";
 import { bundleHermesWork } from "../repo/bundle-hermes-work";
 import { prepareCheckout } from "../repo/prepare-checkout";
@@ -26,13 +27,13 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
   const repository = context.project.repository;
   const baseBranch = context.project.baseBranch;
   const branch = context.branchName;
-  if (!repository || !config.githubToken || branch === baseBranch) {
+  if (!repository || !config.github || branch === baseBranch) {
     await kaneo.fail(run, {
       code: "git_failed",
       message: !repository
         ? "The project has no repository"
-        : !config.githubToken
-          ? "The runner has no GitHub token"
+        : !config.github
+          ? "The runner has no GitHub credentials"
           : "The branch name equals the base branch",
     });
     return;
@@ -47,14 +48,23 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
   const step = (message: string) => session.events.push("step", message);
   const fail = (code: FailureCode, message: string) =>
     kaneo.fail(run, { code, message: message.slice(0, 2000) });
+  // Asked for at each step: a GitHub App's token can expire during a long run.
+  const writeToken = async () => {
+    const token = await deps.github(repository, "write", session.signal);
+    if (!token)
+      throw new GitHubAuthError("The runner has no GitHub credentials");
+    return token;
+  };
   try {
     step(`Preparing ${repository} from ${baseBranch}`);
     const paths = await prepareRunDir(config, workId);
+    // Write access, checked before Hermes spends a run on work it can't push.
     const checkout = await prepareCheckout(config, {
       runId: workId,
       repository,
       baseBranch,
       branch,
+      token: await writeToken(),
       signal: session.signal,
     });
     step(
@@ -131,6 +141,7 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
         repository,
         paths,
         branch,
+        token: await writeToken(),
         signal: session.signal,
       });
     } else step(`${branch} already has the work`);
@@ -143,6 +154,7 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
       branch,
       title,
       body: pullRequestBody(context, summary),
+      token: await writeToken(),
       signal: session.signal,
     });
     if (await reportStop(kaneo, run, session)) return;
@@ -156,7 +168,10 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
     if (!(await reportStop(kaneo, run, session)))
       await kaneo
         .fail(run, {
-          code: error instanceof CommandError ? "git_failed" : "internal",
+          code:
+            error instanceof CommandError || error instanceof GitHubAuthError
+              ? "git_failed"
+              : "internal",
           message: redact((error as Error).message).slice(0, 2000),
         })
         .catch(() => {});
