@@ -4329,7 +4329,7 @@
 				"backToReleases": "Назад к релизам",
 				"standaloneHeading": "Задачи без фичи",
 				"empty": "В этом релизе пока ничего нет",
-				"emptyHint": "Укажите релиз у задачи или фичи либо добавьте задачу здесь.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Добавить задачу",
 				"featureElsewhere": "Фича вне этого релиза",
 				"tasksElsewhere_one": "Ещё {{count}} задача вне этого релиза",
@@ -4388,6 +4388,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

@@ -4103,7 +4103,7 @@
 				"backToReleases": "Buraxılışlara qayıt",
 				"standaloneHeading": "İmkana aid olmayan tapşırıqlar",
 				"empty": "Bu buraxılışda hələ heç nə yoxdur",
-				"emptyHint": "Tapşırığın və ya imkanın buraxılışını təyin edin, ya da buraya tapşırıq əlavə edin.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Tapşırıq əlavə et",
 				"featureElsewhere": "İmkan bu buraxılışda deyil",
 				"tasksElsewhere_one": "Bu buraxılışdan kənarda daha {{count}} tapşırıq",
@@ -4158,6 +4158,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

@@ -94,14 +94,12 @@ export default function ProjectLayout({
   const isHome = page === "home";
   const resolvedRoute: ProjectRoute = isHome ? "board" : page;
   const currentView = resolveProjectView(resolvedRoute, viewMode);
-  // The header menu belongs to the task views and the backlog; the project
-  // page, Features, and Releases bring their own actions.
-  const isTaskView = !isHome && isTaskLayoutView(currentView);
-  // Triage creates tasks and bugs too; they follow the normal routing.
-  const createTypes =
-    isTaskView || page === "triage" ? TASK_VIEW_CREATE_TYPES : undefined;
+  // The header menu belongs to the backlog and triage; the task views create
+  // from their columns, and the other pages bring their own actions.
+  // Triage creates tasks and bugs; they follow the normal routing.
+  const createTypes = page === "triage" ? TASK_VIEW_CREATE_TYPES : undefined;
   const showCreate =
-    (isTaskView || page === "backlog" || page === "triage") &&
+    (page === "backlog" || page === "triage") &&
     Boolean(project) &&
     (createTypes
       ? createTypes.some((type) => canWorkItem(type, "create"))

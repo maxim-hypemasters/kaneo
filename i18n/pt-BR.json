@@ -4190,7 +4190,7 @@
 				"backToReleases": "Voltar para as versões",
 				"standaloneHeading": "Tarefas sem funcionalidade",
 				"empty": "Ainda não há nada nesta versão",
-				"emptyHint": "Defina a versão de uma tarefa ou funcionalidade, ou adicione uma tarefa aqui.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Adicionar tarefa",
 				"featureElsewhere": "Funcionalidade fora desta versão",
 				"tasksElsewhere_one": "Mais {{count}} tarefa fora desta versão",
@@ -4247,6 +4247,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

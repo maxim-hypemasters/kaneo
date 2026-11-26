@@ -5147,7 +5147,7 @@
 				"backToReleases": "Wróć do wydań",
 				"standaloneHeading": "Zadania bez funkcji",
 				"empty": "W tym wydaniu nic jeszcze nie ma",
-				"emptyHint": "Ustaw wydanie zadania lub funkcji albo dodaj tutaj zadanie.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Dodaj zadanie",
 				"featureElsewhere": "Funkcja poza tym wydaniem",
 				"tasksElsewhere_one": "Jeszcze {{count}} zadanie poza tym wydaniem",
@@ -5206,6 +5206,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

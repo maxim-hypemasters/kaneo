@@ -214,9 +214,8 @@ describe("ProjectLayout toolbar", () => {
     );
   });
 
-  it("omits an otherwise empty task toolbar when creation is unavailable", () => {
+  it("omits an otherwise empty task toolbar", () => {
     project.current = { data: { name: "Alpha" }, error: null };
-    project.canCreate = false;
     const { container } = render(
       <ProjectLayout
         projectId="project-1"
@@ -239,7 +238,7 @@ describe("ProjectLayout toolbar", () => {
 });
 
 describe("ProjectLayout tasks view", () => {
-  it.each(["board", "calendar", "gantt", "backlog"] as const)(
+  it.each(["backlog", "triage"] as const)(
     "creates the selected type from the %s header",
     (view) => {
       project.current = { data: { name: "Alpha" }, error: null };
@@ -259,21 +258,18 @@ describe("ProjectLayout tasks view", () => {
     },
   );
 
-  it.each(["board", "calendar", "gantt"] as const)(
-    "leaves features out of the %s header",
-    async (view) => {
-      project.current = { data: { name: "Alpha" }, error: null };
-      renderLayout(view);
-      fireEvent.click(
-        screen.getByRole("button", { name: "tasks:createMenu.label" }),
-      );
-      const options = await screen.findAllByRole("menuitem");
-      expect(options.map((option) => option.textContent)).toEqual([
-        "tasks:createMenu.newTask",
-        "tasks:createMenu.newBug",
-      ]);
-    },
-  );
+  it("leaves features out of the triage header", async () => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    renderLayout("triage");
+    fireEvent.click(
+      screen.getByRole("button", { name: "tasks:createMenu.label" }),
+    );
+    const options = await screen.findAllByRole("menuitem");
+    expect(options.map((option) => option.textContent)).toEqual([
+      "tasks:createMenu.newTask",
+      "tasks:createMenu.newBug",
+    ]);
+  });
 
   it("offers features from the backlog header", async () => {
     project.current = { data: { name: "Alpha" }, error: null };
@@ -288,10 +284,10 @@ describe("ProjectLayout tasks view", () => {
     ).toBeVisible();
   });
 
-  it("hides task-view creation from a role that only creates features", () => {
+  it("hides triage creation from a role that only creates features", () => {
     project.current = { data: { name: "Alpha" }, error: null };
     project.creatable = ["feature"];
-    renderLayout("board");
+    renderLayout("triage");
     expect(
       screen.queryByRole("button", { name: "tasks:createMenu.label" }),
     ).toBeNull();
@@ -302,22 +298,26 @@ describe("ProjectLayout tasks view", () => {
     ).toBeVisible();
   });
 
-  it.each(["home", "features", "releases"] as const)(
-    "leaves %s creation to its own page",
-    (view) => {
-      project.current = { data: { name: "Alpha" }, error: null };
-      renderLayout(view);
-      expect(
-        screen.queryByRole("button", { name: "tasks:createMenu.label" }),
-      ).toBeNull();
-      expect(screen.getByText("Toolbar action")).toBeVisible();
-    },
-  );
+  it.each([
+    "home",
+    "board",
+    "calendar",
+    "gantt",
+    "features",
+    "releases",
+  ] as const)("has no header creation menu on %s", (view) => {
+    project.current = { data: { name: "Alpha" }, error: null };
+    renderLayout(view);
+    expect(
+      screen.queryByRole("button", { name: "tasks:createMenu.label" }),
+    ).toBeNull();
+    expect(screen.getByText("Toolbar action")).toBeVisible();
+  });
 
   it("hides header creation without permission", () => {
     project.current = { data: { name: "Alpha" }, error: null };
     project.canCreate = false;
-    renderLayout();
+    renderLayout("backlog");
     expect(
       screen.queryByRole("button", { name: "tasks:createMenu.label" }),
     ).toBeNull();

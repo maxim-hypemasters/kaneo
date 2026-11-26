@@ -230,7 +230,6 @@ function View({
           canManage: false,
           canMoveItems: canMove,
           canDelete: false,
-          canCreateTasks: false,
         }}
         onEdit={vi.fn()}
         onDelete={vi.fn()}

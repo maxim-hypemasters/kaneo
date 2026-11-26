@@ -4,8 +4,6 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ProjectLayout from "@/components/common/project-layout";
 import PageTitle from "@/components/page-title";
-import CreateTaskModal from "@/components/shared/modals/create-task-modal";
-import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import TaskDetailsSheet from "@/components/task/task-details-sheet";
 import { useGetColumns } from "@/hooks/queries/column/use-get-columns";
 import { useGetReleaseMilestones } from "@/hooks/queries/release/use-get-release-milestones";
@@ -19,7 +17,7 @@ import {
 } from "@/lib/releases/release-progress";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import type { Release } from "@/types/release";
-import type { TaskType } from "@/types/task";
+import type { ReleaseLinkKind } from "@/fetchers/release/get-release-link-candidates";
 import { DeleteReleaseDialog } from "../delete-release-dialog";
 import { ReleaseDialog } from "../dialog/release-dialog";
 import { ReleasesLoadError } from "../list/releases-load-error";
@@ -36,6 +34,7 @@ import { ReleaseNotFound } from "./release-not-found";
 import { ReleaseProgressSection } from "./release-progress-section";
 import { ReleaseGroupingFeedback } from "./release-grouping-feedback";
 import { ReleaseLinkDialog } from "./release-link-dialog";
+import { ReleaseLinkMenu } from "./release-link-menu";
 import { ReleasePlanDialog } from "../planning/release-plan-dialog";
 
 const NO_RELEASES: Release[] = [];
@@ -78,8 +77,7 @@ export function ReleaseDetailPage({
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
-  const [createType, setCreateType] = useState<TaskType | null>(null);
-  const [linkKind, setLinkKind] = useState<"task" | "milestone" | null>(null);
+  const [linkKind, setLinkKind] = useState<ReleaseLinkKind | null>(null);
 
   const done = useMemo(
     () => finalStatuses(workflowQuery.data ?? board?.columns ?? []),
@@ -117,11 +115,8 @@ export function ReleaseDetailPage({
       projectId,
     ],
   );
-  const openCreate = permissions.canCreateTasks
-    ? (type: TaskType) => setCreateType(type)
-    : undefined;
   const openLink = permissions.canMoveItems
-    ? (kind: "task" | "milestone") => setLinkKind(kind)
+    ? (kind: ReleaseLinkKind) => setLinkKind(kind)
     : undefined;
   const progressReady =
     !boardQuery.isPending && workflowQuery.data !== undefined;
@@ -174,7 +169,7 @@ export function ReleaseDetailPage({
             }}
           />
         ) : (
-          <ReleaseDetailEmpty onCreate={openCreate} onLink={openLink} />
+          <ReleaseDetailEmpty onLink={openLink} />
         );
     } else if (boardQuery.isError) {
       items = (
@@ -236,14 +231,7 @@ export function ReleaseDetailPage({
               release={release}
               canPlan={permissions.canManage && permissions.canMoveItems}
             />
-            {(openCreate || openLink) && (
-              <NewWorkMenu
-                variant="outline"
-                size="xs"
-                onSelect={openCreate}
-                onLink={openLink}
-              />
-            )}
+            {openLink && <ReleaseLinkMenu size="xs" onLink={openLink} />}
           </div>
         ) : null
       }
@@ -284,14 +272,6 @@ export function ReleaseDetailPage({
             releases={releases}
             unfinished={counts?.unfinished ?? 0}
             today={today}
-          />
-          <CreateTaskModal
-            open={createType !== null}
-            type={createType ?? "task"}
-            projectId={projectId}
-            releaseId={createType === "feature" ? undefined : release.id}
-            originReleaseId={release.id}
-            onClose={() => setCreateType(null)}
           />
           {linkKind && permissions.canMoveItems && (
             <ReleaseLinkDialog

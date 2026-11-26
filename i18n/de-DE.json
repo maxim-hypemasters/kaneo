@@ -4103,7 +4103,7 @@
 				"backToReleases": "Zurück zu den Releases",
 				"standaloneHeading": "Aufgaben ohne Feature",
 				"empty": "Noch nichts in diesem Release",
-				"emptyHint": "Lege das Release einer Aufgabe oder eines Features fest oder füge hier eine Aufgabe hinzu.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Aufgabe hinzufügen",
 				"featureElsewhere": "Feature nicht in diesem Release",
 				"tasksElsewhere_one": "{{count}} weitere Aufgabe außerhalb dieses Releases",
@@ -4158,6 +4158,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

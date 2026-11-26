@@ -4017,7 +4017,7 @@
 				"backToReleases": "Quay lại danh sách bản phát hành",
 				"standaloneHeading": "Công việc không thuộc tính năng nào",
 				"empty": "Bản phát hành này chưa có gì",
-				"emptyHint": "Đặt bản phát hành cho một công việc hoặc tính năng, hoặc thêm công việc tại đây.",
+				"emptyLinkHint": "Set the release of a task or feature, or link existing work here.",
 				"addTask": "Thêm công việc",
 				"featureElsewhere": "Tính năng không thuộc bản phát hành này",
 				"tasksElsewhere_other": "Còn {{count}} công việc khác ngoài bản phát hành này",
@@ -4071,6 +4071,7 @@
 			"link": {
 				"milestoneAction": "Link existing milestone",
 				"taskAction": "Link existing tasks or bugs",
+				"menu": "Link work",
 				"milestonesTitle": "Link milestones to {{release}}",
 				"tasksTitle": "Link tasks or bugs to {{release}}",
 				"searchMilestones": "Search milestones or features…",

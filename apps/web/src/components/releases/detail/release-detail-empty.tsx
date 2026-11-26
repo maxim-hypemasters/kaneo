@@ -1,6 +1,5 @@
 import { Rocket } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { NewWorkMenu } from "@/components/shared/new-work-menu";
 import {
   Empty,
   EmptyContent,
@@ -9,14 +8,13 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import type { TaskType } from "@/types/task";
+import type { ReleaseLinkKind } from "@/fetchers/release/get-release-link-candidates";
+import { ReleaseLinkMenu } from "./release-link-menu";
 
 export function ReleaseDetailEmpty({
-  onCreate,
   onLink,
 }: {
-  onCreate?: (type: TaskType) => void;
-  onLink?: (kind: "task" | "milestone") => void;
+  onLink?: (kind: ReleaseLinkKind) => void;
 }) {
   const { t } = useTranslation();
 
@@ -30,12 +28,12 @@ export function ReleaseDetailEmpty({
           {t("tasks:releases.detail.empty")}
         </EmptyTitle>
         <EmptyDescription>
-          {t("tasks:releases.detail.emptyHint")}
+          {t("tasks:releases.detail.emptyLinkHint")}
         </EmptyDescription>
       </EmptyHeader>
-      {onCreate || onLink ? (
+      {onLink ? (
         <EmptyContent>
-          <NewWorkMenu variant="outline" onSelect={onCreate} onLink={onLink} />
+          <ReleaseLinkMenu onLink={onLink} />
         </EmptyContent>
       ) : null}
     </Empty>
