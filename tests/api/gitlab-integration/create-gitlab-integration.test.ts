@@ -113,7 +113,7 @@ describe("createGitlabIntegration on an existing integration", () => {
 
     expect(savedConfig()).toMatchObject({
       accessToken: "old-token",
-      branchPattern: "{slug}-{number}",
+      branchPattern: "{type}/{slug}-{number}/{title}",
       commentTaskLinkOnGitlabIssue: true,
       statusTransitions: { onPROpen: "in-review" },
     });

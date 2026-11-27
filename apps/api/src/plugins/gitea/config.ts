@@ -1,6 +1,6 @@
 import * as v from "valibot";
 import { type SyncRules, syncRulesSchema } from "../sync/rules";
-import { branchPatterns } from "../github/config";
+import { branchPatterns, TYPED_BRANCH_PATTERN } from "../github/config";
 
 export { branchPatterns };
 
@@ -48,7 +48,7 @@ export async function validateGiteaConfig(
 }
 
 export const defaultGiteaConfig: Partial<GiteaConfig> = {
-  branchPattern: "{slug}-{number}",
+  branchPattern: TYPED_BRANCH_PATTERN,
   commentTaskLinkOnGiteaIssue: true,
   statusTransitions: {
     onBranchPush: "in-progress",

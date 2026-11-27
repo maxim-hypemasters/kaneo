@@ -7,6 +7,7 @@ import {
 
 describe("github config", () => {
   it("exposes the supported branch patterns", () => {
+    expect(branchPatterns).toContain("{type}/{slug}-{number}/{title}");
     expect(branchPatterns).toContain("{slug}-{number}");
     expect(branchPatterns).toContain("fix/{number}-{title}");
   });
@@ -16,7 +17,7 @@ describe("github config", () => {
       repositoryOwner: "usekaneo",
       repositoryName: "kaneo",
       installationId: 42,
-      branchPattern: "{slug}-{number}",
+      branchPattern: "{type}/{slug}-{number}/{title}",
       commentTaskLinkOnGitHubIssue: true,
       statusTransitions: {
         onBranchPush: "in-progress",

@@ -128,7 +128,7 @@ describe("agent runner protocol", () => {
     expect(claimed.context).toMatchObject({
       task: { ticketId: "HUB-7", title: "Login fails on Firefox" },
       project: { repository: "acme/app", instructions: "Run pnpm test." },
-      branchName: "hub-7",
+      branchName: "bugfix/hub-7/login-fails-on-firefox",
     });
     expect(claimed.context.resultSchema).toMatchObject({ type: "object" });
   });
@@ -221,7 +221,7 @@ describe("agent runner protocol", () => {
     const claimed = await ctx.claim(token, ["start"], true);
     expect(claimed!.run.kind).toBe("start");
     expect(claimed!.context).toMatchObject({
-      branchName: "hub-7",
+      branchName: "bugfix/hub-7/login-fails-on-firefox",
       resultSchema: null,
       planning: null,
     });
@@ -248,6 +248,69 @@ describe("agent runner protocol", () => {
       .where(eq(schema.externalLinkTable.taskId, ctx.task.id));
     expect(links).toMatchObject([{ url: prUrl, title: "Pull request #5" }]);
     expect(await ctx.taskStatus()).toBe("in-progress");
+  });
+
+  it("keeps the Start branch for Ship and Copy prompt after a title edit", async () => {
+    const ctx = await setupAgentWorkspace();
+    await ctx.enable();
+    const token = await ctx.createRunnerToken();
+    await ctx.claim(token, ["start"], true);
+    await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/start`);
+    const started = await ctx.claim(token, ["start"], true);
+    const branch = "bugfix/hub-7/login-fails-on-firefox";
+    expect(started!.context.branchName).toBe(branch);
+    await ctx.runCall(token, started!, "ship-result", {
+      prUrl: "https://github.com/acme/app/pull/5",
+      branch,
+      summary: "",
+    });
+
+    const renamed = await ctx.call(
+      ctx.member,
+      "PUT",
+      `/task/title/${ctx.task.id}`,
+      { title: "Login fails on Safari" },
+    );
+    expect(renamed.status).toBe(200);
+    expect((await ctx.getAgent()).ship.branchName).toBe(branch);
+    const prompt = await ctx.call(
+      ctx.member,
+      "GET",
+      `/agent/task/${ctx.task.id}/prompt`,
+    );
+    expect(((await prompt.json()) as { branchName: string }).branchName).toBe(
+      branch,
+    );
+
+    await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/assess`);
+    await ctx.assess(token, READY_ASSESSMENT);
+    const shipped = await ctx.call(
+      ctx.member,
+      "POST",
+      `/agent/task/${ctx.task.id}/ship`,
+    );
+    expect(shipped.status).toBe(200);
+    const claimed = await ctx.claim(token, ["ship"], true);
+    expect(claimed!.context.branchName).toBe(branch);
+  });
+
+  it("names the branch anew when the last one was an old-format name", async () => {
+    const ctx = await setupAgentWorkspace();
+    await db.insert(agentRunTable).values({
+      taskId: ctx.task.id,
+      kind: "start",
+      status: "succeeded",
+      inputHash: "old",
+      result: {
+        prUrl: "https://github.com/acme/app/pull/5",
+        branch: "hub-7",
+        summary: "",
+      },
+    });
+
+    expect((await ctx.getAgent()).ship.branchName).toBe(
+      "bugfix/hub-7/login-fails-on-firefox",
+    );
   });
 
   it("validates assessments so the runner can ask for a correction", async () => {

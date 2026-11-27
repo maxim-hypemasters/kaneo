@@ -64,7 +64,7 @@ Navigate to your GitHub repository and verify:
 
 Test branch-based workflow:
 1. Note your task number (e.g., `PROJ-123`)
-2. Create and push a branch matching the pattern (e.g., `proj-123`)
+2. Create and push a branch matching the pattern (e.g., `feature/proj-123/fix-login`)
 3. Verify the task moves to "in-progress"
 4. Open a PR from that branch
 5. Verify the task moves to "in-review". A draft PR is only linked; the task moves when you mark it ready for review
@@ -72,7 +72,7 @@ Test branch-based workflow:
 7. Verify the task moves to "done"
 
 <Info>
-Default branch pattern is `{slug}-{number}`. You can customize this in project settings.
+Default branch pattern is `{type}/{slug}-{number}/{title}`. You can customize this in project settings.
 </Info>
 </Step>
 
@@ -107,19 +107,26 @@ Test both directions:
 Configure how Kaneo matches branches to tasks in your project's GitHub integration settings:
 
 **Predefined Patterns:**
-- `{slug}-{number}` (default) - e.g., `proj-123`
+- `{type}/{slug}-{number}/{title}` (default) - e.g., `feature/proj-123/add-dark-mode` for a task and `bugfix/proj-124/login-button-does-nothing` for a bug
+- `{slug}-{number}` - e.g., `proj-123`
 - `{slug}-{number}-{title}` - e.g., `proj-123-fix-bug`
 - `{number}` - e.g., `123`
 - `{number}-{title}` - e.g., `123-fix-bug`
 - `feature/{slug}-{number}` - e.g., `feature/proj-123`
+- `feature/{number}-{title}` - e.g., `feature/123-fix-bug`
 - `fix/{slug}-{number}` - e.g., `fix/proj-123`
+- `fix/{number}-{title}` - e.g., `fix/123-fix-bug`
 
 **Custom Regex:**
 You can also provide a custom regex pattern for more complex matching.
 
 <Tip>
-The `{slug}` variable is your project's slug (case-insensitive), `{number}` is the task number, and `{title}` is an optional slug of the task title.
+The `{type}` variable is `bugfix` for a bug and `feature` for a task, `{slug}` is your project's slug (case-insensitive), `{number}` is the task number, and `{title}` is a slug of the task title: lowercase words joined by dashes, at most 50 characters. Only the ASCII letters a–z and digits are kept, so accented letters are dropped: `Café` becomes `caf`. Under the default pattern, a title with none of them is left out together with its `/`, as in `feature/proj-123`; a pattern with `-{title}` keeps the dash, as in `proj-123-`.
 </Tip>
+
+Under the default pattern, a branch matches with or without its title, so `feature/proj-123` and `feature/proj-123/fix-login` both link to `PROJ-123`, in any letter case. A pattern with `-{title}` needs the dash before the title: under `{slug}-{number}-{title}`, `proj-123-fix-bug` links and `proj-123` doesn't.
+
+Projects that still used the old default, `{slug}-{number}`, switch to the new default when Kaneo is upgraded; projects that chose another pattern keep it. Under the new default, branches named the old way, such as `proj-123`, no longer link by name. Their pull requests still link through a title such as `PROJ-123: Fix login`.
 
 ### Pull Request Task References
 

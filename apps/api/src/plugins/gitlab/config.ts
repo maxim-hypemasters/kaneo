@@ -1,7 +1,7 @@
 import * as v from "valibot";
 import { type SyncRules, syncRulesSchema } from "../sync/rules";
 import { privateDestinationsAllowed } from "../../utils/assert-public-destination";
-import { branchPatterns } from "../github/config";
+import { branchPatterns, TYPED_BRANCH_PATTERN } from "../github/config";
 
 export { branchPatterns };
 
@@ -53,7 +53,7 @@ export async function validateGitlabConfig(
 export const GITLAB_CLOUD_URL = "https://gitlab.com";
 
 export const defaultGitlabConfig: Partial<GitlabConfig> = {
-  branchPattern: "{slug}-{number}",
+  branchPattern: TYPED_BRANCH_PATTERN,
   commentTaskLinkOnGitlabIssue: true,
   statusTransitions: {
     onBranchPush: "in-progress",

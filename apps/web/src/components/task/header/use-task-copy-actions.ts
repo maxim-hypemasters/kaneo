@@ -7,6 +7,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useTaskAgent } from "@/hooks/queries/agent/use-task-agent";
+import useGetConfig from "@/hooks/queries/config/use-get-config";
 import useGetGiteaIntegration from "@/hooks/queries/gitea-integration/use-get-gitea-integration";
 import useGetGithubIntegration from "@/hooks/queries/github-integration/use-get-github-integration";
 import useGetGitlabIntegration from "@/hooks/queries/gitlab-integration/use-get-gitlab-integration";
@@ -44,6 +46,11 @@ export function useTaskCopyActions({
   // Only once the item is known to be a Task/Bug, so a Feature still
   // loading never flashes the branch action.
   const canCopyBranch = task !== undefined && !isFeature;
+  const { data: config } = useGetConfig();
+  // Shares the cache the AI agent section fills.
+  const { data: agent } = useTaskAgent(taskId, {
+    enabled: canCopyBranch && config?.hasAiAgent === true,
+  });
 
   const copy = async (text: string, message: string, icon: LucideIcon) => {
     if (!text) return;
@@ -88,10 +95,23 @@ export function useTaskCopyActions({
       void copy(generateLink(path), labels.linkCopied, LinkIcon);
     },
     copyBranch: () => {
+      // Once the agent has run on the task, copy the branch Start and Ship
+      // push to, which keeps its name after the title changes.
+      const agentBranch =
+        agent?.enabled && (agent.ship.activeRun || agent.ship.lastRun)
+          ? agent.ship.branchName
+          : null;
       const pattern =
         github?.branchPattern || gitea?.branchPattern || gitlab?.branchPattern;
       void copy(
-        generateBranchName(pattern, project?.slug, task?.number, task?.title),
+        agentBranch ??
+          generateBranchName(
+            pattern,
+            project?.slug,
+            task?.number,
+            task?.title,
+            task?.type,
+          ),
         t("tasks:properties.taskBranchCopied"),
         GitBranchIcon,
       );

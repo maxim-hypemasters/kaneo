@@ -138,7 +138,7 @@ describe("AI agent on a task", () => {
     expect(agent.ship).toMatchObject({
       canShip: false,
       blockers: ["open_questions"],
-      branchName: "hub-7",
+      branchName: "bugfix/hub-7/login-fails-on-firefox",
     });
 
     const questionId = agent.assessment!.questions[0]!.id;
@@ -661,9 +661,9 @@ describe("Start, Ship and the workflow", () => {
       prompt: string;
       branchName: string;
     };
-    expect(branchName).toBe("hub-7");
+    expect(branchName).toBe("bugfix/hub-7/login-fails-on-firefox");
     expect(prompt).toContain("Login fails on Firefox");
-    expect(prompt).toContain("branch hub-7");
+    expect(prompt).toContain("branch bugfix/hub-7/login-fails-on-firefox:");
     expect(prompt).toContain('"HUB-7: Login fails on Firefox"');
     // Project instructions are for people who may read the agent settings.
     expect(prompt).not.toContain("Run pnpm test.");

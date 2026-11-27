@@ -1,7 +1,11 @@
 import * as v from "valibot";
 import { type SyncRules, syncRulesSchema } from "../sync/rules";
 
+// {type} is "bugfix" for a bug and "feature" for anything else.
+export const TYPED_BRANCH_PATTERN = "{type}/{slug}-{number}/{title}";
+
 export const branchPatterns = [
+  TYPED_BRANCH_PATTERN,
   "{slug}-{number}",
   "{slug}-{number}-{title}",
   "{number}",
@@ -59,7 +63,7 @@ export async function validateGitHubConfig(
 }
 
 export const defaultGitHubConfig: Partial<GitHubConfig> = {
-  branchPattern: "{slug}-{number}",
+  branchPattern: TYPED_BRANCH_PATTERN,
   commentTaskLinkOnGitHubIssue: true,
   statusTransitions: {
     onBranchPush: "in-progress",

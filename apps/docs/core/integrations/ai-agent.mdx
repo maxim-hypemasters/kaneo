@@ -78,7 +78,7 @@ Kaneo moves the task back only if it's still in In Progress; if someone moved it
 
 **Start task** moves the task to In Progress at any readiness. When the project has a repository and the runner can open pull requests, it also queues a start run, and no model is involved:
 
-1. The runner creates the task's branch (`{slug}-{number}` by default) from the base branch, or uses the branch if it exists.
+1. The runner creates the task's branch from the base branch, or uses the branch if it exists. By default it's `feature/{slug}-{number}/{title}` for a task and `bugfix/{slug}-{number}/{title}` for a bug, such as `bugfix/proj-7/login-button-does-nothing`.
 2. When the branch has no commits of its own, the runner adds one empty commit, authored with its git identity (`GIT_AUTHOR_NAME` and `GIT_AUTHOR_EMAIL`), and pushes it. A branch that already has work is left as it is.
 3. It opens a draft pull request against the base branch, titled `{ticket}: {title}`, and Kaneo comments on the task with the link. An open pull request on the branch is reused.
 
@@ -90,9 +90,9 @@ A start run that fails leaves the task in In Progress. When GitHub refuses the d
 
 **Ship with AI** opens a dialog with the repository, the base branch and the branch Hermes will work on. Confirming queues the work and moves the task to In Progress.
 
-Hermes implements the task on the branch the GitHub integration expects (`{slug}-{number}` by default), runs the tests the repository documents, and commits. The runner then pushes and opens the pull request, and Hermes comments on the task with the link. If Hermes needs a decision, it stops, its questions appear on the task, and a task that Ship moved goes back to To Do. If its session ends any other way before its final answer, the runner pushes nothing and the run fails.
+Hermes implements the task on the branch the GitHub integration expects (`feature/…` for a task and `bugfix/…` for a bug by default; see [Branch Naming Patterns](/core/integrations/github/configuration#branch-naming-patterns)), runs the tests the repository documents, and commits. The runner then pushes and opens the pull request, and Hermes comments on the task with the link. If Hermes needs a decision, it stops, its questions appear on the task, and a task that Ship moved goes back to To Do. If its session ends any other way before its final answer, the runner pushes nothing and the run fails.
 
-A later Ship of the same task continues the same branch and pull request. After a Start, Ship continues the branch Start pushed: once Hermes's work is pushed, the runner marks the draft pull request ready for review and replaces Start's placeholder description with Hermes's summary, keeping anything people added to the description. It does this only for a draft that Start opened; a draft someone else opened stays a draft. Start's empty commit doesn't count as work: when Hermes adds nothing on top of it, the run fails as having no changes, and nothing is pushed.
+A later Ship of the same task continues the same branch and pull request, even after the task's title changes, as long as the branch still matches the project's branch pattern. After a Start, Ship continues the branch Start pushed: once Hermes's work is pushed, the runner marks the draft pull request ready for review and replaces Start's placeholder description with Hermes's summary, keeping anything people added to the description. It does this only for a draft that Start opened; a draft someone else opened stays a draft. Start's empty commit doesn't count as work: when Hermes adds nothing on top of it, the run fails as having no changes, and nothing is pushed.
 
 ### Copy prompt
 
