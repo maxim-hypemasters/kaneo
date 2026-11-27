@@ -3,13 +3,10 @@ import { publishEvent } from "../../../events";
 import type { GitHubConfig } from "../config";
 import { createExternalLink, findExternalLink } from "../services/link-manager";
 import { resolvePullRequestTask } from "../services/resolve-pull-request-task";
-import {
-  findAllIntegrationsByRepo,
-  updateTaskStatus,
-} from "../services/task-service";
-import { resolveTargetStatus } from "../utils/resolve-column";
+import { applyPrOpenedStatus } from "../services/apply-pr-opened-status";
+import { findAllIntegrationsByRepo } from "../services/task-service";
 
-type PROpenedPayload = {
+export type PROpenedPayload = {
   action: string;
   pull_request: {
     number: number;
@@ -116,37 +113,16 @@ export async function handlePullRequestOpened(payload: PROpenedPayload) {
         }),
       );
 
-      const targetStatus = await resolveTargetStatus(
-        integration.projectId,
-        "pr_opened",
-        config.statusTransitions?.onPROpen || "in-review",
-        database,
-      );
+      // A draft only links; marking it ready for review applies the PR-opened rule.
+      if (pull_request.draft) return;
 
-      if (currentTask.status !== targetStatus) {
-        const statusResult = await updateTaskStatus(
-          task.id,
-          targetStatus,
-          database,
-        );
-        if (
-          statusResult.applied &&
-          statusResult.before.status !== statusResult.after.status
-        ) {
-          afterCommit(() =>
-            publishEvent("task.status_changed", {
-              taskId: statusResult.after.id,
-              projectId: statusResult.after.projectId,
-              userId: null,
-              oldStatus: statusResult.before.status,
-              newStatus: statusResult.after.status,
-              title: statusResult.after.title,
-              assigneeId: statusResult.after.userId,
-              type: "status_changed",
-            }),
-          );
-        }
-      }
+      await applyPrOpenedStatus({
+        projectId: integration.projectId,
+        task: currentTask,
+        config,
+        database,
+        afterCommit,
+      });
     },
   );
 }

@@ -8,6 +8,7 @@ import { FeatureBreadcrumb } from "./features/feature-breadcrumb";
 import { TaskActivity } from "./task-activity";
 import TaskDescription from "./task-description";
 import { TaskRelatedContent } from "./task-related-content";
+import { SectionHeader } from "./sections/section-header";
 import { FeatureWorkspace } from "./features/workspace/feature-workspace";
 import TaskTitle from "./task-title";
 import { TriageBanner } from "./triage-banner";
@@ -74,6 +75,7 @@ export default function TaskDetailsContent({
       ) : (
         <>
           <AiAgentSection key={taskId} task={task} />
+          <SectionHeader title={t("common:documentEditor.description")} />
           <TaskDescription taskId={taskId} />
           {task && (
             <div className="mt-6">

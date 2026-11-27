@@ -37,7 +37,7 @@ export function ReadinessMeter({
     />
   ));
 
-  // Without a score a meter would read as 0%; the bar's text says it was
+  // Without a score a meter would read as 0%; the card's title says it was
   // not checked yet.
   if (score === null) {
     return (

@@ -1950,7 +1950,9 @@
 					"neverConnectedDescription": "No runner has connected with this token yet.",
 					"token": "Token",
 					"version": "Version",
-					"lastSeen": "Last seen"
+					"lastSeen": "Last seen",
+					"canPush": "Can open pull requests.",
+					"cannotPush": "Can't open pull requests: the runner has no GitHub credentials, so Start only moves tasks."
 				},
 				"token": {
 					"sectionTitle": "Token",
@@ -1983,7 +1985,7 @@
 			},
 			"project": {
 				"enabledTitle": "Use Hermes in this project",
-				"enabledDescription": "Check tasks and bugs for AI readiness, and let people ship ready ones to Hermes.",
+				"enabledDescription": "Check task readiness for tasks and bugs, and let people start them or ship ready ones to Hermes.",
 				"autoAssessTitle": "Check readiness automatically",
 				"autoAssessDescription": "Check a task again shortly after someone creates or edits it.",
 				"repositoryLabel": "Repository",
@@ -2099,7 +2101,7 @@
 			"gitlabSectionTitle": "GitLab Integration",
 			"gitlabSectionSubtitle": "Synchronize tasks with GitLab.com or a self-managed instance.",
 			"aiAgentSectionTitle": "AI agent (Hermes)",
-			"aiAgentSectionSubtitle": "Check tasks for AI readiness, and let Hermes implement them and open pull requests.",
+			"aiAgentSectionSubtitle": "Check task readiness, and let Hermes implement tasks and open pull requests.",
 			"discordSectionTitle": "Discord Integration",
 			"discordSectionSubtitle": "Send project task updates into a Discord channel with a webhook.",
 			"genericWebhookSectionTitle": "Webhooks",
@@ -2524,7 +2526,7 @@
 			"toastError": "Failed to update rule",
 			"events": {
 				"branch_push": "Branch pushed",
-				"pr_opened": "Pull request opened",
+				"pr_opened": "Pull request opened or ready for review",
 				"pr_merged": "Pull request merged",
 				"issue_opened": "Issue opened",
 				"issue_closed": "Issue closed"
@@ -4711,37 +4713,29 @@
 		},
 		"aiAgent": {
 			"sectionLabel": "AI agent",
-			"readinessTitle": "AI readiness",
-			"readiness": "AI readiness {{score}}%",
-			"meterLabel": "AI readiness score",
+			"readinessTitle": "Task readiness",
+			"readiness": "Task readiness {{score}}%",
+			"meterLabel": "Task readiness score",
 			"notAssessed": "Not checked yet",
 			"assessing": "Assessing…",
 			"assessScheduled": "Check starts shortly",
 			"outdated": "Outdated",
 			"checkAgain": "Check again",
 			"checkNow": "Check now",
-			"details": "Details",
-			"questionCount_one": "{{count}} question",
-			"questionCount_other": "{{count}} questions",
-			"ship": "Ship",
+			"ship": "Ship with AI",
+			"startTask": "Start task",
+			"copyPrompt": "Copy prompt",
+			"shipMenuLabel": "More ways to start",
 			"runnerOffline": "The runner is offline. Work starts when it reconnects.",
 			"runnerMissing": "No runner is set up for this workspace, so Hermes can't check or ship tasks.",
 			"runnerMissingLink": "Set up the runner",
 			"runnerMissingAskAdmin": "Ask a workspace admin to set one up.",
 			"checkFailed": "The last check failed: {{reason}}",
-			"panelLabel": "AI readiness details",
 			"unknownError": "unknown error",
-			"summaryTitle": "Hermes' summary",
 			"verdict": {
 				"notReady": "Not ready",
 				"needsClarification": "Needs clarification",
 				"ready": "Ready for AI"
-			},
-			"checklist": {
-				"title": "Checklist",
-				"met": "Met",
-				"partial": "Partial",
-				"missing": "Missing"
 			},
 			"questions": {
 				"title": "Open questions",
@@ -4754,10 +4748,32 @@
 				"submit": "Submit answers"
 			},
 			"suggestions": {
-				"title": "Suggested additions",
+				"title": "Suggestions",
 				"apply": "Add to description",
+				"applyField": "Apply",
+				"applyLabel": "Apply \"{{title}}\"",
 				"dismiss": "Dismiss",
-				"dismissLabel": "Dismiss \"{{title}}\""
+				"dismissLabel": "Dismiss \"{{title}}\"",
+				"assignee": "Assign to {{name}}",
+				"priority": "Set priority: {{priority}}",
+				"feature": "Feature: {{feature}}",
+				"featureWithMilestone": "Feature: {{feature}} › {{milestone}}",
+				"milestone": "Milestone: {{milestone}}",
+				"release": "Release: {{release}}",
+				"estimate": "Estimate {{estimate}}",
+				"estimatePlanned": "Planned {{start}} – {{due}} for {{name}}",
+				"estimateAssigns": "Assigns {{name}}, planned {{start}} – {{due}}",
+				"estimateKeepsDates": "Keeps the task's current dates",
+				"estimateOnly": "Sets the estimate only, no dates",
+				"testCases_one": "Create {{count}} test case",
+				"testCases_other": "Create {{count}} test cases",
+				"testCasesBug_one": "Create {{count}} test case for this bug",
+				"testCasesBug_other": "Create {{count}} test cases for this bug",
+				"testCasesMilestone_one": "Create {{count}} test case in {{milestone}}",
+				"testCasesMilestone_other": "Create {{count}} test cases in {{milestone}}",
+				"showTestCases": "Show test cases",
+				"steps": "Steps",
+				"expectedResult": "Expected result"
 			},
 			"decisions": {
 				"title": "Decisions ({{count}})",
@@ -4769,20 +4785,27 @@
 				"noRepository": "Set a repository in the project's AI agent settings.",
 				"runnerMissing": "Set up a runner in workspace settings.",
 				"archived": "Archived tasks can't be shipped.",
+				"inTriage": "Accept this task from Triage first.",
 				"notAssessed": "Hermes hasn't checked this task yet.",
 				"assessmentOutdated": "The task changed since the last check.",
 				"openQuestions": "Answer the blocking questions.",
 				"notReady": "The readiness score is below the project's threshold.",
-				"shipInProgress": "Hermes is already working on this task."
+				"shipInProgress": "A run is already in progress for this task."
 			},
 			"shipDialog": {
-				"title": "Ship to Hermes?",
-				"description": "Hermes works from the task text and the decisions answered here, then opens a pull request for review.",
+				"title": "Ship with AI?",
+				"description": "Hermes works from the task text and the decisions answered here, then opens a pull request for review. The task moves to In Progress.",
 				"repository": "Repository",
 				"baseBranch": "Base branch",
 				"newBranch": "New branch",
-				"confirm": "Ship",
+				"confirm": "Ship with AI",
 				"pending": "Shipping…"
+			},
+			"copyPromptDialog": {
+				"title": "Copy the prompt",
+				"description": "Your browser didn't allow copying. Copy the prompt below and paste it into your coding agent.",
+				"label": "Prompt",
+				"moveToInProgress": "Move to {{status}}"
 			},
 			"run": {
 				"queued": "Queued for Hermes…",
@@ -4794,20 +4817,45 @@
 				"viewPullRequest": "View pull request",
 				"failed": "Hermes couldn't finish this task.",
 				"failedFallback": "The run stopped without an error message.",
-				"cancelled": "Hermes stopped before finishing, as requested."
+				"cancelled": "Hermes stopped before finishing, as requested.",
+				"startQueued": "Waiting for the runner to open a draft pull request…",
+				"starting": "Opening a draft pull request…",
+				"startSucceeded": "The runner opened a draft pull request.",
+				"startFailed": "The runner couldn't open a draft pull request.",
+				"startCancelled": "Stopped before the draft pull request opened."
 			},
 			"toast": {
 				"applied": "Added to the description",
-				"shipped": "Sent to Hermes"
+				"appliedField": {
+					"assignee": "Assignee set",
+					"priority": "Priority set",
+					"feature": "Added to the feature",
+					"milestone": "Added to the milestone",
+					"release": "Added to the release",
+					"estimate": "Estimate set",
+					"estimateWithDates": "Estimate and dates set",
+					"estimateWithAssignee": "Assigned, with an estimate and dates",
+					"testCases": "Test cases created"
+				},
+				"shipped": "Sent to Hermes",
+				"started": "Task started",
+				"startedWithPullRequest": "Task started. A draft pull request opens shortly.",
+				"startedNoRunner": "Task started. No runner is set up, so no draft pull request opens.",
+				"startedNoPush": "Task started. The runner has no GitHub credentials, so no draft pull request opens.",
+				"promptCopied": "Prompt copied. The task is in progress."
 			},
 			"errors": {
 				"assess": "Couldn't ask Hermes to check this task",
 				"answers": "Couldn't save your answers",
-				"apply": "Couldn't add the suggestion to the description",
+				"apply": "Couldn't apply the suggestion",
+				"suggestionOutdated": "The task changed, so this suggestion no longer fits",
 				"dismiss": "Couldn't dismiss the suggestion",
 				"ship": "Couldn't send the task to Hermes",
 				"notShippable": "This task isn't ready for Hermes anymore",
-				"cancel": "Couldn't stop Hermes"
+				"cancel": "Couldn't stop Hermes",
+				"start": "Couldn't start the task",
+				"notStartable": "This task can't be started right now",
+				"copyPrompt": "Couldn't load the prompt"
 			}
 		}
 	},

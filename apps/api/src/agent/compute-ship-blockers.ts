@@ -5,6 +5,7 @@ export const SHIP_BLOCKERS = [
   "no_repository",
   "runner_missing",
   "archived",
+  "in_triage",
   "not_assessed",
   "assessment_outdated",
   "open_questions",
@@ -19,6 +20,7 @@ export function computeShipBlockers(input: {
   repository: string | null;
   hasRunner: boolean;
   archived: boolean;
+  inTriage: boolean;
   assessment: {
     verdict: ReadinessVerdict;
     questions: ReadonlyArray<Pick<ReadinessQuestion, "blocking">>;
@@ -32,6 +34,7 @@ export function computeShipBlockers(input: {
   if (!input.repository) blockers.push("no_repository");
   if (!input.hasRunner) blockers.push("runner_missing");
   if (input.archived) blockers.push("archived");
+  if (input.inTriage) blockers.push("in_triage");
   const { assessment } = input;
   if (!assessment) blockers.push("not_assessed");
   else {

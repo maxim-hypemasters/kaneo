@@ -1,13 +1,31 @@
 import type { RunContext } from "../kaneo/client";
+import type { BranchState } from "../repo/branch-state";
 import { taskBrief } from "../task-brief";
+
+function branchSentence(
+  branch: string,
+  baseBranch: string,
+  state: BranchState,
+) {
+  switch (state) {
+    case "continued":
+      return `It continues the existing branch ${branch}, which already has earlier work on this task; build on it.`;
+    case "empty":
+      return `It is on the branch ${branch}, started from ${baseBranch}, with no work on it yet.`;
+    case "new":
+      return `It is on a new branch ${branch} from ${baseBranch}.`;
+  }
+}
 
 export function buildShipPrompt(
   context: RunContext,
-  options: { branch: string; continued: boolean },
+  options: { branch: string; branchState: BranchState },
 ): string {
-  const start = options.continued
-    ? `It continues the existing branch ${options.branch}, which already has earlier work on this task; build on it.`
-    : `It is on a new branch ${options.branch} from ${context.project.baseBranch}.`;
+  const start = branchSentence(
+    options.branch,
+    context.project.baseBranch,
+    options.branchState,
+  );
   return `You are Hermes, working autonomously on ${context.task.ticketId} in the ${context.project.repository} repository, which is checked out in the current directory. ${start}
 
 ${taskBrief(context)}

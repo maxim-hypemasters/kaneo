@@ -1,3 +1,4 @@
+import { requireEntitlement } from "../billing/require-entitlement-middleware";
 import {
   apiRouter,
   type BaseVariables,
@@ -7,13 +8,18 @@ import {
 } from "../openapi";
 import { requireUserSession } from "../utils/require-user-session";
 import { requireWorkItemPermission } from "../utils/require-work-item-permission";
-import { requireWorkspacePermission } from "../utils/require-workspace-permission";
+import {
+  hasWorkspacePermission,
+  requireWorkspacePermission,
+  workspacePermissionChecker,
+} from "../utils/require-workspace-permission";
 import { workspaceAccess } from "../utils/workspace-access-middleware";
 import { applySuggestion } from "./controllers/apply-suggestion";
 import { cancelShip } from "./controllers/cancel-ship";
 import { dismissSuggestion } from "./controllers/dismiss-suggestion";
 import { getProjectAgentSettings } from "./controllers/get-project-agent-settings";
 import { getTaskAgent } from "./controllers/get-task-agent";
+import { getTaskPrompt } from "./controllers/get-task-prompt";
 import {
   loadWorkspaceRunner,
   toRunnerStatus,
@@ -23,18 +29,23 @@ import { revokeRunner } from "./controllers/revoke-runner";
 import { rotateRunnerToken } from "./controllers/rotate-runner-token";
 import { saveProjectAgentSettings } from "./controllers/save-project-agent-settings";
 import { shipTask } from "./controllers/ship-task";
+import { startTask } from "./controllers/start-task";
 import { submitAnswers } from "./controllers/submit-answers";
 import { requireAgentEnabled } from "./middleware/require-agent-enabled";
 import {
   agentRunnerStatusSchema,
   agentRunnerTokenSchema,
+  appliedSuggestionSchema,
   okSchema,
   projectAgentSettingsSchema,
+  startTaskResultSchema,
+  taskAgentPromptSchema,
   taskAgentSchema,
 } from "./response";
 import {
   projectAgentSettingsBody,
   projectIdParam,
+  startTaskBody,
   submitAnswersBody,
   suggestionParam,
   taskIdParam,
@@ -55,6 +66,9 @@ const editTask = [
   workspaceAccess.fromTaskId("taskId"),
   requireWorkItemPermission("update"),
 ] as const;
+// Writes to the task itself, such as its status or fields, need a workspace
+// with an active plan, as the task routes do.
+const changeTask = [...editTask, requireEntitlement] as const;
 const manageProject = [
   requireAgentEnabled,
   workspaceAccess.fromProjectId("projectId"),
@@ -82,6 +96,10 @@ const editErrors = {
   ...taskErrors,
   409: errorResponse("AI_AGENT_NOT_ENABLED for the task's project"),
 };
+const changeErrors = {
+  ...editErrors,
+  402: errorResponse("Workspace plan has expired"),
+};
 const ok = { 200: jsonResponse("Done", okSchema) };
 
 const agent = apiRouter<BaseVariables & { workspaceId: string }>()
@@ -93,7 +111,7 @@ const agent = apiRouter<BaseVariables & { workspaceId: string }>()
       tags,
       summary: "Get a task's AI readiness",
       description:
-        "The latest readiness assessment, open questions and suggestions, answered decisions, and the state of Ship for a task or bug.",
+        "The latest readiness assessment, open questions and suggestions, answered decisions, the project's To Do and In Progress columns, and the state of Start and Ship for a task or bug.",
       middleware: [...readTask],
       request: { params: taskIdParam },
       responses: {
@@ -101,7 +119,14 @@ const agent = apiRouter<BaseVariables & { workspaceId: string }>()
         ...taskErrors,
       },
     }),
-    async (c) => c.json(await getTaskAgent(c.req.valid("param").taskId), 200),
+    async (c) =>
+      c.json(
+        await getTaskAgent(
+          c.req.valid("param").taskId,
+          await workspacePermissionChecker(c),
+        ),
+        200,
+      ),
   )
   .openapi(
     createRoute({
@@ -155,26 +180,37 @@ const agent = apiRouter<BaseVariables & { workspaceId: string }>()
       operationId: "applyTaskAgentSuggestion",
       path: "/task/{taskId}/suggestions/{suggestionId}/apply",
       tags,
-      summary: "Add a suggestion to the description",
+      summary: "Apply a suggestion",
       description:
-        "Appends the suggestion's Markdown to the task description as an ordinary edit by the caller.",
-      middleware: [...editTask],
+        "Applies the suggestion as an ordinary edit by the caller: appends a description suggestion to the description, sets the suggested field, or creates the suggested test cases. An estimate also sets the planned start and due dates when the task has none, assigning the suggested person first when the dates were planned for them and the caller has task:assign. The suggestion is checked against the task as it is now; a field set meanwhile is not overwritten.",
+      middleware: [...changeTask],
       request: { params: suggestionParam },
       responses: {
-        ...ok,
-        ...editErrors,
+        200: jsonResponse("What Apply changed", appliedSuggestionSchema),
+        ...changeErrors,
+        400: errorResponse(
+          "AI_AGENT_NOT_WORK_ITEM for a feature, or a value the task refuses",
+        ),
+        403: errorResponse(
+          "No access to the task, or missing permission: task:assign for an assignee, test_case:create with bug:read or milestone:read for test cases",
+        ),
         404: errorResponse(
           "Task not found, AI_AGENT_SUGGESTION_NOT_FOUND, or AI_AGENT_DISABLED",
         ),
         409: errorResponse(
-          "AI_AGENT_NOT_ENABLED, DESCRIPTION_CONFLICT when the description changed since it was read, or the task moved to another project or workspace meanwhile",
+          "AI_AGENT_NOT_ENABLED; AI_AGENT_SUGGESTION_OUTDATED when the field was set or what the suggestion points at changed; DESCRIPTION_CONFLICT when the description changed since it was read; TASK_ASSIGNEE_AWAY when the dates fall on a day the assignee is away; or the task moved to another project or workspace meanwhile",
         ),
       },
     }),
     async (c) => {
       const { taskId, suggestionId } = c.req.valid("param");
-      await applySuggestion(taskId, suggestionId, c.get("userId"));
-      return c.json({ ok: true as const }, 200);
+      const applied = await applySuggestion(
+        taskId,
+        suggestionId,
+        c.get("userId"),
+        await workspacePermissionChecker(c),
+      );
+      return c.json({ ok: true as const, ...applied }, 200);
     },
   )
   .openapi(
@@ -184,6 +220,8 @@ const agent = apiRouter<BaseVariables & { workspaceId: string }>()
       path: "/task/{taskId}/suggestions/{suggestionId}",
       tags,
       summary: "Dismiss a suggestion",
+      description:
+        "Removes the suggestion. For a field suggestion, or test cases, later readiness checks don't suggest that field again for this task.",
       middleware: [...editTask],
       request: { params: suggestionParam },
       responses: {
@@ -208,13 +246,15 @@ const agent = apiRouter<BaseVariables & { workspaceId: string }>()
       tags,
       summary: "Ship the task to the AI agent",
       description:
-        "Queues the agent to implement the task in the project's repository and open a pull request. Refused with AI_AGENT_NOT_SHIPPABLE, listing the blockers in issues, unless the current assessment is ready.",
-      middleware: [...editTask],
+        "Queues the agent to implement the task in the project's repository and open a pull request, and moves the task from To Do to In Progress. Refused with AI_AGENT_NOT_SHIPPABLE, listing the blockers in issues, unless the current assessment is ready and the task is out of Triage.",
+      middleware: [...changeTask],
       request: { params: taskIdParam },
       responses: {
         ...ok,
-        ...editErrors,
-        409: errorResponse("AI_AGENT_NOT_ENABLED or AI_AGENT_NOT_SHIPPABLE"),
+        ...changeErrors,
+        409: errorResponse(
+          "AI_AGENT_NOT_ENABLED, AI_AGENT_NOT_SHIPPABLE, or TASK_STATUS_CONFLICT when the task's status changed while it was moved",
+        ),
       },
     }),
     async (c) => {
@@ -225,12 +265,78 @@ const agent = apiRouter<BaseVariables & { workspaceId: string }>()
   .openapi(
     createRoute({
       method: "post",
+      operationId: "startTask",
+      path: "/task/{taskId}/start",
+      tags,
+      summary: "Start work on the task",
+      description:
+        "Moves the task from To Do to In Progress at any readiness. When the project has a repository and the runner can push, the runner also opens a draft pull request on the task's branch; no model is involved. Refused with AI_AGENT_NOT_STARTABLE, listing the blockers in issues, for archived work, work in Triage, or while a Ship or Start is active.",
+      middleware: [...changeTask],
+      request: {
+        params: taskIdParam,
+        body: {
+          required: false,
+          content: { "application/json": { schema: startTaskBody } },
+        },
+      },
+      responses: {
+        200: jsonResponse("What Start did", startTaskResultSchema),
+        ...changeErrors,
+        400: errorResponse(
+          "Invalid body, or AI_AGENT_NOT_WORK_ITEM for a feature",
+        ),
+        409: errorResponse(
+          "AI_AGENT_NOT_ENABLED, AI_AGENT_NOT_STARTABLE, or TASK_STATUS_CONFLICT when the task's status changed while it was moved",
+        ),
+      },
+    }),
+    async (c) =>
+      c.json(
+        await startTask(c.req.valid("param").taskId, c.get("userId"), {
+          pullRequest: c.req.valid("json")?.pullRequest ?? true,
+        }),
+        200,
+      ),
+  )
+  .openapi(
+    createRoute({
+      method: "get",
+      operationId: "getTaskAgentPrompt",
+      path: "/task/{taskId}/prompt",
+      tags,
+      summary: "Get a prompt for your own coding agent",
+      description:
+        "The task, its decisions, recent comments and related tasks as instructions for a coding agent of your choice, with the branch to work on. Project instructions are included only for callers with workspace:manage_settings.",
+      middleware: [...editTask],
+      request: { params: taskIdParam },
+      responses: {
+        200: jsonResponse("The prompt", taskAgentPromptSchema),
+        ...editErrors,
+      },
+    }),
+    async (c) => {
+      const includeInstructions = await hasWorkspacePermission(
+        c,
+        MANAGE_SETTINGS,
+      );
+      c.header("Cache-Control", "no-store");
+      return c.json(
+        await getTaskPrompt(c.req.valid("param").taskId, {
+          includeInstructions,
+        }),
+        200,
+      );
+    },
+  )
+  .openapi(
+    createRoute({
+      method: "post",
       operationId: "cancelTaskShip",
       path: "/task/{taskId}/cancel",
       tags,
       summary: "Stop the agent working on the task",
       description:
-        "Cancels a queued Ship, or a running one whose runner stopped reporting, at once. A live run is asked to stop and ends at the runner's next heartbeat.",
+        "Cancels a queued Ship or Start, or a running one whose runner stopped reporting, at once; a queued one that moved the task puts it back in To Do. A live run is asked to stop and ends at the runner's next heartbeat.",
       middleware: [...editTask],
       request: { params: taskIdParam },
       responses: {

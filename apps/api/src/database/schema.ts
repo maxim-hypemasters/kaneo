@@ -33,7 +33,6 @@ import type {
   AgentRunEventKind,
   AgentRunKind,
   AgentRunStatus,
-  ReadinessChecklistItem,
   ReadinessQuestion,
   ReadinessSuggestion,
   ReadinessVerdict,
@@ -2683,6 +2682,9 @@ export const workspaceAgentRunnerTable = pgTable("workspace_agent_runner", {
   tokenPrefix: text("token_prefix").notNull(),
   lastSeenAt: timestamp("last_seen_at", { mode: "date" }),
   runnerVersion: text("runner_version"),
+  // Whether the runner said at its last claim that it holds GitHub write
+  // credentials, so Start can open a draft pull request.
+  canPush: boolean("can_push").notNull().default(false),
   createdByUserId: text("created_by_user_id").references(() => userTable.id, {
     onDelete: "set null",
     onUpdate: "cascade",
@@ -2706,17 +2708,17 @@ export const taskAgentAssessmentTable = pgTable(
     runId: text("run_id"),
     score: integer("score").notNull(),
     verdict: text("verdict").$type<ReadinessVerdict>().notNull(),
-    summary: text("summary").notNull().default(""),
-    checklist: jsonb("checklist")
-      .$type<ReadinessChecklistItem[]>()
-      .notNull()
-      .default([]),
     questions: jsonb("questions")
       .$type<ReadinessQuestion[]>()
       .notNull()
       .default([]),
     suggestions: jsonb("suggestions")
       .$type<ReadinessSuggestion[]>()
+      .notNull()
+      .default([]),
+    // Field suggestion kinds people dismissed; later assessments skip them.
+    dismissedSuggestionKinds: jsonb("dismissed_suggestion_kinds")
+      .$type<string[]>()
       .notNull()
       .default([]),
     inputHash: text("input_hash").notNull(),
@@ -2795,6 +2797,9 @@ export const agentRunTable = pgTable(
     attempts: integer("attempts").notNull().default(0),
     leaseExpiresAt: timestamp("lease_expires_at", { mode: "date" }),
     cancelRequestedAt: timestamp("cancel_requested_at", { mode: "date" }),
+    // A work run that moved its task from To Do to In Progress; a run that
+    // never really started moves it back.
+    movedTask: boolean("moved_task").notNull().default(false),
     result: jsonb("result").$type<ShipResult>(),
     errorCode: text("error_code"),
     error: text("error"),
@@ -2810,12 +2815,16 @@ export const agentRunTable = pgTable(
     uniqueIndex("agent_run_queued_assess_uidx")
       .on(table.taskId)
       .where(sql`${table.kind} = 'assess' and ${table.status} = 'queued'`),
-    uniqueIndex("agent_run_active_ship_uidx")
+    // Ship and Start push to the same branch, so one runs at a time.
+    uniqueIndex("agent_run_active_work_uidx")
       .on(table.taskId)
       .where(
-        sql`${table.kind} = 'ship' and ${table.status} in ('queued', 'running')`,
+        sql`${table.kind} in ('ship', 'start') and ${table.status} in ('queued', 'running')`,
       ),
-    check("agent_run_kind_check", sql`${table.kind} in ('assess', 'ship')`),
+    check(
+      "agent_run_kind_check",
+      sql`${table.kind} in ('assess', 'ship', 'start')`,
+    ),
     check(
       "agent_run_status_check",
       sql`${table.status} in ('queued', 'running', 'succeeded', 'failed', 'cancelled')`,

@@ -1,4 +1,4 @@
-import { type FormEvent, useId, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import type { AgentQuestion } from "@/fetchers/agent/get-task-agent";
@@ -12,14 +12,14 @@ type ClarifyQuestionsProps = {
   canUpdate: boolean;
 };
 
-// All answered questions go in one request, so Hermes reassesses once.
+// All answered questions go in one request, so Hermes reassesses once. The
+// card around it carries the heading.
 export function ClarifyQuestions({
   taskId,
   questions,
   canUpdate,
 }: ClarifyQuestionsProps) {
   const { t } = useTranslation();
-  const headingId = useId();
   const [selections, setSelections] = useState<AnswerSelections>({});
   const { mutate, isPending } = useSubmitTaskAgentAnswers();
   const answers = buildAnswers(questions, selections);
@@ -53,37 +53,27 @@ export function ClarifyQuestions({
     />
   ));
 
+  if (!canUpdate) return <div className="space-y-2">{list}</div>;
+
   return (
-    <section aria-labelledby={headingId} className="space-y-2">
-      <h3
-        id={headingId}
-        className="font-medium text-muted-foreground text-xs uppercase tracking-wide"
-      >
-        {t("tasks:aiAgent.questions.title")}
-      </h3>
-      {canUpdate ? (
-        <form noValidate onSubmit={submit} className="space-y-2">
-          {list}
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <span className="text-muted-foreground text-xs tabular-nums">
-              {t("tasks:aiAgent.questions.answered", {
-                answered: answers.length,
-                total: questions.length,
-              })}
-            </span>
-            <Button
-              type="submit"
-              size="sm"
-              loading={isPending}
-              disabled={answers.length === 0}
-            >
-              {t("tasks:aiAgent.questions.submit")}
-            </Button>
-          </div>
-        </form>
-      ) : (
-        <div className="space-y-2">{list}</div>
-      )}
-    </section>
+    <form noValidate onSubmit={submit} className="space-y-2">
+      {list}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <span className="text-muted-foreground text-xs tabular-nums">
+          {t("tasks:aiAgent.questions.answered", {
+            answered: answers.length,
+            total: questions.length,
+          })}
+        </span>
+        <Button
+          type="submit"
+          size="sm"
+          loading={isPending}
+          disabled={answers.length === 0}
+        >
+          {t("tasks:aiAgent.questions.submit")}
+        </Button>
+      </div>
+    </form>
   );
 }

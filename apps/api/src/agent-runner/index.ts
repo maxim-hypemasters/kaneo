@@ -82,12 +82,11 @@ const agentRunner = apiRouter<Variables>()
       },
     }),
     async (c) => {
-      const { kinds, runnerVersion } = c.req.valid("json");
-      const claimed = await claimRun(
-        c.get("runnerWorkspaceId"),
-        kinds,
+      const { kinds, runnerVersion, canPush } = c.req.valid("json");
+      const claimed = await claimRun(c.get("runnerWorkspaceId"), kinds, {
         runnerVersion,
-      );
+        canPush: canPush ?? false,
+      });
       if (!claimed) return c.body(null, 204);
       return c.json(claimed, 200);
     },
@@ -189,6 +188,8 @@ const agentRunner = apiRouter<Variables>()
       tags,
       security,
       summary: "Report an opened pull request",
+      description:
+        "Finishes a ship run, or a start run that opened a draft pull request.",
       middleware: [...runner],
       request: {
         params: runIdParam,

@@ -2,9 +2,13 @@ import { describe, expect, it } from "vite-plus/test";
 import type { AgentRun, AgentRunEvent } from "@/fetchers/agent/get-task-agent";
 import { runAnnouncement } from "./run-announcement";
 
-function run(status: AgentRun["status"]): AgentRun {
+function run(
+  status: AgentRun["status"],
+  kind: AgentRun["kind"] = "ship",
+): AgentRun {
   return {
     id: "r1",
+    kind,
     status,
     requestedBy: null,
     cancelRequested: false,
@@ -55,5 +59,22 @@ describe("runAnnouncement", () => {
         runAnnouncement({ activeRun: null, lastRun: run(status), events: [] }),
       ).toEqual({ key: `tasks:aiAgent.run.${status}` });
     }
+  });
+
+  it("speaks of the draft pull request for a Start run", () => {
+    expect(
+      runAnnouncement({
+        activeRun: run("queued", "start"),
+        lastRun: null,
+        events: [],
+      }),
+    ).toEqual({ key: "tasks:aiAgent.run.startQueued" });
+    expect(
+      runAnnouncement({
+        activeRun: null,
+        lastRun: run("succeeded", "start"),
+        events: [],
+      }),
+    ).toEqual({ key: "tasks:aiAgent.run.startSucceeded" });
   });
 });

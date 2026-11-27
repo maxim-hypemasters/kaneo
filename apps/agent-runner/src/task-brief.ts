@@ -1,5 +1,9 @@
 import type { RunContext } from "./kaneo/client";
 
+// apps/api/src/agent/prompt/task-brief.ts is a port of this for the Copy
+// prompt, since the runner image builds only this package's source: the two
+// copies change together.
+
 const fence = (text: string) => `<<<\n${text.trim() || "(empty)"}\n>>>`;
 
 /** The task as both prompts present it: data, clearly delimited. */

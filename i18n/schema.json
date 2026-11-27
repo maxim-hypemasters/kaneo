@@ -7899,6 +7899,12 @@
 										},
 										"lastSeen": {
 											"type": "string"
+										},
+										"canPush": {
+											"type": "string"
+										},
+										"cannotPush": {
+											"type": "string"
 										}
 									},
 									"required": [
@@ -7912,7 +7918,9 @@
 										"neverConnectedDescription",
 										"token",
 										"version",
-										"lastSeen"
+										"lastSeen",
+										"canPush",
+										"cannotPush"
 									]
 								},
 								"token": {
@@ -19784,28 +19792,16 @@
 						"checkNow": {
 							"type": "string"
 						},
-						"details": {
-							"type": "string"
-						},
-						"questionCount_one": {
-							"type": "string"
-						},
-						"questionCount_zero": {
-							"type": "string"
-						},
-						"questionCount_two": {
-							"type": "string"
-						},
-						"questionCount_few": {
-							"type": "string"
-						},
-						"questionCount_many": {
-							"type": "string"
-						},
-						"questionCount_other": {
-							"type": "string"
-						},
 						"ship": {
+							"type": "string"
+						},
+						"startTask": {
+							"type": "string"
+						},
+						"copyPrompt": {
+							"type": "string"
+						},
+						"shipMenuLabel": {
 							"type": "string"
 						},
 						"runnerOffline": {
@@ -19823,13 +19819,7 @@
 						"checkFailed": {
 							"type": "string"
 						},
-						"panelLabel": {
-							"type": "string"
-						},
 						"unknownError": {
-							"type": "string"
-						},
-						"summaryTitle": {
 							"type": "string"
 						},
 						"verdict": {
@@ -19847,25 +19837,6 @@
 								}
 							},
 							"required": ["notReady", "needsClarification", "ready"]
-						},
-						"checklist": {
-							"type": "object",
-							"additionalProperties": false,
-							"properties": {
-								"title": {
-									"type": "string"
-								},
-								"met": {
-									"type": "string"
-								},
-								"partial": {
-									"type": "string"
-								},
-								"missing": {
-									"type": "string"
-								}
-							},
-							"required": ["title", "met", "partial", "missing"]
 						},
 						"questions": {
 							"type": "object",
@@ -19917,14 +19888,137 @@
 								"apply": {
 									"type": "string"
 								},
+								"applyField": {
+									"type": "string"
+								},
+								"applyLabel": {
+									"type": "string"
+								},
 								"dismiss": {
 									"type": "string"
 								},
 								"dismissLabel": {
 									"type": "string"
+								},
+								"assignee": {
+									"type": "string"
+								},
+								"priority": {
+									"type": "string"
+								},
+								"feature": {
+									"type": "string"
+								},
+								"featureWithMilestone": {
+									"type": "string"
+								},
+								"milestone": {
+									"type": "string"
+								},
+								"release": {
+									"type": "string"
+								},
+								"estimate": {
+									"type": "string"
+								},
+								"estimatePlanned": {
+									"type": "string"
+								},
+								"estimateAssigns": {
+									"type": "string"
+								},
+								"estimateKeepsDates": {
+									"type": "string"
+								},
+								"estimateOnly": {
+									"type": "string"
+								},
+								"testCases_one": {
+									"type": "string"
+								},
+								"testCases_zero": {
+									"type": "string"
+								},
+								"testCases_two": {
+									"type": "string"
+								},
+								"testCases_few": {
+									"type": "string"
+								},
+								"testCases_many": {
+									"type": "string"
+								},
+								"testCases_other": {
+									"type": "string"
+								},
+								"testCasesBug_one": {
+									"type": "string"
+								},
+								"testCasesBug_zero": {
+									"type": "string"
+								},
+								"testCasesBug_two": {
+									"type": "string"
+								},
+								"testCasesBug_few": {
+									"type": "string"
+								},
+								"testCasesBug_many": {
+									"type": "string"
+								},
+								"testCasesBug_other": {
+									"type": "string"
+								},
+								"testCasesMilestone_one": {
+									"type": "string"
+								},
+								"testCasesMilestone_zero": {
+									"type": "string"
+								},
+								"testCasesMilestone_two": {
+									"type": "string"
+								},
+								"testCasesMilestone_few": {
+									"type": "string"
+								},
+								"testCasesMilestone_many": {
+									"type": "string"
+								},
+								"testCasesMilestone_other": {
+									"type": "string"
+								},
+								"showTestCases": {
+									"type": "string"
+								},
+								"steps": {
+									"type": "string"
+								},
+								"expectedResult": {
+									"type": "string"
 								}
 							},
-							"required": ["title", "apply", "dismiss", "dismissLabel"]
+							"required": [
+								"title",
+								"apply",
+								"applyField",
+								"applyLabel",
+								"dismiss",
+								"dismissLabel",
+								"assignee",
+								"priority",
+								"feature",
+								"featureWithMilestone",
+								"milestone",
+								"release",
+								"estimate",
+								"estimatePlanned",
+								"estimateAssigns",
+								"estimateKeepsDates",
+								"estimateOnly",
+								"showTestCases",
+								"steps",
+								"expectedResult"
+							]
 						},
 						"decisions": {
 							"type": "object",
@@ -19976,6 +20070,9 @@
 								"archived": {
 									"type": "string"
 								},
+								"inTriage": {
+									"type": "string"
+								},
 								"notAssessed": {
 									"type": "string"
 								},
@@ -19998,6 +20095,7 @@
 								"noRepository",
 								"runnerMissing",
 								"archived",
+								"inTriage",
 								"notAssessed",
 								"assessmentOutdated",
 								"openQuestions",
@@ -20041,6 +20139,25 @@
 								"pending"
 							]
 						},
+						"copyPromptDialog": {
+							"type": "object",
+							"additionalProperties": false,
+							"properties": {
+								"title": {
+									"type": "string"
+								},
+								"description": {
+									"type": "string"
+								},
+								"label": {
+									"type": "string"
+								},
+								"moveToInProgress": {
+									"type": "string"
+								}
+							},
+							"required": ["title", "description", "label", "moveToInProgress"]
+						},
 						"run": {
 							"type": "object",
 							"additionalProperties": false,
@@ -20074,6 +20191,21 @@
 								},
 								"cancelled": {
 									"type": "string"
+								},
+								"startQueued": {
+									"type": "string"
+								},
+								"starting": {
+									"type": "string"
+								},
+								"startSucceeded": {
+									"type": "string"
+								},
+								"startFailed": {
+									"type": "string"
+								},
+								"startCancelled": {
+									"type": "string"
 								}
 							},
 							"required": [
@@ -20086,7 +20218,12 @@
 								"viewPullRequest",
 								"failed",
 								"failedFallback",
-								"cancelled"
+								"cancelled",
+								"startQueued",
+								"starting",
+								"startSucceeded",
+								"startFailed",
+								"startCancelled"
 							]
 						},
 						"toast": {
@@ -20096,11 +20233,79 @@
 								"applied": {
 									"type": "string"
 								},
+								"appliedField": {
+									"type": "object",
+									"additionalProperties": false,
+									"properties": {
+										"assignee": {
+											"type": "string"
+										},
+										"priority": {
+											"type": "string"
+										},
+										"feature": {
+											"type": "string"
+										},
+										"milestone": {
+											"type": "string"
+										},
+										"release": {
+											"type": "string"
+										},
+										"estimate": {
+											"type": "string"
+										},
+										"estimateWithDates": {
+											"type": "string"
+										},
+										"estimateWithAssignee": {
+											"type": "string"
+										},
+										"testCases": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"assignee",
+										"priority",
+										"feature",
+										"milestone",
+										"release",
+										"estimate",
+										"estimateWithDates",
+										"estimateWithAssignee",
+										"testCases"
+									]
+								},
 								"shipped": {
+									"type": "string"
+								},
+								"started": {
+									"type": "string"
+								},
+								"startedWithPullRequest": {
+									"type": "string"
+								},
+								"startedNoRunner": {
+									"type": "string"
+								},
+								"startedNoPush": {
+									"type": "string"
+								},
+								"promptCopied": {
 									"type": "string"
 								}
 							},
-							"required": ["applied", "shipped"]
+							"required": [
+								"applied",
+								"appliedField",
+								"shipped",
+								"started",
+								"startedWithPullRequest",
+								"startedNoRunner",
+								"startedNoPush",
+								"promptCopied"
+							]
 						},
 						"errors": {
 							"type": "object",
@@ -20115,6 +20320,9 @@
 								"apply": {
 									"type": "string"
 								},
+								"suggestionOutdated": {
+									"type": "string"
+								},
 								"dismiss": {
 									"type": "string"
 								},
@@ -20126,16 +20334,29 @@
 								},
 								"cancel": {
 									"type": "string"
+								},
+								"start": {
+									"type": "string"
+								},
+								"notStartable": {
+									"type": "string"
+								},
+								"copyPrompt": {
+									"type": "string"
 								}
 							},
 							"required": [
 								"assess",
 								"answers",
 								"apply",
+								"suggestionOutdated",
 								"dismiss",
 								"ship",
 								"notShippable",
-								"cancel"
+								"cancel",
+								"start",
+								"notStartable",
+								"copyPrompt"
 							]
 						}
 					},
@@ -20150,23 +20371,23 @@
 						"outdated",
 						"checkAgain",
 						"checkNow",
-						"details",
 						"ship",
+						"startTask",
+						"copyPrompt",
+						"shipMenuLabel",
 						"runnerOffline",
 						"runnerMissing",
 						"runnerMissingLink",
 						"runnerMissingAskAdmin",
 						"checkFailed",
-						"panelLabel",
 						"unknownError",
-						"summaryTitle",
 						"verdict",
-						"checklist",
 						"questions",
 						"suggestions",
 						"decisions",
 						"blockers",
 						"shipDialog",
+						"copyPromptDialog",
 						"run",
 						"toast",
 						"errors"

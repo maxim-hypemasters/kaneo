@@ -10,6 +10,7 @@ import {
 import db, { schema } from "../../apps/api/src/database";
 import { agentRunTable } from "../../apps/api/src/database/schema";
 import {
+  addPlanningCandidates,
   expectError,
   READY_ASSESSMENT,
   setupAgentWorkspace,
@@ -39,6 +40,7 @@ async function readyToShip() {
     `/agent/task/${ctx.task.id}/ship`,
   );
   expect(shipped.status).toBe(200);
+  expect(await ctx.taskStatus()).toBe("in-progress");
   return { ...ctx, token };
 }
 
@@ -171,6 +173,83 @@ describe("agent runner protocol", () => {
     expect(recovered.lastAssessFailure).toBeNull();
   });
 
+  it("accepts the retired summary and checklist from an older runner", async () => {
+    const ctx = await setupAgentWorkspace();
+    await ctx.enable();
+    const token = await ctx.createRunnerToken();
+    await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/assess`);
+    await ctx.assess(token, {
+      ...READY_ASSESSMENT,
+      summary: "Clear bug with repro steps.",
+      checklist: [{ key: "goal", label: "Goal", status: "met" }],
+    });
+    const { assessment } = await ctx.getAgent();
+    expect(assessment).toMatchObject({ score: 90, verdict: "ready" });
+    expect(assessment).not.toHaveProperty("summary");
+    expect(assessment).not.toHaveProperty("checklist");
+  });
+
+  it("stores whether the runner can push", async () => {
+    const ctx = await setupAgentWorkspace();
+    const token = await ctx.createRunnerToken();
+    const runner = async () =>
+      (await (
+        await ctx.call(
+          ctx.admin,
+          "GET",
+          `/agent/workspace/${ctx.workspace.id}/runner`,
+        )
+      ).json()) as { canPush: boolean };
+    expect((await runner()).canPush).toBe(false);
+    await ctx.claim(token, ["start"], true);
+    expect((await runner()).canPush).toBe(true);
+    // An older runner says nothing, so it can't take start runs.
+    await ctx.claim(token, ["assess"]);
+    expect((await runner()).canPush).toBe(false);
+  });
+
+  it("starts: a start run opens a draft pull request", async () => {
+    const ctx = await setupAgentWorkspace();
+    await ctx.enable();
+    const token = await ctx.createRunnerToken();
+    await ctx.claim(token, ["start"], true);
+    expect(
+      (await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/start`))
+        .status,
+    ).toBe(200);
+    expect(await ctx.claim(token, ["assess", "ship"], true)).toBeNull();
+    const claimed = await ctx.claim(token, ["start"], true);
+    expect(claimed!.run.kind).toBe("start");
+    expect(claimed!.context).toMatchObject({
+      branchName: "hub-7",
+      resultSchema: null,
+      planning: null,
+    });
+
+    const prUrl = "https://github.com/acme/app/pull/5";
+    const result = { prUrl, branch: "hub-7", summary: "" };
+    expect(
+      (await ctx.runCall(token, claimed!, "ship-result", result)).status,
+    ).toBe(200);
+    const agent = await ctx.getAgent();
+    expect(agent.ship.lastRun).toMatchObject({
+      kind: "start",
+      status: "succeeded",
+      result,
+    });
+    expect(agent.start.canStart).toBe(true);
+    const comments = await agentComments(ctx.task.id);
+    expect(comments.map((comment) => comment.content)).toEqual([
+      "Opened a draft [Pull request #5](https://github.com/acme/app/pull/5) from `hub-7`.",
+    ]);
+    const links = await db
+      .select()
+      .from(schema.externalLinkTable)
+      .where(eq(schema.externalLinkTable.taskId, ctx.task.id));
+    expect(links).toMatchObject([{ url: prUrl, title: "Pull request #5" }]);
+    expect(await ctx.taskStatus()).toBe("in-progress");
+  });
+
   it("validates assessments so the runner can ask for a correction", async () => {
     const ctx = await setupAgentWorkspace();
     await ctx.enable();
@@ -183,6 +262,110 @@ describe("agent runner protocol", () => {
     });
     expect(response.status).toBe(400);
     expect(JSON.stringify(await response.json())).toContain("score");
+  });
+
+  it("gives an assess run the planning candidates, with names but no emails", async () => {
+    const ctx = await setupAgentWorkspace();
+    await ctx.enable();
+    const token = await ctx.createRunnerToken();
+    const { feature, milestone, release } = await addPlanningCandidates(
+      ctx.project.id,
+      ctx.task.id,
+    );
+    await db.insert(schema.taskTable).values({
+      projectId: ctx.project.id,
+      title: "Open work",
+      userId: ctx.admin.id,
+      number: 8,
+    });
+    // Work in another project is not counted: its readers may differ.
+    const { project: otherProject } = await createProjectFixture({
+      workspaceId: ctx.workspace.id,
+      name: "Elsewhere",
+    });
+    await db.insert(schema.taskTable).values({
+      projectId: otherProject.id,
+      title: "Hidden work",
+      userId: ctx.admin.id,
+      number: 1,
+    });
+    await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/assess`);
+    const claimed = await ctx.claim(token, ["assess"]);
+    expect(claimed!.context.planning).toEqual({
+      missing: [
+        "assignee",
+        "priority",
+        "feature",
+        "release",
+        "estimate",
+        "test_cases",
+      ],
+      estimateDayMinutes: 480,
+      people: [
+        { id: ctx.admin.id, name: "Ada Admin", openTasks: 1 },
+        { id: ctx.member.id, name: "Mo Member", openTasks: 0 },
+        { id: ctx.viewer.id, name: "Vi Viewer", openTasks: 0 },
+      ],
+      features: [
+        {
+          id: feature.id,
+          title: "Sign-in",
+          milestones: [{ id: milestone.id, title: "Beta" }],
+        },
+      ],
+      releases: [
+        {
+          id: release.id,
+          name: "Spring",
+          submissionDate: release.submissionDate,
+        },
+      ],
+      testCaseTarget: "bug",
+    });
+    expect(JSON.stringify(claimed!.context.planning)).not.toContain("@");
+    const schemaProperties = claimed!.context.resultSchema!
+      .properties as Record<string, unknown>;
+    expect(schemaProperties.recommendations).toMatchObject({
+      type: "object",
+      additionalProperties: false,
+    });
+  });
+
+  it("drops a bad recommendation but stores the assessment", async () => {
+    const ctx = await setupAgentWorkspace();
+    await ctx.enable();
+    const token = await ctx.createRunnerToken();
+    await addPlanningCandidates(ctx.project.id, ctx.task.id);
+    await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/assess`);
+    await ctx.assess(token, {
+      ...READY_ASSESSMENT,
+      suggestions: [{ title: "Expected", markdown: "Expected: signed in." }],
+      recommendations: {
+        assignee: { userId: "user-unknown", reason: "Not a candidate" },
+        priority: { priority: "extreme", reason: "Not a priority" },
+        release: "spring",
+        estimate: { minutes: 120, reason: "Two hours" },
+      },
+    });
+    const { assessment } = await ctx.getAgent();
+    expect(assessment).toMatchObject({ score: 90, verdict: "ready" });
+    expect(assessment!.suggestions).toMatchObject([
+      { kind: "estimate", minutes: 120, reason: "Two hours" },
+      { kind: "description", title: "Expected" },
+    ]);
+  });
+
+  it("stores the assessment when recommendations is not an object", async () => {
+    const ctx = await setupAgentWorkspace();
+    await ctx.enable();
+    const token = await ctx.createRunnerToken();
+    await addPlanningCandidates(ctx.project.id, ctx.task.id);
+    for (const recommendations of [[], "none"]) {
+      await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/assess`);
+      await ctx.assess(token, { ...READY_ASSESSMENT, recommendations });
+      const { assessment } = await ctx.getAgent();
+      expect(assessment).toMatchObject({ score: 90, suggestions: [] });
+    }
   });
 
   it("ships: progress, pull request link and agent comment", async () => {
@@ -241,6 +424,7 @@ describe("agent runner protocol", () => {
     expect((await ctx.getAgent()).ship.lastRun).toMatchObject({
       status: "cancelled",
     });
+    expect(await ctx.taskStatus()).toBe("to-do");
     await expectError(await cancel(), 409, "AI_AGENT_NO_ACTIVE_RUN");
 
     await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/ship`);
@@ -278,6 +462,8 @@ describe("agent runner protocol", () => {
       questions: [{ text: "Fix the modal or the page form?" }],
     });
     expect(agent.ship.blockers).toEqual(["open_questions"]);
+    // The work never started, so the task waits in To Do for the answers.
+    expect(await ctx.taskStatus()).toBe("to-do");
   });
 
   it("reclaims an abandoned run once, then fails it", async () => {
@@ -419,6 +605,34 @@ describe("agent runner protocol", () => {
     });
     expect(agent.ship.blockers).toEqual(["assessment_outdated"]);
     expect(await agentComments(ctx.task.id)).toHaveLength(1);
+    expect(await ctx.taskStatus()).toBe("to-do");
+  });
+
+  it("leaves a task someone moved on alone when a Ship never starts", async () => {
+    const ctx = await readyToShip();
+    const moved = await ctx.call(
+      ctx.member,
+      "PUT",
+      `/task/status/${ctx.task.id}`,
+      { status: "in-review" },
+    );
+    expect(moved.status).toBe(200);
+    expect(
+      (await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/cancel`))
+        .status,
+    ).toBe(200);
+    expect(await ctx.taskStatus()).toBe("in-review");
+
+    await ctx.setTaskStatus("to-do");
+    await ctx.call(ctx.member, "POST", `/agent/task/${ctx.task.id}/ship`);
+    const claimed = await ctx.claim(ctx.token, ["ship"]);
+    await ctx.setTaskStatus("in-review");
+    await ctx.runCall(ctx.token, claimed!, "fail", {
+      code: "needs_input",
+      message: "Which form?",
+      questions: [{ text: "Which form?", options: ["Page"], blocking: true }],
+    });
+    expect(await ctx.taskStatus()).toBe("in-review");
   });
 
   it("keeps a comment for each Ship that pushes to the same pull request", async () => {

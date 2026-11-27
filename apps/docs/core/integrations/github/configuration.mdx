@@ -67,7 +67,7 @@ Test branch-based workflow:
 2. Create and push a branch matching the pattern (e.g., `proj-123`)
 3. Verify the task moves to "in-progress"
 4. Open a PR from that branch
-5. Verify the task moves to "in-review"
+5. Verify the task moves to "in-review". A draft PR is only linked; the task moves when you mark it ready for review
 6. Merge the PR
 7. Verify the task moves to "done"
 
@@ -142,13 +142,15 @@ Customize when tasks automatically change status:
 | Event | Default Status | Customizable |
 |-------|---------------|--------------|
 | Branch Push | `in-progress` | ✅ |
-| PR Opened | `in-review` | ✅ |
+| PR opened, or ready for review | `in-review` | ✅ |
 | PR Merged | `done` | ✅ |
 
 Configure these under **Workflow → Automations** to match your workflow.
 
+Draft pull requests no longer move the task when they open. Kaneo links a draft to its task and shows it as a draft. When you select **Ready for review** on GitHub, Kaneo applies the pull-request rule above. Converting a pull request back to a draft updates its badge and leaves the task where it is.
+
 <Warning>
-A completed task moves again only when new work starts on it: the first push to a branch that is not yet linked to the task, or a pull request that is not yet linked to it. More pushes to a linked branch, or reopening a pull request, leave a completed task where it is.
+A completed task moves again only when new work starts on it: the first push to a branch that is not yet linked to the task, or a pull request that is not yet linked to it and opens ready for review. More pushes to a linked branch, or reopening a pull request, leave a completed task where it is. Marking a linked draft ready for review never moves a task that is completed, archived, or in Triage.
 </Warning>
 
 ### Label Synchronization

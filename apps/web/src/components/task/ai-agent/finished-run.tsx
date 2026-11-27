@@ -8,28 +8,27 @@ import { useTranslation } from "react-i18next";
 import type { AgentRun, AgentRunEvent } from "@/fetchers/agent/get-task-agent";
 import { getExternalWebUrl } from "@/lib/external-url";
 import { RunLogDisclosure } from "./run-log-disclosure";
+import { runStatusKey } from "./run-status-key";
 
 type FinishedRunProps = {
   run: AgentRun;
   events: AgentRunEvent[];
 };
 
-// Another Ship goes through the Ship button and its confirmation.
+// Another Ship or Start goes through the start actions.
 export function FinishedRun({ run, events }: FinishedRunProps) {
   const { t } = useTranslation();
 
   if (run.status === "succeeded") {
     const prUrl = run.result ? getExternalWebUrl(run.result.prUrl) : null;
     return (
-      <div className="space-y-1 border-border border-t px-3 py-2.5 text-sm">
+      <div className="space-y-1 border-border/70 border-t px-2 pt-2 pb-1 text-sm">
         <p className="inline-flex flex-wrap items-center gap-1.5">
           <CircleCheckIcon
             aria-hidden="true"
             className="size-4 shrink-0 text-success-foreground"
           />
-          <span className="font-medium">
-            {t("tasks:aiAgent.run.succeeded")}
-          </span>
+          <span className="font-medium">{t(runStatusKey(run))}</span>
           {prUrl ? (
             <a
               href={prUrl}
@@ -53,13 +52,13 @@ export function FinishedRun({ run, events }: FinishedRunProps) {
 
   if (run.status === "failed") {
     return (
-      <div className="space-y-2 border-border border-t px-3 py-2.5 text-sm">
+      <div className="space-y-2 border-border/70 border-t px-2 pt-2 pb-1 text-sm">
         <p className="inline-flex items-center gap-1.5 font-medium">
           <CircleXIcon
             aria-hidden="true"
             className="size-4 shrink-0 text-destructive-foreground"
           />
-          {t("tasks:aiAgent.run.failed")}
+          {t(runStatusKey(run))}
         </p>
         <p className="whitespace-pre-wrap break-words text-muted-foreground text-xs">
           {run.error ?? t("tasks:aiAgent.run.failedFallback")}
@@ -71,10 +70,10 @@ export function FinishedRun({ run, events }: FinishedRunProps) {
 
   if (run.status === "cancelled") {
     return (
-      <div className="space-y-2 border-border border-t px-3 py-2.5">
+      <div className="space-y-2 border-border/70 border-t px-2 pt-2 pb-1">
         <p className="inline-flex items-center gap-1.5 text-muted-foreground text-xs">
           <CircleSlashIcon aria-hidden="true" className="size-3.5 shrink-0" />
-          {t("tasks:aiAgent.run.cancelled")}
+          {t(runStatusKey(run))}
         </p>
         <RunLogDisclosure events={events} />
       </div>

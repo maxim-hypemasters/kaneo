@@ -10,6 +10,8 @@ import { handleGiteaPullRequestOpened } from "../../apps/api/src/plugins/gitea/w
 import { resolvePullRequestTask } from "../../apps/api/src/plugins/github/services/resolve-pull-request-task";
 import { handlePullRequestClosed } from "../../apps/api/src/plugins/github/webhooks/pull-request-closed";
 import { handlePullRequestOpened } from "../../apps/api/src/plugins/github/webhooks/pull-request-opened";
+import { handlePullRequestReadyForReview } from "../../apps/api/src/plugins/github/webhooks/pull-request-ready-for-review";
+import { setPullRequestDraft } from "../../apps/api/src/plugins/github/services/set-pull-request-draft";
 import { handlePush } from "../../apps/api/src/plugins/github/webhooks/push";
 import { handleGiteaPush } from "../../apps/api/src/plugins/gitea/webhooks/push";
 import { resetTestDatabase } from "./helpers/database";
@@ -621,3 +623,109 @@ describe.each(["github", "gitea"] as const)(
     }
   },
 );
+
+describe("github draft pull requests", () => {
+  let fixture: Awaited<ReturnType<typeof createFixture>>;
+  const repositoryUrl = "https://github.com/acme/repo";
+  const event = (action: string, draft: boolean) => ({
+    action,
+    installation: { id: 1 },
+    repository: { id: 2, owner: { login: "acme" }, name: "repo" },
+    pull_request: {
+      number: 110,
+      title: "KAN-42: Start work",
+      body: null,
+      head: { ref: "kan-42" },
+      html_url: `${repositoryUrl}/pull/110`,
+      state: "open",
+      draft,
+      merged: false,
+      user: { login: "octocat" },
+    },
+  });
+  const openDraft = () => handlePullRequestOpened(event("opened", true));
+  const markReady = () =>
+    handlePullRequestReadyForReview(event("ready_for_review", false));
+  const link = () =>
+    db.query.externalLinkTable.findFirst({
+      where: and(
+        eq(schema.externalLinkTable.resourceType, "pull_request"),
+        eq(schema.externalLinkTable.externalId, "110"),
+      ),
+    });
+  const isDraft = async () =>
+    (JSON.parse((await link())?.metadata ?? "{}") as { draft?: boolean }).draft;
+  const task = () =>
+    db.query.taskTable.findFirst({
+      where: eq(schema.taskTable.id, fixture.intended.id),
+    });
+  const setStatus = (status: string, columnId: string | null) =>
+    db
+      .update(schema.taskTable)
+      .set({ status, columnId })
+      .where(eq(schema.taskTable.id, fixture.intended.id));
+
+  beforeEach(async () => {
+    await resetTestDatabase();
+    fixture = await createFixture("github");
+  });
+
+  it("links a draft without moving the task", async () => {
+    await openDraft();
+    expect(await link()).toMatchObject({ taskId: fixture.intended.id });
+    expect(await isDraft()).toBe(true);
+    expect(await task()).toMatchObject({
+      status: "to-do",
+      columnId: fixture.columns.todo.id,
+    });
+  });
+
+  it("moves the task to review when the draft is ready for review", async () => {
+    await openDraft();
+    await markReady();
+    expect(await isDraft()).toBe(false);
+    expect(await task()).toMatchObject({
+      status: "in-review",
+      columnId: fixture.columns.inReview.id,
+    });
+  });
+
+  it("applies the project's pull request opened rule when ready", async () => {
+    await db.insert(schema.workflowRuleTable).values({
+      projectId: fixture.project.id,
+      integrationType: "github",
+      eventType: "pr_opened",
+      columnId: fixture.columns.inProgress.id,
+    });
+    await openDraft();
+    expect((await task())?.status).toBe("to-do");
+    await markReady();
+    expect((await task())?.status).toBe("in-progress");
+  });
+
+  it.each([
+    ["done", "done"],
+    ["archived", null],
+    ["triage", null],
+  ] as const)("leaves a %s task where it is", async (status, column) => {
+    await openDraft();
+    await setStatus(status, column && fixture.columns[column].id);
+    await markReady();
+    expect(await isDraft()).toBe(false);
+    expect((await task())?.status).toBe(status);
+  });
+
+  it("links and moves a pull request that was not linked as a draft", async () => {
+    await markReady();
+    expect(await link()).toMatchObject({ taskId: fixture.intended.id });
+    expect(await isDraft()).toBe(false);
+    expect((await task())?.status).toBe("in-review");
+  });
+
+  it("keeps the task in place when the pull request returns to draft", async () => {
+    await handlePullRequestOpened(event("opened", false));
+    await setPullRequestDraft(event("converted_to_draft", true), true);
+    expect(await isDraft()).toBe(true);
+    expect((await task())?.status).toBe("in-review");
+  });
+});

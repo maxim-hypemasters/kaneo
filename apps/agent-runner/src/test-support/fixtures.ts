@@ -2,7 +2,7 @@ import { chmod, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { RunnerConfig } from "../config";
-import type { KaneoClient, RunClaim } from "../kaneo/client";
+import type { AgentRunKind, KaneoClient, RunClaim } from "../kaneo/client";
 import { runCommand } from "../process/run-command";
 
 export async function tempDir() {
@@ -57,7 +57,43 @@ export async function createRemote(root: string) {
       await git(seed, "push", "--quiet", bare, `${branch}:${branch}`);
       await git(seed, "checkout", "--quiet", "main");
     },
+    /** Pushes a branch with one empty commit on top of main, as Start would. */
+    pushEmptyBranch: async (branch: string) => {
+      await git(seed, "checkout", "--quiet", "-B", branch, "main");
+      await git(seed, "commit", "--quiet", "--allow-empty", "-m", "Start");
+      await git(seed, "push", "--quiet", bare, `${branch}:${branch}`);
+      await git(seed, "checkout", "--quiet", "main");
+    },
   };
+}
+
+/**
+ * A gh that logs its arguments and token to <root>/gh.log, answers pr list
+ * with the given pull requests and pr create with pull request 12, and keeps
+ * the body it reads for create or edit in <root>/gh-<command>-body.txt. A
+ * command in failOn exits 1.
+ */
+export async function fakeGh(
+  root: string,
+  options: { pulls?: unknown[]; failOn?: string[] } = {},
+) {
+  const quote = (text: string) => `'${text.replaceAll("'", `'\\''`)}'`;
+  const fail = (options.failOn ?? [])
+    .map(
+      (command) => `  ${command}) echo "gh ${command} refused" >&2; exit 1;;`,
+    )
+    .join("\n");
+  return script(
+    root,
+    "gh",
+    `echo "$@ token=\${GH_TOKEN}" >> ${root}/gh.log
+case "$2" in
+${fail}
+  list) echo ${quote(JSON.stringify(options.pulls ?? []))};;
+  create) cat > ${root}/gh-create-body.txt; echo "https://github.com/acme/app/pull/12";;
+  edit) cat > ${root}/gh-edit-body.txt;;
+esac`,
+  );
 }
 
 export function testConfig(root: string, overrides: Partial<RunnerConfig>) {
@@ -107,7 +143,7 @@ export function fakeKaneo() {
   return { client, calls, assessmentReplies };
 }
 
-export function claimFor(kind: "assess" | "ship"): RunClaim {
+export function claimFor(kind: AgentRunKind): RunClaim {
   return {
     run: { id: `run-${kind}`, kind, attempt: 1 },
     context: {
@@ -133,6 +169,7 @@ export function claimFor(kind: "assess" | "ship"): RunClaim {
       },
       branchName: "hub-7",
       resultSchema: kind === "assess" ? { type: "object" } : null,
+      planning: null,
     },
   };
 }

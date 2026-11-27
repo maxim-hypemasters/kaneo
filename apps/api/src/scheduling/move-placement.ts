@@ -1,7 +1,5 @@
-import { timeOffInterval } from "./approved-time-off-calendars";
-import { coalesceDays } from "./coalesce-days";
 import { createCalendarReader, fitWork } from "./engine/calendar";
-import { uniformPlanningCalendar } from "./uniform-calendar";
+import { uniformCalendarWithDaysOff } from "./uniform-calendar";
 
 // The planner's own horizon (see build-schedule).
 export const MOVE_HORIZON_DAYS = 3660;
@@ -51,15 +49,8 @@ export function movePlacement(
     0,
   );
   const earliest = target.start.getTime();
-  const calendar = {
-    ...uniformPlanningCalendar("", timeZone),
-    // A run made only of skipped civil dates has no interval to block.
-    timeOff: coalesceDays(blockedDays)
-      .map((range) => timeOffInterval(range, timeZone))
-      .filter((interval) => interval.start < interval.end),
-  };
   const fitted = fitWork(
-    createCalendarReader(calendar),
+    createCalendarReader(uniformCalendarWithDaysOff(timeZone, blockedDays)),
     earliest,
     effort,
     [],

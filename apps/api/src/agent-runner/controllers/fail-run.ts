@@ -6,6 +6,7 @@ import {
   STOPPED_COMMENT,
 } from "../../agent/controllers/post-agent-comment";
 import { publishAgentUpdate } from "../../agent/controllers/publish-agent-update";
+import { restoreTaskToTodo } from "../../agent/controllers/restore-task-to-todo";
 import { mergeQuestions } from "../../agent/merge-questions";
 import { readinessVerdict } from "../../agent/readiness-verdict";
 import db from "../../database";
@@ -31,7 +32,8 @@ function failureComment(failure: Failure) {
 
 /**
  * Ends a run that could not finish. Questions a Ship run raises join the
- * task's open questions, so the readiness widget asks them.
+ * task's open questions, so the readiness widget asks them, and the task goes
+ * back to To Do until they are answered.
  */
 export async function failRun(ref: RunnerRunRef, failure: Failure) {
   const run = await loadRunnerRun(ref);
@@ -75,5 +77,6 @@ export async function failRun(ref: RunnerRunRef, failure: Failure) {
       projectId: run.projectId,
       content: failureComment(failure),
     });
+  if (failure.code === "needs_input") await restoreTaskToTodo(run);
   await publishAgentUpdate(run.taskId, run.projectId);
 }

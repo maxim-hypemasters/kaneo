@@ -52,6 +52,14 @@ export function RunnerStatusRow({ runner }: RunnerStatusRowProps) {
               ) : null}
             </dl>
           ) : null}
+          {/* The runner reports its GitHub credentials when it checks in. */}
+          {runner.configured && runner.lastSeenAt ? (
+            <p className="mt-1">
+              {runner.canPush
+                ? t("settings:aiAgentPage.runner.status.canPush")
+                : t("settings:aiAgentPage.runner.status.cannotPush")}
+            </p>
+          ) : null}
         </>
       }
     />

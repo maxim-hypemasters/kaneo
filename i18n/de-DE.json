@@ -1160,7 +1160,7 @@
 			"connect": "Verbinden",
 			"configure": "Konfigurieren",
 			"done": "Fertig",
-			"aiAgentSectionSubtitle": "Check tasks for AI readiness, and let Hermes implement them and open pull requests.",
+			"aiAgentSectionSubtitle": "Check task readiness, and let Hermes implement tasks and open pull requests.",
 			"aiAgentSectionTitle": "AI agent (Hermes)"
 		},
 		"projectVisibility": {
@@ -1443,7 +1443,7 @@
 			"toastError": "Workflow-Regel konnte nicht aktualisiert werden",
 			"events": {
 				"branch_push": "Branch gepusht",
-				"pr_opened": "Pull Request geöffnet",
+				"pr_opened": "Pull Request geöffnet oder bereit zur Prüfung",
 				"pr_merged": "Pull Request gemergt",
 				"issue_opened": "Issue geöffnet",
 				"issue_closed": "Issue geschlossen"
@@ -2740,7 +2740,7 @@
 				"autoAssessDescription": "Check a task again shortly after someone creates or edits it.",
 				"autoAssessTitle": "Check readiness automatically",
 				"baseBranchLabel": "Base branch",
-				"enabledDescription": "Check tasks and bugs for AI readiness, and let people ship ready ones to Hermes.",
+				"enabledDescription": "Check task readiness for tasks and bugs, and let people start them or ship ready ones to Hermes.",
 				"enabledTitle": "Use Hermes in this project",
 				"errors": {
 					"baseBranch": "Enter a valid branch name.",
@@ -2793,7 +2793,9 @@
 					"onlineDescription": "Last checked in {{lastSeen}}.",
 					"title": "Runner status",
 					"token": "Token",
-					"version": "Version"
+					"version": "Version",
+					"cannotPush": "Can't open pull requests: the runner has no GitHub credentials, so Start only moves tasks.",
+					"canPush": "Can open pull requests."
 				},
 				"token": {
 					"copyLabel": "Copy runner token",
@@ -4721,36 +4723,32 @@
 				"notReady": "The readiness score is below the project's threshold.",
 				"openQuestions": "Answer the blocking questions.",
 				"runnerMissing": "Set up a runner in workspace settings.",
-				"shipInProgress": "Hermes is already working on this task.",
-				"title": "Before Hermes can ship this"
+				"shipInProgress": "A run is already in progress for this task.",
+				"title": "Before Hermes can ship this",
+				"inTriage": "Accept this task from Triage first."
 			},
 			"checkAgain": "Check again",
-			"checklist": {
-				"met": "Met",
-				"missing": "Missing",
-				"partial": "Partial",
-				"title": "Checklist"
-			},
 			"checkNow": "Check now",
 			"decisions": {
 				"answeredBy": "Answered by {{name}}",
 				"title": "Decisions ({{count}})"
 			},
-			"details": "Details",
 			"errors": {
 				"answers": "Couldn't save your answers",
-				"apply": "Couldn't add the suggestion to the description",
+				"apply": "Couldn't apply the suggestion",
 				"assess": "Couldn't ask Hermes to check this task",
 				"cancel": "Couldn't stop Hermes",
 				"dismiss": "Couldn't dismiss the suggestion",
 				"notShippable": "This task isn't ready for Hermes anymore",
-				"ship": "Couldn't send the task to Hermes"
+				"ship": "Couldn't send the task to Hermes",
+				"copyPrompt": "Couldn't load the prompt",
+				"notStartable": "This task can't be started right now",
+				"start": "Couldn't start the task",
+				"suggestionOutdated": "The task changed, so this suggestion no longer fits"
 			},
-			"meterLabel": "AI readiness score",
+			"meterLabel": "Task readiness score",
 			"notAssessed": "Not checked yet",
 			"outdated": "Outdated",
-			"questionCount_one": "{{count}} question",
-			"questionCount_other": "{{count}} questions",
 			"questions": {
 				"answered": "{{answered}} of {{total}} answered",
 				"blocking": "Blocking",
@@ -4761,8 +4759,8 @@
 				"submit": "Submit answers",
 				"title": "Open questions"
 			},
-			"readiness": "AI readiness {{score}}%",
-			"readinessTitle": "AI readiness",
+			"readiness": "Task readiness {{score}}%",
+			"readinessTitle": "Task readiness",
 			"run": {
 				"cancel": "Cancel",
 				"cancelled": "Hermes stopped before finishing, as requested.",
@@ -4773,30 +4771,72 @@
 				"stopping": "Stopping…",
 				"succeeded": "Hermes opened a pull request.",
 				"viewPullRequest": "View pull request",
-				"working": "Hermes is working…"
+				"working": "Hermes is working…",
+				"startCancelled": "Stopped before the draft pull request opened.",
+				"startFailed": "The runner couldn't open a draft pull request.",
+				"starting": "Opening a draft pull request…",
+				"startQueued": "Waiting for the runner to open a draft pull request…",
+				"startSucceeded": "The runner opened a draft pull request."
 			},
 			"runnerOffline": "The runner is offline. Work starts when it reconnects.",
 			"sectionLabel": "AI agent",
-			"ship": "Ship",
+			"ship": "Ship with AI",
 			"shipDialog": {
 				"baseBranch": "Base branch",
-				"confirm": "Ship",
-				"description": "Hermes works from the task text and the decisions answered here, then opens a pull request for review.",
+				"confirm": "Ship with AI",
+				"description": "Hermes works from the task text and the decisions answered here, then opens a pull request for review. The task moves to In Progress.",
 				"newBranch": "New branch",
 				"pending": "Shipping…",
 				"repository": "Repository",
-				"title": "Ship to Hermes?"
+				"title": "Ship with AI?"
 			},
 			"suggestions": {
 				"apply": "Add to description",
 				"dismiss": "Dismiss",
 				"dismissLabel": "Dismiss \"{{title}}\"",
-				"title": "Suggested additions"
+				"title": "Suggestions",
+				"applyField": "Apply",
+				"applyLabel": "Apply \"{{title}}\"",
+				"assignee": "Assign to {{name}}",
+				"estimate": "Estimate {{estimate}}",
+				"estimateAssigns": "Assigns {{name}}, planned {{start}} – {{due}}",
+				"estimateKeepsDates": "Keeps the task's current dates",
+				"estimateOnly": "Sets the estimate only, no dates",
+				"estimatePlanned": "Planned {{start}} – {{due}} for {{name}}",
+				"expectedResult": "Expected result",
+				"feature": "Feature: {{feature}}",
+				"featureWithMilestone": "Feature: {{feature}} › {{milestone}}",
+				"milestone": "Milestone: {{milestone}}",
+				"priority": "Set priority: {{priority}}",
+				"release": "Release: {{release}}",
+				"showTestCases": "Show test cases",
+				"steps": "Steps",
+				"testCases_one": "Create {{count}} test case",
+				"testCases_other": "Create {{count}} test cases",
+				"testCasesBug_one": "Create {{count}} test case for this bug",
+				"testCasesBug_other": "Create {{count}} test cases for this bug",
+				"testCasesMilestone_one": "Create {{count}} test case in {{milestone}}",
+				"testCasesMilestone_other": "Create {{count}} test cases in {{milestone}}"
 			},
-			"summaryTitle": "Hermes' summary",
 			"toast": {
 				"applied": "Added to the description",
-				"shipped": "Sent to Hermes"
+				"shipped": "Sent to Hermes",
+				"appliedField": {
+					"assignee": "Assignee set",
+					"estimate": "Estimate set",
+					"estimateWithAssignee": "Assigned, with an estimate and dates",
+					"estimateWithDates": "Estimate and dates set",
+					"feature": "Added to the feature",
+					"milestone": "Added to the milestone",
+					"priority": "Priority set",
+					"release": "Added to the release",
+					"testCases": "Test cases created"
+				},
+				"promptCopied": "Prompt copied. The task is in progress.",
+				"started": "Task started",
+				"startedNoPush": "Task started. The runner has no GitHub credentials, so no draft pull request opens.",
+				"startedNoRunner": "Task started. No runner is set up, so no draft pull request opens.",
+				"startedWithPullRequest": "Task started. A draft pull request opens shortly."
 			},
 			"verdict": {
 				"needsClarification": "Needs clarification",
@@ -4809,7 +4849,15 @@
 			"runnerMissing": "No runner is set up for this workspace, so Hermes can't check or ship tasks.",
 			"runnerMissingAskAdmin": "Ask a workspace admin to set one up.",
 			"runnerMissingLink": "Set up the runner",
-			"panelLabel": "AI readiness details"
+			"copyPrompt": "Copy prompt",
+			"copyPromptDialog": {
+				"description": "Your browser didn't allow copying. Copy the prompt below and paste it into your coding agent.",
+				"label": "Prompt",
+				"moveToInProgress": "Move to {{status}}",
+				"title": "Copy the prompt"
+			},
+			"shipMenuLabel": "More ways to start",
+			"startTask": "Start task"
 		}
 	},
 	"invitations": {

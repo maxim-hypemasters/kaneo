@@ -1,42 +1,11 @@
-import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
-import path from "node:path";
 import type { RunnerConfig } from "../config";
 import { ROOT } from "../isolation/hermes-user";
 import { chownTree, ensureDir } from "../isolation/ownership";
+import type { BranchState } from "./branch-state";
 import { git, gitSucceeds, repositoryUrl } from "./git";
 import { withRepoLock } from "./repo-lock";
-import { mirrorPath, runPaths } from "./work-paths";
-
-/** Fetches the cached mirror, or clones it. Call it under the repo lock. */
-async function updateMirror(
-  config: RunnerConfig,
-  repository: string,
-  token: string | null,
-  signal?: AbortSignal,
-) {
-  const mirror = mirrorPath(config.workDir, repository);
-  if (existsSync(mirror))
-    await git(config, ["--git-dir", mirror, "fetch", "--prune", "origin"], {
-      token,
-      signal,
-    });
-  else {
-    await mkdir(path.dirname(mirror), { recursive: true });
-    await git(
-      config,
-      [
-        "clone",
-        "--mirror",
-        "--quiet",
-        repositoryUrl(config, repository),
-        mirror,
-      ],
-      { token, signal },
-    );
-  }
-  return mirror;
-}
+import { updateMirror } from "./update-mirror";
+import { runPaths } from "./work-paths";
 
 /**
  * Hermes's working copy for one run, cloned from the cached mirror into the
@@ -44,6 +13,8 @@ async function updateMirror(
  * branch: the existing remote one when a previous Ship pushed it, so the pull
  * request keeps growing, otherwise a new one from the base branch. The runner
  * prepares it, then hands it to Hermes's user; it never runs git in it again.
+ * An existing branch with no change against the base, as Start pushes it,
+ * counts as empty rather than continued.
  */
 export async function prepareCheckout(
   config: RunnerConfig,
@@ -89,12 +60,21 @@ export async function prepareCheckout(
   const baseRef = `refs/remotes/origin/${input.baseBranch}`;
   if (!(await exists(baseRef)))
     throw new Error(`Base branch ${input.baseBranch} was not found`);
-  const continued =
+  const pushed =
     input.branch !== undefined &&
     (await exists(`refs/remotes/origin/${input.branch}`));
-  const startRef = continued
+  const startRef = pushed
     ? `origin/${input.branch}`
     : `origin/${input.baseBranch}`;
+  const empty =
+    pushed &&
+    (await gitSucceeds(
+      config,
+      ["diff", "--quiet", `origin/${input.baseBranch}...${startRef}`],
+      { cwd: dir },
+    ));
+  let branchState: BranchState = "new";
+  if (pushed) branchState = empty ? "empty" : "continued";
   await git(
     config,
     ["checkout", "--quiet", "-B", input.branch ?? input.baseBranch, startRef],
@@ -102,7 +82,7 @@ export async function prepareCheckout(
   );
   const startSha = await git(config, ["rev-parse", "HEAD"], { cwd: dir });
   if (config.hermesUser) await chownTree([dir], config.hermesUser);
-  return { dir, startSha, continued };
+  return { dir, startSha, branchState };
 }
 
 export type Checkout = Awaited<ReturnType<typeof prepareCheckout>>;

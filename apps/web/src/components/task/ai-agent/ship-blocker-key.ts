@@ -5,6 +5,7 @@ const BLOCKER_KEYS: Record<ShipBlocker, string> = {
   no_repository: "tasks:aiAgent.blockers.noRepository",
   runner_missing: "tasks:aiAgent.blockers.runnerMissing",
   archived: "tasks:aiAgent.blockers.archived",
+  in_triage: "tasks:aiAgent.blockers.inTriage",
   not_assessed: "tasks:aiAgent.blockers.notAssessed",
   assessment_outdated: "tasks:aiAgent.blockers.assessmentOutdated",
   open_questions: "tasks:aiAgent.blockers.openQuestions",
@@ -16,8 +17,8 @@ export function shipBlockerKey(blocker: ShipBlocker): string {
   return BLOCKER_KEYS[blocker];
 }
 
-// The run status already says when Hermes is working on the task, and the
-// readiness bar when the workspace has no runner.
+// The run status already says when a run is working on the task, and the
+// readiness card when the workspace has no runner.
 const SHOWN_ELSEWHERE: readonly ShipBlocker[] = [
   "ship_in_progress",
   "runner_missing",

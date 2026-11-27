@@ -7,6 +7,7 @@ import {
   isNull,
   lt,
   lte,
+  ne,
   or,
   sql,
 } from "drizzle-orm";
@@ -34,10 +35,18 @@ import { failOutdatedShip } from "./fail-outdated-ship";
 const utcNow = sql`(now() AT TIME ZONE 'utc')`;
 const leaseEnd = sql`(now() AT TIME ZONE 'utc') + ${`${RUN_LEASE_MS} milliseconds`}::interval`;
 
-async function markSeen(workspaceId: string, runnerVersion?: string) {
+type RunnerReport = { runnerVersion?: string; canPush: boolean };
+
+// A change in what the runner can do is written at once, so Start offers a
+// draft pull request as soon as the runner can open one.
+async function markSeen(workspaceId: string, runner: RunnerReport) {
   await db
     .update(workspaceAgentRunnerTable)
-    .set({ lastSeenAt: utcNow, runnerVersion: runnerVersion ?? null })
+    .set({
+      lastSeenAt: utcNow,
+      runnerVersion: runner.runnerVersion ?? null,
+      canPush: runner.canPush,
+    })
     .where(
       and(
         eq(workspaceAgentRunnerTable.workspaceId, workspaceId),
@@ -47,6 +56,7 @@ async function markSeen(workspaceId: string, runnerVersion?: string) {
             workspaceAgentRunnerTable.lastSeenAt,
             sql`(now() AT TIME ZONE 'utc') - ${`${RUNNER_SEEN_THROTTLE_MS} milliseconds`}::interval`,
           ),
+          ne(workspaceAgentRunnerTable.canPush, runner.canPush),
         ),
       ),
     );
@@ -96,9 +106,9 @@ const leaseExpired = and(
 export async function claimRun(
   workspaceId: string,
   kinds: readonly AgentRunKind[],
-  runnerVersion?: string,
+  runner: RunnerReport,
 ) {
-  await markSeen(workspaceId, runnerVersion);
+  await markSeen(workspaceId, runner);
 
   // A cancel asked for while no runner held the run ends it here, before it
   // could be reclaimed or failed. Projects turned off are included: turning
@@ -190,6 +200,7 @@ export async function claimRun(
 
   const context = await buildRunContext(run);
   if (!context) return null;
+  // Only Ship carries out the assessed text; Start works from any version.
   if (run.kind === "ship" && context.inputHash !== run.inputHash) {
     await failOutdatedShip(run, context.projectId);
     return null;

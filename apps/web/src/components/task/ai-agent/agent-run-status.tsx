@@ -7,6 +7,7 @@ import { runAnnouncement } from "./run-announcement";
 
 type AgentRunStatusProps = {
   taskId: string;
+  projectId: string;
   agent: TaskAgent;
   canUpdate: boolean;
   statusRef: RefObject<HTMLParagraphElement | null>;
@@ -14,6 +15,7 @@ type AgentRunStatusProps = {
 
 export function AgentRunStatus({
   taskId,
+  projectId,
   agent,
   canUpdate,
   statusRef,
@@ -35,6 +37,7 @@ export function AgentRunStatus({
       {activeRun ? (
         <ActiveRun
           taskId={taskId}
+          projectId={projectId}
           run={activeRun}
           events={events}
           runner={agent.runner}

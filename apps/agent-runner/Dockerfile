@@ -1,5 +1,6 @@
 # Kaneo AI agent runner: Hermes Agent plus a small Node service that claims
-# readiness checks and Ship runs from Kaneo. Build from the repository root:
+# readiness checks, Start (draft pull request) and Ship runs from Kaneo.
+# Build from the repository root:
 #   docker build -f apps/agent-runner/Dockerfile -t kaneo-agent-runner .
 
 # The bundle needs only hono/client at build time; types come from the

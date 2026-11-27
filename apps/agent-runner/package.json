@@ -1,8 +1,8 @@
 {
   "name": "@kaneo/agent-runner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "Runs Kaneo AI agent work (readiness assessments and Ship) with Hermes Agent",
+  "description": "Runs Kaneo AI agent work (readiness checks, Start and Ship) with Hermes Agent",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",

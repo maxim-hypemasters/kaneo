@@ -37,6 +37,10 @@ export const claimBody = z
   .object({
     kinds: z.array(z.enum(AGENT_RUN_KINDS)).min(1),
     runnerVersion: z.string().trim().max(40).optional(),
+    canPush: z.boolean().optional().openapi({
+      description:
+        "The runner holds GitHub write credentials, so it can take start runs. Omitted counts as false.",
+    }),
   })
   .openapi("AgentRunnerClaimInput");
 

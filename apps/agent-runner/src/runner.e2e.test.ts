@@ -11,9 +11,12 @@ import {
 import { runCommand } from "./process/run-command";
 import { createRedactor } from "./redact";
 import { runShip } from "./ship/run-ship";
+import { START_MARKER } from "./ship/start-marker";
+import { runStart } from "./start/run-start";
 import {
   claimFor,
   createRemote,
+  fakeGh,
   fakeKaneo,
   script,
   tempDir,
@@ -24,17 +27,17 @@ import {
 const FIND_DIR =
   'dir=""; while [ $# -gt 0 ]; do [ "$1" = "--in" ] && dir="$2"; shift; done';
 
-async function setup(hermesBody: (root: string) => string) {
+async function setup(
+  hermesBody: (root: string) => string,
+  gh: Parameters<typeof fakeGh>[1] = {},
+) {
   const root = await tempDir();
   const remote = await createRemote(root);
   const hermes = await script(root, "hermes", hermesBody(root));
-  const gh = await script(
-    root,
-    "gh",
-    `echo "$@ token=\${GH_TOKEN}" >> ${root}/gh.log
-case "$2" in list) echo "[]";; create) echo "https://github.com/acme/app/pull/12";; esac`,
-  );
-  const config = testConfig(root, { hermesBin: hermes, ghBin: gh });
+  const config = testConfig(root, {
+    hermesBin: hermes,
+    ghBin: await fakeGh(root, gh),
+  });
   const kaneo = fakeKaneo();
   const deps = {
     config,
@@ -58,6 +61,29 @@ const eventMessages = (ctx: Awaited<ReturnType<typeof setup>>) =>
     .filter(([name]) => name === "events")
     .flatMap(([, , batch]) => batch as Array<{ message: string }>)
     .map((event) => event.message);
+
+// gh's calls without their token.
+const ghCalls = async (ctx: Awaited<ReturnType<typeof setup>>) =>
+  (await readFile(path.join(ctx.root, "gh.log"), "utf8"))
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => line.replace(/ token=.*$/, ""));
+
+// Hermes leaves a fix uncommitted, which the runner commits.
+const FIXES_IT = (root: string) => `${FIND_DIR}
+cat > ${root}/prompt.txt
+echo fixed > "$dir/login.txt"
+echo '{"type":"text","text":"Fixed it."}'
+echo '{"type":"result","exit_code":0,"text":"Fixed it."}'`;
+
+// The draft Start opened for the branch.
+const STARTED_DRAFT = {
+  url: "https://github.com/acme/app/pull/5",
+  isCrossRepository: false,
+  headRepositoryOwner: { login: "acme" },
+  isDraft: true,
+  body: `Work on [HUB-7](http://kaneo/task/t1) started from Kaneo; no changes yet.\n\n${START_MARKER}`,
+};
 
 describe("runShip", () => {
   it("lets Hermes commit, then pushes its bundle and opens the pull request itself", async () => {
@@ -111,6 +137,7 @@ echo '{"type":"result","exit_code":0,"text":"Fixed the login form."}'`,
     expect(ghLog).toContain(
       "pr create --repo acme/app --base main --head hub-7",
     );
+    expect(ghLog).not.toContain("--draft");
     expect(ghLog).toContain("token=ghp_testtokentesttokentesttoken");
 
     const events = eventMessages(ctx);
@@ -400,6 +427,142 @@ echo '{"type":"result","exit_code":0,"text":"${text}"}'`,
     }
   });
 
+  it("tells Hermes that the branch Start pushed has no work yet", async () => {
+    const ctx = await setup(FIXES_IT);
+    await ctx.remote.pushEmptyBranch("hub-7");
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    const prompt = await readFile(path.join(ctx.root, "prompt.txt"), "utf8");
+    expect(prompt).toContain(
+      "It is on the branch hub-7, started from main, with no work on it yet.",
+    );
+    expect(prompt).not.toContain("earlier work");
+    expect(eventMessages(ctx)).toContain(
+      "Working on branch hub-7, which has no work yet",
+    );
+    expect(await ctx.remote.log("hub-7")).toEqual([
+      "HUB-7: Fix login",
+      "Start",
+      "init",
+    ]);
+  });
+
+  it("reports no changes when Hermes adds nothing to the branch Start pushed", async () => {
+    const ctx = await setup(
+      () => `cat > /dev/null
+echo '{"type":"text","text":"Nothing to do."}'
+echo '{"type":"result","exit_code":0,"text":"Nothing to do."}'`,
+      { pulls: [STARTED_DRAFT] },
+    );
+    await ctx.remote.pushEmptyBranch("hub-7");
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toEqual([
+      "fail",
+      "run-ship",
+      { code: "no_changes", message: "Nothing to do." },
+    ]);
+    expect(called(ctx, "shipResult")).toBeUndefined();
+    expect(await ctx.remote.log("hub-7")).toEqual(["Start", "init"]);
+    expect(existsSync(path.join(ctx.root, "gh.log"))).toBe(false);
+  });
+
+  it("marks the draft Start opened ready for review, with the Ship's summary", async () => {
+    const ctx = await setup(FIXES_IT, { pulls: [STARTED_DRAFT] });
+    await ctx.remote.pushEmptyBranch("hub-7");
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    expect(called(ctx, "shipResult")).toMatchObject([
+      "shipResult",
+      "run-ship",
+      { prUrl: STARTED_DRAFT.url, branch: "hub-7", summary: "Fixed it." },
+    ]);
+    const calls = await ghCalls(ctx);
+    expect(calls[0]).toMatch(/^pr list /);
+    expect(calls.slice(1)).toEqual([
+      `pr ready ${STARTED_DRAFT.url}`,
+      `pr edit ${STARTED_DRAFT.url} --body-file -`,
+    ]);
+    const body = await readFile(
+      path.join(ctx.root, "gh-edit-body.txt"),
+      "utf8",
+    );
+    expect(body).toMatch(/^Fixed it\./);
+    expect(body).not.toContain(START_MARKER);
+    expect(body).not.toContain("started from Kaneo");
+    expect(eventMessages(ctx)).toContain(
+      "Marking the pull request ready for review",
+    );
+  });
+
+  it("keeps what people wrote on Start's draft when the Ship fills it in", async () => {
+    const note = "Design note: keep the old endpoint.\r\n- [ ] Check mobile";
+    const ctx = await setup(FIXES_IT, {
+      pulls: [
+        {
+          ...STARTED_DRAFT,
+          body: STARTED_DRAFT.body.replace(
+            START_MARKER,
+            `${note}\r\n\r\n${START_MARKER}`,
+          ),
+        },
+      ],
+    });
+    await ctx.remote.pushEmptyBranch("hub-7");
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    const body = await readFile(
+      path.join(ctx.root, "gh-edit-body.txt"),
+      "utf8",
+    );
+    expect(body.startsWith(`${note}\n\n---\n\nFixed it.`)).toBe(true);
+    expect(body).not.toContain(START_MARKER);
+    expect(body).not.toContain("started from Kaneo");
+  });
+
+  it("leaves a draft pull request a person opened as it is", async () => {
+    const ctx = await setup(FIXES_IT, {
+      pulls: [{ ...STARTED_DRAFT, body: "WIP, don't merge yet" }],
+    });
+    await ctx.remote.pushBranch("hub-7", "Work in progress");
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    expect(called(ctx, "shipResult")).toMatchObject([
+      "shipResult",
+      "run-ship",
+      { prUrl: STARTED_DRAFT.url },
+    ]);
+    expect(await ghCalls(ctx)).toEqual([expect.stringMatching(/^pr list /)]);
+  });
+
+  it("ships though GitHub refuses to mark Start's draft ready", async () => {
+    const ctx = await setup(FIXES_IT, {
+      pulls: [STARTED_DRAFT],
+      failOn: ["ready"],
+    });
+    await ctx.remote.pushEmptyBranch("hub-7");
+    await runShip(ctx.deps, claimFor("ship"));
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    expect(called(ctx, "shipResult")).toMatchObject([
+      "shipResult",
+      "run-ship",
+      { prUrl: STARTED_DRAFT.url },
+    ]);
+    expect(eventMessages(ctx)).toContainEqual(
+      expect.stringContaining(
+        "Couldn't mark the pull request ready for review",
+      ),
+    );
+    expect(await ghCalls(ctx)).not.toContainEqual(
+      expect.stringMatching(/^pr edit /),
+    );
+  });
+
   it("reports no changes when Hermes commits nothing", async () => {
     const ctx = await setup(
       () => `cat > /dev/null
@@ -411,6 +574,117 @@ echo '{"type":"result","exit_code":0,"text":"Nothing to do."}'`,
       "fail",
       "run-ship",
       { code: "no_changes" },
+    ]);
+    expect(await ctx.remote.branches()).toEqual(["main"]);
+  });
+});
+
+// Start runs no Hermes.
+const NO_HERMES = (root: string) => `touch ${root}/hermes-ran`;
+
+describe("runStart", () => {
+  it("pushes a new branch with one empty commit over the base, then opens a draft pull request", async () => {
+    const ctx = await setup(NO_HERMES);
+    await runStart(ctx.deps, claimFor("start"));
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    expect(called(ctx, "shipResult")).toEqual([
+      "shipResult",
+      "run-start",
+      {
+        prUrl: "https://github.com/acme/app/pull/12",
+        branch: "hub-7",
+        summary: "",
+      },
+    ]);
+    expect(await ctx.remote.log("hub-7")).toEqual([
+      "Start HUB-7: Fix login",
+      "init",
+    ]);
+    const tree = async (ref: string) =>
+      (
+        await runCommand(
+          "git",
+          ["--git-dir", ctx.remote.bare, "rev-parse", `${ref}^{tree}`],
+          { check: true },
+        )
+      ).stdout.trim();
+    expect(await tree("hub-7")).toBe(await tree("main"));
+    expect(await ghCalls(ctx)).toEqual([
+      expect.stringMatching(/^pr list --repo acme\/app --head hub-7 /),
+      "pr create --repo acme/app --base main --head hub-7 --title HUB-7: Fix login --body-file - --draft",
+    ]);
+    expect(
+      await readFile(path.join(ctx.root, "gh-create-body.txt"), "utf8"),
+    ).toBe(STARTED_DRAFT.body);
+    expect(eventMessages(ctx)).toContain("Pushing new branch hub-7 from main");
+    expect(existsSync(path.join(ctx.root, "hermes-ran"))).toBe(false);
+    expect(
+      existsSync(path.join(ctx.config.workDir, "push", "run-start-1.git")),
+    ).toBe(false);
+  });
+
+  it("adds no commit to a branch that already has work", async () => {
+    const ctx = await setup(NO_HERMES);
+    await ctx.remote.pushBranch("hub-7", "Earlier work");
+    await runStart(ctx.deps, claimFor("start"));
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    expect(called(ctx, "shipResult")).toMatchObject([
+      "shipResult",
+      "run-start",
+      { prUrl: "https://github.com/acme/app/pull/12", branch: "hub-7" },
+    ]);
+    expect(await ctx.remote.log("hub-7")).toEqual(["Earlier work", "init"]);
+    expect(eventMessages(ctx)).toContain(
+      "hub-7 already has commits; leaving it as it is",
+    );
+    expect((await ghCalls(ctx))[1]).toMatch(/^pr create .* --draft$/);
+  });
+
+  it("reuses the branch's open pull request", async () => {
+    const ctx = await setup(NO_HERMES, { pulls: [STARTED_DRAFT] });
+    await ctx.remote.pushEmptyBranch("hub-7");
+    await runStart(ctx.deps, claimFor("start"));
+
+    expect(called(ctx, "fail")).toBeUndefined();
+    expect(called(ctx, "shipResult")).toEqual([
+      "shipResult",
+      "run-start",
+      { prUrl: STARTED_DRAFT.url, branch: "hub-7", summary: "" },
+    ]);
+    expect(await ctx.remote.log("hub-7")).toEqual(["Start", "init"]);
+    expect(await ghCalls(ctx)).toEqual([expect.stringMatching(/^pr list /)]);
+  });
+
+  it("fails as a git failure when GitHub doesn't open the draft, with the branch pushed", async () => {
+    const ctx = await setup(NO_HERMES, { failOn: ["create"] });
+    await runStart(ctx.deps, claimFor("start"));
+
+    expect(called(ctx, "fail")).toEqual([
+      "fail",
+      "run-start",
+      {
+        code: "git_failed",
+        message:
+          "Branch hub-7 is pushed, but GitHub didn't open a draft pull request: gh create refused",
+      },
+    ]);
+    expect(called(ctx, "shipResult")).toBeUndefined();
+    expect(await ctx.remote.branches()).toContain("hub-7");
+  });
+
+  it("fails before touching the repository without GitHub credentials", async () => {
+    const ctx = await setup(NO_HERMES);
+    await runStart(
+      { ...ctx.deps, config: { ...ctx.config, github: null } },
+      claimFor("start"),
+    );
+
+    expect(called(ctx, "fail")).toEqual([
+      "fail",
+      "run-start",
+      { code: "git_failed", message: "The runner has no GitHub credentials" },
     ]);
     expect(await ctx.remote.branches()).toEqual(["main"]);
   });
@@ -468,14 +742,14 @@ fi`,
   it("removes secrets from the assessment it submits", async () => {
     const ctx = await setup(
       () => `cat > /dev/null
-echo '{"type":"text","text":"{\\"summary\\": \\"Use ghp_testtokentesttokentesttoken\\"}"}'
-echo '{"type":"result","exit_code":0,"text":"{\\"summary\\": \\"Use ghp_testtokentesttokentesttoken\\"}"}'`,
+echo '{"type":"text","text":"{\\"questions\\": [{\\"text\\": \\"Use ghp_testtokentesttokentesttoken?\\"}]}"}'
+echo '{"type":"result","exit_code":0,"text":"{\\"questions\\": [{\\"text\\": \\"Use ghp_testtokentesttokentesttoken?\\"}]}"}'`,
     );
     await runAssess(ctx.deps, claimFor("assess"));
     expect(called(ctx, "assessment")).toEqual([
       "assessment",
       "run-assess",
-      { summary: "Use [redacted]" },
+      { questions: [{ text: "Use [redacted]?" }] },
     ]);
   });
 

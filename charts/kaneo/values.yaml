@@ -183,9 +183,10 @@ gateway:
           port: 5173
 
 # Optional AI agent runner (Hermes Agent). It polls Kaneo for readiness
-# checks and Ship runs; nothing reaches it from outside. Create a runner token
-# in Workspace settings → AI agent, then put it in a Secret with the GitHub
-# credentials that push branches and the model provider key, for example:
+# checks, Start (draft pull request) and Ship runs; nothing reaches it from
+# outside. Create a runner token in Workspace settings → AI agent, then put it
+# in a Secret with the GitHub credentials that push branches and the model
+# provider key, for example:
 #   kubectl create secret generic kaneo-agent-runner \
 #     --from-literal=KANEO_RUNNER_TOKEN=kar_... \
 #     --from-literal=GH_TOKEN=github_pat_... \

@@ -9,7 +9,10 @@ export type TaskAgent = InferResponseType<
 export type AgentAssessment = NonNullable<TaskAgent["assessment"]>;
 export type AgentQuestion = AgentAssessment["questions"][number];
 export type AgentSuggestion = AgentAssessment["suggestions"][number];
-export type AgentChecklistItem = AgentAssessment["checklist"][number];
+export type AgentDescriptionSuggestion = Extract<
+  AgentSuggestion,
+  { kind: "description" }
+>;
 export type AgentClarification = TaskAgent["clarifications"][number];
 export type AgentRun = NonNullable<TaskAgent["ship"]["lastRun"]>;
 export type AgentRunEvent = TaskAgent["ship"]["events"][number];

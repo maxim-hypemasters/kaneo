@@ -1,19 +1,27 @@
-import { and, asc, desc, eq, getTableColumns, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { HTTPException } from "hono/http-exception";
 import db from "../../database";
 import {
   agentRunEventTable,
   agentRunTable,
   taskAgentAssessmentTable,
-  userTable,
 } from "../../database/schema";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
 import { agentError } from "../agent-error";
 import { agentBranchName } from "../branch-name";
 import { computeShipBlockers } from "../compute-ship-blockers";
+import {
+  computeStartBlockers,
+  startPullRequestState,
+} from "../compute-start-blockers";
 import { MAX_EVENTS_PER_RUN } from "../constants";
 import { readinessVerdict } from "../readiness-verdict";
+import type { PermissionCheck } from "../suggestions/load-suggestion-facts";
+import { resolveSuggestions } from "../suggestions/resolve-suggestions";
 import { loadAgentTask } from "./load-agent-task";
 import { loadEffectiveAgentSetting } from "./load-project-agent-setting";
+import { loadWorkRuns } from "./load-work-runs";
+import { loadWorkflowColumns } from "./load-workflow-columns";
 import { isRunnerOnline, loadWorkspaceRunner } from "./load-workspace-runner";
 import { toAgentRun } from "./to-agent-run";
 
@@ -28,90 +36,90 @@ export async function loadAssessment(taskId: string) {
   return row ?? null;
 }
 
-async function loadShipRuns(taskId: string) {
-  return db
-    .select({
-      ...getTableColumns(agentRunTable),
-      requestedByName: userTable.name,
-    })
-    .from(agentRunTable)
-    .leftJoin(userTable, eq(agentRunTable.requestedByUserId, userTable.id))
-    .where(
-      and(eq(agentRunTable.taskId, taskId), eq(agentRunTable.kind, "ship")),
-    )
-    .orderBy(desc(agentRunTable.createdAt))
-    .limit(2);
-}
-
-/** Everything the task view shows about the agent, in one read. */
-export async function getTaskAgent(taskId: string) {
+/**
+ * Everything the task view shows about the agent, in one read. Suggestions
+ * are filtered and named for the caller, whose permissions `can` checks.
+ */
+export async function getTaskAgent(taskId: string, can: PermissionCheck) {
   const loaded = await loadAgentTask(taskId);
   if (!loaded) throw new HTTPException(404, { message: "Task not found" });
   if (!loaded.task.isWorkItem) throw agentError("AI_AGENT_NOT_WORK_ITEM");
   const { task, clarifications, inputHash } = loaded;
 
-  const [setting, runner, assessment, shipRuns, lastAssess, activeAssess] =
-    await Promise.all([
-      loadEffectiveAgentSetting(task.projectId),
-      loadWorkspaceRunner(task.workspaceId),
-      loadAssessment(taskId),
-      loadShipRuns(taskId),
-      db
-        .select({
-          status: agentRunTable.status,
-          errorCode: agentRunTable.errorCode,
-          error: agentRunTable.error,
-          finishedAt: agentRunTable.finishedAt,
-          inputHash: agentRunTable.inputHash,
-        })
-        .from(agentRunTable)
-        .where(
-          and(
-            eq(agentRunTable.taskId, taskId),
-            eq(agentRunTable.kind, "assess"),
-            inArray(agentRunTable.status, ["succeeded", "failed"]),
-          ),
-        )
-        .orderBy(desc(agentRunTable.createdAt))
-        .limit(1),
-      db
-        .select({
-          status: agentRunTable.status,
-          notBefore: agentRunTable.notBefore,
-        })
-        .from(agentRunTable)
-        .where(
-          and(
-            eq(agentRunTable.taskId, taskId),
-            eq(agentRunTable.kind, "assess"),
-            inArray(agentRunTable.status, [...ACTIVE]),
-          ),
-        )
-        // "running" sorts before "queued": a running check is not scheduled.
-        .orderBy(desc(agentRunTable.status))
-        .limit(1),
-    ]);
+  const [
+    setting,
+    runner,
+    assessment,
+    { active, last },
+    workflow,
+    lastAssess,
+    activeAssess,
+  ] = await Promise.all([
+    loadEffectiveAgentSetting(task.projectId),
+    loadWorkspaceRunner(task.workspaceId),
+    loadAssessment(taskId),
+    loadWorkRuns(taskId),
+    loadWorkflowColumns(task.projectId),
+    db
+      .select({
+        status: agentRunTable.status,
+        errorCode: agentRunTable.errorCode,
+        error: agentRunTable.error,
+        finishedAt: agentRunTable.finishedAt,
+        inputHash: agentRunTable.inputHash,
+      })
+      .from(agentRunTable)
+      .where(
+        and(
+          eq(agentRunTable.taskId, taskId),
+          eq(agentRunTable.kind, "assess"),
+          inArray(agentRunTable.status, ["succeeded", "failed"]),
+        ),
+      )
+      .orderBy(desc(agentRunTable.createdAt))
+      .limit(1),
+    db
+      .select({
+        status: agentRunTable.status,
+        notBefore: agentRunTable.notBefore,
+      })
+      .from(agentRunTable)
+      .where(
+        and(
+          eq(agentRunTable.taskId, taskId),
+          eq(agentRunTable.kind, "assess"),
+          inArray(agentRunTable.status, [...ACTIVE]),
+        ),
+      )
+      // "running" sorts before "queued": a running check is not scheduled.
+      .orderBy(desc(agentRunTable.status))
+      .limit(1),
+  ]);
 
-  const [latest, previous] = shipRuns;
-  const active =
-    latest && (ACTIVE as readonly string[]).includes(latest.status)
-      ? latest
-      : null;
-  const last = active ? (previous ?? null) : (latest ?? null);
   const shownRun = active ?? last;
-  const events = shownRun
-    ? await db
-        .select({
-          id: agentRunEventTable.id,
-          kind: agentRunEventTable.kind,
-          message: agentRunEventTable.message,
-          createdAt: agentRunEventTable.createdAt,
+  const [events, suggestions] = await Promise.all([
+    shownRun
+      ? db
+          .select({
+            id: agentRunEventTable.id,
+            kind: agentRunEventTable.kind,
+            message: agentRunEventTable.message,
+            createdAt: agentRunEventTable.createdAt,
+          })
+          .from(agentRunEventTable)
+          .where(eq(agentRunEventTable.runId, shownRun.id))
+          .orderBy(asc(agentRunEventTable.id))
+          .limit(MAX_EVENTS_PER_RUN)
+      : [],
+    assessment
+      ? resolveSuggestions({
+          task,
+          suggestions: assessment.suggestions,
+          dismissedKinds: assessment.dismissedSuggestionKinds,
+          can,
         })
-        .from(agentRunEventTable)
-        .where(eq(agentRunEventTable.runId, shownRun.id))
-        .orderBy(asc(agentRunEventTable.id))
-        .limit(MAX_EVENTS_PER_RUN)
-    : [];
+      : [],
+  ]);
 
   // The project's current threshold applies, even if it changed after the
   // assessment was made.
@@ -123,14 +131,21 @@ export async function getTaskAgent(taskId: string) {
       questions: assessment.questions,
     }),
   };
+  const inTriage = task.status === TRIAGE_STATUS;
   const blockers = computeShipBlockers({
     enabled: setting.enabled,
     repository: setting.repository,
     hasRunner: runner !== null,
     archived: task.archived,
+    inTriage,
     assessment: current,
     currentInputHash: inputHash,
     shipInProgress: active !== null,
+  });
+  const startBlockers = computeStartBlockers({
+    archived: task.archived,
+    inTriage,
+    runInProgress: active !== null,
   });
 
   return {
@@ -140,10 +155,8 @@ export async function getTaskAgent(taskId: string) {
       ? {
           score: current.score,
           verdict: current.verdict,
-          summary: current.summary,
-          checklist: current.checklist,
           questions: current.questions,
-          suggestions: current.suggestions,
+          suggestions,
           assessedAt: current.assessedAt,
         }
       : null,
@@ -175,6 +188,18 @@ export async function getTaskAgent(taskId: string) {
       createdAt: item.createdAt,
     })),
     runner: { configured: runner !== null, online: isRunnerOnline(runner) },
+    workflow: {
+      todoStatus: workflow.todo?.slug ?? null,
+      inProgress: workflow.inProgress,
+    },
+    start: {
+      canStart: startBlockers.length === 0,
+      blockers: startBlockers,
+      pullRequest: startPullRequestState({
+        repository: setting.repository,
+        runner,
+      }),
+    },
     ship: {
       canShip: blockers.length === 0,
       blockers,
