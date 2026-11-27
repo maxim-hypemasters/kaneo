@@ -100,6 +100,12 @@ vi.mock(
     default: () => ({ data: undefined }),
   }),
 );
+vi.mock("@/hooks/queries/config/use-get-config", () => ({
+  default: () => ({ data: { hasAiAgent: false } }),
+}));
+vi.mock("@/hooks/queries/agent/use-task-agent", () => ({
+  useTaskAgent: () => ({ data: undefined }),
+}));
 vi.mock("@/hooks/queries/task-relation/use-get-task-relations", () => ({
   default: () => ({ data: mocks.relations, isSuccess: true }),
 }));
@@ -283,7 +289,7 @@ describe("TaskShortcuts", () => {
 
     press({ key: ">", code: "Period", ctrlKey: true, shiftKey: true });
     await act(async () => {});
-    expect(mocks.writeText).toHaveBeenCalledWith("kan-42-fix-login");
+    expect(mocks.writeText).toHaveBeenCalledWith("feature/kan-42/fix-login");
 
     press({ key: "m", code: "KeyM", ctrlKey: true });
     expect(getByRole("textbox", { name: "Comment" })).toHaveFocus();

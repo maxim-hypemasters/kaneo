@@ -3,6 +3,7 @@ import { alias } from "drizzle-orm/pg-core";
 import { agentBranchName } from "../../agent/branch-name";
 import { CONTEXT_COMMENT_LIMIT } from "../../agent/constants";
 import type { AgentTask } from "../../agent/controllers/load-agent-task";
+import { loadWorkBranch } from "../../agent/controllers/load-work-branch";
 import type { loadEffectiveAgentSetting } from "../../agent/controllers/load-project-agent-setting";
 import db from "../../database";
 import {
@@ -88,24 +89,26 @@ export async function buildTaskContext(
   { task, clarifications }: Pick<AgentTask, "task" | "clarifications">,
   setting: AgentSetting,
 ) {
-  const [labels, column, comments, relatedTasks] = await Promise.all([
-    db
-      .select({ name: labelTable.name })
-      .from(labelTable)
-      .where(eq(labelTable.taskId, task.id)),
-    db
-      .select({ name: columnTable.name })
-      .from(columnTable)
-      .where(
-        and(
-          eq(columnTable.projectId, task.projectId),
-          eq(columnTable.slug, task.status ?? ""),
-        ),
-      )
-      .limit(1),
-    loadComments(task.id),
-    loadRelatedTasks(task.id, task.projectId),
-  ]);
+  const [labels, column, comments, relatedTasks, workBranch] =
+    await Promise.all([
+      db
+        .select({ name: labelTable.name })
+        .from(labelTable)
+        .where(eq(labelTable.taskId, task.id)),
+      db
+        .select({ name: columnTable.name })
+        .from(columnTable)
+        .where(
+          and(
+            eq(columnTable.projectId, task.projectId),
+            eq(columnTable.slug, task.status ?? ""),
+          ),
+        )
+        .limit(1),
+      loadComments(task.id),
+      loadRelatedTasks(task.id, task.projectId),
+      loadWorkBranch(task.id),
+    ]);
   const clientUrl = process.env.KANEO_CLIENT_URL || "http://localhost:5173";
 
   return {
@@ -137,6 +140,8 @@ export async function buildTaskContext(
       projectSlug: task.projectSlug,
       taskNumber: task.number,
       taskTitle: task.title,
+      taskType: task.type,
+      workBranch,
     }),
   };
 }

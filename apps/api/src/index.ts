@@ -73,6 +73,7 @@ import { migrateWorkItemPermissions } from "./migrations/work-item-permissions";
 import { migrateProjectDocumentPermissions } from "./migrations/project-document-permissions";
 import { migrateTimeOffPermissions } from "./migrations/time-off-permissions";
 import { migrateTestCasePermissions } from "./migrations/test-case-permissions";
+import { migrateBranchPatternDefault } from "./migrations/branch-pattern-default";
 import notification from "./notification";
 import notificationPreferences from "./notification-preferences";
 import oauth from "./oauth";
@@ -1102,6 +1103,7 @@ export async function runStartupTasks() {
   await migrateProjectDocumentPermissions();
   await migrateTimeOffPermissions();
   await migrateTestCasePermissions();
+  await migrateBranchPatternDefault();
   await seedDefaultWorkspaceRoles();
 
   initializePlugins();

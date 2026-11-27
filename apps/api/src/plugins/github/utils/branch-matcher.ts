@@ -1,11 +1,24 @@
-import type { GitHubConfig } from "../config";
+import { type GitHubConfig, TYPED_BRANCH_PATTERN } from "../config";
+
+// A title after "/" is left out with its "/" when it slugs to nothing, so the
+// name never ends in a bare "/". After any other separator the separator
+// stays, as it always has.
+const SLASH_TITLE = "/{title}";
+// The title once the pattern is escaped for a RegExp, with the "/" that makes
+// it optional.
+const ESCAPED_TITLE = /(\/)?\\\{title\\\}/;
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 50);
+    .slice(0, 50)
+    .replace(/-$/, "");
 }
 
 export function generateBranchName(
@@ -13,26 +26,37 @@ export function generateBranchName(
   projectSlug: string,
   taskNumber: number,
   taskTitle: string,
+  taskType: string,
 ): string {
-  return pattern
-    .replace("{slug}", projectSlug.toLowerCase())
-    .replace("{number}", taskNumber.toString())
-    .replace("{title}", slugify(taskTitle));
+  // slugify keeps only ASCII letters and digits, so a title written in any
+  // other script leaves nothing.
+  const title = slugify(taskTitle);
+  const base = title ? pattern : pattern.replace(SLASH_TITLE, "");
+  // Replacer functions insert each value as written, so "$&" in a project key
+  // stays text, and the key goes in last so nothing in it reads as a
+  // placeholder.
+  return base
+    .replace("{type}", () => (taskType === "bug" ? "bugfix" : "feature"))
+    .replace("{number}", () => taskNumber.toString())
+    .replace("{title}", () => title)
+    .replace("{slug}", () => projectSlug.toLowerCase());
 }
 
 export function createBranchRegex(
   pattern: string,
   projectSlug: string,
 ): RegExp {
-  const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-  const regexPattern = escapedPattern
-    .replace("\\{slug\\}", projectSlug.toLowerCase())
+  const regexPattern = escapeRegExp(pattern)
+    .replace("\\{type\\}", "(?:feature|bugfix)")
     .replace("\\{number\\}", "(\\d+)")
-    // The title segment can be empty: slugify keeps only ASCII alphanumerics,
-    // so a title written in any other script leaves nothing behind and
-    // generateBranchName emits the separator with no name after it.
-    .replace("\\{title\\}", "([a-z0-9-]*)");
+    // The title can slug to nothing. After a "/", generateBranchName drops it
+    // with the "/" and older names kept the "/", so both forms match; any
+    // other separator stays required, as it always was.
+    .replace(ESCAPED_TITLE, (_title, slash?: string) =>
+      slash ? "(?:/([a-z0-9-]*))?" : "([a-z0-9-]*)",
+    )
+    // Escaped, so a key such as "C++" or "A.B" matches only itself.
+    .replace("\\{slug\\}", () => escapeRegExp(projectSlug.toLowerCase()));
 
   // Allow optional suffix after the pattern (e.g., lif-3-part-1)
   return new RegExp(`^${regexPattern}(?:-.*)?$`, "i");
@@ -57,7 +81,7 @@ export function extractTaskNumberFromBranch(
     return null;
   }
 
-  const pattern = config.branchPattern || "{slug}-{number}";
+  const pattern = config.branchPattern || TYPED_BRANCH_PATTERN;
   const regex = createBranchRegex(pattern, projectSlug);
   const match = branchName.match(regex);
 
@@ -85,7 +109,7 @@ function extractExplicitTaskNumber(
   projectSlug?: string,
 ): number | null {
   if (projectSlug) {
-    const slug = projectSlug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const slug = escapeRegExp(projectSlug);
     const key = withShortLinksAsTickets(text).match(
       new RegExp(`(?:^|[^\\w-])${slug}-(\\d+)(?=$|[^\\w])`, "i"),
     );

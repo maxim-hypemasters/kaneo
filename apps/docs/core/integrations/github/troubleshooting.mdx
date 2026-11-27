@@ -48,7 +48,7 @@ For existing issues, use **Import Issues**. If an import stops, return to the in
 
 ## Branches and pull requests do not move tasks
 
-Check the branch naming pattern in the project's integration settings. The default is `{slug}-{number}`, for example `web-22` for task `WEB-22`.
+Check the branch naming pattern in the project's integration settings. The default is `{type}/{slug}-{number}/{title}`, for example `feature/web-22/add-dark-mode` for task `WEB-22`, or `bugfix/web-23/login-button-does-nothing` for bug `WEB-23`. Under the default, a branch named the old way, such as `web-22`, doesn't link by name; a pull request from it still links when its title names the task, such as `WEB-22: Add dark mode`.
 
 Then check:
 

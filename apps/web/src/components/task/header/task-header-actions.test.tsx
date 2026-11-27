@@ -19,6 +19,9 @@ import { TaskHeaderActions } from "./task-header-actions";
 
 const mocks = vi.hoisted(() => ({
   task: undefined as Record<string, unknown> | undefined,
+  hasAiAgent: false,
+  agent: undefined as Record<string, unknown> | undefined,
+  taskAgent: vi.fn(),
   writeText: vi.fn(),
   message: vi.fn(),
   error: vi.fn(),
@@ -61,6 +64,15 @@ vi.mock(
   "@/hooks/queries/gitlab-integration/use-get-gitlab-integration",
   () => ({ default: () => ({ data: undefined }) }),
 );
+vi.mock("@/hooks/queries/config/use-get-config", () => ({
+  default: () => ({ data: { hasAiAgent: mocks.hasAiAgent } }),
+}));
+vi.mock("@/hooks/queries/agent/use-task-agent", () => ({
+  useTaskAgent: (taskId: string, options: { enabled: boolean }) => {
+    mocks.taskAgent(taskId, options);
+    return { data: options.enabled ? mocks.agent : undefined };
+  },
+}));
 vi.mock("@/hooks/use-workspace-permission", () => ({
   useWorkspacePermission: () => ({ canWorkItem: () => true }),
 }));
@@ -95,8 +107,30 @@ async function openMoreMenu() {
   );
 }
 
+function agentState({
+  enabled = true,
+  ran = true,
+}: { enabled?: boolean; ran?: boolean } = {}) {
+  return {
+    enabled,
+    ship: {
+      branchName: "feature/kan-12/fix-login-on-safari",
+      activeRun: null,
+      lastRun: ran ? { id: "run-1", kind: "start" } : null,
+    },
+  };
+}
+
+async function copyBranch() {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Copy task branch" }));
+  });
+}
+
 beforeEach(() => {
   mocks.task = task;
+  mocks.hasAiAgent = false;
+  mocks.agent = undefined;
   mocks.writeText.mockResolvedValue(undefined);
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
@@ -170,6 +204,55 @@ describe("TaskHeaderActions", () => {
     expect(
       screen.queryByRole("button", { name: "Copy task branch" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("copies the branch the agent pushed after the title changed", async () => {
+    mocks.hasAiAgent = true;
+    mocks.agent = agentState();
+    renderActions();
+
+    await copyBranch();
+
+    expect(mocks.taskAgent).toHaveBeenCalledWith("task-1", { enabled: true });
+    expect(mocks.writeText).toHaveBeenCalledWith(
+      "feature/kan-12/fix-login-on-safari",
+    );
+  });
+
+  it.each([
+    ["the agent hasn't run", { ran: false }],
+    ["the project has the agent off", { enabled: false }],
+  ])("copies the generated branch when %s", async (_case, state) => {
+    mocks.hasAiAgent = true;
+    mocks.agent = agentState(state);
+    renderActions();
+
+    await copyBranch();
+
+    expect(mocks.writeText).toHaveBeenCalledWith("feature/kan-12/fix-login");
+  });
+
+  it("doesn't load agent state on an instance without the agent", async () => {
+    mocks.agent = agentState();
+    renderActions();
+
+    await copyBranch();
+
+    expect(mocks.taskAgent).toHaveBeenCalledWith("task-1", { enabled: false });
+    expect(mocks.taskAgent).not.toHaveBeenCalledWith("task-1", {
+      enabled: true,
+    });
+    expect(mocks.writeText).toHaveBeenCalledWith("feature/kan-12/fix-login");
+  });
+
+  it("doesn't load agent state for a Feature", () => {
+    mocks.hasAiAgent = true;
+    mocks.task = { ...task, type: "feature" };
+    renderActions();
+
+    expect(mocks.taskAgent).not.toHaveBeenCalledWith("task-1", {
+      enabled: true,
+    });
   });
 
   it("says which Feature ID it copied", async () => {

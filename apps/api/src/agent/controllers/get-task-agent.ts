@@ -20,6 +20,7 @@ import type { PermissionCheck } from "../suggestions/load-suggestion-facts";
 import { resolveSuggestions } from "../suggestions/resolve-suggestions";
 import { loadAgentTask } from "./load-agent-task";
 import { loadEffectiveAgentSetting } from "./load-project-agent-setting";
+import { loadWorkBranch } from "./load-work-branch";
 import { loadWorkRuns } from "./load-work-runs";
 import { loadWorkflowColumns } from "./load-workflow-columns";
 import { isRunnerOnline, loadWorkspaceRunner } from "./load-workspace-runner";
@@ -54,6 +55,7 @@ export async function getTaskAgent(taskId: string, can: PermissionCheck) {
     workflow,
     lastAssess,
     activeAssess,
+    workBranch,
   ] = await Promise.all([
     loadEffectiveAgentSetting(task.projectId),
     loadWorkspaceRunner(task.workspaceId),
@@ -94,6 +96,7 @@ export async function getTaskAgent(taskId: string, can: PermissionCheck) {
       // "running" sorts before "queued": a running check is not scheduled.
       .orderBy(desc(agentRunTable.status))
       .limit(1),
+    loadWorkBranch(taskId),
   ]);
 
   const shownRun = active ?? last;
@@ -210,6 +213,8 @@ export async function getTaskAgent(taskId: string, can: PermissionCheck) {
         projectSlug: task.projectSlug,
         taskNumber: task.number,
         taskTitle: task.title,
+        taskType: task.type,
+        workBranch,
       }),
       activeRun: active ? toAgentRun(active) : null,
       lastRun: last ? toAgentRun(last) : null,
