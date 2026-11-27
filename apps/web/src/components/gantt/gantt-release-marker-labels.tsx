@@ -9,7 +9,10 @@ import {
 import { cn } from "@/lib/cn";
 import { formatReleaseDate } from "@/lib/releases/release-date";
 import { formatReleaseKinds } from "./format-release-kinds";
-import { releaseMarkerLabelWidths } from "./release-marker-label-widths";
+import {
+  releaseMarkerLabelWidths,
+  releaseMarkerLinePosition,
+} from "./release-marker-label-widths";
 import type { ReleaseMarkerDay } from "./release-marker-days";
 import type { GanttTimeline } from "./timeline";
 
@@ -53,17 +56,16 @@ export function GanttReleaseMarkerLabels({
     >
       {days.map((day, position) => {
         const { roomDays, iconOnly } = widths[position];
-        const date = formatReleaseDate(day.date, { today });
         return (
           <li
             key={day.date}
             className="absolute inset-y-0 flex items-center gap-0.5"
             style={{
-              left: `${(day.index + 0.5) * dayColumnWidthRem - ICON_CENTRE_REM}rem`,
+              left: `${releaseMarkerLinePosition(day) * dayColumnWidthRem - ICON_CENTRE_REM}rem`,
               maxWidth: `${roomDays * dayColumnWidthRem}rem`,
             }}
           >
-            {day.releases.map((release) => {
+            {day.releases.map((release, entry) => {
               const label = t("tasks:releases.gantt.markerAria", {
                 name: release.name,
                 kind: formatReleaseKinds(
@@ -72,10 +74,13 @@ export function GanttReleaseMarkerLabels({
                   ),
                   locale,
                 ),
-                date,
+                date: formatReleaseDate(release.date, { today }),
               });
+              // A release with dates on both days of a pinned weekend gets a
+              // link per date; its name shows once, after the last.
+              const nameFollows = day.releases[entry + 1]?.id === release.id;
               return (
-                <Tooltip key={release.id}>
+                <Tooltip key={`${release.id}:${release.date}`}>
                   <TooltipTrigger
                     render={
                       <Link
@@ -101,7 +106,7 @@ export function GanttReleaseMarkerLabels({
                         />
                       );
                     })}
-                    {iconOnly ? null : (
+                    {iconOnly || nameFollows ? null : (
                       <span className="truncate">{release.name}</span>
                     )}
                   </TooltipTrigger>

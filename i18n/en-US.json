@@ -3656,6 +3656,7 @@
 			"pageTitle": "{{name}} – Gantt",
 			"title": "Gantt Timeline",
 			"jumpToToday": "Jump to today",
+			"todayOnHiddenWeekend": "Today, {{date}}, is a hidden weekend day",
 			"hideTasks": "Hide tasks",
 			"showTasks": "Show tasks",
 			"noTasks": "No scheduled work",
@@ -3900,6 +3901,7 @@
 			"checklistProgress": "Checklist progress",
 			"projectBackground": "Project background",
 			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends",
 			"layout": "Layout",
 			"groupBy": "Group by",
 			"groupByOptions": {

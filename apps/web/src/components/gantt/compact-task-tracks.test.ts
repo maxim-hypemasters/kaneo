@@ -86,6 +86,67 @@ describe("Compact Gantt rows", () => {
     ).toEqual([["a"], ["b"]]);
   });
 
+  describe("with weekends hidden", () => {
+    // 2026-09-05 is a Saturday.
+    const saturday = task("sat", "2026-09-05T00:00", "2026-09-05T00:00");
+    const sunday = task("sun", "2026-09-06T00:00", "2026-09-06T00:00");
+    const weekend = task("weekend", "2026-09-05T00:00", "2026-09-06T00:00");
+    const monday = task("mon", "2026-09-07T00:00", "2026-09-08T00:00");
+
+    it("keeps a weekend-only bar off the track of the Monday bar it is drawn on", () => {
+      expect(ids(compactTaskTracks([saturday, monday], false))).toEqual([
+        ["sat", "mon"],
+      ]);
+      expect(
+        ids(compactTaskTracks([saturday, monday], false, undefined, true)),
+      ).toEqual([["sat"], ["mon"]]);
+      expect(
+        ids(compactTaskTracks([weekend, monday], false, undefined, true)),
+      ).toEqual([["weekend"], ["mon"]]);
+    });
+
+    it("stacks a Saturday-only and a Sunday-only bar, both drawn on Monday", () => {
+      expect(ids(compactTaskTracks([saturday, sunday], false))).toEqual([
+        ["sat", "sun"],
+      ]);
+      expect(
+        ids(compactTaskTracks([saturday, sunday], false, undefined, true)),
+      ).toEqual([["sat"], ["sun"]]);
+    });
+
+    it("lets bars that only overlap on hidden days share a track", () => {
+      const tasks = [
+        task("fri-sun", "2026-09-04T00:00", "2026-09-06T00:00"),
+        task("sat-mon", "2026-09-05T00:00", "2026-09-07T00:00"),
+      ];
+      expect(ids(compactTaskTracks(tasks, false))).toEqual([
+        ["fri-sun"],
+        ["sat-mon"],
+      ]);
+      expect(ids(compactTaskTracks(tasks, false, undefined, true))).toEqual([
+        ["fri-sun", "sat-mon"],
+      ]);
+    });
+
+    it("remembers the days a bar is drawn on", () => {
+      const tracks = compactTaskTracks(
+        [saturday, monday],
+        false,
+        undefined,
+        true,
+      );
+      const memory = rememberTracks(tracks, true);
+      expect(memory.get("sat")).toEqual({
+        track: 0,
+        firstDay: new Date("2026-09-07T00:00").getTime(),
+        lastDay: new Date("2026-09-07T00:00").getTime(),
+      });
+      expect(
+        ids(compactTaskTracks([saturday, monday], false, memory, true)),
+      ).toEqual([["sat"], ["mon"]]);
+    });
+  });
+
   describe("after an edit", () => {
     const opened = [
       task("a", "2026-10-01T00:00", "2026-10-03T00:00"),

@@ -3865,7 +3865,8 @@
 				"loadError": "Couldn't load who is away.",
 				"note": "{{name}} is away {{dates}}.",
 				"relatedRefused": "{{title}} would start or be due on {{date}}, when {{name}} is away, so the tasks stay where they were."
-			}
+			},
+			"todayOnHiddenWeekend": "Сегодня, {{date}}, скрытый выходной день"
 		},
 		"delete": {
 			"title": "Удалить задачу?",
@@ -4093,7 +4094,8 @@
 				"none": "Без группировки",
 				"feature": "Фича"
 			},
-			"ganttCompactRows": "Компактные строки"
+			"ganttCompactRows": "Компактные строки",
+			"ganttHideWeekends": "Скрыть выходные"
 		},
 		"filterBar": {
 			"label": "Активные фильтры",

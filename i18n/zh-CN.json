@@ -3683,7 +3683,8 @@
 				"loadError": "Couldn't load who is away.",
 				"note": "{{name}} is away {{dates}}.",
 				"relatedRefused": "{{title}} would start or be due on {{date}}, when {{name}} is away, so the tasks stay where they were."
-			}
+			},
+			"todayOnHiddenWeekend": "Today, {{date}}, is a hidden weekend day"
 		},
 		"delete": {
 			"title": "删除任务？",
@@ -3840,7 +3841,8 @@
 				"none": "无",
 				"feature": "功能"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "已应用的筛选",

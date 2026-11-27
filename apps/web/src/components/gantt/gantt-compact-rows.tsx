@@ -57,7 +57,12 @@ export function GanttCompactRows({
   dependencyNote,
   awayFor,
 }: GanttCompactRowsProps) {
-  const tracks = useHeldCompactTracks(tasks, isMobile, ready);
+  const tracks = useHeldCompactTracks(
+    tasks,
+    isMobile,
+    ready,
+    timeline.hideWeekends,
+  );
   if (tracks.length === 0) return null;
   return (
     // No lines between rows: compact lanes are divided only from each other.

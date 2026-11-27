@@ -1,5 +1,6 @@
-import { addDays, differenceInCalendarDays } from "date-fns";
+import { addDays } from "date-fns";
 import { extendGanttRange, type GanttRange } from "./timeline";
+import { columnDay, dayColumn } from "./weekend-columns";
 
 export const GANTT_MIN_DAY_WIDTH_REM = 2;
 export const GANTT_MAX_DAY_WIDTH_REM = 24;
@@ -22,10 +23,14 @@ export function ganttZoomAnchor(
   scrollLeft: number,
   pointerOffsetPx: number,
   dayPx: number,
+  hideWeekends = false,
 ): GanttZoomAnchor {
   const index = (scrollLeft + pointerOffsetPx) / dayPx;
   const wholeDays = Math.floor(index);
-  return { day: addDays(rangeStart, wholeDays), fraction: index - wholeDays };
+  return {
+    day: columnDay(rangeStart, wholeDays, hideWeekends),
+    fraction: index - wholeDays,
+  };
 }
 
 export function scrollLeftForZoomAnchor(
@@ -33,11 +38,12 @@ export function scrollLeftForZoomAnchor(
   rangeStart: Date,
   pointerOffsetPx: number,
   dayPx: number,
+  hideWeekends = false,
 ) {
   // Calendar-day differences keep the same date under the pointer across
   // DST boundaries; a day is not always 24 elapsed hours.
   return (
-    (differenceInCalendarDays(anchor.day, rangeStart) + anchor.fraction) *
+    (dayColumn(anchor.day, rangeStart, hideWeekends) + anchor.fraction) *
       dayPx -
     pointerOffsetPx
   );
@@ -52,6 +58,7 @@ export function rangeForZoomAnchor(
   dayPx: number,
   visiblePx: number,
   maxDays: number,
+  hideWeekends = false,
 ) {
   let range = current;
   while (true) {
@@ -60,8 +67,13 @@ export function rangeForZoomAnchor(
       range.start,
       pointerOffsetPx,
       dayPx,
+      hideWeekends,
     );
-    const dayCount = differenceInCalendarDays(range.end, range.start) + 1;
+    const dayCount = dayColumn(
+      addDays(range.end, 1),
+      range.start,
+      hideWeekends,
+    );
     const maxLeft = Math.max(0, dayCount * dayPx - visiblePx);
     const side = left < 0 ? "start" : left > maxLeft ? "end" : null;
     if (!side) return range;

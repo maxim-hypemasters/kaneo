@@ -13,13 +13,13 @@ const runs = [
 ];
 
 it("lists each run's days", () => {
-  expect(awayNoteDates(runs, rangeStart, today)).toBe(
+  expect(awayNoteDates(runs, { rangeStart }, today)).toBe(
     `${formatReleaseRange("2027-01-05", "2027-01-07", { today })}, ${formatReleaseDate("2027-01-11", { today })}`,
   );
 });
 
 it("adds each run's label when asked", () => {
   expect(
-    awayNoteDates(runs.slice(1), rangeStart, today, (run) => run.kind),
+    awayNoteDates(runs.slice(1), { rangeStart }, today, (run) => run.kind),
   ).toBe(`${formatReleaseDate("2027-01-11", { today })} (away)`);
 });

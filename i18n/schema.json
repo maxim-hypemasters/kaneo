@@ -14938,6 +14938,9 @@
 						"jumpToToday": {
 							"type": "string"
 						},
+						"todayOnHiddenWeekend": {
+							"type": "string"
+						},
 						"hideTasks": {
 							"type": "string"
 						},
@@ -15382,6 +15385,7 @@
 						"pageTitle",
 						"title",
 						"jumpToToday",
+						"todayOnHiddenWeekend",
 						"hideTasks",
 						"showTasks",
 						"noTasks",
@@ -16189,6 +16193,9 @@
 						"ganttCompactRows": {
 							"type": "string"
 						},
+						"ganttHideWeekends": {
+							"type": "string"
+						},
 						"layout": {
 							"type": "string"
 						},
@@ -16220,6 +16227,7 @@
 						"checklistProgress",
 						"projectBackground",
 						"ganttCompactRows",
+						"ganttHideWeekends",
 						"layout",
 						"groupBy",
 						"groupByOptions"

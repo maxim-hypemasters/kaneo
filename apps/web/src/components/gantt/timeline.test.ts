@@ -232,3 +232,47 @@ describe("toIsoDay", () => {
     );
   });
 });
+
+describe("with weekends hidden", () => {
+  // Thu Oct 1 to Sun Oct 11, 2026.
+  const range = { start: new Date(2026, 9, 1), end: new Date(2026, 9, 11) };
+
+  it("renders only the working days", () => {
+    const timeline = buildGanttTimeline(range, 2.75, true);
+    expect(timeline.days.map((day) => day.getDate())).toEqual([
+      1, 2, 5, 6, 7, 8, 9,
+    ]);
+    expect(timeline.gridTemplateColumns).toBe(
+      "repeat(7, minmax(2.75rem, 2.75rem))",
+    );
+    expect(timeline.timelineMinWidthRem).toBeCloseTo(7 * 2.75);
+  });
+
+  it("keeps every day by default", () => {
+    expect(buildGanttTimeline(range, 2.75).days).toHaveLength(11);
+  });
+
+  it("draws a span over a weekend with no columns for it", () => {
+    expect(
+      getBarGridColumns(
+        new Date(2026, 9, 2),
+        new Date(2026, 9, 6),
+        range.start,
+        7,
+        true,
+      ),
+    ).toMatchObject({ barInView: true, lineStart: 2, lineEnd: 5 });
+  });
+
+  it("gives a span on weekend days only one column, on the next working day", () => {
+    expect(
+      getBarGridColumns(
+        new Date(2026, 9, 3),
+        new Date(2026, 9, 4),
+        range.start,
+        7,
+        true,
+      ),
+    ).toMatchObject({ barInView: true, lineStart: 3, lineEnd: 4 });
+  });
+});

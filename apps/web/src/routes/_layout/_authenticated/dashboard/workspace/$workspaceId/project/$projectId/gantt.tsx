@@ -43,6 +43,7 @@ import { GanttPeriodControls } from "@/components/gantt/gantt-period-controls";
 import { GanttReleaseMarkerLabels } from "@/components/gantt/gantt-release-marker-labels";
 import { GanttReleaseMarkers } from "@/components/gantt/gantt-release-markers";
 import { ganttReleases } from "@/components/gantt/gantt-releases";
+import { dayColumn } from "@/components/gantt/weekend-columns";
 import { GanttCompactRows } from "@/components/gantt/gantt-compact-rows";
 import { ganttStatusPhase } from "@/components/gantt/gantt-status-phase";
 import { GanttTaskRow } from "@/components/gantt/gantt-task-row";
@@ -83,6 +84,7 @@ import { useHeldRowOrder } from "@/components/gantt/use-held-row-order";
 import PageTitle from "@/components/page-title";
 import { DisplaySection } from "@/components/project/display/display-section";
 import { GanttCompactRowsSwitch } from "@/components/project/display/gantt-compact-rows-switch";
+import { GanttHideWeekendsSwitch } from "@/components/project/display/gantt-hide-weekends-switch";
 import { GanttGroupByControl } from "@/components/project/display/gantt-group-by-control";
 import { WeekStartControl } from "@/components/project/display/week-start-control";
 import { ActiveFiltersBar } from "@/components/project/task-filters/active-filters-bar";
@@ -100,6 +102,8 @@ import useGetProjectMembers from "@/hooks/queries/workspace-users/use-get-projec
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useWorkspacePermission } from "@/hooks/use-workspace-permission";
 import { cn } from "@/lib/cn";
+import { formatDate } from "@/lib/format";
+import { parseReleaseDate } from "@/lib/releases/release-date";
 import { releaseSummaries } from "@/lib/releases/release-summaries";
 import { useReleaseToday } from "@/lib/releases/use-release-today";
 import { toast } from "@/lib/toast";
@@ -182,6 +186,8 @@ function RouteComponent() {
   // Only an explicit true packs rows, as with a stale stored grouping above.
   const compactRows =
     useUserPreferencesStore((state) => state.ganttCompactRows) === true;
+  const hideWeekends =
+    useUserPreferencesStore((state) => state.ganttHideWeekends) === true;
   const entityPreference = useUserPreferencesStore(
     (state) => state.ganttEntities,
   );
@@ -352,6 +358,7 @@ function RouteComponent() {
     ready: rangeReady,
     showEmptyTimeline: groupByMilestone && milestones.length > 0,
     weekStartsOn,
+    hideWeekends,
     dayColumnWidthRem: defaultDayColumnWidthRem,
     railWidthRem,
     scrollElement,
@@ -431,9 +438,10 @@ function RouteComponent() {
               assigneeName: task.assigneeName,
               assigneeImage: task.assigneeImage ?? null,
             },
+        hideWeekends,
       );
     });
-  }, [parsedTasks, pendingEdits]);
+  }, [parsedTasks, pendingEdits, hideWeekends]);
   const savedTasksById = useMemo(
     () => new Map(savedTasks.map((task) => [task.id, task])),
     [savedTasks],
@@ -472,9 +480,10 @@ function RouteComponent() {
             heldEdit.taskId,
             heldDraft.edit,
             heldEdit.brokenIds,
+            hideWeekends,
           )
         : null,
-    [heldEdit, heldDraft, savedSpans, dependencies],
+    [heldEdit, heldDraft, savedSpans, dependencies, hideWeekends],
   );
   const heldMoves = useMemo(
     () =>
@@ -490,17 +499,21 @@ function RouteComponent() {
     if (!heldEdit || !heldDraft || heldEdit.saved) return savedTasks;
     return savedTasks.map((task) =>
       task.id === heldEdit.taskId
-        ? applyPendingEdit(task, {
-            ...heldDraft.edit,
-            seq: -1,
-            assigneeName: heldDraft.assignee.name,
-            assigneeImage: heldDraft.assignee.image,
-            hasStartDate: Boolean(task.startDate),
-            hasDueDate: Boolean(task.dueDate),
-          })
+        ? applyPendingEdit(
+            task,
+            {
+              ...heldDraft.edit,
+              seq: -1,
+              assigneeName: heldDraft.assignee.name,
+              assigneeImage: heldDraft.assignee.image,
+              hasStartDate: Boolean(task.startDate),
+              hasDueDate: Boolean(task.dueDate),
+            },
+            hideWeekends,
+          )
         : task,
     );
-  }, [savedTasks, heldEdit, heldDraft]);
+  }, [savedTasks, heldEdit, heldDraft, hideWeekends]);
   const spans = useMemo(
     () => spansOf(displayedTasks, completedStatuses),
     [displayedTasks, completedStatuses],
@@ -914,12 +927,25 @@ function RouteComponent() {
       tasks.map((task) => renderTaskRow(task, options))
     );
 
-  // Whether today's column is rendered; "Jump to today" re-centres the span
-  // first when it isn't.
-  const todayInRange = useMemo(
-    () => timeline?.days.some((day) => isToday(day)) ?? false,
-    [timeline],
+  // Today's column, or on a hidden weekend the next working day's, whose left
+  // edge is where today is pinned. -1 when it isn't rendered; "Jump to today"
+  // re-centres the span first then.
+  // The viewer's day changes at midnight, so the pin follows it.
+  const todayDate = useMemo(
+    () => parseReleaseDate(releaseToday),
+    [releaseToday],
   );
+  const todayColumn = useMemo(() => {
+    if (!timeline) return -1;
+    const column = dayColumn(
+      todayDate,
+      timeline.rangeStart,
+      timeline.hideWeekends,
+    );
+    return column >= 0 && column < timeline.days.length ? column : -1;
+  }, [timeline, todayDate]);
+  const todayInRange = todayColumn !== -1;
+  const todayPinned = hideWeekends && isWeekend(todayDate);
   // Opening the view only centres on today when today is near the project's
   // work. The rendered span is padded to a minimum width, so today can be in
   // it while the work sits months away.
@@ -1031,6 +1057,7 @@ function RouteComponent() {
               <DisplaySection>
                 <GanttGroupByControl />
                 <GanttCompactRowsSwitch />
+                <GanttHideWeekendsSwitch />
                 <WeekStartControl />
                 <GanttEntityFilterControl />
               </DisplaySection>
@@ -1251,15 +1278,24 @@ function RouteComponent() {
                         !isSameMonth(day, timeline.days[index - 1] ?? day);
 
                       const isCurrentDay = isToday(day);
+                      const isTodayPin = todayPinned && index === todayColumn;
 
                       return (
                         <div
                           key={day.toISOString()}
-                          ref={isCurrentDay ? todayCellRef : undefined}
+                          ref={
+                            isCurrentDay || isTodayPin
+                              ? todayCellRef
+                              : undefined
+                          }
+                          data-gantt-today-pin={isTodayPin ? "" : undefined}
                           aria-current={isCurrentDay ? "date" : undefined}
                           className={cn(
                             "border-r border-border/70 px-0.5 py-2 text-center sm:px-1",
                             isWeekend(day) && "bg-muted/25",
+                            // Today is a hidden weekend day: marked at the
+                            // boundary before the next working day.
+                            isTodayPin && "border-l-2 border-l-primary",
                           )}
                         >
                           <div className="h-4 text-[10px] font-medium text-muted-foreground">
@@ -1274,6 +1310,15 @@ function RouteComponent() {
                           >
                             {format(day, "d")}
                           </div>
+                          {isTodayPin ? (
+                            <span className="sr-only">
+                              {t("tasks:gantt.todayOnHiddenWeekend", {
+                                date: formatDate(todayDate, {
+                                  dateStyle: "long",
+                                }),
+                              })}
+                            </span>
+                          ) : null}
                         </div>
                       );
                     })}

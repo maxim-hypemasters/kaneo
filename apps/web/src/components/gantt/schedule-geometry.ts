@@ -1,4 +1,4 @@
-import { differenceInCalendarDays } from "date-fns";
+import { daySpanColumns } from "./weekend-columns";
 
 export function lastScheduledInstant(start: Date, end: Date) {
   // Work intervals are end-exclusive, including when they finish at midnight.
@@ -10,20 +10,25 @@ export type ScheduleDayBlock = { from: number; to: number };
 // Planned work fills every local calendar day it has work on, so a two-hour
 // task still reads as a full card; the exact hours stay in its description.
 // Consecutive days merge into one block, while days without work (a weekend,
-// time off) stay gaps. Blocks are 0-based, end-exclusive day indexes from
-// rangeStart, clipped to the rendered days.
+// time off) stay gaps; with weekends hidden they have no column, so work
+// either side of one joins up. Blocks are 0-based, end-exclusive column
+// indexes from rangeStart, clipped to the rendered days.
 export function scheduleDayBlocks(
   segments: readonly { start: Date; end: Date }[],
   rangeStart: Date,
   dayCount: number,
+  hideWeekends = false,
 ) {
   const days = segments
-    .map(({ start, end }) => ({
-      from: differenceInCalendarDays(start, rangeStart),
-      to:
-        differenceInCalendarDays(lastScheduledInstant(start, end), rangeStart) +
-        1,
-    }))
+    .map(({ start, end }) =>
+      daySpanColumns(
+        start,
+        lastScheduledInstant(start, end),
+        rangeStart,
+        hideWeekends,
+      ),
+    )
+    .filter(({ from, to }) => !hideWeekends || to > from)
     .sort((left, right) => left.from - right.from);
   const blocks: ScheduleDayBlock[] = [];
   for (const day of days) {

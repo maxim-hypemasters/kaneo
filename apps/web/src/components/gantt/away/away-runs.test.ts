@@ -82,9 +82,37 @@ describe("runsWithin", () => {
   });
 });
 
+describe("with weekends hidden", () => {
+  it("drops weekend days and joins the days either side", () => {
+    // Fri Jan 8 and Mon Jan 11 are neighbouring columns; Sat and Sun are
+    // clipped away.
+    const runs = awayRunsByUser(
+      days({
+        "2027-01-08": vacation,
+        "2027-01-09": vacation,
+        "2027-01-10": vacation,
+        "2027-01-11": vacation,
+      }),
+      rangeStart,
+      10,
+      true,
+    );
+    expect(runs.get("bo")).toEqual([{ from: 4, to: 6, kind: "vacation" }]);
+  });
+
+  it("dates a run by its columns", () => {
+    expect(
+      runDates(
+        { from: 4, to: 6, kind: "vacation" },
+        { rangeStart, hideWeekends: true },
+      ),
+    ).toEqual({ startDate: "2027-01-08", endDate: "2027-01-11" });
+  });
+});
+
 describe("runDates", () => {
   it("gives a run's first and last day", () => {
-    expect(runDates({ from: 1, to: 4, kind: "away" }, rangeStart)).toEqual({
+    expect(runDates({ from: 1, to: 4, kind: "away" }, { rangeStart })).toEqual({
       startDate: "2027-01-05",
       endDate: "2027-01-07",
     });

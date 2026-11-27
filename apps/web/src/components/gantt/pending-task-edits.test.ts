@@ -196,6 +196,33 @@ describe("applyPendingEdit", () => {
     ).toBeNull();
   });
 
+  it("moves planned work segments by working days with weekends hidden", () => {
+    // Mon, Wed and Fri blocks of a bar dragged one working day later.
+    const block = (day: number) => ({
+      start: new Date(2026, 8, day, 9),
+      end: new Date(2026, 8, day, 17),
+    });
+    const planned = {
+      ...task,
+      scheduleStart: new Date(2026, 8, 7, 9),
+      scheduleEnd: new Date(2026, 8, 11, 17),
+      scheduleApplied: true,
+      scheduleSegments: [block(7), block(9), block(11)],
+    };
+    const moved = {
+      ...pending,
+      start: new Date(2026, 8, 8, 9),
+      end: new Date(2026, 8, 14, 17),
+    };
+    expect(applyPendingEdit(planned, moved, true)).toMatchObject({
+      scheduleSegments: [block(8), block(10), block(14)],
+    });
+    // With weekends shown, the Friday block moves onto Saturday as before.
+    expect(applyPendingEdit(planned, moved)).toMatchObject({
+      scheduleSegments: [block(8), block(10), block(12)],
+    });
+  });
+
   it("moves planned work segments with the bar", () => {
     const planned = {
       ...task,

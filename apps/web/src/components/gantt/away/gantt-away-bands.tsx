@@ -69,7 +69,7 @@ export function GanttAwayBands({
       <p className="sr-only">
         {t("tasks:gantt.away.laneSummary", {
           name,
-          dates: awayNoteDates(runs, timeline.rangeStart, today, labelOf),
+          dates: awayNoteDates(runs, timeline, today, labelOf),
         })}
       </p>
     </>

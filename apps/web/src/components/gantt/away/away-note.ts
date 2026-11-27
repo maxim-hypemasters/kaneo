@@ -8,13 +8,13 @@ import { type AwayRun, runDates } from "./away-runs";
 // each run is in parentheses.
 export function awayNoteDates(
   runs: readonly AwayRun[],
-  rangeStart: Date,
+  timeline: { rangeStart: Date; hideWeekends?: boolean },
   today: string,
   labelOf?: (run: AwayRun) => string,
 ) {
   return runs
     .map((run) => {
-      const { startDate, endDate } = runDates(run, rangeStart);
+      const { startDate, endDate } = runDates(run, timeline);
       const dates =
         startDate === endDate
           ? formatReleaseDate(startDate, { today })

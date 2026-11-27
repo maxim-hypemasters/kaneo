@@ -2,6 +2,7 @@ import { eachDayOfInterval, parseISO } from "date-fns";
 import { describe, expect, it } from "vite-plus/test";
 import { assigneeMilestoneTracks } from "./assignee-milestone-tracks";
 import { scheduledMilestones } from "./scheduled-milestones";
+import { isWeekendDay } from "./weekend-columns";
 
 const timeline = {
   rangeStart: parseISO("2026-10-01"),
@@ -9,6 +10,7 @@ const timeline = {
     start: parseISO("2026-10-01"),
     end: parseISO("2026-10-31"),
   }),
+  hideWeekends: false,
 };
 function milestone(id: string, startDate: string, endDate: string) {
   return scheduledMilestones([
@@ -61,6 +63,55 @@ describe("Milestones on a lead's header row", () => {
         ),
       ),
     ).toEqual([["milestone:clipped"]]);
+  });
+  describe("with weekends hidden", () => {
+    const workdays = {
+      ...timeline,
+      days: timeline.days.filter((day) => !isWeekendDay(day)),
+      hideWeekends: true,
+    };
+    // 2026-10-03 is a Saturday.
+    const weekend = milestone("weekend", "2026-10-03", "2026-10-04");
+    const week = milestone("week", "2026-10-05", "2026-10-09");
+
+    it("keeps a weekend-only milestone off the track of the Monday one it is drawn on", () => {
+      expect(
+        ids(assigneeMilestoneTracks([weekend, week], timeline, false)),
+      ).toEqual([["milestone:weekend", "milestone:week"]]);
+      expect(
+        ids(assigneeMilestoneTracks([weekend, week], workdays, false)),
+      ).toEqual([["milestone:weekend"], ["milestone:week"]]);
+    });
+
+    it("stacks a Saturday-only and a Sunday-only milestone, both drawn on Monday", () => {
+      expect(
+        ids(
+          assigneeMilestoneTracks(
+            [
+              milestone("sat", "2026-10-03", "2026-10-03"),
+              milestone("sun", "2026-10-04", "2026-10-04"),
+            ],
+            workdays,
+            false,
+          ),
+        ),
+      ).toEqual([["milestone:sat"], ["milestone:sun"]]);
+    });
+
+    it("lets milestones that only overlap on hidden days share a track", () => {
+      expect(
+        ids(
+          assigneeMilestoneTracks(
+            [
+              milestone("fri-sun", "2026-10-02", "2026-10-04"),
+              milestone("sat-mon", "2026-10-03", "2026-10-05"),
+            ],
+            workdays,
+            false,
+          ),
+        ),
+      ).toEqual([["milestone:fri-sun", "milestone:sat-mon"]]);
+    });
   });
   it("gives short phone labels their own tracks", () => {
     expect(

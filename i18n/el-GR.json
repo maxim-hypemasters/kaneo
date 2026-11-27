@@ -3729,7 +3729,8 @@
 				"loadError": "Couldn't load who is away.",
 				"note": "{{name}} is away {{dates}}.",
 				"relatedRefused": "{{title}} would start or be due on {{date}}, when {{name}} is away, so the tasks stay where they were."
-			}
+			},
+			"todayOnHiddenWeekend": "Today, {{date}}, is a hidden weekend day"
 		},
 		"delete": {
 			"title": "Διαγραφή εργασίας;",
@@ -3907,7 +3908,8 @@
 				"none": "Χωρίς ομαδοποίηση",
 				"feature": "Δυνατότητα"
 			},
-			"ganttCompactRows": "Compact rows"
+			"ganttCompactRows": "Compact rows",
+			"ganttHideWeekends": "Hide weekends"
 		},
 		"filterBar": {
 			"label": "Ενεργά φίλτρα",

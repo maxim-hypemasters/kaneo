@@ -98,6 +98,9 @@ type UserPreferencesStore = {
   // `compactMode`, the app-wide density setting.
   ganttCompactRows: boolean;
   setGanttCompactRows: (ganttCompactRows: boolean) => void;
+  // Gantt-only: renders Monday to Friday, leaving Saturday and Sunday out.
+  ganttHideWeekends: boolean;
+  setGanttHideWeekends: (ganttHideWeekends: boolean) => void;
 };
 
 export const useUserPreferencesStore = create<UserPreferencesStore>()(
@@ -211,6 +214,8 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
       setGanttGroupBy: (ganttGroupBy) => set({ ganttGroupBy }),
       ganttCompactRows: false,
       setGanttCompactRows: (ganttCompactRows) => set({ ganttCompactRows }),
+      ganttHideWeekends: false,
+      setGanttHideWeekends: (ganttHideWeekends) => set({ ganttHideWeekends }),
     }),
     {
       name: "user-preferences",
@@ -230,6 +235,9 @@ export const useUserPreferencesStore = create<UserPreferencesStore>()(
         }
         if (typeof state.ganttCompactRows !== "boolean") {
           state.setGanttCompactRows(false);
+        }
+        if (typeof state.ganttHideWeekends !== "boolean") {
+          state.setGanttHideWeekends(false);
         }
         if (!isDefaultProjectView(state.defaultProjectView)) {
           state.setDefaultProjectView("gantt");
