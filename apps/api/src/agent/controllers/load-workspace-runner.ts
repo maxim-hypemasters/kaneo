@@ -9,6 +9,7 @@ export async function loadWorkspaceRunner(workspaceId: string) {
       tokenPrefix: workspaceAgentRunnerTable.tokenPrefix,
       lastSeenAt: workspaceAgentRunnerTable.lastSeenAt,
       runnerVersion: workspaceAgentRunnerTable.runnerVersion,
+      canPush: workspaceAgentRunnerTable.canPush,
       createdAt: workspaceAgentRunnerTable.createdAt,
     })
     .from(workspaceAgentRunnerTable)
@@ -36,6 +37,7 @@ export function toRunnerStatus(
     online: isRunnerOnline(runner),
     lastSeenAt: runner?.lastSeenAt ?? null,
     runnerVersion: runner?.runnerVersion ?? null,
+    canPush: runner?.canPush ?? false,
     createdAt: runner?.createdAt ?? null,
   };
 }

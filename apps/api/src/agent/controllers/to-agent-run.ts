@@ -1,12 +1,15 @@
 import type { agentRunTable } from "../../database/schema";
+import type { WorkRunKind } from "../agent-types";
 
 type RunRow = typeof agentRunTable.$inferSelect & {
+  kind: WorkRunKind;
   requestedByName: string | null;
 };
 
 export function toAgentRun(run: RunRow) {
   return {
     id: run.id,
+    kind: run.kind,
     status: run.status,
     requestedBy:
       run.requestedByUserId && run.requestedByName

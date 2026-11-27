@@ -17,7 +17,10 @@ export type RunnerRunRef = {
  * moved to another workspace is not found. An attempt a later claim replaced
  * is refused, so it stops and its result is never recorded.
  */
-export async function loadRunnerRun(ref: RunnerRunRef, kind?: AgentRunKind) {
+export async function loadRunnerRun(
+  ref: RunnerRunRef,
+  kinds?: readonly AgentRunKind[],
+) {
   const [run] = await db
     .select({
       ...getTableColumns(agentRunTable),
@@ -32,7 +35,7 @@ export async function loadRunnerRun(ref: RunnerRunRef, kind?: AgentRunKind) {
   if (
     !run ||
     run.workspaceId !== ref.workspaceId ||
-    (kind && run.kind !== kind)
+    (kinds && !kinds.includes(run.kind))
   )
     throw agentError("AI_AGENT_RUN_NOT_FOUND");
   if (run.status !== "running" || run.attempts !== ref.attempt)

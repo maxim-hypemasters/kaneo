@@ -32,7 +32,8 @@ services:
       start_period: 60s
       retries: 3
 
-  # Optional AI agent runner (Hermes Agent). Start it with
+  # Optional AI agent runner (Hermes Agent) for readiness checks, Start (draft
+  # pull request) and Ship runs. Start it with
   # `docker compose --profile agent up -d` after creating a runner token in
   # Workspace settings → AI agent. In .env, set KANEO_RUNNER_TOKEN and the
   # runner's other variables with an AGENT_ prefix (AGENT_HERMES_PROVIDER for

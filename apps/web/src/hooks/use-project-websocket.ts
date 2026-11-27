@@ -23,6 +23,7 @@ import { projectDocumentCommentsKey } from "@/hooks/queries/document-comment/doc
 import { projectDocumentsKey } from "@/hooks/queries/project-document/project-document-keys";
 import { projectLinksKey } from "@/hooks/queries/project-link/project-links-key";
 import { agentKeys } from "@/hooks/queries/agent/agent-keys";
+import { invalidateTestCaseSuggestions } from "@/hooks/queries/agent/invalidate-test-case-suggestions";
 import {
   testCaseCommentThreadsKey,
   testCasesKey,
@@ -163,16 +164,22 @@ export function useProjectWebSocket(projectId: string) {
       }, RELEASES_REFRESH_DELAY_MS);
     }
     // Test case lists show linked milestones and bugs, so their changes
-    // refresh them too. Only lists on screen refetch.
+    // refresh them too. Only lists on screen refetch. A test case change
+    // also refreshes the task views offering test cases.
     let testCasesRefreshTimer: ReturnType<typeof setTimeout> | null = null;
-    function refreshTestCases() {
+    let testCaseSuggestionsDirty = false;
+    function refreshTestCases(testCasesChanged = false) {
+      testCaseSuggestionsDirty ||= testCasesChanged;
       if (testCasesRefreshTimer !== null) return;
       testCasesRefreshTimer = setTimeout(() => {
         testCasesRefreshTimer = null;
-        if (!disposed)
-          void queryClient.invalidateQueries({
-            queryKey: testCasesKey(projectId),
-          });
+        if (disposed) return;
+        void queryClient.invalidateQueries({
+          queryKey: testCasesKey(projectId),
+        });
+        if (testCaseSuggestionsDirty)
+          invalidateTestCaseSuggestions(queryClient);
+        testCaseSuggestionsDirty = false;
       }, RELEASES_REFRESH_DELAY_MS);
     }
     let workflowDirty = false;
@@ -478,7 +485,7 @@ export function useProjectWebSocket(projectId: string) {
             return;
           }
           if (message.type === "TEST_CASES_UPDATED") {
-            refreshTestCases();
+            refreshTestCases(true);
             return;
           }
           if (message.type === "TEST_CASE_COMMENTS_UPDATED") {

@@ -1,14 +1,22 @@
 import { runAssess } from "./assess/run-assess";
 import { loadConfig } from "./config";
 import { createGitHubTokens } from "./github/github-tokens";
-import { createKaneoClient } from "./kaneo/client";
+import { type AgentRunKind, createKaneoClient } from "./kaneo/client";
+import { dispatchRun, type RunHandler } from "./loop/dispatch-run";
 import { pollLoop } from "./loop/poll-loop";
 import { ensureSlotUsers, slotUser } from "./isolation/slot-users";
 import { createRedactor } from "./redact";
 import { prepareWorkDir } from "./repo/prepare-work-dir";
 import type { RunDeps } from "./run-deps";
 import { runShip } from "./ship/run-ship";
+import { runStart } from "./start/run-start";
 import { RUNNER_VERSION } from "./version";
+
+const RUN_HANDLERS = {
+  assess: runAssess,
+  ship: runShip,
+  start: runStart,
+} satisfies Record<AgentRunKind, RunHandler>;
 
 const PROVIDER_KEYS = [
   "OPENROUTER_API_KEY",
@@ -62,15 +70,36 @@ async function main() {
 
   const deps: RunDeps = {
     config,
-    kaneo: createKaneoClient(config.apiUrl, config.runnerToken),
+    kaneo: createKaneoClient(config.apiUrl, config.runnerToken, {
+      canPush: config.github !== null,
+    }),
     github: createGitHubTokens(config.github, config.githubHost),
     redact,
     shutdown: shutdown.signal,
     log,
   };
   const loops: Promise<void>[] = [];
+  // Each loop claims one kind and takes runs of that kind only.
+  const startLoop = (
+    loopDeps: RunDeps,
+    kind: AgentRunKind,
+    refusedNote?: string,
+  ) => {
+    loops.push(
+      pollLoop({
+        kaneo: deps.kaneo,
+        kinds: [kind],
+        intervalMs: config.pollIntervalMs,
+        shutdown: shutdown.signal,
+        log,
+        refusedNote,
+        handle: (claim) =>
+          dispatchRun({ [kind]: RUN_HANDLERS[kind] }, loopDeps, claim),
+      }),
+    );
+  };
   let nextSlot = 0;
-  const start = (count: number, kind: "assess" | "ship") => {
+  const startSlots = (count: number, kind: "assess" | "ship") => {
     for (let index = 0; index < count; index++) {
       const slot = nextSlot++;
       // Each slot runs Hermes as a user of its own.
@@ -83,26 +112,19 @@ async function main() {
             },
           }
         : deps;
-      loops.push(
-        pollLoop({
-          kaneo: deps.kaneo,
-          kinds: [kind],
-          intervalMs: config.pollIntervalMs,
-          shutdown: shutdown.signal,
-          log,
-          handle: (claim) => {
-            log(`${kind} ${claim.run.id} for ${claim.context.task.ticketId}`);
-            return kind === "assess"
-              ? runAssess(slotDeps, claim)
-              : runShip(slotDeps, claim);
-          },
-        }),
-      );
+      startLoop(slotDeps, kind);
     }
   };
-  start(config.assessConcurrency, "assess");
+  startSlots(config.assessConcurrency, "assess");
   if (config.github) {
-    start(config.shipConcurrency, "ship");
+    startSlots(config.shipConcurrency, "ship");
+    // Start runs no Hermes, so its loop takes no slot user. Its own loop
+    // keeps an older Kaneo's refusal of the kind away from the others.
+    startLoop(
+      { ...deps, config: { ...config, hermesUser: null } },
+      "start",
+      `Kaneo refused to hand out start runs, as a Kaneo older than runner v${RUNNER_VERSION} does; readiness checks and Ship go on, and Start keeps asking`,
+    );
     log(
       config.github.kind === "app"
         ? `Pushes as GitHub App ${config.github.appId}, with a token per repository`
@@ -110,11 +132,11 @@ async function main() {
     );
   } else
     log(
-      "No GitHub credentials: assessing only; Ship runs wait for a runner that can push",
+      "No GitHub credentials: assessing only; Start only moves tasks, and Ship runs wait for a runner that can push",
     );
 
   log(
-    `v${RUNNER_VERSION} polling ${config.apiUrl} with ${config.hermesProvider}/${config.hermesModel} (${config.assessConcurrency} assess, ${config.github ? config.shipConcurrency : 0} ship)`,
+    `v${RUNNER_VERSION} polling ${config.apiUrl} with ${config.hermesProvider}/${config.hermesModel} (${config.assessConcurrency} assess, ${config.github ? config.shipConcurrency : 0} ship, ${config.github ? 1 : 0} start)`,
   );
   await Promise.all(loops);
 }

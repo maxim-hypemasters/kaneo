@@ -21,6 +21,9 @@ describe("parseWorkflowEvent", () => {
   });
 
   it("accepts the readable label and a few aliases", () => {
+    expect(
+      parseWorkflowEvent("Pull request opened or ready for review"),
+    ).toEqual(Result.succeed("pr_opened"));
     expect(parseWorkflowEvent("Pull request opened")).toEqual(
       Result.succeed("pr_opened"),
     );
@@ -56,6 +59,9 @@ describe("labels", () => {
   it("names known values and passes unknown ones through", () => {
     expect(integrationLabel("gitea")).toBe("Gitea");
     expect(eventLabel("branch_push")).toBe("Branch pushed");
+    expect(eventLabel("pr_opened")).toBe(
+      "Pull request opened or ready for review",
+    );
     expect(eventLabel("custom_event")).toBe("custom_event");
   });
 });

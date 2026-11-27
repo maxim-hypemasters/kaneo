@@ -4,6 +4,7 @@ import { focusIsFree } from "./focus-is-free";
 
 type ShipFlowInput = {
   taskId: string;
+  projectId: string;
   canShip: boolean;
   activeRunId: string | null;
   /** When the agent state last settled, fetched or failed. */
@@ -15,10 +16,11 @@ type ShipFlowInput = {
  * button, which a socket update can remove while it is open; it closes on
  * purpose when the task can no longer ship. Focus then goes to the run's
  * status if a run started, else back to the Ship button, else, with the
- * button gone, to the readiness summary.
+ * button gone, to the readiness score.
  */
 export function useShipFlow({
   taskId,
+  projectId,
   canShip,
   activeRunId,
   settledAt,
@@ -26,7 +28,7 @@ export function useShipFlow({
   const [open, setOpen] = useState(false);
   const { mutate, isPending } = useShipTask();
   const sectionRef = useRef<HTMLElement>(null);
-  const summaryRef = useRef<HTMLSpanElement>(null);
+  const scoreRef = useRef<HTMLHeadingElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   const focusRun = useRef(false);
@@ -48,7 +50,7 @@ export function useShipFlow({
     open,
     pending: isPending,
     sectionRef,
-    summaryRef,
+    scoreRef,
     statusRef,
     openDialog: (button: HTMLElement) => {
       opener.current = button;
@@ -56,14 +58,17 @@ export function useShipFlow({
     },
     setOpen,
     confirm: () =>
-      mutate(taskId, {
-        onSuccess: () => {
-          focusRun.current = true;
-          setOpen(false);
+      mutate(
+        { taskId, projectId },
+        {
+          onSuccess: () => {
+            focusRun.current = true;
+            setOpen(false);
+          },
         },
-      }),
+      ),
     finalFocus: () =>
-      [statusRef.current, opener.current, summaryRef.current].find(
+      [statusRef.current, opener.current, scoreRef.current].find(
         (element) => element?.isConnected,
       ) ?? (true as const),
   };

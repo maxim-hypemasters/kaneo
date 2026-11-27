@@ -5,15 +5,24 @@ import { startRunSession } from "../loop/run-session";
 import { GitHubAuthError } from "../github/github-tokens";
 import { CommandError } from "../process/run-command";
 import { bundleHermesWork } from "../repo/bundle-hermes-work";
+import type { BranchState } from "../repo/branch-state";
 import { prepareCheckout } from "../repo/prepare-checkout";
 import { preparePushRepo, pushBranch } from "../repo/push-repo";
 import { prepareRunDir, removeRunDir } from "../repo/run-dir";
 import { runWorkId } from "../repo/work-paths";
 import type { RunDeps } from "../run-deps";
+import { startPullRequestText } from "../start/start-pull-request-body";
 import { buildShipPrompt } from "./build-ship-prompt";
+import { markPullRequestReady } from "./mark-pull-request-ready";
 import { openPullRequest } from "./open-pull-request";
 import { parseNeedsInput } from "./parse-needs-input";
 import { pullRequestBody } from "./pull-request-body";
+
+const BRANCH_STEP: Record<BranchState, (branch: string) => string> = {
+  new: (branch) => `Working on new branch ${branch}`,
+  empty: (branch) => `Working on branch ${branch}, which has no work yet`,
+  continued: (branch) => `Continuing branch ${branch}`,
+};
 
 /**
  * Has Hermes implement the task on its branch, then pushes and opens the
@@ -67,16 +76,12 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
       token: await writeToken(),
       signal: session.signal,
     });
-    step(
-      checkout.continued
-        ? `Continuing branch ${branch}`
-        : `Working on new branch ${branch}`,
-    );
+    step(BRANCH_STEP[checkout.branchState](branch));
 
     const outcome = await runHermes(config, {
       prompt: buildShipPrompt(context, {
         branch,
-        continued: checkout.continued,
+        branchState: checkout.branchState,
       }),
       cwd: checkout.dir,
       hermesHome: paths.hermes,
@@ -131,9 +136,10 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
       );
       return;
     }
-    // Over the base, not the start: an earlier run may have pushed the work
-    // and stopped before its pull request was opened.
-    if (!work.overBase) {
+    // Against the base, not the start: an earlier run may have pushed the
+    // work and stopped before its pull request was opened. An empty Start
+    // commit is not work.
+    if (!work.changed) {
       await fail("no_changes", summary || "Hermes made no changes");
       return;
     }
@@ -154,19 +160,29 @@ export async function runShip(deps: RunDeps, claim: RunClaim) {
 
     if (await reportStop(kaneo, run, session)) return;
     step("Opening the pull request");
-    const prUrl = await openPullRequest(config, {
+    const body = pullRequestBody(context, summary);
+    const prToken = await writeToken();
+    const pullRequest = await openPullRequest(config, {
       repository,
       baseBranch,
       branch,
       title,
-      body: pullRequestBody(context, summary),
-      token: await writeToken(),
+      body,
+      token: prToken,
       signal: session.signal,
+    });
+    await markPullRequestReady(config, {
+      pullRequest,
+      body,
+      startText: startPullRequestText(context),
+      token: prToken,
+      signal: session.signal,
+      step,
     });
     if (await reportStop(kaneo, run, session)) return;
     await session.events.flush();
     await kaneo.shipResult(run, {
-      prUrl,
+      prUrl: pullRequest.url,
       branch,
       summary: summary.slice(0, 8000),
     });

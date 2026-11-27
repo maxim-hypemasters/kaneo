@@ -19,6 +19,28 @@ function Panel() {
   );
 }
 
+function LatePanel() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [shown, setShown] = useState(true);
+  useFocusRescue(ref, mounted);
+  if (!mounted)
+    return (
+      <button type="button" onClick={() => setMounted(true)}>
+        Open
+      </button>
+    );
+  return (
+    <div ref={ref} tabIndex={-1} data-testid="panel">
+      {shown ? (
+        <button type="button" onClick={() => setShown(false)}>
+          Dismiss
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 afterEach(() => cleanup());
 
 const flush = () => act(() => new Promise((resolve) => setTimeout(resolve)));
@@ -26,6 +48,16 @@ const flush = () => act(() => new Promise((resolve) => setTimeout(resolve)));
 describe("useFocusRescue", () => {
   it("moves focus to the container when the focused control is removed", async () => {
     const view = render(<Panel />);
+    const dismiss = view.getByText("Dismiss");
+    dismiss.focus();
+    act(() => dismiss.click());
+    await flush();
+    expect(document.activeElement).toBe(view.getByTestId("panel"));
+  });
+
+  it("starts watching once the container renders", async () => {
+    const view = render(<LatePanel />);
+    act(() => view.getByText("Open").click());
     const dismiss = view.getByText("Dismiss");
     dismiss.focus();
     act(() => dismiss.click());

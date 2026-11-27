@@ -34,8 +34,8 @@ describe("renderRuleList", () => {
     });
     expect(lines).toEqual([
       "",
-      "  GitHub  Pull request merged  →  ● Done       github pr_merged",
-      "  GitLab  Pull request opened  →  ● In review  gitlab pr_opened",
+      "  GitHub  Pull request merged                   →  ● Done       github pr_merged",
+      "  GitLab  Pull request opened or ready for re…  →  ● In review  gitlab pr_opened",
       "",
     ]);
     for (const line of lines) expect(stringWidth(line)).toBeLessThanOrEqual(80);
@@ -73,7 +73,7 @@ describe("renderRuleChange", () => {
   it("describes a deleted rule", () => {
     expect(renderRuleChange(ui, { verb: "Deleted", rule: opened })).toEqual([
       "",
-      "  ✓ Deleted the rule GitLab pull request opened · was In review",
+      "  ✓ Deleted the rule GitLab pull request opened or ready for review · was In review",
       "",
     ]);
   });

@@ -3,10 +3,15 @@ import { runCommand } from "../process/run-command";
 import { ghEnv } from "./gh-env";
 import {
   type ListedPullRequest,
+  type PullRequest,
   pickOwnPullRequest,
 } from "./pick-own-pull-request";
+import { hasStartMarker } from "./start-marker";
 
-/** Reuses the branch's own open pull request, or opens one. Returns its URL. */
+/**
+ * Reuses the branch's own open pull request, or opens one, as a draft when
+ * asked. Returns it with whether it is a draft Start opened.
+ */
 export async function openPullRequest(
   config: RunnerConfig,
   input: {
@@ -15,10 +20,11 @@ export async function openPullRequest(
     branch: string;
     title: string;
     body: string;
+    draft?: boolean;
     token: string;
     signal: AbortSignal;
   },
-): Promise<string> {
+): Promise<PullRequest> {
   const env = ghEnv(config, input.token);
   const existing = await runCommand(
     config.ghBin,
@@ -32,7 +38,7 @@ export async function openPullRequest(
       "--state",
       "open",
       "--json",
-      "url,isCrossRepository,headRepositoryOwner",
+      "url,isCrossRepository,headRepositoryOwner,isDraft,body",
       "--limit",
       "50",
     ],
@@ -44,6 +50,7 @@ export async function openPullRequest(
   );
   if (open) return open;
 
+  const draft = input.draft === true;
   const created = await runCommand(
     config.ghBin,
     [
@@ -59,11 +66,17 @@ export async function openPullRequest(
       input.title,
       "--body-file",
       "-",
+      ...(draft ? ["--draft"] : []),
     ],
     { env, input: input.body, signal: input.signal, check: true },
   );
   const url = created.stdout.trim().split("\n").pop()?.trim();
   if (!url?.startsWith("https://"))
     throw new Error(`gh did not return a pull request URL: ${created.stdout}`);
-  return url;
+  return {
+    url,
+    isDraft: draft,
+    startedByKaneo: draft && hasStartMarker(input.body),
+    body: input.body,
+  };
 }

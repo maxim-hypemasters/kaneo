@@ -4,8 +4,6 @@ import { shouldAutoAssess } from "./should-auto-assess";
 const assessment = {
   score: 80,
   verdict: "ready" as const,
-  summary: "",
-  checklist: [],
   questions: [],
   suggestions: [],
   assessedAt: "2026-11-26T10:00:00.000Z",

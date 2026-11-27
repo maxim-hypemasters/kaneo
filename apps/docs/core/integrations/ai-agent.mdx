@@ -1,28 +1,162 @@
 ---
 title: "AI agent (Hermes)"
-description: "Check whether tasks and bugs are ready for an AI coding agent, answer its questions, and Ship ready work to Hermes Agent, which opens a pull request."
+description: "Check whether tasks and bugs are ready for an AI coding agent, answer its questions, apply its suggestions, and start the work: a draft pull request, Hermes Agent, or a coding agent of your own."
 ---
 
 The AI agent hands well-specified tasks and bugs to [Hermes Agent](https://github.com/NousResearch/hermes-agent), an open-source coding agent. It runs in a separate service, the **agent runner**, which you host next to Kaneo or on any machine that can reach it.
 
-Every task and bug in a project with the agent turned on gets:
+Every task and bug in a project with the agent turned on gets up to three cards above its description:
 
-- an **AI readiness** bar with a score from 0 to 100,
-- a panel with Hermes's **questions**, each with suggested answers, and **suggestions** you can add to the description,
-- a **Ship** button once the task is ready. Hermes then implements it on a branch and the runner opens a pull request.
+- **Task readiness**: a score from 0 to 100 with Hermes's verdict, a button to check the task again, and, while the task waits in To Do, the buttons that start the work.
+- **Open questions**: Hermes's questions, each with suggested answers, and the decisions answered so far.
+- **Suggestions**: additions to the description, and values for the task's empty fields, such as an assignee, a priority or an estimate with dates.
+
+Work starts in one of three ways, each of which moves the task from To Do to In Progress:
+
+- **Start task**, at any readiness. When the runner can push, it opens a draft pull request on the task's branch. No model is involved.
+- **Ship with AI**, once the task is ready: Hermes implements it and the runner opens a pull request.
+- **Copy prompt** puts a prompt for a coding agent you run yourself on the clipboard.
 
 Kaneo itself never runs the model, a shell or git. Nothing changes for a project until an admin turns the agent on, and a single instance needs no extra services unless you run the agent.
 
 ## How it works
 
-1. When someone creates or edits a task or bug, Kaneo queues a readiness check. Edits made within 30 seconds count as one. Tasks that come from an integration or an import, and drafts created together with a Feature or milestone, are checked when someone opens them. With **Check readiness automatically** off, checks run only when someone chooses **Check now**.
+1. When someone creates or edits a task or bug, Kaneo queues a readiness check. Edits made within 30 seconds count as one. Tasks that come from an integration or an import, and drafts created together with a Feature or milestone, are checked when someone opens them. With **Check readiness automatically** off, checks run only when someone chooses **Check now** or **Check again**.
 2. The runner asks Kaneo for work every few seconds. Kaneo never connects to the runner, so the runner can sit behind a firewall.
-3. For a check, Hermes reads the repository without changing it. It scores the task against a checklist (goal, acceptance criteria, scope, reproduction steps and expected behaviour for bugs, constraints, how to verify) and lists the questions it can't answer from the task or the code.
-4. Answering questions saves them as **decisions** and checks the task again right away. **Add to description** appends a suggestion to the description.
-5. A task is **ready** when its score reaches the project's threshold and no blocking question is open. Editing it afterwards marks the check **outdated** until the next one finishes.
-6. **Ship** queues the work. Hermes implements it on the branch the GitHub integration expects (`{slug}-{number}` by default), runs the tests the repository documents, and commits. The runner then pushes and opens the pull request, and Hermes comments on the task with the link. If Hermes needs a decision, it stops, and its questions appear in the panel. If its session ends any other way before its final answer, the runner pushes nothing and the run fails.
+3. For a check, Hermes reads the repository without changing it. It scores the task on its goal, acceptance criteria, scope, reproduction steps and expected behaviour for bugs, constraints, and how to verify it, and lists the questions it can't answer from the task or the code. It also suggests additions to the description, and values for the task's empty fields from the candidates Kaneo gives it.
+4. Answering questions saves them as **decisions** and checks the task again right away. Applying a suggestion edits the task as you.
+5. A task is **ready** when its score reaches the project's threshold and no blocking question is open. Editing its title or description, or answering a question, marks the check **outdated** until the next one finishes. Setting a field such as the assignee or priority doesn't.
+6. Someone starts the work with **Start task**, **Ship with AI** or **Copy prompt**, and the task moves to In Progress.
 
-Progress shows live on the task while Hermes works, and **Cancel** stops it. A later Ship of the same task continues the same branch and pull request.
+## Task readiness
+
+The readiness card is always there. **Open questions** shows while the task is in Triage or To Do, when Hermes has asked something or there are decisions. **Suggestions** shows when a check left some; see [Suggestions](#suggestions).
+
+### The readiness card
+
+The card's heading shows the score, such as **Task readiness 85%**, and a verdict: **Not ready**, **Needs clarification** or **Ready for AI**. **Outdated** means the task changed since the last check, and **Not checked yet** that Hermes hasn't checked it. People who can edit the task can choose **Check now**, or **Check again** once there is a check. The card also says when the runner is offline or not set up.
+
+While the task is in To Do, the card offers the ways to start it to people who can edit it:
+
+- Before the task is ready, **Start task**.
+- Once Hermes judged the current version ready, with no blocking question open, **Ship with AI**. The menu button next to it, labelled **More ways to start**, holds **Start task** and **Copy prompt**. The menu works even when Ship itself can't run yet, for example without a runner.
+
+While Ship can't run yet, **Before Hermes can ship this** under the buttons lists what it still needs. While a Start or Ship runs, the card shows its progress live, and **Cancel** stops it. Only one Start or Ship runs for a task at a time.
+
+### Open questions
+
+Hermes's questions show while the task is in Triage or To Do. Each one has suggested answers and **Other…** for your own. **Submit answers** saves them as decisions, listed under the questions, and Hermes checks the task again. A **Blocking** question keeps the task from being ready until it's answered. Decisions are part of what Hermes and the copied prompt work from.
+
+## Where the task is in the workflow
+
+Columns have no type, so Kaneo works out which ones mean To Do and In Progress:
+
+- **To Do** is the column with the slug `to-do`. Without one, it's the first open column: not a final column, and not Planned, Archived or Triage. New tasks go to the same column.
+- **In Progress** is the open column with the slug `in-progress`. Without one, it's the next open column after To Do, other than Backlog.
+
+The agent offers different things depending on where the task is:
+
+| Where the task is | Questions | Start task, Ship with AI, Copy prompt | Suggestions |
+| --- | --- | --- | --- |
+| [Triage](/core/functional/triage) | Shown | Not offered until someone accepts the task, and refused by the API | Shown |
+| To Do | Shown | Offered to people who can edit the task | Shown |
+| Any other column | Hidden | Not offered | Shown |
+
+**Start task**, **Ship with AI** and **Copy prompt** move the task from To Do to In Progress, as an ordinary status change by the person who chose them: it shows in the activity, sends the usual notifications and reaches other people's boards live. Kaneo moves a task only out of To Do. A task in any other column stays where it is, and a project without an In Progress column moves nothing.
+
+When the work never really starts, a Ship or Start that moved the task puts it back in To Do:
+
+- Hermes stopped to ask questions. They appear on the task.
+- The task was edited after Ship and before the runner picked it up, so the check is outdated.
+- Someone cancelled the Ship or Start while it was still queued.
+
+Kaneo moves the task back only if it's still in In Progress; if someone moved it meanwhile, it stays. A run that fails any other way leaves the task in In Progress, including a Start that couldn't open its draft pull request. To Ship a task again after such a failure, move it back to To Do first.
+
+## Start the work
+
+### Start task
+
+**Start task** moves the task to In Progress at any readiness. When the project has a repository and the runner can open pull requests, it also queues a start run, and no model is involved:
+
+1. The runner creates the task's branch (`{slug}-{number}` by default) from the base branch, or uses the branch if it exists.
+2. When the branch has no commits of its own, the runner adds one empty commit, authored with its git identity (`GIT_AUTHOR_NAME` and `GIT_AUTHOR_EMAIL`), and pushes it. A branch that already has work is left as it is.
+3. It opens a draft pull request against the base branch, titled `{ticket}: {title}`, and Kaneo comments on the task with the link. An open pull request on the branch is reused.
+
+The runner can open pull requests when it's version 0.2.0 or later and has GitHub credentials. **Settings → Workspace → AI agent** then shows **Can open pull requests**. Without a repository, a runner, or a runner that can push, Start only moves the task. Its notice says when the runner is missing or can't push.
+
+A start run that fails leaves the task in In Progress. When GitHub refuses the draft, the branch is already pushed; see [Troubleshooting](#troubleshooting).
+
+### Ship with AI
+
+**Ship with AI** opens a dialog with the repository, the base branch and the branch Hermes will work on. Confirming queues the work and moves the task to In Progress.
+
+Hermes implements the task on the branch the GitHub integration expects (`{slug}-{number}` by default), runs the tests the repository documents, and commits. The runner then pushes and opens the pull request, and Hermes comments on the task with the link. If Hermes needs a decision, it stops, its questions appear on the task, and a task that Ship moved goes back to To Do. If its session ends any other way before its final answer, the runner pushes nothing and the run fails.
+
+A later Ship of the same task continues the same branch and pull request. After a Start, Ship continues the branch Start pushed: once Hermes's work is pushed, the runner marks the draft pull request ready for review and replaces Start's placeholder description with Hermes's summary, keeping anything people added to the description. It does this only for a draft that Start opened; a draft someone else opened stays a draft. Start's empty commit doesn't count as work: when Hermes adds nothing on top of it, the run fails as having no changes, and nothing is pushed.
+
+### Copy prompt
+
+**Copy prompt**, in the **Ship with AI** menu, hands the task to a coding agent you run yourself. It puts a prompt on the clipboard and moves the task to In Progress. It queues nothing and opens no pull request.
+
+The prompt holds:
+
+- the repository, and the branch to work on: check it out if it exists, otherwise create it from the base branch;
+- the ticket, title, type, priority, status, labels, a link to the task, and the description;
+- the decisions, the latest 20 comments, and related tasks in the same project;
+- the project's **Instructions for Hermes**, only when you can manage workspace settings, the same people who can read them in the project's settings;
+- the steps to follow: read `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md` or the README, keep the diff small and add tests, run the repository's checks, commit, and open the pull request against the base branch titled `{ticket}: {title}`, so Kaneo links it to the task.
+
+Kaneo builds the prompt fresh from the task when you open the menu. When the browser doesn't allow copying, a dialog shows the prompt selected, to copy by hand. **Move to In Progress**, named after the project's column, then moves the task; closing the dialog leaves it in To Do.
+
+## Suggestions
+
+A check can suggest two kinds of change:
+
+- **Additions to the description**, such as acceptance criteria. **Add to description** appends one to the description, which marks the check outdated like any edit of the description.
+- **Values for the task's empty fields.** Hermes picks only from the candidates Kaneo lists for it, and each suggestion comes with Hermes's reason. **Apply** sets the field.
+
+| Field | Suggested when | Hermes picks from |
+| --- | --- | --- |
+| Assignee | Nobody is assigned | Up to 50 people who can work in the project, with how many open tasks each has in it |
+| Priority | The task has no priority | Low, medium, high or urgent |
+| Feature | The task has no Feature and the project has Features | Up to 50 live Features, each with up to 20 milestones, so a milestone can come with it |
+| Milestone | The task's Feature has milestones, but the task has none | The milestones of the task's Feature |
+| Release | The task has no release and an upcoming one exists | Up to 20 releases with a submission date of today or later |
+| Estimate | The task has no estimate | Working effort in minutes; Kaneo plans the dates |
+| Test cases | The target below has none | 2 to 5 concrete test cases |
+
+Test cases go where the task's tests belong. For a Bug, **Apply** creates them all at once, linked to it. For a task in a milestone, it creates them in that [milestone](/core/functional/test-cases#link-to-a-milestone-or-bug). For any other task, they come as a **Test cases** section to add to the description.
+
+### Estimates and dates
+
+Hermes suggests only the effort. Kaneo plans the start and due dates for the assignee: from now, on working days Monday to Friday in the project's planning time zone, around the assignee's approved [time off](/core/functional/time-off), public holidays and other dated work. The dates are approximate: they don't take dependencies into account. Kaneo plans dates only when the task has no start or due date; otherwise **Apply** sets the estimate and keeps the dates.
+
+Planned dates show only to people who can view time off, since dates planned around it reveal when someone is away. When nobody is assigned yet and Hermes also suggests an assignee, people who can assign tasks see dates planned for that person, and **Apply** on the estimate assigns them first. Everyone else gets the estimate without dates.
+
+### Who can apply what
+
+Applying a suggestion is an ordinary edit by you: it needs permission to edit the task, and some kinds need more.
+
+| Suggestion | Also needs |
+| --- | --- |
+| Assignee | Permission to assign tasks (`task:assign`) |
+| Test cases for a Bug | Permission to create test cases and to read Bugs |
+| Test cases for a milestone | Permission to create test cases and to read milestones |
+
+The built-in **Member** role can't assign tasks, so members see assignee suggestions with **Dismiss** only. Admins and owners can apply them. Without permission to read Features or milestones, those suggestions don't show at all.
+
+Suggestions are checked against the task as it is now. Once someone sets the field by hand, or the Feature, milestone or release is archived or gone, the suggestion disappears, and applying one that just went out of date says so. **Dismiss** removes a suggestion. For a field or test cases, Kaneo also stops suggesting that field for this task, even after later checks; there is no way to bring it back.
+
+## GitHub pull requests
+
+With the [GitHub integration](/core/integrations/github/configuration#status-transition-configuration) connected to the same repository, Start's draft pull request is linked to the task without moving it: draft pull requests don't apply the pull-request rule. When the draft is marked ready for review, by someone on GitHub or by a Ship that finishes the work, Kaneo applies the rule for opened pull requests, which moves the task to In Review by default. Start's push of a new branch counts as a branch push, like any other.
+
+## Runner versions
+
+Start's draft pull request needs runner 0.2.0 or later, which reports whether it has GitHub credentials.
+
+- **An older runner** doesn't report this, so Kaneo treats it as unable to open pull requests: Start only moves the task until you update the runner. Readiness checks and Ship work as before.
+- **Runner 0.2.0 with an older Kaneo**: Kaneo refuses to hand out start runs. The runner logs "Kaneo refused to hand out start runs…" once and keeps asking, backing off to once a minute; readiness checks and Ship go on.
 
 ## Set it up
 
@@ -79,14 +213,14 @@ Open the project's **Settings → Integrations**, and choose **Configure** next 
 
 | Setting | What it does |
 | --- | --- |
-| **Use Hermes in this project** | Shows readiness on the project's tasks and bugs and lets members Ship them. Turning it off cancels the agent's queued work in the project. |
+| **Use Hermes in this project** | Shows readiness on the project's tasks and bugs and lets members start and Ship them. Turning it off cancels the agent's queued work in the project; tasks that this work moved to In Progress stay there. |
 | **Check readiness automatically** | Checks tasks when they're created or edited. Turn it off to check only on request. |
-| **Repository** | `owner/name` on GitHub. Leave it empty to use the repository of the project's GitHub integration. |
-| **Base branch** | The branch Hermes starts from and pull requests target. |
+| **Repository** | `owner/name` on GitHub. Leave it empty to use the repository of the project's GitHub integration. Without a repository, Start only moves tasks and Ship can't run. |
+| **Base branch** | The branch Hermes and Start work from, and that pull requests target. |
 | **Ready threshold** | The score, from 1 to 100, at which a task counts as ready. The default is 80. |
-| **Instructions for Hermes** | Guidance Hermes gets with every task in the project, such as test commands. Hermes also reads `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md` and the README in the repository. |
+| **Instructions for Hermes** | Guidance Hermes gets with every task in the project, such as test commands. Hermes also reads `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md` and the README in the repository. A copied prompt includes them only for people who can manage workspace settings. |
 
-Anyone who can edit a task or bug can answer its questions and Ship it.
+Anyone who can edit a task or bug can answer its questions, start it, Ship it and copy its prompt. Some suggestions need more to apply; see [Who can apply what](#who-can-apply-what).
 
 ## Runner settings
 
@@ -96,16 +230,16 @@ With Docker Compose, set these in `.env` with an `AGENT_` prefix, such as `AGENT
 | --- | --- | --- |
 | `KANEO_API_URL` | required | Kaneo's URL. `/api` is added when missing. |
 | `KANEO_RUNNER_TOKEN` | required | The workspace's runner token. |
-| `GH_TOKEN` | none | A token that pushes branches and opens pull requests. Without it or a GitHub App, the runner only checks readiness. |
+| `GH_TOKEN` | none | A token that pushes branches and opens pull requests. Without it or a GitHub App, the runner only checks readiness: Start only moves tasks, and Ship waits for a runner that can push. |
 | `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY` or `GITHUB_PRIVATE_KEY_BASE64` | none | A [GitHub App](#push-as-a-github-app) to push and open pull requests as, instead of `GH_TOKEN`. The key is the app's PEM private key, or the PEM in base64. Set these or `GH_TOKEN`, not both. |
 | `GITHUB_APP_INSTALLATION_ID` | none | Keeps a GitHub App to one of its installations: repositories of its other installations are refused. |
 | `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `NOUS_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY` | none | Model provider keys. Hermes uses the one for `HERMES_PROVIDER`. Compose passes on only these; for another provider, add its key to the runner's `environment` in a Compose override file. |
 | `HERMES_MODEL` | `anthropic/claude-sonnet-5.5` | The model Hermes uses. |
 | `HERMES_PROVIDER` | `openrouter` | The Hermes inference provider. |
 | `GITHUB_HOST` | `github.com` | For GitHub Enterprise Server. The runner gives its token to git and to the GitHub CLI, which reads it as `GH_ENTERPRISE_TOKEN` there. |
-| `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL` | `Hermes Agent` | The author of Hermes's commits. |
-| `ASSESS_CONCURRENCY`, `SHIP_CONCURRENCY` | `2`, `1` | Runs at once of each kind. |
-| `ASSESS_TIMEOUT_MS`, `SHIP_TIMEOUT_MS` | 10 minutes, 60 minutes | Longer runs are stopped and reported. |
+| `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL` | `Hermes Agent` | The author of Hermes's commits and of Start's empty commit. |
+| `ASSESS_CONCURRENCY`, `SHIP_CONCURRENCY` | `2`, `1` | Runs at once of each kind. A runner with GitHub credentials also takes one Start run at a time. |
+| `ASSESS_TIMEOUT_MS`, `SHIP_TIMEOUT_MS` | 10 minutes, 60 minutes | Longer runs are stopped and reported. Start runs stop after 10 minutes. |
 | `ASSESS_MAX_TURNS`, `SHIP_MAX_TURNS` | `40`, `200` | Tool-call limit per run. |
 | `SHIP_TOOLSETS` | `file,terminal,todo` | Hermes toolsets for Ship. Add `web` to let it read documentation online. |
 | `HERMES_UID`, `HERMES_GID` | `10000` | The image's `hermes` user, which gets these IDs at startup. Hermes runs as users above it, one for each run at the same time: `HERMES_UID`+1 up to `HERMES_UID` plus `ASSESS_CONCURRENCY` plus `SHIP_CONCURRENCY`. With `HERMES_UID` set, the runner must run as root. |
@@ -129,8 +263,10 @@ Hermes runs commands that it decides on from task text, comments and repository 
 
 - **Limit the runner's GitHub access** to the repositories the agent works on, with **Contents** and **Pull requests** read and write access: a fine-grained token, or a GitHub App installed only there or kept to one installation. The runner works in whichever repository a project's AI agent settings name, so its credentials decide what a workspace's admins can reach with it. An app's tokens each cover one repository and expire within the hour, but its private key doesn't expire. Kaneo never receives the runner's credentials.
 - **Hermes runs as a separate user.** The runner runs as root in its container and starts Hermes, and every git command in Hermes's checkout, as an unprivileged user, a different one for each run at the same time. That user can't read the runner's environment, which holds its GitHub credentials and runner token, or the runner's git mirrors. Run users are separate from root, from the image's own `hermes` user and from each other, so none of them can read another user's process environment. No process gets the tokens on a run's behalf either: the image doesn't run the Hermes dashboard or its supervised gateway, which would run as the image's `hermes` user with the container's environment, and it runs Hermes's startup setup without the tokens. Hermes's own environment has neither token, and its config refuses `git push` and `gh` even in unattended mode.
-- **Only the runner pushes, to the task's branch.** When Hermes finishes, its commits are packed into a git bundle as the run's user. The runner fetches that bundle into a fresh copy of the repository that only it can write, checks that the commits build on the branch the run started from, and pushes from there to the repository's GitHub URL. Hooks or git configuration that Hermes left in its checkout never run with the token.
-- **Readiness checks are read-only.** Hermes gets file tools that can't write outside a scratch directory, and no shell or web access. Tasks synced from public issue trackers can contain prompt injection, which is why only a person's Ship starts code changes.
+- **Only the runner pushes, to the task's branch.** When Hermes finishes, its commits are packed into a git bundle as the run's user. The runner fetches that bundle into a fresh copy of the repository that only it can write, checks that the commits build on the branch the run started from, and pushes from there to the repository's GitHub URL. Hooks or git configuration that Hermes left in its checkout never run with the token. A Start run doesn't run Hermes at all: the runner adds the empty commit in its own copy and pushes it.
+- **Readiness checks are read-only.** Hermes gets file tools that can't write outside a scratch directory, and no shell or web access. Tasks synced from public issue trackers can contain prompt injection, which is why only a person's Ship starts code changes, and why field suggestions only take effect when a person applies them.
+- **Checks see only the candidates they need.** For field suggestions, Kaneo gives a check the names of the people who can work in the project and how many open tasks each has in that project, never their email addresses, and the project's Features, milestones and upcoming releases, each only while the matching field is empty. It keeps only suggestions that name an item from those lists, and removes mentions from Hermes's text, so a suggestion can't notify anyone.
+- **A copied prompt carries task text to your own agent.** It includes the description and comments, which can contain prompt injection. The prompt tells the agent they can't change its rules, but review what your agent does as you would Hermes's work.
 - **The container is the sandbox.** Ship runs Hermes without command approvals inside the runner container. Don't mount the Docker socket or host directories into the runner.
 - **Each run starts fresh.** Every run gets its own clone and its own Hermes home, with its own sessions and memory, closed to the users of other runs. Hermes's temporary files go to the run's own directory, too. When the run ends, the runner kills every process of the run's user, including daemons a build started, deletes that user's files in the shared temporary directories and its shared memory and message queues, and deletes the clone and the home. Nothing a run starts or plants reaches a later run. Runs going on at the same time are closed to each other's files, but they share the container's network and `/tmp`, so treat the tasks one runner works on as one trust domain.
 - **The runner must start as root.** Started as another user, with `--user` or `runAsUser`, it can't switch users, so it exits with an error rather than run Hermes where it could read the tokens.
@@ -144,12 +280,23 @@ To turn the agent off for the whole instance, set `DISABLE_AI_AGENT=true` on Kan
 - **Runner shows Offline**: check its logs. A `401` means the token was replaced or revoked. Create a new one and restart the runner.
 - **The runner exits with "The runner must start as root" or "HERMES_UID is set, but the runner runs as uid …"**: the container was started as a non-root user, with `--user` or `runAsUser`. Start it as root.
 - **The runner logs "credential isolation is off"**: it runs outside the image, without `HERMES_UID`, so Hermes runs as the runner's user and can read its tokens. Use the image.
-- **Ship stays queued**: the runner may be offline, or have no GitHub credentials, in which case it only checks readiness.
-- **Ship fails with "The GitHub App isn't installed on …"**: install the app on that repository, or add the repository to its installation.
-- **Ship fails with "The GitHub App can't get write access to …"**: the message ends with GitHub's reason. When it says the app needs Contents and Pull requests access, give it those with read and write, then accept the new permissions on its installation.
-- **Ship fails with "… belongs to another installation of the GitHub App"**: the repository isn't in the installation `GITHUB_APP_INSTALLATION_ID` names.
-- **Ship fails with "Can't reach the GitHub API at …"**: the runner can't connect to GitHub. For GitHub Enterprise Server with a certificate from your own CA, give the runner `NODE_EXTRA_CA_CERTS` pointing to it.
+- **Ship or Start stays queued**: the runner may be offline. A runner without GitHub credentials only checks readiness, so Ship waits for one that can push.
+- **Start task only moves the task**: the project has no repository, no runner is set up, or the runner can't open pull requests because it has no GitHub credentials or is older than 0.2.0. **Settings → Workspace → AI agent** shows **Can open pull requests** when it can.
+- **Start fails with "Branch … is pushed, but GitHub didn't open a draft pull request: …"**: the message ends with GitHub's reason. GitHub doesn't offer draft pull requests for private repositories on every plan. The branch is pushed and the task stays in In Progress: open the pull request from the branch on GitHub, or, once the task is ready, move it back to To Do and Ship it, which opens a regular pull request.
+- **Start fails with "Base branch … was not found in …"**: set the project's **Base branch** to a branch that exists in the repository.
+- **Start task, Ship with AI or Copy prompt doesn't show**: they're offered only while the task is in To Do, to people who can edit it, and while no Start or Ship runs. Accept a task in Triage first.
+- **The task didn't move to In Progress**: Kaneo moves a task only out of To Do, and only when the project has an In Progress column; see [Where the task is in the workflow](#where-the-task-is-in-the-workflow).
+- **Start or Ship is refused with `TASK_STATUS_CONFLICT`**: someone moved the task at the same moment. Nothing runs; check where the task is now and try again.
+- **The runner logs "Kaneo refused to hand out start runs…"**: Kaneo is older than the runner. Update Kaneo; readiness checks and Ship keep working meanwhile.
+- **An assignee or test case suggestion has only Dismiss**: you can't assign tasks, or can't create test cases; see [Who can apply what](#who-can-apply-what).
+- **An estimate suggestion has no dates**: the task already has a start or due date, you can't view time off, nobody is assigned and you can't assign the suggested person, or the work doesn't fit in the next year.
+- **Applying a suggestion says it's out of date**: someone set the field, or archived what it points at, since the suggestion was made.
+- **Ship or Start fails with "The GitHub App isn't installed on …"**: install the app on that repository, or add the repository to its installation.
+- **Ship or Start fails with "The GitHub App can't get write access to …"**: the message ends with GitHub's reason. When it says the app needs Contents and Pull requests access, give it those with read and write, then accept the new permissions on its installation.
+- **Ship or Start fails with "… belongs to another installation of the GitHub App"**: the repository isn't in the installation `GITHUB_APP_INSTALLATION_ID` names.
+- **Ship or Start fails with "Can't reach the GitHub API at …"**: the runner can't connect to GitHub. For GitHub Enterprise Server with a certificate from your own CA, give the runner `NODE_EXTRA_CA_CERTS` pointing to it.
 - **The runner exits with "Set GH_TOKEN or a GitHub App …, not both"**: keep one of them.
 - **"Hermes failed: credentials or agent init failed"**: the provider key is missing or wrong for `HERMES_PROVIDER`.
 - **A run failed after "The runner stopped reporting progress"**: the runner restarted twice during the same run. Ship the task again.
+- **Ship fails because Hermes made no changes**: Hermes committed nothing, so nothing was pushed; the message is Hermes's explanation. After a Start, its empty commit doesn't count as work.
 - **Ship fails with "Hermes didn't finish, so nothing was pushed"**: Hermes's session ended before a final answer, so the runner kept its partial work to itself. The rest of the message says why. "Stopped before finishing its turn, for example at its turn limit" means Hermes used up `SHIP_MAX_TURNS`: raise it, or split the task. "Gateway connection/read failed" or "ended before its result" means Hermes's process was killed, often because the runner ran out of memory during a build or typecheck: give the runner more memory, or name lighter checks in the project's instructions for Hermes. "Ended its turn without a final answer" means the model gave no reply or its stream broke off: Ship the task again, or switch models.

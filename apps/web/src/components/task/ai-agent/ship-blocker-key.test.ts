@@ -9,11 +9,12 @@ describe("shipBlockerKey", () => {
     expect(shipBlockerKey("open_questions")).toBe(
       "tasks:aiAgent.blockers.openQuestions",
     );
+    expect(shipBlockerKey("in_triage")).toBe("tasks:aiAgent.blockers.inTriage");
   });
 });
 
 describe("listedShipBlockers", () => {
-  it("leaves out what the run status and readiness bar show, keeping the order", () => {
+  it("leaves out what the run status and readiness card show, keeping the order", () => {
     expect(
       listedShipBlockers([
         "no_repository",

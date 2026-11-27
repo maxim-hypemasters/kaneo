@@ -55,14 +55,16 @@ async function ok<T extends AnyResponse>(response: T): Promise<T> {
 
 /**
  * The runner's side of /api/agent-runner. Every request about a run names
- * the claim's attempt, so Kaneo refuses one a later claim superseded.
+ * the claim's attempt, so Kaneo refuses one a later claim superseded. Every
+ * claim says whether the runner can push, which decides whether Kaneo queues
+ * start runs at all.
  */
 export function createKaneoClient(
   apiUrl: string,
   token: string,
-  fetch?: typeof globalThis.fetch,
+  options: { canPush: boolean; fetch?: typeof globalThis.fetch },
 ) {
-  const runner = createHonoClient(apiUrl, token, fetch)["agent-runner"];
+  const runner = createHonoClient(apiUrl, token, options.fetch)["agent-runner"];
   const run = runner.runs[":runId"];
   const scope = (ref: RunRef) => ({
     param: { runId: ref.id },
@@ -73,7 +75,11 @@ export function createKaneoClient(
     async claim(kinds: AgentRunKind[]): Promise<RunClaim | null> {
       const response = await ok(
         await runner.claim.$post({
-          json: { kinds, runnerVersion: RUNNER_VERSION },
+          json: {
+            kinds,
+            runnerVersion: RUNNER_VERSION,
+            canPush: options.canPush,
+          },
         }),
       );
       if (response.status === 204) return null;

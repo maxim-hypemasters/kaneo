@@ -120,6 +120,89 @@ describe("copyToClipboard", () => {
     expect(document.querySelectorAll("textarea")).toHaveLength(0);
   });
 
+  describe("with text that is still loading", () => {
+    const originalClipboardItem = globalThis.ClipboardItem;
+
+    class FakeClipboardItem {
+      constructor(readonly items: Record<string, Promise<Blob>>) {}
+    }
+
+    afterEach(() => {
+      Object.defineProperty(globalThis, "ClipboardItem", {
+        value: originalClipboardItem,
+        configurable: true,
+        writable: true,
+      });
+    });
+
+    function setClipboardItem(value: unknown) {
+      Object.defineProperty(globalThis, "ClipboardItem", {
+        value,
+        configurable: true,
+        writable: true,
+      });
+    }
+
+    it("writes a pending clipboard item during the click", async () => {
+      setClipboardItem(FakeClipboardItem);
+      const write = vi.fn().mockResolvedValue(undefined);
+      setClipboard({ write, writeText: vi.fn() });
+      let resolve: (text: string) => void = () => {};
+      const text = new Promise<string>((done) => {
+        resolve = done;
+      });
+
+      const copied = copyToClipboard(text);
+      // Called before the text arrives, while the click still counts.
+      expect(write).toHaveBeenCalledTimes(1);
+      const [[item]] = write.mock.calls[0] as [[FakeClipboardItem]];
+      resolve("hello");
+      const blob = await item.items["text/plain"];
+      expect(blob.type).toBe("text/plain");
+      await expect(blob.text()).resolves.toBe("hello");
+      await expect(copied).resolves.toBe(true);
+    });
+
+    it("copies the loaded text when clipboard items are unsupported", async () => {
+      setClipboardItem(undefined);
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      setClipboard({ writeText });
+
+      await expect(copyToClipboard(Promise.resolve("hello"))).resolves.toBe(
+        true,
+      );
+      expect(writeText).toHaveBeenCalledWith("hello");
+    });
+
+    it("falls back to the loaded text when the clipboard refuses the item", async () => {
+      setClipboardItem(FakeClipboardItem);
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      setClipboard({
+        write: vi.fn().mockRejectedValue(new Error("denied")),
+        writeText,
+      });
+
+      await expect(copyToClipboard(Promise.resolve("hello"))).resolves.toBe(
+        true,
+      );
+      expect(writeText).toHaveBeenCalledWith("hello");
+    });
+
+    it("reports failure when the text fails to load", async () => {
+      setClipboardItem(FakeClipboardItem);
+      const write = vi.fn(async ([item]: [FakeClipboardItem]) => {
+        await item.items["text/plain"];
+      });
+      const writeText = vi.fn();
+      setClipboard({ write, writeText });
+
+      await expect(
+        copyToClipboard(Promise.reject(new Error("offline"))),
+      ).resolves.toBe(false);
+      expect(writeText).not.toHaveBeenCalled();
+    });
+  });
+
   it("cleans up the scratch node when execCommand throws", async () => {
     setClipboard(undefined);
     Object.defineProperty(document, "execCommand", {

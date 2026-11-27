@@ -1,7 +1,6 @@
-import { invalidateWorkLinkCandidates } from "@/lib/invalidate-work-link-candidates";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { invalidateMyWork } from "@/lib/invalidate-my-work";
 import updateTaskStatus from "@/fetchers/task/update-task-status";
+import { invalidateTaskStatusChange } from "@/lib/invalidate-task-status-change";
 import type Task from "@/types/task";
 
 export function useUpdateTaskStatus() {
@@ -10,35 +9,7 @@ export function useUpdateTaskStatus() {
   return useMutation({
     mutationFn: (task: Task) => updateTaskStatus(task.id, task),
     onSuccess: (_, variables) => {
-      invalidateWorkLinkCandidates(queryClient, variables.projectId);
-      invalidateMyWork(queryClient);
-      void queryClient.invalidateQueries({
-        queryKey: ["release-progress", variables.projectId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["feature-milestones", variables.projectId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["releases", variables.projectId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["task", variables.id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["tasks", variables.projectId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["notifications"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["projects"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["activities", variables.id],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["task-relations"],
-      });
+      invalidateTaskStatusChange(queryClient, variables);
     },
   });
 }

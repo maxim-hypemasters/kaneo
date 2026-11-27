@@ -56,6 +56,7 @@ Then check:
 2. Push and pull-request events are subscribed and arriving.
 3. **Workflow → Automations** maps the event to the intended column.
 4. The task is eligible for the transition. A completed task only moves for new work: a branch or pull request that is not yet linked to it.
+5. The pull request isn't a draft. A draft pull request is only linked to the task; the pull-request rule applies when it's marked ready for review. See [status transitions](/core/integrations/github/configuration#status-transition-configuration).
 
 Try one branch push and inspect its webhook delivery before testing another event.
 

@@ -21,9 +21,18 @@ export async function loadAgentTask(taskId: string) {
       status: taskTable.status,
       priority: taskTable.priority,
       archivedAt: taskTable.archivedAt,
+      userId: taskTable.userId,
+      featureId: taskTable.featureId,
+      milestoneId: taskTable.milestoneId,
+      releaseId: taskTable.releaseId,
+      estimateSeconds: taskTable.estimateSeconds,
+      startDate: taskTable.startDate,
+      dueDate: taskTable.dueDate,
       projectSlug: projectTable.slug,
       projectName: projectTable.name,
       workspaceId: projectTable.workspaceId,
+      planningTimeZone: projectTable.planningTimeZone,
+      estimateDayMinutes: projectTable.estimateDayMinutes,
     })
     .from(taskTable)
     .innerJoin(projectTable, eq(taskTable.projectId, projectTable.id))

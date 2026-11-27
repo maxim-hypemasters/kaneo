@@ -632,7 +632,8 @@
                 "type": "string",
                 "enum": [
                   "assess",
-                  "ship"
+                  "ship",
+                  "start"
                 ]
               },
               "attempt": {
@@ -799,6 +800,9 @@
                 ],
                 "additionalProperties": {},
                 "description": "For assess runs, the JSON Schema the assessment must match"
+              },
+              "planning": {
+                "$ref": "#/components/schemas/AgentPlanningContext"
               }
             },
             "required": [
@@ -808,7 +812,8 @@
               "relatedTasks",
               "project",
               "branchName",
-              "resultSchema"
+              "resultSchema",
+              "planning"
             ]
           }
         },
@@ -816,6 +821,136 @@
           "run",
           "context"
         ]
+      },
+      "AgentPlanningContext": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "missing": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "assignee",
+                "priority",
+                "feature",
+                "milestone",
+                "release",
+                "estimate",
+                "test_cases"
+              ]
+            },
+            "description": "The fields the agent may recommend a value for"
+          },
+          "estimateDayMinutes": {
+            "type": "integer",
+            "description": "Working minutes in one day of the project's estimates"
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "openTasks": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "openTasks"
+              ]
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "milestones": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "milestones"
+              ]
+            }
+          },
+          "releases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "submissionDate": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "submissionDate"
+              ]
+            }
+          },
+          "testCaseTarget": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "bug",
+              "milestone",
+              "description",
+              null
+            ]
+          }
+        },
+        "required": [
+          "missing",
+          "estimateDayMinutes",
+          "people",
+          "features",
+          "releases",
+          "testCaseTarget"
+        ],
+        "description": "For assess runs, the candidates for the task's empty fields; null otherwise"
       },
       "AgentRunnerClaimInput": {
         "type": "object",
@@ -826,7 +961,8 @@
               "type": "string",
               "enum": [
                 "assess",
-                "ship"
+                "ship",
+                "start"
               ]
             },
             "minItems": 1
@@ -834,6 +970,10 @@
           "runnerVersion": {
             "type": "string",
             "maxLength": 40
+          },
+          "canPush": {
+            "type": "boolean",
+            "description": "The runner holds GitHub write credentials, so it can take start runs. Omitted counts as false."
           }
         },
         "required": [
@@ -882,46 +1022,6 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 100
-          },
-          "summary": {
-            "type": "string",
-            "maxLength": 2000
-          },
-          "checklist": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "key": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 60
-                },
-                "label": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 120
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "met",
-                    "partial",
-                    "missing"
-                  ]
-                },
-                "note": {
-                  "type": "string",
-                  "maxLength": 500
-                }
-              },
-              "required": [
-                "key",
-                "label",
-                "status"
-              ]
-            },
-            "maxItems": 12
           },
           "questions": {
             "type": "array",
@@ -978,12 +1078,18 @@
               ]
             },
             "maxItems": 5
+          },
+          "recommendations": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {},
+            "description": "Values for the task's empty fields, as described by the resultSchema of the claim. Each key is validated on its own; an invalid one is dropped, never refused. A value that is not an object counts as no recommendations."
           }
         },
         "required": [
           "score",
-          "summary",
-          "checklist",
           "questions",
           "suggestions"
         ]
@@ -10722,6 +10828,76 @@
               "online"
             ]
           },
+          "workflow": {
+            "type": "object",
+            "properties": {
+              "todoStatus": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The status work waits in; Start and Ship move the task only from here"
+              },
+              "inProgress": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "slug": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "slug",
+                  "name"
+                ],
+                "description": "Where Start and Ship move the task"
+              }
+            },
+            "required": [
+              "todoStatus",
+              "inProgress"
+            ],
+            "description": "The project's To Do and In Progress columns, found by slug or else by column order"
+          },
+          "start": {
+            "type": "object",
+            "properties": {
+              "canStart": {
+                "type": "boolean"
+              },
+              "blockers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "archived",
+                    "in_triage",
+                    "run_in_progress"
+                  ]
+                }
+              },
+              "pullRequest": {
+                "type": "string",
+                "enum": [
+                  "opens",
+                  "no_repository",
+                  "runner_missing",
+                  "runner_cannot_push"
+                ],
+                "description": "opens: Start also opens a draft pull request; otherwise it only moves the task, for the reason given"
+              }
+            },
+            "required": [
+              "canStart",
+              "blockers",
+              "pullRequest"
+            ]
+          },
           "ship": {
             "type": "object",
             "properties": {
@@ -10737,6 +10913,7 @@
                     "no_repository",
                     "runner_missing",
                     "archived",
+                    "in_triage",
                     "not_assessed",
                     "assessment_outdated",
                     "open_questions",
@@ -10818,6 +10995,8 @@
           "lastAssessFailure",
           "clarifications",
           "runner",
+          "workflow",
+          "start",
           "ship"
         ]
       },
@@ -10837,39 +11016,6 @@
               "needs_clarification",
               "ready"
             ]
-          },
-          "summary": {
-            "type": "string"
-          },
-          "checklist": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "key": {
-                  "type": "string"
-                },
-                "label": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "met",
-                    "partial",
-                    "missing"
-                  ]
-                },
-                "note": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "key",
-                "label",
-                "status"
-              ]
-            }
           },
           "questions": {
             "type": "array",
@@ -10903,24 +11049,9 @@
           "suggestions": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "title": {
-                  "type": "string"
-                },
-                "markdown": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "title",
-                "markdown"
-              ]
-            }
+              "$ref": "#/components/schemas/AgentSuggestion"
+            },
+            "description": "Additions to the description, and values for the task's empty fields. Only those that still fit the task and that the caller can read are listed."
           },
           "assessedAt": {
             "type": "string",
@@ -10930,11 +11061,409 @@
         "required": [
           "score",
           "verdict",
-          "summary",
-          "checklist",
           "questions",
           "suggestions",
           "assessedAt"
+        ]
+      },
+      "AgentSuggestion": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "description"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "markdown": {
+                "type": "string",
+                "description": "Markdown that Apply appends to the description"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "title",
+              "markdown"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "assignee"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the agent picked this value; may be empty"
+              },
+              "user": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "reason",
+              "user"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "priority"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the agent picked this value; may be empty"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "urgent"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "reason",
+              "priority"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "feature"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the agent picked this value; may be empty"
+              },
+              "feature": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title"
+                ]
+              },
+              "milestone": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title"
+                ],
+                "description": "A milestone of that feature, set together with it"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "reason",
+              "feature",
+              "milestone"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "milestone"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the agent picked this value; may be empty"
+              },
+              "milestone": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "reason",
+              "milestone"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "release"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the agent picked this value; may be empty"
+              },
+              "release": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "submissionDate": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "submissionDate"
+                ]
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "reason",
+              "release"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "estimate"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the agent picked this value; may be empty"
+              },
+              "minutes": {
+                "type": "integer",
+                "description": "Working effort"
+              },
+              "keepsDates": {
+                "type": "boolean",
+                "description": "The task already has a start or due date, which Apply keeps"
+              },
+              "plan": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "assignee": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "name"
+                    ]
+                  },
+                  "suggestedAssignee": {
+                    "type": "boolean",
+                    "description": "The dates are for the suggested assignee, whom Apply assigns first"
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "dueDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "assignee",
+                  "suggestedAssignee",
+                  "startDate",
+                  "dueDate"
+                ],
+                "description": "The start and due dates Apply sets, planned around the person's time off and other dated work; null when only the estimate is set"
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "reason",
+              "minutes",
+              "keepsDates",
+              "plan"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "test_cases"
+                ]
+              },
+              "id": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the agent picked this value; may be empty"
+              },
+              "target": {
+                "type": "string",
+                "enum": [
+                  "bug",
+                  "milestone"
+                ],
+                "description": "Apply creates the test cases linked to the bug, or to the task's milestone"
+              },
+              "milestone": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "title"
+                ]
+              },
+              "cases": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "steps": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "expectedResult": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "steps",
+                    "expectedResult"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "id",
+              "reason",
+              "target",
+              "milestone",
+              "cases"
+            ]
+          }
         ]
       },
       "AgentRun": {
@@ -10945,6 +11474,14 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ship",
+              "start"
+            ],
+            "description": "ship: the agent implements the task; start: Kaneo opens a draft pull request, no model involved"
           },
           "status": {
             "type": "string",
@@ -11032,6 +11569,7 @@
         },
         "required": [
           "id",
+          "kind",
           "status",
           "requestedBy",
           "cancelRequested",
@@ -11072,6 +11610,102 @@
         },
         "required": [
           "answers"
+        ]
+      },
+      "AgentSuggestionApplied": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "description",
+              "assignee",
+              "priority",
+              "feature",
+              "milestone",
+              "release",
+              "estimate",
+              "test_cases"
+            ]
+          },
+          "assigneeChanged": {
+            "type": "boolean",
+            "description": "Apply also assigned the task, as an estimate may"
+          },
+          "datesChanged": {
+            "type": "boolean",
+            "description": "Apply also set the task's start and due dates"
+          }
+        },
+        "required": [
+          "ok",
+          "kind",
+          "assigneeChanged",
+          "datesChanged"
+        ]
+      },
+      "AgentStartResult": {
+        "type": "object",
+        "properties": {
+          "moved": {
+            "type": "boolean",
+            "description": "The task moved from To Do to In Progress"
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The task's status afterwards"
+          },
+          "pullRequest": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "not_requested",
+              "no_repository",
+              "runner_missing",
+              "runner_cannot_push"
+            ],
+            "description": "queued: the runner will open a draft pull request; otherwise why none is opened"
+          }
+        },
+        "required": [
+          "moved",
+          "status",
+          "pullRequest"
+        ]
+      },
+      "AgentStartInput": {
+        "type": "object",
+        "properties": {
+          "pullRequest": {
+            "type": "boolean",
+            "default": true,
+            "description": "Also open a draft pull request when the runner can; false only moves the task, as Copy prompt does"
+          }
+        }
+      },
+      "TaskAgentPrompt": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "description": "Instructions for a coding agent of your choice, with the task, its decisions and comments"
+          },
+          "branchName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt",
+          "branchName"
         ]
       },
       "ProjectAgentSettings": {
@@ -11190,6 +11824,10 @@
               "null"
             ]
           },
+          "canPush": {
+            "type": "boolean",
+            "description": "The runner reported GitHub write credentials, so Start can open draft pull requests"
+          },
           "createdAt": {
             "type": [
               "string",
@@ -11204,6 +11842,7 @@
           "online",
           "lastSeenAt",
           "runnerVersion",
+          "canPush",
           "createdAt"
         ]
       },
@@ -12091,6 +12730,7 @@
           }
         ],
         "summary": "Report an opened pull request",
+        "description": "Finishes a ship run, or a start run that opened a draft pull request.",
         "parameters": [
           {
             "schema": {
@@ -50478,7 +51118,7 @@
           "AI agent"
         ],
         "summary": "Get a task's AI readiness",
-        "description": "The latest readiness assessment, open questions and suggestions, answered decisions, and the state of Ship for a task or bug.",
+        "description": "The latest readiness assessment, open questions and suggestions, answered decisions, the project's To Do and In Progress columns, and the state of Start and Ship for a task or bug.",
         "parameters": [
           {
             "schema": {
@@ -50757,8 +51397,8 @@
         "tags": [
           "AI agent"
         ],
-        "summary": "Add a suggestion to the description",
-        "description": "Appends the suggestion's Markdown to the task description as an ordinary edit by the caller.",
+        "summary": "Apply a suggestion",
+        "description": "Applies the suggestion as an ordinary edit by the caller: appends a description suggestion to the description, sets the suggested field, or creates the suggested test cases. An estimate also sets the planned start and due dates when the task has none, assigning the suggested person first when the dates were planned for them and the caller has task:assign. The suggestion is checked against the task as it is now; a field set meanwhile is not overwritten.",
         "parameters": [
           {
             "schema": {
@@ -50781,28 +51421,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Done",
+            "description": "What Apply changed",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "ok": {
-                      "type": "boolean",
-                      "enum": [
-                        true
-                      ]
-                    }
-                  },
-                  "required": [
-                    "ok"
-                  ]
+                  "$ref": "#/components/schemas/AgentSuggestionApplied"
                 }
               }
             }
           },
           "400": {
-            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature, or a value the task refuses",
             "content": {
               "application/json": {
                 "schema": {
@@ -50821,8 +51450,18 @@
               }
             }
           },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "403": {
-            "description": "No access to the task, or missing permission",
+            "description": "No access to the task, or missing permission: task:assign for an assignee, test_case:create with bug:read or milestone:read for test cases",
             "content": {
               "application/json": {
                 "schema": {
@@ -50842,7 +51481,7 @@
             }
           },
           "409": {
-            "description": "AI_AGENT_NOT_ENABLED, DESCRIPTION_CONFLICT when the description changed since it was read, or the task moved to another project or workspace meanwhile",
+            "description": "AI_AGENT_NOT_ENABLED; AI_AGENT_SUGGESTION_OUTDATED when the field was set or what the suggestion points at changed; DESCRIPTION_CONFLICT when the description changed since it was read; TASK_ASSIGNEE_AWAY when the dates fall on a day the assignee is away; or the task moved to another project or workspace meanwhile",
             "content": {
               "application/json": {
                 "schema": {
@@ -50864,6 +51503,7 @@
           "AI agent"
         ],
         "summary": "Dismiss a suggestion",
+        "description": "Removes the suggestion. For a field suggestion, or test cases, later readiness checks don't suggest that field again for this task.",
         "parameters": [
           {
             "schema": {
@@ -50969,7 +51609,7 @@
           "AI agent"
         ],
         "summary": "Ship the task to the AI agent",
-        "description": "Queues the agent to implement the task in the project's repository and open a pull request. Refused with AI_AGENT_NOT_SHIPPABLE, listing the blockers in issues, unless the current assessment is ready.",
+        "description": "Queues the agent to implement the task in the project's repository and open a pull request, and moves the task from To Do to In Progress. Refused with AI_AGENT_NOT_SHIPPABLE, listing the blockers in issues, unless the current assessment is ready and the task is out of Triage.",
         "parameters": [
           {
             "schema": {
@@ -51023,6 +51663,16 @@
               }
             }
           },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "403": {
             "description": "No access to the task, or missing permission",
             "content": {
@@ -51044,7 +51694,199 @@
             }
           },
           "409": {
-            "description": "AI_AGENT_NOT_ENABLED or AI_AGENT_NOT_SHIPPABLE",
+            "description": "AI_AGENT_NOT_ENABLED, AI_AGENT_NOT_SHIPPABLE, or TASK_STATUS_CONFLICT when the task's status changed while it was moved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}/start": {
+      "post": {
+        "operationId": "startTask",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Start work on the task",
+        "description": "Moves the task from To Do to In Progress at any readiness. When the project has a repository and the runner can push, the runner also opens a draft pull request on the task's branch; no model is involved. Refused with AI_AGENT_NOT_STARTABLE, listing the blockers in issues, for archived work, work in Triage, or while a Ship or Start is active.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentStartInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What Start did",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentStartResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body, or AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Workspace plan has expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, or AI_AGENT_DISABLED on this instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_NOT_ENABLED, AI_AGENT_NOT_STARTABLE, or TASK_STATUS_CONFLICT when the task's status changed while it was moved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/ApiKeyRateLimited"
+          }
+        }
+      }
+    },
+    "/agent/task/{taskId}/prompt": {
+      "get": {
+        "operationId": "getTaskAgentPrompt",
+        "tags": [
+          "AI agent"
+        ],
+        "summary": "Get a prompt for your own coding agent",
+        "description": "The task, its decisions, recent comments and related tasks as instructions for a coding agent of your choice, with the branch to work on. Project instructions are included only for callers with workspace:manage_settings.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true,
+            "name": "taskId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The prompt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskAgentPrompt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "AI_AGENT_NOT_WORK_ITEM for a feature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No access to the task, or missing permission",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found, or AI_AGENT_DISABLED on this instance",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "AI_AGENT_NOT_ENABLED for the task's project",
             "content": {
               "application/json": {
                 "schema": {
@@ -51066,7 +51908,7 @@
           "AI agent"
         ],
         "summary": "Stop the agent working on the task",
-        "description": "Cancels a queued Ship, or a running one whose runner stopped reporting, at once. A live run is asked to stop and ends at the runner's next heartbeat.",
+        "description": "Cancels a queued Ship or Start, or a running one whose runner stopped reporting, at once; a queued one that moved the task puts it back in To Do. A live run is asked to stop and ends at the runner's next heartbeat.",
         "parameters": [
           {
             "schema": {

@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { ShipResult } from "../../agent/agent-types";
+import { type ShipResult, WORK_RUN_KINDS } from "../../agent/agent-types";
 import {
   loadEffectiveAgentSetting,
   loadGithubBinding,
@@ -17,13 +17,20 @@ function pullRequestTitle(prUrl: string) {
   return number ? `Pull request #${number}` : "Pull request";
 }
 
+function resultComment(kind: string, result: ShipResult) {
+  const pullRequest = `[${pullRequestTitle(result.prUrl)}](${result.prUrl})`;
+  if (kind === "start")
+    return `Opened a draft ${pullRequest} from \`${result.branch}\`.`;
+  return `Pushed to ${pullRequest} from \`${result.branch}\`.\n\n${result.summary}`.trim();
+}
+
 /**
- * Records the pull request. When the project's GitHub integration watches the
- * same repository it links the pull request itself, so no second link is
- * added here.
+ * Records the pull request a Ship pushed to or a Start opened as a draft.
+ * When the project's GitHub integration watches the same repository it links
+ * the pull request itself, so no second link is added here.
  */
 export async function completeShip(ref: RunnerRunRef, result: ShipResult) {
-  const run = await loadRunnerRun(ref, "ship");
+  const run = await loadRunnerRun(ref, WORK_RUN_KINDS);
   await db.transaction((tx) =>
     finishRun(tx, run, { status: "succeeded", result }),
   );
@@ -66,8 +73,7 @@ export async function completeShip(ref: RunnerRunRef, result: ShipResult) {
   await postAgentComment({
     taskId: run.taskId,
     projectId: run.projectId,
-    content:
-      `Pushed to [${pullRequestTitle(result.prUrl)}](${result.prUrl}) from \`${result.branch}\`.\n\n${result.summary}`.trim(),
+    content: resultComment(run.kind, result),
     externalUrl: `${result.prUrl}#kaneo-run-${run.id}`,
   });
   await publishAgentUpdate(run.taskId, run.projectId);

@@ -6,6 +6,7 @@ const ready = {
   repository: "acme/app",
   hasRunner: true,
   archived: false,
+  inTriage: false,
   assessment: { verdict: "ready" as const, questions: [], inputHash: "h1" },
   currentInputHash: "h1",
   shipInProgress: false,
@@ -53,6 +54,12 @@ describe("computeShipBlockers", () => {
         },
       }),
     ).toEqual(["open_questions"]);
+  });
+
+  it("blocks work still waiting in Triage", () => {
+    expect(computeShipBlockers({ ...ready, inTriage: true })).toEqual([
+      "in_triage",
+    ]);
   });
 
   it("blocks a second Ship and an archived task", () => {

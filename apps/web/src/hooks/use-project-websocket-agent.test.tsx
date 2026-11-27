@@ -74,3 +74,27 @@ it("refreshes every task's agent state when the project settings change", async 
 
   expect(invalidatedKeys()).toEqual([["task-agent"]]);
 });
+
+it("refreshes the task views offering test cases when test cases change", async () => {
+  renderHook(() => useProjectWebSocket("p"));
+  Socket.current.message({ type: "TEST_CASES_UPDATED" });
+  await vi.advanceTimersByTimeAsync(1000);
+
+  expect(invalidatedKeys()).toEqual([["test-cases", "p"], ["task-agent"]]);
+  const [{ predicate }] = mocks.client.invalidateQueries.mock.calls[1];
+  const query = (suggestions?: { kind: string }[]) => ({
+    state: { data: suggestions ? { assessment: { suggestions } } : undefined },
+  });
+  expect(predicate(query([{ kind: "test_cases" }]))).toBe(true);
+  expect(predicate(query([{ kind: "priority" }]))).toBe(false);
+  expect(predicate(query())).toBe(false);
+});
+
+it("leaves agent state alone when only milestones change", async () => {
+  renderHook(() => useProjectWebSocket("p"));
+  Socket.current.message({ type: "MILESTONES_UPDATED" });
+  await vi.advanceTimersByTimeAsync(1000);
+
+  expect(invalidatedKeys()).toContainEqual(["test-cases", "p"]);
+  expect(invalidatedKeys()).not.toContainEqual(["task-agent"]);
+});

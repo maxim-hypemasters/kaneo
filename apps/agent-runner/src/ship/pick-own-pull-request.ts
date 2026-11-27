@@ -1,7 +1,20 @@
+import { hasStartMarker } from "./start-marker";
+
 export type ListedPullRequest = {
   url: string;
   isCrossRepository?: boolean;
   headRepositoryOwner?: { login?: string } | null;
+  isDraft?: boolean;
+  body?: string | null;
+};
+
+export type PullRequest = {
+  url: string;
+  isDraft: boolean;
+  // Start opened it as a draft and no Ship has filled it in since.
+  startedByKaneo: boolean;
+  // Its description as GitHub has it, which people may have added to.
+  body: string;
 };
 
 /**
@@ -12,12 +25,18 @@ export type ListedPullRequest = {
 export function pickOwnPullRequest(
   pulls: readonly ListedPullRequest[],
   repository: string,
-): string | null {
+): PullRequest | null {
   const owner = repository.split("/")[0]?.toLowerCase();
   const own = pulls.find(
     (pull) =>
       pull.isCrossRepository === false &&
       pull.headRepositoryOwner?.login?.toLowerCase() === owner,
   );
-  return own?.url ?? null;
+  if (!own) return null;
+  return {
+    url: own.url,
+    isDraft: own.isDraft === true,
+    startedByKaneo: hasStartMarker(own.body),
+    body: own.body ?? "",
+  };
 }

@@ -8,6 +8,10 @@ const ERRORS = {
   AI_AGENT_NOT_SHIPPABLE: [409, "The task is not ready for the AI agent"],
   AI_AGENT_QUESTION_NOT_FOUND: [404, "The question was already answered"],
   AI_AGENT_SUGGESTION_NOT_FOUND: [404, "The suggestion no longer exists"],
+  AI_AGENT_SUGGESTION_OUTDATED: [
+    409,
+    "The suggestion no longer fits the task, which changed meanwhile",
+  ],
   AI_AGENT_NO_ACTIVE_RUN: [409, "The AI agent is not working on this task"],
   AI_AGENT_RUN_NOT_FOUND: [404, "Agent run not found"],
   AI_AGENT_RUN_NOT_RUNNING: [409, "The agent run is no longer running"],

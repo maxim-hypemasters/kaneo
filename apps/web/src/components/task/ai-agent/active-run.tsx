@@ -9,19 +9,22 @@ import type {
 } from "@/fetchers/agent/get-task-agent";
 import { useCancelTaskShip } from "@/hooks/mutations/agent/use-cancel-task-ship";
 import { AgentRunLog } from "./agent-run-log";
+import { runStatusKey } from "./run-status-key";
 
 type ActiveRunProps = {
   taskId: string;
+  projectId: string;
   run: AgentRun;
   events: AgentRunEvent[];
   runner: TaskAgent["runner"];
   canUpdate: boolean;
-  /** Focused after shipping, since the Ship button is gone by then. */
+  /** Focused after Ship or Start, since their buttons are gone by then. */
   statusRef: RefObject<HTMLParagraphElement | null>;
 };
 
 export function ActiveRun({
   taskId,
+  projectId,
   run,
   events,
   runner,
@@ -33,7 +36,7 @@ export function ActiveRun({
   const stopping = run.cancelRequested || cancel.isPending;
 
   return (
-    <div className="space-y-2 border-border border-t px-3 py-2.5">
+    <div className="space-y-2 border-border/70 border-t px-2 pt-2 pb-1">
       <div className="flex flex-wrap items-center gap-2">
         <p
           ref={statusRef}
@@ -44,9 +47,7 @@ export function ActiveRun({
             aria-hidden="true"
             className="size-4 shrink-0 animate-spin text-muted-foreground"
           />
-          {run.status === "queued"
-            ? t("tasks:aiAgent.run.queued")
-            : t("tasks:aiAgent.run.working")}
+          {t(runStatusKey(run))}
         </p>
         {canUpdate ? (
           <Button
@@ -54,7 +55,7 @@ export function ActiveRun({
             variant="outline"
             size="xs"
             disabled={stopping}
-            onClick={() => cancel.mutate(taskId)}
+            onClick={() => cancel.mutate({ taskId, projectId })}
           >
             {stopping
               ? t("tasks:aiAgent.run.stopping")
@@ -62,7 +63,7 @@ export function ActiveRun({
           </Button>
         ) : null}
       </div>
-      {/* Without a runner the readiness bar already says one is missing. */}
+      {/* Without a runner the readiness card already says one is missing. */}
       {run.status === "queued" && runner.configured && !runner.online ? (
         <p className="text-muted-foreground text-xs">
           {t("tasks:aiAgent.runnerOffline")}

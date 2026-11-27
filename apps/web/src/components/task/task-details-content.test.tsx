@@ -16,7 +16,9 @@ vi.mock("./features/feature-breadcrumb", () => ({
   FeatureBreadcrumb: () => null,
 }));
 vi.mock("./task-title", () => ({ default: () => null }));
-vi.mock("./task-description", () => ({ default: () => <p>Description</p> }));
+vi.mock("./task-description", () => ({
+  default: () => <p>Description editor</p>,
+}));
 vi.mock("./ai-agent/ai-agent-section", () => ({
   AiAgentSection: () => <p>AI agent</p>,
 }));
@@ -49,7 +51,20 @@ it("waits for the entity type before mounting tab or legacy activity queries", (
 it("retains the existing Task/Bug description and activity", () => {
   state.task = { id: "b", type: "bug", projectId: "p" };
   render(<TaskDetailsContent taskId="b" projectId="p" workspaceId="w" />);
-  expect(screen.getByText("Description")).toBeInTheDocument();
+  expect(screen.getByText("Description editor")).toBeInTheDocument();
   expect(screen.getByText("Legacy activity")).toBeInTheDocument();
   expect(screen.getByText("AI agent")).toBeInTheDocument();
+});
+it("titles the description below the AI agent", () => {
+  state.task = { id: "t", type: "task", projectId: "p" };
+  render(<TaskDetailsContent taskId="t" projectId="p" workspaceId="w" />);
+  const subtitle = screen.getByRole("heading", {
+    name: "common:documentEditor.description",
+  });
+  expect(subtitle.compareDocumentPosition(screen.getByText("AI agent"))).toBe(
+    Node.DOCUMENT_POSITION_PRECEDING,
+  );
+  expect(
+    subtitle.compareDocumentPosition(screen.getByText("Description editor")),
+  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 });

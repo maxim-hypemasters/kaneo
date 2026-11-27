@@ -8,7 +8,9 @@ import { handleIssueReopened } from "./webhooks/issue-reopened";
 import { handleLabelCreated } from "./webhooks/label-created";
 import { handlePullRequestClosed } from "./webhooks/pull-request-closed";
 import { handlePullRequestOpened } from "./webhooks/pull-request-opened";
+import { handlePullRequestReadyForReview } from "./webhooks/pull-request-ready-for-review";
 import { handlePush } from "./webhooks/push";
+import { setPullRequestDraft } from "./services/set-pull-request-draft";
 
 export async function handleGitHubWebhook(
   body: string,
@@ -199,6 +201,47 @@ export function setupWebhookHandlers() {
       throw error;
     }
   });
+
+  githubApp.webhooks.on(
+    "pull_request.ready_for_review",
+    async ({ payload }) => {
+      console.log("[GitHub Webhook] Handling pull_request.ready_for_review");
+      try {
+        await handlePullRequestReadyForReview(
+          payload as Parameters<typeof handlePullRequestReadyForReview>[0],
+        );
+        console.log(
+          "[GitHub Webhook] pull_request.ready_for_review handled successfully",
+        );
+      } catch (error) {
+        console.error(
+          "[GitHub Webhook] pull_request.ready_for_review handler error:",
+          error,
+        );
+        throw error;
+      }
+    },
+  );
+
+  githubApp.webhooks.on(
+    "pull_request.converted_to_draft",
+    async ({ payload }) => {
+      console.log("[GitHub Webhook] Handling pull_request.converted_to_draft");
+      try {
+        // The task stays where it is; only the link's draft badge changes.
+        await setPullRequestDraft(payload, true);
+        console.log(
+          "[GitHub Webhook] pull_request.converted_to_draft handled successfully",
+        );
+      } catch (error) {
+        console.error(
+          "[GitHub Webhook] pull_request.converted_to_draft handler error:",
+          error,
+        );
+        throw error;
+      }
+    },
+  );
 
   githubApp.webhooks.on("label.created", async ({ payload }) => {
     console.log("[GitHub Webhook] Handling label.created");

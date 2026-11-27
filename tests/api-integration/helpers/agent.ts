@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { expect } from "vite-plus/test";
 import db, { schema } from "../../../apps/api/src/database";
 import { createApp } from "../../../apps/api/src/index";
@@ -17,7 +18,23 @@ export type Claim = {
     project: { repository: string | null; instructions: string };
     branchName: string;
     resultSchema: Record<string, unknown> | null;
+    planning: unknown;
   };
+};
+
+// A suggestion as getTaskAgent returns it; tests read the kind's fields.
+export type AgentSuggestionView = { id: string; kind: string } & Record<
+  string,
+  unknown
+>;
+
+type AgentRun = {
+  id: string;
+  kind: string;
+  status: string;
+  cancelRequested: boolean;
+  result: unknown;
+  errorCode: string | null;
 };
 
 async function joinWorkspace(workspaceId: string, name: string, role: string) {
@@ -41,11 +58,47 @@ async function joinWorkspace(workspaceId: string, name: string, role: string) {
 
 export const READY_ASSESSMENT = {
   score: 90,
-  summary: "Clear bug with repro steps.",
-  checklist: [{ key: "goal", label: "Goal", status: "met" }],
   questions: [],
   suggestions: [],
 };
+
+/**
+ * Candidates for field suggestions: a feature with a milestone and an
+ * upcoming release. The task loses its priority, so every field is empty.
+ */
+export async function addPlanningCandidates(projectId: string, taskId: string) {
+  const [feature] = await db
+    .insert(schema.taskTable)
+    .values({
+      projectId,
+      title: "Sign-in",
+      type: "feature",
+      status: null,
+      columnId: null,
+      priority: null,
+    })
+    .returning();
+  const [milestone] = await db
+    .insert(schema.milestoneTable)
+    .values({ featureId: feature!.id, title: "Beta" })
+    .returning();
+  const year = new Date().getUTCFullYear() + 1;
+  const [release] = await db
+    .insert(schema.releaseTable)
+    .values({
+      projectId,
+      name: "Spring",
+      startDate: `${year}-03-01`,
+      codeFreezeDate: `${year}-03-20`,
+      submissionDate: `${year}-03-31`,
+    })
+    .returning();
+  await db
+    .update(schema.taskTable)
+    .set({ priority: "no-priority" })
+    .where(eq(schema.taskTable.id, taskId));
+  return { feature: feature!, milestone: milestone!, release: release! };
+}
 
 /** A workspace with an admin, a member and a viewer, a project and a bug. */
 export async function setupAgentWorkspace() {
@@ -151,34 +204,46 @@ export async function setupAgentWorkspace() {
         score: number;
         verdict: string;
         questions: Array<{ id: string; text: string; blocking: boolean }>;
-        suggestions: Array<{ id: string; title: string; markdown: string }>;
+        suggestions: AgentSuggestionView[];
       };
       clarifications: Array<{ question: string; answer: string }>;
       runner: { configured: boolean; online: boolean };
+      workflow: {
+        todoStatus: string | null;
+        inProgress: { slug: string; name: string } | null;
+      };
+      start: { canStart: boolean; blockers: string[]; pullRequest: string };
       ship: {
         canShip: boolean;
         blockers: string[];
         branchName: string;
-        activeRun: null | {
-          id: string;
-          status: string;
-          cancelRequested: boolean;
-        };
-        lastRun: null | {
-          id: string;
-          status: string;
-          result: unknown;
-          errorCode: string | null;
-        };
+        activeRun: null | AgentRun;
+        lastRun: null | AgentRun;
         events: Array<{ message: string }>;
       };
     };
   };
+  const taskStatus = async () =>
+    (
+      await db
+        .select({ status: schema.taskTable.status })
+        .from(schema.taskTable)
+        .where(eq(schema.taskTable.id, task!.id))
+    )[0]!.status;
+  const setTaskStatus = (status: string) =>
+    db
+      .update(schema.taskTable)
+      .set({ status })
+      .where(eq(schema.taskTable.id, task!.id));
   const claim = async (
     token: string,
     kinds: string[] = ["assess", "ship"],
+    canPush?: boolean,
   ): Promise<Claim | null> => {
-    const response = await runnerCall(token, "POST", "/claim", { kinds });
+    const response = await runnerCall(token, "POST", "/claim", {
+      kinds,
+      ...(canPush === undefined ? {} : { canPush }),
+    });
     if (response.status === 204) return null;
     expect(response.status).toBe(200);
     return (await response.json()) as Claim;
@@ -204,6 +269,8 @@ export async function setupAgentWorkspace() {
     enable,
     createRunnerToken,
     getAgent,
+    taskStatus,
+    setTaskStatus,
     claim,
     assess,
   };

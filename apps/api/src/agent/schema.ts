@@ -67,3 +67,12 @@ export const projectAgentSettingsBody = z
     readyThreshold: z.number().int().min(1).max(100),
   })
   .openapi("ProjectAgentSettingsInput");
+
+export const startTaskBody = z
+  .object({
+    pullRequest: z.boolean().default(true).openapi({
+      description:
+        "Also open a draft pull request when the runner can; false only moves the task, as Copy prompt does",
+    }),
+  })
+  .openapi("AgentStartInput");

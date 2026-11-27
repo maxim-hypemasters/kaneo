@@ -1,14 +1,19 @@
 import { ApiError } from "../../errors/api-error";
 import db from "../../database";
 import { agentRunTable } from "../../database/schema";
+import { TRIAGE_STATUS } from "../../triage/triage-status";
 import { computeShipBlockers } from "../compute-ship-blockers";
 import { readinessVerdict } from "../readiness-verdict";
 import { loadAssessment } from "./get-task-agent";
 import { loadWorkspaceRunner } from "./load-workspace-runner";
+import { moveTaskForWorkRun } from "./move-task-for-work-run";
 import { publishAgentUpdate } from "./publish-agent-update";
 import { requireAgentTask } from "./require-agent-task";
 
-/** Queues a Ship run after checking readiness again on the server. */
+/**
+ * Queues a Ship run after checking readiness again on the server, and moves
+ * the task from To Do to In Progress.
+ */
 export async function shipTask(taskId: string, userId: string) {
   const { task, inputHash, setting } = await requireAgentTask(taskId);
   const [assessment, runner] = await Promise.all([
@@ -20,6 +25,7 @@ export async function shipTask(taskId: string, userId: string) {
     repository: setting.repository,
     hasRunner: runner !== null,
     archived: task.archived,
+    inTriage: task.status === TRIAGE_STATUS,
     // Judged by the project's threshold now, not the one at assessment time.
     assessment: assessment && {
       ...assessment,
@@ -40,7 +46,7 @@ export async function shipTask(taskId: string, userId: string) {
     });
   if (blockers.length) throw refuse(blockers);
 
-  // The partial unique index allows one queued or running Ship per task.
+  // The partial unique index allows one queued or running Ship or Start.
   const [run] = await db
     .insert(agentRunTable)
     .values({ taskId, kind: "ship", inputHash, requestedByUserId: userId })
@@ -48,6 +54,7 @@ export async function shipTask(taskId: string, userId: string) {
     .returning({ id: agentRunTable.id });
   if (!run) throw refuse(["ship_in_progress"]);
 
+  await moveTaskForWorkRun(task, userId, run.id);
   await publishAgentUpdate(taskId, task.projectId);
   return run;
 }

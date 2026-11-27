@@ -22,7 +22,7 @@ export type WorkflowEvent = (typeof EVENTS)[number];
 
 export const EVENT_LABELS: Readonly<Record<WorkflowEvent, string>> = {
   branch_push: "Branch pushed",
-  pr_opened: "Pull request opened",
+  pr_opened: "Pull request opened or ready for review",
   pr_merged: "Pull request merged",
   issue_opened: "Issue opened",
   issue_closed: "Issue closed",
@@ -32,6 +32,8 @@ export const EVENT_LABELS: Readonly<Record<WorkflowEvent, string>> = {
 const EVENT_ALIASES: Readonly<Record<string, WorkflowEvent>> = {
   push: "branch_push",
   mr_opened: "pr_opened",
+  // The label from before the rule also covered Ready for review.
+  pull_request_opened: "pr_opened",
   mr_merged: "pr_merged",
 };
 
